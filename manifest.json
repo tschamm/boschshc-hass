@@ -1,0 +1,8 @@
+{
+  "domain": "boschshc",
+  "name": "Bosch Smart Home Control",
+  "documentation": "https://www.home-assistant.io/components/",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": []
+}
