@@ -47,14 +47,6 @@ async def async_setup(hass, config):
     _LOGGER.debug("Initializing Bosch SHC bridge")
         
     
-    # """Your controller/hub specific code."""
-    # # Data that you want to share with your platforms
-    hass.data[DOMAIN] = {
-        'temperature': 15
-    }
-    #
-    # hass.helpers.discovery.load_platform('sensor', DOMAIN, {}, config)
-    
     hass.data[SHC_LOGIN] = SHCBridge(hass, config[DOMAIN], Client)
     bridge = hass.data[SHC_LOGIN]
     if not bridge.login():
@@ -62,8 +54,9 @@ async def async_setup(hass, config):
         return False
     
     if config[DOMAIN][CONF_DISCOVERY]:
-        for component in "sensor", "switch":
-            discovery.load_platform(hass, component, DOMAIN, {}, config)
+        # for component in "sensor", "switch":
+        #     discovery.load_platform(hass, component, DOMAIN, {}, config)
+        discovery.load_platform(hass, "switch", DOMAIN, {}, config)
     
     return True
 
@@ -94,7 +87,6 @@ class SHCBridge:
             shc_info = self.my_client.shc_information()
             _LOGGER.debug('  version        : %s' % shc_info.version)
             _LOGGER.debug('  updateState    : %s' % shc_info.updateState)
-
             
             return True
         except HTTPError:
