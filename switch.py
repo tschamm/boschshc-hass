@@ -59,3 +59,5 @@ class MySwitch(SwitchDevice):
         self._is_on = not self._is_on
         _LOGGER.debug("New switch state is %s" % self._is_on)
     
+    def update(self, **kwargs):
+        self._representation.update()
