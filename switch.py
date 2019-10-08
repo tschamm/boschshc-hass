@@ -18,21 +18,27 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         
     for plug in smart_plug.initialize_smart_plugs(client, client.device_list()):
         _LOGGER.debug("Found smart plug: %s" % plug.get_id)
-        dev.append(MySwitch(plug, plug.get_name, plug.get_state, plug.get_powerConsumption, plug.get_energyConsumption))
+        dev.append(SmartPlugSwitch(plug, plug.get_name, plug.get_state, plug.get_powerConsumption, plug.get_energyConsumption, client))
     
     if dev:
         add_entities(dev, True)
 
 
-class MySwitch(SwitchDevice):
+class SmartPlugSwitch(SwitchDevice):
 
-    def __init__(self, plug, name, state, powerConsumption, energyConsumption):
+    def __init__(self, plug, name, state, powerConsumption, energyConsumption, client):
         self._representation = plug
+        self._client = client
         self._is_on = state
         self._today_energy_kwh = energyConsumption
         self._current_power_w = powerConsumption
         self._name = name
-        
+        self._client.register_device(self._representation, self.update_callback)
+
+    def update_callback(self, device):
+        _LOGGER.debug("Update notification for smart plug: %s" % device.id)
+        self.schedule_update_ha_state(True)
+                
     @property
     def name(self):
         """Name of the device."""
@@ -43,6 +49,11 @@ class MySwitch(SwitchDevice):
         """If the switch is currently on or off."""
         return self._is_on
         
+    @property
+    def should_poll(self):
+        """Polling needed."""
+        return False
+    
     @property
     def today_energy_kwh(self):
         """Total energy usage in kWh."""
@@ -72,7 +83,7 @@ class MySwitch(SwitchDevice):
         _LOGGER.debug("New switch state is %s" % self._is_on)
     
     def update(self, **kwargs):
-        if self._representation.update:
+        if self._representation.update():
             self._is_on = self._representation.get_state
             self._today_energy_kwh = self._representation.get_energyConsumption
             self._current_power_w = self._representation.get_powerConsumption

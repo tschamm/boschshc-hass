@@ -41,7 +41,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-async def async_setup(hass, config):
+def setup(hass, config):
     """Set up the Bosch SHC bridge"""
     from BoschShcPy import Client
     _LOGGER.debug("Initializing Bosch SHC bridge")
@@ -54,9 +54,8 @@ async def async_setup(hass, config):
         return False
     
     if config[DOMAIN][CONF_DISCOVERY]:
-        # for component in "sensor", "switch":
-        #     discovery.load_platform(hass, component, DOMAIN, {}, config)
-        discovery.load_platform(hass, "switch", DOMAIN, {}, config)
+        for component in "switch", "cover":
+            discovery.load_platform(hass, component, DOMAIN, {}, config)
     
     return True
 
@@ -71,8 +70,10 @@ class SHCBridge:
         self._hass = hass
 
         self.my_client = client(
-            domain_config[CONF_IP_ADDRESS],         domain_config[CONF_PORT], domain_config[CONF_ACCESS_CERT], domain_config[CONF_ACCESS_KEY]
+            domain_config[CONF_IP_ADDRESS], domain_config[CONF_PORT], domain_config[CONF_ACCESS_CERT], domain_config[CONF_ACCESS_KEY]
         )
+
+        self.my_client.start_subscription()
 
         self._hass.data[SHC_BRIDGE] = self.my_client
 
