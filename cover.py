@@ -39,6 +39,7 @@ class ShutterControlCover(CoverDevice):
         self._state = state
         self._name = name
         self._client.register_device(self._representation, self.update_callback)
+        self._client.register_device(self._representation.get_device, self.update_callback)
     
     def update_callback(self, device):
         _LOGGER.debug("Update notification for shutter control: %s" % device.id)
@@ -57,9 +58,8 @@ class ShutterControlCover(CoverDevice):
     @property
     def available(self):
         """Return False if state has not been updated yet."""
-        if self._current_cover_position is None:
-            return False
-        return True
+#         _LOGGER.debug("Cover available: %s" % self._representation.get_availability)
+        return self._representation.get_availability
     
     # @property
     # def is_opening(self):
@@ -83,21 +83,27 @@ class ShutterControlCover(CoverDevice):
     
     def stop_cover(self, **kwargs):
         """Stop the cover."""
-        
-        pass
+        self._representation.stop()
+        return
         
     @property
     def is_closed(self):
         """Return if the cover is closed or not."""
-        pass
+        if self._representation.get_level == None:
+            return None
+        elif self._representation.get_level == 0.:
+            return True
+        return False
     
     def open_cover(self, **kwargs):
         """Open the cover."""
-        pass
+        level = 1.
+        self._representation.set_level(level)
     
     def close_cover(self, **kwargs):
         """Close cover."""
-        pass
+        level = 0.
+        self._representation.set_level(level)
         
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""

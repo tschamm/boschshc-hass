@@ -34,6 +34,7 @@ class SmartPlugSwitch(SwitchDevice):
         self._current_power_w = powerConsumption
         self._name = name
         self._client.register_device(self._representation, self.update_callback)
+        self._client.register_device(self._representation.get_device, self.update_callback)
 
     def update_callback(self, device):
         _LOGGER.debug("Update notification for smart plug: %s" % device.id)
@@ -43,6 +44,12 @@ class SmartPlugSwitch(SwitchDevice):
     def name(self):
         """Name of the device."""
         return self._name
+
+    @property
+    def available(self):
+        """Return False if state has not been updated yet."""
+#         _LOGGER.debug("Switch available: %s" % self._representation.get_availability)
+        return self._representation.get_availability
 
     @property
     def is_on(self):
