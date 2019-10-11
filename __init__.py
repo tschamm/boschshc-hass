@@ -54,7 +54,7 @@ def setup(hass, config):
         return False
     
     if config[DOMAIN][CONF_DISCOVERY]:
-        for component in "switch", "cover":
+        for component in "switch", "cover", "binary_sensor":
             discovery.load_platform(hass, component, DOMAIN, {}, config)
     
     return True
