@@ -34,6 +34,7 @@ class ShutterContactSensor(BinarySensorDevice):
         self._client = client
         self._state = state
         self._name = name
+        self._manufacturer = self._representation.get_device.manufacturer
         self._client.register_device(self._representation, self.update_callback)
         self._client.register_device(self._representation.get_device, self.update_callback)
     
@@ -45,6 +46,11 @@ class ShutterContactSensor(BinarySensorDevice):
     def name(self):
         """Name of the device."""
         return self._name
+    
+    @property
+    def manufacturer(self):
+        """The manufacturer of the device."""
+        return self._manufacturer
 
     @property
     def should_poll(self):

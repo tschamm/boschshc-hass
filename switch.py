@@ -33,6 +33,7 @@ class SmartPlugSwitch(SwitchDevice):
         self._today_energy_kwh = energyConsumption
         self._current_power_w = powerConsumption
         self._name = name
+        self._manufacturer = self._representation.get_device.manufacturer
         self._client.register_device(self._representation, self.update_callback)
         self._client.register_device(self._representation.get_device, self.update_callback)
 
@@ -44,6 +45,11 @@ class SmartPlugSwitch(SwitchDevice):
     def name(self):
         """Name of the device."""
         return self._name
+
+    @property
+    def manufacturer(self):
+        """The manufacturer of the device."""
+        return self._manufacturer
 
     @property
     def available(self):
