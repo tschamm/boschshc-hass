@@ -1,0 +1,4 @@
+examples/keystore
+__pycache__
+.project
+.pydevproject
