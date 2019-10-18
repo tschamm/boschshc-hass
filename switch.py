@@ -101,4 +101,3 @@ class SmartPlugSwitch(SwitchDevice):
             self._today_energy_kwh = self._representation.get_energyConsumption
             self._current_power_w = self._representation.get_powerConsumption
             self._name = self._representation.get_name
-        

@@ -12,6 +12,7 @@ from homeassistant.components.cover import (
 from BoschShcPy import shutter_control
 
 from .const import DOMAIN, SHC_LOGIN
+
 SHC_BRIDGE = "shc_bridge"
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     if dev:
         add_entities(dev, True)
+
 
 class ShutterControlCover(CoverDevice):
 
@@ -64,7 +66,7 @@ class ShutterControlCover(CoverDevice):
     @property
     def available(self):
         """Return False if state has not been updated yet."""
-#         _LOGGER.debug("Cover available: %s" % self._representation.get_availability)
+        #         _LOGGER.debug("Cover available: %s" % self._representation.get_availability)
         return self._representation.get_availability
 
     # @property
