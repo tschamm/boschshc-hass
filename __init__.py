@@ -88,7 +88,7 @@ class SHCBridge:
             shc_info = self.my_client.shc_information()
             _LOGGER.debug('  version        : %s' % shc_info.version)
             _LOGGER.debug('  updateState    : %s' % shc_info.updateState)
-            if shc_info.updateState == state.UPDATE_AVAILABLE:
+            if shc_info.get_state() == state.UPDATE_AVAILABLE:
                 _LOGGER.warning('Please check for software updates of the bridge in the Bosch Smart Home App')
 
             return True

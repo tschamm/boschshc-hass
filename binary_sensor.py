@@ -5,7 +5,7 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASSES,
     BinarySensorDevice,
 )
-from BoschShcPy import shutter_contact
+from BoschShcPy import shutter_contact, smoke_detector
 
 from .const import DOMAIN, SHC_LOGIN
 import homeassistant
@@ -23,9 +23,14 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     for binarysensor in shutter_contact.initialize_shutter_contacts(client, client.device_list()):
         _LOGGER.debug("Found shutter contact: %s" % binarysensor.get_id)
         dev.append(ShutterContactSensor(binarysensor, binarysensor.get_name, binarysensor.get_state, client))
-    
+
+    for binarysensor in smoke_detector.initialize_smoke_detectors(client, client.device_list()):
+        _LOGGER.debug("Found smoke detector: %s" % binarysensor.get_id)
+        dev.append(SmokeDetectorSensor(binarysensor, binarysensor.get_name, binarysensor.get_state, client))
+
     if dev:
         add_entities(dev, True)
+
 
 class ShutterContactSensor(BinarySensorDevice):
 
@@ -81,6 +86,59 @@ class ShutterContactSensor(BinarySensorDevice):
             
     def update(self, **kwargs):
         if self._representation.update():
+            print("Update called!")
             self._state = self._representation.get_state
             self._name = self._representation.get_name
-        
+
+
+class SmokeDetectorSensor(BinarySensorDevice):
+
+    def __init__(self, binarysensor, name, state, client):
+        self._representation = binarysensor
+        self._client = client
+        self._state = state
+        self._name = name
+        self._manufacturer = self._representation.get_device.manufacturer
+        self._client.register_device(self._representation, self.update_callback)
+        self._client.register_device(self._representation.get_device, self.update_callback)
+
+    def update_callback(self, device):
+        _LOGGER.debug("Update notification for smoke detector: %s" % device.id)
+        self.schedule_update_ha_state(True)
+
+    @property
+    def name(self):
+        """Name of the device."""
+        return self._name
+
+    @property
+    def manufacturer(self):
+        """The manufacturer of the device."""
+        return self._manufacturer
+
+    @property
+    def should_poll(self):
+        """Polling needed."""
+        return False
+
+    @property
+    def available(self):
+        """Return False if state has not been updated yet."""
+        #         _LOGGER.debug("Cover available: %s" % self._representation.get_availability)
+        return self._representation.get_availability
+
+    @property
+    def is_on(self):
+        """If the binary sensor is currently on or off."""
+        return False if self._state == smoke_detector.state.IDLE_OFF else True
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return homeassistant.components.binary_sensor.DEVICE_CLASS_SMOKE
+
+    def update(self, **kwargs):
+        if self._representation.update():
+            print("Update called!")
+            self._state = self._representation.get_state
+            self._name = self._representation.get_name

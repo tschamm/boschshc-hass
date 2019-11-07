@@ -2,3 +2,10 @@ examples/keystore
 __pycache__
 .project
 .pydevproject
+.idea/boschshc-hass.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.vscode/settings.json
+.env

@@ -26,7 +26,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     for cover in shutter_control.initialize_shutter_controls(client, client.device_list()):
         _LOGGER.debug("Found shutter control: %s" % cover.get_id)
-        dev.append(ShutterControlCover(cover, cover.get_name, cover.get_state, cover.get_level, client))
+        dev.append(ShutterControlCover(cover, cover.get_name,
+                                       cover.get_state, cover.get_level, client))
 
     if dev:
         add_entities(dev, True)
@@ -41,11 +42,14 @@ class ShutterControlCover(CoverDevice):
         self._state = state
         self._name = name
         self._manufacturer = self._representation.get_device.manufacturer
-        self._client.register_device(self._representation, self.update_callback)
-        self._client.register_device(self._representation.get_device, self.update_callback)
+        self._client.register_device(
+            self._representation, self.update_callback)
+        self._client.register_device(
+            self._representation.get_device, self.update_callback)
 
     def update_callback(self, device):
-        _LOGGER.debug("Update notification for shutter control: %s" % device.id)
+        _LOGGER.debug(
+            "Update notification for shutter control: %s" % device.id)
         self.schedule_update_ha_state(True)
 
     @property

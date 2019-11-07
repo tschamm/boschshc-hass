@@ -1,8 +1,12 @@
 {
   "domain": "boschshc",
-  "name": "Bosch Smart Home Control",
-  "documentation": "https://www.home-assistant.io/components/",
+  "name": "Bosch Smart Home Interface",
+  "documentation": "",
   "requirements": [],
+  "ssdp": {},
+  "homekit": {},
   "dependencies": [],
-  "codeowners": []
+  "codeowners": [
+    "@tschamm"
+  ]
 }
