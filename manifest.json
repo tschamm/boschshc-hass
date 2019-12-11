@@ -1,9 +1,9 @@
 {
   "domain": "boschshc",
   "name": "Bosch Smart Home Interface",
+  "config_flow": true,
   "documentation": "",
   "requirements": [],
-  "ssdp": {},
   "homekit": {},
   "dependencies": [],
   "codeowners": [

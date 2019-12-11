@@ -1,5 +1,6 @@
 """Platform for cover integration."""
 import logging
+import asyncio
 
 from homeassistant.components.cover import (
     SUPPORT_OPEN,
@@ -11,18 +12,19 @@ from homeassistant.components.cover import (
 )
 from BoschShcPy import shutter_control
 
-from .const import DOMAIN, SHC_LOGIN
+from .const import DOMAIN
 
-SHC_BRIDGE = "shc_bridge"
+from homeassistant.const import CONF_NAME
+from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def asyn_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the platform."""
-    # We only want this platform to be set up via discovery.
+
     dev = []
-    client = hass.data[SHC_BRIDGE]
+    client = hass.data[DOMAIN][slugify(config[CONF_NAME])]
 
     for cover in shutter_control.initialize_shutter_controls(client, client.device_list()):
         _LOGGER.debug("Found shutter control: %s" % cover.get_id)
@@ -30,7 +32,22 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                                        cover.get_state, cover.get_level, client))
 
     if dev:
-        add_entities(dev, True)
+        return await async_add_entities(dev)
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up the platform."""
+
+    dev = []
+    client = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])].my_client
+
+    for cover in shutter_control.initialize_shutter_controls(client, client.device_list()):
+        _LOGGER.debug("Found shutter control: %s" % cover.get_id)
+        dev.append(ShutterControlCover(cover, cover.get_name,
+                                       cover.get_state, cover.get_level, client))
+
+    if dev:
+        async_add_entities(dev)    
 
 
 class ShutterControlCover(CoverDevice):
@@ -41,16 +58,44 @@ class ShutterControlCover(CoverDevice):
         self._current_cover_position = level
         self._state = state
         self._name = name
-        self._manufacturer = self._representation.get_device.manufacturer
         self._client.register_device(
             self._representation, self.update_callback)
         self._client.register_device(
             self._representation.get_device, self.update_callback)
+        self.update()
 
     def update_callback(self, device):
         _LOGGER.debug(
             "Update notification for shutter control: %s" % device.id)
         self.schedule_update_ha_state(True)
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this cover."""
+        return self._representation.get_device.serial
+
+    @property
+    def device_id(self):
+        """Return the ID of this cover."""
+        return self.unique_id
+
+    @property
+    def root_device(self):
+        return self._representation.get_device.rootDeviceId
+
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, self.device_id)},
+            "name": self._name,
+            "manufacturer": self.manufacturer,
+            "model": self._representation.get_device.deviceModel,
+            "sw_version": "",
+            "via_device": (DOMAIN, self._client.get_ip_address),
+            # "via_device": (DOMAIN, self.root_device),
+        }
+
 
     @property
     def name(self):
@@ -60,7 +105,7 @@ class ShutterControlCover(CoverDevice):
     @property
     def manufacturer(self):
         """The manufacturer of the device."""
-        return self._manufacturer
+        return self._representation.get_device.manufacturer
 
     @property
     def should_poll(self):
@@ -70,18 +115,7 @@ class ShutterControlCover(CoverDevice):
     @property
     def available(self):
         """Return False if state has not been updated yet."""
-        #         _LOGGER.debug("Cover available: %s" % self._representation.get_availability)
         return self._representation.get_availability
-
-    # @property
-    # def is_opening(self):
-    #     """If the cover is currently opening."""
-    #     if self._state == shutter_control.
-    #
-    # @property
-    # def today_energy_kwh(self):
-    #     """Total energy usage in kWh."""
-    #     return self._today_energy_kwh
 
     @property
     def supported_features(self):
@@ -124,24 +158,6 @@ class ShutterControlCover(CoverDevice):
             position = min(100, max(0, position))
             level = position / 100.0
             self._representation.set_level(level)
-
-    # def turn_on(self, **kwargs):
-    #     """Turn the switch on."""
-    #     self._representation.set_state(True)
-    #     self._is_on = True
-    #     _LOGGER.debug("New switch state is %s" % self._is_on)
-    #
-    # def turn_off(self, **kwargs):
-    #     """Turn the switch off."""
-    #     self._representation.set_state(False)
-    #     self._is_on = False
-    #     _LOGGER.debug("New switch state is %s" % self._is_on)
-    #
-    # def toggle(self, **kwargs):
-    #     """Toggles the switch."""
-    #     self._representation.set_state(not self._representation.get_state())
-    #     self._is_on = not self._is_on
-    #     _LOGGER.debug("New switch state is %s" % self._is_on)
 
     def update(self, **kwargs):
         if self._representation.update():

@@ -1,0 +1,31 @@
+{
+    "config": {
+        "title": "Bosch Smart Home Interface",
+        "step": {
+            "init": {
+                "title": "Definiere die SHC Parameter",
+                "data": {
+                    "name": "Name",
+                    "ip_address": "IP Adresse",
+                    "mac": "MAC Adresse",
+                    "access_cert": "Access Cert",
+                    "access_key": "Access Key",
+                    "port": "Port",
+                    "icon": "Symbol"
+                }
+            },
+            "link": {
+                "title": "Hub verbinden",
+                "description": "Dr\u00fccke den Knopf auf der Bridge, um Bosch SHC mit Home Assistant zu registrieren.\n\n![Position des Buttons auf der Bridge](/static/images/config_philips_hue.jpg)"
+            }
+        },
+        "error": {
+            "cannot_connect": "Verbindungsfehler, bitte erneut versuchen",
+            "invalid_auth": "Ungültige Authentifikation",
+            "unknown": "Unerwarteter Fehler"
+        },
+        "abort": {
+            "already_configured": "Gerät ist bereits konfiguriert"
+        }
+    }
+}

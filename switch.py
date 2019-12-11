@@ -1,28 +1,46 @@
 """Platform for switch integration."""
 import logging
+import asyncio
 
 from homeassistant.components.switch import SwitchDevice
 from BoschShcPy import smart_plug
 
-from .const import DOMAIN, SHC_LOGIN
-SHC_BRIDGE = "shc_bridge"
+from .const import DOMAIN
+
+from homeassistant.const import CONF_NAME
+from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the sensor platform."""
-    # We only want this platform to be set up via discovery.
+
     dev = []
-    client = hass.data[SHC_BRIDGE]
-        
+    client = hass.data[DOMAIN][slugify(config[CONF_NAME])]
+
     for plug in smart_plug.initialize_smart_plugs(client, client.device_list()):
         _LOGGER.debug("Found smart plug: %s" % plug.get_id)
-        dev.append(SmartPlugSwitch(plug, plug.get_name, plug.get_state, plug.get_powerConsumption, plug.get_energyConsumption, client))
-    
-    if dev:
-        add_entities(dev, True)
+        dev.append(SmartPlugSwitch(plug, plug.get_name, plug.get_state,
+                                   plug.get_powerConsumption, plug.get_energyConsumption, client))
 
+    if dev:
+        return await async_add_entities(dev)
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up the sensor platform."""
+
+    dev = []
+    client = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])].my_client
+
+    for plug in smart_plug.initialize_smart_plugs(client, client.device_list()):
+        _LOGGER.debug("Found smart plug: %s" % plug.get_id)
+        dev.append(SmartPlugSwitch(plug, plug.get_name, plug.get_state,
+                                   plug.get_powerConsumption, plug.get_energyConsumption, client))
+
+    if dev:
+        async_add_entities(dev)
 
 class SmartPlugSwitch(SwitchDevice):
 
@@ -33,14 +51,40 @@ class SmartPlugSwitch(SwitchDevice):
         self._today_energy_kwh = energyConsumption
         self._current_power_w = powerConsumption
         self._name = name
-        self._manufacturer = self._representation.get_device.manufacturer
         self._client.register_device(self._representation, self.update_callback)
         self._client.register_device(self._representation.get_device, self.update_callback)
 
     def update_callback(self, device):
         _LOGGER.debug("Update notification for smart plug: %s" % device.id)
         self.schedule_update_ha_state(True)
-                
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this switch."""
+        return self._representation.get_device.serial
+
+    @property
+    def device_id(self):
+        """Return the ID of this switch."""
+        return self.unique_id
+
+    @property
+    def root_device(self):
+        return self._representation.get_device.rootDeviceId
+
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, self.device_id)},
+            "name": self._name,
+            "manufacturer": self.manufacturer,
+            "model": self._representation.get_device.deviceModel,
+            "sw_version": "",
+            "via_device": (DOMAIN, self._client.get_ip_address),
+            # "via_device": (DOMAIN, self.root_device),
+        }
+
     @property
     def name(self):
         """Name of the device."""
@@ -49,12 +93,11 @@ class SmartPlugSwitch(SwitchDevice):
     @property
     def manufacturer(self):
         """The manufacturer of the device."""
-        return self._manufacturer
+        return self._representation.get_device.manufacturer
 
     @property
     def available(self):
         """Return False if state has not been updated yet."""
-#         _LOGGER.debug("Switch available: %s" % self._representation.get_availability)
         return self._representation.get_availability
 
     @property
