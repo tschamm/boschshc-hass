@@ -2,7 +2,15 @@
 import logging
 import asyncio
 
-import homeassistant.components.alarm_control_panel as alarm
+from homeassistant.components.alarm_control_panel import (
+    AlarmControlPanel,
+    SUPPORT_ALARM_ARM_AWAY,
+    # SUPPORT_ALARM_ARM_CUSTOM_BYPASS,
+    # SUPPORT_ALARM_ARM_HOME,
+    SUPPORT_ALARM_ARM_NIGHT,
+    SUPPORT_ALARM_TRIGGER,
+)
+
 from homeassistant.const import (
     CONF_NAME,
     STATE_ALARM_ARMED_AWAY,
@@ -51,7 +59,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if device:
         async_add_entities([device])
 
-class IntrusionDetectionAlarmControlPanel(alarm.AlarmControlPanel):
+class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
 
     def __init__(self, service, name, state, client):
         self._representation = service
@@ -108,6 +116,11 @@ class IntrusionDetectionAlarmControlPanel(alarm.AlarmControlPanel):
     def device_state_attributes(self):
         """Return the state attributes of the device."""
         return self._device_state_attributes
+
+    @property
+    def supported_features(self):
+        """Return the list of supported features."""
+        return SUPPORT_ALARM_ARM_AWAY | SUPPORT_ALARM_ARM_NIGHT | SUPPORT_ALARM_TRIGGER
 
     @property
     def manufacturer(self):
