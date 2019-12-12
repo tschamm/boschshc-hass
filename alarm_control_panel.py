@@ -9,6 +9,7 @@ from homeassistant.components.alarm_control_panel import (
     # SUPPORT_ALARM_ARM_HOME,
     SUPPORT_ALARM_ARM_NIGHT,
     SUPPORT_ALARM_TRIGGER,
+    FORMAT_NUMBER,
 )
 
 from homeassistant.const import (
@@ -67,8 +68,8 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
         self._state = self.get_arming_state(state)
         self._name = name
         self._device_state_attributes = {}
-        self._representation.register_polling(
-            self._client, self.update_callback)
+        # self._representation.register_polling(
+        #     self._client, self.update_callback)
         self._representation.update()
 
     def update_callback(self, device):
@@ -120,7 +121,11 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return SUPPORT_ALARM_ARM_AWAY | SUPPORT_ALARM_ARM_NIGHT | SUPPORT_ALARM_TRIGGER
+        return (
+            SUPPORT_ALARM_ARM_AWAY 
+            | SUPPORT_ALARM_ARM_NIGHT 
+            | SUPPORT_ALARM_TRIGGER
+        )
 
     @property
     def manufacturer(self):
@@ -135,19 +140,25 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
     @property
     def code_format(self):
         """Return the regex for code format or None if no code is required."""
-        return None
-        # return alarm.FORMAT_NUMBER
+        # return None
+        return FORMAT_NUMBER
+
+    @property
+    def code_arm_required(self):
+        """Whether the code is required for arm actions."""
+        return False
 
     def alarm_disarm(self, code=None):
         """Send disarm command."""
-        self._representation.disarm()
+        if str(code) == "1221":
+            self._representation.disarm()
 
     def alarm_arm_away(self, code=None):
         """Send arm away command."""
         self._representation.arm_instant()
 
-    def alarm_arm_home(self, code=None):
-        """Send arm home command."""
+    def alarm_arm_night(self, code=None):
+        """Send arm night command."""
         self._representation.arm_instant()
 
     def alarm_trigger(self, code=None):
@@ -163,7 +174,7 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
             state = STATE_ALARM_DISARMED
         elif arming_state == intrusion_detection.operation_state.SYSTEM_ARMED:
             state = STATE_ALARM_ARMED_AWAY
-        # elif arming_state == ArmingState.TRIGGERED:
+        # elif arming_state == intrusion_detection.operation_state.TRIGGERED:
         #     state = STATE_ALARM_TRIGGERED
         else:
             _LOGGER.warning("Unhandled arming state: %s", arming_state)
