@@ -44,7 +44,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for cover in shutter_control.initialize_shutter_controls(client, client.device_list()):
         _LOGGER.debug("Found shutter control: %s" % cover.get_id)
         dev.append(ShutterControlCover(cover, cover.get_name,
-                                       cover.get_state, cover.get_level, client))
+                                       cover.get_state, int(cover.get_level * 100.), client))
 
     if dev:
         async_add_entities(dev)    
@@ -181,6 +181,6 @@ class ShutterControlCover(CoverDevice):
     def update(self, **kwargs):
         if self._representation.update():
             self._last_cover_position = self._current_cover_position
-            self._current_cover_position = self._representation.get_level * 100.
+            self._current_cover_position = int(self._representation.get_level * 100.)
             self._state = self._representation.get_state
             self._name = self._representation.get_name
