@@ -44,7 +44,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for cover in shutter_control.initialize_shutter_controls(client, client.device_list()):
         _LOGGER.debug("Found shutter control: %s" % cover.get_id)
         dev.append(ShutterControlCover(cover, cover.get_name,
-                                       cover.get_state, int(cover.get_level * 100.), client))
+                                       cover.get_state, 100, client))
 
     if dev:
         async_add_entities(dev)    
