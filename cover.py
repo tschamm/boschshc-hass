@@ -56,6 +56,7 @@ class ShutterControlCover(CoverDevice):
         self._representation = cover
         self._client = client
         self._current_cover_position = level
+        self._last_cover_position = level
         self._state = state
         self._name = name
         self._client.register_device(
@@ -141,6 +142,24 @@ class ShutterControlCover(CoverDevice):
             return True
         return False
 
+    @property
+    def is_opening(self):
+        """Return if the cover is opening or not."""
+        if self._last_cover_position < self._current_cover_position:
+            return True
+        else:
+            False
+
+
+    @property
+    def is_closing(self):
+        """Return if the cover is closing or not."""
+        if self._last_cover_position > self._current_cover_position:
+            return True
+        else:
+            False
+
+
     def open_cover(self, **kwargs):
         """Open the cover."""
         level = 1.
@@ -161,6 +180,7 @@ class ShutterControlCover(CoverDevice):
 
     def update(self, **kwargs):
         if self._representation.update():
+            self._last_cover_position = self._current_cover_position
             self._current_cover_position = self._representation.get_level * 100.
             self._state = self._representation.get_state
             self._name = self._representation.get_name
