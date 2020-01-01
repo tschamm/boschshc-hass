@@ -145,7 +145,7 @@ class ShutterControlCover(CoverDevice):
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
-        if self._last_cover_position < self._current_cover_position:
+        if self._state == shutter_control.operation_state.MOVING and self._last_cover_position < self._current_cover_position:
             return True
         else:
             False
@@ -154,7 +154,7 @@ class ShutterControlCover(CoverDevice):
     @property
     def is_closing(self):
         """Return if the cover is closing or not."""
-        if self._last_cover_position > self._current_cover_position:
+        if self._state == shutter_control.operation_state.MOVING and self._last_cover_position > self._current_cover_position:
             return True
         else:
             False

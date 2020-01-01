@@ -3,7 +3,7 @@
   "name": "Bosch Smart Home Interface",
   "config_flow": true,
   "documentation": "",
-  "requirements": [],
+  "requirements": ["requests", "python-dateutil"],
   "homekit": {},
   "dependencies": [],
   "codeowners": [
