@@ -1,0 +1,8 @@
+{
+  "domain": "bshlocal",
+  "name": "Bosch Smart Home Local API",
+  "documentation": "https://www.example.com",
+  "dependencies": [],
+  "codeowners": ["Clemens-Alexander Brust"],
+  "requirements": ["bshlocal==0.0.2"]
+}
