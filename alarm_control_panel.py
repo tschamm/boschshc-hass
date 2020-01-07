@@ -150,8 +150,7 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
 
     def alarm_disarm(self, code=None):
         """Send disarm command."""
-        if str(code) == "1221":
-            self._representation.disarm()
+        self._representation.disarm()
 
     def alarm_arm_away(self, code=None):
         """Send arm away command."""
