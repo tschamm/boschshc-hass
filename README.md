@@ -11,7 +11,8 @@ The following SHC components are currently implemented:
 
 For updating the state of the components, the long polling mechanism is used.  
 
-For component registration, config flow mechanism is used. Before adding the integration to Home Assistant, a new client has to be registered. For registration of the client on the controller, the [apitest.py](https://github.com/tschamm/boschshcpy/blob/master/examples/apitest.py) example script can be used.
+The component registration within HA is done via config flow mechanism. Currently, the component is added as a custom component to `~/.homeassistant/custom_components/boschshc`. 
+Before adding the integration to Home Assistant, a new client has to be registered. For registration of the client on the controller, the [apitest.py](https://github.com/tschamm/boschshcpy/blob/master/examples/apitest.py) example script can be used.
 
 The following parameters have to be provided:
 * 'access_cert': Path to Cert-File
