@@ -141,6 +141,6 @@ class SmartPlugSwitch(SwitchDevice):
     def update(self, **kwargs):
         if self._representation.update():
             self._is_on = self._representation.get_state
-            self._today_energy_kwh = self._representation.get_energyConsumption
+            self._today_energy_kwh = self._representation.get_energyConsumption / 1000.
             self._current_power_w = self._representation.get_powerConsumption
             self._name = self._representation.get_name
