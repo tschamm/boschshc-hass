@@ -154,11 +154,11 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
 
     def alarm_arm_away(self, code=None):
         """Send arm away command."""
-        self._representation.arm_instant()
+        self._representation.arm()
 
     def alarm_arm_night(self, code=None):
         """Send arm night command."""
-        self._representation.arm_instant()
+        self._representation.arm()
 
     def alarm_trigger(self, code=None):
         """Send trigger/panic command."""
