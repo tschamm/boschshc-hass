@@ -5,10 +5,6 @@ import asyncio
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanel,
     SUPPORT_ALARM_ARM_AWAY,
-    # SUPPORT_ALARM_ARM_CUSTOM_BYPASS,
-    # SUPPORT_ALARM_ARM_HOME,
-    SUPPORT_ALARM_ARM_NIGHT,
-    SUPPORT_ALARM_TRIGGER,
     FORMAT_NUMBER,
 )
 
@@ -17,8 +13,6 @@ from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
-    STATE_ALARM_PENDING,
-    STATE_ALARM_TRIGGERED,
 )
 from homeassistant.util import slugify
 
@@ -123,8 +117,6 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
         """Return the list of supported features."""
         return (
             SUPPORT_ALARM_ARM_AWAY 
-            | SUPPORT_ALARM_ARM_NIGHT 
-            | SUPPORT_ALARM_TRIGGER
         )
 
     @property
@@ -156,10 +148,6 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
         """Send arm away command."""
         self._representation.arm()
 
-    def alarm_arm_night(self, code=None):
-        """Send arm night command."""
-        self._representation.arm()
-
     def alarm_trigger(self, code=None):
         """Send trigger/panic command."""
         self._representation.tigger()
@@ -173,8 +161,6 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
             state = STATE_ALARM_DISARMED
         elif arming_state == intrusion_detection.operation_state.SYSTEM_ARMED:
             state = STATE_ALARM_ARMED_AWAY
-        # elif arming_state == intrusion_detection.operation_state.TRIGGERED:
-        #     state = STATE_ALARM_TRIGGERED
         else:
             _LOGGER.warning("Unhandled arming state: %s", arming_state)
         
