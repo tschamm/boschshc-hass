@@ -274,6 +274,10 @@ class ScenarioSwitch(SwitchDevice):
         return self.unique_id
 
     @property
+    def icon(self):
+        return "mdi:script-text"
+
+    @property
     def device_info(self):
         """Return the device info."""
         return {
@@ -308,7 +312,7 @@ class ScenarioSwitch(SwitchDevice):
     def turn_off(self, **kwargs):
         """Turn the switch off."""
         # do nothing
-        continue
+        pass
     
     def toggle(self, **kwargs):
         """Toggles the switch."""
