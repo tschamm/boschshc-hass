@@ -24,6 +24,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         dev.append(SmartPlugSwitch(plug, plug.get_name, plug.get_state,
                                    plug.get_powerConsumption, plug.get_energyConsumption, client))
 
+    for light in smart_plug.initialize_light_control(client, client.device_list()):
+        _LOGGER.debug("Found light control: %s" % light.get_id)
+        dev.append(SmartPlugSwitch(light, light.get_name, light.get_state,
+                                   light.get_powerConsumption, light.get_energyConsumption, client))
+
     for camera in camera_eyes.initialize_camera_eyes(client, client.device_list()):
         _LOGGER.debug("Found camera eyes: %s" % camera.get_id)
         dev.append(CameraEyesSwitch(camera, camera.get_name, camera.get_light_state, client))
@@ -47,6 +52,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         dev.append(SmartPlugSwitch(plug, plug.get_name, plug.get_state,
                                    plug.get_powerConsumption, plug.get_energyConsumption, client))
 
+    for light in smart_plug.initialize_light_control(client, client.device_list()):
+        _LOGGER.debug("Found light control: %s" % light.get_id)
+        dev.append(SmartPlugSwitch(light, light.get_name, light.get_state,
+                                   light.get_powerConsumption, light.get_energyConsumption, client))
+
     for camera in camera_eyes.initialize_camera_eyes(client, client.device_list()):
         _LOGGER.debug("Found camera eyes: %s" % camera.get_id)
         dev.append(CameraEyesSwitch(camera, camera.get_name,
@@ -58,6 +68,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     if dev:
         async_add_entities(dev)
+
+    for item in dev:
+        item.update()
 
 class SmartPlugSwitch(SwitchDevice):
 

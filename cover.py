@@ -49,6 +49,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if dev:
         async_add_entities(dev)    
 
+    for item in dev:
+        item.update()
 
 class ShutterControlCover(CoverDevice):
 

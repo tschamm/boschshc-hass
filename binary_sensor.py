@@ -56,6 +56,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if dev:
         async_add_entities(dev)
 
+    for item in dev:
+        item.update()
+    
+
 class ShutterContactSensor(BinarySensorDevice):
 
     def __init__(self, binarysensor, name, state, client):
@@ -138,7 +142,7 @@ class ShutterContactSensor(BinarySensorDevice):
             
     def update(self, **kwargs):
         if self._representation.update():
-            print("Update called!")
+            # print("Update called!")
             self._state = self._representation.get_state
             self._name = self._representation.get_name
 
