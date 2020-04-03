@@ -1,12 +1,10 @@
 {
   "domain": "boschshc",
-  "name": "Bosch Smart Home Interface",
+  "name": "Bosch Smart Home Controller Interface",
   "config_flow": true,
   "documentation": "",
-  "requirements": ["requests", "python-dateutil"],
+  "requirements": ["requests", "python-dateutil", "boschshcpy==0.1.0"],
   "homekit": {},
   "dependencies": [],
-  "codeowners": [
-    "@tschamm"
-  ]
+  "codeowners": ["@tschamm"]
 }
