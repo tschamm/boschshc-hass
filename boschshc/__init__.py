@@ -1,163 +1,143 @@
-"""Support for the Bosch Smart Home Controller system."""
+"""The Bosch Smart Home Controller integration."""
+import asyncio
 import logging
-from urllib.error import HTTPError
 
 import voluptuous as vol
-
-from BoschShcPy.shc_information import state
 
 from homeassistant.const import (
     CONF_NAME,
     CONF_IP_ADDRESS,
-    CONF_PORT,
-    EVENT_HOMEASSISTANT_START, 
-    EVENT_HOMEASSISTANT_STOP,
 )
 
-from homeassistant.helpers import discovery
-from homeassistant import config_entries
-
-from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
-from homeassistant.helpers import config_per_platform
+
 from homeassistant.util import slugify
 
 from .const import (
     DOMAIN,
-    CONF_ACCESS_CERT,
-    CONF_ACCESS_KEY,
+    CONF_SSL_CERTIFICATE,
+    CONF_SSL_KEY
 )
 
-ENTITY_ID_FORMAT = "shc_bridge.{}"
-PLATFORMS = "switch", "binary_sensor", "cover", "alarm_control_panel"
-
-_LOGGER = logging.getLogger(__name__)
+ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
-                vol.Required(CONF_NAME, default="SHC"): cv.string,
+                vol.Required(CONF_NAME, default="Home"): cv.string,
                 vol.Required(CONF_IP_ADDRESS): cv.string,
-                vol.Required(CONF_ACCESS_CERT): cv.string,
-                vol.Required(CONF_ACCESS_KEY): cv.string,
-                vol.Required(CONF_PORT, default='8444'): cv.string,
+                vol.Required(CONF_SSL_CERTIFICATE): cv.isfile,
+                vol.Required(CONF_SSL_KEY): cv.isfile,
             }
         )
     },
     extra=vol.ALLOW_EXTRA,
 )
 
-async def async_setup(hass, config):
-    """Set up the Bosch SHC bridge"""
-    hass.data[DOMAIN] = {}
-    entities: Set[str] = set()
+PLATFORMS = ["switch"]
 
-    from BoschShcPy import Client
-    _LOGGER.debug("Initializing Bosch SHC (via config)")
+_LOGGER = logging.getLogger(__name__)
 
-    for _, entry in config_per_platform(config, DOMAIN):
-        name = entry[CONF_NAME]
-        bridge = SHCBridge(hass, name, entry, Client)
-        if not bridge.login():
-            _LOGGER.debug("Failed to login to Bosch Smart Home Controller")
-            return False
+async def async_setup(hass: HomeAssistant, config: dict):
+    """Set up the Bosch SHC component."""
+    hass.data.setdefault(DOMAIN, {})
+    conf = config.get(DOMAIN)
 
-        _LOGGER.debug("Login to Bosch Smart Home Controller")
-        hass.data[DOMAIN][slugify(name)] = bridge
+    if not conf:
+        return True
 
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data=conf,
+        )
+    )
     return True
 
-async def async_setup_entry(hass, config_entry):
-    entry = config_entry.data
-    name = entry[CONF_NAME]
 
-    from BoschShcPy import Client
-    _LOGGER.debug("Initializing Bosch SHC bridge (via config entry)")
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Set up Bosch SHC from a config entry."""
+    data = entry.data
+    name = data[CONF_NAME]
 
-    bridge = SHCBridge(hass, name, entry, Client)
+    bridge = SHCBridge(hass, name, data)
     if not bridge.login():
-        _LOGGER.debug("Failed to login to Bosch Smart Home Controller")
         return False
 
     bridge.entity_id = async_generate_entity_id(
         ENTITY_ID_FORMAT, name, None, hass)
-    hass.data[DOMAIN][slugify(name)] = bridge
+    hass.data[DOMAIN][entry.entry_id] = bridge
 
-    device_registry = await dr.async_get_registry(hass)
-    device_registry.async_get_or_create(
-        config_entry_id=config_entry.entry_id,
-        # connections={(dr.CONNECTION_NETWORK_MAC, entry[CONF_MAC])},
-        # identifiers={(DOMAIN, entry[CONF_MAC])},
-        identifiers={(DOMAIN, entry[CONF_IP_ADDRESS])},
-        manufacturer="Bosch",
-        name=name,
-        model="SmartHomeController",
-        sw_version=bridge.swversion
-    )
-
-    # Use `hass.async_add_job` to avoid a circular dependency between the platform and the component
-    for domain in PLATFORMS:
-        hass.async_add_job(
-            hass.config_entries.async_forward_entry_setup(config_entry, domain)
+    for component in PLATFORMS:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, component)
         )
-
-    # hass.async_add_job(
-    #     hass.config_entries.async_forward_entry_setup(config_entry, 'switch'))
-
-    async def stop_subscription_service(event):
-        """Stop the subscription service of the bridge."""
-        bridge.my_client.stop_subscription()
-
-    async def start_subscription_service(event):
-        """Start the subscription service of the bridge."""
-        bridge.my_client.start_subscription()
-        hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, stop_subscription_service
-        )
-
-    hass.bus.async_listen_once(
-        EVENT_HOMEASSISTANT_START, start_subscription_service)
 
     return True
 
-class SHCBridge(Entity):
-    """A Bosch SHC wrapper class."""
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(
+                    entry, component)
+                for component in PLATFORMS
+            ]
+        )
+    )
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
+
+
+class SHCBridge(Entity):
+    """Wrapper class for Bosch SHC bridge."""
     name = None
 
-    def __init__(self, hass, name, domain_config, client):
-        """Initialize the Bosch Smart Home Interface."""
+    def __init__(self, hass: HomeAssistant, name: str, domain_config: dict):
+        """Initialize the session via Bosch SHC interface."""
         self.config = domain_config
         self.name = name
         self._hass = hass
-        self.entity_id = None;
-        self.swversion = None;
-
-        self.my_client = client(
-            domain_config[CONF_IP_ADDRESS], domain_config[CONF_PORT], domain_config[CONF_ACCESS_CERT], domain_config[CONF_ACCESS_KEY]
-        )
+        self.entity_id = None
+        self.swversion = None
+        self.session = None
 
     def login(self):
-        """Login to SHC."""
-        from BoschShcPy import ErrorException
+        """Login attempt to Bosch SHC."""
+        from boschshcpy import SHCSession
+        
+        _LOGGER.debug("Connecting to Bosch Smart Home Controller API")
+
         try:
-            _LOGGER.debug("Trying to connect to Bosch Smart Home Interface API")
-
-            shc_info = self.my_client.shc_information()
-            _LOGGER.debug('  version        : %s' % shc_info.version)
-            _LOGGER.debug('  updateState    : %s' % shc_info.updateState)
-            if shc_info.get_state() == state.NOT_INITIALIZED:
-                _LOGGER.error(
-                    "Unable to connect to Bosch Smart Home Interface API")
-                return False
-            elif shc_info.get_state() == state.UPDATE_AVAILABLE:
-                _LOGGER.warning('Please check for software updates of the bridge in the Bosch Smart Home App')
-            self.swversion = shc_info.version
-
-            # self.my_client.start_subscription()
-            return True
-
-        except (HTTPError, ErrorException) as e:
-            _LOGGER.error("Unable to connect to Bosch Smart Home Interface API")
+            self.session = SHCSession(
+                self.config[CONF_IP_ADDRESS], self.config[CONF_SSL_CERTIFICATE], self.config[CONF_SSL_KEY]
+            )
+        except OSError as error:
+            _LOGGER.error(
+                "Could not read SSL certificate, key from %s, %s: %s",
+                self.config[CONF_SSL_CERTIFICATE], self.config[CONF_SSL_KEY],
+                error,
+            )
             return False
+
+        shc_info = self.session.information
+        _LOGGER.debug('  version        : %s' % shc_info.version)
+        _LOGGER.debug('  updateState    : %s' % shc_info.updateState.name)
+        
+        if shc_info.updateState.name == "NOT_INITIALIZED":
+            _LOGGER.error(
+                "Unable to connect to Bosch Smart Home Controller API")
+            return False
+        elif shc_info.updateState.name == "UPDATE_AVAILABLE":
+            _LOGGER.warning(
+                'Please check for software updates in the Bosch Smart Home App')
+        self.swversion = shc_info.version
+
+        return True

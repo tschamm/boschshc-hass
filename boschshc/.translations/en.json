@@ -1,22 +1,16 @@
 {
     "config": {
-        "title": "Bosch Smart Home Interface",
+        "title": "Bosch Smart Home Controller",
         "step": {
-            "init": {
-                "title": "Define SHC parameters",
+            "user": {
+                "title": "SHC access parameters",
                 "data": {
                     "name": "Name",
                     "ip_address": "IP Address",
-                    "mac": "MAC Address",
-                    "access_cert": "Access Cert",
-                    "access_key": "Access Key",
-                    "port": "Port",
+                    "ssl_certificate": "SSL Certificate",
+                    "ssl_key": "SSL Key",
                     "icon": "Icon"
                 }
-            },
-            "link": {
-                "title": "Link Hub",
-                "description": "Press the button on the bridge to register Bosch SHC with Home Assistant.\n\n![Location of button on bridge](/static/images/config_philips_hue.jpg)"
             }
         },
         "error": {

@@ -1,9 +1,5 @@
-"""Define constants for the Bosch SHC component."""
-
-import logging
-
-LOGGER = logging.getLogger(__package__)
+"""Constants for the Bosch SHC integration."""
 
 DOMAIN = "boschshc"
-CONF_ACCESS_CERT = 'access_cert'
-CONF_ACCESS_KEY = 'access_key'
+CONF_SSL_CERTIFICATE = 'ssl_certificate'
+CONF_SSL_KEY = 'ssl_key'

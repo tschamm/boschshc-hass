@@ -6,16 +6,16 @@ from homeassistant.helpers import config_validation as cv
 
 DOMAIN = "bshlocal"
 
-CONF_CERTIFICATE = "certificate"
-CONF_KEY = "key"
+CONF_SSL_CERTIFICATE = "certificate"
+CONF_SSL_KEY = "key"
 
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
                 vol.Required(const.CONF_IP_ADDRESS): cv.string,
-                vol.Required(CONF_CERTIFICATE): cv.string,
-                vol.Required(CONF_KEY): cv.string,
+                vol.Required(CONF_SSL_CERTIFICATE): cv.string,
+                vol.Required(CONF_SSL_KEY): cv.string,
             }
         ),
     },
@@ -26,8 +26,8 @@ CONFIG_SCHEMA = vol.Schema(
 async def async_setup(hass, config):
     print(config)
     controller_ip = config[DOMAIN].get(const.CONF_IP_ADDRESS)
-    certificate = config[DOMAIN].get(CONF_CERTIFICATE)
-    key = config[DOMAIN].get(CONF_KEY)
+    certificate = config[DOMAIN].get(CONF_SSL_CERTIFICATE)
+    key = config[DOMAIN].get(CONF_SSL_KEY)
     session = bshlocal.BSHLocalSession(
         controller_ip=controller_ip, certificate=certificate, key=key
     )
