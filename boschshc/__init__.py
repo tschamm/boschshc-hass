@@ -1,4 +1,4 @@
-"""Support for the Bosch Smart Home system."""
+"""Support for the Bosch Smart Home Controller system."""
 import logging
 from urllib.error import HTTPError
 
