@@ -29,48 +29,18 @@ DATA_SCHEMA=vol.Schema(
     }
 )
 
-class Session:
-    """Session class to make tests pass.
-
-    """
-    def __init__(self, host):
-        """Initialize."""
-        self.host = host
-
-    async def authenticate(self, ssl_certificate, ssl_key) -> bool:
-        """Test if we can authenticate with the host."""
-
-        return True
-
-    def validate_auth(self, ssl_certificate, ssl_key) -> bool:
-        """Test if we can authenticate with the host."""
-        from boschshcpy import SHCSession
-
-        session = SHCSession(self.host, ssl_certificate, ssl_key, False)
-        if session.information.version == "n/a":
-            return False
-
-        return True        
-
 async def validate_input(hass: core.HomeAssistant, data):
     """Validate the user input allows us to connect.
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
-    session = Session(data[CONF_IP_ADDRESS])
+    from boschshcpy import SHCSession
 
-    if not await hass.async_add_executor_job(
-        session.validate_auth, data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY]
-    ):
+    session = await hass.async_add_executor_job(SHCSession, data[CONF_IP_ADDRESS], data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY], False)
+    status = session.information.version
+        
+    if status == "n/a":
         raise InvalidAuth
-
-    # if not await session.authenticate(data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY]):
-    #     raise InvalidAuth
-
-    # If you cannot connect:
-    # throw CannotConnect
-    # If the authentication is wrong:
-    # InvalidAuth
 
     # Return info that you want to store in the config entry.
     return {"title": data[CONF_NAME]}
