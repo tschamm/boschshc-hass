@@ -131,7 +131,7 @@ class SHCBridge(Entity):
         _LOGGER.debug('  version        : %s' % shc_info.version)
         _LOGGER.debug('  updateState    : %s' % shc_info.updateState.name)
         
-        if shc_info.updateState.name == "NOT_INITIALIZED":
+        if shc_info.version == "n/a":
             _LOGGER.error(
                 "Unable to connect to Bosch Smart Home Controller API")
             return False

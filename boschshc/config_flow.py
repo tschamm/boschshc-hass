@@ -29,38 +29,43 @@ DATA_SCHEMA=vol.Schema(
     }
 )
 
-class PlaceholderHub:
-    """Placeholder class to make tests pass.
+class Session:
+    """Session class to make tests pass.
 
-    TODO Remove this placeholder class and replace with things from your PyPI package.
     """
-
     def __init__(self, host):
         """Initialize."""
         self.host = host
 
-    async def authenticate(self, username, password) -> bool:
+    async def authenticate(self, ssl_certificate, ssl_key) -> bool:
         """Test if we can authenticate with the host."""
+
         return True
 
+    def validate_auth(self, ssl_certificate, ssl_key) -> bool:
+        """Test if we can authenticate with the host."""
+        from boschshcpy import SHCSession
+
+        session = SHCSession(self.host, ssl_certificate, ssl_key, False)
+        if session.information.version == "n/a":
+            return False
+
+        return True        
 
 async def validate_input(hass: core.HomeAssistant, data):
     """Validate the user input allows us to connect.
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
-    # TODO validate the data can be used to set up a connection.
+    session = Session(data[CONF_IP_ADDRESS])
 
-    # If your PyPI package is not built with async, pass your methods
-    # to the executor:
-    # await hass.async_add_executor_job(
-    #     your_validate_func, data["username"], data["password"]
-    # )
-
-    hub = PlaceholderHub(data[CONF_IP_ADDRESS])
-
-    if not await hub.authenticate(data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY]):
+    if not await hass.async_add_executor_job(
+        session.validate_auth, data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY]
+    ):
         raise InvalidAuth
+
+    # if not await session.authenticate(data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY]):
+    #     raise InvalidAuth
 
     # If you cannot connect:
     # throw CannotConnect
@@ -69,7 +74,6 @@ async def validate_input(hass: core.HomeAssistant, data):
 
     # Return info that you want to store in the config entry.
     return {"title": data[CONF_NAME]}
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Bosch SHC."""
