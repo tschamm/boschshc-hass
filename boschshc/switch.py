@@ -3,7 +3,7 @@ import logging
 import asyncio
 
 from homeassistant.components.switch import SwitchDevice
-from boschshcpy import SHCSession, SHCDeviceHelper, SHCSmartPlug, SHCCameraEyes
+from boschshcpy import SHCSession, SHCDeviceHelper, SHCSmartPlug, SHCCameraEyes, SHCScenario
 
 from .const import DOMAIN
 
@@ -43,9 +43,12 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             controller_ip=config[CONF_IP_ADDRESS])
         )
 
-    # for scenario in client.scenario_list().items:
-    #     _LOGGER.debug("Found scenario: %s" % scenario.get_id)
-    #     dev.append(ScenarioSwitch(scenario, scenario.get_name, client))
+    for scenario in session.scenarios:
+        _LOGGER.debug("Found scenario: %s" % scenario.id)
+        device.append(ScenarioSwitch(
+            device=scenario,
+            controller_ip=config[CONF_IP_ADDRESS])
+        )
 
     if device:
         return await async_add_entities(device)
@@ -84,19 +87,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             controller_ip=config_entry.data[CONF_IP_ADDRESS])
         )
 
-    # for light in smart_plug.initialize_light_control(client, client.device_list()):
-    #     _LOGGER.debug("Found light control: %s" % light.get_id)
-    #     dev.append(SmartPlugSwitch(light, light.get_name, light.get_state,
-    #                                light.get_powerConsumption, light.get_energyConsumption, client))
-
-    # for camera in camera_eyes.initialize_camera_eyes(client, client.device_list()):
-    #     _LOGGER.debug("Found camera eyes: %s" % camera.get_id)
-    #     dev.append(CameraEyesSwitch(camera, camera.get_name,
-    #                                 camera.get_light_state, client))
-
-    # for scenario in client.scenario_list().items:
-    #     _LOGGER.debug("Found scenario: %s" % scenario.get_id)
-    #     dev.append(ScenarioSwitch(scenario, scenario.get_name, client))
+    for scenario in session.scenarios:
+        _LOGGER.debug(f"Found scenario: {scenario.name} ({scenario.id})")
+        device.append(ScenarioSwitch(
+            device=scenario,
+            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        )
 
     if device:
         async_add_entities(device)
@@ -218,20 +214,6 @@ class CameraEyesSwitch(SwitchDevice):
         self._room_name = room_name
         self._controller_ip = controller_ip
 
-    async def async_added_to_hass(self):
-        await super().async_added_to_hass()
-
-        def on_state_changed():
-            self.schedule_update_ha_state()
-
-        for service in self._device.device_services:
-            service.on_state_changed = on_state_changed
-
-    async def async_will_remove_from_hass(self):
-        await super().async_will_remove_from_hass()
-        for service in self._device.device_services:
-            service.on_state_changed = None
-
     @property
     def unique_id(self):
         """Return the unique ID of this switch."""
@@ -314,22 +296,24 @@ class CameraEyesSwitch(SwitchDevice):
 
 
 class ScenarioSwitch(SwitchDevice):
-
-    def __init__(self, scenario, name, client):
-        self._representation = scenario
-        self._client = client
-        self._is_on = False
-        self._name = name
+    def __init__(self, device: SHCSmartPlug, controller_ip: str):
+        self._device = device
+        self._controller_ip = controller_ip
 
     @property
     def unique_id(self):
         """Return the unique ID of this switch."""
-        return self._representation.get_id
+        return self._device.id
 
     @property
     def device_id(self):
         """Return the ID of this switch."""
-        return self.unique_id
+        return self._device.id
+
+    @property
+    def name(self):
+        """Name of the device."""
+        return self._device.name
 
     @property
     def icon(self):
@@ -340,43 +324,29 @@ class ScenarioSwitch(SwitchDevice):
         """Return the device info."""
         return {
             "identifiers": {(DOMAIN, self.device_id)},
-            "name": self._name,
-            # "manufacturer": self.manufacturer,
-            # "model": self._representation.get_device.deviceModel,
+            "name": self.name,
             "sw_version": "",
-            "via_device": (DOMAIN, self._client.get_ip_address),
-            # "via_device": (DOMAIN, self.root_device),
+            "via_device": (DOMAIN, self._controller_ip)
         }
 
-    @property
-    def name(self):
-        """Name of the device."""
-        return self._name
-
-    @property
-    def is_on(self):
-        """If the switch is currently on or off."""
-        return self._is_on
-        
     @property
     def should_poll(self):
         """Polling needed."""
         return False
+
+    @property
+    def is_on(self):
+        """Return the state of the switch."""
+        False
     
     def turn_on(self, **kwargs):
         """Turn the switch on."""
-        self._representation.trigger()
+        self._device.trigger()
 
     def turn_off(self, **kwargs):
         """Turn the switch off."""
-        # do nothing
         pass
     
     def toggle(self, **kwargs):
         """Toggles the switch."""
-        self._representation.trigger()
-    
-    def update(self, **kwargs):
-        if self._representation.update():
-            self._name = self._representation.get_name
-
+        self._device.trigger()
