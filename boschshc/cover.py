@@ -20,7 +20,7 @@ from homeassistant.util import slugify
 _LOGGER = logging.getLogger(__name__)
 
 
-async def asyn_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the cover platform."""
 
     device = []
@@ -185,3 +185,11 @@ class ShutterControlCover(CoverDevice):
 
     def update(self, **kwargs):
         self._device.update()
+
+    @property
+    def state_attributes(self):
+        state_attr = super().state_attributes
+        if state_attr is None:
+            state_attr = dict()
+        state_attr["boschshc_room_name"] = self._room_name
+        return state_attr

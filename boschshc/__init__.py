@@ -40,7 +40,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-PLATFORMS = ["binary_sensor", "cover"]
+PLATFORMS = ["binary_sensor", "cover", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
