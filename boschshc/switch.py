@@ -325,6 +325,8 @@ class ScenarioSwitch(SwitchDevice):
         return {
             "identifiers": {(DOMAIN, self.device_id)},
             "name": self.name,
+            "manufacturer": "BOSCH",
+            "model": "SHC_Scenario",
             "sw_version": "",
             "via_device": (DOMAIN, self._controller_ip)
         }

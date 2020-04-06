@@ -1,17 +1,28 @@
-from bshlocal import BSHLocalSession, services_impl
+"""Platform for sensor integration."""
+import logging
+import asyncio
 
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.components.sensor import (
+    DEVICE_CLASSES,
+)
 from homeassistant.helpers.entity import Entity
+
+from boschshcpy import SHCSession, services_impl
 
 from . import DOMAIN
 
+from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS, TEMP_CELSIUS
+from homeassistant.util import slugify
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    if discovery_info is None:
-        return
-    session: BSHLocalSession = hass.data[DOMAIN]["session"]
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    """Set up the sensor platform."""
 
     entities = []
+    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
+
     for device in session.devices:
         for service in device.device_services:
             if (
@@ -19,17 +30,41 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 and device.name != "-RoomClimateControl-"
             ):
                 display_name = f"{device.name}"
-                unique_id = f"{device.serial}.ShutterContact"
+                unique_id = f"{device.serial}"
                 room_name = session.room(device.room_id).name
-                entity = BSHTemperatureSensor(
+                entity = TemperatureSensor(
                     display_name, unique_id, room_name, service
                 )
                 entities += [entity]
 
-    add_entities(entities)
+    if entities:
+        return await async_add_entities(entities)
 
 
-class BSHTemperatureSensor(Entity):
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up the sensor platform."""
+
+    entities = []
+    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+
+    for device in session.devices:
+        for service in device.device_services:
+            if (
+                service.id == "TemperatureLevel"
+                and device.name != "-RoomClimateControl-"
+            ):
+                display_name = f"{device.name}"
+                unique_id = f"{device.serial}"
+                room_name = session.room(device.room_id).name
+                entity = TemperatureSensor(
+                    display_name, unique_id, room_name, service
+                )
+                entities += [entity]
+
+    if entities:
+        async_add_entities(entities)
+
+class TemperatureSensor(Entity):
     def __init__(
         self,
         name: str,
@@ -80,5 +115,5 @@ class BSHTemperatureSensor(Entity):
         state_attr = super().state_attributes
         if state_attr is None:
             state_attr = dict()
-        state_attr["bsh_room_name"] = self._room_name
+        state_attr["boschshc_room_name"] = self._room_name
         return state_attr

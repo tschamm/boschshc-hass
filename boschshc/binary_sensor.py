@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the binary switch platform."""
+    """Set up the binary sensor platform."""
 
     device = []
     session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
@@ -46,7 +46,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the binary switch platform."""
+    """Set up the binary sensor platform."""
 
     device = []
     session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]

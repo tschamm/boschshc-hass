@@ -1,20 +1,30 @@
+"""Platform for climate integration."""
+import logging
+import asyncio
 import math
 import typing
 
-from bshlocal import BSHLocalSession, services_impl
+from homeassistant.components.climate import (
+    const,
+    ClimateDevice
+)
 
-from homeassistant.components.climate import ClimateDevice, const
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
+from boschshcpy import SHCSession, services_impl
 
 from . import DOMAIN
 
+from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS, ATTR_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.util import slugify
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    if discovery_info is None:
-        return
-    session: BSHLocalSession = hass.data[DOMAIN]["session"]
+_LOGGER = logging.getLogger(__name__)
 
+
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    """Set up the climate platform."""
+    
     entities = []
+    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
+
     for device in session.devices:
         if device.name == "-RoomClimateControl-":
             temperature_level_service = device.device_service("TemperatureLevel")
@@ -36,9 +46,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 thermostat.device_service("ValveTappet") for thermostat in thermostats
             ]
             display_name = f"Room Climate {room_name}"
-            unique_id = f"{device.serial}.RoomClimateControl"
+            unique_id = f"{device.serial}"
 
-            entity = BSHClimateDevice(
+            entity = ClimateDevice(
                 display_name,
                 unique_id,
                 room_name,
@@ -48,10 +58,56 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
             )
             entities += [entity]
 
-    add_entities(entities)
+    if entities:
+        return await async_add_entities(entities)
 
 
-class BSHClimateDevice(ClimateDevice):
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up the climate platform."""
+
+    entities = []
+    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+
+    for device in session.devices:
+        if device.name == "-RoomClimateControl-":
+            temperature_level_service = device.device_service(
+                "TemperatureLevel")
+            room_climate_control_service = device.device_service(
+                "RoomClimateControl")
+            room_id = device.room_id
+            room_name = session.room(room_id).name
+
+            # Need to find all thermostat devices, these are different from the "room climate" devices.
+            thermostats = []
+            for potential_thermostat in session.devices:
+                if "ValveTappet" not in potential_thermostat.device_service_ids:
+                    continue
+                if potential_thermostat.room_id != room_id:
+                    continue
+
+                thermostats += [potential_thermostat]
+
+            valve_tappet_services = [
+                thermostat.device_service("ValveTappet") for thermostat in thermostats
+            ]
+            display_name = f"Room Climate {room_name}"
+            unique_id = f"{device.serial}"
+
+            entity = ClimateDevice(
+                display_name,
+                unique_id,
+                room_name,
+                temperature_level_service,
+                room_climate_control_service,
+                valve_tappet_services,
+            )
+            entities += [entity]
+
+    if entities:
+        return await async_add_entities(entities)
+
+
+class ClimateDevice(ClimateDevice):
     def __init__(
         self,
         name: str,
@@ -248,5 +304,5 @@ class BSHClimateDevice(ClimateDevice):
             state_attr = dict()
 
         state_attr["valve_tappet_position"] = self.valve_tappet_position
-        state_attr["bsh_room_name"] = self._room_name
+        state_attr["boschshc_room_name"] = self._room_name
         return state_attr
