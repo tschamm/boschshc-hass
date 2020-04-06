@@ -81,7 +81,6 @@ class ShutterContactSensor(BinarySensorDevice):
         await super().async_added_to_hass()
 
         def on_state_changed():
-            _LOGGER.debug("Update notification for shutter contact: %s" % self._device.id)
             self.schedule_update_ha_state()
 
         for service in self._device.device_services:
