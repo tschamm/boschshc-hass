@@ -1,21 +1,15 @@
 """Platform for cover integration."""
-import logging
 import asyncio
+import logging
 
-from homeassistant.components.cover import (
-    SUPPORT_OPEN,
-    SUPPORT_CLOSE,
-    SUPPORT_STOP,
-    SUPPORT_SET_POSITION,
-    ATTR_POSITION,
-    CoverDevice,
-)
-from boschshcpy import SHCSession, SHCDeviceHelper, SHCShutterControl
+from boschshcpy import SHCDeviceHelper, SHCSession, SHCShutterControl
+from homeassistant.components.cover import (ATTR_POSITION, SUPPORT_CLOSE,
+                                            SUPPORT_OPEN, SUPPORT_SET_POSITION,
+                                            SUPPORT_STOP, CoverDevice)
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.util import slugify
 
 from .const import DOMAIN
-
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
-from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 

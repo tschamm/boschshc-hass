@@ -1,24 +1,16 @@
 """Platform for alarm control panel integration."""
-import logging
 import asyncio
+import logging
 
+from boschshcpy import SHCIntrusionDetectionSystem, SHCSession
 from homeassistant.components.alarm_control_panel import (
-    SUPPORT_ALARM_ARM_AWAY,
-    FORMAT_NUMBER,
-    AlarmControlPanel,
-)
-from boschshcpy import SHCSession, SHCIntrusionDetectionSystem
+    FORMAT_NUMBER, SUPPORT_ALARM_ARM_AWAY, AlarmControlPanel)
+from homeassistant.const import (CONF_IP_ADDRESS, CONF_NAME,
+                                 STATE_ALARM_ARMED_AWAY, STATE_ALARM_ARMING,
+                                 STATE_ALARM_DISARMED)
+from homeassistant.util import slugify
 
 from .const import DOMAIN
-
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_IP_ADDRESS,
-    STATE_ALARM_ARMED_AWAY,
-    STATE_ALARM_ARMING,
-    STATE_ALARM_DISARMED,
-)
-from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -160,4 +152,3 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
 
     def update(self, **kwargs):
         self._device.update()
-        

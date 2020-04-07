@@ -1,18 +1,14 @@
 """Platform for sensor integration."""
-import logging
 import asyncio
-
-from homeassistant.components.sensor import (
-    DEVICE_CLASSES,
-)
-from homeassistant.helpers.entity import Entity
+import logging
 
 from boschshcpy import SHCSession, services_impl
+from homeassistant.components.sensor import DEVICE_CLASSES
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, TEMP_CELSIUS
+from homeassistant.helpers.entity import Entity
+from homeassistant.util import slugify
 
 from . import DOMAIN
-
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS, TEMP_CELSIUS
-from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 

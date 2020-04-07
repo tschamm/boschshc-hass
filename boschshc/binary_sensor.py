@@ -1,20 +1,18 @@
 """Platform for binarysensor integration."""
-import logging
 import asyncio
+import logging
 
-from homeassistant.components.binary_sensor import (
-    DEVICE_CLASSES,
-    DEVICE_CLASS_SMOKE,
-    DEVICE_CLASS_DOOR,
-    DEVICE_CLASS_WINDOW,
-    BinarySensorDevice,
-)
-from boschshcpy import SHCSession, SHCDeviceHelper, SHCShutterContact, SHCSmokeDetector
+from boschshcpy import (SHCDeviceHelper, SHCSession, SHCShutterContact,
+                        SHCSmokeDetector)
+from homeassistant.components.binary_sensor import (DEVICE_CLASS_DOOR,
+                                                    DEVICE_CLASS_SMOKE,
+                                                    DEVICE_CLASS_WINDOW,
+                                                    DEVICE_CLASSES,
+                                                    BinarySensorDevice)
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.util import slugify
 
 from .const import DOMAIN
-
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
-from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 

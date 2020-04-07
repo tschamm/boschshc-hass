@@ -1,14 +1,14 @@
 """Platform for switch integration."""
-import logging
 import asyncio
+import logging
 
+from boschshcpy import (SHCCameraEyes, SHCDeviceHelper, SHCScenario,
+                        SHCSession, SHCSmartPlug)
 from homeassistant.components.switch import SwitchDevice
-from boschshcpy import SHCSession, SHCDeviceHelper, SHCSmartPlug, SHCCameraEyes, SHCScenario
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.util import slugify
 
 from .const import DOMAIN
-
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
-from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 

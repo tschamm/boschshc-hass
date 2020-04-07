@@ -1,20 +1,16 @@
 """Platform for climate integration."""
-import logging
 import asyncio
+import logging
 import math
 import typing
 
-from homeassistant.components.climate import (
-    const,
-    ClimateDevice
-)
-
 from boschshcpy import SHCSession, services_impl
+from homeassistant.components.climate import ClimateDevice, const
+from homeassistant.const import (ATTR_TEMPERATURE, CONF_IP_ADDRESS, CONF_NAME,
+                                 TEMP_CELSIUS)
+from homeassistant.util import slugify
 
 from . import DOMAIN
-
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS, ATTR_TEMPERATURE, TEMP_CELSIUS
-from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
