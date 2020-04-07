@@ -6,8 +6,12 @@ import typing
 
 from boschshcpy import SHCSession, services_impl
 from homeassistant.components.climate import ClimateDevice, const
-from homeassistant.const import (ATTR_TEMPERATURE, CONF_IP_ADDRESS, CONF_NAME,
-                                 TEMP_CELSIUS)
+from homeassistant.const import (
+    ATTR_TEMPERATURE,
+    CONF_IP_ADDRESS,
+    CONF_NAME,
+    TEMP_CELSIUS,
+)
 from homeassistant.util import slugify
 
 from . import DOMAIN
@@ -17,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the climate platform."""
-    
+
     entities = []
     session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
 
@@ -66,10 +70,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     for device in session.devices:
         if device.name == "-RoomClimateControl-":
-            temperature_level_service = device.device_service(
-                "TemperatureLevel")
-            room_climate_control_service = device.device_service(
-                "RoomClimateControl")
+            temperature_level_service = device.device_service("TemperatureLevel")
+            room_climate_control_service = device.device_service("RoomClimateControl")
             room_id = device.room_id
             room_name = session.room(room_id).name
 
@@ -208,7 +210,7 @@ class ClimateDevice(ClimateDevice):
         ):
             return const.HVAC_MODE_HEAT
         else:
-            print(
+            _LOGGER.warning(
                 f"Unknown operation mode! {self._room_climate_control_service.operation_mode} != {services_impl.RoomClimateControlService.OperationMode.MANUAL}"
             )
 

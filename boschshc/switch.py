@@ -2,8 +2,13 @@
 import asyncio
 import logging
 
-from boschshcpy import (SHCCameraEyes, SHCDeviceHelper, SHCScenario,
-                        SHCSession, SHCSmartPlug)
+from boschshcpy import (
+    SHCCameraEyes,
+    SHCDeviceHelper,
+    SHCScenario,
+    SHCSession,
+    SHCSmartPlug,
+)
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.util import slugify
@@ -21,33 +26,38 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     for switch in session.device_helper.smart_plugs:
         _LOGGER.debug("Found smart plug: %s" % switch.id)
-        device.append(SmartPlugSwitch(
-            device=switch,
-            room_name=session.room(switch.room_id).name,
-            controller_ip=config[CONF_IP_ADDRESS])
+        device.append(
+            SmartPlugSwitch(
+                device=switch,
+                room_name=session.room(switch.room_id).name,
+                controller_ip=config[CONF_IP_ADDRESS],
+            )
         )
 
     for light in session.device_helper.light_controls:
         _LOGGER.debug("Found light control: %s" % light.id)
-        device.append(SmartPlugSwitch(
-            device=light,
-            room_name=session.room(light.room_id).name,
-            controller_ip=config[CONF_IP_ADDRESS])
+        device.append(
+            SmartPlugSwitch(
+                device=light,
+                room_name=session.room(light.room_id).name,
+                controller_ip=config[CONF_IP_ADDRESS],
+            )
         )
 
     for cameras in session.device_helper.camera_eyes:
         _LOGGER.debug("Found camera eyes: %s" % cameras.id)
-        device.append(CameraEyesSwitch(
-            device=cameras,
-            room_name=session.room(cameras.room_id).name,
-            controller_ip=config[CONF_IP_ADDRESS])
+        device.append(
+            CameraEyesSwitch(
+                device=cameras,
+                room_name=session.room(cameras.room_id).name,
+                controller_ip=config[CONF_IP_ADDRESS],
+            )
         )
 
     for scenario in session.scenarios:
         _LOGGER.debug("Found scenario: %s" % scenario.id)
-        device.append(ScenarioSwitch(
-            device=scenario,
-            controller_ip=config[CONF_IP_ADDRESS])
+        device.append(
+            ScenarioSwitch(device=scenario, controller_ip=config[CONF_IP_ADDRESS])
         )
 
     if device:
@@ -61,37 +71,41 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
 
     for switch in session.device_helper.smart_plugs:
-        _LOGGER.debug(
-            f"Found smart plug: {switch.name} ({switch.id})")
-        device.append(SmartPlugSwitch(
-            device=switch,
-            room_name=session.room(switch.room_id).name,
-            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        _LOGGER.debug(f"Found smart plug: {switch.name} ({switch.id})")
+        device.append(
+            SmartPlugSwitch(
+                device=switch,
+                room_name=session.room(switch.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
         )
 
     for light in session.device_helper.light_controls:
-        _LOGGER.debug(
-            f"Found light control: {light.name} ({light.id})")
-        device.append(SmartPlugSwitch(
-            device=light,
-            room_name=session.room(light.room_id).name,
-            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        _LOGGER.debug(f"Found light control: {light.name} ({light.id})")
+        device.append(
+            SmartPlugSwitch(
+                device=light,
+                room_name=session.room(light.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
         )
 
     for camera in session.device_helper.camera_eyes:
-        _LOGGER.debug(
-            f"Found camera eyes: {camera.name} ({camera.id})")
-        device.append(CameraEyesSwitch(
-            device=camera,
-            room_name=session.room(camera.room_id).name,
-            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        _LOGGER.debug(f"Found camera eyes: {camera.name} ({camera.id})")
+        device.append(
+            CameraEyesSwitch(
+                device=camera,
+                room_name=session.room(camera.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
         )
 
     for scenario in session.scenarios:
         _LOGGER.debug(f"Found scenario: {scenario.name} ({scenario.id})")
-        device.append(ScenarioSwitch(
-            device=scenario,
-            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        device.append(
+            ScenarioSwitch(
+                device=scenario, controller_ip=config_entry.data[CONF_IP_ADDRESS]
+            )
         )
 
     if device:
@@ -151,7 +165,7 @@ class SmartPlugSwitch(SwitchDevice):
             "manufacturer": self.manufacturer,
             "model": self._device.device_model,
             "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip)
+            "via_device": (DOMAIN, self._controller_ip),
         }
 
     @property
@@ -173,17 +187,17 @@ class SmartPlugSwitch(SwitchDevice):
             return False
         else:
             return None
-    
+
     @property
     def today_energy_kwh(self):
         """Total energy usage in kWh."""
-        return self._device.energyconsumption / 1000.
-    
+        return self._device.energyconsumption / 1000.0
+
     @property
     def current_power_w(self):
         """The current power usage in W."""
         return self._device.powerconsumption
-    
+
     def turn_on(self, **kwargs):
         """Turn the switch on."""
         self._device.set_state(True)
@@ -191,11 +205,11 @@ class SmartPlugSwitch(SwitchDevice):
     def turn_off(self, **kwargs):
         """Turn the switch off."""
         self._device.set_state(False)
-    
+
     def toggle(self, **kwargs):
         """Toggles the switch."""
         self._device.set_state(not self.is_on)
-    
+
     def update(self, **kwargs):
         self._device.update()
 
@@ -247,13 +261,13 @@ class CameraEyesSwitch(SwitchDevice):
             "manufacturer": self.manufacturer,
             "model": self._device.device_model,
             "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip)
+            "via_device": (DOMAIN, self._controller_ip),
         }
 
     @property
     def should_poll(self):
         """Polling needed."""
-        return True # No long polling implemented for camera eyes
+        return True  # No long polling implemented for camera eyes
 
     @property
     def available(self):
@@ -294,7 +308,6 @@ class CameraEyesSwitch(SwitchDevice):
         return state_attr
 
 
-
 class ScenarioSwitch(SwitchDevice):
     def __init__(self, device: SHCSmartPlug, controller_ip: str):
         self._device = device
@@ -328,7 +341,7 @@ class ScenarioSwitch(SwitchDevice):
             "manufacturer": "BOSCH",
             "model": "SHC_Scenario",
             "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip)
+            "via_device": (DOMAIN, self._controller_ip),
         }
 
     @property
@@ -340,7 +353,7 @@ class ScenarioSwitch(SwitchDevice):
     def is_on(self):
         """Return the state of the switch."""
         False
-    
+
     def turn_on(self, **kwargs):
         """Turn the switch on."""
         self._device.trigger()
@@ -348,7 +361,7 @@ class ScenarioSwitch(SwitchDevice):
     def turn_off(self, **kwargs):
         """Turn the switch off."""
         pass
-    
+
     def toggle(self, **kwargs):
         """Toggles the switch."""
         self._device.trigger()

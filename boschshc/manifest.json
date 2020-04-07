@@ -9,6 +9,7 @@
   "homekit": {},
   "dependencies": [],
   "codeowners": [
-    "@tschamm"
+    "@tschamm",
+    "@cabrust"
   ]
 }

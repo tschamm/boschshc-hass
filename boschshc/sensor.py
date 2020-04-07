@@ -28,9 +28,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 display_name = f"{device.name}"
                 unique_id = f"{device.serial}"
                 room_name = session.room(device.room_id).name
-                entity = TemperatureSensor(
-                    display_name, unique_id, room_name, service
-                )
+                entity = TemperatureSensor(display_name, unique_id, room_name, service)
                 entities += [entity]
 
     if entities:
@@ -52,13 +50,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 display_name = f"{device.name}"
                 unique_id = f"{device.serial}"
                 room_name = session.room(device.room_id).name
-                entity = TemperatureSensor(
-                    display_name, unique_id, room_name, service
-                )
+                entity = TemperatureSensor(display_name, unique_id, room_name, service)
                 entities += [entity]
 
     if entities:
         async_add_entities(entities)
+
 
 class TemperatureSensor(Entity):
     def __init__(

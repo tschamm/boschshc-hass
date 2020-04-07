@@ -4,9 +4,12 @@ import logging
 
 import voluptuous as vol
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import (CONF_IP_ADDRESS, CONF_NAME,
-                                 EVENT_HOMEASSISTANT_START,
-                                 EVENT_HOMEASSISTANT_STOP)
+from homeassistant.const import (
+    CONF_IP_ADDRESS,
+    CONF_NAME,
+    EVENT_HOMEASSISTANT_START,
+    EVENT_HOMEASSISTANT_STOP,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -31,9 +34,17 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-PLATFORMS = ["binary_sensor", "cover", "switch", "sensor", "climate", "alarm_control_panel"]
+PLATFORMS = [
+    "binary_sensor",
+    "cover",
+    "switch",
+    "sensor",
+    "climate",
+    "alarm_control_panel",
+]
 
 _LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Bosch SHC component."""
@@ -45,7 +56,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
     hass.async_create_task(
         hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_IMPORT}, data=conf,
+            DOMAIN, context={"source": SOURCE_IMPORT}, data=conf
         )
     )
     return True
@@ -58,14 +69,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     data = entry.data
 
     _LOGGER.debug("Connecting to Bosch Smart Home Controller API")
-    session = await hass.async_add_executor_job(SHCSession, data[CONF_IP_ADDRESS], data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY])
+    session = await hass.async_add_executor_job(
+        SHCSession,
+        data[CONF_IP_ADDRESS],
+        data[CONF_SSL_CERTIFICATE],
+        data[CONF_SSL_KEY],
+    )
 
     shc_info = session.information
     if shc_info.version == "n/a":
         _LOGGER.error("Unable to connect to Bosch Smart Home Controller API")
         return False
     elif shc_info.updateState.name == "UPDATE_AVAILABLE":
-        _LOGGER.warning('Please check for software updates in the Bosch Smart Home App')
+        _LOGGER.warning("Please check for software updates in the Bosch Smart Home App")
 
     hass.data[DOMAIN][slugify(data[CONF_NAME])] = session
 
@@ -76,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         manufacturer="Bosch",
         name=data[CONF_NAME],
         model="SmartHomeController",
-        sw_version=shc_info.version
+        sw_version=shc_info.version,
     )
 
     for component in PLATFORMS:
@@ -110,8 +126,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(
-                    entry, component)
+                hass.config_entries.async_forward_entry_unload(entry, component)
                 for component in PLATFORMS
             ]
         )

@@ -2,13 +2,14 @@
 import asyncio
 import logging
 
-from boschshcpy import (SHCDeviceHelper, SHCSession, SHCShutterContact,
-                        SHCSmokeDetector)
-from homeassistant.components.binary_sensor import (DEVICE_CLASS_DOOR,
-                                                    DEVICE_CLASS_SMOKE,
-                                                    DEVICE_CLASS_WINDOW,
-                                                    DEVICE_CLASSES,
-                                                    BinarySensorDevice)
+from boschshcpy import SHCDeviceHelper, SHCSession, SHCShutterContact, SHCSmokeDetector
+from homeassistant.components.binary_sensor import (
+    DEVICE_CLASS_DOOR,
+    DEVICE_CLASS_SMOKE,
+    DEVICE_CLASS_WINDOW,
+    DEVICE_CLASSES,
+    BinarySensorDevice,
+)
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.util import slugify
 
@@ -22,21 +23,25 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     device = []
     session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
-    
+
     for binarysensor in session.device_helper.shutter_contacts:
         _LOGGER.debug("Found shutter contact: %s" % binarysensor.id)
-        device.append(ShutterContactSensor(
-            device=binarysensor, 
-            room_name=session.room(binarysensor.room_id).name, 
-            controller_ip=config[CONF_IP_ADDRESS])
+        device.append(
+            ShutterContactSensor(
+                device=binarysensor,
+                room_name=session.room(binarysensor.room_id).name,
+                controller_ip=config[CONF_IP_ADDRESS],
+            )
         )
 
     for binarysensor in session.device_helper.smoke_detectors:
         _LOGGER.debug("Found smoke detector: %s" % binarysensor.id)
-        device.append(SmokeDetectorSensor(
-            device=binarysensor,
-            room_name=session.room(binarysensor.room_id).name, 
-            controller_ip=config[CONF_IP_ADDRESS])
+        device.append(
+            SmokeDetectorSensor(
+                device=binarysensor,
+                room_name=session.room(binarysensor.room_id).name,
+                controller_ip=config[CONF_IP_ADDRESS],
+            )
         )
 
     if device:
@@ -51,30 +56,34 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     for binarysensor in session.device_helper.shutter_contacts:
         _LOGGER.debug(f"Found shutter contact: {binarysensor.name} ({binarysensor.id})")
-        device.append(ShutterContactSensor(
-            device=binarysensor, 
-            room_name=session.room(binarysensor.room_id).name, 
-            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        device.append(
+            ShutterContactSensor(
+                device=binarysensor,
+                room_name=session.room(binarysensor.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
         )
 
     for binarysensor in session.device_helper.smoke_detectors:
         _LOGGER.debug(f"Found smoke detector: {binarysensor.name} ({binarysensor.id})")
-        device.append(SmokeDetectorSensor(
-            device=binarysensor,
-            room_name=session.room(binarysensor.room_id).name,
-            controller_ip=config_entry.data[CONF_IP_ADDRESS])
+        device.append(
+            SmokeDetectorSensor(
+                device=binarysensor,
+                room_name=session.room(binarysensor.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
         )
 
     if device:
         async_add_entities(device)
-    
+
 
 class ShutterContactSensor(BinarySensorDevice):
     def __init__(self, device: SHCShutterContact, room_name: str, controller_ip: str):
         self._device = device
         self._room_name = room_name
         self._controller_ip = controller_ip
-    
+
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
 
@@ -122,19 +131,19 @@ class ShutterContactSensor(BinarySensorDevice):
             "manufacturer": self.manufacturer,
             "model": self._device.device_model,
             "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip)
+            "via_device": (DOMAIN, self._controller_ip),
         }
 
     @property
     def should_poll(self):
         """Polling needed."""
         return False
-    
+
     @property
     def available(self):
         """Return false if status is unavailable."""
         return True if self._device.status == "AVAILABLE" else False
-                    
+
     @property
     def is_on(self):
         """Return the state of the sensor."""
@@ -153,12 +162,12 @@ class ShutterContactSensor(BinarySensorDevice):
             SHCShutterContact.DeviceClass.REGULAR_WINDOW: DEVICE_CLASS_WINDOW,
             SHCShutterContact.DeviceClass.FRENCH_WINDOW: DEVICE_CLASS_DOOR,
             SHCShutterContact.DeviceClass.GENERIC: DEVICE_CLASS_WINDOW,
-            }
+        }
         return switcher.get(self._device.device_class, DEVICE_CLASS_WINDOW)
-            
+
     def update(self, **kwargs):
         self._device.update()
-    
+
     @property
     def state_attributes(self):
         state_attr = super().state_attributes
@@ -179,7 +188,8 @@ class SmokeDetectorSensor(BinarySensorDevice):
 
         def on_state_changed():
             _LOGGER.debug(
-                "Update notification for smoke detector: %s" % self._device.id)
+                "Update notification for smoke detector: %s" % self._device.id
+            )
             self.schedule_update_ha_state()
 
         for service in self._device.device_services:
@@ -223,7 +233,7 @@ class SmokeDetectorSensor(BinarySensorDevice):
             "manufacturer": self.manufacturer,
             "model": self._device.device_model,
             "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip)
+            "via_device": (DOMAIN, self._controller_ip),
         }
 
     @property
@@ -258,5 +268,10 @@ class SmokeDetectorSensor(BinarySensorDevice):
         if state_attr is None:
             state_attr = dict()
         state_attr["boschshc_room_name"] = self._room_name
-        state_attr["boschshc_smokedetector_checkstate"] = "OK" if self._device.smokedetectorcheck_state == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK else None
+        state_attr["boschshc_smokedetector_checkstate"] = (
+            "OK"
+            if self._device.smokedetectorcheck_state
+            == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK
+            else None
+        )
         return state_attr
