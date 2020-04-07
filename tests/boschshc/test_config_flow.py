@@ -2,8 +2,8 @@
 from asynctest import patch
 
 from homeassistant import config_entries, setup
-from homeassistant.components.boschshc_test.config_flow import CannotConnect, InvalidAuth
-from homeassistant.components.boschshc_test.const import DOMAIN
+from homeassistant.components.boschshc.config_flow import CannotConnect, InvalidAuth
+from homeassistant.components.boschshc.const import DOMAIN
 
 
 async def test_form(hass):
