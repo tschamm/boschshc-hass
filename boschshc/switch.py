@@ -104,7 +104,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         _LOGGER.debug(f"Found scenario: {scenario.name} ({scenario.id})")
         device.append(
             ScenarioSwitch(
-                device=scenario, controller_ip=config_entry.data[CONF_IP_ADDRESS]
+                device=scenario, controller_ip=config_entry.data[CONF_IP_ADDRESS],
             )
         )
 

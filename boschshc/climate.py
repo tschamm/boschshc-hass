@@ -192,7 +192,9 @@ class ClimateDevice(ClimateDevice):
         if len(self._valve_tappet_services) > 0:
             return min(
                 100,
-                max(0, int(math.ceil(float(total) / len(self._valve_tappet_services)))),
+                max(
+                    0, int(math.ceil(float(total) / len(self._valve_tappet_services))),
+                ),
             )
         else:
             return 0
