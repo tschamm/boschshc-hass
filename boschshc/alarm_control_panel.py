@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from boschshcpy import SHCIntrusionDetectionSystem, SHCSession
+
 from homeassistant.components.alarm_control_panel import (
     FORMAT_NUMBER,
     SUPPORT_ALARM_ARM_AWAY,

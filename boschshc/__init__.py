@@ -3,17 +3,11 @@ import asyncio
 import logging
 
 import voluptuous as vol
+
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import (
-    CONF_IP_ADDRESS,
-    CONF_NAME,
-    EVENT_HOMEASSISTANT_START,
-    EVENT_HOMEASSISTANT_STOP,
-)
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.entity import Entity, async_generate_entity_id
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.util import slugify
 
 from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN

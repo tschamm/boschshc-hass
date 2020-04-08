@@ -5,6 +5,7 @@ import math
 import typing
 
 from boschshcpy import SHCSession, services_impl
+
 from homeassistant.components.climate import ClimateDevice, const
 from homeassistant.const import (
     ATTR_TEMPERATURE,

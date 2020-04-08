@@ -9,6 +9,7 @@ from boschshcpy import (
     SHCSession,
     SHCSmartPlug,
 )
+
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.util import slugify

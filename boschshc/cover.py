@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from boschshcpy import SHCDeviceHelper, SHCSession, SHCShutterControl
+
 from homeassistant.components.cover import (
     ATTR_POSITION,
     SUPPORT_CLOSE,
