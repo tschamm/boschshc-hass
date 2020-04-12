@@ -162,11 +162,11 @@ class PowerSensor(Entity):
 
     @property
     def name(self):
-        return self._device.name
+        return f"{self._device.name} Power"
 
     @property
     def unique_id(self):
-        return self._device.serial
+        return f"{self._device.serial}_power"
 
     @property
     def state(self):
