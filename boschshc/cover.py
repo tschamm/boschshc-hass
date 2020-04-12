@@ -13,38 +13,17 @@ from homeassistant.components.cover import (
     CoverDevice,
 )
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
-from homeassistant.util import slugify
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the cover platform."""
-
-    device = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
-
-    for cover in session.device_helper.shutter_controls:
-        _LOGGER.debug("Found shutter control: %s" % cover.id)
-        device.append(
-            ShutterControlCover(
-                device=cover,
-                room_name=session.room(cover.room_id).name,
-                controller_ip=config[CONF_IP_ADDRESS],
-            )
-        )
-
-    if device:
-        return await async_add_entities(device)
-
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the cover platform."""
 
     device = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for cover in session.device_helper.shutter_controls:
         _LOGGER.debug(f"Found shutter control: {cover.name} ({cover.id})")

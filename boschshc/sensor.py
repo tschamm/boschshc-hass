@@ -7,44 +7,17 @@ from boschshcpy import SHCSession, services_impl, SHCSmartPlug
 from homeassistant.components.sensor import DEVICE_CLASSES
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, TEMP_CELSIUS, POWER_WATT, DEVICE_CLASS_POWER, ENERGY_WATT_HOUR
 from homeassistant.helpers.entity import Entity
-from homeassistant.util import slugify
 
 from . import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the sensor platform."""
-
-    entities = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
-
-    for device in session.devices:
-        for service in device.device_services:
-            if (
-                service.id == "TemperatureLevel"
-                and device.name != "-RoomClimateControl-"
-            ):
-                display_name = f"{device.name}"
-                unique_id = f"{device.serial}"
-                room_name = session.room(device.room_id).name
-                entity = TemperatureSensor(display_name, unique_id, room_name, service)
-                entities += [entity]
-
-    ip_address = config_entry.data[CONF_IP_ADDRESS]
-    entities += get_power_energy_sensor_entities(session.device_helper.light_controls, "light control", ip_address, session)
-    entities += get_power_energy_sensor_entities(session.device_helper.smart_plugs, "smart plug", ip_address, session)
-
-    if entities:
-        return await async_add_entities(entities)
-
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the sensor platform."""
 
     entities = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for device in session.devices:
         for service in device.device_services:

@@ -12,64 +12,17 @@ from boschshcpy import (
 
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
-from homeassistant.util import slugify
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the sensor platform."""
-
-    device = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
-
-    for switch in session.device_helper.smart_plugs:
-        _LOGGER.debug("Found smart plug: %s" % switch.id)
-        device.append(
-            SmartPlugSwitch(
-                device=switch,
-                room_name=session.room(switch.room_id).name,
-                controller_ip=config[CONF_IP_ADDRESS],
-            )
-        )
-
-    for light in session.device_helper.light_controls:
-        _LOGGER.debug("Found light control: %s" % light.id)
-        device.append(
-            SmartPlugSwitch(
-                device=light,
-                room_name=session.room(light.room_id).name,
-                controller_ip=config[CONF_IP_ADDRESS],
-            )
-        )
-
-    for cameras in session.device_helper.camera_eyes:
-        _LOGGER.debug("Found camera eyes: %s" % cameras.id)
-        device.append(
-            CameraEyesSwitch(
-                device=cameras,
-                room_name=session.room(cameras.room_id).name,
-                controller_ip=config[CONF_IP_ADDRESS],
-            )
-        )
-
-    for scenario in session.scenarios:
-        _LOGGER.debug("Found scenario: %s" % scenario.id)
-        device.append(
-            ScenarioSwitch(device=scenario, controller_ip=config[CONF_IP_ADDRESS])
-        )
-
-    if device:
-        return await async_add_entities(device)
-
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the sensor platform."""
 
     device = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for switch in session.device_helper.smart_plugs:
         _LOGGER.debug(f"Found smart plug: {switch.name} ({switch.id})")

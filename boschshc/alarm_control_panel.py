@@ -11,34 +11,20 @@ from homeassistant.components.alarm_control_panel import (
 )
 from homeassistant.const import (
     CONF_IP_ADDRESS,
-    CONF_NAME,
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
 )
-from homeassistant.util import slugify
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the alarm control panel platform."""
-
-    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
-    intrusion_detection_system = session.device_helper.intrusion_detection_system
-
-    device = IntrusionDetectionAlarmControlPanel(
-        device=intrusion_detection_system, controller_ip=config[CONF_IP_ADDRESS]
-    )
-    return await async_add_entities([device])
-
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the alarm control panel platform."""
 
-    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
     intrusion_detection_system = session.device_helper.intrusion_detection_system
 
     device = IntrusionDetectionAlarmControlPanel(
