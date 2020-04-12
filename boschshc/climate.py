@@ -10,64 +10,19 @@ from homeassistant.components.climate import ClimateDevice, const
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     CONF_IP_ADDRESS,
-    CONF_NAME,
     TEMP_CELSIUS,
 )
-from homeassistant.util import slugify
 
 from . import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the climate platform."""
-
-    entities = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config[CONF_NAME])]
-
-    for device in session.devices:
-        if device.name == "-RoomClimateControl-":
-            temperature_level_service = device.device_service("TemperatureLevel")
-            room_climate_control_service = device.device_service("RoomClimateControl")
-            room_id = device.room_id
-            room_name = session.room(room_id).name
-
-            # Need to find all thermostat devices, these are different from the "room climate" devices.
-            thermostats = []
-            for potential_thermostat in session.devices:
-                if "ValveTappet" not in potential_thermostat.device_service_ids:
-                    continue
-                if potential_thermostat.room_id != room_id:
-                    continue
-
-                thermostats += [potential_thermostat]
-
-            valve_tappet_services = [
-                thermostat.device_service("ValveTappet") for thermostat in thermostats
-            ]
-            display_name = f"Room Climate {room_name}"
-            unique_id = f"{device.serial}"
-
-            entity = ClimateDevice(
-                display_name,
-                unique_id,
-                room_name,
-                temperature_level_service,
-                room_climate_control_service,
-                valve_tappet_services,
-            )
-            entities += [entity]
-
-    if entities:
-        return await async_add_entities(entities)
-
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the climate platform."""
 
     entities = []
-    session: SHCSession = hass.data[DOMAIN][slugify(config_entry.data[CONF_NAME])]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for device in session.devices:
         if device.name == "-RoomClimateControl-":
