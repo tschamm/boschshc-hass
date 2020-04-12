@@ -174,6 +174,14 @@ class PowerSensor(Entity):
         return self._device.powerconsumption
 
     @property
+    def device_class(seld):
+        return DEVICE_CLASS_POWER
+
+    @property
+    def unit_of_measurement(self):
+        return POWER_WATT
+
+    @property
     def device_id(self):
         """Return the ID of this device."""
         return self._device.id
@@ -194,14 +202,6 @@ class PowerSensor(Entity):
             "sw_version": "",
             "via_device": (DOMAIN, self._controller_ip),
         }
-
-    @property
-    def device_class(seld):
-        return DEVICE_CLASS_POWER
-
-    @property
-    def unit_of_measurement(self):
-        return POWER_WATT
 
     @property
     def state_attributes(self):
@@ -254,6 +254,10 @@ class EnergySensor(Entity):
         return self._device.energyconsumption
 
     @property
+    def unit_of_measurement(self):
+        return ENERGY_WATT_HOUR
+
+    @property
     def device_id(self):
         """Return the ID of this device."""
         return self._device.id
@@ -274,10 +278,6 @@ class EnergySensor(Entity):
             "sw_version": "",
             "via_device": (DOMAIN, self._controller_ip),
         }
-
-    @property
-    def unit_of_measurement(self):
-        return ENERGY_WATT_HOUR
 
     @property
     def state_attributes(self):
