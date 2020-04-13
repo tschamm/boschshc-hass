@@ -1,7 +1,7 @@
 """Platform for sensor integration."""
 import logging
 
-from boschshcpy import SHCSession, SHCSmartPlug, SHCThermostat, services_impl
+from boschshcpy import SHCSession, SHCSmartPlug, SHCThermostat
 
 from homeassistant.const import (
     CONF_IP_ADDRESS,
@@ -61,7 +61,7 @@ def get_power_energy_sensor_entities(controls, name, ip_address, session):
 class ThermostatSensor(Entity):
     """Representation of a SHC temperature reporting sensor."""
 
-    def __init__(self, device: SHCSmartPlug, room_name: str, controller_ip: str):
+    def __init__(self, device: SHCThermostat, room_name: str, controller_ip: str):
         """Initialize the SHC device."""
         self._device = device
         self._room_name = room_name
@@ -85,16 +85,17 @@ class ThermostatSensor(Entity):
 
     @property
     def unique_id(self):
-        """Return the unique ID of this sensor."""
+        """Return the unique ID of the sensor."""
         return self._device.serial
 
     @property
     def device_id(self):
-        """Return the ID of this switch."""
+        """Return the ID of the sensor."""
         return self._device.id
 
     @property
     def root_device(self):
+        """Return the root device id."""
         return self._device.root_device_id
 
     @property
@@ -104,7 +105,7 @@ class ThermostatSensor(Entity):
 
     @property
     def manufacturer(self):
-        """The manufacturer of the device."""
+        """Manufacturer of the device."""
         return self._device.manufacturer
 
     @property
@@ -140,6 +141,7 @@ class ThermostatSensor(Entity):
         return TEMP_CELSIUS
 
     def update(self):
+        """Trigger an update of the device."""
         self._device.update()
 
     @property
@@ -232,6 +234,10 @@ class PowerSensor(Entity):
             "via_device": (DOMAIN, self._controller_ip),
         }
 
+    def update(self):
+        """Trigger an update of the device."""
+        self._device.update()
+
     @property
     def state_attributes(self):
         """Extend state attribute of the device."""
@@ -315,6 +321,10 @@ class EnergySensor(Entity):
             "sw_version": "",
             "via_device": (DOMAIN, self._controller_ip),
         }
+
+    def update(self):
+        """Trigger an update of the device."""
+        self._device.update()
 
     @property
     def state_attributes(self):
