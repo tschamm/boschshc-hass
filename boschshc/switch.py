@@ -152,19 +152,19 @@ class SmartPlugSwitch(SwitchDevice):
         """The current power usage in W."""
         return self._device.powerconsumption
 
-    def turn_on(self, **kwargs):
+    def turn_on(self):
         """Turn the switch on."""
-        self._device.set_state(True)
+        self._device.state = True
 
-    def turn_off(self, **kwargs):
+    def turn_off(self):
         """Turn the switch off."""
-        self._device.set_state(False)
+        self._device.state = False
 
-    def toggle(self, **kwargs):
+    def toggle(self):
         """Toggles the switch."""
-        self._device.set_state(not self.is_on)
+        self._device.state = not self.is_on
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
 
     @property
@@ -231,26 +231,26 @@ class CameraEyesSwitch(SwitchDevice):
     @property
     def is_on(self):
         """Return the state of the switch."""
-        if self._device.lightstate == SHCCameraEyes.CameraLightService.State.ON:
+        if self._device.cameralight == SHCCameraEyes.CameraLightService.State.ON:
             return True
-        elif self._device.lightstate == SHCCameraEyes.CameraLightService.State.OFF:
+        elif self._device.cameralight == SHCCameraEyes.CameraLightService.State.OFF:
             return False
         else:
             return None
 
-    def turn_on(self, **kwargs):
+    def turn_on(self):
         """Turn the switch on."""
-        self._device.set_cameralight(True)
+        self._device.cameralight = True
 
-    def turn_off(self, **kwargs):
+    def turn_off(self):
         """Turn the switch off."""
-        self._device.set_cameralight(False)
+        self._device.cameralight = False
 
-    def toggle(self, **kwargs):
+    def toggle(self):
         """Toggles the switch."""
-        self._device.set_cameralight(not self.is_on)
+        self._device.cameralight = not self.is_on
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
 
     @property

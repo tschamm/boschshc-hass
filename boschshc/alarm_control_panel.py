@@ -155,5 +155,5 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
         """Send trigger/panic command."""
         self._device.trigger()
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()

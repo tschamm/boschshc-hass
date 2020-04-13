@@ -236,7 +236,7 @@ class SmokeDetectorSensor(BinarySensorDevice):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        if self._device.alarm_state == SHCSmokeDetector.AlarmService.State.IDLE_OFF:
+        if self._device.alarmstate == SHCSmokeDetector.AlarmService.State.IDLE_OFF:
             return False
 
         return True

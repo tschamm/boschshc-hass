@@ -1,5 +1,4 @@
 """Platform for cover integration."""
-import asyncio
 import logging
 
 from boschshcpy import SHCDeviceHelper, SHCSession, SHCShutterControl
@@ -116,9 +115,9 @@ class ShutterControlCover(CoverDevice):
         """The current cover position."""
         return self._device.level * 100.0
 
-    def stop_cover(self, **kwargs):
+    def stop_cover(self):
         """Stop the cover."""
-        self._device.set_stopped()
+        self._device.stop()
         return
 
     @property
@@ -152,25 +151,22 @@ class ShutterControlCover(CoverDevice):
         else:
             False
 
-    def open_cover(self, **kwargs):
+    def open_cover(self):
         """Open the cover."""
-        level = 1.0
-        self._device.set_level(level)
+        self._device.level = 1.0
 
-    def close_cover(self, **kwargs):
+    def close_cover(self):
         """Close cover."""
-        level = 0.0
-        self._device.set_level(level)
+        self._device.level = 0.0
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
         if ATTR_POSITION in kwargs:
             position = float(kwargs[ATTR_POSITION])
             position = min(100, max(0, position))
-            level = position / 100.0
-            self._device.set_level(level)
+            self._device.level = position / 100.0
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
 
     @property
