@@ -1,7 +1,7 @@
 """Platform for sensor integration."""
 import logging
 
-from boschshcpy import SHCSession, SHCSmartPlug, services_impl
+from boschshcpy import SHCSession, SHCSmartPlug, SHCThermostat, services_impl
 
 from homeassistant.const import (
     CONF_IP_ADDRESS,
@@ -22,17 +22,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for device in session.devices:
-        for service in device.device_services:
-            if (
-                service.id == "TemperatureLevel"
-                and device.name != "-RoomClimateControl-"
-            ):
-                display_name = f"{device.name}"
-                unique_id = f"{device.serial}"
-                room_name = session.room(device.room_id).name
-                entity = TemperatureSensor(display_name, unique_id, room_name, service)
-                entities += [entity]
+    for thermostat in session.device_helper.thermostats:
+        _LOGGER.debug(f"Found thermostat: {thermostat.name} ({thermostat.id})")
+        entities.append(
+            ThermostatSensor(
+                device=thermostat,
+                room_name=session.room(thermostat.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
+        )
 
     ip_address = config_entry.data[CONF_IP_ADDRESS]
     entities += get_power_energy_sensor_entities(
@@ -60,36 +58,66 @@ def get_power_energy_sensor_entities(controls, name, ip_address, session):
     return entities
 
 
-class TemperatureSensor(Entity):
+class ThermostatSensor(Entity):
     """Representation of a SHC temperature reporting sensor."""
 
-    def __init__(
-        self,
-        name: str,
-        unique_id: str,
-        room_name: str,
-        device_service: services_impl.TemperatureLevelService,
-    ):
+    def __init__(self, device: SHCSmartPlug, room_name: str, controller_ip: str):
         """Initialize the SHC device."""
-        self._name = name
-        self._unique_id = unique_id
+        self._device = device
         self._room_name = room_name
-        self._device_service = device_service
+        self._controller_ip = controller_ip
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""
         await super().async_added_to_hass()
-        assert self._device_service.on_state_changed is None
 
         def on_state_changed():
             self.schedule_update_ha_state()
 
-        self._device_service.on_state_changed = on_state_changed
+        for service in self._device.device_services:
+            service.on_state_changed = on_state_changed
 
     async def async_will_remove_from_hass(self):
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
-        self._device_service.on_state_changed = None
+        for service in self._device.device_services:
+            service.on_state_changed = None
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return self._device.serial
+
+    @property
+    def device_id(self):
+        """Return the ID of this switch."""
+        return self._device.id
+
+    @property
+    def root_device(self):
+        return self._device.root_device_id
+
+    @property
+    def name(self):
+        """Name of the device."""
+        return self._device.name
+
+    @property
+    def manufacturer(self):
+        """The manufacturer of the device."""
+        return self._device.manufacturer
+
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, self.device_id)},
+            "name": self.name,
+            "manufacturer": self.manufacturer,
+            "model": self._device.device_model,
+            "sw_version": "",
+            "via_device": (DOMAIN, self._controller_ip),
+        }
 
     @property
     def should_poll(self):
@@ -97,24 +125,22 @@ class TemperatureSensor(Entity):
         return False
 
     @property
-    def name(self):
-        """Name of the device."""
-        return self._name
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of this sensor."""
-        return self._unique_id
+    def available(self):
+        """Return false if status is unavailable."""
+        return True if self._device.status == "AVAILABLE" else False
 
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._device_service.temperature
+        return self._device.temperature
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
         return TEMP_CELSIUS
+
+    def update(self):
+        self._device.update()
 
     @property
     def state_attributes(self):
@@ -123,6 +149,7 @@ class TemperatureSensor(Entity):
         if state_attr is None:
             state_attr = dict()
         state_attr["boschshc_room_name"] = self._room_name
+        state_attr["valvetappet_position"] = self._device.position
         return state_attr
 
 

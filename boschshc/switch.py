@@ -1,5 +1,4 @@
 """Platform for switch integration."""
-import asyncio
 import logging
 
 from boschshcpy import (
@@ -124,7 +123,7 @@ class SmartPlugSwitch(SwitchDevice):
 
     @property
     def should_poll(self):
-        """Polling needed."""
+        """Report polling mode."""
         return False
 
     @property
