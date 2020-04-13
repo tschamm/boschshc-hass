@@ -5,7 +5,7 @@ import logging
 from boschshcpy import SHCSession, services_impl, SHCSmartPlug
 
 from homeassistant.components.sensor import DEVICE_CLASSES
-from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, TEMP_CELSIUS, POWER_WATT, DEVICE_CLASS_POWER, ENERGY_WATT_HOUR
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, TEMP_CELSIUS, POWER_WATT, DEVICE_CLASS_POWER, ENERGY_KILO_WATT_HOUR
 from homeassistant.helpers.entity import Entity
 
 from . import DOMAIN
@@ -224,11 +224,11 @@ class EnergySensor(Entity):
 
     @property
     def state(self):
-        return self._device.energyconsumption
+        return self._device.energyconsumption / 1000.
 
     @property
     def unit_of_measurement(self):
-        return ENERGY_WATT_HOUR
+        return ENERGY_KILO_WATT_HOUR
 
     @property
     def device_id(self):
