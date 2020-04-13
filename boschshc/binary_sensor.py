@@ -167,7 +167,7 @@ class SmokeDetectorSensor(BinarySensorDevice):
         self._controller_ip = controller_ip
 
     async def async_added_to_hass(self):
-        """Subscribe SHC events."""
+        """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
         def on_state_changed():
@@ -178,7 +178,7 @@ class SmokeDetectorSensor(BinarySensorDevice):
             service.on_state_changed = on_state_changed
 
     async def async_will_remove_from_hass(self):
-        """Unsubscribe SHC events."""
+        """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
             service.on_state_changed = None
@@ -222,7 +222,7 @@ class SmokeDetectorSensor(BinarySensorDevice):
 
     @property
     def should_poll(self):
-        """Set polling mode."""
+        """Report polling mode."""
         return False
 
     @property
