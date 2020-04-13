@@ -23,7 +23,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for thermostat in session.device_helper.thermostats:
-        _LOGGER.debug(f"Found thermostat: {thermostat.name} ({thermostat.id})")
+        _LOGGER.debug("Found thermostat: %s (%s)", thermostat.name, thermostat.id)
         entities.append(
             ThermostatSensor(
                 device=thermostat,
@@ -48,7 +48,7 @@ def get_power_energy_sensor_entities(controls, name, ip_address, session):
     """Return list of initialized entities."""
     entities = []
     for light in controls:
-        _LOGGER.debug(f"Found {name}: {light.name} ({light.id})")
+        _LOGGER.debug("Found %s: %s (%s)", name, light.name, light.id)
         controller_ip = ip_address
         room_name = session.room(light.room_id).name
         power_sensor = PowerSensor(controller_ip, room_name, light)
