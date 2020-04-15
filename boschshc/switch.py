@@ -133,7 +133,7 @@ class SmartPlugSwitch(SwitchDevice):
 
     @property
     def is_on(self):
-        """Return the state of the switch."""
+        """Returns if the switch is currently on or off."""
         if self._device.state == SHCSmartPlug.PowerSwitchService.State.ON:
             return True
         elif self._device.state == SHCSmartPlug.PowerSwitchService.State.OFF:

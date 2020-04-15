@@ -36,6 +36,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
+    """Representation of SHC intrusion detection control."""
     def __init__(self, device: SHCIntrusionDetectionSystem, controller_ip: str):
         self._device = device
         self._controller_ip = controller_ip
@@ -130,7 +131,7 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
     @property
     def should_poll(self):
         """Polling needed."""
-        return True
+        return False
 
     @property
     def code_format(self):

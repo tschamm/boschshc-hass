@@ -43,7 +43,6 @@ class ShutterControlCover(CoverDevice):
         self._device = device
         self._room_name = room_name
         self._controller_ip = controller_ip
-        self.update()
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
