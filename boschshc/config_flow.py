@@ -3,7 +3,6 @@ import logging
 
 from boschshcpy import SHCSession
 import voluptuous as vol
-from boschshcpy import SHCSession
 
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_ICON, CONF_IP_ADDRESS, CONF_NAME
