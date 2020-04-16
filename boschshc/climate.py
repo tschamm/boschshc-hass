@@ -89,17 +89,17 @@ class ClimateDevice(ClimateDevice):
         def on_state_changed():
             self.schedule_update_ha_state()
 
-        self._temperature_level_service.on_state_changed = on_state_changed
-        self._room_climate_control_service.on_state_changed = on_state_changed
+        self._temperature_level_service.subscribe_callback(self.entity_id, on_state_changed)
+        self._room_climate_control_service.subscribe_callback(self.entity_id, on_state_changed)
         for valve_tappet_service in self._valve_tappet_services:
-            valve_tappet_service.on_state_changed = on_state_changed
+            valve_tappet_service.subscribe_callback(self.entity_id, on_state_changed)
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
-        self._temperature_level_service.on_state_changed = None
-        self._room_climate_control_service.on_state_changed = None
+        self._temperature_level_service.unsubscribe_callback(self.entity_id)
+        self._room_climate_control_service.unsubscribe_callback(self.entity_id)
         for valve_tappet_service in self._valve_tappet_services:
-            valve_tappet_service.on_state_changed = None
+            valve_tappet_service.unsubscribe_callback(self.entity_id)
 
     @property
     def should_poll(self):

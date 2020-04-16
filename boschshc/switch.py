@@ -72,19 +72,21 @@ class SmartPlugSwitch(SwitchDevice):
         self._controller_ip = controller_ip
 
     async def async_added_to_hass(self):
+        """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
         def on_state_changed():
             self.schedule_update_ha_state()
 
         for service in self._device.device_services:
-            service.on_state_changed = on_state_changed
+            service.subscribe_callback(self.entity_id, on_state_changed)
 
     async def async_will_remove_from_hass(self):
+        """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
-            service.on_state_changed = None
-
+            service.unsubscribe_callback(self.entity_id)
+            
     @property
     def unique_id(self):
         """Return the unique ID of this switch."""
