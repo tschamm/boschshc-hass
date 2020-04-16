@@ -7,11 +7,7 @@ import typing
 from boschshcpy import SHCSession, services_impl
 
 from homeassistant.components.climate import ClimateDevice, const
-from homeassistant.const import (
-    ATTR_TEMPERATURE,
-    CONF_IP_ADDRESS,
-    TEMP_CELSIUS,
-)
+from homeassistant.const import ATTR_TEMPERATURE, CONF_IP_ADDRESS, TEMP_CELSIUS
 
 from . import DOMAIN
 
@@ -89,8 +85,12 @@ class ClimateDevice(ClimateDevice):
         def on_state_changed():
             self.schedule_update_ha_state()
 
-        self._temperature_level_service.subscribe_callback(self.entity_id, on_state_changed)
-        self._room_climate_control_service.subscribe_callback(self.entity_id, on_state_changed)
+        self._temperature_level_service.subscribe_callback(
+            self.entity_id, on_state_changed
+        )
+        self._room_climate_control_service.subscribe_callback(
+            self.entity_id, on_state_changed
+        )
         for valve_tappet_service in self._valve_tappet_services:
             valve_tappet_service.subscribe_callback(self.entity_id, on_state_changed)
 

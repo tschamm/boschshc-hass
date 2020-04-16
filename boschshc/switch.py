@@ -86,7 +86,7 @@ class SmartPlugSwitch(SwitchDevice):
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
             service.unsubscribe_callback(self.entity_id)
-            
+
     @property
     def unique_id(self):
         """Return the unique ID of this switch."""
