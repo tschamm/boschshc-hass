@@ -1,3 +1,5 @@
+![Validate with hassfest](https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg)
+
 # boschshc-hass
 
 Home Assistant component for accessing Bosch Smart Home Controller using 3rd party [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
