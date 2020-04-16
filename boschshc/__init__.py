@@ -4,11 +4,13 @@ import logging
 
 from boschshcpy import SHCSession
 import voluptuous as vol
+from boschshcpy import SHCSession
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 
 from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN
 

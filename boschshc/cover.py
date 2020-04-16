@@ -1,5 +1,4 @@
 """Platform for cover integration."""
-import asyncio
 import logging
 
 from boschshcpy import SHCDeviceHelper, SHCSession, SHCShutterControl
@@ -44,21 +43,22 @@ class ShutterControlCover(CoverDevice):
         self._device = device
         self._room_name = room_name
         self._controller_ip = controller_ip
-        self.update()
 
     async def async_added_to_hass(self):
+        """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
         def on_state_changed():
             self.schedule_update_ha_state()
 
         for service in self._device.device_services:
-            service.on_state_changed = on_state_changed
+            service.subscribe_callback(self.entity_id, on_state_changed)
 
     async def async_will_remove_from_hass(self):
+        """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
-            service.on_state_changed = None
+            service.unsubscribe_callback(self.entity_id)
 
     @property
     def unique_id(self):
@@ -116,9 +116,9 @@ class ShutterControlCover(CoverDevice):
         """The current cover position."""
         return self._device.level * 100.0
 
-    def stop_cover(self, **kwargs):
+    def stop_cover(self):
         """Stop the cover."""
-        self._device.set_stopped()
+        self._device.stop()
         return
 
     @property
@@ -152,25 +152,22 @@ class ShutterControlCover(CoverDevice):
         else:
             False
 
-    def open_cover(self, **kwargs):
+    def open_cover(self):
         """Open the cover."""
-        level = 1.0
-        self._device.set_level(level)
+        self._device.level = 1.0
 
-    def close_cover(self, **kwargs):
+    def close_cover(self):
         """Close cover."""
-        level = 0.0
-        self._device.set_level(level)
+        self._device.level = 0.0
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
         if ATTR_POSITION in kwargs:
             position = float(kwargs[ATTR_POSITION])
             position = min(100, max(0, position))
-            level = position / 100.0
-            self._device.set_level(level)
+            self._device.level = position / 100.0
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
 
     @property

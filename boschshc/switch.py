@@ -1,5 +1,4 @@
 """Platform for switch integration."""
-import asyncio
 import logging
 
 from boschshcpy import (
@@ -73,18 +72,20 @@ class SmartPlugSwitch(SwitchDevice):
         self._controller_ip = controller_ip
 
     async def async_added_to_hass(self):
+        """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
         def on_state_changed():
             self.schedule_update_ha_state()
 
         for service in self._device.device_services:
-            service.on_state_changed = on_state_changed
+            service.subscribe_callback(self.entity_id, on_state_changed)
 
     async def async_will_remove_from_hass(self):
+        """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
-            service.on_state_changed = None
+            service.unsubscribe_callback(self.entity_id)
 
     @property
     def unique_id(self):
@@ -124,7 +125,7 @@ class SmartPlugSwitch(SwitchDevice):
 
     @property
     def should_poll(self):
-        """Polling needed."""
+        """Report polling mode."""
         return False
 
     @property
@@ -134,7 +135,7 @@ class SmartPlugSwitch(SwitchDevice):
 
     @property
     def is_on(self):
-        """Return the state of the switch."""
+        """Returns if the switch is currently on or off."""
         if self._device.state == SHCSmartPlug.PowerSwitchService.State.ON:
             return True
         elif self._device.state == SHCSmartPlug.PowerSwitchService.State.OFF:
@@ -152,19 +153,19 @@ class SmartPlugSwitch(SwitchDevice):
         """The current power usage in W."""
         return self._device.powerconsumption
 
-    def turn_on(self, **kwargs):
+    def turn_on(self):
         """Turn the switch on."""
-        self._device.set_state(True)
+        self._device.state = True
 
-    def turn_off(self, **kwargs):
+    def turn_off(self):
         """Turn the switch off."""
-        self._device.set_state(False)
+        self._device.state = False
 
-    def toggle(self, **kwargs):
+    def toggle(self):
         """Toggles the switch."""
-        self._device.set_state(not self.is_on)
+        self._device.state = not self.is_on
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
 
     @property
@@ -231,26 +232,26 @@ class CameraEyesSwitch(SwitchDevice):
     @property
     def is_on(self):
         """Return the state of the switch."""
-        if self._device.lightstate == SHCCameraEyes.CameraLightService.State.ON:
+        if self._device.cameralight == SHCCameraEyes.CameraLightService.State.ON:
             return True
-        elif self._device.lightstate == SHCCameraEyes.CameraLightService.State.OFF:
+        elif self._device.cameralight == SHCCameraEyes.CameraLightService.State.OFF:
             return False
         else:
             return None
 
-    def turn_on(self, **kwargs):
+    def turn_on(self):
         """Turn the switch on."""
-        self._device.set_cameralight(True)
+        self._device.cameralight = True
 
-    def turn_off(self, **kwargs):
+    def turn_off(self):
         """Turn the switch off."""
-        self._device.set_cameralight(False)
+        self._device.cameralight = False
 
-    def toggle(self, **kwargs):
+    def toggle(self):
         """Toggles the switch."""
-        self._device.set_cameralight(not self.is_on)
+        self._device.cameralight = not self.is_on
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
 
     @property

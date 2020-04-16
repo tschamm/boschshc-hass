@@ -36,24 +36,28 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
+    """Representation of SHC intrusion detection control."""
+
     def __init__(self, device: SHCIntrusionDetectionSystem, controller_ip: str):
         self._device = device
         self._controller_ip = controller_ip
         self._device_state_attributes = {}
 
     async def async_added_to_hass(self):
+        """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
         def on_state_changed():
             self.schedule_update_ha_state()
 
         for service in self._device.device_services:
-            service.on_state_changed = on_state_changed
+            service.subscribe_callback(self.entity_id, on_state_changed)
 
     async def async_will_remove_from_hass(self):
+        """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
-            service.on_state_changed = None
+            service.unsubscribe_callback(self.entity_id)
 
     @property
     def unique_id(self):
@@ -130,7 +134,7 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
     @property
     def should_poll(self):
         """Polling needed."""
-        return True
+        return False
 
     @property
     def code_format(self):
@@ -155,5 +159,5 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
         """Send trigger/panic command."""
         self._device.trigger()
 
-    def update(self, **kwargs):
+    def update(self):
         self._device.update()
