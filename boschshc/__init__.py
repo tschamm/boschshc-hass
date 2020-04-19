@@ -16,7 +16,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN
+from .const import (
+    ATTR_NAME,
+    CONF_SSL_CERTIFICATE,
+    CONF_SSL_KEY,
+    DOMAIN,
+    SERVICE_TRIGGER_SCENARIO,
+)
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
@@ -121,6 +127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_polling)
 
+    register_services(hass, entry)
     return True
 
 
@@ -143,3 +150,29 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+def register_services(hass, entry):
+    """Register services for the component."""
+    service_scenario_trigger_schema = vol.Schema(
+        {
+            vol.Required(ATTR_NAME): vol.All(
+                cv.string, vol.In(hass.data[DOMAIN][entry.entry_id].scenario_names)
+            )
+        }
+    )
+
+    async def scenario_service_call(call):
+        """SHC Scenario service call."""
+        name = call.data[ATTR_NAME]
+        for scenario in hass.data[DOMAIN][entry.entry_id].scenarios:
+            if scenario.name == name:
+                _LOGGER.debug("Trigger scenario: %s (%s)", scenario.name, scenario.id)
+                hass.async_add_executor_job(scenario.trigger)
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TRIGGER_SCENARIO,
+        scenario_service_call,
+        service_scenario_trigger_schema,
+    )
