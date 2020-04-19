@@ -2,13 +2,19 @@
 import asyncio
 import logging
 
-from boschshcpy import SHCSession
 import voluptuous as vol
+from boschshcpy import SHCSession
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.const import (
+    CONF_IP_ADDRESS,
+    CONF_NAME,
+    EVENT_HOMEASSISTANT_START,
+    EVENT_HOMEASSISTANT_STOP,
+)
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 
 from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN
 
@@ -100,18 +106,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             hass.config_entries.async_forward_entry_setup(entry, component)
         )
 
-    # async def stop_polling(event):
-    #     """Stop polling service."""
-    #     await hass.async_add_executor_job(session.stop_polling)
+    async def stop_polling(event):
+        """Stop polling service."""
+        _LOGGER.debug("Stopping polling service of SHC")
+        await hass.async_add_executor_job(session.stop_polling)
 
-    # async def start_polling(event):
-    #     """Start polling service."""
-    #     await hass.async_add_executor_job(session.start_polling)
-    #     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
+    async def start_polling(event):
+        """Start polling service."""
+        _LOGGER.debug("Starting polling service of SHC")
+        await hass.async_add_executor_job(session.start_polling)
+        session.reset_connection_listener = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, stop_polling
+        )
 
-    # hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_polling)
-
-    await hass.async_add_executor_job(session.start_polling)
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_polling)
 
     return True
 
@@ -119,6 +127,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     session: SHCSession = hass.data[DOMAIN][entry.entry_id]
+    session.reset_connection_listener()
+    _LOGGER.debug("Stopping polling service of SHC")
     await hass.async_add_executor_job(session.stop_polling)
 
     unload_ok = all(

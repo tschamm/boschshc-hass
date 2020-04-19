@@ -234,10 +234,10 @@ class CameraEyesSwitch(SwitchDevice):
         """Return the state of the switch."""
         if self._device.cameralight == SHCCameraEyes.CameraLightService.State.ON:
             return True
-        elif self._device.cameralight == SHCCameraEyes.CameraLightService.State.OFF:
+        if self._device.cameralight == SHCCameraEyes.CameraLightService.State.OFF:
             return False
-        else:
-            return None
+
+        return None
 
     def turn_on(self):
         """Turn the switch on."""
