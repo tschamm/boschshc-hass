@@ -1,13 +1,7 @@
 """Platform for switch integration."""
 import logging
 
-from boschshcpy import (
-    SHCCameraEyes,
-    SHCDeviceHelper,
-    SHCScenario,
-    SHCSession,
-    SHCSmartPlug,
-)
+from boschshcpy import SHCCameraEyes, SHCDeviceHelper, SHCSession, SHCSmartPlug
 
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
@@ -50,14 +44,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 device=camera,
                 room_name=session.room(camera.room_id).name,
                 controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
-
-    for scenario in session.scenarios:
-        _LOGGER.debug(f"Found scenario: {scenario.name} ({scenario.id})")
-        device.append(
-            ScenarioSwitch(
-                device=scenario, controller_ip=config_entry.data[CONF_IP_ADDRESS],
             )
         )
 
@@ -261,62 +247,3 @@ class CameraEyesSwitch(SwitchDevice):
             state_attr = dict()
         state_attr["boschshc_room_name"] = self._room_name
         return state_attr
-
-
-class ScenarioSwitch(SwitchDevice):
-    def __init__(self, device: SHCSmartPlug, controller_ip: str):
-        self._device = device
-        self._controller_ip = controller_ip
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of this switch."""
-        return self._device.id
-
-    @property
-    def device_id(self):
-        """Return the ID of this switch."""
-        return self._device.id
-
-    @property
-    def name(self):
-        """Name of the device."""
-        return self._device.name
-
-    @property
-    def icon(self):
-        return "mdi:script-text"
-
-    @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self.device_id)},
-            "name": self.name,
-            "manufacturer": "BOSCH",
-            "model": "SHC_Scenario",
-            "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip),
-        }
-
-    @property
-    def should_poll(self):
-        """Polling needed."""
-        return False
-
-    @property
-    def is_on(self):
-        """Return the state of the switch."""
-        False
-
-    def turn_on(self, **kwargs):
-        """Turn the switch on."""
-        self._device.trigger()
-
-    def turn_off(self, **kwargs):
-        """Turn the switch off."""
-        pass
-
-    def toggle(self, **kwargs):
-        """Toggles the switch."""
-        self._device.trigger()
