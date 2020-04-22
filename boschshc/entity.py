@@ -2,11 +2,13 @@
 import logging
 
 from boschshcpy import SHCDevice
+
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""

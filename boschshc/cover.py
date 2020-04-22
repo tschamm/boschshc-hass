@@ -1,7 +1,7 @@
 """Platform for cover integration."""
 import logging
 
-from boschshcpy import SHCDeviceHelper, SHCSession, SHCShutterControl
+from boschshcpy import SHCSession, SHCShutterControl
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
@@ -11,7 +11,7 @@ from homeassistant.components.cover import (
     SUPPORT_STOP,
     CoverDevice,
 )
-from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.const import CONF_IP_ADDRESS
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -26,7 +26,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for cover in session.device_helper.shutter_controls:
-        _LOGGER.debug(f"Found shutter control: {cover.name} ({cover.id})")
+        _LOGGER.debug("Found shutter control: %s (%s)", cover.name, cover.id)
         device.append(
             ShutterControlCover(
                 device=cover,
@@ -52,17 +52,16 @@ class ShutterControlCover(SHCEntity, CoverDevice):
         """The current cover position."""
         return self._device.level * 100.0
 
-    def stop_cover(self):
+    def stop_cover(self, **kwargs):
         """Stop the cover."""
         self._device.stop()
-        return
 
     @property
     def is_closed(self):
         """Return if the cover is closed or not."""
-        if self.current_cover_position == None:
+        if self.current_cover_position is None:
             return None
-        elif self.current_cover_position == 0.0:
+        if self.current_cover_position == 0.0:
             return True
         return False
 
@@ -74,8 +73,7 @@ class ShutterControlCover(SHCEntity, CoverDevice):
             == SHCShutterControl.ShutterControlService.State.OPENING
         ):
             return True
-        else:
-            False
+        return False
 
     @property
     def is_closing(self):
@@ -85,14 +83,13 @@ class ShutterControlCover(SHCEntity, CoverDevice):
             == SHCShutterControl.ShutterControlService.State.CLOSING
         ):
             return True
-        else:
-            False
+        return False
 
-    def open_cover(self):
+    def open_cover(self, **kwargs):
         """Open the cover."""
         self._device.level = 1.0
 
-    def close_cover(self):
+    def close_cover(self, **kwargs):
         """Close cover."""
         self._device.level = 0.0
 

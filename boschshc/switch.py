@@ -1,10 +1,14 @@
 """Platform for switch integration."""
 import logging
 
-from boschshcpy import SHCCameraEyes, SHCDeviceHelper, SHCSession, SHCSmartPlug
+from boschshcpy import SHCCameraEyes, SHCSession, SHCSmartPlug
 
-from homeassistant.components.switch import SwitchDevice, DEVICE_CLASS_OUTLET, DEVICE_CLASS_SWITCH
-from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.components.switch import (
+    DEVICE_CLASS_OUTLET,
+    DEVICE_CLASS_SWITCH,
+    SwitchDevice,
+)
+from homeassistant.const import CONF_IP_ADDRESS
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -19,7 +23,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for switch in session.device_helper.smart_plugs:
-        _LOGGER.debug(f"Found smart plug: {switch.name} ({switch.id})")
+        _LOGGER.debug("Found smart plug: %s (%s)", switch.name, switch.id)
         device.append(
             SmartPlugSwitch(
                 device=switch,
@@ -29,7 +33,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for light in session.device_helper.light_controls:
-        _LOGGER.debug(f"Found light control: {light.name} ({light.id})")
+        _LOGGER.debug("Found light control: %s (%s)", light.name, light.id)
         device.append(
             SmartPlugSwitch(
                 device=light,
@@ -39,7 +43,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for camera in session.device_helper.camera_eyes:
-        _LOGGER.debug(f"Found camera eyes: {camera.name} ({camera.id})")
+        _LOGGER.debug("Found camera eyes: %s (%s)", camera.name, camera.id)
         device.append(
             CameraEyesSwitch(
                 device=camera,
@@ -53,21 +57,26 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class SmartPlugSwitch(SHCEntity, SwitchDevice):
+    """Representation of a smart plug switch."""
 
     @property
     def device_class(self):
         """Return the class of this device."""
-        return DEVICE_CLASS_OUTLET if self._device.device_model == "PSM" else DEVICE_CLASS_SWITCH
+        return (
+            DEVICE_CLASS_OUTLET
+            if self._device.device_model == "PSM"
+            else DEVICE_CLASS_SWITCH
+        )
 
     @property
     def is_on(self):
         """Returns if the switch is currently on or off."""
         if self._device.state == SHCSmartPlug.PowerSwitchService.State.ON:
             return True
-        elif self._device.state == SHCSmartPlug.PowerSwitchService.State.OFF:
+        if self._device.state == SHCSmartPlug.PowerSwitchService.State.OFF:
             return False
-        else:
-            return None
+
+        return None
 
     @property
     def today_energy_kwh(self):
@@ -79,19 +88,21 @@ class SmartPlugSwitch(SHCEntity, SwitchDevice):
         """The current power usage in W."""
         return self._device.powerconsumption
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn the switch on."""
         self._device.state = True
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn the switch off."""
         self._device.state = False
 
-    def toggle(self):
+    def toggle(self, **kwargs):
         """Toggles the switch."""
         self._device.state = not self.is_on
 
+
 class CameraEyesSwitch(SHCEntity, SwitchDevice):
+    """Representation of camera eyes as switch."""
 
     @property
     def should_poll(self):
@@ -108,14 +119,14 @@ class CameraEyesSwitch(SHCEntity, SwitchDevice):
 
         return None
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn the switch on."""
         self._device.cameralight = True
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn the switch off."""
         self._device.cameralight = False
 
-    def toggle(self):
+    def toggle(self, **kwargs):
         """Toggles the switch."""
         self._device.cameralight = not self.is_on

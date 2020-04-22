@@ -1,16 +1,16 @@
 """Platform for sensor integration."""
 import logging
 
-from boschshcpy import SHCSession, SHCSmartPlug, SHCThermostat, SHCBatteryDevice
+from boschshcpy import SHCBatteryDevice, SHCSession
 
 from homeassistant.const import (
     CONF_IP_ADDRESS,
-    DEVICE_CLASS_POWER,
     DEVICE_CLASS_BATTERY,
+    DEVICE_CLASS_POWER,
     ENERGY_KILO_WATT_HOUR,
     POWER_WATT,
     TEMP_CELSIUS,
-    UNIT_PERCENTAGE
+    UNIT_PERCENTAGE,
 )
 
 from .const import DOMAIN
@@ -67,6 +67,7 @@ def get_power_energy_sensor_entities(sensors, name, ip_address, session):
         energy_sensor = EnergySensor(sensor, room_name, controller_ip)
         entities += [energy_sensor]
     return entities
+
 
 def get_battery_sensor_entities(controls, name, ip_address, session):
     """Return list of initialized entities."""
@@ -129,7 +130,7 @@ class PowerSensor(SHCEntity):
 
 class EnergySensor(SHCEntity):
     """Representation of a SHC energy reporting sensor."""
-    
+
     @property
     def unique_id(self):
         """Return the unique ID of this sensor."""
@@ -145,6 +146,7 @@ class EnergySensor(SHCEntity):
         """Return the unit of measurement of the sensor."""
         return ENERGY_KILO_WATT_HOUR
 
+
 class BatterySensor(SHCEntity):
     """Representation of a SHC battery reporting sensor."""
 
@@ -156,14 +158,20 @@ class BatterySensor(SHCEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW:
+        if (
+            self._device.batterylevel
+            == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW
+        ):
             logging.warning("Battery state of device %s is critical low.", self.name)
             return 0
-        if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY:
+        if (
+            self._device.batterylevel
+            == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY
+        ):
             return 20
         if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.OK:
             return 100
-        
+
         return None
 
     @property

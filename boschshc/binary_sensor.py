@@ -11,7 +11,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_platform, service
+from homeassistant.helpers import entity_platform
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -94,7 +94,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorDevice):
         hass: HomeAssistant,
     ):
         """Initialize the SHC device."""
-        super().__init__(device=device, room_name=room_name, controller_ip=controller_ip)
+        super().__init__(
+            device=device, room_name=room_name, controller_ip=controller_ip
+        )
         self._hass = hass
 
     @property
