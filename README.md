@@ -2,7 +2,7 @@
 
 # boschshc-hass
 
-Home Assistant component for accessing Bosch Smart Home Controller using 3rd party [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
+Home Assistant component for accessing Bosch Smart Home Controller using [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
 
 The following platforms are implemented:
 
@@ -26,3 +26,7 @@ boschshc:
    ssl_key: '/path/to/key.pem'
    name: 'SHC-Controller'
 ```
+
+# Additional information
+
+Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/115864) for discussions on the Bosch Smart Home Controller Home Assistant integration.
