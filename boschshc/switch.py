@@ -3,10 +3,11 @@ import logging
 
 from boschshcpy import SHCCameraEyes, SHCDeviceHelper, SHCSession, SHCSmartPlug
 
-from homeassistant.components.switch import SwitchDevice
+from homeassistant.components.switch import SwitchDevice, DEVICE_CLASS_OUTLET, DEVICE_CLASS_SWITCH
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 
 from .const import DOMAIN
+from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,73 +52,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         async_add_entities(device)
 
 
-class SmartPlugSwitch(SwitchDevice):
-    def __init__(self, device: SHCSmartPlug, room_name: str, controller_ip: str):
-        self._device = device
-        self._room_name = room_name
-        self._controller_ip = controller_ip
-
-    async def async_added_to_hass(self):
-        """Subscribe to SHC events."""
-        await super().async_added_to_hass()
-
-        def on_state_changed():
-            self.schedule_update_ha_state()
-
-        for service in self._device.device_services:
-            service.subscribe_callback(self.entity_id, on_state_changed)
-
-    async def async_will_remove_from_hass(self):
-        """Unsubscribe from SHC events."""
-        await super().async_will_remove_from_hass()
-        for service in self._device.device_services:
-            service.unsubscribe_callback(self.entity_id)
+class SmartPlugSwitch(SHCEntity, SwitchDevice):
 
     @property
-    def unique_id(self):
-        """Return the unique ID of this switch."""
-        return self._device.serial
-
-    @property
-    def device_id(self):
-        """Return the ID of this switch."""
-        return self._device.id
-
-    @property
-    def root_device(self):
-        return self._device.root_device_id
-
-    @property
-    def name(self):
-        """Name of the device."""
-        return self._device.name
-
-    @property
-    def manufacturer(self):
-        """The manufacturer of the device."""
-        return self._device.manufacturer
-
-    @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self.device_id)},
-            "name": self.name,
-            "manufacturer": self.manufacturer,
-            "model": self._device.device_model,
-            "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip),
-        }
-
-    @property
-    def should_poll(self):
-        """Report polling mode."""
-        return False
-
-    @property
-    def available(self):
-        """Return false if status is unavailable."""
-        return True if self._device.status == "AVAILABLE" else False
+    def device_class(self):
+        """Return the class of this device."""
+        return DEVICE_CLASS_OUTLET if self._device.device_model == "PSM" else DEVICE_CLASS_SWITCH
 
     @property
     def is_on(self):
@@ -151,69 +91,12 @@ class SmartPlugSwitch(SwitchDevice):
         """Toggles the switch."""
         self._device.state = not self.is_on
 
-    def update(self):
-        self._device.update()
-
-    @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-        state_attr["boschshc_room_name"] = self._room_name
-        return state_attr
-
-
-class CameraEyesSwitch(SwitchDevice):
-    def __init__(self, device: SHCCameraEyes, room_name: str, controller_ip: str):
-        self._device = device
-        self._room_name = room_name
-        self._controller_ip = controller_ip
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of this switch."""
-        return self._device.serial
-
-    @property
-    def device_id(self):
-        """Return the ID of this switch."""
-        return self._device.id
-
-    @property
-    def root_device(self):
-        return self._device.root_device_id
-
-    @property
-    def name(self):
-        """Name of the device."""
-        return self._device.name
-
-    @property
-    def manufacturer(self):
-        """The manufacturer of the device."""
-        return self._device.manufacturer
-
-    @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self.device_id)},
-            "name": self.name,
-            "manufacturer": self.manufacturer,
-            "model": self._device.device_model,
-            "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip),
-        }
+class CameraEyesSwitch(SHCEntity, SwitchDevice):
 
     @property
     def should_poll(self):
         """Polling needed."""
         return True  # No long polling implemented for camera eyes
-
-    @property
-    def available(self):
-        """Return false if status is unavailable."""
-        return True if self._device.status == "AVAILABLE" else False
 
     @property
     def is_on(self):
@@ -236,14 +119,3 @@ class CameraEyesSwitch(SwitchDevice):
     def toggle(self):
         """Toggles the switch."""
         self._device.cameralight = not self.is_on
-
-    def update(self):
-        self._device.update()
-
-    @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-        state_attr["boschshc_room_name"] = self._room_name
-        return state_attr

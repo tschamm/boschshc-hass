@@ -17,6 +17,7 @@ from homeassistant.const import (
 )
 
 from .const import DOMAIN
+from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,65 +36,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities([device])
 
 
-class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
+class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanel):
     """Representation of SHC intrusion detection control."""
 
     def __init__(self, device: SHCIntrusionDetectionSystem, controller_ip: str):
-        self._device = device
-        self._controller_ip = controller_ip
+        super().__init__(device=device, room_name=None, controller_ip=controller_ip)
         self._device_state_attributes = {}
-
-    async def async_added_to_hass(self):
-        """Subscribe to SHC events."""
-        await super().async_added_to_hass()
-
-        def on_state_changed():
-            self.schedule_update_ha_state()
-
-        for service in self._device.device_services:
-            service.subscribe_callback(self.entity_id, on_state_changed)
-
-    async def async_will_remove_from_hass(self):
-        """Unsubscribe from SHC events."""
-        await super().async_will_remove_from_hass()
-        for service in self._device.device_services:
-            service.unsubscribe_callback(self.entity_id)
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of this panel."""
-        return self._device.serial
-
-    @property
-    def device_id(self):
-        """Return the ID of this panel."""
-        return self._device.id
-
-    @property
-    def root_device(self):
-        return self._device.root_device_id
-
-    @property
-    def name(self):
-        """Name of the device."""
-        return self._device.name
-
-    @property
-    def manufacturer(self):
-        """The manufacturer of the device."""
-        return self._device.manufacturer
-
-    @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self.device_id)},
-            "name": self.name,
-            "manufacturer": self.manufacturer,
-            "model": self._device.device_model,
-            "sw_version": "",
-            "via_device": (DOMAIN, self._controller_ip),
-        }
 
     @property
     def state(self):
@@ -132,11 +80,6 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
         return self._device.manufacturer
 
     @property
-    def should_poll(self):
-        """Polling needed."""
-        return False
-
-    @property
     def code_format(self):
         """Return the regex for code format or None if no code is required."""
         return None
@@ -158,6 +101,3 @@ class IntrusionDetectionAlarmControlPanel(AlarmControlPanel):
     def alarm_trigger(self, code=None):
         """Send trigger/panic command."""
         self._device.trigger()
-
-    def update(self):
-        self._device.update()
