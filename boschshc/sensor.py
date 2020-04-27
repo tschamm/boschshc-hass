@@ -27,9 +27,25 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for thermostat in session.device_helper.thermostats:
         _LOGGER.debug("Found thermostat: %s (%s)", thermostat.name, thermostat.id)
         entities.append(
-            ThermostatSensor(
+            TemperatureSensor(
                 device=thermostat,
                 room_name=session.room(thermostat.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
+        )
+    for wallthermostat in session.device_helper.wallthermostats:
+        _LOGGER.debug("Found wallthermostat: %s (%s)", wallthermostat.name, wallthermostat.id)
+        entities.append(
+            TemperatureSensor(
+                device=wallthermostat,
+                room_name=session.room(wallthermostat.room_id).name,
+                controller_ip=config_entry.data[CONF_IP_ADDRESS],
+            )
+        )
+        entities.append(
+            HumiditySensor(
+                device=wallthermostat,
+                room_name=session.room(wallthermostat.room_id).name,
                 controller_ip=config_entry.data[CONF_IP_ADDRESS],
             )
         )
@@ -49,6 +65,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     )
     entities += get_battery_sensor_entities(
         session.device_helper.thermostats, "thermostat", ip_address, session
+    )
+    entities += get_battery_sensor_entities(
+        session.device_helper.wallthermostats, "wallthermostat", ip_address, session
     )
 
     if entities:
@@ -81,7 +100,7 @@ def get_battery_sensor_entities(controls, name, ip_address, session):
     return entities
 
 
-class ThermostatSensor(SHCEntity):
+class TemperatureSensor(SHCEntity):
     """Representation of a SHC temperature reporting sensor."""
 
     @property
@@ -94,14 +113,18 @@ class ThermostatSensor(SHCEntity):
         """Return the unit of measurement of the sensor."""
         return TEMP_CELSIUS
 
+class HumiditySensor(SHCEntity):
+    """Representation of a SHC humidity reporting sensor."""
+
     @property
-    def state_attributes(self):
-        """Extend state attribute of the device."""
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-        state_attr["valvetappet_position"] = self._device.position
-        return state_attr
+    def state(self):
+        """Return the state of the sensor."""
+        return self._device.humidity
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement of the sensor."""
+        return UNIT_PERCENTAGE
 
 
 class PowerSensor(SHCEntity):

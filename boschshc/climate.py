@@ -6,7 +6,7 @@ import typing
 
 from boschshcpy import SHCSession, services_impl
 
-from homeassistant.components.climate import ClimateDevice, const
+from homeassistant.components.climate import ClimateEntity, const
 from homeassistant.const import ATTR_TEMPERATURE, CONF_IP_ADDRESS, TEMP_CELSIUS
 
 from . import DOMAIN
@@ -43,7 +43,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             display_name = f"Room Climate {room_name}"
             unique_id = f"{device.serial}"
 
-            entity = ClimateDevice(
+            entity = ClimateControl(
                 display_name,
                 unique_id,
                 room_name,
@@ -57,7 +57,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         return await async_add_entities(entities)
 
 
-class ClimateDevice(ClimateDevice):
+class ClimateControl(ClimateEntity):
     def __init__(
         self,
         name: str,

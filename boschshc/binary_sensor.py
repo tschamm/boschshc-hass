@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_DOOR,
     DEVICE_CLASS_SMOKE,
     DEVICE_CLASS_WINDOW,
-    BinarySensorDevice,
+    BinarySensorEntity,
 )
 from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.core import HomeAssistant
@@ -59,7 +59,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     )
 
 
-class ShutterContactSensor(SHCEntity, BinarySensorDevice):
+class ShutterContactSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC shutter contact sensor."""
 
     @property
@@ -83,7 +83,7 @@ class ShutterContactSensor(SHCEntity, BinarySensorDevice):
         return switcher.get(self._device.device_class, DEVICE_CLASS_WINDOW)
 
 
-class SmokeDetectorSensor(SHCEntity, BinarySensorDevice):
+class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector sensor."""
 
     def __init__(

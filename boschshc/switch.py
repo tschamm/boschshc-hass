@@ -6,7 +6,7 @@ from boschshcpy import SHCCameraEyes, SHCSession, SHCSmartPlug
 from homeassistant.components.switch import (
     DEVICE_CLASS_OUTLET,
     DEVICE_CLASS_SWITCH,
-    SwitchDevice,
+    SwitchEntity,
 )
 from homeassistant.const import CONF_IP_ADDRESS
 
@@ -56,7 +56,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         async_add_entities(device)
 
 
-class SmartPlugSwitch(SHCEntity, SwitchDevice):
+class SmartPlugSwitch(SHCEntity, SwitchEntity):
     """Representation of a smart plug switch."""
 
     @property
@@ -101,7 +101,7 @@ class SmartPlugSwitch(SHCEntity, SwitchDevice):
         self._device.state = not self.is_on
 
 
-class CameraEyesSwitch(SHCEntity, SwitchDevice):
+class CameraEyesSwitch(SHCEntity, SwitchEntity):
     """Representation of camera eyes as switch."""
 
     @property

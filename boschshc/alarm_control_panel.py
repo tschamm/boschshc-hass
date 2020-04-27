@@ -7,7 +7,7 @@ from boschshcpy import SHCIntrusionDetectionSystem, SHCSession
 from homeassistant.components.alarm_control_panel import (
     FORMAT_NUMBER,
     SUPPORT_ALARM_ARM_AWAY,
-    AlarmControlPanel,
+    AlarmControlPanelEntity,
 )
 from homeassistant.const import (
     CONF_IP_ADDRESS,
@@ -36,7 +36,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities([device])
 
 
-class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanel):
+class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
     def __init__(self, device: SHCIntrusionDetectionSystem, controller_ip: str):

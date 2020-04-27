@@ -9,7 +9,7 @@ from homeassistant.components.cover import (
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
     SUPPORT_STOP,
-    CoverDevice,
+    CoverEntity,
 )
 from homeassistant.const import CONF_IP_ADDRESS
 
@@ -39,7 +39,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         async_add_entities(device)
 
 
-class ShutterControlCover(SHCEntity, CoverDevice):
+class ShutterControlCover(SHCEntity, CoverEntity):
     """Representation of a SHC shutter control device."""
 
     @property
