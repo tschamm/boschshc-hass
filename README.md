@@ -12,10 +12,10 @@ The following platforms are implemented:
 * Shutter Control (cover)
 * Shutter Contact (binary sensor)
 * Smoke Detector (binary sensor)
-* Temperature Sensor (sensor)
+* Thermostat and Wall Thermostat Sensor (sensor)
 * Room Climate Control (climate)
 * Intrusion Detection Control (Alarm Control Panel)
-* Scenarios (switch)
+* Scenarios (as service)
 
 Registration of the component can be done via config flow mechanism, or by adding to `configuration.yaml`:
 
