@@ -19,41 +19,27 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the sensor platform."""
 
-    device = []
+    entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
+    ip_address = config_entry.data[CONF_IP_ADDRESS]
 
-    for switch in session.device_helper.smart_plugs:
-        _LOGGER.debug("Found smart plug: %s (%s)", switch.name, switch.id)
-        device.append(
-            SmartPlugSwitch(
-                device=switch,
-                room_name=session.room(switch.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
+    for device in session.device_helper.smart_plugs:
+        _LOGGER.debug("Found smart plug: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(SmartPlugSwitch(device=device, room_name=room_name, controller_ip=ip_address))
 
-    for light in session.device_helper.light_controls:
-        _LOGGER.debug("Found light control: %s (%s)", light.name, light.id)
-        device.append(
-            SmartPlugSwitch(
-                device=light,
-                room_name=session.room(light.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
+    for device in session.device_helper.light_controls:
+        _LOGGER.debug("Found light controls: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(SmartPlugSwitch(device=device, room_name=room_name, controller_ip=ip_address))
 
-    for camera in session.device_helper.camera_eyes:
-        _LOGGER.debug("Found camera eyes: %s (%s)", camera.name, camera.id)
-        device.append(
-            CameraEyesSwitch(
-                device=camera,
-                room_name=session.room(camera.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
+    for device in session.device_helper.camera_eyes:
+        _LOGGER.debug("Found camera eyes: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(CameraEyesSwitch(device=device, room_name=room_name, controller_ip=ip_address))
 
-    if device:
-        async_add_entities(device)
+    if entities:
+        async_add_entities(entities)
 
 
 class SmartPlugSwitch(SHCEntity, SwitchEntity):

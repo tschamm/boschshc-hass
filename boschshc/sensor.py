@@ -23,85 +23,61 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the sensor platform."""
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
-
-    for thermostat in session.device_helper.thermostats:
-        _LOGGER.debug("Found thermostat: %s (%s)", thermostat.name, thermostat.id)
-        entities.append(
-            TemperatureSensor(
-                device=thermostat,
-                room_name=session.room(thermostat.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
-    for wallthermostat in session.device_helper.wallthermostats:
-        _LOGGER.debug("Found wallthermostat: %s (%s)", wallthermostat.name, wallthermostat.id)
-        entities.append(
-            TemperatureSensor(
-                device=wallthermostat,
-                room_name=session.room(wallthermostat.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
-        entities.append(
-            HumiditySensor(
-                device=wallthermostat,
-                room_name=session.room(wallthermostat.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
-
     ip_address = config_entry.data[CONF_IP_ADDRESS]
-    entities += get_power_energy_sensor_entities(
-        session.device_helper.light_controls, "light control", ip_address, session
-    )
-    entities += get_power_energy_sensor_entities(
-        session.device_helper.smart_plugs, "smart plug", ip_address, session
-    )
-    entities += get_battery_sensor_entities(
-        session.device_helper.smoke_detectors, "smoke detector", ip_address, session
-    )
-    entities += get_battery_sensor_entities(
-        session.device_helper.shutter_contacts, "shutter contact", ip_address, session
-    )
-    entities += get_battery_sensor_entities(
-        session.device_helper.thermostats, "thermostat", ip_address, session
-    )
-    entities += get_battery_sensor_entities(
-        session.device_helper.wallthermostats, "wallthermostat", ip_address, session
-    )
+
+    for device in session.device_helper.thermostats:
+        _LOGGER.debug("Found thermostat: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(TemperatureSensor(device=device, room_name=room_name, controller_ip=ip_address))
+        entities.append(BatterySensor(device=device, room_name=room_name, controller_ip=ip_address))
+
+    for device in session.device_helper.wallthermostats:
+        _LOGGER.debug("Found wallthermostat: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(TemperatureSensor(device=device,room_name=room_name, controller_ip=ip_address))
+        entities.append(HumiditySensor(device=device,room_name=room_name, controller_ip=ip_address))
+        entities.append(BatterySensor(device=device, room_name=room_name, controller_ip=ip_address))
+
+    for device in session.device_helper.twinguards:
+        _LOGGER.debug("Found twinguard: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(TemperatureSensor(device=device,room_name=room_name, controller_ip=ip_address))
+        entities.append(HumiditySensor(device=device,room_name=room_name, controller_ip=ip_address))
+        entities.append(BatterySensor(device=device, room_name=room_name, controller_ip=ip_address))
+
+    for device in session.device_helper.light_controls:
+        _LOGGER.debug("Found light control: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(PowerSensor(device=device,room_name=room_name, controller_ip=ip_address))
+        entities.append(EnergySensor(device=device, room_name=room_name, controller_ip=ip_address))
+
+    for device in session.device_helper.smart_plugs:
+        _LOGGER.debug("Found smart plug: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(PowerSensor(device=device,room_name=room_name, controller_ip=ip_address))
+        entities.append(EnergySensor(device=device, room_name=room_name, controller_ip=ip_address))
+
+    for device in session.device_helper.smoke_detectors:
+        _LOGGER.debug("Found smoke detector: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(BatterySensor(device=device,room_name=room_name, controller_ip=ip_address))
+
+    for device in session.device_helper.shutter_contacts:
+        _LOGGER.debug("Found shutter contact: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(BatterySensor(device=device,room_name=room_name, controller_ip=ip_address))
 
     if entities:
         async_add_entities(entities)
 
 
-def get_power_energy_sensor_entities(sensors, name, ip_address, session):
-    """Return list of initialized entities."""
-    entities = []
-    for sensor in sensors:
-        _LOGGER.debug("Found %s: %s (%s)", name, sensor.name, sensor.id)
-        controller_ip = ip_address
-        room_name = session.room(sensor.room_id).name
-        power_sensor = PowerSensor(sensor, room_name, controller_ip)
-        entities += [power_sensor]
-        energy_sensor = EnergySensor(sensor, room_name, controller_ip)
-        entities += [energy_sensor]
-    return entities
-
-
-def get_battery_sensor_entities(controls, name, ip_address, session):
-    """Return list of initialized entities."""
-    entities = []
-    for sensor in controls:
-        _LOGGER.debug("Found %s: %s (%s)", name, sensor.name, sensor.id)
-        controller_ip = ip_address
-        room_name = session.room(sensor.room_id).name
-        battery_sensor = BatterySensor(sensor, room_name, controller_ip)
-        entities += [battery_sensor]
-    return entities
-
-
 class TemperatureSensor(SHCEntity):
     """Representation of a SHC temperature reporting sensor."""
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}_temperature"
 
     @property
     def state(self):
@@ -115,6 +91,11 @@ class TemperatureSensor(SHCEntity):
 
 class HumiditySensor(SHCEntity):
     """Representation of a SHC humidity reporting sensor."""
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}_humidity"
 
     @property
     def state(self):

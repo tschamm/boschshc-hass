@@ -21,36 +21,29 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
-    device = []
+    entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
+    ip_address = config_entry.data[CONF_IP_ADDRESS]
 
-    for binarysensor in session.device_helper.shutter_contacts:
-        _LOGGER.debug(
-            "Found shutter contact: %s (%s)", binarysensor.name, binarysensor.id
-        )
-        device.append(
-            ShutterContactSensor(
-                device=binarysensor,
-                room_name=session.room(binarysensor.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-            )
-        )
+    for device in session.device_helper.shutter_contacts:
+        _LOGGER.debug("Found shutter contact: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(ShutterContactSensor(device=device, room_name=room_name, controller_ip=ip_address))
 
-    for binarysensor in session.device_helper.smoke_detectors:
-        _LOGGER.debug(
-            "Found smoke detector: %s (%s)", binarysensor.name, binarysensor.id
-        )
-        device.append(
-            SmokeDetectorSensor(
-                device=binarysensor,
-                room_name=session.room(binarysensor.room_id).name,
-                controller_ip=config_entry.data[CONF_IP_ADDRESS],
-                hass=hass,
-            )
-        )
+    for device in session.device_helper.smoke_detectors:
+        _LOGGER.debug("Found smoke detector: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
+        entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
 
-    if device:
-        async_add_entities(device)
+    for device in session.device_helper.twinguards:
+        _LOGGER.debug("Found twinguard smoke detector: %s (%s)", device.name, device.id)
+        room_name=session.room(device.room_id).name
+        entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
+        entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
+
+    if entities:
+        async_add_entities(entities)
 
     platform = entity_platform.current_platform.get()
 
@@ -100,6 +93,11 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
 
     @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}"
+
+    @property
     def is_on(self):
         """Return the state of the sensor."""
         if self._device.alarmstate == SHCSmokeDetector.AlarmService.State.IDLE_OFF:
@@ -112,19 +110,56 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         """Return the class of this device, from component DEVICE_CLASSES."""
         return DEVICE_CLASS_SMOKE
 
-    @property
-    def state_attributes(self):
-        """Extend state attribute of the device."""
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-        state_attr["boschshc_smokedetector_checkstate"] = (
-            "OK"
-            if self._device.smokedetectorcheck_state
-            == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK
-            else None
+    async def async_request_smoketest(self):
+        """Request smokedetector test."""
+        _LOGGER.debug("Requesting smoke test on entity %s", self.name)
+        await self._hass.async_add_executor_job(self._device.smoketest_requested)
+
+class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC smoke detector check state sensor."""
+
+    def __init__(
+        self,
+        device: SHCSmokeDetector,
+        room_name: str,
+        controller_ip: str,
+        hass: HomeAssistant,
+    ):
+        """Initialize the SHC device."""
+        super().__init__(
+            device=device, room_name=room_name, controller_ip=controller_ip
         )
-        return state_attr
+        self._hass = hass
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}_checkstate"
+
+    @property
+    def name(self):
+        """Name of the device."""
+        return f"{self._device.name} Check State"
+
+    @property
+    def is_on(self):
+        """Return the state of the sensor."""
+        if self._device.smokedetectorcheck_state == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK:
+            return True
+
+        return False
+
+    # @property
+    # def available(self):
+    #     """Return false if status is unavailable."""
+    #     if self._device.smokedetectorcheck_state != SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK:
+    #         return False
+    #     return True
+
+    # @property
+    # def device_class(self):
+    #     """Return the class of this device, from component DEVICE_CLASSES."""
+    #     return DEVICE_CLASS_SMOKE
 
     async def async_request_smoketest(self):
         """Request smokedetector test."""
