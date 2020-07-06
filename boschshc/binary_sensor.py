@@ -36,11 +36,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
         entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
 
-    for device in session.device_helper.twinguards:
-        _LOGGER.debug("Found twinguard smoke detector: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
-        entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
+    # for device in session.device_helper.twinguards:
+    #     _LOGGER.debug("Found twinguard smoke detector: %s (%s)", device.name, device.id)
+    #     room_name=session.room(device.room_id).name
+    #     entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
+    #     entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
 
     if entities:
         async_add_entities(entities)

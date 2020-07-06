@@ -20,7 +20,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for device in session.devices:
+    for device in session.device_helper.climate_controls:
         if device.name == "-RoomClimateControl-":
             temperature_level_service = device.device_service("TemperatureLevel")
             room_climate_control_service = device.device_service("RoomClimateControl")
@@ -29,7 +29,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
             # Need to find all thermostat devices, these are different from the "room climate" devices.
             thermostats = []
-            for potential_thermostat in session.devices:
+            for potential_thermostat in session.device_helper.thermostats:
                 if "ValveTappet" not in potential_thermostat.device_service_ids:
                     continue
                 if potential_thermostat.room_id != room_id:
@@ -54,7 +54,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             entities += [entity]
 
     if entities:
-        return await async_add_entities(entities)
+        async_add_entities(entities)
 
 
 class ClimateControl(ClimateEntity):
@@ -77,10 +77,6 @@ class ClimateControl(ClimateEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        assert self._temperature_level_service.on_state_changed is None
-        assert self._room_climate_control_service.on_state_changed is None
-        for valve_tappet_service in self._valve_tappet_services:
-            assert valve_tappet_service.on_state_changed is None
 
         def on_state_changed():
             self.schedule_update_ha_state()
