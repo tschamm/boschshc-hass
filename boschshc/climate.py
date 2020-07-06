@@ -1,5 +1,4 @@
 """Platform for climate integration."""
-import asyncio
 import logging
 import math
 import typing
@@ -7,7 +6,7 @@ import typing
 from boschshcpy import SHCSession, services_impl
 
 from homeassistant.components.climate import ClimateEntity, const
-from homeassistant.const import ATTR_TEMPERATURE, CONF_IP_ADDRESS, TEMP_CELSIUS
+from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
 
 from . import DOMAIN
 
