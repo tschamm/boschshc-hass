@@ -10,7 +10,7 @@ from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
     POWER_WATT,
     TEMP_CELSIUS,
-    UNIT_PERCENTAGE,
+    PERCENTAGE,
 )
 
 from .const import DOMAIN
@@ -105,7 +105,7 @@ class HumiditySensor(SHCEntity):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
-        return UNIT_PERCENTAGE
+        return PERCENTAGE
 
 
 class PowerSensor(SHCEntity):
@@ -186,4 +186,4 @@ class BatterySensor(SHCEntity):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
-        return UNIT_PERCENTAGE
+        return PERCENTAGE

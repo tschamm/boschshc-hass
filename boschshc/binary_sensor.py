@@ -58,11 +58,7 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        if self._device.state == SHCShutterContact.ShutterContactService.State.OPEN:
-            return True
-        if self._device.state == SHCShutterContact.ShutterContactService.State.CLOSED:
-            return False
-        return None
+        return self._device.state == SHCShutterContact.ShutterContactService.State.OPEN
 
     @property
     def device_class(self):
