@@ -115,6 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     async def stop_polling(event):
         """Stop polling service."""
         _LOGGER.debug("Stopping polling service of SHC")
+        session.unsubscribe_callback()
         await hass.async_add_executor_job(session.stop_polling)
 
     async def start_polling(event):
@@ -124,6 +125,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         session.reset_connection_listener = hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STOP, stop_polling
         )
+
+        def scenario_triggered(id, name, lastTimeTriggered):
+            hass.bus.fire("bosch_shc_scenario_triggered", {"id": id, "name": name, "lastTimeTriggered": lastTimeTriggered})
+
+        session.subscribe_callback(scenario_triggered)
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_polling)
 
@@ -167,7 +173,6 @@ def register_services(hass, entry):
         name = call.data[ATTR_NAME]
         for scenario in hass.data[DOMAIN][entry.entry_id].scenarios:
             if scenario.name == name:
-                _LOGGER.debug("Trigger scenario: %s (%s)", scenario.name, scenario.id)
                 hass.async_add_executor_job(scenario.trigger)
 
     hass.services.async_register(
