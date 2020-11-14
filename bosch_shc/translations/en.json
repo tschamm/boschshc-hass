@@ -1,0 +1,34 @@
+{
+    "title": "Bosch SHC",
+    "config": {
+        "flow_title": "Bosch SHC: {name}",
+        "step": {
+            "confirm_discovery": {
+                "description": "Do you want to set up the {model} at {host}?"
+            },
+            "credentials": {
+                "data": {
+                    "ssl_certificate": "SSL certificate public key",
+                    "ssl_key": "SSL certificate private key"
+                }
+            },
+            "user": {
+                "description": "Set up your Bosch SHC instance to allow monitoring and control.",
+                "title": "SHC authentication parameters",
+                "data": {
+                    "host": "Host",
+                    "ssl_certificate": "SSL certificate public key",
+                    "ssl_key": "SSL certificate private key"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "abort": {
+            "already_configured": "Device is already configured"
+        }
+    }
+}

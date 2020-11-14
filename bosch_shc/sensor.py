@@ -4,7 +4,6 @@ import logging
 from boschshcpy import SHCBatteryDevice, SHCSession
 
 from homeassistant.const import (
-    CONF_IP_ADDRESS,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_POWER,
     ENERGY_KILO_WATT_HOUR,
@@ -23,49 +22,97 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the sensor platform."""
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
-    ip_address = config_entry.data[CONF_IP_ADDRESS]
 
-    for device in session.device_helper.thermostats:
-        _LOGGER.debug("Found thermostat: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(TemperatureSensor(device=device, room_name=room_name, controller_ip=ip_address))
-        entities.append(BatterySensor(device=device, room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.thermostats:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            TemperatureSensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            BatterySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
-    for device in session.device_helper.wallthermostats:
-        _LOGGER.debug("Found wallthermostat: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(TemperatureSensor(device=device,room_name=room_name, controller_ip=ip_address))
-        entities.append(HumiditySensor(device=device,room_name=room_name, controller_ip=ip_address))
-        entities.append(BatterySensor(device=device, room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.wallthermostats:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            TemperatureSensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            HumiditySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            BatterySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
-    for device in session.device_helper.twinguards:
-        _LOGGER.debug("Found twinguard: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(TemperatureSensor(device=device,room_name=room_name, controller_ip=ip_address))
-        entities.append(HumiditySensor(device=device,room_name=room_name, controller_ip=ip_address))
-        entities.append(BatterySensor(device=device, room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.twinguards:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            TemperatureSensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            HumiditySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            BatterySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
-    for device in session.device_helper.light_controls:
-        _LOGGER.debug("Found light control: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(PowerSensor(device=device,room_name=room_name, controller_ip=ip_address))
-        entities.append(EnergySensor(device=device, room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.light_controls:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            PowerSensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            EnergySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
-    for device in session.device_helper.smart_plugs:
-        _LOGGER.debug("Found smart plug: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(PowerSensor(device=device,room_name=room_name, controller_ip=ip_address))
-        entities.append(EnergySensor(device=device, room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.smart_plugs:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            PowerSensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            EnergySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
-    for device in session.device_helper.smoke_detectors:
-        _LOGGER.debug("Found smoke detector: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(BatterySensor(device=device,room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.smoke_detectors:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            BatterySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
-    for device in session.device_helper.shutter_contacts:
-        _LOGGER.debug("Found shutter contact: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(BatterySensor(device=device,room_name=room_name, controller_ip=ip_address))
+    for sensor in session.device_helper.shutter_contacts:
+        room_name = session.room(sensor.room_id).name
+        entities.append(
+            BatterySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
 
     if entities:
         async_add_entities(entities)
@@ -88,6 +135,7 @@ class TemperatureSensor(SHCEntity):
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
         return TEMP_CELSIUS
+
 
 class HumiditySensor(SHCEntity):
     """Representation of a SHC humidity reporting sensor."""

@@ -6,7 +6,7 @@ smokedetector_check:
       example: "binary_sensor.smokedetector_living_room"
 
 trigger_scenario:
-  description: Triggers a scenario on the Bosch SHC.
+  description: Triggers a Bosch SHC scenario.
   fields:
     name:
       description: Name of the scenario to trigger
