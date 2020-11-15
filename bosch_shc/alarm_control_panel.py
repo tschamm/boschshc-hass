@@ -7,8 +7,11 @@ from homeassistant.components.alarm_control_panel import (
     SUPPORT_ALARM_ARM_AWAY,
     AlarmControlPanelEntity,
 )
+from homeassistant.components.alarm_control_panel.const import SUPPORT_ALARM_ARM_HOME
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
+    STATE_ALARM_ARMED_HOME, 
+    STATE_ALARM_ARMED_CUSTOM_BYPASS,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
 )
@@ -57,7 +60,17 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
             self._device.alarmstate
             == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.State.SYSTEM_ARMED
         ):
-            return STATE_ALARM_ARMED_AWAY
+            if (self._device.alarmprofile
+            == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.FULL_PROTECTION):
+                return STATE_ALARM_ARMED_AWAY
+
+            if (self._device.alarmprofile
+            == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.PARTIAL_PROTECTION):
+                return STATE_ALARM_ARMED_HOME
+
+            if (self._device.alarmprofile
+            == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.CUSTOM_PROTECTION):
+                return STATE_ALARM_ARMED_CUSTOM_BYPASS
         return None
 
     @property
@@ -68,7 +81,7 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return SUPPORT_ALARM_ARM_AWAY
+        return SUPPORT_ALARM_ARM_AWAY + SUPPORT_ALARM_ARM_HOME
 
     @property
     def manufacturer(self):
@@ -93,6 +106,10 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     def alarm_arm_away(self, code=None):
         """Send arm away command."""
         self._device.arm()
+
+    def alarm_arm_home(self, code=None):
+        """Send arm home command."""
+        self._device.partial_arm()
 
     def alarm_trigger(self, code=None):
         """Send trigger/panic command."""

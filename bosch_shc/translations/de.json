@@ -1,21 +1,30 @@
 {
-    "title": "Bosch Smart Home Controller",
+    "title": "Bosch SHC",
     "config": {
+        "flow_title": "Bosch SHC: {name}",
         "step": {
-            "user": {
-                "title": "SHC Parameter",
+            "confirm_discovery": {
+                "description": "Möchten Sie das {model} bei {ost} einrichten?"
+            },
+            "credentials": {
                 "data": {
-                    "name": "Name",
-                    "ip_address": "IP Adresse",
-                    "ssl_certificate": "SSL Zertifikat",
-                    "ssl_key": "SSL Schlüssel",
-                    "icon": "Symbol"
+                    "ssl_certificate": "Öffentlicher Schlüssel des SSL-Zertifikats",
+                    "ssl_key": "Privater Schlüssel des SSL-Zertifikats"
+                }
+            },
+            "user": {
+                "description": "Richten Sie Ihre Bosch SHC-Instanz ein, um die Überwachung und Steuerung zu ermöglichen.",
+                "title": "SHC-Authentifizierungsparameter",
+                "data": {
+                    "host": "Host",
+                    "ssl_certificate": "Öffentlicher Schlüssel des SSL-Zertifikats",
+                    "ssl_key": "Privater Schlüssel des SSL-Zertifikats"
                 }
             }
         },
         "error": {
-            "cannot_connect": "Verbindungsfehler, bitte erneut versuchen",
-            "invalid_auth": "Ungültige Authentifikation",
+            "cannot_connect": "Verbindung fehlgeschlagen",
+            "invalid_auth": "Ungültige Authentifizierung",
             "unknown": "Unerwarteter Fehler"
         },
         "abort": {
