@@ -1,17 +1,17 @@
 """Platform for alarm control panel integration."""
-import asyncio
 import logging
 
 from boschshcpy import SHCIntrusionDetectionSystem, SHCSession
 
 from homeassistant.components.alarm_control_panel import (
-    FORMAT_NUMBER,
     SUPPORT_ALARM_ARM_AWAY,
     AlarmControlPanelEntity,
 )
+from homeassistant.components.alarm_control_panel.const import SUPPORT_ALARM_ARM_HOME
 from homeassistant.const import (
-    CONF_IP_ADDRESS,
     STATE_ALARM_ARMED_AWAY,
+    STATE_ALARM_ARMED_HOME,
+    STATE_ALARM_ARMED_CUSTOM_BYPASS,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
 )
@@ -28,19 +28,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
     intrusion_detection_system = session.device_helper.intrusion_detection_system
 
-    device = IntrusionDetectionAlarmControlPanel(
+    alarm_control_panel = IntrusionDetectionAlarmControlPanel(
         device=intrusion_detection_system,
-        controller_ip=config_entry.data[CONF_IP_ADDRESS],
+        shc_uid=session.information.name,
     )
     # return await async_add_entities([device])
-    async_add_entities([device])
+    async_add_entities([alarm_control_panel])
 
 
 class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
-    def __init__(self, device: SHCIntrusionDetectionSystem, controller_ip: str):
-        super().__init__(device=device, room_name=None, controller_ip=controller_ip)
+    def __init__(self, device: SHCIntrusionDetectionSystem, shc_uid: str):
+        super().__init__(device=device, room_name=None, shc_uid=shc_uid)
         self._device_state_attributes = {}
 
     @property
@@ -51,18 +51,33 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
             == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.State.SYSTEM_ARMING
         ):
             return STATE_ALARM_ARMING
-        elif (
+        if (
             self._device.alarmstate
             == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.State.SYSTEM_DISARMED
         ):
             return STATE_ALARM_DISARMED
-        elif (
+        if (
             self._device.alarmstate
             == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.State.SYSTEM_ARMED
         ):
-            return STATE_ALARM_ARMED_AWAY
-        else:
-            return None
+            if (
+                self._device.alarmprofile
+                == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.FULL_PROTECTION
+            ):
+                return STATE_ALARM_ARMED_AWAY
+
+            if (
+                self._device.alarmprofile
+                == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.PARTIAL_PROTECTION
+            ):
+                return STATE_ALARM_ARMED_HOME
+
+            if (
+                self._device.alarmprofile
+                == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.CUSTOM_PROTECTION
+            ):
+                return STATE_ALARM_ARMED_CUSTOM_BYPASS
+        return None
 
     @property
     def device_state_attributes(self):
@@ -72,7 +87,7 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return SUPPORT_ALARM_ARM_AWAY
+        return SUPPORT_ALARM_ARM_AWAY + SUPPORT_ALARM_ARM_HOME
 
     @property
     def manufacturer(self):
@@ -97,6 +112,10 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     def alarm_arm_away(self, code=None):
         """Send arm away command."""
         self._device.arm()
+
+    def alarm_arm_home(self, code=None):
+        """Send arm home command."""
+        self._device.partial_arm()
 
     def alarm_trigger(self, code=None):
         """Send trigger/panic command."""

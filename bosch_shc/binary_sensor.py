@@ -9,7 +9,6 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_WINDOW,
     BinarySensorEntity,
 )
-from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 
@@ -23,32 +22,48 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
-    ip_address = config_entry.data[CONF_IP_ADDRESS]
 
-    for device in session.device_helper.shutter_contacts:
-        _LOGGER.debug("Found shutter contact: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(ShutterContactSensor(device=device, room_name=room_name, controller_ip=ip_address))
+    for binarysensor in session.device_helper.shutter_contacts:
+        entities.append(
+            ShutterContactSensor(
+                device=binarysensor,
+                room_name=session.room(binarysensor.room_id).name,
+                shc_uid=session.information.name,
+            )
+        )
 
-    for device in session.device_helper.smoke_detectors:
-        _LOGGER.debug("Found smoke detector: %s (%s)", device.name, device.id)
-        room_name=session.room(device.room_id).name
-        entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
-        entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
+    for binarysensor in session.device_helper.smoke_detectors:
+        room_name = session.room(binarysensor.room_id).name
+        entities.append(
+            SmokeDetectorSensor(
+                device=binarysensor,
+                room_name=room_name,
+                shc_uid=session.information.name,
+                hass=hass,
+            )
+        )
+        entities.append(
+            SmokeDetectorCheckStateSensor(
+                device=binarysensor,
+                room_name=room_name,
+                shc_uid=session.information.name,
+                hass=hass,
+            )
+        )
 
-    # for device in session.device_helper.twinguards:
-    #     _LOGGER.debug("Found twinguard smoke detector: %s (%s)", device.name, device.id)
-    #     room_name=session.room(device.room_id).name
-    #     entities.append(SmokeDetectorSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
-    #     entities.append(SmokeDetectorCheckStateSensor(device=device, room_name=room_name, controller_ip=ip_address, hass=hass))
-
+    # for binarysensor in session.device_helper.twinguards:
+    #     room_name=session.room(binarysensor.room_id).name
+    #     entities.append(SmokeDetectorSensor(device=binarysensor, room_name=room_name, shc_uid=session.information.name, hass=hass))
+    #     entities.append(SmokeDetectorCheckStateSensor(device=binarysensor, room_name=room_name, shc_uid=session.information.name, hass=hass))
     if entities:
         async_add_entities(entities)
 
     platform = entity_platform.current_platform.get()
 
     platform.async_register_entity_service(
-        "smokedetector_check", {}, "async_request_smoketest",
+        "smokedetector_check",
+        {},
+        "async_request_smoketest",
     )
 
 
@@ -79,13 +94,11 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         self,
         device: SHCSmokeDetector,
         room_name: str,
-        controller_ip: str,
+        shc_uid: str,
         hass: HomeAssistant,
     ):
         """Initialize the SHC device."""
-        super().__init__(
-            device=device, room_name=room_name, controller_ip=controller_ip
-        )
+        super().__init__(device=device, room_name=room_name, shc_uid=shc_uid)
         self._hass = hass
 
     @property
@@ -111,6 +124,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         _LOGGER.debug("Requesting smoke test on entity %s", self.name)
         await self._hass.async_add_executor_job(self._device.smoketest_requested)
 
+
 class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector check state sensor."""
 
@@ -118,13 +132,11 @@ class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
         self,
         device: SHCSmokeDetector,
         room_name: str,
-        controller_ip: str,
+        shc_uid: str,
         hass: HomeAssistant,
     ):
         """Initialize the SHC device."""
-        super().__init__(
-            device=device, room_name=room_name, controller_ip=controller_ip
-        )
+        super().__init__(device=device, room_name=room_name, shc_uid=shc_uid)
         self._hass = hass
 
     @property
@@ -140,7 +152,10 @@ class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        if self._device.smokedetectorcheck_state == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK:
+        if (
+            self._device.smokedetectorcheck_state
+            == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK
+        ):
             return True
 
         return False

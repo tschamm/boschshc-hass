@@ -14,16 +14,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the climate platform."""
+    """Set up the SHC climate platform."""
 
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for device in session.device_helper.climate_controls:
-        if device.name == "-RoomClimateControl-":
-            temperature_level_service = device.device_service("TemperatureLevel")
-            room_climate_control_service = device.device_service("RoomClimateControl")
-            room_id = device.room_id
+    for climate in session.device_helper.climate_controls:
+        if climate.name == "-RoomClimateControl-":
+            temperature_level_service = climate.device_service("TemperatureLevel")
+            room_climate_control_service = climate.device_service("RoomClimateControl")
+            room_id = climate.room_id
             room_name = session.room(room_id).name
 
             # Need to find all thermostat devices, these are different from the "room climate" devices.
@@ -40,7 +40,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 thermostat.device_service("ValveTappet") for thermostat in thermostats
             ]
             display_name = f"Room Climate {room_name}"
-            unique_id = f"{device.serial}"
+            unique_id = f"{climate.serial}"
 
             entity = ClimateControl(
                 display_name,
@@ -97,10 +97,6 @@ class ClimateControl(ClimateEntity):
             valve_tappet_service.unsubscribe_callback(self.entity_id)
 
     @property
-    def should_poll(self):
-        return False
-
-    @property
     def name(self):
         return self._name
 
@@ -144,7 +140,8 @@ class ClimateControl(ClimateEntity):
             return min(
                 100,
                 max(
-                    0, int(math.ceil(float(total) / len(self._valve_tappet_services))),
+                    0,
+                    int(math.ceil(float(total) / len(self._valve_tappet_services))),
                 ),
             )
         else:
@@ -255,5 +252,4 @@ class ClimateControl(ClimateEntity):
             state_attr = dict()
 
         state_attr["valve_tappet_position"] = self.valve_tappet_position
-        state_attr["boschshc_room_name"] = self._room_name
         return state_attr

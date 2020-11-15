@@ -2,7 +2,7 @@
 
 # boschshc-hass
 
-Home Assistant component for accessing Bosch Smart Home Controller using [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
+Home Assistant component for accessing Bosch Smart Home Controller (SHC) using [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
 
 The following platforms are implemented:
 
@@ -17,15 +17,7 @@ The following platforms are implemented:
 * Intrusion Detection Control (Alarm Control Panel)
 * Scenarios (as service)
 
-Registration of the component can be done via config flow mechanism, or by adding to `configuration.yaml`:
-
-```
-boschshc:
-   ip_address: '192.168.1.52'
-   ssl_certificate: '/path/to/cert.pem'
-   ssl_key: '/path/to/key.pem'
-   name: 'SHC-Controller'
-```
+Registration of the component `bosch_shc` is done via config flow mechanism, either by zeroconf detection or by manual configuration:
 
 # Additional information
 
