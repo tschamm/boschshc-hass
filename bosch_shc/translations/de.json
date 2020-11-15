@@ -4,7 +4,7 @@
         "flow_title": "Bosch SHC: {name}",
         "step": {
             "confirm_discovery": {
-                "description": "Möchten Sie das {model} bei {ost} einrichten?"
+                "description": "Möchten Sie das {model} bei {host} einrichten?"
             },
             "credentials": {
                 "data": {

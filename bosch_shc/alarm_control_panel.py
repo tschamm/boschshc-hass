@@ -10,7 +10,7 @@ from homeassistant.components.alarm_control_panel import (
 from homeassistant.components.alarm_control_panel.const import SUPPORT_ALARM_ARM_HOME
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
-    STATE_ALARM_ARMED_HOME, 
+    STATE_ALARM_ARMED_HOME,
     STATE_ALARM_ARMED_CUSTOM_BYPASS,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
@@ -60,16 +60,22 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
             self._device.alarmstate
             == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.State.SYSTEM_ARMED
         ):
-            if (self._device.alarmprofile
-            == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.FULL_PROTECTION):
+            if (
+                self._device.alarmprofile
+                == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.FULL_PROTECTION
+            ):
                 return STATE_ALARM_ARMED_AWAY
 
-            if (self._device.alarmprofile
-            == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.PARTIAL_PROTECTION):
+            if (
+                self._device.alarmprofile
+                == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.PARTIAL_PROTECTION
+            ):
                 return STATE_ALARM_ARMED_HOME
 
-            if (self._device.alarmprofile
-            == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.CUSTOM_PROTECTION):
+            if (
+                self._device.alarmprofile
+                == SHCIntrusionDetectionSystem.IntrusionDetectionControlService.Profile.CUSTOM_PROTECTION
+            ):
                 return STATE_ALARM_ARMED_CUSTOM_BYPASS
         return None
 
