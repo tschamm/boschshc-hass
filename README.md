@@ -17,7 +17,53 @@ The following platforms are implemented:
 * Intrusion Detection Control (Alarm Control Panel)
 * Scenarios (as service)
 
-Registration of the component `bosch_shc` is done via config flow mechanism, either by zeroconf detection or by manual configuration:
+# Configuration
+
+Configuration of the component `bosch_shc` is done via config flow mechanism, either by `zeroconf` detection or by manual configuration:
+
+If the `SHC` is running in the same network as the `HomeAssistant`, it is even found directly via `zeroconf`.
+
+### Configuration of the discovered integration
+
+#### Discovered integration
+
+<img
+  src='images/config_step1.png'
+  alt='Discovered integration.'
+  width='437pt'
+/>
+
+#### Confirmation of host
+
+<img
+  src='images/config_step2.png'
+  alt='Confirmation of host.'
+  width='605pt'
+/>
+
+#### Enter credentials: public and private certificate key pair
+
+<img
+  src='images/config_step3.png'
+  alt='Enter credentials: public and private certificate keypair.'
+  width='515pt'
+/>
+
+#### Successful configuration entry created
+
+<img
+  src='images/config_step4.png'
+  alt='Successful configuration entry created.'
+  width='629pt'
+/>
+
+#### Integration is listed as a configured integration
+
+<img
+  src='images/config_step5.png'
+  alt='Integration is listed as a configured integration.'
+  width='467pt'
+/>
 
 # Additional information
 
