@@ -161,6 +161,10 @@ class HumiditySensor(SHCEntity):
         """Return the unit of measurement of the sensor."""
         return PERCENTAGE
 
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:water-percent"
 
 class PuritySensor(SHCEntity):
     """Representation of a SHC purity reporting sensor."""
@@ -180,6 +184,10 @@ class PuritySensor(SHCEntity):
         """Return the unit of measurement of the sensor."""
         return CONCENTRATION_PARTS_PER_MILLION
 
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:molecule-co2"
 
 class PowerSensor(SHCEntity):
     """Representation of a SHC power reporting sensor."""
@@ -204,6 +212,11 @@ class PowerSensor(SHCEntity):
         """Return the unit of measurement of the sensor."""
         return POWER_WATT
 
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:flash"
+
 
 class EnergySensor(SHCEntity):
     """Representation of a SHC energy reporting sensor."""
@@ -223,6 +236,10 @@ class EnergySensor(SHCEntity):
         """Return the unit of measurement of the sensor."""
         return ENERGY_KILO_WATT_HOUR
 
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:gauge"
 
 class BatterySensor(SHCEntity):
     """Representation of a SHC battery reporting sensor."""
