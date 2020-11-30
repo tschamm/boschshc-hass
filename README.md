@@ -25,7 +25,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
 
 ### Configuration of the discovered integration
 
-#### Discovered integration
+#### 1.) Discovered integration
 
 <img
   src='images/config_step1.png'
@@ -33,7 +33,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
   width='437pt'
 />
 
-#### Confirmation of host
+#### 2.) Confirmation of host
 
 <img
   src='images/config_step2.png'
@@ -41,7 +41,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
   width='605pt'
 />
 
-#### Enter credentials: public and private certificate key pair
+#### 3.) Enter credentials: public and private certificate key pair
 
 <img
   src='images/config_step3.png'
@@ -49,7 +49,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
   width='515pt'
 />
 
-#### Successful configuration entry created
+#### 4.) Successful configuration entry created
 
 <img
   src='images/config_step4.png'
@@ -57,7 +57,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
   width='629pt'
 />
 
-#### Integration is listed as a configured integration
+#### 5.) Integration is listed as a configured integration
 
 <img
   src='images/config_step5.png'
