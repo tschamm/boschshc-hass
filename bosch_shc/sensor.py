@@ -50,11 +50,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
         entities.append(
-            PuritySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
-            )
-        )
-        entities.append(
             BatterySensor(
                 device=sensor, room_name=room_name, shc_uid=session.information.name
             )
@@ -69,6 +64,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
         entities.append(
             HumiditySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            PuritySensor(
                 device=sensor, room_name=room_name, shc_uid=session.information.name
             )
         )
