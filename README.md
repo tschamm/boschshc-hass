@@ -17,6 +17,25 @@ The following platforms are implemented:
 * Intrusion Detection Control (Alarm Control Panel)
 * Scenarios (as service)
 
+
+# Installation
+
+For installation, follow these steps to add Bosch Smart Home devices to `HomeAssistant`.
+
+1. Install bosch_shc custom component
+2. Generate a certificate/key pair
+3. Register a new client on the SHC device
+4. Configure bosch_shc integration in HA.
+
+1.) To install `bosch_shc` as custom component, inside your HA configuration directory create a new folder called  `custom_components`. This is the folder that Home Assistant will look at when looking for custom code. Install the custom component there:
+Just copy paste the content of the `boschshc-hass/bosch_shc` folder in your  `config/custom_components`  directory. As example, you will get the  `entity.py`  file in the following path:  `config/custom_components/bosch_shc/entity.py`.
+Afterwards, restart `HomeAssistant`.
+
+2.) + 3.) Follow the [official guide](https://github.com/BoschSmartHome/bosch-shc-api-docs/tree/master/postman#register-a-new-client-to-the-bosch-smart-home-controller) for setting up a new SSL certificate public / private key pair and for registering this certificate on the Bosch SHC step by step. As a result, you obtained a generated SSL certificate key pair which is registered for accessing and controlling the SHC.
+
+4.) For configuration of `bosch_shc` custom component, follow the steps described in [configuration](#configuration). During configuration, you have to enter the obtained credentials from step 2.) by providing the path to your public and private key pair of your SSL certificate.
+
+
 # Configuration
 
 Configuration of the component `bosch_shc` is done via config flow mechanism, either by `zeroconf` detection or by manual configuration:
@@ -41,11 +60,11 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
   width='605pt'
 />
 
-#### 3.) Enter credentials: public and private certificate key pair
+#### 3.) Enter credentials: SSL certificate public and private key pair
 
 <img
   src='images/config_step3.png'
-  alt='Enter credentials: public and private certificate keypair.'
+  alt='Enter credentials: SSL certificate public / private key pair.'
   width='515pt'
 />
 
