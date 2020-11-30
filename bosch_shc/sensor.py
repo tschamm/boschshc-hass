@@ -10,6 +10,7 @@ from homeassistant.const import (
     POWER_WATT,
     TEMP_CELSIUS,
     PERCENTAGE,
+    CONCENTRATION_PARTS_PER_MILLION,
 )
 
 from .const import DOMAIN
@@ -45,6 +46,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
         entities.append(
             HumiditySensor(
+                device=sensor, room_name=room_name, shc_uid=session.information.name
+            )
+        )
+        entities.append(
+            PuritySensor(
                 device=sensor, room_name=room_name, shc_uid=session.information.name
             )
         )
@@ -154,6 +160,25 @@ class HumiditySensor(SHCEntity):
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
         return PERCENTAGE
+
+
+class PuritySensor(SHCEntity):
+    """Representation of a SHC purity reporting sensor."""
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}_purity"
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return self._device.purity
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement of the sensor."""
+        return CONCENTRATION_PARTS_PER_MILLION
 
 
 class PowerSensor(SHCEntity):
