@@ -19,7 +19,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for light in session.device_helper.ledvance_lights:
+    for light in session.device_helper.ledvance_lights + session.device_helper.hue_lights:
         room_name = session.room(light.room_id).name
         entities.append(
             LightSwitch(
