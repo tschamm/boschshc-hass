@@ -39,7 +39,7 @@ class LightSwitch(SHCEntity, LightEntity):
         """Flag supported features."""
         if self._device.supports_brightness:
             return SUPPORT_BRIGHTNESS
-        if self._device.supports_color:
+        if self._device.supports_color_temp:
             return SUPPORT_COLOR_TEMP
         return 0
 
@@ -56,15 +56,15 @@ class LightSwitch(SHCEntity, LightEntity):
         )
         return brightness_value
 
-    @property
-    def hs_color(self):
-        """Not properly implemented yet."""
-        rgb_raw = self._device.color
-        a = (rgb_raw >> 24) & 0xFF
-        r = (rgb_raw >> 16) & 0xFF
-        g = (rgb_raw >>  8) & 0xFF
-        b = rgb_raw & 0xFF
-        return a, r, g, b
+    # @property
+    # def hs_color(self):
+    #     """Not properly implemented yet."""
+    #     rgb_raw = self._device.rgb
+    #     a = (rgb_raw >> 24) & 0xFF
+    #     r = (rgb_raw >> 16) & 0xFF
+    #     g = (rgb_raw >>  8) & 0xFF
+    #     b = rgb_raw & 0xFF
+    #     return a, r, g, b
 
     def turn_on(self, **kwargs):
         """Turn the light on."""
