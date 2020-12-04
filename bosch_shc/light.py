@@ -56,6 +56,16 @@ class LightSwitch(SHCEntity, LightEntity):
         )
         return brightness_value
 
+    @property
+    def hs_color(self):
+        """Not properly implemented yet."""
+        rgb_raw = self._device.color
+        a = (rgb_raw >> 24) & 0xFF
+        r = (rgb_raw >> 16) & 0xFF
+        g = (rgb_raw >>  8) & 0xFF
+        b = rgb_raw & 0xFF
+        return a, r, g, b
+
     def turn_on(self, **kwargs):
         """Turn the light on."""
         if not self.is_on:
