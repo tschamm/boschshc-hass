@@ -1,5 +1,6 @@
 """Platform for binarysensor integration."""
 import logging
+from datetime import datetime, timedelta
 
 from boschshcpy import SHCSession, SHCShutterContact, SHCSmokeDetector
 
@@ -7,6 +8,7 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_DOOR,
     DEVICE_CLASS_SMOKE,
     DEVICE_CLASS_WINDOW,
+    DEVICE_CLASS_MOTION,
     BinarySensorEntity,
 )
 from homeassistant.core import HomeAssistant
@@ -26,6 +28,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for binarysensor in session.device_helper.shutter_contacts:
         entities.append(
             ShutterContactSensor(
+                device=binarysensor,
+                room_name=session.room(binarysensor.room_id).name,
+                shc_uid=session.information.name,
+            )
+        )
+
+    for binarysensor in session.device_helper.motion_detectors:
+        entities.append(
+            MotionDetectionSensor(
                 device=binarysensor,
                 room_name=session.room(binarysensor.room_id).name,
                 shc_uid=session.information.name,
@@ -86,6 +97,31 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
         }
         return switcher.get(self._device.device_class, DEVICE_CLASS_WINDOW)
 
+class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC motion detection sensor."""
+   
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_MOTION
+
+    @property
+    def is_on(self):
+        """Return the state of the sensor."""
+        try:
+            latestmotion = datetime.strptime(self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError:
+            return False
+            
+        elapsed = datetime.utcnow() - latestmotion
+        if elapsed > timedelta(seconds=60):
+            return False
+        return True
+
+    @property
+    def should_poll(self):
+        """Polling mode to retrieve motion state."""
+        return True
 
 class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector sensor."""
