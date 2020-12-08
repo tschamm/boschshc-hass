@@ -114,7 +114,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
             return False
             
         elapsed = datetime.utcnow() - latestmotion
-        if elapsed > timedelta(seconds=60):
+        if elapsed > timedelta(seconds=4*60):
             return False
         return True
 
@@ -122,6 +122,15 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     def should_poll(self):
         """Polling mode to retrieve motion state."""
         return True
+
+    @property
+    def state_attributes(self):
+        state_attr = super().state_attributes
+        if state_attr is None:
+            state_attr = dict()
+
+        state_attr["last_motion_detected"] = self._device.latestmotion
+        return state_attr
 
 class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector sensor."""
