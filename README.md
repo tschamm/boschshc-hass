@@ -12,10 +12,13 @@ The following platforms are implemented:
 * Shutter Control (cover)
 * Shutter Contact (binary sensor)
 * Smoke Detector (binary sensor)
+* Motion Detector (binary sensor)
 * Thermostat and Wall Thermostat Sensor (sensor)
+* Twinguard (sensor)
+* LEDVANCE Light (light)
 * Room Climate Control (climate)
 * Intrusion Detection Control (Alarm Control Panel)
-* Scenarios (as service)
+* Scenarios (as service, as well as HA events)
 
 
 # Installation
@@ -87,3 +90,9 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
 # Additional information
 
 Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/115864) for discussions on the Bosch Smart Home Controller Home Assistant integration.
+
+# Known Issues
+
+* Restart necessary when new devices are added to SHC or deleted from SHC
+* The integration is not (yet) async
+
