@@ -2,9 +2,26 @@
 from boschshcpy.device import SHCDevice
 
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.device_registry import async_get_registry as get_dev_reg
+from homeassistant.helpers.entity_registry import async_get_registry as get_ent_reg
 
 from .const import DOMAIN
-from .helpers import remove_devices
+
+
+async def remove_devices(hass, entity, entry_id):
+    """Get item that is removed from session."""
+    await entity.async_remove()
+    ent_registry = await get_ent_reg(hass)
+    if entity.entity_id in ent_registry.entities:
+        ent_registry.async_remove(entity.entity_id)
+    dev_registry = await get_dev_reg(hass)
+    device = dev_registry.async_get_device(
+        identifiers={(DOMAIN, entity.device_id)}, connections=set()
+    )
+    if device is not None:
+        dev_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
+
+
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
@@ -23,7 +40,9 @@ class SHCEntity(Entity):
 
         def update_entity_information():
             if self._device.deleted:
-                self.hass.async_create_task(remove_devices(self.hass, self, self._entry_id))
+                self.hass.async_create_task(
+                    remove_devices(self.hass, self, self._entry_id)
+                )
             else:
                 self.schedule_update_ha_state()
 

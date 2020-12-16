@@ -61,9 +61,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    # for binarysensor in session.device_helper.twinguards:
-    #     entities.append(SmokeDetectorSensor(device=binarysensor, shc_uid=session.information.name, hass=hass))
-    #     entities.append(SmokeDetectorCheckStateSensor(device=binarysensor, shc_uid=session.information.name, hass=hass))
     if entities:
         async_add_entities(entities)
 
@@ -95,9 +92,10 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
         }
         return switcher.get(self._device.device_class, DEVICE_CLASS_WINDOW)
 
+
 class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC motion detection sensor."""
-   
+
     @property
     def device_class(self):
         """Return the class of this device, from component DEVICE_CLASSES."""
@@ -107,12 +105,14 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     def is_on(self):
         """Return the state of the sensor."""
         try:
-            latestmotion = datetime.strptime(self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ")
+            latestmotion = datetime.strptime(
+                self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
         except ValueError:
             return False
-            
+
         elapsed = datetime.utcnow() - latestmotion
-        if elapsed > timedelta(seconds=4*60):
+        if elapsed > timedelta(seconds=4 * 60):
             return False
         return True
 
@@ -129,6 +129,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
 
         state_attr["last_motion_detected"] = self._device.latestmotion
         return state_attr
+
 
 class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector sensor."""

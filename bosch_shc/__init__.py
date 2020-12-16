@@ -113,7 +113,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     session: SHCSession = hass.data[DOMAIN][entry.entry_id]
     session.unsubscribe_scenario_callback()
-    
+
     if session.reset_connection_listener is not None:
         session.reset_connection_listener()
         session.reset_connection_listener = None
