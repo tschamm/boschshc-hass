@@ -31,6 +31,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     alarm_control_panel = IntrusionDetectionAlarmControlPanel(
         device=intrusion_detection_system,
         shc_uid=session.information.name,
+        entry_id=config_entry.entry_id,
     )
     # return await async_add_entities([device])
     async_add_entities([alarm_control_panel])
@@ -39,8 +40,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
-    def __init__(self, device: SHCIntrusionDetectionSystem, shc_uid: str):
-        super().__init__(device=device, shc_uid=shc_uid)
+    def __init__(self, device: SHCIntrusionDetectionSystem, shc_uid: str, entry_id: str):
+        super().__init__(device=device, shc_uid=shc_uid, entry_id=entry_id)
         self._device_state_attributes = {}
 
     @property

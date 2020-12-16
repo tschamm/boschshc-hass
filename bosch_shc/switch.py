@@ -27,7 +27,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         
         entities.append(
             SmartPlugSwitch(
-                device=switch, shc_uid=session.information.name
+                device=switch, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
@@ -35,7 +35,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         
         entities.append(
             CameraEyesSwitch(
-                device=switch, shc_uid=session.information.name
+                device=switch, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 

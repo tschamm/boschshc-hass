@@ -1,15 +1,18 @@
 """Bosch Smart Home Controller base entity."""
+from boschshcpy.device import SHCDevice
+
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-
+from .helpers import remove_devices
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
-    def __init__(self, device, shc_uid: str):
+    def __init__(self, device: SHCDevice, shc_uid: str, entry_id: str):
         """Initialize the generic SHC device."""
         self._device = device
         self._shc_uid = shc_uid
+        self._entry_id = entry_id
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""
@@ -19,7 +22,10 @@ class SHCEntity(Entity):
             self.schedule_update_ha_state()
 
         def update_entity_information():
-            self.schedule_update_ha_state()
+            if self._device.deleted:
+                self.hass.async_create_task(remove_devices(self.hass, self, self._entry_id))
+            else:
+                self.schedule_update_ha_state()
 
         for service in self._device.device_services:
             service.subscribe_callback(self.entity_id, on_state_changed)
@@ -41,6 +47,11 @@ class SHCEntity(Entity):
     def name(self):
         """Name of the device."""
         return self._device.name
+
+    @property
+    def device_id(self):
+        """Return the ID of the device."""
+        return self._device.id
 
     @property
     def device_info(self):

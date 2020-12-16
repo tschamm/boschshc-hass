@@ -27,89 +27,89 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for sensor in session.device_helper.thermostats:
         entities.append(
             TemperatureSensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             BatterySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
     for sensor in session.device_helper.wallthermostats:
         entities.append(
             TemperatureSensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             HumiditySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             BatterySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
     for sensor in session.device_helper.twinguards:
         entities.append(
             TemperatureSensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             HumiditySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             PuritySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             BatterySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
     for sensor in session.device_helper.light_controls:
         entities.append(
             PowerSensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             EnergySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
     for sensor in session.device_helper.smart_plugs:
         entities.append(
             PowerSensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             EnergySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
     for sensor in session.device_helper.smoke_detectors:
         entities.append(
             BatterySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 
     for sensor in session.device_helper.shutter_contacts:
         entities.append(
             BatterySensor(
-                device=sensor, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name, entry_id=config_entry.entry_id,
             )
         )
 

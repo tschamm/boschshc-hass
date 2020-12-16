@@ -30,6 +30,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             ShutterContactSensor(
                 device=binarysensor,
                 shc_uid=session.information.name,
+                entry_id=config_entry.entry_id,
             )
         )
 
@@ -38,6 +39,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             MotionDetectionSensor(
                 device=binarysensor,
                 shc_uid=session.information.name,
+                entry_id=config_entry.entry_id,
             )
         )
 
@@ -47,6 +49,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 device=binarysensor,
                 shc_uid=session.information.name,
                 hass=hass,
+                entry_id=config_entry.entry_id,
             )
         )
         entities.append(
@@ -54,6 +57,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 device=binarysensor,
                 shc_uid=session.information.name,
                 hass=hass,
+                entry_id=config_entry.entry_id,
             )
         )
 
@@ -134,9 +138,10 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         device: SHCSmokeDetector,
         shc_uid: str,
         hass: HomeAssistant,
+        entry_id: str,
     ):
         """Initialize the SHC device."""
-        super().__init__(device=device, shc_uid=shc_uid)
+        super().__init__(device=device, shc_uid=shc_uid, entry_id=entry_id)
         self._hass = hass
 
     @property
@@ -176,9 +181,10 @@ class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
         device: SHCSmokeDetector,
         shc_uid: str,
         hass: HomeAssistant,
+        entry_id: str,
     ):
         """Initialize the SHC device."""
-        super().__init__(device=device, shc_uid=shc_uid)
+        super().__init__(device=device, shc_uid=shc_uid, entry_id=entry_id)
         self._hass = hass
 
     @property
