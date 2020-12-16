@@ -24,18 +24,18 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for switch in (
         session.device_helper.smart_plugs + session.device_helper.light_controls
     ):
-        room_name = session.room(switch.room_id).name
+        
         entities.append(
             SmartPlugSwitch(
-                device=switch, room_name=room_name, shc_uid=session.information.name
+                device=switch, shc_uid=session.information.name
             )
         )
 
     for switch in session.device_helper.camera_eyes:
-        room_name = session.room(switch.room_id).name
+        
         entities.append(
             CameraEyesSwitch(
-                device=switch, room_name=room_name, shc_uid=session.information.name
+                device=switch, shc_uid=session.information.name
             )
         )
 

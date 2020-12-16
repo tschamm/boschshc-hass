@@ -25,98 +25,91 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for sensor in session.device_helper.thermostats:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             TemperatureSensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             BatterySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 
     for sensor in session.device_helper.wallthermostats:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             TemperatureSensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             HumiditySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             BatterySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 
     for sensor in session.device_helper.twinguards:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             TemperatureSensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             HumiditySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             PuritySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             BatterySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 
     for sensor in session.device_helper.light_controls:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             PowerSensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             EnergySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 
     for sensor in session.device_helper.smart_plugs:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             PowerSensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
         entities.append(
             EnergySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 
     for sensor in session.device_helper.smoke_detectors:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             BatterySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 
     for sensor in session.device_helper.shutter_contacts:
-        room_name = session.room(sensor.room_id).name
         entities.append(
             BatterySensor(
-                device=sensor, room_name=room_name, shc_uid=session.information.name
+                device=sensor, shc_uid=session.information.name
             )
         )
 

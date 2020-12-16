@@ -103,7 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             {"id": scenario_id, "name": name, "lastTimeTriggered": last_time_triggered},
         )
 
-    session.subscribe_callback(scenario_trigger)
+    session.subscribe_scenario_callback(scenario_trigger)
 
     register_services(hass, entry)
     return True
@@ -112,6 +112,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     session: SHCSession = hass.data[DOMAIN][entry.entry_id]
+    session.unsubscribe_scenario_callback()
+    
     if session.reset_connection_listener is not None:
         session.reset_connection_listener()
         session.reset_connection_listener = None

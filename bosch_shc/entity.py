@@ -3,14 +3,12 @@ from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
 
-
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
-    def __init__(self, device, room_name: str, shc_uid: str):
+    def __init__(self, device, shc_uid: str):
         """Initialize the generic SHC device."""
         self._device = device
-        self._room_name = room_name
         self._shc_uid = shc_uid
 
     async def async_added_to_hass(self):
@@ -20,14 +18,19 @@ class SHCEntity(Entity):
         def on_state_changed():
             self.schedule_update_ha_state()
 
+        def update_entity_information():
+            self.schedule_update_ha_state()
+
         for service in self._device.device_services:
             service.subscribe_callback(self.entity_id, on_state_changed)
+        self._device.subscribe_callback(self.entity_id, update_entity_information)
 
     async def async_will_remove_from_hass(self):
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
             service.unsubscribe_callback(self.entity_id)
+        self._device.unsubscribe_callback(self.entity_id)
 
     @property
     def unique_id(self):

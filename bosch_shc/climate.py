@@ -23,8 +23,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         if climate.name == "-RoomClimateControl-":
             temperature_level_service = climate.device_service("TemperatureLevel")
             room_climate_control_service = climate.device_service("RoomClimateControl")
-            room_id = climate.room_id
-            room_name = session.room(room_id).name
 
             # Need to find all thermostat devices, these are different from the "room climate" devices.
             thermostats = []
@@ -39,13 +37,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             valve_tappet_services = [
                 thermostat.device_service("ValveTappet") for thermostat in thermostats
             ]
-            display_name = f"Room Climate {room_name}"
+
+            room_id = climate.room_id
+            display_name = f"Room Climate {session.room(room_id).name}"
             unique_id = f"{climate.serial}"
 
             entity = ClimateControl(
                 display_name,
                 unique_id,
-                room_name,
                 temperature_level_service,
                 room_climate_control_service,
                 valve_tappet_services,
@@ -61,7 +60,6 @@ class ClimateControl(ClimateEntity):
         self,
         name: str,
         unique_id: str,
-        room_name: str,
         temperature_level_service: services_impl.TemperatureLevelService,
         room_climate_control_service: services_impl.RoomClimateControlService,
         valve_tappet_services: typing.List[services_impl.ValveTappetService],
@@ -69,7 +67,6 @@ class ClimateControl(ClimateEntity):
 
         self._name = name
         self._unique_id = unique_id
-        self._room_name = room_name
         self._temperature_level_service = temperature_level_service
         self._room_climate_control_service = room_climate_control_service
         self._valve_tappet_services = valve_tappet_services

@@ -40,7 +40,7 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
     def __init__(self, device: SHCIntrusionDetectionSystem, shc_uid: str):
-        super().__init__(device=device, room_name=None, shc_uid=shc_uid)
+        super().__init__(device=device, shc_uid=shc_uid)
         self._device_state_attributes = {}
 
     @property
