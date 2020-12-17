@@ -93,6 +93,6 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 
 # Known Issues
 
-* Restart necessary when new devices are added to SHC or deleted from SHC
-* The integration is not (yet) async
-
+* After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
+* The integration is not (yet) async.
+* Hue Lights added to SHC do not appear in HomeAssistant. Use the default Hue component instead.
