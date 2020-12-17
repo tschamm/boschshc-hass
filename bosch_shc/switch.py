@@ -2,7 +2,6 @@
 import logging
 
 from boschshcpy import SHCCameraEyes, SHCSession, SHCSmartPlug
-
 from homeassistant.components.switch import (
     DEVICE_CLASS_OUTLET,
     DEVICE_CLASS_SWITCH,

@@ -1,8 +1,7 @@
 """Bosch Smart Home Controller base entity."""
 from boschshcpy.device import SHCDevice
-
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.device_registry import async_get_registry as get_dev_reg
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_registry import async_get_registry as get_ent_reg
 
 from .const import DOMAIN

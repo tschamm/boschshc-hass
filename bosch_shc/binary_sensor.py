@@ -3,12 +3,11 @@ import logging
 from datetime import datetime, timedelta
 
 from boschshcpy import SHCSession, SHCShutterContact, SHCSmokeDetector
-
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_DOOR,
+    DEVICE_CLASS_MOTION,
     DEVICE_CLASS_SMOKE,
     DEVICE_CLASS_WINDOW,
-    DEVICE_CLASS_MOTION,
     BinarySensorEntity,
 )
 from homeassistant.core import HomeAssistant

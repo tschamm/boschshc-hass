@@ -4,7 +4,6 @@ import math
 import typing
 
 from boschshcpy import SHCSession, services_impl
-
 from homeassistant.components.climate import ClimateEntity, const
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
 

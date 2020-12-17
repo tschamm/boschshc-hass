@@ -2,15 +2,14 @@
 import logging
 
 from boschshcpy import SHCBatteryDevice, SHCSession
-
 from homeassistant.const import (
+    CONCENTRATION_PARTS_PER_MILLION,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_POWER,
     ENERGY_KILO_WATT_HOUR,
+    PERCENTAGE,
     POWER_WATT,
     TEMP_CELSIUS,
-    PERCENTAGE,
-    CONCENTRATION_PARTS_PER_MILLION,
 )
 
 from .const import DOMAIN

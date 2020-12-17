@@ -2,7 +2,6 @@
 import logging
 
 from boschshcpy import SHCIntrusionDetectionSystem, SHCSession
-
 from homeassistant.components.alarm_control_panel import (
     SUPPORT_ALARM_ARM_AWAY,
     AlarmControlPanelEntity,
@@ -10,8 +9,8 @@ from homeassistant.components.alarm_control_panel import (
 from homeassistant.components.alarm_control_panel.const import SUPPORT_ALARM_ARM_HOME
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
-    STATE_ALARM_ARMED_HOME,
     STATE_ALARM_ARMED_CUSTOM_BYPASS,
+    STATE_ALARM_ARMED_HOME,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
 )

@@ -1,20 +1,19 @@
 """Config flow for Bosch Smart Home Controller integration."""
 import logging
 
+import voluptuous as vol
 from boschshcpy import SHCSession
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
     SHCmDNSError,
 )
-import voluptuous as vol
-
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST
 
-from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY
 from .const import DOMAIN  # pylint:disable=unused-import
+from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY
 
 _LOGGER = logging.getLogger(__name__)
 

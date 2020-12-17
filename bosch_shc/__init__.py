@@ -3,14 +3,12 @@ import asyncio
 import logging
 
 import voluptuous as vol
-
 from boschshcpy import SHCSession
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
     SHCmDNSError,
 )
-
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, EVENT_HOMEASSISTANT_STOP
@@ -26,7 +24,6 @@ from .const import (
     DOMAIN,
     SERVICE_TRIGGER_SCENARIO,
 )
-
 
 PLATFORMS = [
     "binary_sensor",

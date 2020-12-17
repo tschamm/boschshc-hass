@@ -2,7 +2,6 @@
 import logging
 
 from boschshcpy import SHCSession, SHCShutterControl
-
 from homeassistant.components.cover import (
     ATTR_POSITION,
     SUPPORT_CLOSE,
