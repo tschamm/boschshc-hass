@@ -4,9 +4,10 @@ import logging
 from boschshcpy import SHCSession
 
 from homeassistant.components.light import (
-    LightEntity, SUPPORT_COLOR_TEMP, SUPPORT_BRIGHTNESS, ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    LightEntity, SUPPORT_COLOR_TEMP, SUPPORT_BRIGHTNESS, SUPPORT_COLOR, ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP, ATTR_HS_COLOR
 )
+from homeassistant.util.color import color_RGB_to_hs, color_hs_to_RGB, color_rgb_to_hex
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -19,11 +20,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for light in session.device_helper.ledvance_lights + session.device_helper.hue_lights:
-        room_name = session.room(light.room_id).name
+    for light in session.device_helper.ledvance_lights:
         entities.append(
             LightSwitch(
-                device=light, room_name=room_name, shc_uid=session.information.name
+                device=light, shc_uid=session.information.name, entry_id=config_entry.entry_id
             )
         )
 
@@ -37,11 +37,14 @@ class LightSwitch(SHCEntity, LightEntity):
     @property
     def supported_features(self):
         """Flag supported features."""
+        feature = 0
         if self._device.supports_brightness:
-            return SUPPORT_BRIGHTNESS
+            feature |= SUPPORT_BRIGHTNESS
         if self._device.supports_color_temp:
-            return SUPPORT_COLOR_TEMP
-        return 0
+            feature |= SUPPORT_COLOR_TEMP
+        if self._device.supports_color_hsb:
+            feature |= SUPPORT_COLOR
+        return feature
 
     @property
     def is_on(self):
@@ -56,27 +59,36 @@ class LightSwitch(SHCEntity, LightEntity):
         )
         return brightness_value
 
-    # @property
-    # def hs_color(self):
-    #     """Not properly implemented yet."""
-    #     rgb_raw = self._device.rgb
-    #     a = (rgb_raw >> 24) & 0xFF
-    #     r = (rgb_raw >> 16) & 0xFF
-    #     g = (rgb_raw >>  8) & 0xFF
-    #     b = rgb_raw & 0xFF
-    #     return a, r, g, b
+    @property
+    def hs_color(self):
+        """Return the rgb color of this light."""
+        rgb_raw = self._device.rgb
+        rgb = ((rgb_raw >> 16) & 0xFF, (rgb_raw >>  8) & 0xFF, rgb_raw & 0xFF)
+        return color_RGB_to_hs(*rgb)
+
+    @property
+    def color_temp(self):
+        """Return the color temp of this light."""
+        return self._device.color
 
     def turn_on(self, **kwargs):
         """Turn the light on."""
-        if not self.is_on:
-            self._device.state = True
 
+        hs_color = kwargs.get(ATTR_HS_COLOR)
+        color_temp = kwargs.get(ATTR_COLOR_TEMP)
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
-        if brightness is None:
-            brightness = self.brightness
+        if brightness is not None and self._device.supports_brightness:
+            self._device.brightness = round(brightness * 100 / 255)
+        if hs_color is not None and self._device.supports_color_hsb:
+            rgb = color_hs_to_RGB(*hs_color)
+            raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+            self._device.rgb = raw_rgb
+        if color_temp is not None and self._device.supports_color_temp:
+            self._device.color = color_temp
 
-        self._device.brightness = round(brightness * 100 / 255)
+        if not self.is_on:
+            self._device.state = True
 
     def turn_off(self, **kwargs):
         """Turn the light off."""
