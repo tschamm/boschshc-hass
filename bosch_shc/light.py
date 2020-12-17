@@ -2,12 +2,16 @@
 import logging
 
 from boschshcpy import SHCSession
-
 from homeassistant.components.light import (
-    LightEntity, SUPPORT_COLOR_TEMP, SUPPORT_BRIGHTNESS, SUPPORT_COLOR, ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP, ATTR_HS_COLOR
+    ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP,
+    ATTR_HS_COLOR,
+    SUPPORT_BRIGHTNESS,
+    SUPPORT_COLOR,
+    SUPPORT_COLOR_TEMP,
+    LightEntity,
 )
-from homeassistant.util.color import color_RGB_to_hs, color_hs_to_RGB, color_rgb_to_hex
+from homeassistant.util.color import color_hs_to_RGB, color_rgb_to_hex, color_RGB_to_hs
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -23,7 +27,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for light in session.device_helper.ledvance_lights:
         entities.append(
             LightSwitch(
-                device=light, shc_uid=session.information.name, entry_id=config_entry.entry_id
+                device=light,
+                shc_uid=session.information.name,
+                entry_id=config_entry.entry_id,
             )
         )
 
@@ -33,7 +39,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class LightSwitch(SHCEntity, LightEntity):
     """Representation of a SHC controlled light."""
-    
+
     @property
     def supported_features(self):
         """Flag supported features."""
@@ -55,7 +61,9 @@ class LightSwitch(SHCEntity, LightEntity):
     def brightness(self) -> int:
         """Return the brightness of this light between 0..255."""
         brightness_value = (
-            round(self._device.brightness * 255 / 100) if self._device.brightness else None
+            round(self._device.brightness * 255 / 100)
+            if self._device.brightness
+            else None
         )
         return brightness_value
 
@@ -63,7 +71,7 @@ class LightSwitch(SHCEntity, LightEntity):
     def hs_color(self):
         """Return the rgb color of this light."""
         rgb_raw = self._device.rgb
-        rgb = ((rgb_raw >> 16) & 0xFF, (rgb_raw >>  8) & 0xFF, rgb_raw & 0xFF)
+        rgb = ((rgb_raw >> 16) & 0xFF, (rgb_raw >> 8) & 0xFF, rgb_raw & 0xFF)
         return color_RGB_to_hs(*rgb)
 
     @property
