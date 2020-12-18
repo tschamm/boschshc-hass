@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the sensor platform."""
+    """Set up the switch platform."""
 
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
