@@ -3,10 +3,13 @@ import logging
 import math
 import typing
 
-from boschshcpy import SHCSession, services_impl
-from homeassistant.components.climate import ClimateEntity, const
+from boschshcpy import SHCSession, SHCClimateControl
+
+from homeassistant.components.climate import ClimateEntity
+from homeassistant.components.climate.const import SUPPORT_PRESET_MODE, PRESET_BOOST, SUPPORT_TARGET_TEMPERATURE, PRESET_ECO, PRESET_NONE, HVAC_MODE_HEAT, HVAC_MODE_AUTO, CURRENT_HVAC_HEAT, CURRENT_HVAC_IDLE
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
 
+from .entity import SHCEntity
 from . import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,94 +22,73 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
     for climate in session.device_helper.climate_controls:
-        if climate.name == "-RoomClimateControl-":
-            temperature_level_service = climate.device_service("TemperatureLevel")
-            room_climate_control_service = climate.device_service("RoomClimateControl")
-            room_id = climate.room_id
-
-            # Need to find all thermostat devices, these are different from the "room climate" devices.
-            thermostats = []
-            for potential_thermostat in session.device_helper.thermostats:
-                if "ValveTappet" not in potential_thermostat.device_service_ids:
-                    continue
-                if potential_thermostat.room_id != room_id:
-                    continue
-
-                thermostats += [potential_thermostat]
-
-            valve_tappet_services = [
-                thermostat.device_service("ValveTappet") for thermostat in thermostats
-            ]
-
-            display_name = f"Room Climate {session.room(room_id).name}"
-            unique_id = f"{climate.serial}"
-
-            entity = ClimateControl(
-                display_name,
-                unique_id,
-                temperature_level_service,
-                room_climate_control_service,
-                valve_tappet_services,
+        room_id = climate.room_id
+        entities.append(
+            ClimateControl(
+                device=climate,
+                shc_uid=session.information.name,
+                entry_id=config_entry.entry_id,
+                name = f"Room Climate {session.room(room_id).name}"
             )
-            entities += [entity]
+        )
+
+        # if climate.name == "-RoomClimateControl-":
+        #     temperature_level_service = climate.device_service("TemperatureLevel")
+        #     room_climate_control_service = climate.device_service("RoomClimateControl")
+        #     room_id = climate.room_id
+
+        #     # Need to find all thermostat devices, these are different from the "room climate" devices.
+        #     thermostats = []
+        #     for potential_thermostat in session.device_helper.thermostats:
+        #         if "ValveTappet" not in potential_thermostat.device_service_ids:
+        #             continue
+        #         if potential_thermostat.room_id != room_id:
+        #             continue
+
+        #         thermostats += [potential_thermostat]
+
+        #     valve_tappet_services = [
+        #         thermostat.device_service("ValveTappet") for thermostat in thermostats
+        #     ]
+
+        #     display_name = f"Room Climate {session.room(room_id).name}"
+        #     unique_id = f"{climate.serial}"
+
+        #     entity = ClimateControl(
+        #         display_name,
+        #         unique_id,
+        #         temperature_level_service,
+        #         room_climate_control_service,
+        #         valve_tappet_services,
+        #     )
+        #     entities += [entity]
 
     if entities:
         async_add_entities(entities)
 
 
-class ClimateControl(ClimateEntity):
+class ClimateControl(SHCEntity, ClimateEntity):
     def __init__(
         self,
+        device: SHCClimateControl,
+        shc_uid: str,
         name: str,
-        unique_id: str,
-        temperature_level_service: services_impl.TemperatureLevelService,
-        room_climate_control_service: services_impl.RoomClimateControlService,
-        valve_tappet_services: typing.List[services_impl.ValveTappetService],
+        entry_id: str,
     ):
-
+        """Initialize the SHC device."""
+        super().__init__(device=device, shc_uid=shc_uid, entry_id=entry_id)
         self._name = name
-        self._unique_id = unique_id
-        self._temperature_level_service = temperature_level_service
-        self._room_climate_control_service = room_climate_control_service
-        self._valve_tappet_services = valve_tappet_services
-
-    async def async_added_to_hass(self):
-        await super().async_added_to_hass()
-
-        def on_state_changed():
-            self.schedule_update_ha_state()
-
-        self._temperature_level_service.subscribe_callback(
-            self.entity_id, on_state_changed
-        )
-        self._room_climate_control_service.subscribe_callback(
-            self.entity_id, on_state_changed
-        )
-        for valve_tappet_service in self._valve_tappet_services:
-            valve_tappet_service.subscribe_callback(self.entity_id, on_state_changed)
-
-    async def async_will_remove_from_hass(self):
-        await super().async_will_remove_from_hass()
-        self._temperature_level_service.unsubscribe_callback(self.entity_id)
-        self._room_climate_control_service.unsubscribe_callback(self.entity_id)
-        for valve_tappet_service in self._valve_tappet_services:
-            valve_tappet_service.unsubscribe_callback(self.entity_id)
 
     @property
     def name(self):
         return self._name
-
-    @property
-    def unique_id(self):
-        return self._unique_id
-
     @property
     def temperature_unit(self):
         return TEMP_CELSIUS
 
     @property
     def current_temperature(self):
-        return self._temperature_level_service.temperature
+        return self._device.temperature
 
     @property
     def max_temp(self):
@@ -118,80 +100,79 @@ class ClimateControl(ClimateEntity):
 
     @property
     def target_temperature(self):
-        return self._room_climate_control_service.setpoint_temperature
+        return self._device.setpoint_temperature
 
     @property
     def target_temperature_step(self):
         return 0.5
 
-    @property
-    def valve_tappet_position(self):
-        total = sum(
-            [
-                valve_tappet_service.position
-                for valve_tappet_service in self._valve_tappet_services
-            ]
-        )
-        if len(self._valve_tappet_services) > 0:
-            return min(
-                100,
-                max(
-                    0,
-                    int(math.ceil(float(total) / len(self._valve_tappet_services))),
-                ),
-            )
-        else:
-            return 0
+    # @property
+    # def valve_tappet_position(self):
+    #     total = sum(
+    #         [
+    #             valve_tappet_service.position
+    #             for valve_tappet_service in self._valve_tappet_services
+    #         ]
+    #     )
+    #     if len(self._valve_tappet_services) > 0:
+    #         return min(
+    #             100,
+    #             max(
+    #                 0,
+    #                 int(math.ceil(float(total) / len(self._valve_tappet_services))),
+    #             ),
+    #         )
+    #     else:
+    #         return 0
 
     @property
     def hvac_mode(self):
         if (
-            self._room_climate_control_service.operation_mode
-            == services_impl.RoomClimateControlService.OperationMode.AUTOMATIC
+            self._device.operation_mode
+            == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
         ):
-            return const.HVAC_MODE_AUTO
-        elif (
-            self._room_climate_control_service.operation_mode
-            == services_impl.RoomClimateControlService.OperationMode.MANUAL
+            return HVAC_MODE_AUTO
+        if (
+            self._device.operation_mode
+            == SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
         ):
-            return const.HVAC_MODE_HEAT
-        else:
-            _LOGGER.warning(
-                f"Unknown operation mode! {self._room_climate_control_service.operation_mode} != {services_impl.RoomClimateControlService.OperationMode.MANUAL}"
-            )
+            return HVAC_MODE_HEAT
+        _LOGGER.warning(
+            f"Unknown operation mode! {self._device.operation_mode} != {SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL}"
+        )
 
     @property
     def hvac_modes(self):
-        return [const.HVAC_MODE_AUTO, const.HVAC_MODE_HEAT]
+        return [HVAC_MODE_AUTO, HVAC_MODE_HEAT]
 
-    @property
-    def hvac_action(self):
-        if self.valve_tappet_position > 5:
-            return const.CURRENT_HVAC_HEAT
-        else:
-            return const.CURRENT_HVAC_IDLE
+    # @property
+    # def hvac_action(self):
+    #     if self.valve_tappet_position > 5:
+    #         return CURRENT_HVAC_HEAT
+    #     else:
+    #         return CURRENT_HVAC_IDLE
 
     @property
     def preset_mode(self):
-        if self._room_climate_control_service.supports_boost_mode:
-            if self._room_climate_control_service.boost_mode:
-                return const.PRESET_BOOST
+        if self._device.supports_boost_mode:
+            if self._device.boost_mode:
+                return PRESET_BOOST
 
-        if self._room_climate_control_service.low:
-            return const.PRESET_ECO
+        if self._device.low:
+            return PRESET_ECO
 
-        return const.PRESET_NONE
+        return PRESET_NONE
 
     @property
     def preset_modes(self):
-        presets = [const.PRESET_NONE, const.PRESET_ECO]
-        if self._room_climate_control_service.supports_boost_mode:
-            presets += [const.PRESET_BOOST]
+        presets = [PRESET_NONE, PRESET_ECO]
+        if self._device.supports_boost_mode:
+            presets += [PRESET_BOOST]
         return presets
 
     @property
     def supported_features(self):
-        return const.SUPPORT_TARGET_TEMPERATURE + const.SUPPORT_PRESET_MODE
+        return SUPPORT_TARGET_TEMPERATURE + SUPPORT_PRESET_MODE
 
     async def async_set_temperature(self, **kwargs):
         temperature = kwargs.get(ATTR_TEMPERATURE)
@@ -199,47 +180,47 @@ class ClimateControl(ClimateEntity):
             return
 
         if self.min_temp <= temperature <= self.max_temp:
-            self._room_climate_control_service.setpoint_temperature = float(temperature)
+            self._device.setpoint_temperature = float(temperature)
 
     async def async_set_hvac_mode(self, hvac_mode: str):
         if hvac_mode not in self.hvac_modes:
             return
 
-        if hvac_mode == const.HVAC_MODE_AUTO:
-            self._room_climate_control_service.operation_mode = (
-                services_impl.RoomClimateControlService.OperationMode.AUTOMATIC
+        if hvac_mode == HVAC_MODE_AUTO:
+            self._device.operation_mode = (
+                SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
             )
-        elif hvac_mode == const.HVAC_MODE_HEAT:
-            self._room_climate_control_service.operation_mode = (
-                services_impl.RoomClimateControlService.OperationMode.MANUAL
+        elif hvac_mode == HVAC_MODE_HEAT:
+            self._device.operation_mode = (
+                SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
             )
 
     async def async_set_preset_mode(self, preset_mode: str):
         if preset_mode not in self.preset_modes:
             return
 
-        if preset_mode == const.PRESET_NONE:
-            if self._room_climate_control_service.supports_boost_mode:
-                if self._room_climate_control_service.boost_mode:
-                    self._room_climate_control_service.boost_mode = False
+        if preset_mode == PRESET_NONE:
+            if self._device.supports_boost_mode:
+                if self._device.boost_mode:
+                    self._device.boost_mode = False
 
-            if self._room_climate_control_service.low:
-                self._room_climate_control_service.low = False
+            if self._device.low:
+                self._device.low = False
 
-        elif preset_mode == const.PRESET_BOOST:
-            if not self._room_climate_control_service.boost_mode:
-                self._room_climate_control_service.boost_mode = True
+        elif preset_mode == PRESET_BOOST:
+            if not self._device.boost_mode:
+                self._device.boost_mode = True
 
-            if self._room_climate_control_service.low:
-                self._room_climate_control_service.low = False
+            if self._device.low:
+                self._device.low = False
 
-        elif preset_mode == const.PRESET_ECO:
-            if self._room_climate_control_service.supports_boost_mode:
-                if self._room_climate_control_service.boost_mode:
-                    self._room_climate_control_service.boost_mode = False
+        elif preset_mode == PRESET_ECO:
+            if self._device.supports_boost_mode:
+                if self._device.boost_mode:
+                    self._device.boost_mode = False
 
-            if not self._room_climate_control_service.low:
-                self._room_climate_control_service.low = True
+            if not self._device.low:
+                self._device.low = True
 
     @property
     def state_attributes(self):
@@ -247,5 +228,5 @@ class ClimateControl(ClimateEntity):
         if state_attr is None:
             state_attr = dict()
 
-        state_attr["valve_tappet_position"] = self.valve_tappet_position
+        # state_attr["valve_tappet_position"] = self.valve_tappet_position
         return state_attr
