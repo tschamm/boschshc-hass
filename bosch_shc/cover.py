@@ -8,6 +8,7 @@ from homeassistant.components.cover import (
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
     SUPPORT_STOP,
+    DEVICE_CLASS_SHUTTER,
     CoverEntity,
 )
 
@@ -43,6 +44,11 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     def supported_features(self):
         """Flag supported features."""
         return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_SHUTTER
 
     @property
     def current_cover_position(self):

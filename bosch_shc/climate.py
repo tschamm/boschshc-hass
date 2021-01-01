@@ -106,25 +106,6 @@ class ClimateControl(SHCEntity, ClimateEntity):
     def target_temperature_step(self):
         return 0.5
 
-    # @property
-    # def valve_tappet_position(self):
-    #     total = sum(
-    #         [
-    #             valve_tappet_service.position
-    #             for valve_tappet_service in self._valve_tappet_services
-    #         ]
-    #     )
-    #     if len(self._valve_tappet_services) > 0:
-    #         return min(
-    #             100,
-    #             max(
-    #                 0,
-    #                 int(math.ceil(float(total) / len(self._valve_tappet_services))),
-    #             ),
-    #         )
-    #     else:
-    #         return 0
-
     @property
     def hvac_mode(self):
         if (
@@ -174,7 +155,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
     def supported_features(self):
         return SUPPORT_TARGET_TEMPERATURE + SUPPORT_PRESET_MODE
 
-    async def async_set_temperature(self, **kwargs):
+    def set_temperature(self, **kwargs):
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
@@ -182,7 +163,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if self.min_temp <= temperature <= self.max_temp:
             self._device.setpoint_temperature = float(temperature)
 
-    async def async_set_hvac_mode(self, hvac_mode: str):
+    def set_hvac_mode(self, hvac_mode: str):
         if hvac_mode not in self.hvac_modes:
             return
 
@@ -195,7 +176,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
             )
 
-    async def async_set_preset_mode(self, preset_mode: str):
+    def set_preset_mode(self, preset_mode: str):
         if preset_mode not in self.preset_modes:
             return
 
@@ -222,11 +203,3 @@ class ClimateControl(SHCEntity, ClimateEntity):
             if not self._device.low:
                 self._device.low = True
 
-    @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-
-        # state_attr["valve_tappet_position"] = self.valve_tappet_position
-        return state_attr
