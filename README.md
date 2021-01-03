@@ -96,3 +96,4 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 * After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
 * The integration is not (yet) async.
 * Hue Lights added to SHC do not appear in HomeAssistant. Use the default Hue component instead.
+* Preparatory step for creating and registering of SSL key pair necessary before loading the integration.
