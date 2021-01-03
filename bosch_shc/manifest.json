@@ -5,7 +5,7 @@
   "documentation": "https://www.home-assistant.io/integrations/bosch_shc",
   "requirements": ["boschshcpy==0.1.19"],
   "zeroconf": [
-    {"type": "_http._tcp.local.", "name": "Bosch SHC*"}
+    {"type": "_http._tcp.local.", "name": "bosch shc*"}
   ],
   "codeowners": ["@tschamm"],
   "after_dependencies": ["zeroconf"]
