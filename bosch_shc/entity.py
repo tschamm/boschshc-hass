@@ -39,9 +39,7 @@ class SHCEntity(Entity):
 
         def update_entity_information():
             if self._device.deleted:
-                self.hass.async_create_task(
-                    remove_devices(self.hass, self, self._entry_id)
-                )
+                self.hass.async_create_task(remove_devices(self.hass, self, self._entry_id))
             else:
                 self.schedule_update_ha_state()
 
@@ -79,7 +77,10 @@ class SHCEntity(Entity):
             "name": self.name,
             "manufacturer": self._device.manufacturer,
             "model": self._device.device_model,
-            "via_device": (DOMAIN, self._device.parent_device_id if not None else self._parent_id),
+            "via_device": (
+                DOMAIN,
+                self._device.parent_device_id if not None else self._parent_id,
+            ),
         }
 
     @property

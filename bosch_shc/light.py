@@ -11,7 +11,7 @@ from homeassistant.components.light import (
     SUPPORT_COLOR_TEMP,
     LightEntity,
 )
-from homeassistant.util.color import color_hs_to_RGB, color_rgb_to_hex, color_RGB_to_hs
+from homeassistant.util.color import color_hs_to_RGB, color_RGB_to_hs
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -61,9 +61,7 @@ class LightSwitch(SHCEntity, LightEntity):
     def brightness(self) -> int:
         """Return the brightness of this light between 0..255."""
         brightness_value = (
-            round(self._device.brightness * 255 / 100)
-            if self._device.brightness
-            else None
+            round(self._device.brightness * 255 / 100) if self._device.brightness else None
         )
         return brightness_value
 

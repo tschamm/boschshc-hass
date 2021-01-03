@@ -284,16 +284,10 @@ class BatterySensor(SHCEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        if (
-            self._device.batterylevel
-            == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW
-        ):
+        if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW:
             logging.warning("Battery state of device %s is critical low.", self.name)
             return 0
-        if (
-            self._device.batterylevel
-            == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY
-        ):
+        if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY:
             return 20
         if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.OK:
             return 100

@@ -4,11 +4,11 @@ import logging
 from boschshcpy import SHCSession, SHCShutterControl
 from homeassistant.components.cover import (
     ATTR_POSITION,
+    DEVICE_CLASS_SHUTTER,
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
     SUPPORT_STOP,
-    DEVICE_CLASS_SHUTTER,
     CoverEntity,
 )
 
@@ -71,20 +71,14 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
-        if (
-            self._device.operation_state
-            == SHCShutterControl.ShutterControlService.State.OPENING
-        ):
+        if self._device.operation_state == SHCShutterControl.ShutterControlService.State.OPENING:
             return True
         return False
 
     @property
     def is_closing(self):
         """Return if the cover is closing or not."""
-        if (
-            self._device.operation_state
-            == SHCShutterControl.ShutterControlService.State.CLOSING
-        ):
+        if self._device.operation_state == SHCShutterControl.ShutterControlService.State.CLOSING:
             return True
         return False
 

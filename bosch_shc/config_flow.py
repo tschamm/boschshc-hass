@@ -3,11 +3,7 @@ import logging
 
 import voluptuous as vol
 from boschshcpy import SHCSession
-from boschshcpy.exceptions import (
-    SHCAuthenticationError,
-    SHCConnectionError,
-    SHCmDNSError,
-)
+from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError, SHCmDNSError
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST
@@ -73,9 +69,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.host = host
                 return await self.async_step_credentials()
 
-        return self.async_show_form(
-            step_id="user", data_schema=HOST_SCHEMA, errors=errors
-        )
+        return self.async_show_form(step_id="user", data_schema=HOST_SCHEMA, errors=errors)
 
     async def async_step_credentials(self, user_input=None):
         """Handle the credentials step."""
@@ -110,9 +104,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
 
-        return self.async_show_form(
-            step_id="credentials", data_schema=schema, errors=errors
-        )
+        return self.async_show_form(step_id="credentials", data_schema=schema, errors=errors)
 
     async def async_step_zeroconf(self, zeroconf_info):
         """Handle zeroconf discovery."""

@@ -4,11 +4,7 @@ import logging
 
 import voluptuous as vol
 from boschshcpy import SHCSession
-from boschshcpy.exceptions import (
-    SHCAuthenticationError,
-    SHCConnectionError,
-    SHCmDNSError,
-)
+from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError, SHCmDNSError
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, EVENT_HOMEASSISTANT_STOP
@@ -17,13 +13,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .const import (
-    ATTR_NAME,
-    CONF_SSL_CERTIFICATE,
-    CONF_SSL_KEY,
-    DOMAIN,
-    SERVICE_TRIGGER_SCENARIO,
-)
+from .const import ATTR_NAME, CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN, SERVICE_TRIGGER_SCENARIO
 
 PLATFORMS = [
     "binary_sensor",
@@ -82,9 +72,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+        hass.async_create_task(hass.config_entries.async_forward_entry_setup(entry, component))
 
     async def stop_polling(event):
         """Stop polling service."""

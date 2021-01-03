@@ -2,11 +2,7 @@
 import logging
 
 from boschshcpy import SHCCameraEyes, SHCSession, SHCSmartPlug
-from homeassistant.components.switch import (
-    DEVICE_CLASS_OUTLET,
-    DEVICE_CLASS_SWITCH,
-    SwitchEntity,
-)
+from homeassistant.components.switch import DEVICE_CLASS_OUTLET, DEVICE_CLASS_SWITCH, SwitchEntity
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -20,9 +16,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for switch in (
-        session.device_helper.smart_plugs + session.device_helper.light_controls
-    ):
+    for switch in session.device_helper.smart_plugs + session.device_helper.light_controls:
 
         entities.append(
             SmartPlugSwitch(
@@ -52,11 +46,7 @@ class SmartPlugSwitch(SHCEntity, SwitchEntity):
     @property
     def device_class(self):
         """Return the class of this device."""
-        return (
-            DEVICE_CLASS_OUTLET
-            if self._device.device_model == "PSM"
-            else DEVICE_CLASS_SWITCH
-        )
+        return DEVICE_CLASS_OUTLET if self._device.device_model == "PSM" else DEVICE_CLASS_SWITCH
 
     @property
     def is_on(self):

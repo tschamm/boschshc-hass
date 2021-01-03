@@ -104,9 +104,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     def is_on(self):
         """Return the state of the sensor."""
         try:
-            latestmotion = datetime.strptime(
-                self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            latestmotion = datetime.strptime(self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError:
             return False
 
@@ -207,18 +205,6 @@ class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
             return True
 
         return False
-
-    # @property
-    # def available(self):
-    #     """Return false if status is unavailable."""
-    #     if self._device.smokedetectorcheck_state != SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK:
-    #         return False
-    #     return True
-
-    # @property
-    # def device_class(self):
-    #     """Return the class of this device, from component DEVICE_CLASSES."""
-    #     return DEVICE_CLASS_SMOKE
 
     async def async_request_smoketest(self):
         """Request smokedetector test."""

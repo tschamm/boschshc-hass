@@ -1,16 +1,21 @@
 """Platform for climate integration."""
 import logging
-import math
-import typing
 
-from boschshcpy import SHCSession, SHCClimateControl
-
+from boschshcpy import SHCClimateControl, SHCSession
 from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import SUPPORT_PRESET_MODE, PRESET_BOOST, SUPPORT_TARGET_TEMPERATURE, PRESET_ECO, PRESET_NONE, HVAC_MODE_HEAT, HVAC_MODE_AUTO, CURRENT_HVAC_HEAT, CURRENT_HVAC_IDLE
+from homeassistant.components.climate.const import (
+    HVAC_MODE_AUTO,
+    HVAC_MODE_HEAT,
+    PRESET_BOOST,
+    PRESET_ECO,
+    PRESET_NONE,
+    SUPPORT_PRESET_MODE,
+    SUPPORT_TARGET_TEMPERATURE,
+)
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
 
-from .entity import SHCEntity
 from . import DOMAIN
+from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,46 +33,17 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 device=climate,
                 parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
-                name = f"Room Climate {session.room(room_id).name}"
+                name=f"Room Climate {session.room(room_id).name}",
             )
         )
-
-        # if climate.name == "-RoomClimateControl-":
-        #     temperature_level_service = climate.device_service("TemperatureLevel")
-        #     room_climate_control_service = climate.device_service("RoomClimateControl")
-        #     room_id = climate.room_id
-
-        #     # Need to find all thermostat devices, these are different from the "room climate" devices.
-        #     thermostats = []
-        #     for potential_thermostat in session.device_helper.thermostats:
-        #         if "ValveTappet" not in potential_thermostat.device_service_ids:
-        #             continue
-        #         if potential_thermostat.room_id != room_id:
-        #             continue
-
-        #         thermostats += [potential_thermostat]
-
-        #     valve_tappet_services = [
-        #         thermostat.device_service("ValveTappet") for thermostat in thermostats
-        #     ]
-
-        #     display_name = f"Room Climate {session.room(room_id).name}"
-        #     unique_id = f"{climate.serial}"
-
-        #     entity = ClimateControl(
-        #         display_name,
-        #         unique_id,
-        #         temperature_level_service,
-        #         room_climate_control_service,
-        #         valve_tappet_services,
-        #     )
-        #     entities += [entity]
 
     if entities:
         async_add_entities(entities)
 
 
 class ClimateControl(SHCEntity, ClimateEntity):
+    """Representation of a SHC room climate control."""
+
     def __init__(
         self,
         device: SHCClimateControl,
@@ -119,9 +95,9 @@ class ClimateControl(SHCEntity, ClimateEntity):
             == SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
         ):
             return HVAC_MODE_HEAT
-        _LOGGER.warning(
-            f"Unknown operation mode! {self._device.operation_mode} != {SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL}"
-        )
+        # _LOGGER.warning(
+        #     f"Unknown operation mode! {self._device.operation_mode} != {SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL}"
+        # )
 
     @property
     def hvac_modes(self):
@@ -203,4 +179,3 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
             if not self._device.low:
                 self._device.low = True
-
