@@ -27,14 +27,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             TemperatureSensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             BatterySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        entities.append(
+            ValveTappetSensor(
+                device=sensor,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -43,21 +50,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             TemperatureSensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             HumiditySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             BatterySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -66,28 +73,28 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             TemperatureSensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             HumiditySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             PuritySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             BatterySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -96,14 +103,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             PowerSensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             EnergySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -112,14 +119,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             PowerSensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             EnergySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -128,7 +135,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             BatterySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -137,7 +144,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             BatterySensor(
                 device=sensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -302,3 +309,36 @@ class BatterySensor(SHCEntity):
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
         return PERCENTAGE
+
+
+class ValveTappetSensor(SHCEntity):
+    """Representation of a SHC valve tappet reporting sensor."""
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}_valvetappet"
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return self._device.position
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:gauge"
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement of the sensor."""
+        return PERCENTAGE
+
+    @property
+    def state_attributes(self):
+        state_attr = super().state_attributes
+        if state_attr is None:
+            state_attr = dict()
+
+        state_attr["valve_tappet_state"] = self._device.valvestate.name
+        return state_attr

@@ -28,7 +28,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             ShutterContactSensor(
                 device=binarysensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -37,7 +37,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             MotionDetectionSensor(
                 device=binarysensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -46,7 +46,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             SmokeDetectorSensor(
                 device=binarysensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -54,7 +54,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             SmokeDetectorCheckStateSensor(
                 device=binarysensor,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -136,12 +136,12 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     def __init__(
         self,
         device: SHCSmokeDetector,
-        shc_uid: str,
+        parent_id: str,
         hass: HomeAssistant,
         entry_id: str,
     ):
         """Initialize the SHC device."""
-        super().__init__(device=device, shc_uid=shc_uid, entry_id=entry_id)
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._hass = hass
 
     @property
@@ -179,12 +179,12 @@ class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
     def __init__(
         self,
         device: SHCSmokeDetector,
-        shc_uid: str,
+        parent_id: str,
         hass: HomeAssistant,
         entry_id: str,
     ):
         """Initialize the SHC device."""
-        super().__init__(device=device, shc_uid=shc_uid, entry_id=entry_id)
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._hass = hass
 
     @property

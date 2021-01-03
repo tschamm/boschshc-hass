@@ -28,7 +28,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             LightSwitch(
                 device=light,
-                shc_uid=session.information.name,
+                parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
             )
         )

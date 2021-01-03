@@ -24,10 +24,10 @@ async def remove_devices(hass, entity, entry_id):
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
-    def __init__(self, device: SHCDevice, shc_uid: str, entry_id: str):
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str):
         """Initialize the generic SHC device."""
         self._device = device
-        self._shc_uid = shc_uid
+        self._parent_id = parent_id
         self._entry_id = entry_id
 
     async def async_added_to_hass(self):
@@ -58,7 +58,7 @@ class SHCEntity(Entity):
 
     @property
     def unique_id(self):
-        """Return the unique ID of this binary sensor."""
+        """Return the unique ID of the device."""
         return self._device.serial
 
     @property
@@ -79,7 +79,7 @@ class SHCEntity(Entity):
             "name": self.name,
             "manufacturer": self._device.manufacturer,
             "model": self._device.device_model,
-            "via_device": (DOMAIN, self._shc_uid),
+            "via_device": (DOMAIN, self._device.parent_device_id if not None else self._parent_id),
         }
 
     @property
