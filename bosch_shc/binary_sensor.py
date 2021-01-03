@@ -18,6 +18,7 @@ from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
@@ -51,14 +52,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 entry_id=config_entry.entry_id,
             )
         )
-        entities.append(
-            SmokeDetectorCheckStateSensor(
-                device=binarysensor,
-                parent_id=session.information.name,
-                hass=hass,
-                entry_id=config_entry.entry_id,
-            )
-        )
 
     if entities:
         async_add_entities(entities)
@@ -66,7 +59,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     platform = entity_platform.current_platform.get()
 
     platform.async_register_entity_service(
-        "smokedetector_check",
+        SERVICE_SMOKEDETECTOR_CHECK,
         {},
         "async_request_smoketest",
     )
@@ -170,43 +163,11 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         _LOGGER.debug("Requesting smoke test on entity %s", self.name)
         await self._hass.async_add_executor_job(self._device.smoketest_requested)
 
-
-class SmokeDetectorCheckStateSensor(SHCEntity, BinarySensorEntity):
-    """Representation of a SHC smoke detector check state sensor."""
-
-    def __init__(
-        self,
-        device: SHCSmokeDetector,
-        parent_id: str,
-        hass: HomeAssistant,
-        entry_id: str,
-    ):
-        """Initialize the SHC device."""
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
-        self._hass = hass
-
     @property
-    def unique_id(self):
-        """Return the unique ID of this sensor."""
-        return f"{self._device.serial}_checkstate"
+    def state_attributes(self):
+        state_attr = super().state_attributes
+        if state_attr is None:
+            state_attr = dict()
 
-    @property
-    def name(self):
-        """Name of the device."""
-        return f"{self._device.name} Check State"
-
-    @property
-    def is_on(self):
-        """Return the state of the sensor."""
-        if (
-            self._device.smokedetectorcheck_state
-            == SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK
-        ):
-            return True
-
-        return False
-
-    async def async_request_smoketest(self):
-        """Request smokedetector test."""
-        _LOGGER.debug("Requesting smoke test on entity %s", self.name)
-        await self._hass.async_add_executor_job(self._device.smoketest_requested)
+        state_attr["smokedetectorcheck_state"] = self._device.smokedetectorcheck_state.name
+        return state_attr
