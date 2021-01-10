@@ -93,7 +93,9 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 
 # Known Issues
 
-* After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
+* Preparation step for creating and registering of SSL key pair necessary before loading the integration.
+* Encrypted SSL private key and SSL host verification is not supported due to limitations of `requests` library.
 * The integration is not (yet) async.
-* Hue Lights added to SHC do not appear in HomeAssistant. Use the default Hue component instead.
-* Preparatory step for creating and registering of SSL key pair necessary before loading the integration.
+* After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
+* Hue Lights added to SHC do not appear in HomeAssistant. Please use the provided [hue component](https://www.home-assistant.io/integrations/hue/) instead.
+* Arming and disarming of alarm control panel does not support using a code.
