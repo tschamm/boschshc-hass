@@ -7,13 +7,15 @@ from boschshcpy import SHCSession
 from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError, SHCmDNSError
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import HomeAssistant
+from homeassistant.const import CONF_HOST, EVENT_HOMEASSISTANT_STOP, ATTR_ID, ATTR_NAME
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .const import ATTR_NAME, CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN, SERVICE_TRIGGER_SCENARIO
+from .const import (
+    ATTR_NAME, ATTR_LAST_TIME_TRIGGERED, CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN, EVENT_BOSCH_SHC_SCENARIO_TRIGGER, SERVICE_TRIGGER_SCENARIO
+)
 
 PLATFORMS = [
     "binary_sensor",
@@ -83,13 +85,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         EVENT_HOMEASSISTANT_STOP, stop_polling
     )
 
-    def scenario_trigger(scenario_id, name, last_time_triggered):
-        hass.bus.fire(
-            "bosch_shc_scenario_trigger",
-            {"id": scenario_id, "name": name, "lastTimeTriggered": last_time_triggered},
+    @callback
+    def _async_scenario_trigger(scenario_id, name, last_time_triggered):
+        hass.bus.async_fire(
+            EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+            {
+                ATTR_ID: scenario_id,
+                ATTR_NAME: name,
+                ATTR_LAST_TIME_TRIGGERED: last_time_triggered
+            }
         )
 
-    session.subscribe_scenario_callback(scenario_trigger)
+    session.subscribe_scenario_callback(_async_scenario_trigger)
 
     register_services(hass, entry)
     return True

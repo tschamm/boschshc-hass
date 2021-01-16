@@ -30,5 +30,11 @@
         "abort": {
             "already_configured": "Device is already configured"
         }
+    },
+    "device_automation": {
+        "trigger_type": {
+            "turned_off": "{entity_name} wurde ausgeschaltet",
+            "turned_on": "{entity_name} wurde angeschaltet"
+        }
     }
 }

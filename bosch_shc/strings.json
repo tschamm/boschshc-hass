@@ -28,5 +28,11 @@
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     },
     "flow_title": "Bosch SHC: {name}"
+  },
+  "device_automation": {
+    "trigger_type": {
+      "turned_on": "{entity_name} turned on",
+      "turned_off": "{entity_name} turned off"
+    }
   }
 }
