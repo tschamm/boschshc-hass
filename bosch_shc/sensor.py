@@ -92,6 +92,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
         entities.append(
+            AirQualitySensor(
+                device=sensor,
+                parent_id=session.information.name,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        entities.append(
             BatterySensor(
                 device=sensor,
                 parent_id=session.information.name,
@@ -162,6 +169,11 @@ class TemperatureSensor(SHCEntity):
         return f"{self._device.serial}_temperature"
 
     @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Temperature"
+
+    @property
     def state(self):
         """Return the state of the sensor."""
         return self._device.temperature
@@ -179,6 +191,11 @@ class HumiditySensor(SHCEntity):
     def unique_id(self):
         """Return the unique ID of this sensor."""
         return f"{self._device.serial}_humidity"
+
+    @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Humidity"
 
     @property
     def state(self):
@@ -205,6 +222,11 @@ class PuritySensor(SHCEntity):
         return f"{self._device.serial}_purity"
 
     @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Purity"
+
+    @property
     def state(self):
         """Return the state of the sensor."""
         return self._device.purity
@@ -219,6 +241,35 @@ class PuritySensor(SHCEntity):
         """Return the icon of the sensor."""
         return "mdi:molecule-co2"
 
+class AirQualitySensor(SHCEntity):
+    """Representation of a SHC airquality reporting sensor."""
+
+    @property
+    def unique_id(self):
+        """Return the unique ID of this sensor."""
+        return f"{self._device.serial}_airquality"
+
+    @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Air Quality"
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return self._device.combined_rating.name
+
+    @property
+    def state_attributes(self):
+        state_attr = super().state_attributes
+        if state_attr is None:
+            state_attr = dict()
+
+        state_attr["rating_description"] = self._device.description
+        state_attr["temperature_rating"] = self._device.temperature_rating.name
+        state_attr["humidity_rating"] = self._device.humidity_rating.name
+        state_attr["purity_rating"] = self._device.purity_rating.name
+        return state_attr
 
 class PowerSensor(SHCEntity):
     """Representation of a SHC power reporting sensor."""
@@ -227,6 +278,11 @@ class PowerSensor(SHCEntity):
     def unique_id(self):
         """Return the unique ID of this sensor."""
         return f"{self._device.serial}_power"
+
+    @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Power"
 
     @property
     def state(self):
@@ -258,6 +314,11 @@ class EnergySensor(SHCEntity):
         return f"{self._device.serial}_energy"
 
     @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Energy"
+
+    @property
     def state(self):
         """Return the state of the sensor."""
         return self._device.energyconsumption / 1000.0
@@ -280,6 +341,11 @@ class BatterySensor(SHCEntity):
     def unique_id(self):
         """Return the unique ID of this sensor."""
         return f"{self._device.serial}_battery"
+
+    @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Battery"
 
     @property
     def state(self):
@@ -312,6 +378,11 @@ class ValveTappetSensor(SHCEntity):
     def unique_id(self):
         """Return the unique ID of this sensor."""
         return f"{self._device.serial}_valvetappet"
+
+    @property
+    def name(self):
+        """Return the name of this sensor."""
+        return f"{self._device.name} Valvetappet"
 
     @property
     def state(self):

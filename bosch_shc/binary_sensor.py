@@ -136,11 +136,6 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
 
     @property
-    def unique_id(self):
-        """Return the unique ID of this sensor."""
-        return f"{self._device.serial}"
-
-    @property
     def is_on(self):
         """Return the state of the sensor."""
         if self._device.alarmstate == SHCSmokeDetector.AlarmService.State.IDLE_OFF:
