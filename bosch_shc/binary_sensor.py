@@ -13,12 +13,10 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN
+from .const import DOMAIN, SERVICE_SMOKEDETECTOR_CHECK
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
-
-SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
