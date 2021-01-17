@@ -74,7 +74,7 @@ class SHCEntity(Entity):
         """Return the device info."""
         return {
             "identifiers": {(DOMAIN, self._device.id)},
-            "name": self.name,
+            "name": self._device.name,
             "manufacturer": self._device.manufacturer,
             "model": self._device.device_model,
             "via_device": (
