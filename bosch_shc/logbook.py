@@ -4,17 +4,21 @@ from homeassistant.const import ATTR_DEVICE_ID, ATTR_NAME
 from homeassistant.core import callback
 
 from .const import (
+    ATTR_BUTTON,
     ATTR_CLICK_TYPE,
     DOMAIN,
+    EVENT_BOSCH_SHC_CLICK,
     EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
 )
+from .device_trigger import get_device_from_id
+
 
 @callback
 def async_describe_events(hass, async_describe_event):
     """Describe logbook events."""
 
     @callback
-    def async_describe_scenario_trigger_event(event):
+    def async_describe_bosch_shc_scenario_trigger_event(event):
         """Describe bosch_shc.scenario_trigger logbook event."""
 
         name = event.data[ATTR_NAME]
@@ -24,4 +28,30 @@ def async_describe_events(hass, async_describe_event):
             "message": f"'{name}' scenario trigger event was fired.",
         }
 
-    async_describe_event(DOMAIN, EVENT_BOSCH_SHC_SCENARIO_TRIGGER, async_describe_scenario_trigger_event)
+    @callback
+    def async_describe_bosch_shc_click_event(event):
+        """Describe bosch_shc.click logbook event."""
+
+        # device = get_device_from_id(hass, event.data[ATTR_DEVICE_ID])
+        # if device:
+        #     device_name = device.name
+        # else:
+        #     device_name = event.data[ATTR_NAME]
+
+        device_name = event.data[ATTR_NAME]
+        subtype = event.data[ATTR_BUTTON]
+        click_type = event.data[ATTR_CLICK_TYPE]
+
+        return {
+            "name": "Bosch SHC",
+            "message": f"'{click_type}' click event for {device_name} button '{subtype}' was fired.",
+        }
+
+    async_describe_event(
+        DOMAIN,
+        EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+        async_describe_bosch_shc_scenario_trigger_event,
+    )
+    async_describe_event(
+        DOMAIN, EVENT_BOSCH_SHC_CLICK, async_describe_bosch_shc_click_event
+    )

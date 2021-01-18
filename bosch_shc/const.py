@@ -5,9 +5,9 @@ ATTR_CLICK_TYPE = "click_type"
 ATTR_BUTTON = "button"
 ATTR_LAST_TIME_TRIGGERED = "lastTimeTriggered"
 
+CONF_SUBTYPE = "subtype"
 CONF_SSL_CERTIFICATE = "ssl_certificate"
 CONF_SSL_KEY = "ssl_key"
-CONF_SUBTYPE = "subtype"
 
 DOMAIN = "bosch_shc"
 
@@ -23,6 +23,6 @@ SUPPORTED_INPUTS_EVENTS_TYPES = {
 }
 
 INPUTS_EVENTS_SUBTYPES = {
-    "LOWER_BUTTON": 1,
-    "UPPER_BUTTON": 2,
+    "LOWER_BUTTON",
+    "UPPER_BUTTON",
 }

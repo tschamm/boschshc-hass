@@ -29,10 +29,14 @@
     },
     "flow_title": "Bosch SHC: {name}"
   },
-  "device_automation": {
-    "trigger_type": {
-      "turned_on": "{entity_name} turned on",
-      "turned_off": "{entity_name} turned off"
-    }
+  "device_automation":{
+      "trigger_subtype": {
+          "LOWER_BUTTON": "Lower Button",
+          "UPPER_BUTTON": "Upper button"
+      },
+      "trigger_type": {
+          "PRESS_SHORT": "{subtype} short clicked",
+          "PRESS_LONG": "{subtype} long clicked"
+      }
   }
 }

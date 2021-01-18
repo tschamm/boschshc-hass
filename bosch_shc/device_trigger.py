@@ -2,7 +2,7 @@
 from typing import List
 
 import voluptuous as vol
-
+from boschshcpy import SHCUniversalSwitch
 from homeassistant.components.automation import AutomationActionType
 from homeassistant.components.device_automation import TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (
@@ -18,6 +18,7 @@ from homeassistant.const import (
     CONF_TYPE,
 )
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -38,52 +39,69 @@ TRIGGER_SCHEMA = TRIGGER_BASE_SCHEMA.extend(
 )
 
 
-async def async_validate_trigger_config(hass, config):
-    """Validate config."""
-    config = TRIGGER_SCHEMA(config)
+async def get_device_from_id(hass, device_id) -> SHCUniversalSwitch:
+    """Get the switch device for the given device id."""
+    dev_registry = await dr.async_get_registry(hass)
+    for config_entry in hass.data[DOMAIN]:
+        session = hass.data[DOMAIN][config_entry]
 
-    print("async_validate_trigger_config called")
+        for switch_device in session.device_helper.universal_switches:
+            device = dev_registry.async_get_device(
+                identifiers={(DOMAIN, switch_device.id)}, connections=set()
+            )
+            if device.id == device_id:
+                return switch_device
 
-    # if device is available verify parameters against device capabilities
-    # wrapper = get_device_wrapper(hass, config[CONF_DEVICE_ID])
-    # if not wrapper:
-    #     return config
+    return None
 
-    trigger = (config[CONF_TYPE], config[CONF_SUBTYPE])
 
-    # for block in wrapper.device.blocks:
-    #     input_triggers = get_input_triggers(wrapper.device, block)
-    #     if trigger in input_triggers:
-    #         return config
+# async def async_validate_trigger_config(hass, config):
+#     """Validate config."""
+#     config = TRIGGER_SCHEMA(config)
 
-    raise InvalidDeviceAutomationConfig(
-        f"Invalid ({CONF_TYPE},{CONF_SUBTYPE}): {trigger}"
-    )
+#     # if device is available verify parameters against device capabilities
+#     device = await get_device_from_id(hass, config[CONF_DEVICE_ID])
+#     if not device:
+#         return config
+
+#     trigger = (config[CONF_TYPE], config[CONF_SUBTYPE])
+
+#     input_triggers = []
+#     for event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
+#         for subtype in INPUTS_EVENTS_SUBTYPES:
+#             input_triggers.append((event_type, subtype))
+
+#     if trigger in input_triggers:
+#         return config
+
+#     raise InvalidDeviceAutomationConfig(
+#         f"Invalid ({CONF_TYPE},{CONF_SUBTYPE}): {trigger}"
+#     )
 
 
 async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
     """List device triggers for Shelly devices."""
     triggers = []
 
-    print("async_get_triggers called")
+    device = await get_device_from_id(hass, device_id)
+    if not device:
+        raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
 
-    # wrapper = get_device_wrapper(hass, device_id)
-    # if not wrapper:
-    #     raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
+    input_triggers = []
+    for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
+        for subtype in INPUTS_EVENTS_SUBTYPES:
+            input_triggers.append((trigger, subtype))
 
-    # for block in wrapper.device.blocks:
-    #     input_triggers = get_input_triggers(wrapper.device, block)
-
-    #     for trigger, subtype in input_triggers:
-    #         triggers.append(
-    #             {
-    #                 CONF_PLATFORM: "device",
-    #                 CONF_DEVICE_ID: device_id,
-    #                 CONF_DOMAIN: DOMAIN,
-    #                 CONF_TYPE: trigger,
-    #                 CONF_SUBTYPE: subtype,
-    #             }
-    #         )
+    for trigger, subtype in input_triggers:
+        triggers.append(
+            {
+                CONF_PLATFORM: "device",
+                CONF_DEVICE_ID: device_id,
+                CONF_DOMAIN: DOMAIN,
+                CONF_TYPE: trigger,
+                CONF_SUBTYPE: subtype,
+            }
+        )
 
     return triggers
 
@@ -96,8 +114,6 @@ async def async_attach_trigger(
 ) -> CALLBACK_TYPE:
     """Attach a trigger."""
 
-    print("async_attach_trigger called")
-
     config = TRIGGER_SCHEMA(config)
     event_config = event_trigger.TRIGGER_SCHEMA(
         {
@@ -105,7 +121,7 @@ async def async_attach_trigger(
             event_trigger.CONF_EVENT_TYPE: EVENT_BOSCH_SHC_CLICK,
             event_trigger.CONF_EVENT_DATA: {
                 ATTR_DEVICE_ID: config[CONF_DEVICE_ID],
-                ATTR_BUTTON: INPUTS_EVENTS_SUBTYPES[config[CONF_SUBTYPE]],
+                ATTR_BUTTON: config[CONF_SUBTYPE],
                 ATTR_CLICK_TYPE: config[CONF_TYPE],
             },
         }
