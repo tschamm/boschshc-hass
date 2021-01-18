@@ -31,7 +31,7 @@
   },
   "device_automation":{
       "trigger_subtype": {
-          "LOWER_BUTTON": "Lower Button",
+          "LOWER_BUTTON": "Lower button",
           "UPPER_BUTTON": "Upper button"
       },
       "trigger_type": {
