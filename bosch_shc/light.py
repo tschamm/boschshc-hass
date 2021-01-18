@@ -61,7 +61,9 @@ class LightSwitch(SHCEntity, LightEntity):
     def brightness(self) -> int:
         """Return the brightness of this light between 0..255."""
         brightness_value = (
-            round(self._device.brightness * 255 / 100) if self._device.brightness else None
+            round(self._device.brightness * 255 / 100)
+            if self._device.brightness
+            else None
         )
         return brightness_value
 

@@ -39,7 +39,9 @@ class SHCEntity(Entity):
 
         def update_entity_information():
             if self._device.deleted:
-                self.hass.async_create_task(remove_devices(self.hass, self, self._entry_id))
+                self.hass.async_create_task(
+                    remove_devices(self.hass, self, self._entry_id)
+                )
             else:
                 self.schedule_update_ha_state()
 

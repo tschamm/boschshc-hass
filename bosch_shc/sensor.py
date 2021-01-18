@@ -106,7 +106,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    for sensor in session.device_helper.light_controls + session.device_helper.smart_plugs:
+    for sensor in (
+        session.device_helper.light_controls + session.device_helper.smart_plugs
+    ):
         entities.append(
             PowerSensor(
                 device=sensor,
@@ -122,7 +124,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    for sensor in session.device_helper.smoke_detectors + session.device_helper.shutter_contacts + session.device_helper.universal_switches:
+    for sensor in (
+        session.device_helper.smoke_detectors
+        + session.device_helper.shutter_contacts
+        + session.device_helper.universal_switches
+    ):
         entities.append(
             BatterySensor(
                 device=sensor,
@@ -216,6 +222,7 @@ class PuritySensor(SHCEntity):
         """Return the icon of the sensor."""
         return "mdi:molecule-co2"
 
+
 class AirQualitySensor(SHCEntity):
     """Representation of a SHC airquality reporting sensor."""
 
@@ -245,6 +252,7 @@ class AirQualitySensor(SHCEntity):
         state_attr["humidity_rating"] = self._device.humidity_rating.name
         state_attr["purity_rating"] = self._device.purity_rating.name
         return state_attr
+
 
 class PowerSensor(SHCEntity):
     """Representation of a SHC power reporting sensor."""
@@ -325,10 +333,16 @@ class BatterySensor(SHCEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW:
+        if (
+            self._device.batterylevel
+            == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW
+        ):
             logging.warning("Battery state of device %s is critical low.", self.name)
             return 0
-        if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY:
+        if (
+            self._device.batterylevel
+            == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY
+        ):
             return 20
         if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.OK:
             return 100

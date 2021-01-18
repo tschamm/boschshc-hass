@@ -18,6 +18,7 @@ from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
     entities = []
@@ -95,7 +96,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     def is_on(self):
         """Return the state of the sensor."""
         try:
-            latestmotion = datetime.strptime(self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ")
+            latestmotion = datetime.strptime(
+                self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
         except ValueError:
             return False
 
@@ -162,5 +165,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         if state_attr is None:
             state_attr = dict()
 
-        state_attr["smokedetectorcheck_state"] = self._device.smokedetectorcheck_state.name
+        state_attr[
+            "smokedetectorcheck_state"
+        ] = self._device.smokedetectorcheck_state.name
         return state_attr
