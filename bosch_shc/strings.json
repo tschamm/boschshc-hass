@@ -28,5 +28,15 @@
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     },
     "flow_title": "Bosch SHC: {name}"
+  },
+  "device_automation":{
+      "trigger_subtype": {
+          "LOWER_BUTTON": "Lower button",
+          "UPPER_BUTTON": "Upper button"
+      },
+      "trigger_type": {
+          "PRESS_SHORT": "{subtype} short clicked",
+          "PRESS_LONG": "{subtype} long clicked"
+      }
   }
 }

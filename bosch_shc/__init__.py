@@ -3,17 +3,38 @@ import asyncio
 import logging
 
 import voluptuous as vol
-from boschshcpy import SHCSession
-from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError, SHCmDNSError
+from boschshcpy import SHCSession, SHCUniversalSwitch
+from boschshcpy.exceptions import (
+    SHCAuthenticationError,
+    SHCConnectionError,
+    SHCmDNSError,
+)
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import HomeAssistant
+from homeassistant.const import (
+    ATTR_DEVICE_ID,
+    ATTR_ID,
+    ATTR_NAME,
+    CONF_HOST,
+    EVENT_HOMEASSISTANT_STOP,
+)
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .const import ATTR_NAME, CONF_SSL_CERTIFICATE, CONF_SSL_KEY, DOMAIN, SERVICE_TRIGGER_SCENARIO
+from .const import (
+    ATTR_BUTTON,
+    ATTR_CLICK_TYPE,
+    ATTR_LAST_TIME_TRIGGERED,
+    CONF_SSL_CERTIFICATE,
+    CONF_SSL_KEY,
+    DOMAIN,
+    EVENT_BOSCH_SHC_CLICK,
+    EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+    SERVICE_TRIGGER_SCENARIO,
+    SUPPORTED_INPUTS_EVENTS_TYPES,
+)
 
 PLATFORMS = [
     "binary_sensor",
@@ -61,7 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id] = session
 
     device_registry = await dr.async_get_registry(hass)
-    device_registry.async_get_or_create(
+    device_entry = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         connections={(dr.CONNECTION_NETWORK_MAC, dr.format_mac(shc_info.mac_address))},
         identifiers={(DOMAIN, shc_info.name)},
@@ -70,9 +91,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         model="SmartHomeController",
         sw_version=shc_info.version,
     )
+    device_id = device_entry.id
 
     for component in PLATFORMS:
-        hass.async_create_task(hass.config_entries.async_forward_entry_setup(entry, component))
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, component)
+        )
 
     async def stop_polling(event):
         """Stop polling service."""
@@ -83,13 +107,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         EVENT_HOMEASSISTANT_STOP, stop_polling
     )
 
-    def scenario_trigger(scenario_id, name, last_time_triggered):
-        hass.bus.fire(
-            "bosch_shc_scenario_trigger",
-            {"id": scenario_id, "name": name, "lastTimeTriggered": last_time_triggered},
+    @callback
+    def _async_scenario_trigger(scenario_id, name, last_time_triggered):
+        hass.bus.async_fire(
+            EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+            {
+                ATTR_DEVICE_ID: device_id,
+                ATTR_ID: scenario_id,
+                ATTR_NAME: name,
+                ATTR_LAST_TIME_TRIGGERED: last_time_triggered,
+            },
         )
 
-    session.subscribe_scenario_callback(scenario_trigger)
+    session.subscribe_scenario_callback(_async_scenario_trigger)
+
+    for switch_device in session.device_helper.universal_switches:
+        event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
+        await event_listener.async_setup()
 
     register_services(hass, entry)
     return True
@@ -142,3 +176,72 @@ def register_services(hass, entry):
         scenario_service_call,
         service_scenario_trigger_schema,
     )
+
+
+class SwitchDeviceEventListener:
+    """Event listener for a Switch device."""
+
+    def __init__(self, hass, entry, device: SHCUniversalSwitch):
+        """Initialize the Switch device event listener."""
+        self.hass = hass
+        self.entry = entry
+        self._device = device
+        self._service = None
+        self.device_id = None
+
+        for service in self._device.device_services:
+            if service.id == "Keypad":
+                self._service = service
+                self._service.subscribe_callback(
+                    self._device.id, self._async_input_events_handler
+                )
+
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+
+    @callback
+    def _async_input_events_handler(self):
+        """Handle device input events."""
+        event_type = self._device.eventtype.name
+
+        if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
+            self.hass.bus.async_fire(
+                EVENT_BOSCH_SHC_CLICK,
+                {
+                    ATTR_DEVICE_ID: self.device_id,
+                    ATTR_ID: self._device.id,
+                    ATTR_NAME: self._device.name,
+                    ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
+                    ATTR_BUTTON: self._device.keyname.name,
+                    ATTR_CLICK_TYPE: self._device.eventtype.name,
+                },
+            )
+        else:
+            _LOGGER.warning(
+                "Switch input event %s for device %s is not supported, please open issue",
+                event_type,
+                self._device.name,
+            )
+
+    async def async_setup(self):
+        """Set up the listener."""
+
+        device_registry = await dr.async_get_registry(self.hass)
+        device_entry = device_registry.async_get_or_create(
+            config_entry_id=self.entry.entry_id,
+            name=self._device.name,
+            identifiers={(DOMAIN, self._device.id)},
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+            via_device=(DOMAIN, self._device.parent_device_id),
+        )
+        self.device_id = device_entry.id
+
+    def shutdown(self):
+        """Shutdown the listener."""
+        self._service.unsubscribe_callback(self._device.id)
+
+    @callback
+    def _handle_ha_stop(self, _):
+        """Handle Home Assistant stopping."""
+        _LOGGER.debug("Stopping Switch event listener for %s", self._device.name)
+        self.shutdown()

@@ -4,22 +4,38 @@
 
 Home Assistant component `bosch_shc` for accessing Bosch Smart Home Controller (SHC) using [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
 
+The SmartHomeController is added as a device. The component provides access to:
+
+* Service calls
+  * `bosch_shc.trigger_scenario` service call to trigger a scenario by its name
+  * `bosch_shc.smokedetector_check` service call to trigger a check routine of the smokedetector
+* Events
+  * `bosch_shc.click` event for Universal Switches (lower and upper button, short and long press)
+  * `bosch_shc.scenario_trigger` event for a triggered scenario
+
 The following platforms are implemented:
 
-* SmartHomeController (as a device)
-* Smart Plug (switch)
-* Light Control (switch)
-* Shutter Control (cover)
-* Shutter Contact (binary sensor)
-* Smoke Detector (binary sensor)
-* Motion Detector (binary sensor)
-* Thermostat and Wall Thermostat Sensor (sensor)
-* Twinguard (sensor)
-* LEDVANCE Light (light)
-* Room Climate Control (climate)
-* Intrusion Detection Control (Alarm Control Panel)
-* Scenarios (as service, as well as HA events)
-
+* Alarm Control Panel
+  * Intrusion Detection Control
+* Binary Sensor
+  * Shutter Contact
+  * Smoke Detector
+  * Motion Detector
+* Climate
+  * Room Climate Control
+* Cover
+  * Shutter Control
+* Light
+  * LEDVANCE Light
+* Sensor
+  * Thermostat
+  * Wall Thermostat
+  * Twinguard
+  * Battery: all battery powered devices
+  * Smart Plug and Light Control (energy and power)
+* Switch
+  * Smart Plug
+  * Light Control
 
 # Installation
 

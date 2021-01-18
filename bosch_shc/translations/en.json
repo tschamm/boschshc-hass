@@ -30,5 +30,15 @@
         "abort": {
             "already_configured": "Device is already configured"
         }
+    },
+    "device_automation":{
+        "trigger_subtype": {
+            "LOWER_BUTTON": "Lower button",
+            "UPPER_BUTTON": "Upper button"
+        },
+        "trigger_type": {
+            "PRESS_SHORT": "{subtype} short clicked",
+            "PRESS_LONG": "{subtype} long clicked"
+        }
     }
 }

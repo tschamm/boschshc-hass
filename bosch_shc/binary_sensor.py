@@ -13,12 +13,11 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN
+from .const import DOMAIN, SERVICE_SMOKEDETECTOR_CHECK
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
@@ -97,7 +96,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     def is_on(self):
         """Return the state of the sensor."""
         try:
-            latestmotion = datetime.strptime(self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ")
+            latestmotion = datetime.strptime(
+                self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
         except ValueError:
             return False
 
@@ -164,5 +165,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         if state_attr is None:
             state_attr = dict()
 
-        state_attr["smokedetectorcheck_state"] = self._device.smokedetectorcheck_state.name
+        state_attr[
+            "smokedetectorcheck_state"
+        ] = self._device.smokedetectorcheck_state.name
         return state_attr
