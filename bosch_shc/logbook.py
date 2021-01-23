@@ -11,6 +11,7 @@ from .const import (
     EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
 )
 
+
 @callback
 def async_describe_events(hass, async_describe_event):
     """Describe logbook events."""

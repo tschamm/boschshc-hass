@@ -2,6 +2,8 @@
 import logging
 from datetime import datetime, timedelta
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from boschshcpy import SHCSession, SHCShutterContact, SHCSmokeDetector
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_DOOR,
@@ -10,10 +12,11 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_WINDOW,
     BinarySensorEntity,
 )
+from homeassistant.const import ATTR_COMMAND
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN, SERVICE_SMOKEDETECTOR_CHECK
+from .const import DOMAIN, SERVICE_SMOKEDETECTOR_ALARMSTATE, SERVICE_SMOKEDETECTOR_CHECK
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,9 +55,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    if entities:
-        async_add_entities(entities)
-
     platform = entity_platform.current_platform.get()
 
     platform.async_register_entity_service(
@@ -62,6 +62,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         {},
         "async_request_smoketest",
     )
+    platform.async_register_entity_service(
+        SERVICE_SMOKEDETECTOR_ALARMSTATE,
+        {
+            vol.Required(ATTR_COMMAND): cv.string,
+        },
+        "async_request_alarmstate",
+    )
+
+    if entities:
+        async_add_entities(entities)
 
 
 class ShutterContactSensor(SHCEntity, BinarySensorEntity):
@@ -76,10 +86,10 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
     def device_class(self):
         """Return the class of this device, from component DEVICE_CLASSES."""
         switcher = {
-            SHCShutterContact.DeviceClass.ENTRANCE_DOOR: DEVICE_CLASS_DOOR,
-            SHCShutterContact.DeviceClass.REGULAR_WINDOW: DEVICE_CLASS_WINDOW,
-            SHCShutterContact.DeviceClass.FRENCH_WINDOW: DEVICE_CLASS_DOOR,
-            SHCShutterContact.DeviceClass.GENERIC: DEVICE_CLASS_WINDOW,
+            "ENTRANCE_DOOR": DEVICE_CLASS_DOOR,
+            "REGULAR_WINDOW": DEVICE_CLASS_WINDOW,
+            "FRENCH_WINDOW": DEVICE_CLASS_DOOR,
+            "GENERIC": DEVICE_CLASS_WINDOW,
         }
         return switcher.get(self._device.device_class, DEVICE_CLASS_WINDOW)
 
@@ -158,6 +168,17 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         """Request smokedetector test."""
         _LOGGER.debug("Requesting smoke test on entity %s", self.name)
         await self._hass.async_add_executor_job(self._device.smoketest_requested)
+
+    async def async_request_alarmstate(self, command: str):
+        """Request smokedetector alarm state."""
+
+        def set_alarmstate(device, command):
+            device.alarmstate = command
+
+        _LOGGER.debug(
+            "Requesting custom alarm state %s on entity %s", command, self.name
+        )
+        await self._hass.async_add_executor_job(set_alarmstate, self._device, command)
 
     @property
     def state_attributes(self):

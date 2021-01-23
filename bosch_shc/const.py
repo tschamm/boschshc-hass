@@ -15,6 +15,7 @@ EVENT_BOSCH_SHC_CLICK = "bosch_shc.click"
 EVENT_BOSCH_SHC_SCENARIO_TRIGGER = "bosch_shc.scenario_trigger"
 
 SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
+SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 
 SUPPORTED_INPUTS_EVENTS_TYPES = {
