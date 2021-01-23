@@ -1,6 +1,6 @@
 """Describe Shelly logbook events."""
 
-from homeassistant.const import ATTR_DEVICE_ID, ATTR_NAME
+from homeassistant.const import ATTR_NAME
 from homeassistant.core import callback
 
 from .const import (
@@ -10,8 +10,6 @@ from .const import (
     EVENT_BOSCH_SHC_CLICK,
     EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
 )
-from .device_trigger import get_device_from_id
-
 
 @callback
 def async_describe_events(hass, async_describe_event):
@@ -31,12 +29,6 @@ def async_describe_events(hass, async_describe_event):
     @callback
     def async_describe_bosch_shc_click_event(event):
         """Describe bosch_shc.click logbook event."""
-
-        # device = get_device_from_id(hass, event.data[ATTR_DEVICE_ID])
-        # if device:
-        #     device_name = device.name
-        # else:
-        #     device_name = event.data[ATTR_NAME]
 
         device_name = event.data[ATTR_NAME]
         subtype = event.data[ATTR_BUTTON]

@@ -63,6 +63,11 @@ class SHCEntity(Entity):
 
     @property
     def name(self):
+        """Name of the entity."""
+        return self.device_name
+
+    @property
+    def device_name(self):
         """Name of the device."""
         return self._device.name
 
@@ -76,7 +81,7 @@ class SHCEntity(Entity):
         """Return the device info."""
         return {
             "identifiers": {(DOMAIN, self._device.id)},
-            "name": self._device.name,
+            "name": self.device_name,
             "manufacturer": self._device.manufacturer,
             "model": self._device.device_model,
             "via_device": (

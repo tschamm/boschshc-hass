@@ -6,6 +6,7 @@ from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     HVAC_MODE_AUTO,
     HVAC_MODE_HEAT,
+    HVAC_MODE_OFF,
     PRESET_BOOST,
     PRESET_ECO,
     PRESET_NONE,
@@ -57,34 +58,47 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     @property
     def name(self):
+        """Name of the entity."""
+        return self._name
+
+    @property
+    def device_name(self):
+        """Name of the device."""
         return self._name
 
     @property
     def temperature_unit(self):
+        """Return the temperature unit."""
         return TEMP_CELSIUS
 
     @property
     def current_temperature(self):
+        """Return the current temperature."""
         return self._device.temperature
 
     @property
     def max_temp(self):
+        """Return the maximum temperature allowed."""
         return 30.0
 
     @property
     def min_temp(self):
+        """Return the minimum temperature allowed."""
         return 5.0
 
     @property
     def target_temperature(self):
+        """Return the target temperature setpoint."""
         return self._device.setpoint_temperature
 
     @property
     def target_temperature_step(self):
+        """Return the temperature step."""
         return 0.5
 
     @property
     def hvac_mode(self):
+        """Return the hvac mode."""
         if (
             self._device.operation_mode
             == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
@@ -95,12 +109,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
             == SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
         ):
             return HVAC_MODE_HEAT
-        # _LOGGER.warning(
-        #     f"Unknown operation mode! {self._device.operation_mode} != {SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL}"
-        # )
+        return HVAC_MODE_OFF
 
     @property
     def hvac_modes(self):
+        """Return available hvac modes."""
         return [HVAC_MODE_AUTO, HVAC_MODE_HEAT]
 
     # @property
@@ -112,6 +125,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     @property
     def preset_mode(self):
+        """Return preset mode."""
         if self._device.supports_boost_mode:
             if self._device.boost_mode:
                 return PRESET_BOOST
@@ -123,6 +137,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     @property
     def preset_modes(self):
+        """Return available preset modes."""
         presets = [PRESET_NONE, PRESET_ECO]
         if self._device.supports_boost_mode:
             presets += [PRESET_BOOST]
@@ -130,9 +145,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     @property
     def supported_features(self):
+        """Return supported features."""
         return SUPPORT_TARGET_TEMPERATURE + SUPPORT_PRESET_MODE
 
     def set_temperature(self, **kwargs):
+        """Set the temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
@@ -141,6 +158,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
             self._device.setpoint_temperature = float(temperature)
 
     def set_hvac_mode(self, hvac_mode: str):
+        """Set hvac mode."""
         if hvac_mode not in self.hvac_modes:
             return
 
@@ -154,6 +172,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
             )
 
     def set_preset_mode(self, preset_mode: str):
+        """Set preset mode."""
         if preset_mode not in self.preset_modes:
             return
 
