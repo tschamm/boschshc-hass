@@ -1,10 +1,13 @@
 ![Validate with hassfest](https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/tschamm/boschshc-hass)
 
 # Bosch Smart Home Controller (SHC) for Home Assistant
 
 ![Bosch Smart Home](https://avatars.githubusercontent.com/u/56956610?s=200&v=4)
 
-Home Assistant component `bosch_shc` for accessing Bosch Smart Home Controller (SHC) using [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
+Custom Home Assistant integration for accessing Bosch Smart Home Controller (SHC).
+
+The integration is using [boschshcpy](https://github.com/tschamm/boschshcpy) as backend towards the API.
 
 The SmartHomeController is added as a device. The component provides access to:
 

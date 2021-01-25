@@ -38,12 +38,12 @@ Platform        | Description
 ***
 
 [bosch_smart_home]: https://github.com/BoschSmartHome/bosch-shc-api-docs
-[bosch_smart_home_icon]: https://avatars.githubusercontent.com/u/56956610?s=200&v=4
+[bosch_smart_home_icon]: https://avatars.githubusercontent.com/u/56956610?s=100&v=4
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass?style=for-the-badge
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
-[hacs]: https://hacs.xyz
+[hacs]: https://github.com/tschamm/boschshc-hass
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
