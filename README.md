@@ -1,6 +1,8 @@
 ![Validate with hassfest](https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg)
 
-# boschshc-hass
+# Bosch Smart Home Controller (SHC) for Home Assistant
+
+![Bosch Smart Home](https://avatars.githubusercontent.com/u/56956610?s=200&v=4)
 
 Home Assistant component `bosch_shc` for accessing Bosch Smart Home Controller (SHC) using [boschshcpy](https://github.com/tschamm/boschshcpy) python library.
 
