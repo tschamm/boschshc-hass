@@ -9,6 +9,8 @@
 
 _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 
+![Bosch Smart Home][bosch_smart_home_icon]
+
 **This component will set up the following platforms.**
 
 Platform        | Description
@@ -32,10 +34,11 @@ Platform        | Description
 ## Configuration is done in the UI
 
 <!---->
-<a href="https://www.buymeacoffee.com/tschamm" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+<a href="https://www.buymeacoffee.com/tschamm" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 163px !important;" ></a>
 ***
 
 [bosch_smart_home]: https://github.com/BoschSmartHome/bosch-shc-api-docs
+[bosch_smart_home_icon]: https://avatars.githubusercontent.com/u/56956610?s=200&v=4
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass?style=for-the-badge
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
