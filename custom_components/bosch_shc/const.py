@@ -12,6 +12,7 @@ CONF_SSL_KEY = "ssl_key"
 DOMAIN = "bosch_shc"
 
 EVENT_BOSCH_SHC_CLICK = "bosch_shc.click"
+EVENT_BOSCH_SHC_MOTION_DETECTED = "bosch_shc.motion_detected"
 EVENT_BOSCH_SHC_SCENARIO_TRIGGER = "bosch_shc.scenario_trigger"
 
 SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"

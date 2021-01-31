@@ -9,6 +9,7 @@ from .const import (
     DOMAIN,
     EVENT_BOSCH_SHC_CLICK,
     EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+    EVENT_BOSCH_SHC_MOTION_DETECTED
 )
 
 
@@ -28,6 +29,17 @@ def async_describe_events(hass, async_describe_event):
         }
 
     @callback
+    def async_describe_bosch_shc_motion_detected_event(event):
+        """Describe bosch_shc.motion_detected logbook event."""
+
+        device_name = event.data[ATTR_NAME]
+
+        return {
+            "name": "Bosch SHC",
+            "message": f"'{device_name}' motion event was fired.",
+        }
+
+    @callback
     def async_describe_bosch_shc_click_event(event):
         """Describe bosch_shc.click logbook event."""
 
@@ -44,6 +56,11 @@ def async_describe_events(hass, async_describe_event):
         DOMAIN,
         EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
         async_describe_bosch_shc_scenario_trigger_event,
+    )
+    async_describe_event(
+        DOMAIN,
+        EVENT_BOSCH_SHC_MOTION_DETECTED,
+        async_describe_bosch_shc_motion_detected_event,
     )
     async_describe_event(
         DOMAIN, EVENT_BOSCH_SHC_CLICK, async_describe_bosch_shc_click_event

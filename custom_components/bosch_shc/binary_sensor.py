@@ -12,11 +12,13 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_WINDOW,
     BinarySensorEntity,
 )
-from homeassistant.const import ATTR_COMMAND
-from homeassistant.core import HomeAssistant
+from homeassistant.const import ATTR_COMMAND, EVENT_HOMEASSISTANT_STOP, ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
+
+
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN, SERVICE_SMOKEDETECTOR_ALARMSTATE, SERVICE_SMOKEDETECTOR_CHECK
+from .const import DOMAIN, SERVICE_SMOKEDETECTOR_ALARMSTATE, SERVICE_SMOKEDETECTOR_CHECK, EVENT_BOSCH_SHC_MOTION_DETECTED, ATTR_LAST_TIME_TRIGGERED
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +41,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for binarysensor in session.device_helper.motion_detectors:
         entities.append(
             MotionDetectionSensor(
+                hass=hass,
                 device=binarysensor,
                 parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
@@ -96,6 +99,40 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
 
 class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC motion detection sensor."""
+
+    def __init__(self, hass, device, parent_id: str, entry_id: str):
+        """Initialize the motion detection device."""
+        self.hass = hass
+        self._service = None
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+
+        for service in self._device.device_services:
+            if service.id == "LatestMotion":
+                self._service = service
+                self._service.subscribe_callback(
+                    self._device.id + "_eventlistener", self._async_input_events_handler
+                )
+
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+
+    @callback
+    def _async_input_events_handler(self):
+        """Handle device input events."""
+        self.hass.bus.async_fire(
+            EVENT_BOSCH_SHC_MOTION_DETECTED,
+            {
+                ATTR_DEVICE_ID: self.device_id,
+                ATTR_ID: self._device.id,
+                ATTR_NAME: self._device.name,
+                ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+            },
+        )
+
+    @callback
+    def _handle_ha_stop(self, _):
+        """Handle Home Assistant stopping."""
+        _LOGGER.debug("Stopping motion detection event listener for %s", self._device.name)
+        self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
     def device_class(self):
@@ -190,3 +227,4 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             "smokedetectorcheck_state"
         ] = self._device.smokedetectorcheck_state.name
         return state_attr
+
