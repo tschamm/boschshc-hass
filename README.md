@@ -1,5 +1,8 @@
-![Validate with hassfest](https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg)
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/tschamm/boschshc-hass)
+[![Validate with hassfest][hassfestbadge]][hassfest]
+[![hacs_badge][hacsbadge]][hacs]
+
+[![Stars][stars-shield]][bosch_shc]
+[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
 
 # Bosch Smart Home Controller (SHC) for Home Assistant
 
@@ -120,3 +123,12 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 * After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
 * Hue Lights added to SHC do not appear in HomeAssistant. Please use the provided [hue component](https://www.home-assistant.io/integrations/hue/) instead.
 * Arming and disarming of alarm control panel does not support using a code.
+
+[buymecoffee]: https://www.buymeacoffee.com/tschamm
+[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[hassfest]: https://github.com/tschamm/boschshc-hass/actions
+[hassfestbadge]: https://img.shields.io/github/workflow/status/tschamm/boschshc-hass/Validate%20with%20hassfest?style=for-the-badge
+[hacs]: https://github.com/tschamm/boschshc-hass
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[bosch_shc]: https://github.com/tschamm/boschshc-hass
+[stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass?style=for-the-badge
