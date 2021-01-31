@@ -4,6 +4,7 @@ import logging
 from boschshcpy import SHCClimateControl, SHCSession
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
+    ATTR_HVAC_MODE,
     HVAC_MODE_AUTO,
     HVAC_MODE_HEAT,
     HVAC_MODE_OFF,
@@ -99,22 +100,21 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def hvac_mode(self):
         """Return the hvac mode."""
+        if self._device.summer_mode:
+            return HVAC_MODE_OFF
+
         if (
             self._device.operation_mode
             == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
         ):
             return HVAC_MODE_AUTO
-        if (
-            self._device.operation_mode
-            == SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
-        ):
-            return HVAC_MODE_HEAT
-        return HVAC_MODE_OFF
+
+        return HVAC_MODE_HEAT
 
     @property
     def hvac_modes(self):
         """Return available hvac modes."""
-        return [HVAC_MODE_AUTO, HVAC_MODE_HEAT]
+        return [HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF]
 
     # @property
     # def hvac_action(self):
@@ -154,8 +154,14 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if temperature is None:
             return
 
+        self.set_hvac_mode(kwargs.get(ATTR_HVAC_MODE))
+
+        if self.hvac_mode == HVAC_MODE_OFF:
+            return
+
         if self.min_temp <= temperature <= self.max_temp:
             self._device.setpoint_temperature = float(temperature)
+
 
     def set_hvac_mode(self, hvac_mode: str):
         """Set hvac mode."""
@@ -163,13 +169,17 @@ class ClimateControl(SHCEntity, ClimateEntity):
             return
 
         if hvac_mode == HVAC_MODE_AUTO:
+            self._device.summer_mode = False
             self._device.operation_mode = (
                 SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
             )
-        elif hvac_mode == HVAC_MODE_HEAT:
+        if hvac_mode == HVAC_MODE_HEAT:
+            self._device.summer_mode = False
             self._device.operation_mode = (
                 SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
             )
+        if hvac_mode == HVAC_MODE_OFF:
+            self._device.summer_mode = True
 
     def set_preset_mode(self, preset_mode: str):
         """Set preset mode."""

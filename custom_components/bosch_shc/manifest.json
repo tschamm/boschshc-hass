@@ -3,8 +3,8 @@
   "name": "Bosch SHC",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/bosch_shc",
-  "requirements": ["boschshcpy==0.2.1"],
-  "version": "0.2.1",
+  "requirements": ["boschshcpy==0.2.2"],
+  "version": "0.2.2",
   "zeroconf": [
     {"type": "_http._tcp.local.", "name": "bosch shc*"}
   ],
