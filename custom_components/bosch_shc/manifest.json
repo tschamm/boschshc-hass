@@ -2,9 +2,9 @@
   "domain": "bosch_shc",
   "name": "Bosch SHC",
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/bosch_shc",
+  "documentation": "https://github.com/tschamm/boschshc-hass/blob/master/README.md",
   "requirements": ["boschshcpy==0.2.2"],
-  "version": "0.2.3",
+  "version": "0.2.4.dev0",
   "zeroconf": [
     {"type": "_http._tcp.local.", "name": "bosch shc*"}
   ],
