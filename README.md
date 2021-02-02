@@ -17,9 +17,10 @@ The SmartHomeController is added as a device. The component provides access to:
 * Service calls
   * `bosch_shc.trigger_scenario` service call to trigger a scenario by its name
   * `bosch_shc.smokedetector_check` service call to trigger a check routine of the smokedetector
-* Events
-  * `bosch_shc.click` event for Universal Switches (lower and upper button, short and long press)
-  * `bosch_shc.scenario_trigger` event for a triggered scenario
+* Events: `bosch_shc.event`
+  * Button events for Universal Switches (lower and upper button, short and long press)
+  * Scenario events for triggered scenarios registered in SHC, each scenario is identified by its name
+  * Motion events for detected motion for Motion Detectors
 
 The following platforms are implemented:
 
