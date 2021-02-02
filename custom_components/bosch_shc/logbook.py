@@ -3,12 +3,7 @@
 from homeassistant.const import ATTR_NAME
 from homeassistant.core import callback
 
-from .const import (
-    ATTR_EVENT_TYPE,
-    ATTR_EVENT_SUBTYPE,
-    DOMAIN,
-    EVENT_BOSCH_SHC,
-)
+from .const import ATTR_EVENT_SUBTYPE, ATTR_EVENT_TYPE, DOMAIN, EVENT_BOSCH_SHC
 
 
 @callback
@@ -50,7 +45,6 @@ def async_describe_events(hass, async_describe_event):
             "name": "Bosch SHC",
             "message": f"'{event_type}' click event for {device_name} button '{button}' was fired.",
         }
-
 
     async_describe_event(
         DOMAIN,

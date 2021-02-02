@@ -22,8 +22,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
-    ATTR_EVENT_TYPE,
     ATTR_EVENT_SUBTYPE,
+    ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
     DOMAIN,
     EVENT_BOSCH_SHC,
@@ -75,7 +75,7 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
     device, dev_type = await get_device_from_id(hass, device_id)
     if not device:
         raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
-    
+
     if dev_type == "WRC2":
         input_triggers = []
         for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
@@ -139,7 +139,7 @@ async def async_attach_trigger(
                 ATTR_DEVICE_ID: config[CONF_DEVICE_ID],
                 ATTR_EVENT_TYPE: config[CONF_TYPE],
                 ATTR_EVENT_SUBTYPE: config[CONF_SUBTYPE],
-            }
+            },
         }
     )
 

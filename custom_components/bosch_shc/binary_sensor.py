@@ -12,13 +12,25 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_WINDOW,
     BinarySensorEntity,
 )
-from homeassistant.const import ATTR_COMMAND, EVENT_HOMEASSISTANT_STOP, ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
-
-
+from homeassistant.const import (
+    ATTR_COMMAND,
+    ATTR_DEVICE_ID,
+    ATTR_ID,
+    ATTR_NAME,
+    EVENT_HOMEASSISTANT_STOP,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN, SERVICE_SMOKEDETECTOR_ALARMSTATE, SERVICE_SMOKEDETECTOR_CHECK, EVENT_BOSCH_SHC, ATTR_LAST_TIME_TRIGGERED, ATTR_EVENT_TYPE, ATTR_EVENT_SUBTYPE
+from .const import (
+    ATTR_EVENT_SUBTYPE,
+    ATTR_EVENT_TYPE,
+    ATTR_LAST_TIME_TRIGGERED,
+    DOMAIN,
+    EVENT_BOSCH_SHC,
+    SERVICE_SMOKEDETECTOR_ALARMSTATE,
+    SERVICE_SMOKEDETECTOR_CHECK,
+)
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -133,7 +145,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
-        _LOGGER.debug("Stopping motion detection event listener for %s", self._device.name)
+        _LOGGER.debug(
+            "Stopping motion detection event listener for %s", self._device.name
+        )
         self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
@@ -229,4 +243,3 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             "smokedetectorcheck_state"
         ] = self._device.smokedetectorcheck_state.name
         return state_attr
-

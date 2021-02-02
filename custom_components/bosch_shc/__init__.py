@@ -24,8 +24,8 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
-    ATTR_EVENT_TYPE,
     ATTR_EVENT_SUBTYPE,
+    ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,

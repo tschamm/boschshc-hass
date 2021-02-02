@@ -162,7 +162,6 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if self.min_temp <= temperature <= self.max_temp:
             self._device.setpoint_temperature = float(temperature)
 
-
     def set_hvac_mode(self, hvac_mode: str):
         """Set hvac mode."""
         if hvac_mode not in self.hvac_modes:
