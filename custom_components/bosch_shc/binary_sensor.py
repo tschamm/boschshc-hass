@@ -1,4 +1,5 @@
 """Platform for binarysensor integration."""
+import asyncio
 import logging
 from datetime import datetime, timedelta
 
@@ -21,6 +22,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
+from homeassistant.helpers.device_registry import async_get_registry as get_dev_reg
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -31,7 +33,7 @@ from .const import (
     SERVICE_SMOKEDETECTOR_ALARMSTATE,
     SERVICE_SMOKEDETECTOR_CHECK,
 )
-from .entity import SHCEntity
+from .entity import SHCEntity, get_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -133,7 +135,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         self.hass.bus.async_fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: self.device_id,
+                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
+                    get_device_id(self.hass, self._device.id), self.hass.loop
+                ).result(),
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
