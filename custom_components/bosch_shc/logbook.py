@@ -4,12 +4,10 @@ from homeassistant.const import ATTR_NAME
 from homeassistant.core import callback
 
 from .const import (
-    ATTR_BUTTON,
-    ATTR_CLICK_TYPE,
+    ATTR_EVENT_TYPE,
+    ATTR_EVENT_SUBTYPE,
     DOMAIN,
-    EVENT_BOSCH_SHC_CLICK,
-    EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
-    EVENT_BOSCH_SHC_MOTION_DETECTED
+    EVENT_BOSCH_SHC,
 )
 
 
@@ -29,39 +27,33 @@ def async_describe_events(hass, async_describe_event):
         }
 
     @callback
-    def async_describe_bosch_shc_motion_detected_event(event):
-        """Describe bosch_shc.motion_detected logbook event."""
-
-        device_name = event.data[ATTR_NAME]
-
-        return {
-            "name": "Bosch SHC",
-            "message": f"'{device_name}' motion event was fired.",
-        }
-
-    @callback
-    def async_describe_bosch_shc_click_event(event):
+    def async_describe_bosch_shc_event(event):
         """Describe bosch_shc.click logbook event."""
 
         device_name = event.data[ATTR_NAME]
-        subtype = event.data[ATTR_BUTTON]
-        click_type = event.data[ATTR_CLICK_TYPE]
+        button = event.data[ATTR_EVENT_SUBTYPE]
+        event_type = event.data[ATTR_EVENT_TYPE]
+
+        if event_type == "MOTION":
+            return {
+                "name": "Bosch SHC",
+                "message": f"'{device_name}' motion event was fired.",
+            }
+
+        if event_type == "SCENARIO":
+            return {
+                "name": "Bosch SHC",
+                "message": f"'{device_name}' scenario trigger event was fired.",
+            }
 
         return {
             "name": "Bosch SHC",
-            "message": f"'{click_type}' click event for {device_name} button '{subtype}' was fired.",
+            "message": f"'{event_type}' click event for {device_name} button '{button}' was fired.",
         }
+
 
     async_describe_event(
         DOMAIN,
-        EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
-        async_describe_bosch_shc_scenario_trigger_event,
-    )
-    async_describe_event(
-        DOMAIN,
-        EVENT_BOSCH_SHC_MOTION_DETECTED,
-        async_describe_bosch_shc_motion_detected_event,
-    )
-    async_describe_event(
-        DOMAIN, EVENT_BOSCH_SHC_CLICK, async_describe_bosch_shc_click_event
+        EVENT_BOSCH_SHC,
+        async_describe_bosch_shc_event,
     )

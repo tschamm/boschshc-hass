@@ -24,14 +24,13 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
-    ATTR_BUTTON,
-    ATTR_CLICK_TYPE,
+    ATTR_EVENT_TYPE,
+    ATTR_EVENT_SUBTYPE,
     ATTR_LAST_TIME_TRIGGERED,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DOMAIN,
-    EVENT_BOSCH_SHC_CLICK,
-    EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+    EVENT_BOSCH_SHC,
     SERVICE_TRIGGER_SCENARIO,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
@@ -110,12 +109,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     @callback
     def _async_scenario_trigger(scenario_id, name, last_time_triggered):
         hass.bus.async_fire(
-            EVENT_BOSCH_SHC_SCENARIO_TRIGGER,
+            EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: device_id,
                 ATTR_ID: scenario_id,
-                ATTR_NAME: name,
+                ATTR_NAME: shc_info.name,
                 ATTR_LAST_TIME_TRIGGERED: last_time_triggered,
+                ATTR_EVENT_TYPE: "SCENARIO",
+                ATTR_EVENT_SUBTYPE: name,
             },
         )
 
@@ -155,7 +156,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 def register_services(hass, entry):
     """Register services for the component."""
-    service_scenario_trigger_schema = vol.Schema(
+    TRIGGER_SCHEMA = vol.Schema(
         {
             vol.Required(ATTR_NAME): vol.All(
                 cv.string, vol.In(hass.data[DOMAIN][entry.entry_id].scenario_names)
@@ -174,7 +175,7 @@ def register_services(hass, entry):
         DOMAIN,
         SERVICE_TRIGGER_SCENARIO,
         scenario_service_call,
-        service_scenario_trigger_schema,
+        TRIGGER_SCHEMA,
     )
 
 
@@ -205,14 +206,14 @@ class SwitchDeviceEventListener:
 
         if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
             self.hass.bus.async_fire(
-                EVENT_BOSCH_SHC_CLICK,
+                EVENT_BOSCH_SHC,
                 {
                     ATTR_DEVICE_ID: self.device_id,
                     ATTR_ID: self._device.id,
                     ATTR_NAME: self._device.name,
                     ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
-                    ATTR_BUTTON: self._device.keyname.name,
-                    ATTR_CLICK_TYPE: self._device.eventtype.name,
+                    ATTR_EVENT_SUBTYPE: self._device.keyname.name,
+                    ATTR_EVENT_TYPE: self._device.eventtype.name,
                 },
             )
         else:

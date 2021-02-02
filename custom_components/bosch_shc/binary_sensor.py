@@ -18,7 +18,7 @@ from homeassistant.const import ATTR_COMMAND, EVENT_HOMEASSISTANT_STOP, ATTR_DEV
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN, SERVICE_SMOKEDETECTOR_ALARMSTATE, SERVICE_SMOKEDETECTOR_CHECK, EVENT_BOSCH_SHC_MOTION_DETECTED, ATTR_LAST_TIME_TRIGGERED
+from .const import DOMAIN, SERVICE_SMOKEDETECTOR_ALARMSTATE, SERVICE_SMOKEDETECTOR_CHECK, EVENT_BOSCH_SHC, ATTR_LAST_TIME_TRIGGERED, ATTR_EVENT_TYPE, ATTR_EVENT_SUBTYPE
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -119,12 +119,14 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     def _async_input_events_handler(self):
         """Handle device input events."""
         self.hass.bus.async_fire(
-            EVENT_BOSCH_SHC_MOTION_DETECTED,
+            EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self.device_id,
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+                ATTR_EVENT_TYPE: "MOTION",
+                ATTR_EVENT_SUBTYPE: "",
             },
         )
 

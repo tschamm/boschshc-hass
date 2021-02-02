@@ -36,7 +36,9 @@
       },
       "trigger_type": {
           "PRESS_SHORT": "{subtype} short clicked",
-          "PRESS_LONG": "{subtype} long clicked"
+          "PRESS_LONG": "{subtype} long clicked",
+          "MOTION": "Motion detected",
+          "SCENARIO": "Scenario triggered: {subtype}"
       }
   }
 }
