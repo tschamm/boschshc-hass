@@ -14,13 +14,13 @@ The integration is using [boschshcpy](https://github.com/tschamm/boschshcpy) as 
 
 The SmartHomeController is added as a device. The component provides access to:
 
-* Service calls
+* Service calls:
   * `bosch_shc.trigger_scenario` service call to trigger a scenario by its name
   * `bosch_shc.smokedetector_check` service call to trigger a check routine of the smokedetector
-* Events: `bosch_shc.event`
-  * Button events for Universal Switches (lower and upper button, short and long press)
-  * Scenario events for triggered scenarios registered in SHC, each scenario is identified by its name
-  * Motion events for detected motion for Motion Detectors
+* `bosch_shc.event` events:
+  * Button events for Universal Switches devices (lower and upper button, short and long press)
+  * Scenario events for triggered scenarios registered in SHC device, each scenario is identified by its name
+  * Motion events for detected motion for Motion Detector devices
 
 The following platforms are implemented:
 
