@@ -11,7 +11,12 @@ from homeassistant.components.light import (
     SUPPORT_COLOR_TEMP,
     LightEntity,
 )
-from homeassistant.util.color import color_hs_to_RGB, color_RGB_to_hs
+from homeassistant.util.color import (
+    color_hs_to_RGB,
+    color_RGB_to_hs,
+    color_temperature_mired_to_kelvin,
+    color_temperature_to_hs,
+)
 
 from .const import DOMAIN
 from .entity import SHCEntity
@@ -50,6 +55,7 @@ class LightSwitch(SHCEntity, LightEntity):
             feature |= SUPPORT_COLOR_TEMP
         if self._device.supports_color_hsb:
             feature |= SUPPORT_COLOR
+            feature |= SUPPORT_COLOR_TEMP
         return feature
 
     @property
@@ -88,10 +94,15 @@ class LightSwitch(SHCEntity, LightEntity):
 
         if brightness is not None and self._device.supports_brightness:
             self._device.brightness = round(brightness * 100 / 255)
-        if hs_color is not None and self._device.supports_color_hsb:
-            rgb = color_hs_to_RGB(*hs_color)
-            raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-            self._device.rgb = raw_rgb
+        if self._device.supports_color_hsb:
+            if color_temp is not None:
+                hs_color = color_temperature_to_hs(
+                    color_temperature_mired_to_kelvin(color_temp)
+                )
+            if hs_color is not None:
+                rgb = color_hs_to_RGB(*hs_color)
+                raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+                self._device.rgb = raw_rgb
         if color_temp is not None and self._device.supports_color_temp:
             self._device.color = color_temp
 
