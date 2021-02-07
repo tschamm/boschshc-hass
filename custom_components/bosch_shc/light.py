@@ -96,6 +96,8 @@ class LightSwitch(SHCEntity, LightEntity):
             self._device.brightness = round(brightness * 100 / 255)
         if self._device.supports_color_hsb:
             if color_temp is not None:
+                if color_temp < self._device.min_color_temperature: color_temp = self._device.min_color_temperature
+                if color_temp > self._device.max_color_temperature: color_temp = self._device.max_color_temperature
                 hs_color = color_temperature_to_hs(
                     color_temperature_mired_to_kelvin(color_temp)
                 )
