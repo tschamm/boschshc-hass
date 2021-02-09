@@ -84,7 +84,7 @@ class LightSwitch(SHCEntity, LightEntity):
     def color_temp(self):
         """Return the color temp of this light."""
         if self._device.supports_color_temp:
-        return self._device.color
+            return self._device.color
         return None
 
     def turn_on(self, **kwargs):
