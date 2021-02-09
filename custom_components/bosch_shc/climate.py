@@ -154,9 +154,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if temperature is None:
             return
 
-        self.set_hvac_mode(kwargs.get(ATTR_HVAC_MODE))
+        self.set_hvac_mode(kwargs.get(ATTR_HVAC_MODE)) # set_temperature args may provide HVAC mode as well
 
-        if self.hvac_mode == HVAC_MODE_OFF:
+        if self.hvac_mode == HVAC_MODE_OFF or self.preset_mode == PRESET_ECO:
+            _LOGGER.debug("Skipping setting temperature as device %s is off or in low_mode.", self.device_name)
             return
 
         if self.min_temp <= temperature <= self.max_temp:
