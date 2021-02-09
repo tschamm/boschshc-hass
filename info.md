@@ -1,3 +1,4 @@
+[![Stars][stars-shield]][bosch_shc]
 [![hacs][hacsbadge]][hacs]
 
 [![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
