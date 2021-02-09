@@ -26,7 +26,8 @@ Platform        | Description
 ## Installation
 
 1. Click install.
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Bosch SHC".
+2. In the HA UI go to "Configuration" -> "Integrations"
+3. Your SHC should be auto discovered, if not click "+" and search for "Bosch SHC".
 
 {% endif %}
 
@@ -34,7 +35,9 @@ Platform        | Description
 ## Configuration is done in the UI
 
 <!---->
-<a href="https://www.buymeacoffee.com/tschamm" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 163px !important;" ></a>
+
+<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="tschamm" data-color="#FFDD00" data-emoji=""  data-font="Cookie" data-text="Buy me a double espresso" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+
 ***
 
 [bosch_smart_home]: https://github.com/BoschSmartHome/bosch-shc-api-docs
@@ -42,7 +45,7 @@ Platform        | Description
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass?style=for-the-badge
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20double%20espresso-donate-yellow.svg?style=for-the-badge
 [hacs]: https://github.com/custom-components/hacs
 [hacsbadge]: https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge
 [discord]: https://discord.gg/Qa5fW2R
