@@ -129,7 +129,7 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
 [hassfest]: https://github.com/tschamm/boschshc-hass/actions
 [hassfestbadge]: https://img.shields.io/github/workflow/status/tschamm/boschshc-hass/Validate%20with%20hassfest?style=for-the-badge
-[hacs]: https://github.com/tschamm/boschshc-hass
-[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacs]: https://github.com/custom-components/hacs
+[hacsbadge]: https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass?style=for-the-badge
