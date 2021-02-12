@@ -32,13 +32,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
         entities.append(
-            BatterySensor(
-                device=sensor,
-                parent_id=session.information.name,
-                entry_id=config_entry.entry_id,
-            )
-        )
-        entities.append(
             ValveTappetSensor(
                 device=sensor,
                 parent_id=session.information.name,
@@ -56,13 +49,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
         entities.append(
             HumiditySensor(
-                device=sensor,
-                parent_id=session.information.name,
-                entry_id=config_entry.entry_id,
-            )
-        )
-        entities.append(
-            BatterySensor(
                 device=sensor,
                 parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
@@ -98,13 +84,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 entry_id=config_entry.entry_id,
             )
         )
-        entities.append(
-            BatterySensor(
-                device=sensor,
-                parent_id=session.information.name,
-                entry_id=config_entry.entry_id,
-            )
-        )
 
     for sensor in (
         session.device_helper.smart_plugs
@@ -128,14 +107,18 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         session.device_helper.smoke_detectors
         + session.device_helper.shutter_contacts
         + session.device_helper.universal_switches
+        + session.device_helper.thermostats
+        + session.device_helper.wallthermostats
+        + session.device_helper.twinguards
     ):
-        entities.append(
-            BatterySensor(
-                device=sensor,
-                parent_id=session.information.name,
-                entry_id=config_entry.entry_id,
+        if sensor.supports_batterylevel:
+            entities.append(
+                BatterySensor(
+                    device=sensor,
+                    parent_id=session.information.name,
+                    entry_id=config_entry.entry_id,
+                )
             )
-        )
 
     if entities:
         async_add_entities(entities)
@@ -347,6 +330,11 @@ class BatterySensor(SHCEntity):
         if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.OK:
             return 100
 
+        if (
+            self._device.batterylevel
+            == SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE
+        ):
+            logging.warning("Battery state of device %s is not available.", self.name)
         return None
 
     @property
