@@ -68,7 +68,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
-                await self.async_set_unique_id(info["mac"])
+                await self.async_set_unique_id(info["unique_id"])
                 self._abort_if_unique_id_configured({CONF_HOST: host})
                 self.host = host
                 return await self.async_step_credentials()
@@ -130,7 +130,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         local_name = zeroconf_info["hostname"][:-1]
         node_name = local_name[: -len(".local")]
 
-        await self.async_set_unique_id(info["mac"])
+        await self.async_set_unique_id(info["unique_id"])
         self._abort_if_unique_id_configured({CONF_HOST: zeroconf_info["host"]})
         self.host = zeroconf_info["host"]
         # pylint: disable=no-member # https://github.com/PyCQA/pylint/issues/3167
@@ -166,4 +166,4 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         information = await self.hass.async_add_executor_job(session.mdns_info)
-        return {"title": information.name, "mac": information.mac_address}
+        return {"title": information.name, "unique_id": information.unique_id}

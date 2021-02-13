@@ -44,7 +44,7 @@ async def test_form_user(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -157,7 +157,7 @@ async def test_form_user_invalid_auth(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -197,7 +197,7 @@ async def test_form_validate_connection_error(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -237,7 +237,7 @@ async def test_form_validate_mdns_error(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -277,7 +277,7 @@ async def test_form_validate_exception(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -323,7 +323,7 @@ async def test_form_already_configured(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -351,7 +351,7 @@ async def test_zeroconf(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
@@ -413,7 +413,7 @@ async def test_zeroconf_already_configured(hass):
         new_callable=PropertyMock,
         return_value="shc012345",
     ), patch(
-        "boschshcpy.information.SHCInformation.mac_address",
+        "boschshcpy.information.SHCInformation.unique_id",
         new_callable=PropertyMock,
         return_value="test-mac",
     ):
