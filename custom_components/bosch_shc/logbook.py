@@ -26,13 +26,19 @@ def async_describe_events(hass, async_describe_event):
         """Describe bosch_shc.click logbook event."""
 
         device_name = event.data[ATTR_NAME]
-        button = event.data[ATTR_EVENT_SUBTYPE]
+        event_subtype = event.data[ATTR_EVENT_SUBTYPE]
         event_type = event.data[ATTR_EVENT_TYPE]
 
         if event_type == "MOTION":
             return {
                 "name": "Bosch SHC",
                 "message": f"'{device_name}' motion event was fired.",
+            }
+
+        if event_type == "ALARM":
+            return {
+                "name": "Bosch SHC",
+                "message": f"'{device_name}' alarm event '{event_subtype}' was fired.",
             }
 
         if event_type == "SCENARIO":
@@ -43,7 +49,7 @@ def async_describe_events(hass, async_describe_event):
 
         return {
             "name": "Bosch SHC",
-            "message": f"'{event_type}' click event for {device_name} button '{button}' was fired.",
+            "message": f"'{event_type}' click event for {device_name} button '{event_subtype}' was fired.",
         }
 
     async_describe_event(

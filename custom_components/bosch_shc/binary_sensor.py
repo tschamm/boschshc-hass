@@ -199,9 +199,44 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         hass: HomeAssistant,
         entry_id: str,
     ):
-        """Initialize the SHC device."""
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        """Initialize the smoke detector device."""
         self._hass = hass
+        self._service = None
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+
+        for service in self._device.device_services:
+            if service.id == "Alarm":
+                self._service = service
+                self._service.subscribe_callback(
+                    self._device.id + "_eventlistener", self._async_input_events_handler
+                )
+
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+
+    @callback
+    def _async_input_events_handler(self):
+        """Handle device input events."""
+        self._hass.bus.async_fire(
+            EVENT_BOSCH_SHC,
+            {
+                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
+                    get_device_id(self._hass, self._device.id), self._hass.loop
+                ).result(),
+                ATTR_ID: self._device.id,
+                ATTR_NAME: self._device.name,
+                ATTR_EVENT_TYPE: "ALARM",
+                ATTR_EVENT_SUBTYPE: self._device.alarmstate.name,
+            },
+        )
+
+    @callback
+    def _handle_ha_stop(self, _):
+        """Handle Home Assistant stopping."""
+        _LOGGER.debug(
+            "Stopping alarm event listener for %s", self._device.name
+        )
+        self._service.unsubscribe_callback(self._device.id + "_eventlistener")
+
 
     @property
     def is_on(self):

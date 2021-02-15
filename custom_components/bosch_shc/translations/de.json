@@ -34,13 +34,18 @@
     "device_automation":{
         "trigger_subtype": {
             "LOWER_BUTTON": "Unterer Knopf",
-            "UPPER_BUTTON": "Oberer Knopf"
+            "UPPER_BUTTON": "Oberer Knopf",
+            "IDLE_OFF": "Alarm aus",
+            "INTRUSION_ALARM": "Einbrecher Alarm",
+            "SECONDARY_ALARM": "Sekundärer Alarm",
+            "PRIMARY_ALARM": "Primärer Alarm"
         },
         "trigger_type": {
             "PRESS_SHORT": "{subtype} kurz gedrückt",
             "PRESS_LONG": "{subtype} lang gedrückt",
             "MOTION": "Bewegung erkannt",
-            "SCENARIO": "Szenario ausgelöst: {subtype}"
+            "SCENARIO": "Szenario {subtype} ausgelöst",
+            "ALARM": "{subtype} ausgelöst"
         }
     }
 }
