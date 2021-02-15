@@ -22,6 +22,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    ALARM_EVENTS_SUBTYPES,
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
@@ -58,6 +59,13 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
             )
             if device.id == device_id:
                 return motion_device, "MD"
+
+        for smoke_device in session.device_helper.smoke_detectors:
+            device = dev_registry.async_get_device(
+                identifiers={(DOMAIN, smoke_device.id)}, connections=set()
+            )
+            if device.id == device_id:
+                return smoke_device, "SD"
 
         device = dev_registry.async_get_device(
             identifiers={(DOMAIN, session.information.name)}, connections=set()
@@ -104,6 +112,18 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
                 CONF_SUBTYPE: "",
             }
         )
+
+    if dev_type == "SD":
+        for subtype in ALARM_EVENTS_SUBTYPES:
+            triggers.append(
+                {
+                    CONF_PLATFORM: "device",
+                    CONF_DEVICE_ID: device_id,
+                    CONF_DOMAIN: DOMAIN,
+                    CONF_TYPE: "ALARM",
+                    CONF_SUBTYPE: subtype,
+                }
+            )
 
     if dev_type == "SHC":
         for subtype in device.scenario_names:

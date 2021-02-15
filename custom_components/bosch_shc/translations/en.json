@@ -34,13 +34,18 @@
     "device_automation":{
         "trigger_subtype": {
             "LOWER_BUTTON": "Lower button",
-            "UPPER_BUTTON": "Upper button"
+            "UPPER_BUTTON": "Upper button",
+            "IDLE_OFF": "Alarm off",
+            "INTRUSION_ALARM": "Intrusion alarm",
+            "SECONDARY_ALARM": "Secondary alarm",
+            "PRIMARY_ALARM": "Primary alarm"
         },
         "trigger_type": {
             "PRESS_SHORT": "{subtype} short clicked",
             "PRESS_LONG": "{subtype} long clicked",
             "MOTION": "Motion detected",
-            "SCENARIO": "Scenario triggered: {subtype}"
+            "SCENARIO": "Scenario {subtype} triggered",
+            "ALARM": "{subtype} triggered"
         }
     }
 }
