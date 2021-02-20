@@ -44,6 +44,7 @@ class IntrusionDetectionAlarmControlPanel(SHCEntity, AlarmControlPanelEntity):
     ):
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._device_state_attributes = {}
+        _LOGGER.warning("intrusion detection system deprecated in API version 2.1. The Bosch Smart Home Controller update scheduled for May 2021 will no longer support API 1.x.")
 
     @property
     def state(self):
