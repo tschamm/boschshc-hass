@@ -21,13 +21,14 @@ The SmartHomeController is added as a device. The component provides access to:
 * `bosch_shc.event` events:
   * Button events for Universal Switches devices (lower and upper button, short and long press)
   * Scenario events for triggered scenarios registered in SHC device, each scenario is identified by its name
-  * Motion events for detected motion for Motion Detector devices
-  * Alarm events for triggered alarms for Smoke Detector devices
+  * Motion events for detected motion triggered by Motion Detector devices
+  * Alarm events for alarms triggered by Smoke Detector devices
 
 The following platforms are implemented:
 
 * Alarm Control Panel
-  * Intrusion Detection Control
+  * Intrusion Detection Control (deprecated, using API 1.0)
+  * Intrusion Detection System (based on API 2.1)
 * Binary Sensor
   * Shutter Contact
   * Smoke Detector
