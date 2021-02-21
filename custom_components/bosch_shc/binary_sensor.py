@@ -232,11 +232,8 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
-        _LOGGER.debug(
-            "Stopping alarm event listener for %s", self._device.name
-        )
+        _LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
         self._service.unsubscribe_callback(self._device.id + "_eventlistener")
-
 
     @property
     def is_on(self):

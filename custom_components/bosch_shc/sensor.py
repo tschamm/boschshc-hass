@@ -85,9 +85,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    for sensor in (
-        session.device_helper.smart_plugs
-    ):
+    for sensor in session.device_helper.smart_plugs:
         entities.append(
             PowerSensor(
                 device=sensor,

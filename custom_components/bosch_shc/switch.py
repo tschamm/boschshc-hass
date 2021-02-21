@@ -20,9 +20,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
 
-    for switch in (
-        session.device_helper.smart_plugs
-    ):
+    for switch in session.device_helper.smart_plugs:
 
         entities.append(
             SmartPlugSwitch(
