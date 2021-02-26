@@ -1,7 +1,7 @@
 """Platform for switch integration."""
 import logging
 
-from boschshcpy import SHCCameraEyes, SHCSession, SHCSmartPlug
+from boschshcpy import SHCCameraEyes, SHCCamera360, SHCSession, SHCSmartPlug
 from homeassistant.components.switch import (
     DEVICE_CLASS_OUTLET,
     DEVICE_CLASS_SWITCH,
@@ -34,6 +34,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
         entities.append(
             CameraEyesSwitch(
+                device=switch,
+                parent_id=session.information.name,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for switch in session.device_helper.camera_360:
+
+        entities.append(
+            Camera360Switch(
                 device=switch,
                 parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
@@ -122,3 +132,38 @@ class CameraEyesSwitch(SHCEntity, SwitchEntity):
     def toggle(self, **kwargs):
         """Toggles the switch."""
         self._device.cameralight = not self.is_on
+
+
+class Camera360Switch(SHCEntity, SwitchEntity):
+    """Representation of camera 360 as switch."""
+
+    @property
+    def should_poll(self):
+        """Polling needed."""
+        return True  # No long polling implemented for camera 360
+
+    def update(self):
+        """Trigger an update of the device."""
+        self._device.update()
+
+    @property
+    def is_on(self):
+        """Return the state of the switch."""
+        if self._device.privacymode == SHCCamera360.PrivacyModeService.State.DISABLED:
+            return True
+        if self._device.privacymode == SHCCamera360.PrivacyModeService.State.ENABLED:
+            return False
+
+        return None
+
+    def turn_on(self, **kwargs):
+        """Turn the switch on."""
+        self._device.privacymode = False
+
+    def turn_off(self, **kwargs):
+        """Turn the switch off."""
+        self._device.privacymode = True
+
+    def toggle(self, **kwargs):
+        """Toggles the switch."""
+        self._device.privacymode = not self.is_on
