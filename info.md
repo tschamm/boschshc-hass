@@ -6,6 +6,10 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
+{% if prerelease %}
+### NB!: This is a Beta version!
+{% endif %}
+
 _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 
 ![Bosch Smart Home][bosch_smart_home_icon]
