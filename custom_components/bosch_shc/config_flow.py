@@ -195,7 +195,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def _write_tls_assets(self, assets):
         """Write the tls assets to disk."""
-        makedirs(path.dirname(self.hass.config.path(DOMAIN)), exist_ok=True)
+        makedirs(self.hass.config.path(DOMAIN), exist_ok=True)
         with open(self.hass.config.path(DOMAIN, CONF_SHC_CERT), "w") as file_handle:
             file_handle.write(assets['cert'].decode('utf-8'))
         with open(self.hass.config.path(DOMAIN, CONF_SHC_KEY), "w") as file_handle:
