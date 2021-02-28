@@ -54,17 +54,13 @@ The following platforms are implemented:
 For installation, follow these steps to add Bosch Smart Home devices to `HomeAssistant`.
 
 1. Install bosch_shc custom component
-2. Generate a certificate/key pair
-3. Register a new client on the SHC device
-4. Configure bosch_shc integration in HA.
+2. Configure bosch_shc integration in HA.
 
 1.) To install `bosch_shc` as custom component, inside your HA configuration directory create a new folder called  `custom_components`. This is the folder that Home Assistant will look at when looking for custom code. Install the custom component there:
 Just copy paste the content of the `boschshc-hass/bosch_shc` folder in your  `config/custom_components`  directory. As example, you will get the  `entity.py`  file in the following path:  `config/custom_components/bosch_shc/entity.py`.
 Afterwards, restart `HomeAssistant`.
 
-2.) + 3.) Follow the [official guide](https://github.com/BoschSmartHome/bosch-shc-api-docs/tree/master/postman#register-a-new-client-to-the-bosch-smart-home-controller) for setting up a new SSL certificate public / private key pair and for registering this certificate on the Bosch SHC step by step. As a result, you obtained a generated SSL certificate key pair which is registered for accessing and controlling the SHC.
-
-4.) For configuration of `bosch_shc` custom component, follow the steps described in [configuration](#configuration). During configuration, you have to enter the obtained credentials from step 2.) by providing the path to your public and private key pair of your SSL certificate.
+2.) For configuration of `bosch_shc` custom component, follow the steps described in [configuration](#configuration). During configuration, you have to enter the password of your SHC, which you defined during setup of your SHC.
 
 
 # Configuration
@@ -92,6 +88,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
 />
 
 #### 3.) Enter credentials: SSL certificate public and private key pair
+TODO: Update description and image.
 
 <img
   src='images/config_step3.png'
@@ -121,8 +118,8 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 
 # Known Issues
 
-* Preparation step for creating and registering of SSL key pair necessary before loading the integration.
-* Encrypted SSL private key and SSL host verification is not supported due to limitations of `requests` library.
+* -Preparation step for creating and registering of SSL key pair necessary before loading the integration.-
+* Encrypted SSL private key -and SSL host verification- is not supported due to limitations of `requests` library.
 * The integration is not (yet) async.
 * After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
 * Hue Lights added to SHC do not appear in HomeAssistant. Please use the provided [hue component](https://www.home-assistant.io/integrations/hue/) instead.
