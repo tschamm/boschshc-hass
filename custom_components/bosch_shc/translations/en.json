@@ -4,7 +4,7 @@
         "flow_title": "Bosch SHC: {name}",
         "step": {
             "confirm_discovery": {
-                "description": "Please press the Bosch Smart Home Controller button until LED starts blinking.\nReady to continue to set up {model} with Home Assistant?"
+                "description": "Please press the Bosch Smart Home Controller button until LED starts blinking.\nReady to continue to set up {model} @ {host} with Home Assistant?"
             },
             "credentials": {
                 "data": {
