@@ -72,6 +72,7 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
 ### Configuration of the discovered integration
 
 #### 1.) Discovered integration
+Press *configure* to start the configuration process.
 
 <img
   src='images/config_step1.png'
@@ -80,7 +81,9 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
 />
 
 #### 2.) Confirmation of host
-Hint: Please press the Bosch SHC's front-side button until LEDs begin flashing. This will put the SHC into client registration mode, so new clients can be added to communicate with the SHC.
+**Hint:** Please press the Bosch SHC's front-side button until LEDs begin flashing. This will put the SHC into client registration mode, so new clients can be added to communicate with the SHC.
+
+Press *submit* to continue.
 
 <img
   src='images/config_step2.png'
@@ -89,7 +92,9 @@ Hint: Please press the Bosch SHC's front-side button until LEDs begin flashing. 
 />
 
 #### 3.) Enter credentials: System password
-Use the system password of your Bosch Smart Home Controller, which you created upon initial setup of the SHC.
+Use the **system password** of your Bosch Smart Home Controller, which you created upon initial setup of the SHC.
+
+Press *submit* to continue.
 
 <img
   src='images/config_step3.png'
@@ -98,6 +103,9 @@ Use the system password of your Bosch Smart Home Controller, which you created u
 />
 
 #### 4.) Successful configuration entry created
+You can define areas of all supported devices.
+
+Press *finish* to end the configuration process.
 
 <img
   src='images/config_step4.png'
