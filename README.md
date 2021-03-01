@@ -76,24 +76,25 @@ If the `SHC` is running in the same network as the `HomeAssistant`, it is even f
 <img
   src='images/config_step1.png'
   alt='Discovered integration.'
-  width='437pt'
+  width='235pt'
 />
 
 #### 2.) Confirmation of host
+Hint: Please press the Bosch SHC's front-side button until LEDs begin flashing. This will put the SHC into client registration mode, so new clients can be added to communicate with the SHC.
 
 <img
   src='images/config_step2.png'
   alt='Confirmation of host.'
-  width='605pt'
+  width='477pt'
 />
 
-#### 3.) Enter credentials: SSL certificate public and private key pair
-TODO: Update description and image.
+#### 3.) Enter credentials: System password
+Use the system password of your Bosch Smart Home Controller, which you created upon initial setup of the SHC.
 
 <img
   src='images/config_step3.png'
   alt='Enter credentials: SSL certificate public / private key pair.'
-  width='515pt'
+  width='315pt'
 />
 
 #### 4.) Successful configuration entry created
@@ -101,15 +102,7 @@ TODO: Update description and image.
 <img
   src='images/config_step4.png'
   alt='Successful configuration entry created.'
-  width='629pt'
-/>
-
-#### 5.) Integration is listed as a configured integration
-
-<img
-  src='images/config_step5.png'
-  alt='Integration is listed as a configured integration.'
-  width='467pt'
+  width='474pt'
 />
 
 # Additional information
