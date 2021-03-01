@@ -8,6 +8,9 @@
 
 {% if prerelease %}
 ### NB!: This is a Beta version!
+* Preparation step for creating and registering of SSL key pair before loading the integration is now done within the `config_flow`.
+* SSL host verification using the provided Issuing CA.
+
 {% endif %}
 
 _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
@@ -44,7 +47,7 @@ Platform        | Description
 ***
 
 [bosch_smart_home]: https://github.com/BoschSmartHome/bosch-shc-api-docs
-[bosch_smart_home_icon]: https://avatars.githubusercontent.com/u/56956610?s=100&v=4
+[bosch_smart_home_icon]: https://www.home-connect-plus.com/dist/static/partners/bosch_smart_home/Bosch_Smart_Home_290px_@2x.png
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
