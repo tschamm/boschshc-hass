@@ -15,7 +15,7 @@
         }
       },
       "confirm_discovery": {
-        "description": "Please press the Bosch Smart Home Controller button until LED starts blinking.\nReady to continue to set up {model} @ {host} with Home Assistant?"
+        "description": "Please press the Bosch Smart Home Controller's front-side button until LED starts flashing.\nReady to continue to set up {model} @ {host} with Home Assistant?"
       }
     },
     "error": {
