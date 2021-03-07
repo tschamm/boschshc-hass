@@ -44,9 +44,10 @@ The following platforms are implemented:
   * Wall Thermostat
   * Twinguard
   * Battery: all battery powered devices
-  * Smart Plug and Light Control (energy and power)
+  * Smart Plug, Smart Plug Compact and Light Control (energy and power)
 * Switch
   * Smart Plug
+  * Smart Plug Compact
   * Light Control
 
 # Installation
