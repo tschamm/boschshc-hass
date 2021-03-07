@@ -115,11 +115,7 @@ class SmartPlugCompactSwitch(SHCEntity, SwitchEntity):
     @property
     def device_class(self):
         """Return the class of this device."""
-        return (
-            DEVICE_CLASS_OUTLET
-            if self._device.device_model == "PLUG_COMPACT"
-            else DEVICE_CLASS_SWITCH
-        )
+        return DEVICE_CLASS_OUTLET
 
     @property
     def is_on(self):
@@ -144,7 +140,7 @@ class SmartPlugCompactSwitch(SHCEntity, SwitchEntity):
     @property
     def communication_quality(self):
         """The current communication quality as GOOD | MEDIUM | BAD | UNKNOWN."""
-        return self._device.communicationquality
+        return self._device.communicationquality.name
 
     def turn_on(self, **kwargs):
         """Turn the switch on."""
