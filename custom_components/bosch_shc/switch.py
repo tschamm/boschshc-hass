@@ -1,7 +1,7 @@
 """Platform for switch integration."""
 import logging
 
-from boschshcpy import SHCCameraEyes, SHCCamera360, SHCSession, SHCSmartPlug
+from boschshcpy import SHCCameraEyes, SHCCamera360, SHCSession, SHCSmartPlug, SHCSmartPlugCompact
 from homeassistant.components.switch import (
     DEVICE_CLASS_OUTLET,
     DEVICE_CLASS_SWITCH,
@@ -24,6 +24,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
         entities.append(
             SmartPlugSwitch(
+                device=switch,
+                parent_id=session.information.name,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for switch in session.device_helper.smart_plugs_compact:
+
+        entities.append(
+            SmartPlugCompactSwitch(
                 device=switch,
                 parent_id=session.information.name,
                 entry_id=config_entry.entry_id,
@@ -85,6 +95,52 @@ class SmartPlugSwitch(SHCEntity, SwitchEntity):
     def current_power_w(self):
         """The current power usage in W."""
         return self._device.powerconsumption
+
+    def turn_on(self, **kwargs):
+        """Turn the switch on."""
+        self._device.state = True
+
+    def turn_off(self, **kwargs):
+        """Turn the switch off."""
+        self._device.state = False
+
+    def toggle(self, **kwargs):
+        """Toggles the switch."""
+        self._device.state = not self.is_on
+
+
+class SmartPlugCompactSwitch(SHCEntity, SwitchEntity):
+    """Representation of a smart plug compact switch."""
+
+    @property
+    def device_class(self):
+        """Return the class of this device."""
+        return DEVICE_CLASS_OUTLET
+
+    @property
+    def is_on(self):
+        """Returns if the switch is currently on or off."""
+        if self._device.state == SHCSmartPlugCompact.PowerSwitchService.State.ON:
+            return True
+        if self._device.state == SHCSmartPlugCompact.PowerSwitchService.State.OFF:
+            return False
+
+        return None
+
+    @property
+    def today_energy_kwh(self):
+        """Total energy usage in kWh."""
+        return self._device.energyconsumption / 1000.0
+
+    @property
+    def current_power_w(self):
+        """The current power usage in W."""
+        return self._device.powerconsumption
+
+    @property
+    def communication_quality(self):
+        """The current communication quality as GOOD | MEDIUM | BAD | UNKNOWN."""
+        return self._device.communicationquality.name
 
     def turn_on(self, **kwargs):
         """Turn the switch on."""

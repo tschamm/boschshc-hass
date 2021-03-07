@@ -101,6 +101,22 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
+    for sensor in session.device_helper.smart_plugs_compact:
+        entities.append(
+            PowerSensor(
+                device=sensor,
+                parent_id=session.information.name,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        entities.append(
+            EnergySensor(
+                device=sensor,
+                parent_id=session.information.name,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     for sensor in (
         session.device_helper.smoke_detectors
         + session.device_helper.shutter_contacts

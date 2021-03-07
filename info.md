@@ -17,14 +17,14 @@ _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 
 **This component will set up the following platforms.**
 
-Platform        | Description
-----------------|------------------------------------
-`alarm_control_panel` | Intrusion detection control system.
-`binary_sensor` | Shutter contact, smoke detector, motion detector.
-`climate` | Room climate control.
-`light` | LEDVANCE lights.
-`sensor`        | Thermostat, wall thermostat, twinguard, battery state of battery powered devices, smart plug and light control (energy and power).
-`switch`        | Smart plug, light control.
+| Platform              | Description                                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `alarm_control_panel` | Intrusion detection control system.                                                                                                                    |
+| `binary_sensor`       | Shutter contact, smoke detector, motion detector.                                                                                                      |
+| `climate`             | Room climate control.                                                                                                                                  |
+| `light`               | LEDVANCE lights.                                                                                                                                       |
+| `sensor`              | Thermostat, wall thermostat, twinguard, battery state of battery powered devices, smart plug, smart plug compact and light control (energy and power). |
+| `switch`              | Smart plug, Smart plug compact, light control.                                                                                                         |
 
 {% if not installed %}
 ## Installation
