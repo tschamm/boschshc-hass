@@ -119,8 +119,7 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 
 # Known Issues
 
-* <s>Preparation step for creating and registering of SSL key pair necessary before loading the integration.</s>
-* Encrypted SSL private key <s>and SSL host verification</s> is not supported due to limitations of `requests` library.
+* Encrypted SSL private key is not supported due to limitations of `requests` library.
 * The integration is not (yet) async.
 * After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
 * Hue Lights added to SHC do not appear in HomeAssistant. Please use the provided [hue component](https://www.home-assistant.io/integrations/hue/) instead.

@@ -8,8 +8,6 @@
 
 {% if prerelease %}
 ### NB!: This is a Beta version!
-* Preparation step for creating and registering of SSL key pair before loading the integration is now done within the `config_flow`.
-* SSL host verification using the provided Issuing CA.
 
 {% endif %}
 
