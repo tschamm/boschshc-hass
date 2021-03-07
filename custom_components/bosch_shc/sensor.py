@@ -116,13 +116,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 entry_id=config_entry.entry_id,
             )
         )
-        entities.append(
-            CommunicationQualitySensor(
-                device=sensor,
-                parent_id=session.information.name,
-                entry_id=config_entry.entry_id,
-            )
-        )
 
     for sensor in (
         session.device_helper.smoke_detectors
@@ -319,25 +312,6 @@ class EnergySensor(SHCEntity):
     def icon(self):
         """Return the icon of the sensor."""
         return "mdi:gauge"
-
-
-class CommunicationQualitySensor(SHCEntity):
-    """Representation of a SHC communication quality sensor."""
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of this sensor."""
-        return f"{self._device.serial}_communicationquality"
-
-    @property
-    def name(self):
-        """Return the name of this sensor."""
-        return f"{self._device.name} Communication Quality"
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._device.communicationquality
 
 
 class BatterySensor(SHCEntity):
