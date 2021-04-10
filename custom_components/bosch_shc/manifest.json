@@ -3,8 +3,8 @@
   "name": "Bosch SHC",
   "config_flow": true,
   "documentation": "https://github.com/tschamm/boschshc-hass/blob/master/README.md",
-  "requirements": ["boschshcpy==0.2.9"],
-  "version": "0.3.2",
+  "requirements": ["boschshcpy==0.2.12"],
+  "version": "0.3.3",
   "zeroconf": [
     {"type": "_http._tcp.local.", "name": "bosch shc*"}
   ],
