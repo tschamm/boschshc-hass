@@ -1,22 +1,28 @@
 """Config flow for Bosch Smart Home Controller integration."""
 import logging
-from os import path, makedirs
+from os import makedirs
 
 import voluptuous as vol
-from boschshcpy import SHCSession, SHCRegisterClient
+from boschshcpy import SHCRegisterClient, SHCSession
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
     SHCmDNSError,
     SHCRegistrationError,
-    SHCSessionError
+    SHCSessionError,
 )
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN
 
 from .const import DOMAIN  # pylint:disable=unused-import
-from .const import CONF_SSL_CERTIFICATE, CONF_SSL_KEY, CONF_SHC_CERT, CONF_SHC_KEY, CONF_HOSTNAME
+from .const import (
+    CONF_HOSTNAME,
+    CONF_SHC_CERT,
+    CONF_SHC_KEY,
+    CONF_SSL_CERTIFICATE,
+    CONF_SSL_KEY,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +57,7 @@ def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes):
     """Helper function to write the tls assets to disk."""
     makedirs(hass.config.path(DOMAIN), exist_ok=True)
     with open(hass.config.path(DOMAIN, filename), "w") as file_handle:
-        file_handle.write(asset.decode('utf-8'))
+        file_handle.write(asset.decode("utf-8"))
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -94,17 +100,26 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 helper = await self.hass.async_add_executor_job(
-                    SHCRegisterClient,
-                    self.host, 
-                    user_input[CONF_PASSWORD]
+                    SHCRegisterClient, self.host, user_input[CONF_PASSWORD]
                 )
-                result = await self.hass.async_add_executor_job(helper.register, self.host, "HomeAssistant")
+                result = await self.hass.async_add_executor_job(
+                    helper.register, self.host, "HomeAssistant"
+                )
                 if "token" in result:
-                    self.hostname = result["token"].split(":",1)[1]
-                
-                await self.hass.async_add_executor_job(write_tls_asset, self.hass, CONF_SHC_CERT, result["cert"])
-                await self.hass.async_add_executor_job(write_tls_asset, self.hass, CONF_SHC_KEY, result["key"])
-                await validate_input(self.hass, self.host, self.hass.config.path(DOMAIN, CONF_SHC_CERT), self.hass.config.path(DOMAIN, CONF_SHC_KEY))
+                    self.hostname = result["token"].split(":", 1)[1]
+
+                await self.hass.async_add_executor_job(
+                    write_tls_asset, self.hass, CONF_SHC_CERT, result["cert"]
+                )
+                await self.hass.async_add_executor_job(
+                    write_tls_asset, self.hass, CONF_SHC_KEY, result["key"]
+                )
+                await validate_input(
+                    self.hass,
+                    self.host,
+                    self.hass.config.path(DOMAIN, CONF_SHC_CERT),
+                    self.hass.config.path(DOMAIN, CONF_SHC_KEY),
+                )
             except SHCAuthenticationError:
                 errors["base"] = "invalid_auth"
             except SHCConnectionError:
@@ -116,7 +131,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.warning("API call returned non-OK result. Wrong password?")
                 errors["base"] = "unknown"
             except SHCRegistrationError:
-                _LOGGER.warning("SHC not in pairing mode! Please press the Bosch Smart Home Controller button until LED starts blinking.")
+                _LOGGER.warning(
+                    "SHC not in pairing mode! Please press the Bosch Smart Home Controller button until LED starts blinking."
+                )
                 errors["base"] = "unknown"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
@@ -125,21 +142,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(
                     title=self.info["title"],
                     data={
-                        CONF_SSL_CERTIFICATE: self.hass.config.path(DOMAIN, CONF_SHC_CERT), 
-                        CONF_SSL_KEY: self.hass.config.path(DOMAIN, CONF_SHC_KEY), 
-                        CONF_HOST: self.host, 
+                        CONF_SSL_CERTIFICATE: self.hass.config.path(
+                            DOMAIN, CONF_SHC_CERT
+                        ),
+                        CONF_SSL_KEY: self.hass.config.path(DOMAIN, CONF_SHC_KEY),
+                        CONF_HOST: self.host,
                         CONF_TOKEN: result["token"],
                         CONF_HOSTNAME: self.hostname,
-                    }
+                    },
                 )
         else:
             user_input = {}
-        
+
         schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_PASSWORD, default=user_input.get(CONF_PASSWORD)
-                ): str,
+                vol.Required(CONF_PASSWORD, default=user_input.get(CONF_PASSWORD)): str,
             }
         )
 

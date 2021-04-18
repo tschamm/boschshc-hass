@@ -1,7 +1,13 @@
 """Platform for switch integration."""
 import logging
 
-from boschshcpy import SHCCameraEyes, SHCCamera360, SHCSession, SHCSmartPlug, SHCSmartPlugCompact
+from boschshcpy import (
+    SHCCamera360,
+    SHCCameraEyes,
+    SHCSession,
+    SHCSmartPlug,
+    SHCSmartPlugCompact,
+)
 from homeassistant.components.switch import (
     DEVICE_CLASS_OUTLET,
     DEVICE_CLASS_SWITCH,
