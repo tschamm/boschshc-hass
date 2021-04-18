@@ -35,7 +35,10 @@
           "IDLE_OFF": "Alarm off",
           "INTRUSION_ALARM": "Intrusion alarm",
           "SECONDARY_ALARM": "Secondary alarm",
-          "PRIMARY_ALARM": "Primary alarm"
+          "PRIMARY_ALARM": "Primary alarm",
+          "ALARM_OFF": "Alarm off",
+          "ALARM_ON": "Alarm on",
+          "ALARM_MUTED": "Alarm muted"
       },
       "trigger_type": {
           "PRESS_SHORT": "{subtype} short clicked",

@@ -22,7 +22,7 @@ The SmartHomeController is added as a device. The component provides access to:
   * Button events for Universal Switches devices (lower and upper button, short and long press)
   * Scenario events for triggered scenarios registered in SHC device, each scenario is identified by its name
   * Motion events for detected motion triggered by Motion Detector devices
-  * Alarm events for alarms triggered by Smoke Detector devices
+  * Alarm events for alarms triggered by Smoke Detector devices or by Smoke Detection System
 
 The following platforms are implemented:
 
@@ -33,6 +33,7 @@ The following platforms are implemented:
   * Shutter Contact
   * Smoke Detector
   * Motion Detector
+  * Smoke Detection System
 * Climate
   * Room Climate Control
 * Cover

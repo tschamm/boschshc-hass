@@ -67,6 +67,13 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
             if device.id == device_id:
                 return smoke_device, "SD"
 
+        for smoke_detection_system in session.device_helper.smoke_detection_system:
+            device = dev_registry.async_get_device(
+                identifiers={(DOMAIN, smoke_detection_system.id)}, connections=set()
+            )
+            if device.id == device_id:
+                return smoke_detection_system, "SMOKE_DETECTION_SYSTEM"
+
         device = dev_registry.async_get_device(
             identifiers={(DOMAIN, session.information.name)}, connections=set()
         )
@@ -87,7 +94,7 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
     if dev_type == "WRC2":
         input_triggers = []
         for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
-            if trigger == "PRESS_SHORT" or trigger == "PRESS_LONG":
+            if trigger in ("PRESS_SHORT", "PRESS_LONG"):
                 for subtype in INPUTS_EVENTS_SUBTYPES:
                     input_triggers.append((trigger, subtype))
 
@@ -113,7 +120,7 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
             }
         )
 
-    if dev_type == "SD":
+    if dev_type in ("SD", "SDS"):
         for subtype in ALARM_EVENTS_SUBTYPES:
             triggers.append(
                 {

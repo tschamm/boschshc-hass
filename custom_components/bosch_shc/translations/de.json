@@ -32,10 +32,13 @@
         "trigger_subtype": {
             "LOWER_BUTTON": "Unterer Knopf",
             "UPPER_BUTTON": "Oberer Knopf",
-            "IDLE_OFF": "Alarm aus",
+            "IDLE_OFF": "Alarm Aus",
             "INTRUSION_ALARM": "Einbrecher Alarm",
             "SECONDARY_ALARM": "Sekundärer Alarm",
-            "PRIMARY_ALARM": "Primärer Alarm"
+            "PRIMARY_ALARM": "Primärer Alarm",
+            "ALARM_OFF": "Alarm Aus",
+            "ALARM_ON": "Alarm An",
+            "ALARM_MUTED": "Alarm Lautlos"
         },
         "trigger_type": {
             "PRESS_SHORT": "{subtype} kurz gedrückt",

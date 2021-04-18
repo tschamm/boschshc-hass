@@ -5,7 +5,12 @@ from datetime import datetime, timedelta
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from boschshcpy import SHCSession, SHCShutterContact, SHCSmokeDetector
+from boschshcpy import (
+    SHCSession,
+    SHCShutterContact,
+    SHCSmokeDetectionSystem,
+    SHCSmokeDetector,
+)
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_DOOR,
     DEVICE_CLASS_MOTION,
@@ -22,7 +27,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
-from homeassistant.helpers.device_registry import async_get_registry as get_dev_reg
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -65,6 +69,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for binarysensor in session.device_helper.smoke_detectors:
         entities.append(
             SmokeDetectorSensor(
+                device=binarysensor,
+                parent_id=session.information.name,
+                hass=hass,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for binarysensor in session.device_helper.smoke_detection_system:
+        entities.append(
+            SmokeDetectionSystemSensor(
                 device=binarysensor,
                 parent_id=session.information.name,
                 hass=hass,
@@ -278,4 +292,82 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         state_attr[
             "smokedetectorcheck_state"
         ] = self._device.smokedetectorcheck_state.name
+        state_attr["alarmstate"] = self._device.alarmstate.name
+        return state_attr
+
+
+class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC smoke detection system sensor."""
+
+    def __init__(
+        self,
+        device: SHCSmokeDetectionSystem,
+        parent_id: str,
+        hass: HomeAssistant,
+        entry_id: str,
+    ):
+        """Initialize the smoke detection system device."""
+        self._hass = hass
+        self._service = None
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+
+        for service in self._device.device_services:
+            if service.id == "SurveillanceAlarm":
+                self._service = service
+                self._service.subscribe_callback(
+                    self._device.id + "_eventlistener", self._async_input_events_handler
+                )
+
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+
+    @callback
+    def _async_input_events_handler(self):
+        """Handle device input events."""
+        self._hass.bus.async_fire(
+            EVENT_BOSCH_SHC,
+            {
+                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
+                    get_device_id(self._hass, self._device.id), self._hass.loop
+                ).result(),
+                ATTR_ID: self._device.id,
+                ATTR_NAME: self._device.name,
+                ATTR_EVENT_TYPE: "ALARM",
+                ATTR_EVENT_SUBTYPE: self._device.alarm.name,
+            },
+        )
+
+    @callback
+    def _handle_ha_stop(self, _):
+        """Handle Home Assistant stopping."""
+        _LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
+        self._service.unsubscribe_callback(self._device.id + "_eventlistener")
+
+    @property
+    def is_on(self):
+        """Return the state of the sensor."""
+        if (
+            self._device.alarm
+            == SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        ):
+            return False
+
+        return True
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_SMOKE
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:smoke-detector"
+
+    @property
+    def state_attributes(self):
+        state_attr = super().state_attributes
+        if state_attr is None:
+            state_attr = dict()
+
+        state_attr["alarm_state"] = self._device.alarm.name
         return state_attr
