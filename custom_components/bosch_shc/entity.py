@@ -96,7 +96,7 @@ class SHCEntity(Entity):
             "model": self._device.device_model,
             "via_device": (
                 DOMAIN,
-                self._device.parent_device_id if not None else self._parent_id,
+                self._device.parent_device_id if self._device.parent_device_id is not None else self._parent_id,
             ),
         }
 
