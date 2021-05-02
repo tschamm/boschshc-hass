@@ -29,7 +29,7 @@ from .const import (
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DATA_SESSION,
-    DATA_STOP_POLLING,
+    DATA_POLLING_HANDLER,
     DOMAIN,
     EVENT_BOSCH_SHC,
     SERVICE_TRIGGER_SCENARIO,
@@ -107,7 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.async_add_executor_job(session.stop_polling)
 
     await hass.async_add_executor_job(session.start_polling)
-    hass.data[DOMAIN][entry.entry_id][DATA_STOP_POLLING] = hass.bus.async_listen_once(
+    hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER] = hass.bus.async_listen_once(
         EVENT_HOMEASSISTANT_STOP, stop_polling
     )
 
@@ -140,9 +140,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
     session.unsubscribe_scenario_callback()
 
-    if hass.data[DOMAIN][entry.entry_id][DATA_STOP_POLLING]:
-        hass.data[DOMAIN][entry.entry_id][DATA_STOP_POLLING]()
-        hass.data[DOMAIN][entry.entry_id].pop(DATA_STOP_POLLING)
+    if hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]:
+        hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
+        hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
         await hass.async_add_executor_job(session.stop_polling)
 
     unload_ok = all(

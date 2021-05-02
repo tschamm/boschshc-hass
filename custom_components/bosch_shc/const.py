@@ -13,7 +13,7 @@ CONF_SSL_CERTIFICATE = "ssl_certificate"
 CONF_SSL_KEY = "ssl_key"
 
 DATA_SESSION = "session"
-DATA_STOP_POLLING = "stop_polling"
+DATA_POLLING_HANDLER = "polling_handler"
 
 DOMAIN = "bosch_shc"
 
