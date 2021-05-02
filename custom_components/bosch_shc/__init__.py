@@ -99,7 +99,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
 
-    async def stop_polling():
+    async def stop_polling(event):
         """Stop polling service."""
         await hass.async_add_executor_job(session.stop_polling)
 
