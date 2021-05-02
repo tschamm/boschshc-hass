@@ -2,6 +2,7 @@
 import logging
 from os import makedirs
 
+import voluptuous as vol
 from boschshcpy import SHCRegisterClient, SHCSession
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
@@ -9,13 +10,10 @@ from boschshcpy.exceptions import (
     SHCRegistrationError,
     SHCSessionError,
 )
-import voluptuous as vol
-
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN
 
-from .const import DOMAIN  # pylint:disable=unused-import
 from .const import (
     CONF_HOSTNAME,
     CONF_SHC_CERT,

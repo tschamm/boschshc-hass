@@ -4,10 +4,7 @@ import logging
 
 import voluptuous as vol
 from boschshcpy import SHCSession, SHCUniversalSwitch
-from boschshcpy.exceptions import (
-    SHCAuthenticationError,
-    SHCConnectionError,
-)
+from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntry
 from homeassistant.const import (
@@ -28,8 +25,8 @@ from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_SESSION,
     DATA_POLLING_HANDLER,
+    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     SERVICE_TRIGGER_SCENARIO,
@@ -102,14 +99,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
 
-    async def stop_polling(event):
+    async def stop_polling():
         """Stop polling service."""
         await hass.async_add_executor_job(session.stop_polling)
 
     await hass.async_add_executor_job(session.start_polling)
-    hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER] = hass.bus.async_listen_once(
-        EVENT_HOMEASSISTANT_STOP, stop_polling
-    )
+    hass.data[DOMAIN][entry.entry_id][
+        DATA_POLLING_HANDLER
+    ] = hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
 
     @callback
     def _async_scenario_trigger(scenario_id, name, last_time_triggered):
@@ -164,7 +161,8 @@ def register_services(hass, entry):
     TRIGGER_SCHEMA = vol.Schema(
         {
             vol.Required(ATTR_NAME): vol.All(
-                cv.string, vol.In(hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenario_names)
+                cv.string,
+                vol.In(hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenario_names),
             )
         }
     )

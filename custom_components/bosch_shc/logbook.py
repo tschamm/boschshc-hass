@@ -11,17 +11,6 @@ def async_describe_events(hass, async_describe_event):
     """Describe logbook events."""
 
     @callback
-    def async_describe_bosch_shc_scenario_trigger_event(event):
-        """Describe bosch_shc.scenario_trigger logbook event."""
-
-        name = event.data[ATTR_NAME]
-
-        return {
-            "name": "Bosch SHC",
-            "message": f"'{name}' scenario trigger event was fired.",
-        }
-
-    @callback
     def async_describe_bosch_shc_event(event):
         """Describe bosch_shc.click logbook event."""
 
