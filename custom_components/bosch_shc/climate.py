@@ -172,6 +172,8 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Set hvac mode."""
         if hvac_mode not in self.hvac_modes:
             return
+        if self.preset_mode == PRESET_ECO:
+            return
 
         if hvac_mode == HVAC_MODE_AUTO:
             self._device.summer_mode = False
