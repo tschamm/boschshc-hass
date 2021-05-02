@@ -12,6 +12,9 @@ CONF_SUBTYPE = "subtype"
 CONF_SSL_CERTIFICATE = "ssl_certificate"
 CONF_SSL_KEY = "ssl_key"
 
+DATA_SESSION = "session"
+DATA_STOP_POLLING = "stop_polling"
+
 DOMAIN = "bosch_shc"
 
 EVENT_BOSCH_SHC = "bosch_shc.event"

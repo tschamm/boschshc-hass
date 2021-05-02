@@ -4,7 +4,7 @@
         "flow_title": "Bosch SHC: {name}",
         "step": {
             "confirm_discovery": {
-                "description": "Drücke den Knopf auf dem Bosch Smart Home Controller bis die LED zu blinken anfängt.\nSind Sie bereit, {model} @ {host} mit Home Assistant zu registrieren?"
+                "description": "Drücke den Knopf auf dem Bosch Smart Home Controller bis die LED zu blinken anfängt.\nBist du bereit, {model} @ {host} mit Home Assistant zu registrieren?"
             },
             "credentials": {
                 "data": {
@@ -12,8 +12,15 @@
                 }
             },
             "user": {
-                "description": "Richten Sie Ihren Bosch Smart Home Controller ein, um die Überwachung und Steuerung mit Home Assistant zu ermöglichen.",
+                "description": "Richte deinen Bosch Smart Home Controller ein, um die Überwachung und Steuerung mit Home Assistant zu ermöglichen.",
                 "title": "SHC-Authentifizierungsparameter",
+                "data": {
+                    "host": "Host"
+                }
+            },
+            "reauth_confirm": {
+                "title": "SHC-Authentifizierungsparameter",
+                "description": "Die bosch_shc Integration muss deinen Zugang neu authentifizieren.",
                 "data": {
                     "host": "Host"
                 }
@@ -22,10 +29,12 @@
         "error": {
             "cannot_connect": "Verbindung fehlgeschlagen",
             "invalid_auth": "Ungültige Authentifizierung",
+            "pairing_failed": "Pairing fehlgeschlagen",
             "unknown": "Unerwarteter Fehler"
         },
         "abort": {
-            "already_configured": "Gerät ist bereits konfiguriert"
+            "already_configured": "Gerät ist bereits konfiguriert",
+            "reauth_successful": "Neue Authentifizierung erfolgreich abgeschlossen"
         }
     },
     "device_automation":{

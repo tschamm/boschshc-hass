@@ -2,15 +2,15 @@
 import logging
 from os import makedirs
 
-import voluptuous as vol
 from boschshcpy import SHCRegisterClient, SHCSession
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
-    SHCmDNSError,
     SHCRegistrationError,
     SHCSessionError,
 )
+import voluptuous as vol
+
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN
@@ -22,6 +22,7 @@ from .const import (
     CONF_SHC_KEY,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,31 +34,45 @@ HOST_SCHEMA = vol.Schema(
 )
 
 
-async def validate_input(hass: core.HomeAssistant, host, cert, key):
-    """Validate the user input allows us to connect.
-
-    Data has the keys from DATA_SCHEMA with values provided by the user.
-    """
-    zeroconf = await async_get_instance(hass)
-
-    session: SHCSession
-    session = await hass.async_add_executor_job(
-        SHCSession,
-        host,
-        cert,
-        key,
-        True,
-        zeroconf,
-    )
-
-    await hass.async_add_executor_job(session.authenticate)
-
-
-def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes):
-    """Helper function to write the tls assets to disk."""
+def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes) -> None:
+    """Write the tls assets to disk."""
     makedirs(hass.config.path(DOMAIN), exist_ok=True)
     with open(hass.config.path(DOMAIN, filename), "w") as file_handle:
         file_handle.write(asset.decode("utf-8"))
+
+
+def create_credentials_and_validate(hass, host, user_input, zeroconf):
+    """Create and store credentials and validate session."""
+    helper = SHCRegisterClient(host, user_input[CONF_PASSWORD])
+    result = helper.register(host, "HomeAssistant")
+
+    if result is not None:
+        write_tls_asset(hass, CONF_SHC_CERT, result["cert"])
+        write_tls_asset(hass, CONF_SHC_KEY, result["key"])
+
+        session = SHCSession(
+            host,
+            hass.config.path(DOMAIN, CONF_SHC_CERT),
+            hass.config.path(DOMAIN, CONF_SHC_KEY),
+            True,
+            zeroconf,
+        )
+        session.authenticate()
+
+    return result
+
+
+def get_info_from_host(hass, host, zeroconf):
+    """Get information from host."""
+    session = SHCSession(
+        host,
+        "",
+        "",
+        True,
+        zeroconf,
+    )
+    information = session.mdns_info()
+    return {"title": information.name, "unique_id": information.unique_id}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -69,6 +84,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     host = None
     hostname = None
 
+    async def async_step_reauth(self, user_input=None):
+        """Perform reauth upon an API authentication error."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        """Dialog that informs the user that reauth is required."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reauth_confirm",
+                data_schema=HOST_SCHEMA,
+            )
+        self.host = host = user_input[CONF_HOST]
+        self.info = await self._get_info(host)
+        return await self.async_step_credentials()
+
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
@@ -77,9 +107,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 self.info = info = await self._get_info(host)
             except SHCConnectionError:
-                errors["base"] = "cannot_connect"
-            except SHCmDNSError:
-                _LOGGER.warning("Error looking up mDNS entry")
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
@@ -99,57 +126,49 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             try:
-                helper = await self.hass.async_add_executor_job(
-                    SHCRegisterClient, self.host, user_input[CONF_PASSWORD]
-                )
+                zeroconf = await async_get_instance(self.hass)
                 result = await self.hass.async_add_executor_job(
-                    helper.register, self.host, "HomeAssistant"
-                )
-                if "token" in result:
-                    self.hostname = result["token"].split(":", 1)[1]
-
-                await self.hass.async_add_executor_job(
-                    write_tls_asset, self.hass, CONF_SHC_CERT, result["cert"]
-                )
-                await self.hass.async_add_executor_job(
-                    write_tls_asset, self.hass, CONF_SHC_KEY, result["key"]
-                )
-                await validate_input(
+                    create_credentials_and_validate,
                     self.hass,
                     self.host,
-                    self.hass.config.path(DOMAIN, CONF_SHC_CERT),
-                    self.hass.config.path(DOMAIN, CONF_SHC_KEY),
+                    user_input,
+                    zeroconf,
                 )
+                entry_data = {
+                    CONF_SSL_CERTIFICATE: self.hass.config.path(DOMAIN, CONF_SHC_CERT),
+                    CONF_SSL_KEY: self.hass.config.path(DOMAIN, CONF_SHC_KEY),
+                    CONF_HOST: self.host,
+                    CONF_TOKEN: result["token"],
+                    CONF_HOSTNAME: result["token"].split(":", 1)[1],
+                }
             except SHCAuthenticationError:
                 errors["base"] = "invalid_auth"
             except SHCConnectionError:
-                errors["base"] = "cannot_connect"
-            except SHCmDNSError:
-                _LOGGER.warning("Error looking up mDNS entry")
                 errors["base"] = "cannot_connect"
             except SHCSessionError:
                 _LOGGER.warning("API call returned non-OK result. Wrong password?")
                 errors["base"] = "unknown"
             except SHCRegistrationError:
                 _LOGGER.warning(
-                    "SHC not in pairing mode! Please press the Bosch Smart Home Controller button until LED starts blinking."
+                    "SHC not in pairing mode! Please press the Bosch Smart Home Controller button until LED starts blinking"
                 )
-                errors["base"] = "unknown"
+                errors["base"] = "pairing_failed"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
+                existing_entry = await self.async_set_unique_id(self.info["unique_id"])
+                if existing_entry:
+                    self.hass.config_entries.async_update_entry(
+                        existing_entry,
+                        data=entry_data,
+                    )
+                    await self.hass.config_entries.async_reload(existing_entry.entry_id)
+                    return self.async_abort(reason="reauth_successful")
+
                 return self.async_create_entry(
                     title=self.info["title"],
-                    data={
-                        CONF_SSL_CERTIFICATE: self.hass.config.path(
-                            DOMAIN, CONF_SHC_CERT
-                        ),
-                        CONF_SSL_KEY: self.hass.config.path(DOMAIN, CONF_SHC_KEY),
-                        CONF_HOST: self.host,
-                        CONF_TOKEN: result["token"],
-                        CONF_HOSTNAME: self.hostname,
-                    },
+                    data=entry_data,
                 )
         else:
             user_input = {}
@@ -164,26 +183,22 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="credentials", data_schema=schema, errors=errors
         )
 
-    async def async_step_zeroconf(self, zeroconf_info):
+    async def async_step_zeroconf(self, discovery_info):
         """Handle zeroconf discovery."""
-        if not zeroconf_info.get("name", "").startswith("Bosch SHC"):
+        if not discovery_info.get("name", "").startswith("Bosch SHC"):
             return self.async_abort(reason="not_bosch_shc")
 
         try:
-            self.info = info = await self._get_info(zeroconf_info["host"])
+            self.info = info = await self._get_info(discovery_info["host"])
         except SHCConnectionError:
             return self.async_abort(reason="cannot_connect")
-        except SHCmDNSError:
-            _LOGGER.exception("Error looking up mDNS entry")
-            return self.async_abort(reason="cannot_connect")
 
-        local_name = zeroconf_info["hostname"][:-1]
+        local_name = discovery_info["hostname"][:-1]
         node_name = local_name[: -len(".local")]
 
         await self.async_set_unique_id(info["unique_id"])
-        self._abort_if_unique_id_configured({CONF_HOST: zeroconf_info["host"]})
-        self.host = zeroconf_info["host"]
-        # pylint: disable=no-member # https://github.com/PyCQA/pylint/issues/3167
+        self._abort_if_unique_id_configured({CONF_HOST: discovery_info["host"]})
+        self.host = discovery_info["host"]
         self.context["title_placeholders"] = {"name": node_name}
         return await self.async_step_confirm_discovery()
 
@@ -206,14 +221,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Get additional information."""
         zeroconf = await async_get_instance(self.hass)
 
-        session = await self.hass.async_add_executor_job(
-            SHCSession,
+        return await self.hass.async_add_executor_job(
+            get_info_from_host,
+            self.hass,
             host,
-            "",
-            "",
-            True,
             zeroconf,
         )
-
-        information = await self.hass.async_add_executor_job(session.mdns_info)
-        return {"title": information.name, "unique_id": information.unique_id}

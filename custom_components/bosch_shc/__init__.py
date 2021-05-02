@@ -7,10 +7,9 @@ from boschshcpy import SHCSession, SHCUniversalSwitch
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
-    SHCmDNSError,
 )
 from homeassistant.components.zeroconf import async_get_instance
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_ID,
     ATTR_ID,
@@ -29,6 +28,8 @@ from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
+    DATA_SESSION,
+    DATA_STOP_POLLING,
     DOMAIN,
     EVENT_BOSCH_SHC,
     SERVICE_TRIGGER_SCENARIO,
@@ -48,13 +49,7 @@ PLATFORMS = [
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Bosch SHC component."""
-    hass.data.setdefault(DOMAIN, {})
-    return True
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bosch SHC from a config entry."""
     data = entry.data
 
@@ -68,19 +63,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             False,
             zeroconf,
         )
-    except SHCAuthenticationError as err:
+    except SHCAuthenticationError:
         _LOGGER.warning("Unable to authenticate on Bosch Smart Home Controller API")
-        raise ConfigEntryNotReady from err
-    except (SHCConnectionError, SHCmDNSError) as err:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_REAUTH},
+                data=entry.data,
+            )
+        )
+        return False
+    except SHCConnectionError as err:
         raise ConfigEntryNotReady from err
 
     shc_info = session.information
     if shc_info.updateState.name == "UPDATE_AVAILABLE":
         _LOGGER.warning("Please check for software updates in the Bosch Smart Home App")
 
-    hass.data[DOMAIN][entry.entry_id] = session
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = {
+        DATA_SESSION: session,
+    }
 
-    device_registry = await dr.async_get_registry(hass)
+    device_registry = dr.async_get(hass)
     device_entry = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         connections={(dr.CONNECTION_NETWORK_MAC, dr.format_mac(shc_info.unique_id))},
@@ -92,9 +97,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
     device_id = device_entry.id
 
-    for component in PLATFORMS:
+    for platform in PLATFORMS:
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
+            hass.config_entries.async_forward_entry_setup(entry, platform)
         )
 
     async def stop_polling(event):
@@ -102,7 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await hass.async_add_executor_job(session.stop_polling)
 
     await hass.async_add_executor_job(session.start_polling)
-    session.reset_connection_listener = hass.bus.async_listen_once(
+    hass.data[DOMAIN][entry.entry_id][DATA_STOP_POLLING] = hass.bus.async_listen_once(
         EVENT_HOMEASSISTANT_STOP, stop_polling
     )
 
@@ -130,21 +135,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    session: SHCSession = hass.data[DOMAIN][entry.entry_id]
+    session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
     session.unsubscribe_scenario_callback()
 
-    if session.reset_connection_listener is not None:
-        session.reset_connection_listener()
-        session.reset_connection_listener = None
+    if hass.data[DOMAIN][entry.entry_id][DATA_STOP_POLLING]:
+        hass.data[DOMAIN][entry.entry_id][DATA_STOP_POLLING]()
+        hass.data[DOMAIN][entry.entry_id].pop(DATA_STOP_POLLING)
         await hass.async_add_executor_job(session.stop_polling)
 
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(entry, component)
-                for component in PLATFORMS
+                hass.config_entries.async_forward_entry_unload(entry, platform)
+                for platform in PLATFORMS
             ]
         )
     )
@@ -159,7 +164,7 @@ def register_services(hass, entry):
     TRIGGER_SCHEMA = vol.Schema(
         {
             vol.Required(ATTR_NAME): vol.All(
-                cv.string, vol.In(hass.data[DOMAIN][entry.entry_id].scenario_names)
+                cv.string, vol.In(hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenario_names)
             )
         }
     )
@@ -167,7 +172,7 @@ def register_services(hass, entry):
     async def scenario_service_call(call):
         """SHC Scenario service call."""
         name = call.data[ATTR_NAME]
-        for scenario in hass.data[DOMAIN][entry.entry_id].scenarios:
+        for scenario in hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenarios:
             if scenario.name == name:
                 hass.async_add_executor_job(scenario.trigger)
 

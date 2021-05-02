@@ -32,12 +32,13 @@ from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
+    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     SERVICE_SMOKEDETECTOR_ALARMSTATE,
     SERVICE_SMOKEDETECTOR_CHECK,
 )
-from .entity import SHCEntity, get_device_id
+from .entity import SHCEntity, async_get_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC binary sensor platform."""
     entities = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for binarysensor in session.device_helper.shutter_contacts:
         entities.append(
@@ -150,7 +151,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
-                    get_device_id(self.hass, self._device.id), self.hass.loop
+                    async_get_device_id(self.hass, self._device.id), self.hass.loop
                 ).result(),
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
@@ -234,7 +235,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
-                    get_device_id(self._hass, self._device.id), self._hass.loop
+                    async_get_device_id(self._hass, self._device.id), self._hass.loop
                 ).result(),
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
@@ -327,7 +328,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
-                    get_device_id(self._hass, self._device.id), self._hass.loop
+                    async_get_device_id(self._hass, self._device.id), self._hass.loop
                 ).result(),
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,

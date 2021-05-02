@@ -14,7 +14,7 @@ from homeassistant.components.switch import (
     SwitchEntity,
 )
 
-from .const import DOMAIN
+from .const import DATA_SESSION, DOMAIN
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the switch platform."""
 
     entities = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for switch in session.device_helper.smart_plugs:
 

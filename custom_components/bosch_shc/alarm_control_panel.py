@@ -16,7 +16,7 @@ from homeassistant.const import (
     STATE_ALARM_DISARMED,
 )
 
-from .const import DOMAIN
+from .const import DATA_SESSION, DOMAIN
 from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     devices = []
 
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id]
+    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     intrusion_system = session.intrusion_system
     alarm_control_panel = IntrusionSystemAlarmControlPanel(
