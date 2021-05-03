@@ -22,7 +22,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
-    ALARM_EVENTS_SUBTYPES,
+    ALARM_EVENTS_SUBTYPES_SD,
+    ALARM_EVENTS_SUBTYPES_SDS,
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
@@ -110,8 +111,20 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
             }
         )
 
-    if dev_type in ("SD", "SMOKE_DETECTION_SYSTEM"):
-        for subtype in ALARM_EVENTS_SUBTYPES:
+    if dev_type in ("SD"):
+        for subtype in ALARM_EVENTS_SUBTYPES_SD:
+            triggers.append(
+                {
+                    CONF_PLATFORM: "device",
+                    CONF_DEVICE_ID: device_id,
+                    CONF_DOMAIN: DOMAIN,
+                    CONF_TYPE: "ALARM",
+                    CONF_SUBTYPE: subtype,
+                }
+            )
+
+    if dev_type in ("SMOKE_DETECTION_SYSTEM"):
+        for subtype in ALARM_EVENTS_SUBTYPES_SDS:
             triggers.append(
                 {
                     CONF_PLATFORM: "device",
