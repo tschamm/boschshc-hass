@@ -2,7 +2,7 @@
 from typing import List, Tuple
 
 import voluptuous as vol
-from boschshcpy import SHCDevice
+from boschshcpy import SHCDevice, SHCSession
 from homeassistant.components.automation import AutomationActionType
 from homeassistant.components.device_automation import TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (
@@ -26,6 +26,7 @@ from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
+    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     INPUTS_EVENTS_SUBTYPES,
@@ -44,35 +45,24 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
     """Get the device for the given device id."""
     dev_registry = await dr.async_get_registry(hass)
     for config_entry in hass.data[DOMAIN]:
-        session = hass.data[DOMAIN][config_entry]
 
-        for switch_device in session.device_helper.universal_switches:
+        session: SHCSession = hass.data[DOMAIN][config_entry][DATA_SESSION]
+
+        for shc_device in session.devices:
             device = dev_registry.async_get_device(
-                identifiers={(DOMAIN, switch_device.id)}, connections=set()
+                    identifiers={(DOMAIN, shc_device.id)}, connections=set()
+                )
+            if device is None or device.id != device_id:
+                continue
+            return shc_device, shc_device.device_model
+
+        ids = session.intrusion_system
+        if ids:
+            device = dev_registry.async_get_device(
+                identifiers={(DOMAIN, ids.id)}, connections=set()
             )
             if device.id == device_id:
-                return switch_device, "WRC2"
-
-        for motion_device in session.device_helper.motion_detectors:
-            device = dev_registry.async_get_device(
-                identifiers={(DOMAIN, motion_device.id)}, connections=set()
-            )
-            if device.id == device_id:
-                return motion_device, "MD"
-
-        for smoke_device in session.device_helper.smoke_detectors:
-            device = dev_registry.async_get_device(
-                identifiers={(DOMAIN, smoke_device.id)}, connections=set()
-            )
-            if device.id == device_id:
-                return smoke_device, "SD"
-
-        for smoke_detection_system in session.device_helper.smoke_detection_system:
-            device = dev_registry.async_get_device(
-                identifiers={(DOMAIN, smoke_detection_system.id)}, connections=set()
-            )
-            if device.id == device_id:
-                return smoke_detection_system, "SMOKE_DETECTION_SYSTEM"
+                return ids, "IDS"
 
         device = dev_registry.async_get_device(
             identifiers={(DOMAIN, session.information.name)}, connections=set()
@@ -84,7 +74,7 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
 
 
 async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
-    """List device triggers for Shelly devices."""
+    """List device triggers for SHC devices."""
     triggers = []
 
     device, dev_type = await get_device_from_id(hass, device_id)
@@ -120,7 +110,7 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
             }
         )
 
-    if dev_type in ("SD", "SDS"):
+    if dev_type in ("SD", "SMOKE_DETECTION_SYSTEM"):
         for subtype in ALARM_EVENTS_SUBTYPES:
             triggers.append(
                 {
