@@ -10,9 +10,11 @@ from boschshcpy import (
     SHCShutterContact,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
+    SHCWaterLeakageSensor,
 )
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_DOOR,
+    DEVICE_CLASS_MOISTURE,
     DEVICE_CLASS_MOTION,
     DEVICE_CLASS_SMOKE,
     DEVICE_CLASS_WINDOW,
@@ -80,6 +82,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for binarysensor in session.device_helper.smoke_detection_system:
         entities.append(
             SmokeDetectionSystemSensor(
+                device=binarysensor,
+                parent_id=session.information.name,
+                hass=hass,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for binarysensor in session.device_helper.water_leakage_detectors:
+        entities.append(
+            WaterLeakageDetectorSensor(
                 device=binarysensor,
                 parent_id=session.information.name,
                 hass=hass,
@@ -295,6 +307,31 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         ] = self._device.smokedetectorcheck_state.name
         state_attr["alarmstate"] = self._device.alarmstate.name
         return state_attr
+
+
+class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC water leakage detector sensor."""
+
+    @property
+    def is_on(self):
+        """Return the state of the sensor."""
+        if (
+            self._device.leakage_state
+            == SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
+        ):
+            return False
+
+        return True
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_MOISTURE
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return "mdi:water-alert"
 
 
 class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
