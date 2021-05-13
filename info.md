@@ -20,8 +20,9 @@ _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 | Platform              | Description                                                                                                                                            |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `alarm_control_panel` | Intrusion detection control system.                                                                                                                    |
-| `binary_sensor`       | Shutter contact, smoke detector, motion detector, smoke detection system.                                                                                                      |
+| `binary_sensor`       | Shutter contact, smoke detector, motion detector, smoke detection, water leakage sensor.                                                                                                      |
 | `climate`             | Room climate control.                                                                                                                                  |
+| `cover`               | Shutter control.                                                                                                                                  |
 | `light`               | LEDVANCE lights.                                                                                                                                       |
 | `sensor`              | Thermostat, wall thermostat, twinguard, battery state of battery powered devices, smart plug, smart plug compact and light control (energy and power). |
 | `switch`              | Smart plug, Smart plug compact, light control.                                                                                                         |

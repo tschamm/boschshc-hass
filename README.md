@@ -34,6 +34,7 @@ The following platforms are implemented:
   * Smoke Detector
   * Motion Detector
   * Smoke Detection System
+  * Water Leakage Sensor
 * Climate
   * Room Climate Control
 * Cover
