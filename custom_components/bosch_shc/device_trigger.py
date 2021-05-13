@@ -66,7 +66,7 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
                 return ids, "IDS"
 
         device = dev_registry.async_get_device(
-            identifiers={(DOMAIN, session.information.name)}, connections=set()
+            identifiers={(DOMAIN, session.information.unique_id)}, connections=set()
         )
         if device.id == device_id:
             return session, "SHC"

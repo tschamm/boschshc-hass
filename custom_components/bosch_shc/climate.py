@@ -33,7 +33,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             ClimateControl(
                 device=climate,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 name=f"Room Climate {session.room(room_id).name}",
             )

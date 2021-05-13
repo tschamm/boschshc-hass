@@ -1,8 +1,8 @@
 """Bosch Smart Home Controller base entity."""
 from boschshcpy.device import SHCDevice
+
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.entity_registry import async_get as get_ent_reg
 
 from .const import DOMAIN
 
@@ -13,21 +13,16 @@ async def async_get_device_id(hass, device_id):
     device = dev_registry.async_get_device(
         identifiers={(DOMAIN, device_id)}, connections=set()
     )
-    if device is None:
-        return None
-    return device.id
-
+    return device.id if device is not None else None
 
 async def async_remove_devices(hass, entity, entry_id):
     """Get item that is removed from session."""
-    ent_registry = get_ent_reg(hass)
-    if entity.entity_id in ent_registry.entities:
-        ent_registry.async_remove(entity.entity_id)
-
     dev_registry = get_dev_reg(hass)
-    device_id = async_get_device_id(hass, entity.device_id)
-    if device_id is not None:
-        dev_registry.async_update_device(device_id, remove_config_entry_id=entry_id)
+    device = dev_registry.async_get_device(
+        identifiers={(DOMAIN, entity.device_id)}, connections=set()
+    )
+    if device is not None:
+        dev_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
 
 
 class SHCEntity(Entity):
@@ -49,7 +44,6 @@ class SHCEntity(Entity):
         def update_entity_information():
             if self._device.deleted:
                 self.hass.add_job(async_remove_devices(self.hass, self, self._entry_id))
-
             else:
                 self.schedule_update_ha_state()
 

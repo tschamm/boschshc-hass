@@ -2,7 +2,6 @@
 import logging
 from os import makedirs
 
-import voluptuous as vol
 from boschshcpy import SHCRegisterClient, SHCSession
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
@@ -10,6 +9,8 @@ from boschshcpy.exceptions import (
     SHCRegistrationError,
     SHCSessionError,
 )
+import voluptuous as vol
+
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN
@@ -77,7 +78,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Bosch SHC."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
     info = None
     host = None
     hostname = None
@@ -123,8 +123,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the credentials step."""
         errors = {}
         if user_input is not None:
+            zeroconf = await async_get_instance(self.hass)
             try:
-                zeroconf = await async_get_instance(self.hass)
                 result = await self.hass.async_add_executor_job(
                     create_credentials_and_validate,
                     self.hass,
@@ -132,6 +132,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     user_input,
                     zeroconf,
                 )
+            except SHCAuthenticationError:
+                errors["base"] = "invalid_auth"
+            except SHCConnectionError:
+                errors["base"] = "cannot_connect"
+            except SHCSessionError as err:
+                _LOGGER.warning("Session error: %s", err.message)
+                errors["base"] = "unknown"
+            except SHCRegistrationError as err:
+                _LOGGER.warning("Registration error: %s", err.message)
+                errors["base"] = "pairing_failed"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
                 entry_data = {
                     CONF_SSL_CERTIFICATE: self.hass.config.path(DOMAIN, CONF_SHC_CERT),
                     CONF_SSL_KEY: self.hass.config.path(DOMAIN, CONF_SHC_KEY),
@@ -139,22 +153,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_TOKEN: result["token"],
                     CONF_HOSTNAME: result["token"].split(":", 1)[1],
                 }
-            except SHCAuthenticationError:
-                errors["base"] = "invalid_auth"
-            except SHCConnectionError:
-                errors["base"] = "cannot_connect"
-            except SHCSessionError:
-                _LOGGER.warning("API call returned non-OK result. Wrong password?")
-                errors["base"] = "unknown"
-            except SHCRegistrationError:
-                _LOGGER.warning(
-                    "SHC not in pairing mode! Please press the Bosch Smart Home Controller button until LED starts blinking"
-                )
-                errors["base"] = "pairing_failed"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
-                errors["base"] = "unknown"
-            else:
                 existing_entry = await self.async_set_unique_id(self.info["unique_id"])
                 if existing_entry:
                     self.hass.config_entries.async_update_entry(
@@ -173,7 +171,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_PASSWORD, default=user_input.get(CONF_PASSWORD)): str,
+                vol.Required(
+                    CONF_PASSWORD, default=user_input.get(CONF_PASSWORD, "")
+                ): str,
             }
         )
 

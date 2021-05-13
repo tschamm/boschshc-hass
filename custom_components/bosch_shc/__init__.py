@@ -6,7 +6,7 @@ import voluptuous as vol
 from boschshcpy import SHCSession, SHCUniversalSwitch
 from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError
 from homeassistant.components.zeroconf import async_get_instance
-from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntry
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_ID,
     ATTR_ID,
@@ -60,16 +60,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             False,
             zeroconf,
         )
-    except SHCAuthenticationError:
-        _LOGGER.warning("Unable to authenticate on Bosch Smart Home Controller API")
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN,
-                context={"source": SOURCE_REAUTH},
-                data=entry.data,
-            )
-        )
-        return False
+    except SHCAuthenticationError as err:
+        raise ConfigEntryAuthFailed from err
     except SHCConnectionError as err:
         raise ConfigEntryNotReady from err
 
@@ -86,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device_entry = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         connections={(dr.CONNECTION_NETWORK_MAC, dr.format_mac(shc_info.unique_id))},
-        identifiers={(DOMAIN, shc_info.name)},
+        identifiers={(DOMAIN, shc_info.unique_id)},
         manufacturer="Bosch",
         name=entry.title,
         model="SmartHomeController",
@@ -94,10 +86,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     device_id = device_entry.id
 
-    for platform in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, platform)
-        )
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     async def stop_polling(event):
         """Stop polling service."""
@@ -137,19 +126,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
     session.unsubscribe_scenario_callback()
 
-    if hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]:
-        hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
-        hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
-        await hass.async_add_executor_job(session.stop_polling)
+    hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
+    hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
+    await hass.async_add_executor_job(session.stop_polling)
 
-    unload_ok = all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
-                for platform in PLATFORMS
-            ]
-        )
-    )
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
 

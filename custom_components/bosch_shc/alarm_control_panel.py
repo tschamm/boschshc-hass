@@ -32,7 +32,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     intrusion_system = session.intrusion_system
     alarm_control_panel = IntrusionSystemAlarmControlPanel(
         device=intrusion_system,
-        parent_id=session.information.name,
+        parent_id=session.information.unique_id,
         entry_id=config_entry.entry_id,
     )
     devices.append(alarm_control_panel)

@@ -54,7 +54,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             ShutterContactSensor(
                 device=binarysensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -64,7 +64,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             MotionDetectionSensor(
                 hass=hass,
                 device=binarysensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -73,7 +73,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             SmokeDetectorSensor(
                 device=binarysensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -83,7 +83,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             SmokeDetectionSystemSensor(
                 device=binarysensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -93,7 +93,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             WaterLeakageDetectorSensor(
                 device=binarysensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )

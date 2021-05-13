@@ -27,14 +27,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             TemperatureSensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             ValveTappetSensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -43,14 +43,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             TemperatureSensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             HumiditySensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -59,28 +59,28 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             TemperatureSensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             HumiditySensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             PuritySensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             AirQualitySensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -89,14 +89,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             PowerSensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             EnergySensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -105,14 +105,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             PowerSensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             EnergySensor(
                 device=sensor,
-                parent_id=session.information.name,
+                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -129,7 +129,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             entities.append(
                 BatterySensor(
                     device=sensor,
-                    parent_id=session.information.name,
+                    parent_id=session.information.unique_id,
                     entry_id=config_entry.entry_id,
                 )
             )
