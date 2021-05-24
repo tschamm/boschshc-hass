@@ -1,6 +1,4 @@
 """Platform for cover integration."""
-import logging
-
 from boschshcpy import SHCSession, SHCShutterControl
 from homeassistant.components.cover import (
     ATTR_POSITION,
@@ -14,8 +12,6 @@ from homeassistant.components.cover import (
 
 from .const import DATA_SESSION, DOMAIN
 from .entity import SHCEntity
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -52,7 +48,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 
     @property
     def current_cover_position(self):
-        """The current cover position."""
+        """Return the current cover position."""
         return self._device.level * 100.0
 
     def stop_cover(self, **kwargs):
@@ -71,22 +67,18 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
-        if (
+        return (
             self._device.operation_state
             == SHCShutterControl.ShutterControlService.State.OPENING
-        ):
-            return True
-        return False
+        )
 
     @property
     def is_closing(self):
         """Return if the cover is closing or not."""
-        if (
+        return (
             self._device.operation_state
             == SHCShutterControl.ShutterControlService.State.CLOSING
-        ):
-            return True
-        return False
+        )
 
     def open_cover(self, **kwargs):
         """Open the cover."""

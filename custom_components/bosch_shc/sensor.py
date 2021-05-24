@@ -2,6 +2,7 @@
 import logging
 
 from boschshcpy import SHCBatteryDevice, SHCSession
+
 from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
     DEVICE_CLASS_BATTERY,
@@ -19,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the sensor platform."""
+    """Set up the SHC sensor platform."""
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
@@ -239,16 +240,14 @@ class AirQualitySensor(SHCEntity):
         return self._device.combined_rating.name
 
     @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-
-        state_attr["rating_description"] = self._device.description
-        state_attr["temperature_rating"] = self._device.temperature_rating.name
-        state_attr["humidity_rating"] = self._device.humidity_rating.name
-        state_attr["purity_rating"] = self._device.purity_rating.name
-        return state_attr
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "rating_description": self._device.description,
+            "temperature_rating": self._device.temperature_rating.name,
+            "humidity_rating": self._device.humidity_rating.name,
+            "purity_rating": self._device.purity_rating.name,
+        }
 
 
 class PowerSensor(SHCEntity):
@@ -334,13 +333,16 @@ class BatterySensor(SHCEntity):
             self._device.batterylevel
             == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW
         ):
-            logging.warning("Battery state of device %s is critical low.", self.name)
+            _LOGGER.warning("Battery state of device %s is critical low", self.name)
             return 0
+
         if (
             self._device.batterylevel
             == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY
         ):
+            _LOGGER.warning("Battery state of device %s is low", self.name)
             return 20
+
         if self._device.batterylevel == SHCBatteryDevice.BatteryLevelService.State.OK:
             return 100
 
@@ -348,7 +350,8 @@ class BatterySensor(SHCEntity):
             self._device.batterylevel
             == SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE
         ):
-            logging.warning("Battery state of device %s is not available.", self.name)
+            _LOGGER.debug("Battery state of device %s is not available", self.name)
+
         return None
 
     @property
@@ -391,10 +394,8 @@ class ValveTappetSensor(SHCEntity):
         return PERCENTAGE
 
     @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-
-        state_attr["valve_tappet_state"] = self._device.valvestate.name
-        return state_attr
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "valve_tappet_state": self._device.valvestate.name,
+        }

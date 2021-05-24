@@ -50,49 +50,49 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
-    for binarysensor in session.device_helper.shutter_contacts:
+    for binary_sensor in session.device_helper.shutter_contacts:
         entities.append(
             ShutterContactSensor(
-                device=binarysensor,
+                device=binary_sensor,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binarysensor in session.device_helper.motion_detectors:
+    for binary_sensor in session.device_helper.motion_detectors:
         entities.append(
             MotionDetectionSensor(
                 hass=hass,
-                device=binarysensor,
+                device=binary_sensor,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binarysensor in session.device_helper.smoke_detectors:
+    for binary_sensor in session.device_helper.smoke_detectors:
         entities.append(
             SmokeDetectorSensor(
-                device=binarysensor,
+                device=binary_sensor,
                 parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binarysensor in session.device_helper.smoke_detection_system:
+    for binary_sensor in session.device_helper.smoke_detection_system:
         entities.append(
             SmokeDetectionSystemSensor(
-                device=binarysensor,
+                device=binary_sensor,
                 parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binarysensor in session.device_helper.water_leakage_detectors:
+    for binary_sensor in session.device_helper.water_leakage_detectors:
         entities.append(
             WaterLeakageDetectorSensor(
-                device=binarysensor,
+                device=binary_sensor,
                 parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
@@ -203,17 +203,15 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
 
     @property
     def should_poll(self):
-        """Polling mode to retrieve motion state."""
+        """Retrieve motion state."""
         return True
 
     @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-
-        state_attr["last_motion_detected"] = self._device.latestmotion
-        return state_attr
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "last_motion_detected": self._device.latestmotion,
+        }
 
 
 class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
@@ -265,10 +263,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        if self._device.alarmstate == SHCSmokeDetector.AlarmService.State.IDLE_OFF:
-            return False
-
-        return True
+        return self._device.alarmstate != SHCSmokeDetector.AlarmService.State.IDLE_OFF
 
     @property
     def device_class(self):
@@ -297,16 +292,12 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         await self._hass.async_add_executor_job(set_alarmstate, self._device, command)
 
     @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-
-        state_attr[
-            "smokedetectorcheck_state"
-        ] = self._device.smokedetectorcheck_state.name
-        state_attr["alarmstate"] = self._device.alarmstate.name
-        return state_attr
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "smokedetectorcheck_state": self._device.smokedetectorcheck_state.name,
+            "alarmstate": self._device.alarmstate.name,
+        }
 
 
 class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
@@ -315,13 +306,10 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        if (
+        return (
             self._device.leakage_state
-            == SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
-        ):
-            return False
-
-        return True
+            != SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
+        )
 
     @property
     def device_class(self):
@@ -383,13 +371,10 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        if (
+        return (
             self._device.alarm
-            == SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
-        ):
-            return False
-
-        return True
+            != SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        )
 
     @property
     def device_class(self):
@@ -402,10 +387,8 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         return "mdi:smoke-detector"
 
     @property
-    def state_attributes(self):
-        state_attr = super().state_attributes
-        if state_attr is None:
-            state_attr = dict()
-
-        state_attr["alarm_state"] = self._device.alarm.name
-        return state_attr
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "alarm_state": self._device.alarm.name,
+        }

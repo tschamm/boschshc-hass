@@ -29,7 +29,8 @@
         "error": {
             "cannot_connect": "Verbindung fehlgeschlagen",
             "invalid_auth": "Ungültige Authentifizierung",
-            "pairing_failed": "Pairing fehlgeschlagen... Drücke den Knopf auf dem Bosch Smart Home Controller bis die LED zu blinken anfängt und prüfe dein Passwort.",
+            "pairing_failed": "Pairing fehlgeschlagen; Drücke den Knopf auf dem Bosch Smart Home Controller bis die LED zu blinken anfängt und prüfe dein Passwort.",
+            "session_error": "Session-Fehler: API liefert ungültiges Resultat.",
             "unknown": "Unerwarteter Fehler"
         },
         "abort": {

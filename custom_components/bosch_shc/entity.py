@@ -15,6 +15,7 @@ async def async_get_device_id(hass, device_id):
     )
     return device.id if device is not None else None
 
+
 async def async_remove_devices(hass, entity, entry_id):
     """Get item that is removed from session."""
     dev_registry = get_dev_reg(hass)
