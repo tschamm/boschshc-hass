@@ -7,7 +7,7 @@
 
 # Bosch Smart Home Controller (SHC) for Home Assistant
 
-![Bosch Smart Home](https://www.home-connect-plus.com/dist/static/partners/bosch_smart_home/Bosch_Smart_Home_290px_@2x.png)
+![Bosch Smart Home](https://www.home-connect-plus.com/wp-content/uploads/logo-bosch-smart-home-website.png)
 
 Custom Home Assistant integration for accessing Bosch Smart Home Controller (SHC).
 
@@ -27,8 +27,7 @@ The SmartHomeController is added as a device. The component provides access to:
 The following platforms are implemented:
 
 * Alarm Control Panel
-  * Intrusion Detection Control (deprecated, using API 1.0)
-  * Intrusion Detection System (based on API 2.1)
+  * Intrusion Detection System
 * Binary Sensor
   * Shutter Contact
   * Smoke Detector

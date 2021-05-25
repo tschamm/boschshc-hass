@@ -20,11 +20,11 @@ _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 | Platform              | Description                                                                                                                                            |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `alarm_control_panel` | Intrusion detection control system.                                                                                                                    |
-| `binary_sensor`       | Shutter contact, smoke detector, motion detector, smoke detection, water leakage sensor.                                                                                                      |
+| `binary_sensor`       | Shutter contact, smoke detector, motion detector, smoke detection system, water leakage sensor.                                                                                                      |
 | `climate`             | Room climate control.                                                                                                                                  |
 | `cover`               | Shutter control.                                                                                                                                  |
 | `light`               | LEDVANCE lights.                                                                                                                                       |
-| `sensor`              | Thermostat, wall thermostat, twinguard, battery state of battery powered devices, smart plug, smart plug compact and light control (energy and power). |
+| `sensor`              | Thermostat, wall thermostat, twinguard, battery, smart plug, smart plug compact and light control (energy and power). |
 | `switch`              | Smart plug, Smart plug compact, light control.                                                                                                         |
 
 {% if not installed %}
@@ -46,7 +46,7 @@ _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 ***
 
 [bosch_smart_home]: https://github.com/BoschSmartHome/bosch-shc-api-docs
-[bosch_smart_home_icon]: https://www.home-connect-plus.com/dist/static/partners/bosch_smart_home/Bosch_Smart_Home_290px_@2x.png
+[bosch_smart_home_icon]: https://www.home-connect-plus.com/wp-content/uploads/logo-bosch-smart-home-website.png
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass
 [buymecoffee]: https://www.buymeacoffee.com/tschamm

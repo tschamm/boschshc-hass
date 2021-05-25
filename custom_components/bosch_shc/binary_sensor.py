@@ -320,6 +320,14 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
         """Return the icon of the sensor."""
         return "mdi:water-alert"
 
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "push_notification_state": self._device.push_notification_state.name,
+            "acoustic_signal_state": self._device.acoustic_signal_state.name,
+        }
+
 
 class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detection system sensor."""
