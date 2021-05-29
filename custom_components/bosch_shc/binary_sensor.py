@@ -277,18 +277,18 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     async def async_request_smoketest(self):
         """Request smokedetector test."""
         _LOGGER.debug("Requesting smoke test on entity %s", self.name)
-        await self._hass.async_add_executor_job(self._device.smoketest_requested)
+        await self._device.smoketest_requested()
 
     async def async_request_alarmstate(self, command: str):
         """Request smokedetector alarm state."""
 
-        def set_alarmstate(device, command):
-            device.alarmstate = command
+        async def async_set_alarmstate(device, command):
+            await device.alarmstate(command)
 
         _LOGGER.debug(
             "Requesting custom alarm state %s on entity %s", command, self.name
         )
-        await self._hass.async_add_executor_job(set_alarmstate, self._device, command)
+        await async_set_alarmstate(self._device, command)
 
     @property
     def extra_state_attributes(self):

@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import aiohttp_client
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -50,15 +51,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bosch SHC from a config entry."""
     data = entry.data
 
-    zeroconf = await async_get_instance(hass)
     try:
-        session = await hass.async_add_executor_job(
-            SHCSession,
-            data[CONF_HOST],
-            data[CONF_SSL_CERTIFICATE],
-            data[CONF_SSL_KEY],
-            False,
-            zeroconf,
+        session = SHCSession(
+            data[CONF_HOST], data[CONF_SSL_CERTIFICATE], data[CONF_SSL_KEY]
+        )
+        await session.init(
+            websession=aiohttp_client.async_get_clientsession(hass), authenticate=True
         )
     except SHCAuthenticationError as err:
         raise ConfigEntryAuthFailed from err
@@ -88,11 +86,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
-    async def stop_polling(event):
-        """Stop polling service."""
-        await hass.async_add_executor_job(session.stop_polling)
+    async def _subscribe_events():
+        """Subscribe to long polling."""
+        try:
+            async for updated_object in session.start_polling():
+                pass
+        except GeneratorExit:
+            pass
 
-    await hass.async_add_executor_job(session.start_polling)
+    reset_jobs = []
+    reset_jobs.append(asyncio.create_task(_subscribe_events()).cancel)
+
+    async def stop_polling(event):
+        """Stop long polling."""
+        while reset_jobs:
+            reset_jobs.pop()()
+
     hass.data[DOMAIN][entry.entry_id][
         DATA_POLLING_HANDLER
     ] = hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
@@ -126,13 +135,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
     session.unsubscribe_scenario_callback()
 
-    hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
+    hass.data[DOMAIN][entry.entry_id][
+        DATA_POLLING_HANDLER
+    ]()  # TODO: check if this stops long polling
     hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
-    await hass.async_add_executor_job(session.stop_polling)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+
+    if len(hass.data[DOMAIN]) == 0:
+        hass.data.pop(DOMAIN)
+        hass.services.async_remove(DOMAIN, SERVICE_TRIGGER_SCENARIO)
 
     return unload_ok
 

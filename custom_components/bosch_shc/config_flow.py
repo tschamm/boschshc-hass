@@ -14,6 +14,7 @@ import voluptuous as vol
 from homeassistant import config_entries, core
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN
+from homeassistant.helpers import aiohttp_client
 
 from .const import (
     CONF_HOSTNAME,
@@ -40,10 +41,10 @@ def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes) -> No
         file_handle.write(asset.decode("utf-8"))
 
 
-def create_credentials_and_validate(hass, host, user_input, zeroconf):
+async def async_create_credentials_and_validate(hass, host, user_input, zeroconf):
     """Create and store credentials and validate session."""
     helper = SHCRegisterClient(host, user_input[CONF_PASSWORD])
-    result = helper.register(host, "HomeAssistant")
+    result = await helper.register(host, "HomeAssistant")
 
     if result is not None:
         write_tls_asset(hass, CONF_SHC_CERT, result["cert"])
@@ -61,17 +62,20 @@ def create_credentials_and_validate(hass, host, user_input, zeroconf):
     return result
 
 
-def get_info_from_host(hass, host, zeroconf):
+async def async_get_info_from_host(hass, host):
     """Get information from host."""
     session = SHCSession(
         host,
         "",
         "",
-        True,
-        zeroconf,
     )
-    information = session.mdns_info()
-    return {"title": information.name, "unique_id": information.unique_id}
+    await session.init(
+        websession=aiohttp_client.async_get_clientsession(hass), authenticate=False
+    )
+    return {
+        "title": session.information.name,
+        "unique_id": session.information.unique_id,
+    }
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -217,11 +221,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _get_info(self, host):
         """Get additional information."""
-        zeroconf = await async_get_instance(self.hass)
+        # zeroconf = await async_get_instance(self.hass)
 
-        return await self.hass.async_add_executor_job(
-            get_info_from_host,
-            self.hass,
-            host,
-            zeroconf,
-        )
+        return await get_info_from_host(self.hass, host)

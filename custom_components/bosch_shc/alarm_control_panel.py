@@ -153,22 +153,22 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         """Whether the code is required for arm actions."""
         return False
 
-    def alarm_disarm(self, code=None):
+    async def async_alarm_disarm(self, code=None):
         """Send disarm command."""
-        self._device.disarm()
+        await self._device.disarm()
 
-    def alarm_arm_away(self, code=None):
+    async def async_alarm_arm_away(self, code=None):
         """Send arm away command."""
-        self._device.arm_full_protection()
+        await self._device.arm_full_protection()
 
-    def alarm_arm_home(self, code=None):
+    async def async_alarm_arm_home(self, code=None):
         """Send arm home command."""
-        self._device.arm_partial_protection()
+        await self._device.arm_partial_protection()
 
-    def alarm_arm_custom_bypass(self, code=None):
+    async def async_alarm_arm_custom_bypass(self, code=None):
         """Send arm home command."""
-        self._device.arm_individual_protection()
+        await self._device.arm_individual_protection()
 
-    def alarm_mute(self):
+    async def async_alarm_mute(self):
         """Mute alarm command."""
-        self._device.mute()
+        await self._device.mute()

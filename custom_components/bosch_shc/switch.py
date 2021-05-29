@@ -93,17 +93,17 @@ class SmartPlugSwitch(SHCEntity, SwitchEntity):
         """Return the current power usage in W."""
         return self._device.powerconsumption
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
-        self._device.state = True
+        await self._device.set_state(True)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the switch off."""
-        self._device.state = False
+        await self._device.set_state(False)
 
-    def toggle(self, **kwargs):
+    async def async_toggle(self, **kwargs):
         """Toggle the switch."""
-        self._device.state = not self.is_on
+        await self._device.set_state(not self.is_on)
 
 
 class SmartPlugCompactSwitch(SHCEntity, SwitchEntity):
@@ -129,17 +129,17 @@ class SmartPlugCompactSwitch(SHCEntity, SwitchEntity):
         """Return the current power usage in W."""
         return self._device.powerconsumption
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
-        self._device.state = True
+        await self._device.set_state(True)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the switch off."""
-        self._device.state = False
+        await self._device.set_state(False)
 
-    def toggle(self, **kwargs):
+    async def async_toggle(self, **kwargs):
         """Toggle the switch."""
-        self._device.state = not self.is_on
+        await self._device.set_state(not self.is_on)
 
     @property
     def extra_state_attributes(self):
@@ -157,26 +157,26 @@ class CameraEyesSwitch(SHCEntity, SwitchEntity):
         """Camera Eyes needs polling."""
         return True
 
-    def update(self):
+    async def async_update(self):
         """Trigger an update of the device."""
-        self._device.update()
+        await self._device.update()
 
     @property
     def is_on(self):
         """Return the state of the switch."""
         return self._device.cameralight == SHCCameraEyes.CameraLightService.State.ON
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
-        self._device.cameralight = True
+        await self._device.set_cameralight(True)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the switch off."""
-        self._device.cameralight = False
+        await self._device.set_cameralight(False)
 
-    def toggle(self, **kwargs):
+    async def async_toggle(self, **kwargs):
         """Toggle the switch."""
-        self._device.cameralight = not self.is_on
+        await self._device.set_cameralight(not self.is_on)
 
 
 class Camera360Switch(SHCEntity, SwitchEntity):
@@ -187,9 +187,9 @@ class Camera360Switch(SHCEntity, SwitchEntity):
         """Camera 360 needs polling."""
         return True
 
-    def update(self):
+    async def async_update(self):
         """Trigger an update of the device."""
-        self._device.update()
+        await self._device.update()
 
     @property
     def is_on(self):
@@ -198,14 +198,14 @@ class Camera360Switch(SHCEntity, SwitchEntity):
             self._device.privacymode == SHCCamera360.PrivacyModeService.State.DISABLED
         )
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
-        self._device.privacymode = False
+        await self._device.set_privacymode(False)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the switch off."""
-        self._device.privacymode = True
+        await self._device.set_privacymode(True)
 
-    def toggle(self, **kwargs):
+    async def async_toggle(self, **kwargs):
         """Toggle the switch."""
-        self._device.privacymode = not self.is_on
+        await self._device.set_privacymode(not self.is_on)

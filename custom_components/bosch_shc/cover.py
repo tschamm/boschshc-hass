@@ -51,9 +51,9 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         """Return the current cover position."""
         return self._device.level * 100.0
 
-    def stop_cover(self, **kwargs):
+    async def async_stop_cover(self, **kwargs):
         """Stop the cover."""
-        self._device.stop()
+        await self._device.stop()
 
     @property
     def is_closed(self):
@@ -80,17 +80,17 @@ class ShutterControlCover(SHCEntity, CoverEntity):
             == SHCShutterControl.ShutterControlService.State.CLOSING
         )
 
-    def open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs):
         """Open the cover."""
-        self._device.level = 1.0
+        await self._device.set_level(1.0)
 
-    def close_cover(self, **kwargs):
+    async def async_close_cover(self, **kwargs):
         """Close cover."""
-        self._device.level = 0.0
+        await self._device.set_level(0.0)
 
-    def set_cover_position(self, **kwargs):
+    async def async_set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
         if ATTR_POSITION in kwargs:
             position = float(kwargs[ATTR_POSITION])
             position = min(100, max(0, position))
-            self._device.level = position / 100.0
+            await self._device.set_level(position / 100.0)

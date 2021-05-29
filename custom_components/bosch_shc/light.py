@@ -87,7 +87,7 @@ class LightSwitch(SHCEntity, LightEntity):
             return self._device.color
         return None
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the light on."""
 
         hs_color = kwargs.get(ATTR_HS_COLOR)
@@ -95,7 +95,7 @@ class LightSwitch(SHCEntity, LightEntity):
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
         if brightness is not None and self._device.supports_brightness:
-            self._device.brightness = round(brightness * 100 / 255)
+            await self._device.set_brightness(round(brightness * 100 / 255))
         if self._device.supports_color_hsb:
             if color_temp is not None:
                 if color_temp < self._device.min_color_temperature:
@@ -108,13 +108,13 @@ class LightSwitch(SHCEntity, LightEntity):
             if hs_color is not None:
                 rgb = color_hs_to_RGB(*hs_color)
                 raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-                self._device.rgb = raw_rgb
+                await self._device.set_rgb(raw_rgb)
         if color_temp is not None and self._device.supports_color_temp:
-            self._device.color = color_temp
+            await self._device.set_color(color_temp)
 
         if not self.is_on:
-            self._device.state = True
+            await self._device.set_state(True)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the light off."""
-        self._device.state = False
+        await self._device.set_state(False)
