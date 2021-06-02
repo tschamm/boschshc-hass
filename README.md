@@ -29,6 +29,7 @@ The following platforms are implemented:
 * Alarm Control Panel
   * Intrusion Detection System
 * Binary Sensor
+  * Battery: all battery powered devices
   * Shutter Contact
   * Smoke Detector
   * Motion Detector
@@ -44,7 +45,6 @@ The following platforms are implemented:
   * Thermostat
   * Wall Thermostat
   * Twinguard
-  * Battery: all battery powered devices
   * Smart Plug, Smart Plug Compact and Light Control (energy and power)
 * Switch
   * Smart Plug
