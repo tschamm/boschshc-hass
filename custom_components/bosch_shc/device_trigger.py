@@ -4,7 +4,7 @@ from typing import List, Tuple
 import voluptuous as vol
 from boschshcpy import SHCDevice, SHCSession
 from homeassistant.components.automation import AutomationActionType
-from homeassistant.components.device_automation import TRIGGER_BASE_SCHEMA
+from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (
     InvalidDeviceAutomationConfig,
 )
@@ -34,7 +34,7 @@ from .const import (
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
 
-TRIGGER_SCHEMA = TRIGGER_BASE_SCHEMA.extend(
+TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
     {
         vol.Required(CONF_TYPE): vol.In(SUPPORTED_INPUTS_EVENTS_TYPES),
         vol.Required(CONF_SUBTYPE): str,
