@@ -340,6 +340,11 @@ class PowerSensor(SHCEntity, SensorEntity):
         """Return the unit of measurement of the sensor."""
         return POWER_WATT
 
+    @property
+    def state_class(self):
+        """Return the state class of the sensor."""
+        return "measurement"
+
 
 class EnergySensor(SHCEntity, SensorEntity):
     """Representation of a SHC energy reporting sensor."""
@@ -368,6 +373,11 @@ class EnergySensor(SHCEntity, SensorEntity):
     def unit_of_measurement(self):
         """Return the unit of measurement of the sensor."""
         return ENERGY_KILO_WATT_HOUR
+
+    @property
+    def state_class(self):
+        """Return the state class of the sensor."""
+        return "total_increasing"
 
 
 class ValveTappetSensor(SHCEntity, SensorEntity):
