@@ -71,7 +71,11 @@ def get_info_from_host(hass, host, zeroconf):
         zeroconf,
     )
     information = session.mdns_info()
-    return {"title": information.name, "unique_id": information.unique_id}
+    return {
+        "title": information.name,
+        "unique_id": information.unique_id,
+        "shc_ip_address": information.shcIpAddress,
+    }
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -195,8 +199,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         node_name = local_name[: -len(".local")]
 
         await self.async_set_unique_id(info["unique_id"])
-        self._abort_if_unique_id_configured({CONF_HOST: discovery_info["host"]})
-        self.host = discovery_info["host"]
+        self._abort_if_unique_id_configured({CONF_HOST: info["shc_ip_address"]})
+        self.host = info["shc_ip_address"]
         self.context["title_placeholders"] = {"name": node_name}
         return await self.async_step_confirm_discovery()
 
