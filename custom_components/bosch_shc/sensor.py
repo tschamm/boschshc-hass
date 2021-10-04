@@ -1,5 +1,5 @@
 """Platform for sensor integration."""
-from boschshcpy import SHCSession
+from boschshcpy import SHCSession, SHCDevice
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import (
@@ -145,30 +145,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class TemperatureSensor(SHCEntity, SensorEntity):
     """Representation of a SHC temperature reporting sensor."""
 
-    @property
-    def unique_id(self):
-        """Return the unique ID of this sensor."""
-        return f"{self._device.serial}_temperature"
+    _attr_device_class = DEVICE_CLASS_TEMPERATURE
+    _attr_native_unit_of_measurement = TEMP_CELSIUS
+
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+        """Initialize an SHC temperature reporting sensor."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_name = f"{device.name} Temperature"
+        self._attr_unique_id = f"{device.serial}_temperature"
 
     @property
-    def name(self):
-        """Return the name of this sensor."""
-        return f"{self._device.name} Temperature"
-
-    @property
-    def state(self):
+    def native_value(self):
         """Return the state of the sensor."""
         return self._device.temperature
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement of the sensor."""
-        return TEMP_CELSIUS
-
-    @property
-    def device_class(self):
-        """Return the class of this device."""
-        return DEVICE_CLASS_TEMPERATURE
 
 
 class HumiditySensor(SHCEntity, SensorEntity):
