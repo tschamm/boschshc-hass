@@ -74,7 +74,6 @@ def get_info_from_host(hass, host, zeroconf):
     return {
         "title": information.name,
         "unique_id": information.unique_id,
-        "shc_ip_address": information.shcIpAddress,
     }
 
 
@@ -191,7 +190,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="not_bosch_shc")
 
         try:
-            self.info = info = await self._get_info(discovery_info["host"])
+            for host in discovery_info["host"]:
+                if not host.startswith("169."):
+                    self.info = info = await self._get_info(host)
+                    break
         except SHCConnectionError:
             return self.async_abort(reason="cannot_connect")
 
@@ -199,8 +201,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         node_name = local_name[: -len(".local")]
 
         await self.async_set_unique_id(info["unique_id"])
-        self._abort_if_unique_id_configured({CONF_HOST: info["shc_ip_address"]})
-        self.host = info["shc_ip_address"]
+        self._abort_if_unique_id_configured({CONF_HOST: host})
+        self.host = host
         self.context["title_placeholders"] = {"name": node_name}
         return await self.async_step_confirm_discovery()
 
