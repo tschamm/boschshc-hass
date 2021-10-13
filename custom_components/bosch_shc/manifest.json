@@ -4,7 +4,7 @@
   "config_flow": true,
   "documentation": "https://github.com/tschamm/boschshc-hass/blob/master/README.md",
   "requirements": ["boschshcpy==0.2.24"],
-  "version": "0.4.16",
+  "version": "0.4.17",
   "zeroconf": [
     {"type": "_http._tcp.local.", "name": "bosch shc*"}
   ],
