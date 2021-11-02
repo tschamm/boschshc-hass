@@ -7,7 +7,7 @@
 
 # Bosch Smart Home Controller (SHC) for Home Assistant
 
-![Bosch Smart Home](https://www.home-connect-plus.com/wp-content/uploads/logo-bosch-smart-home-website.png)
+![Bosch Smart Home](https://www.home-connect-plus.com/wp-content/uploads/logo-bosch-smart-home-en-website.png)
 
 Custom Home Assistant integration for accessing Bosch Smart Home Controller (SHC).
 

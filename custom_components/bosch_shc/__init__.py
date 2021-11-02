@@ -1,5 +1,4 @@
 """The Bosch Smart Home Controller integration."""
-import asyncio
 import logging
 
 import voluptuous as vol

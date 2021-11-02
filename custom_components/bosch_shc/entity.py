@@ -34,6 +34,8 @@ class SHCEntity(Entity):
         self._device = device
         self._parent_id = parent_id
         self._entry_id = entry_id
+        self._attr_name = f"{device.name}"
+        self._attr_unique_id = f"{device.serial}"
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""
@@ -58,16 +60,6 @@ class SHCEntity(Entity):
         for service in self._device.device_services:
             service.unsubscribe_callback(self.entity_id)
         self._device.unsubscribe_callback(self.entity_id)
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of the device."""
-        return self._device.serial
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._device.name
 
     @property
     def device_name(self):

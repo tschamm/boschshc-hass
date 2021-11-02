@@ -7,6 +7,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from boschshcpy import (
     SHCBatteryDevice,
+    SHCDevice,
     SHCSession,
     SHCShutterContact,
     SHCSmokeDetectionSystem,
@@ -161,6 +162,8 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
 class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC motion detection sensor."""
 
+    _attr_device_class = DEVICE_CLASS_MOTION
+
     def __init__(self, hass, device, parent_id: str, entry_id: str):
         """Initialize the motion detection device."""
         self.hass = hass
@@ -202,11 +205,6 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_MOTION
-
-    @property
     def is_on(self):
         """Return the state of the sensor."""
         try:
@@ -236,6 +234,8 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
 
 class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector sensor."""
+
+    _attr_device_class = DEVICE_CLASS_SMOKE
 
     def __init__(
         self,
@@ -286,11 +286,6 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         return self._device.alarmstate != SHCSmokeDetector.AlarmService.State.IDLE_OFF
 
     @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_SMOKE
-
-    @property
     def icon(self):
         """Return the icon of the sensor."""
         return "mdi:smoke-detector"
@@ -323,6 +318,8 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
 class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC water leakage detector sensor."""
 
+    _attr_device_class = DEVICE_CLASS_MOISTURE
+
     @property
     def is_on(self):
         """Return the state of the sensor."""
@@ -330,11 +327,6 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
             self._device.leakage_state
             != SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
         )
-
-    @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_MOISTURE
 
     @property
     def icon(self):
@@ -352,6 +344,8 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
 
 class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detection system sensor."""
+
+    _attr_device_class = DEVICE_CLASS_SMOKE
 
     def __init__(
         self,
@@ -405,11 +399,6 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         )
 
     @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_SMOKE
-
-    @property
     def icon(self):
         """Return the icon of the sensor."""
         return "mdi:smoke-detector"
@@ -425,15 +414,13 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
 class BatterySensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC battery reporting sensor."""
 
-    @property
-    def unique_id(self):
-        """Return the unique ID of this sensor."""
-        return f"{self._device.serial}_battery"
+    _attr_device_class = DEVICE_CLASS_BATTERY
 
-    @property
-    def name(self):
-        """Return the name of this sensor."""
-        return f"{self._device.name} Battery"
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+        """Initialize an SHC temperature reporting sensor."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_name = f"{device.name} Battery"
+        self._attr_unique_id = f"{device.serial}_battery"
 
     @property
     def is_on(self):
@@ -459,8 +446,3 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
         return (
             self._device.batterylevel != SHCBatteryDevice.BatteryLevelService.State.OK
         )
-
-    @property
-    def device_class(self):
-        """Return the class of the sensor."""
-        return DEVICE_CLASS_BATTERY
