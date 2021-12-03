@@ -49,7 +49,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     @property
     def current_cover_position(self):
         """Return the current cover position."""
-        return self._device.level * 100.0
+        return (1.0 - self._device.level) * 100.0
 
     def stop_cover(self, **kwargs):
         """Stop the cover."""
@@ -61,15 +61,15 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         if self.current_cover_position is None:
             return None
         if self.current_cover_position == 0.0:
-            return True
-        return False
+            return False
+        return True
 
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
         return (
             self._device.operation_state
-            == SHCShutterControl.ShutterControlService.State.OPENING
+            == SHCShutterControl.ShutterControlService.State.CLOSING
         )
 
     @property
@@ -77,7 +77,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         """Return if the cover is closing or not."""
         return (
             self._device.operation_state
-            == SHCShutterControl.ShutterControlService.State.CLOSING
+            == SHCShutterControl.ShutterControlService.State.OPENING
         )
 
     def open_cover(self, **kwargs):
@@ -93,4 +93,4 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         if ATTR_POSITION in kwargs:
             position = float(kwargs[ATTR_POSITION])
             position = min(100, max(0, position))
-            self._device.level = position / 100.0
+            self._device.level = (100.0 - position) / 100.0
