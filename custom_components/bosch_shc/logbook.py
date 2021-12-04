@@ -13,7 +13,6 @@ def async_describe_events(hass, async_describe_event):
     @callback
     def async_describe_bosch_shc_event(event):
         """Describe bosch_shc.click logbook event."""
-
         device_name = event.data[ATTR_NAME]
         event_subtype = event.data[ATTR_EVENT_SUBTYPE]
         event_type = event.data[ATTR_EVENT_TYPE]

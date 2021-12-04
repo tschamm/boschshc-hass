@@ -89,7 +89,6 @@ class LightSwitch(SHCEntity, LightEntity):
 
     def turn_on(self, **kwargs):
         """Turn the light on."""
-
         hs_color = kwargs.get(ATTR_HS_COLOR)
         color_temp = kwargs.get(ATTR_COLOR_TEMP)
         brightness = kwargs.get(ATTR_BRIGHTNESS)

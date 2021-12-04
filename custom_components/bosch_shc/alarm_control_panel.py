@@ -17,14 +17,12 @@ from homeassistant.const import (
 )
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the alarm control panel platform."""
-
     devices = []
 
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
@@ -44,6 +42,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
     def __init__(self, device: SHCIntrusionSystem, parent_id: str, entry_id: str):
+        """Initialize the intrusion detection control."""
         self._device = device
         self._parent_id = parent_id
         self._entry_id = entry_id
@@ -139,7 +138,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
 
     @property
     def manufacturer(self):
-        """The manufacturer of the device."""
+        """Return manufacturer of the device."""
         return self._device.manufacturer
 
     @property

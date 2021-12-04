@@ -16,7 +16,6 @@ from .entity import SHCEntity
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC cover platform."""
-
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
