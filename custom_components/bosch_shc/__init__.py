@@ -12,6 +12,7 @@ from homeassistant.const import (
     ATTR_NAME,
     CONF_HOST,
     EVENT_HOMEASSISTANT_STOP,
+    Platform,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
@@ -33,13 +34,13 @@ from .const import (
 )
 
 PLATFORMS = [
-    "binary_sensor",
-    "cover",
-    "switch",
-    "sensor",
-    "climate",
-    "alarm_control_panel",
-    "light",
+    Platform.BINARY_SENSOR,
+    Platform.COVER,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.CLIMATE,
+    Platform.ALARM_CONTROL_PANEL,
+    Platform.LIGHT,
 ]
 
 _LOGGER = logging.getLogger(__name__)
