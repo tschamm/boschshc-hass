@@ -27,6 +27,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -416,7 +417,7 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Battery"
         self._attr_unique_id = f"{device.serial}_battery"
-        self._attr_entity_category = "diagnostic"
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
     def is_on(self):
