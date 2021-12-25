@@ -15,12 +15,7 @@ from boschshcpy import (
     SHCWaterLeakageSensor,
 )
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_DOOR,
-    DEVICE_CLASS_MOISTURE,
-    DEVICE_CLASS_MOTION,
-    DEVICE_CLASS_SMOKE,
-    DEVICE_CLASS_WINDOW,
+    BinarySensorDeviceClass,
     BinarySensorEntity,
 )
 from homeassistant.const import (
@@ -149,20 +144,20 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
 
     @property
     def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
+        """Return the class of this device."""
         switcher = {
-            "ENTRANCE_DOOR": DEVICE_CLASS_DOOR,
-            "REGULAR_WINDOW": DEVICE_CLASS_WINDOW,
-            "FRENCH_WINDOW": DEVICE_CLASS_DOOR,
-            "GENERIC": DEVICE_CLASS_WINDOW,
+            "ENTRANCE_DOOR": BinarySensorDeviceClass.DOOR,
+            "REGULAR_WINDOW": BinarySensorDeviceClass.WINDOW,
+            "FRENCH_WINDOW": BinarySensorDeviceClass.DOOR,
+            "GENERIC": BinarySensorDeviceClass.WINDOW,
         }
-        return switcher.get(self._device.device_class, DEVICE_CLASS_WINDOW)
+        return switcher.get(self._device.device_class, BinarySensorDeviceClass.WINDOW)
 
 
 class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC motion detection sensor."""
 
-    _attr_device_class = DEVICE_CLASS_MOTION
+    _attr_device_class = BinarySensorDeviceClass.MOTION
 
     def __init__(self, hass, device, parent_id: str, entry_id: str):
         """Initialize the motion detection device."""
@@ -235,7 +230,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
 class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detector sensor."""
 
-    _attr_device_class = DEVICE_CLASS_SMOKE
+    _attr_device_class = BinarySensorDeviceClass.SMOKE
 
     def __init__(
         self,
@@ -318,7 +313,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
 class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC water leakage detector sensor."""
 
-    _attr_device_class = DEVICE_CLASS_MOISTURE
+    _attr_device_class = BinarySensorDeviceClass.MOISTURE
 
     @property
     def is_on(self):
@@ -345,7 +340,7 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):
 class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC smoke detection system sensor."""
 
-    _attr_device_class = DEVICE_CLASS_SMOKE
+    _attr_device_class = BinarySensorDeviceClass.SMOKE
 
     def __init__(
         self,
@@ -414,7 +409,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
 class BatterySensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC battery reporting sensor."""
 
-    _attr_device_class = DEVICE_CLASS_BATTERY
+    _attr_device_class = BinarySensorDeviceClass.BATTERY
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
