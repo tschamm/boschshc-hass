@@ -185,7 +185,6 @@ class PuritySensor(SHCEntity, SensorEntity):
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Purity"
         self._attr_unique_id = f"{device.serial}_purity"
-        self._attr_entity_category = "diagnostic"
 
     @property
     def native_value(self):
