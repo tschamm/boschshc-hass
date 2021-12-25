@@ -2,11 +2,11 @@
 from boschshcpy import SHCSession, SHCShutterControl
 from homeassistant.components.cover import (
     ATTR_POSITION,
-    DEVICE_CLASS_SHUTTER,
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
     SUPPORT_STOP,
+    CoverDeviceClass,
     CoverEntity,
 )
 
@@ -42,8 +42,8 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 
     @property
     def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_SHUTTER
+        """Return the class of this device."""
+        return CoverDeviceClass.SHUTTER
 
     @property
     def current_cover_position(self):
