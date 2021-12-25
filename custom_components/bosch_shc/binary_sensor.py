@@ -416,6 +416,7 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Battery"
         self._attr_unique_id = f"{device.serial}_battery"
+        self._attr_entity_category = "diagnostic"
 
     @property
     def is_on(self):
