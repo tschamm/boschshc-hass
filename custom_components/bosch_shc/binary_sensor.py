@@ -78,7 +78,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    for binary_sensor in session.device_helper.smoke_detection_system:
+    binary_sensor = session.device_helper.smoke_detection_system
+    if binary_sensor:
         entities.append(
             SmokeDetectionSystemSensor(
                 device=binary_sensor,
