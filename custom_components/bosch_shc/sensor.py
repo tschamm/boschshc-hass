@@ -4,7 +4,11 @@ from __future__ import annotations
 from boschshcpy import SHCSession
 from boschshcpy.device import SHCDevice
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
@@ -162,6 +166,7 @@ class TemperatureSensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = TEMP_CELSIUS
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
@@ -180,6 +185,7 @@ class HumiditySensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.HUMIDITY
     _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC humidity reporting sensor."""
@@ -198,6 +204,7 @@ class PuritySensor(SHCEntity, SensorEntity):
 
     _attr_icon = "mdi:molecule-co2"
     _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC purity reporting sensor."""
@@ -300,6 +307,7 @@ class PowerSensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = POWER_WATT
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
@@ -318,6 +326,7 @@ class EnergySensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_native_unit_of_measurement = ENERGY_KILO_WATT_HOUR
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC energy reporting sensor."""
