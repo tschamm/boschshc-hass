@@ -46,7 +46,7 @@ _Component to integrate with [Bosch Smart Home][bosch_smart_home] system._
 ***
 
 [bosch_smart_home]: https://github.com/BoschSmartHome/bosch-shc-api-docs
-[bosch_smart_home_icon]: https://www.home-connect-plus.com/wp-content/uploads/logo-bosch-smart-home-website.png
+[bosch_smart_home_icon]: https://www.home-connect-plus.com/wp-content/uploads/logo-bosch-smart-home-en-website.png
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
 [stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
