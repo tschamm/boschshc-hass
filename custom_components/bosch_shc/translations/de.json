@@ -1,5 +1,4 @@
 {
-    "title": "Bosch SHC",
     "config": {
         "flow_title": "Bosch SHC: {name}",
         "step": {
