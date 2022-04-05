@@ -12,13 +12,11 @@
             },
             "user": {
                 "description": "Set up your Bosch Smart Home Controller to allow monitoring and control with Home Assistant.",
-                "title": "SHC authentication parameters",
                 "data": {
                     "host": "Host"
                 }
             },
             "reauth_confirm": {
-                "title": "SHC authentication parameters",
                 "description": "The bosch_shc integration needs to re-authenticate your account",
                 "data": {
                     "host": "Host"

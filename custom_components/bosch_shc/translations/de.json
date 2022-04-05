@@ -12,13 +12,11 @@
             },
             "user": {
                 "description": "Richte deinen Bosch Smart Home Controller ein, um die Überwachung und Steuerung mit Home Assistant zu ermöglichen.",
-                "title": "SHC-Authentifizierungsparameter",
                 "data": {
                     "host": "Host"
                 }
             },
             "reauth_confirm": {
-                "title": "SHC-Authentifizierungsparameter",
                 "description": "Die bosch_shc Integration muss deinen Zugang neu authentifizieren.",
                 "data": {
                     "host": "Host"
