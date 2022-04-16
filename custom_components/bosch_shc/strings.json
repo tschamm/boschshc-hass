@@ -1,5 +1,4 @@
 {
-  "title": "Bosch SHC",
   "config": {
     "step": {
       "user": {
@@ -35,24 +34,24 @@
     },
     "flow_title": "Bosch SHC: {name}"
   },
-  "device_automation":{
-      "trigger_subtype": {
-          "LOWER_BUTTON": "Lower button",
-          "UPPER_BUTTON": "Upper button",
-          "IDLE_OFF": "Alarm off",
-          "INTRUSION_ALARM": "Intrusion alarm",
-          "SECONDARY_ALARM": "Secondary alarm",
-          "PRIMARY_ALARM": "Primary alarm",
-          "ALARM_OFF": "Alarm off",
-          "ALARM_ON": "Alarm on",
-          "ALARM_MUTED": "Alarm muted"
-      },
-      "trigger_type": {
-          "PRESS_SHORT": "{subtype} short clicked",
-          "PRESS_LONG": "{subtype} long clicked",
-          "MOTION": "Motion detected",
-          "SCENARIO": "Scenario {subtype} triggered",
-          "ALARM": "{subtype} triggered"
-      }
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Lower button",
+      "UPPER_BUTTON": "Upper button",
+      "IDLE_OFF": "Alarm off",
+      "INTRUSION_ALARM": "Intrusion alarm",
+      "SECONDARY_ALARM": "Secondary alarm",
+      "PRIMARY_ALARM": "Primary alarm",
+      "ALARM_OFF": "Alarm off",
+      "ALARM_ON": "Alarm on",
+      "ALARM_MUTED": "Alarm muted"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} short clicked",
+      "PRESS_LONG": "{subtype} long clicked",
+      "MOTION": "Motion detected",
+      "SCENARIO": "Scenario {subtype} triggered",
+      "ALARM": "{subtype} triggered"
+    }
   }
 }
