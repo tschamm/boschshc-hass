@@ -47,13 +47,14 @@ def create_credentials_and_validate(hass, host, user_input, zeroconf_instance):
     result = helper.register(host, "HomeAssistant")
 
     if result is not None:
-        write_tls_asset(hass, CONF_SHC_CERT, result["cert"])
-        write_tls_asset(hass, CONF_SHC_KEY, result["key"])
+        hostname = result["token"].split(":", 1)[1]
+        write_tls_asset(hass, CONF_SHC_CERT + "_" + hostname + ".pem", result["cert"])
+        write_tls_asset(hass, CONF_SHC_KEY + "_" + hostname + ".pem", result["key"])
 
         session = SHCSession(
             host,
-            hass.config.path(DOMAIN, CONF_SHC_CERT),
-            hass.config.path(DOMAIN, CONF_SHC_KEY),
+            hass.config.path(DOMAIN, CONF_SHC_CERT + "_" + hostname + ".pem"),
+            hass.config.path(DOMAIN, CONF_SHC_KEY + "_" + hostname + ".pem"),
             True,
             zeroconf_instance,
         )
@@ -147,12 +148,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
+                hostname = result["token"].split(":", 1)[1]
                 entry_data = {
-                    CONF_SSL_CERTIFICATE: self.hass.config.path(DOMAIN, CONF_SHC_CERT),
-                    CONF_SSL_KEY: self.hass.config.path(DOMAIN, CONF_SHC_KEY),
+                    CONF_SSL_CERTIFICATE: self.hass.config.path(
+                        DOMAIN, CONF_SHC_CERT + "_" + hostname + ".pem"
+                    ),
+                    CONF_SSL_KEY: self.hass.config.path(
+                        DOMAIN, CONF_SHC_KEY + "_" + hostname + ".pem"
+                    ),
                     CONF_HOST: self.host,
                     CONF_TOKEN: result["token"],
-                    CONF_HOSTNAME: result["token"].split(":", 1)[1],
+                    CONF_HOSTNAME: hostname,
                 }
                 existing_entry = await self.async_set_unique_id(self.info["unique_id"])
                 if existing_entry:
