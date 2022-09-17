@@ -31,7 +31,7 @@ The following platforms are implemented:
 * Binary Sensor
   * Battery: all battery powered devices
   * Shutter Contact
-  * Smoke Detector
+  * Smoke Detector Gen 1 and Gen 2
   * Motion Detector
   * Smoke Detection System
   * Water Leakage Sensor
@@ -43,7 +43,7 @@ The following platforms are implemented:
   * LEDVANCE Light
 * Sensor
   * Thermostat
-  * Wall Thermostat
+  * Wall Thermostat Gen 1 and Gen 2
   * Twinguard
   * Smart Plug, Smart Plug Compact and Light Control (energy and power)
 * Switch

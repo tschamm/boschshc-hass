@@ -44,7 +44,7 @@ TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
 
 async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
     """Get the device for the given device id."""
-    dev_registry = await dr.async_get(hass)
+    dev_registry = dr.async_get(hass)
     for config_entry in hass.data[DOMAIN]:
 
         session: SHCSession = hass.data[DOMAIN][config_entry][DATA_SESSION]
