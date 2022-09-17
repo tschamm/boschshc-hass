@@ -209,7 +209,7 @@ class SwitchDeviceEventListener:
 
     async def async_setup(self):
         """Set up the listener."""
-        device_registry = await dr.async_get_registry(self.hass)
+        device_registry = await dr.async_get(self.hass)
         device_entry = device_registry.async_get_or_create(
             config_entry_id=self.entry.entry_id,
             name=self._device.name,
