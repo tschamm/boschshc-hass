@@ -61,6 +61,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Initialize the SHC device."""
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._name = name
+        self._attr_unique_id = f"{device.root_device_id}_{device.serial}"
 
     @property
     def name(self):
