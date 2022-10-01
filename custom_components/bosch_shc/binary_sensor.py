@@ -24,6 +24,7 @@ from homeassistant.const import (
     ATTR_ID,
     ATTR_NAME,
     EVENT_HOMEASSISTANT_STOP,
+    Platform,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
@@ -39,7 +40,7 @@ from .const import (
     SERVICE_SMOKEDETECTOR_ALARMSTATE,
     SERVICE_SMOKEDETECTOR_CHECK,
 )
-from .entity import SHCEntity, async_get_device_id
+from .entity import SHCEntity, async_get_device_id, migrate_old_unique_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,6 +81,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     binary_sensor = session.device_helper.smoke_detection_system
     if binary_sensor:
+        migrate_old_unique_ids(
+            hass,
+            Platform.BINARY_SENSOR,
+            f"{binary_sensor.serial}",
+            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        )
         entities.append(
             SmokeDetectionSystemSensor(
                 device=binary_sensor,
@@ -355,6 +362,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
         self._service = None
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.serial}"
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
