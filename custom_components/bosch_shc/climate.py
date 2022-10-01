@@ -14,10 +14,10 @@ from homeassistant.components.climate.const import (
     SUPPORT_PRESET_MODE,
     SUPPORT_TARGET_TEMPERATURE,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, Platform
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, migrate_old_unique_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +29,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     for climate in session.device_helper.climate_controls:
         room_id = climate.room_id
+        migrate_old_unique_ids(
+            hass,
+            Platform.CLIMATE,
+            f"{climate.serial}",
+            f"{climate.root_device_id}_{climate.serial}",
+        )
         entities.append(
             ClimateControl(
                 device=climate,

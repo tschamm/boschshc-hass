@@ -1,13 +1,14 @@
 """Bosch Smart Home Controller base entity."""
 from boschshcpy.device import SHCDevice
-
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
 
 
-async def async_get_device_id(hass, device_id):
+async def async_get_device_id(hass: HomeAssistant, device_id: str) -> None:
     """Get device id from device registry."""
     dev_registry = get_dev_reg(hass)
     device = dev_registry.async_get_device(
@@ -16,7 +17,9 @@ async def async_get_device_id(hass, device_id):
     return device.id if device is not None else None
 
 
-async def async_remove_devices(hass, entity, entry_id):
+async def async_remove_devices(
+    hass: HomeAssistant, entity: Entity, entry_id: str
+) -> None:
     """Get item that is removed from session."""
     dev_registry = get_dev_reg(hass)
     device = dev_registry.async_get_device(
@@ -24,6 +27,17 @@ async def async_remove_devices(hass, entity, entry_id):
     )
     if device is not None:
         dev_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
+
+
+@callback
+def migrate_old_unique_ids(
+    hass: HomeAssistant, platform: str, old_unique_id: str, new_key: str
+) -> None:
+    """Migrate unique IDs to the new format."""
+    ent_reg = entity_registry.async_get(hass)
+
+    if entity_id := ent_reg.async_get_entity_id(platform, DOMAIN, old_unique_id):
+        ent_reg.async_update_entity(entity_id, new_unique_id=f"{new_key}")
 
 
 class SHCEntity(Entity):
@@ -35,7 +49,7 @@ class SHCEntity(Entity):
         self._parent_id = parent_id
         self._entry_id = entry_id
         self._attr_name = f"{device.name}"
-        self._attr_unique_id = f"{device.serial}"
+        self._attr_unique_id = f"{device.root_device_id}_{device.serial}"
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""

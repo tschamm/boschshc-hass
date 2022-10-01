@@ -11,6 +11,7 @@ from homeassistant.components.light import (
     SUPPORT_COLOR_TEMP,
     LightEntity,
 )
+from homeassistant.const import Platform
 from homeassistant.util.color import (
     color_hs_to_RGB,
     color_RGB_to_hs,
@@ -19,7 +20,7 @@ from homeassistant.util.color import (
 )
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, migrate_old_unique_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +31,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for light in session.device_helper.ledvance_lights:
+        migrate_old_unique_ids(
+            hass,
+            Platform.LIGHT,
+            f"{light.serial}",
+            f"{light.root_device_id}_{light.serial}",
+        )
         entities.append(
             LightSwitch(
                 device=light,

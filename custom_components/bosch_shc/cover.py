@@ -1,6 +1,5 @@
 """Platform for cover integration."""
 from boschshcpy import SHCSession, SHCShutterControl
-
 from homeassistant.components.cover import (
     ATTR_POSITION,
     SUPPORT_CLOSE,
@@ -11,11 +10,12 @@ from homeassistant.components.cover import (
     CoverEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, migrate_old_unique_ids
 
 
 async def async_setup_entry(
@@ -28,6 +28,12 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for cover in session.device_helper.shutter_controls:
+        migrate_old_unique_ids(
+            hass,
+            Platform.COVER,
+            f"{cover.serial}",
+            f"{cover.root_device_id}_{cover.serial}",
+        )
         entities.append(
             ShutterControlCover(
                 device=cover,

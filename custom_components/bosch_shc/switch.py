@@ -12,20 +12,20 @@ from boschshcpy import (
     SHCSmartPlugCompact,
 )
 from boschshcpy.device import SHCDevice
-
 from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, migrate_old_unique_ids
 
 
 @dataclass
@@ -94,7 +94,12 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for switch in session.device_helper.smart_plugs:
-
+        migrate_old_unique_ids(
+            hass,
+            Platform.SWITCH,
+            f"{switch.serial}",
+            f"{switch.root_device_id}_{switch.serial}",
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -102,6 +107,12 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["smartplug"],
             )
+        )
+        migrate_old_unique_ids(
+            hass,
+            Platform.SWITCH,
+            f"{switch.serial}_routing",
+            f"{switch.root_device_id}_{switch.serial}_routing",
         )
         entities.append(
             SHCRoutingSwitch(
@@ -112,7 +123,12 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.light_switches:
-
+        migrate_old_unique_ids(
+            hass,
+            Platform.SWITCH,
+            f"{switch.serial}",
+            f"{switch.root_device_id}_{switch.serial}",
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -123,7 +139,12 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.smart_plugs_compact:
-
+        migrate_old_unique_ids(
+            hass,
+            Platform.SWITCH,
+            f"{switch.serial}",
+            f"{switch.root_device_id}_{switch.serial}",
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -134,7 +155,12 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_eyes:
-
+        migrate_old_unique_ids(
+            hass,
+            Platform.SWITCH,
+            f"{switch.serial}",
+            f"{switch.root_device_id}_{switch.serial}",
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -145,7 +171,12 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_360:
-
+        migrate_old_unique_ids(
+            hass,
+            Platform.SWITCH,
+            f"{switch.serial}",
+            f"{switch.root_device_id}_{switch.serial}",
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -211,7 +242,7 @@ class SHCRoutingSwitch(SHCEntity, SwitchEntity):
         """Initialize an SHC communication quality reporting sensor."""
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Routing"
-        self._attr_unique_id = f"{device.serial}_routing"
+        self._attr_unique_id = f"{device.root_device_id}_{device.serial}_routing"
 
     @property
     def is_on(self) -> bool:

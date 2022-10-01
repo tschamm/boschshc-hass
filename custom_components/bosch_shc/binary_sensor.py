@@ -24,6 +24,7 @@ from homeassistant.const import (
     ATTR_ID,
     ATTR_NAME,
     EVENT_HOMEASSISTANT_STOP,
+    Platform,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
@@ -39,7 +40,7 @@ from .const import (
     SERVICE_SMOKEDETECTOR_ALARMSTATE,
     SERVICE_SMOKEDETECTOR_CHECK,
 )
-from .entity import SHCEntity, async_get_device_id
+from .entity import SHCEntity, async_get_device_id, migrate_old_unique_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,6 +51,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for binary_sensor in session.device_helper.shutter_contacts:
+        migrate_old_unique_ids(
+            hass,
+            Platform.BINARY_SENSOR,
+            f"{binary_sensor.serial}",
+            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        )
         entities.append(
             ShutterContactSensor(
                 device=binary_sensor,
@@ -59,6 +66,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for binary_sensor in session.device_helper.motion_detectors:
+        migrate_old_unique_ids(
+            hass,
+            Platform.BINARY_SENSOR,
+            f"{binary_sensor.serial}",
+            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        )
         entities.append(
             MotionDetectionSensor(
                 hass=hass,
@@ -69,6 +82,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for binary_sensor in session.device_helper.smoke_detectors:
+        migrate_old_unique_ids(
+            hass,
+            Platform.BINARY_SENSOR,
+            f"{binary_sensor.serial}",
+            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        )
         entities.append(
             SmokeDetectorSensor(
                 device=binary_sensor,
@@ -80,6 +99,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     binary_sensor = session.device_helper.smoke_detection_system
     if binary_sensor:
+        migrate_old_unique_ids(
+            hass,
+            Platform.BINARY_SENSOR,
+            f"{binary_sensor.serial}",
+            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        )
         entities.append(
             SmokeDetectionSystemSensor(
                 device=binary_sensor,
@@ -90,6 +115,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for binary_sensor in session.device_helper.water_leakage_detectors:
+        migrate_old_unique_ids(
+            hass,
+            Platform.BINARY_SENSOR,
+            f"{binary_sensor.serial}",
+            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        )
         entities.append(
             WaterLeakageDetectorSensor(
                 device=binary_sensor,
@@ -109,6 +140,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         + session.device_helper.water_leakage_detectors
     ):
         if binary_sensor.supports_batterylevel:
+            migrate_old_unique_ids(
+                hass,
+                Platform.BINARY_SENSOR,
+                f"{binary_sensor.serial}_battery",
+                f"{binary_sensor.root_device_id}_{binary_sensor.serial}_battery",
+            )
             entities.append(
                 BatterySensor(
                     device=binary_sensor,
@@ -417,7 +454,7 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Battery"
-        self._attr_unique_id = f"{device.serial}_battery"
+        self._attr_unique_id = f"{device.root_device_id}_{device.serial}_battery"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
