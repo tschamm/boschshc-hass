@@ -81,6 +81,13 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCCamera360.PrivacyModeService.State.DISABLED,
         should_poll=True,
     ),
+    "presencesimulation": SHCSwitchEntityDescription(
+        key="presencesimulation",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="enabled",
+        on_value=True,
+        should_poll=True,
+    ),
 }
 
 
@@ -152,6 +159,18 @@ async def async_setup_entry(
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360"],
+            )
+        )
+
+    presence_simulation_system = session.device_helper.presence_simulation_system
+    if presence_simulation_system:
+
+        entities.append(
+            SHCSwitch(
+                device=presence_simulation_system,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["presencesimulation"],
             )
         )
 
