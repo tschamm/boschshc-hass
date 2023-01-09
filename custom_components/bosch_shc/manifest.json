@@ -4,7 +4,7 @@
   "config_flow": true,
   "documentation": "https://github.com/tschamm/boschshc-hass/blob/master/README.md",
   "requirements": ["git+https://github.com/beilm/boschshcpy.git#boschshcpy==0.2.37.1"],
-  "version": "0.4.36",
+  "version": "0.4.36.1",
   "zeroconf": [{ "type": "_http._tcp.local.", "name": "bosch shc*" }],
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/tschamm/boschshc-hass/issues",
