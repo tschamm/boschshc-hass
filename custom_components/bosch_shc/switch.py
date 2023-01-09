@@ -70,8 +70,8 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     "cameraeyes": SHCSwitchEntityDescription(
         key="cameraeyes",
         device_class=SwitchDeviceClass.SWITCH,
-        on_key="cameralight",
-        on_value=SHCCameraEyes.CameraLightService.State.ON,
+        on_key="privacymode",
+        on_value=SHCCameraEyes.PrivacyModeService.State.DISABLED,
         should_poll=True,
     ),
     "camera360": SHCSwitchEntityDescription(
@@ -143,22 +143,43 @@ async def async_setup_entry(
     for switch in session.device_helper.camera_eyes:
 
         entities.append(
-            SHCSwitch(
+            SHCCameraPrivacySwitch(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraeyes"],
             )
         )
+        entities.append(
+            SHCCameraNotificationSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        entities.append(
+            SHCCameraLightSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+            )
+        )
 
     for switch in session.device_helper.camera_360:
 
         entities.append(
-            SHCSwitch(
+            SHCCameraPrivacySwitch(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360"],
+            )
+        )
+        entities.append(
+            SHCCameraNotificationSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
             )
         )
 
@@ -244,3 +265,115 @@ class SHCRoutingSwitch(SHCEntity, SwitchEntity):
     def turn_off(self, **kwargs) -> None:
         """Turn the switch off."""
         self._device.routing = False
+
+
+class SHCCameraPrivacySwitch(SHCEntity, SwitchEntity):
+    """Representation of a SHC camera privacy switch."""
+
+    entity_description: SHCSwitchEntityDescription
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        parent_id: str,
+        entry_id: str,
+        description: SHCSwitchEntityDescription,
+    ) -> None:
+        """Initialize a SHC camera privacy switch."""
+        super().__init__(device, parent_id, entry_id)
+        self.entity_description = description
+
+    @property
+    def is_on(self) -> bool:
+        """Return the state of the switch."""
+        return (
+            getattr(self._device, self.entity_description.on_key)
+            == self.entity_description.on_value
+        )
+
+    def turn_on(self, **kwargs) -> None:
+        """Turn the privacy on."""
+        setattr(self._device, self.entity_description.on_key, False)
+
+    def turn_off(self, **kwargs) -> None:
+        """Turn the privacy off."""
+        setattr(self._device, self.entity_description.on_key, True)
+
+    @property
+    def should_poll(self) -> bool:
+        """Switch needs polling."""
+        return self.entity_description.should_poll
+
+    def update(self) -> None:
+        """Trigger an update of the device."""
+        self._device.update()
+
+
+class SHCCameraNotificationSwitch(SHCEntity, SwitchEntity):
+    """Representation of a SHC camera notification switch."""
+
+    _attr_icon = "mdi:message-badge"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+        """Initialize an SHC camera device."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_name = f"{device.name} Notifications"
+        self._attr_unique_id = f"{device.serial}_cameranotification"
+
+    @property
+    def is_on(self) -> bool:
+        """Return the state of the camera notifications."""
+        return self._device.cameranotification.name == "ENABLED"
+
+    def turn_on(self, **kwargs) -> None:
+        """Turn the notifications on."""
+        self._device.cameranotification = True
+
+    def turn_off(self, **kwargs) -> None:
+        """Turn the notifications off."""
+        self._device.cameranotification = False
+
+    @property
+    def should_poll(self) -> bool:
+        """Attr needs polling."""
+        return True
+
+    def update(self) -> None:
+        """Trigger an update of the device."""
+        self._device.update()
+
+
+class SHCCameraLightSwitch(SHCEntity, SwitchEntity):
+    """Representation of a SHC camera light switch."""
+
+    _attr_icon = "mdi:light-flood-down"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+        """Initialize an SHC camera device."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_name = f"{device.name} Light"
+        self._attr_unique_id = f"{device.serial}_cameralight"
+
+    @property
+    def is_on(self) -> bool:
+        """Return the state of the camera light."""
+        return self._device.cameralight.name == "ON"
+
+    def turn_on(self, **kwargs) -> None:
+        """Turn the light on."""
+        self._device.cameralight = True
+
+    def turn_off(self, **kwargs) -> None:
+        """Turn the light off."""
+        self._device.cameralight = False
+
+    @property
+    def should_poll(self) -> bool:
+        """Attr needs polling."""
+        return True
+
+    def update(self) -> None:
+        """Trigger an update of the device."""
+        self._device.update()
