@@ -1,0 +1,60 @@
+{
+    "config": {
+        "flow_title": "Bosch SHC: {name}",
+        "step": {
+            "confirm_discovery": {
+                "description": "Please press the Bosch Smart Home Controller's front-side button until LED starts flashing.\nReady to continue to set up {model} @ {host} with Home Assistant?"
+            },
+            "credentials": {
+                "data": {
+                    "password": "Password of the Smart Home Controller"
+                }
+            },
+            "user": {
+                "description": "Set up your Bosch Smart Home Controller to allow monitoring and control with Home Assistant.",
+                "title": "SHC authentication parameters",
+                "data": {
+                    "host": "Host"
+                }
+            },
+            "reauth_confirm": {
+                "title": "SHC authentication parameters",
+                "description": "The bosch_shc integration needs to re-authenticate your account",
+                "data": {
+                    "host": "Host"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "pairing_failed": "Pairing failed; please check the Bosch Smart Home Controller is in pairing mode (LED flashing) as well as your password is correct.",
+            "session_error": "Session error: API return Non-OK result.",
+            "unknown": "Unexpected error"
+        },
+        "abort": {
+            "already_configured": "Device is already configured",
+            "reauth_successful": "Re-authentication was successful"
+        }
+    },
+    "device_automation":{
+        "trigger_subtype": {
+            "LOWER_BUTTON": "Lower button",
+            "UPPER_BUTTON": "Upper button",
+            "IDLE_OFF": "Alarm off",
+            "INTRUSION_ALARM": "Intrusion alarm",
+            "SECONDARY_ALARM": "Secondary alarm",
+            "PRIMARY_ALARM": "Primary alarm",
+            "ALARM_OFF": "Alarm off",
+            "ALARM_ON": "Alarm on",
+            "ALARM_MUTED": "Alarm muted"
+        },
+        "trigger_type": {
+            "PRESS_SHORT": "{subtype} short clicked",
+            "PRESS_LONG": "{subtype} long clicked",
+            "MOTION": "Motion detected",
+            "SCENARIO": "Scenario {subtype} triggered",
+            "ALARM": "{subtype} triggered"
+        }
+    }
+}
