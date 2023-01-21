@@ -53,6 +53,15 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCSmartPlug.PowerSwitchService.State.ON,
         should_poll=False,
     ),
+    "smartplug_routing": SHCSwitchEntityDescription(
+        key="smartplug_routing",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="routing",
+        on_value=SHCSmartPlug.RoutingService.State.ENABLED,
+        should_poll=False,
+        entity_category=EntityCategory.CONFIG,
+        icon="mdi:wifi",
+    ),
     "smartplugcompact": SHCSwitchEntityDescription(
         key="smartplugcompact",
         device_class=SwitchDeviceClass.OUTLET,
@@ -74,12 +83,37 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCCameraEyes.CameraLightService.State.ON,
         should_poll=True,
     ),
+    "cameraeyes_privacymode": SHCSwitchEntityDescription(
+        key="cameraeyes_privacymode",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="privacymode",
+        on_value=SHCCameraEyes.PrivacyModeService.State.DISABLED,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+    ),
+    "cameraeyes_notification": SHCSwitchEntityDescription(
+        key="cameraeyes_notification",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="cameranotification",
+        on_value=SHCCameraEyes.CameraNotificationService.State.ENABLED,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+    ),
     "camera360": SHCSwitchEntityDescription(
         key="camera360",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="privacymode",
         on_value=SHCCamera360.PrivacyModeService.State.DISABLED,
         should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+    ),
+    "camera360_notification": SHCSwitchEntityDescription(
+        key="camera360_notification",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="cameranotification",
+        on_value=SHCCamera360.CameraNotificationService.State.ENABLED,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
     ),
     "presencesimulation": SHCSwitchEntityDescription(
         key="presencesimulation",
@@ -111,14 +145,19 @@ async def async_setup_entry(
             )
         )
         entities.append(
-            SHCRoutingSwitch(
+            SHCSwitch(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["smartplug_routing"],
+                attr_name="Routing",
             )
         )
 
-    for switch in session.device_helper.light_switches:
+    for switch in (
+        session.device_helper.light_switches_bsm
+        + session.device_helper.micromodule_light_attached
+    ):
 
         entities.append(
             SHCSwitch(
@@ -150,6 +189,24 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["cameraeyes"],
             )
         )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraeyes_privacymode"],
+                attr_name="Activated",
+            )
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraeyes_notification"],
+                attr_name="Notification",
+            )
+        )
 
     for switch in session.device_helper.camera_360:
 
@@ -159,6 +216,15 @@ async def async_setup_entry(
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360"],
+            )
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["camera360_notification"],
+                attr_name="Notification",
             )
         )
 
@@ -189,10 +255,19 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         parent_id: str,
         entry_id: str,
         description: SHCSwitchEntityDescription,
+        attr_name: str | None = None,
     ) -> None:
         """Initialize a SHC switch."""
         super().__init__(device, parent_id, entry_id)
         self.entity_description = description
+        self._attr_name = (
+            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
+        )
+        self._attr_unique_id = (
+            f"{device.serial}"
+            if attr_name is None
+            else f"{device.serial}_{attr_name.lower()}"
+        )
 
     @property
     def is_on(self) -> bool:
@@ -218,29 +293,3 @@ class SHCSwitch(SHCEntity, SwitchEntity):
     def update(self) -> None:
         """Trigger an update of the device."""
         self._device.update()
-
-
-class SHCRoutingSwitch(SHCEntity, SwitchEntity):
-    """Representation of a SHC routing switch."""
-
-    _attr_icon = "mdi:wifi"
-    _attr_entity_category = EntityCategory.CONFIG
-
-    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
-        """Initialize an SHC communication quality reporting sensor."""
-        super().__init__(device, parent_id, entry_id)
-        self._attr_name = f"{device.name} Routing"
-        self._attr_unique_id = f"{device.serial}_routing"
-
-    @property
-    def is_on(self) -> bool:
-        """Return the state of the switch."""
-        return self._device.routing.name == "ENABLED"
-
-    def turn_on(self, **kwargs) -> None:
-        """Turn the switch on."""
-        self._device.routing = True
-
-    def turn_off(self, **kwargs) -> None:
-        """Turn the switch off."""
-        self._device.routing = False
