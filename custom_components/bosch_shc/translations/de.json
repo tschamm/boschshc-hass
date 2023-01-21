@@ -1,60 +1,37 @@
 {
     "config": {
+        "abort": {
+            "already_configured": "Ger\u00e4t ist bereits konfiguriert",
+            "reauth_successful": "Die erneute Authentifizierung war erfolgreich"
+        },
+        "error": {
+            "cannot_connect": "Verbindung fehlgeschlagen",
+            "invalid_auth": "Ung\u00fcltige Authentifizierung",
+            "pairing_failed": "Pairing fehlgeschlagen; bitte pr\u00fcfe, ob sich der Bosch Smart Home Controller im Pairing-Modus befindet (LED blinkt) und ob dein Passwort korrekt ist.",
+            "session_error": "Sitzungsfehler: API gab Non-OK Ergebnis zur\u00fcck.",
+            "unknown": "Unerwarteter Fehler"
+        },
         "flow_title": "Bosch SHC: {name}",
         "step": {
             "confirm_discovery": {
-                "description": "Drücke den Knopf auf dem Bosch Smart Home Controller bis die LED zu blinken anfängt.\nBist du bereit, {model} @ {host} mit Home Assistant zu registrieren?"
+                "description": "Bitte dr\u00fccke die frontseitige Taste des Bosch Smart Home Controllers, bis die LED zu blinken beginnt.\nBist du bereit, mit der Einrichtung von {model} @ {host} in Home Assistant fortzufahren?"
             },
             "credentials": {
                 "data": {
                     "password": "Passwort des Smart Home Controllers"
                 }
             },
-            "user": {
-                "description": "Richte deinen Bosch Smart Home Controller ein, um die Überwachung und Steuerung mit Home Assistant zu ermöglichen.",
-                "title": "SHC-Authentifizierungsparameter",
-                "data": {
-                    "host": "Host"
-                }
-            },
             "reauth_confirm": {
-                "title": "SHC-Authentifizierungsparameter",
-                "description": "Die bosch_shc Integration muss deinen Zugang neu authentifizieren.",
+                "description": "Die bosch_shc Integration muss dein Konto neu authentifizieren",
+                "title": "Integration erneut authentifizieren"
+            },
+            "user": {
                 "data": {
                     "host": "Host"
-                }
+                },
+                "description": "Richte deinen Bosch Smart Home Controller ein, um die \u00dcberwachung und Steuerung mit Home Assistant zu erm\u00f6glichen.",
+                "title": "SHC Authentifizierungsparameter"
             }
-        },
-        "error": {
-            "cannot_connect": "Verbindung fehlgeschlagen",
-            "invalid_auth": "Ungültige Authentifizierung",
-            "pairing_failed": "Pairing fehlgeschlagen; Drücke den Knopf auf dem Bosch Smart Home Controller bis die LED zu blinken anfängt und prüfe dein Passwort.",
-            "session_error": "Session-Fehler: API liefert ungültiges Resultat.",
-            "unknown": "Unerwarteter Fehler"
-        },
-        "abort": {
-            "already_configured": "Gerät ist bereits konfiguriert",
-            "reauth_successful": "Neue Authentifizierung erfolgreich abgeschlossen"
-        }
-    },
-    "device_automation":{
-        "trigger_subtype": {
-            "LOWER_BUTTON": "Unterer Knopf",
-            "UPPER_BUTTON": "Oberer Knopf",
-            "IDLE_OFF": "Alarm Aus",
-            "INTRUSION_ALARM": "Einbrecher Alarm",
-            "SECONDARY_ALARM": "Sekundärer Alarm",
-            "PRIMARY_ALARM": "Primärer Alarm",
-            "ALARM_OFF": "Alarm Aus",
-            "ALARM_ON": "Alarm An",
-            "ALARM_MUTED": "Alarm Lautlos"
-        },
-        "trigger_type": {
-            "PRESS_SHORT": "{subtype} kurz gedrückt",
-            "PRESS_LONG": "{subtype} lang gedrückt",
-            "MOTION": "Bewegung erkannt",
-            "SCENARIO": "Szenario {subtype} ausgelöst",
-            "ALARM": "{subtype} ausgelöst"
         }
     }
 }
