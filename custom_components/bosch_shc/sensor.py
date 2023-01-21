@@ -120,6 +120,7 @@ async def async_setup_entry(
         session.device_helper.smart_plugs
         + session.device_helper.light_switches_bsm
         + session.device_helper.micromodule_light_controls
+        + session.device_helper.micromodule_shutter_controls
     ):
         entities.append(
             PowerSensor(

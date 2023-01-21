@@ -27,7 +27,10 @@ async def async_setup_entry(
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
-    for cover in session.device_helper.shutter_controls:
+    for cover in (
+        session.device_helper.shutter_controls
+        + session.device_helper.micromodule_shutter_controls
+    ):
         entities.append(
             ShutterControlCover(
                 device=cover,
