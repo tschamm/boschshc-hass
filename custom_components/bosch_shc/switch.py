@@ -10,6 +10,7 @@ from boschshcpy import (
     SHCSession,
     SHCSmartPlug,
     SHCSmartPlugCompact,
+    SHCShutterContact2,
 )
 from boschshcpy.device import SHCDevice
 
@@ -121,6 +122,14 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_key="enabled",
         on_value=True,
         should_poll=True,
+    ),
+    "bypass": SHCSwitchEntityDescription(
+        key="bypass",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="bypass",
+        on_value=SHCShutterContact2.BypassService.State.BYPASS_INACTIVE,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
     ),
 }
 
@@ -237,6 +246,16 @@ async def async_setup_entry(
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["presencesimulation"],
+            )
+        )
+
+    for switch in session.device_helper.shutter_contacts2:
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["bypass"],
             )
         )
 
