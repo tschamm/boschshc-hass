@@ -80,17 +80,19 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     "cameraeyes": SHCSwitchEntityDescription(
         key="cameraeyes",
         device_class=SwitchDeviceClass.SWITCH,
-        on_key="cameralight",
-        on_value=SHCCameraEyes.CameraLightService.State.ON,
-        should_poll=True,
-    ),
-    "cameraeyes_privacymode": SHCSwitchEntityDescription(
-        key="cameraeyes_privacymode",
-        device_class=SwitchDeviceClass.SWITCH,
         on_key="privacymode",
         on_value=SHCCameraEyes.PrivacyModeService.State.DISABLED,
         should_poll=True,
+        icon="mdi:video"
+    ),
+    "cameraeyes_cameralight": SHCSwitchEntityDescription(
+        key="cameraeyes_cameralight",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="cameralight",
+        on_value=SHCCameraEyes.CameraLightService.State.ON,
+        should_poll=True,
         entity_category=EntityCategory.CONFIG,
+        icon="mdi:light-flood-down"
     ),
     "cameraeyes_notification": SHCSwitchEntityDescription(
         key="cameraeyes_notification",
@@ -99,6 +101,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCCameraEyes.CameraNotificationService.State.ENABLED,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
+        icon="mdi:message-badge"
     ),
     "camera360": SHCSwitchEntityDescription(
         key="camera360",
@@ -106,7 +109,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_key="privacymode",
         on_value=SHCCamera360.PrivacyModeService.State.DISABLED,
         should_poll=True,
-        entity_category=EntityCategory.CONFIG,
+        icon="mdi:video"
     ),
     "camera360_notification": SHCSwitchEntityDescription(
         key="camera360_notification",
@@ -115,6 +118,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCCamera360.CameraNotificationService.State.ENABLED,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
+        icon="mdi:message-badge"
     ),
     "presencesimulation": SHCSwitchEntityDescription(
         key="presencesimulation",
@@ -191,7 +195,7 @@ async def async_setup_entry(
     for switch in session.device_helper.camera_eyes:
 
         entities.append(
-            SHCSwitch(
+            SHCPrivacySwitch(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
@@ -203,8 +207,8 @@ async def async_setup_entry(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
-                description=SWITCH_TYPES["cameraeyes_privacymode"],
-                attr_name="Activated",
+                description=SWITCH_TYPES["cameraeyes_cameralight"],
+                attr_name="Light",
             )
         )
         entities.append(
@@ -220,7 +224,7 @@ async def async_setup_entry(
     for switch in session.device_helper.camera_360:
 
         entities.append(
-            SHCSwitch(
+            SHCPrivacySwitch(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
@@ -312,3 +316,18 @@ class SHCSwitch(SHCEntity, SwitchEntity):
     def update(self) -> None:
         """Trigger an update of the device."""
         self._device.update()
+
+
+class SHCPrivacySwitch(SHCSwitch):
+    """Representation of a SHC switch for privacy mode of BOSCH cameras."""
+
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str, description: SHCSwitchEntityDescription, attr_name: str | None = None) -> None:
+        super().__init__(device, parent_id, entry_id, description, attr_name)
+
+    def turn_on(self, **kwargs) -> None:
+        """Turn the switch on."""
+        setattr(self._device, self.entity_description.on_key, False)
+
+    def turn_off(self, **kwargs) -> None:
+        """Turn the switch off."""
+        setattr(self._device, self.entity_description.on_key, True)
