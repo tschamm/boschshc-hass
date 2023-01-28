@@ -1,6 +1,4 @@
 """Platform for alarm control panel integration."""
-import logging
-
 from boschshcpy import SHCIntrusionSystem, SHCSession
 from homeassistant.components.alarm_control_panel import AlarmControlPanelEntity
 from homeassistant.components.alarm_control_panel.const import (
@@ -18,9 +16,7 @@ from homeassistant.const import (
 )
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import migrate_old_unique_ids
-
-_LOGGER = logging.getLogger(__name__)
+from .entity import async_migrate_to_new_unique_id
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -30,11 +26,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     intrusion_system = session.intrusion_system
-    migrate_old_unique_ids(
+    await async_migrate_to_new_unique_id(
         hass,
         Platform.ALARM_CONTROL_PANEL,
-        f"{intrusion_system.id}",
-        f"{config_entry.entry_id}_{intrusion_system.id}",
+        device=intrusion_system,
+        attr_name=None,
+        old_unique_id=f"{config_entry.entry_id}_{intrusion_system.id}",
     )
     alarm_control_panel = IntrusionSystemAlarmControlPanel(
         device=intrusion_system,
@@ -54,7 +51,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         self._device = device
         self._parent_id = parent_id
         self._entry_id = entry_id
-        self._attr_unique_id = f"{entry_id}_{self._device.id}"
+        self._attr_unique_id = f"{self._device.root_device_id}_{self._device.id}"
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""

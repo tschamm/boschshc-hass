@@ -1,6 +1,4 @@
 """Platform for light integration."""
-import logging
-
 from boschshcpy import SHCSession
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -11,6 +9,7 @@ from homeassistant.components.light import (
     SUPPORT_COLOR_TEMP,
     LightEntity,
 )
+from homeassistant.const import Platform
 from homeassistant.util.color import (
     color_hs_to_RGB,
     color_RGB_to_hs,
@@ -19,9 +18,7 @@ from homeassistant.util.color import (
 )
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
-
-_LOGGER = logging.getLogger(__name__)
+from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -30,12 +27,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for light in session.device_helper.ledvance_lights:
+        await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
         entities.append(
-            LightSwitch(
-                device=light,
-                parent_id=session.information.unique_id,
-                entry_id=config_entry.entry_id,
-            )
+            parent_id=session.information.unique_id,
+            entry_id=config_entry.entry_id,
         )
 
     if entities:

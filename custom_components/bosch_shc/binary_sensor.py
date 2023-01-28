@@ -1,6 +1,5 @@
 """Platform for binarysensor integration."""
 import asyncio
-import logging
 from datetime import datetime, timedelta
 
 import homeassistant.helpers.config_validation as cv
@@ -37,12 +36,11 @@ from .const import (
     DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
+    LOGGER,
     SERVICE_SMOKEDETECTOR_ALARMSTATE,
     SERVICE_SMOKEDETECTOR_CHECK,
 )
-from .entity import SHCEntity, async_get_device_id, migrate_old_unique_ids
-
-_LOGGER = logging.getLogger(__name__)
+from .entity import SHCEntity, async_get_device_id, async_migrate_to_new_unique_id
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -50,7 +48,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
-    for binary_sensor in session.device_helper.shutter_contacts + session.device_helper.shutter_contacts2:
+    for binary_sensor in (
+        session.device_helper.shutter_contacts + session.device_helper.shutter_contacts2
+    ):
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor
+        )
         entities.append(
             ShutterContactSensor(
                 device=binary_sensor,
@@ -60,6 +63,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for binary_sensor in session.device_helper.motion_detectors:
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor
+        )
         entities.append(
             MotionDetectionSensor(
                 hass=hass,
@@ -70,6 +76,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for binary_sensor in session.device_helper.smoke_detectors:
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor
+        )
         entities.append(
             SmokeDetectorSensor(
                 device=binary_sensor,
@@ -81,11 +90,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     binary_sensor = session.device_helper.smoke_detection_system
     if binary_sensor:
-        migrate_old_unique_ids(
-            hass,
-            Platform.BINARY_SENSOR,
-            f"{binary_sensor.serial}",
-            f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.BINARY_SENSOR,
+            device=binary_sensor,
+            attr_name=None,
+            old_unique_id=f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
         )
         entities.append(
             SmokeDetectionSystemSensor(
@@ -97,6 +107,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for binary_sensor in session.device_helper.water_leakage_detectors:
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor
+        )
         entities.append(
             WaterLeakageDetectorSensor(
                 device=binary_sensor,
@@ -116,6 +129,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         + session.device_helper.wallthermostats
         + session.device_helper.water_leakage_detectors
     ):
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor, attr_name="Battery"
+        )
         if binary_sensor.supports_batterylevel:
             entities.append(
                 BatterySensor(
@@ -204,7 +220,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
-        _LOGGER.debug(
+        LOGGER.debug(
             "Stopping motion detection event listener for %s", self._device.name
         )
         self._service.unsubscribe_callback(self._device.id + "_eventlistener")
@@ -282,7 +298,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
-        _LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
+        LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
         self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
@@ -297,7 +313,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
 
     async def async_request_smoketest(self):
         """Request smokedetector test."""
-        _LOGGER.debug("Requesting smoke test on entity %s", self.name)
+        LOGGER.debug("Requesting smoke test on entity %s", self.name)
         await self._hass.async_add_executor_job(self._device.smoketest_requested)
 
     async def async_request_alarmstate(self, command: str):
@@ -306,7 +322,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         def set_alarmstate(device, command):
             device.alarmstate = command
 
-        _LOGGER.debug(
+        LOGGER.debug(
             "Requesting custom alarm state %s on entity %s", command, self.name
         )
         await self._hass.async_add_executor_job(set_alarmstate, self._device, command)
@@ -363,7 +379,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
         self._service = None
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.serial}"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
@@ -393,7 +409,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
-        _LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
+        LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
         self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
@@ -426,7 +442,7 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Battery"
-        self._attr_unique_id = f"{device.serial}_battery"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
@@ -436,19 +452,19 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
             self._device.batterylevel
             == SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE
         ):
-            _LOGGER.debug("Battery state of device %s is not available", self.name)
+            LOGGER.debug("Battery state of device %s is not available", self.name)
 
         if (
             self._device.batterylevel
             == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW
         ):
-            _LOGGER.warning("Battery state of device %s is critical low", self.name)
+            LOGGER.warning("Battery state of device %s is critical low", self.name)
 
         if (
             self._device.batterylevel
             == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY
         ):
-            _LOGGER.warning("Battery state of device %s is low", self.name)
+            LOGGER.warning("Battery state of device %s is low", self.name)
 
         return (
             self._device.batterylevel != SHCBatteryDevice.BatteryLevelService.State.OK

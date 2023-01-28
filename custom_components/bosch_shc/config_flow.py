@@ -1,5 +1,4 @@
 """Config flow for Bosch Smart Home Controller integration."""
-import logging
 from os import makedirs
 
 import voluptuous as vol
@@ -22,9 +21,8 @@ from .const import (
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DOMAIN,
+    LOGGER,
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 HOST_SCHEMA = vol.Schema(
     {
@@ -108,7 +106,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except SHCConnectionError:
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
+                LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(info["unique_id"])
@@ -138,13 +136,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except SHCConnectionError:
                 errors["base"] = "cannot_connect"
             except SHCSessionError as err:
-                _LOGGER.warning("Session error: %s", err.message)
+                LOGGER.warning("Session error: %s", err.message)
                 errors["base"] = "session_error"
             except SHCRegistrationError as err:
-                _LOGGER.warning("Registration error: %s", err.message)
+                LOGGER.warning("Registration error: %s", err.message)
                 errors["base"] = "pairing_failed"
             except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
+                LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
                 hostname = result["token"].split(":", 1)[1]

@@ -1,4 +1,5 @@
 """Constants for the Bosch SHC integration."""
+import logging
 
 ATTR_NAME = "name"
 ATTR_EVENT_TYPE = "event_type"
@@ -18,6 +19,8 @@ DATA_POLLING_HANDLER = "polling_handler"
 DOMAIN = "bosch_shc"
 
 EVENT_BOSCH_SHC = "bosch_shc.event"
+
+LOGGER = logging.getLogger(__package__)
 
 SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"

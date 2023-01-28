@@ -1,11 +1,11 @@
 """Bosch Smart Home Controller base entity."""
 from boschshcpy.device import SHCDevice
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN
+from .const import DOMAIN, LOGGER
 
 
 async def async_get_device_id(hass: HomeAssistant, device_id: str) -> None:
@@ -29,15 +29,44 @@ async def async_remove_devices(
         dev_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
 
 
-@callback
-def migrate_old_unique_ids(
-    hass: HomeAssistant, platform: str, old_unique_id: str, new_key: str
+async def async_migrate_to_new_unique_id(
+    hass: HomeAssistant,
+    platform: str,
+    device: SHCDevice,
+    attr_name: str | None = None,
+    old_unique_id: str | None = None,
 ) -> None:
-    """Migrate unique IDs to the new format."""
-    ent_reg = entity_registry.async_get(hass)
+    """Migrate old unique ids to new unique ids."""
+    if old_unique_id is None:
+        old_unique_id = (
+            f"{device.serial}"
+            if attr_name is None
+            else f"{device.serial}_{attr_name.lower()}"
+        )
 
-    if entity_id := ent_reg.async_get_entity_id(platform, DOMAIN, old_unique_id):
-        ent_reg.async_update_entity(entity_id, new_unique_id=f"{new_key}")
+    ent_reg = entity_registry.async_get(hass)
+    entity_id = ent_reg.async_get_entity_id(platform, DOMAIN, old_unique_id)
+
+    if entity_id is not None:
+        new_unique_id = (
+            f"{device.root_device_id}_{device.id}"
+            if attr_name is None
+            else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
+        )
+        try:
+            ent_reg.async_update_entity(entity_id, new_unique_id=new_unique_id)
+        except ValueError:
+            LOGGER.warning(
+                "Skip migration of id [%s] to [%s] because it already exists",
+                old_unique_id,
+                new_unique_id,
+            )
+        else:
+            LOGGER.debug(
+                "Migrating unique_id from [%s] to [%s]",
+                old_unique_id,
+                new_unique_id,
+            )
 
 
 class SHCEntity(Entity):
@@ -49,7 +78,7 @@ class SHCEntity(Entity):
         self._parent_id = parent_id
         self._entry_id = entry_id
         self._attr_name = f"{device.name}"
-        self._attr_unique_id = f"{device.serial}"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""

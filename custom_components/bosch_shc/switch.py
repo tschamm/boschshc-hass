@@ -20,13 +20,14 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
 @dataclass
@@ -149,6 +150,9 @@ async def async_setup_entry(
 
     for switch in session.device_helper.smart_plugs:
 
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -156,6 +160,9 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["smartplug"],
             )
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Routing"
         )
         entities.append(
             SHCSwitch(
@@ -172,6 +179,9 @@ async def async_setup_entry(
         + session.device_helper.micromodule_light_attached
     ):
 
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -183,6 +193,9 @@ async def async_setup_entry(
 
     for switch in session.device_helper.smart_plugs_compact:
 
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -194,6 +207,11 @@ async def async_setup_entry(
 
     for switch in session.device_helper.camera_eyes:
 
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -201,6 +219,9 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraeyes"],
             )
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Light"
         )
         entities.append(
             SHCSwitch(
@@ -210,6 +231,9 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["cameraeyes_cameralight"],
                 attr_name="Light",
             )
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Notification"
         )
         entities.append(
             SHCSwitch(
@@ -222,7 +246,9 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_360:
-
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch
+        )
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -230,6 +256,9 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360"],
             )
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Notification"
         )
         entities.append(
             SHCSwitch(
@@ -243,7 +272,11 @@ async def async_setup_entry(
 
     presence_simulation_system = session.device_helper.presence_simulation_system
     if presence_simulation_system:
-
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=presence_simulation_system,
+        )
         entities.append(
             SHCSwitch(
                 device=presence_simulation_system,
@@ -254,6 +287,9 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.shutter_contacts2:
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch
+        )
         entities.append(
             SHCSwitch(
                 device=switch,

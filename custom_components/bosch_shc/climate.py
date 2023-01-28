@@ -1,6 +1,4 @@
 """Platform for climate integration."""
-import logging
-
 from boschshcpy import SHCClimateControl, SHCSession
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -16,10 +14,8 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, Platform
 
-from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity, migrate_old_unique_ids
-
-_LOGGER = logging.getLogger(__name__)
+from .const import DATA_SESSION, DOMAIN, LOGGER
+from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -29,11 +25,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     for climate in session.device_helper.climate_controls:
         room_id = climate.room_id
-        migrate_old_unique_ids(
-            hass,
-            Platform.CLIMATE,
-            f"{climate.serial}",
-            f"{climate.root_device_id}_{climate.serial}",
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.CLIMATE,
+            device=climate,
+            attr_name=None,
+            old_unique_id=f"{climate.root_device_id}_{climate.serial}",
         )
         entities.append(
             ClimateControl(
@@ -61,7 +58,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Initialize the SHC device."""
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._name = name
-        self._attr_unique_id = f"{device.root_device_id}_{device.serial}"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     @property
     def name(self):
@@ -165,7 +162,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         )  # set_temperature args may provide HVAC mode as well
 
         if self.hvac_mode == HVAC_MODE_OFF or self.preset_mode == PRESET_ECO:
-            _LOGGER.debug(
+            LOGGER.debug(
                 "Skipping setting temperature as device %s is off or in low_mode.",
                 self.device_name,
             )

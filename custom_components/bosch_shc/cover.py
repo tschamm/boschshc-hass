@@ -10,12 +10,13 @@ from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntity,
 )
+from homeassistant.const import Platform
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
 async def async_setup_entry(
@@ -31,6 +32,7 @@ async def async_setup_entry(
         session.device_helper.shutter_controls
         + session.device_helper.micromodule_shutter_controls
     ):
+        await async_migrate_to_new_unique_id(hass, Platform.COVER, device=cover)
         entities.append(
             ShutterControlCover(
                 device=cover,
