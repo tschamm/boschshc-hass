@@ -287,9 +287,9 @@ class SHCSwitch(SHCEntity, SwitchEntity):
             f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
         )
         self._attr_unique_id = (
-            f"{device.serial}"
+            f"{device.root_device_id}_{device.id}"
             if attr_name is None
-            else f"{device.serial}_{attr_name.lower()}"
+            else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
 
     @property
