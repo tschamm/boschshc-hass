@@ -90,13 +90,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     binary_sensor = session.device_helper.smoke_detection_system
     if binary_sensor:
-        await async_migrate_to_new_unique_id(
-            hass=hass,
-            platform=Platform.BINARY_SENSOR,
-            device=binary_sensor,
-            attr_name=None,
-            old_unique_id=f"{binary_sensor.root_device_id}_{binary_sensor.serial}",
-        )
         entities.append(
             SmokeDetectionSystemSensor(
                 device=binary_sensor,
