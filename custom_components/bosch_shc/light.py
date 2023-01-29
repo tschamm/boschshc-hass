@@ -29,8 +29,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for light in session.device_helper.ledvance_lights:
         await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
         entities.append(
-            parent_id=session.information.unique_id,
-            entry_id=config_entry.entry_id,
+            LightSwitch(
+                device=light,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+            )
         )
 
     if entities:
