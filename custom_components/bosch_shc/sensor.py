@@ -431,6 +431,7 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
 
     _attr_icon = "mdi:gauge"
     _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC valve tappet reporting sensor."""
