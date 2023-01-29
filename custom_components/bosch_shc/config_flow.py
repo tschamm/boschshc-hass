@@ -11,7 +11,7 @@ from boschshcpy.exceptions import (
 )
 from homeassistant import config_entries, core
 from homeassistant.components import zeroconf
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
@@ -41,7 +41,7 @@ def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes) -> No
 def create_credentials_and_validate(hass, host, user_input, zeroconf_instance):
     """Create and store credentials and validate session."""
     helper = SHCRegisterClient(host, user_input[CONF_PASSWORD])
-    result = helper.register(host, "HomeAssistant")
+    result = helper.register(user_input[CONF_NAME].lower(), user_input[CONF_NAME])
 
     if result is not None:
         hostname = result["token"].split(":", 1)[1]
@@ -177,6 +177,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     CONF_PASSWORD, default=user_input.get(CONF_PASSWORD, "")
+                ): str,
+                vol.Optional(
+                    CONF_NAME, default=user_input.get(CONF_NAME, "HomeAssistant")
                 ): str,
             }
         )
