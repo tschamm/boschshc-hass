@@ -133,7 +133,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="bypass",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
-        on_value=SHCShutterContact2.BypassService.State.BYPASS_INACTIVE,
+        on_value=SHCShutterContact2.BypassService.State.BYPASS_ACTIVE,
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
     ),
