@@ -11,6 +11,7 @@ from boschshcpy import (
     SHCSmartPlug,
     SHCSmartPlugCompact,
     SHCShutterContact2,
+    SHCThermostat,
 )
 from boschshcpy.device import SHCDevice
 
@@ -135,6 +136,15 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCShutterContact2.BypassService.State.BYPASS_INACTIVE,
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
+    ),
+    "child_lock": SHCSwitchEntityDescription(
+        key="child_lock",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="child_lock",
+        on_value=SHCThermostat.ThermostatService.State.ON,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:lock",
     ),
 }
 
@@ -296,6 +306,19 @@ async def async_setup_entry(
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["bypass"],
+            )
+        )
+
+    for switch in (
+        session.device_helper.thermostats + session.device_helper.roomthermostats
+    ):
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["child_lock"],
+                attr_name="ChildLock",
             )
         )
 
