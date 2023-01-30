@@ -40,6 +40,7 @@ PLATFORMS = [
     Platform.CLIMATE,
     Platform.ALARM_CONTROL_PANEL,
     Platform.LIGHT,
+    Platform.NUMBER,
 ]
 
 
