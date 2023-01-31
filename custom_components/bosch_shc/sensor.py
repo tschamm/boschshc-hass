@@ -57,7 +57,9 @@ async def async_setup_entry(
             )
         )
 
-    for sensor in session.device_helper.wallthermostats:
+    for sensor in (
+        session.device_helper.wallthermostats + session.device_helper.roomthermostats
+    ):
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Temperature"
         )
