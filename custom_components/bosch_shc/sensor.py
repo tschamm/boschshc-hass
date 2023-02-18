@@ -244,6 +244,15 @@ async def async_setup_entry(
             )
         )
 
+    for sensor in session.device_helper.motion_detectors:
+        entities.append(
+            IlluminanceLevelSensor(
+                device=sensor,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -454,3 +463,21 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
         return {
             "valve_tappet_state": self._device.valvestate.name,
         }
+
+
+class IlluminanceLevelSensor(SHCEntity, SensorEntity):
+    """Representation of an SHC illuminance level reporting sensor."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+        """Initialize an SHC illuminance level reporting sensor."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_name = f"{device.name} Illuminance"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_illuminance"
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        return self._device.illuminance
