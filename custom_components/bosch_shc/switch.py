@@ -310,7 +310,10 @@ async def async_setup_entry(
         )
 
     for switch in (
-        session.device_helper.thermostats + session.device_helper.roomthermostats
+        session.device_helper.thermostats
+        + session.device_helper.roomthermostats
+        + session.device_helper.micromodule_shutter_controls
+        + session.device_helper.micromodule_light_attached
     ):
         entities.append(
             SHCSwitch(
