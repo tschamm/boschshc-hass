@@ -9,6 +9,7 @@ from boschshcpy import (
     SHCLightSwitch,
     SHCSession,
     SHCSmartPlug,
+    SHCMicromoduleRelay,
     SHCSmartPlugCompact,
     SHCShutterContact2,
     SHCThermostat,
@@ -70,6 +71,13 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         device_class=SwitchDeviceClass.OUTLET,
         on_key="state",
         on_value=SHCSmartPlugCompact.PowerSwitchService.State.ON,
+        should_poll=False,
+    ),
+    "micromodule_relay": SHCSwitchEntityDescription(
+        key="micromodule_relay",
+        device_class=SwitchDeviceClass.OUTLET,
+        on_key="state",
+        on_value=SHCMicromoduleRelay.PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "lightswitch": SHCSwitchEntityDescription(
@@ -159,7 +167,6 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for switch in session.device_helper.smart_plugs:
-
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -188,7 +195,6 @@ async def async_setup_entry(
         session.device_helper.light_switches_bsm
         + session.device_helper.micromodule_light_attached
     ):
-
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -202,7 +208,6 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.smart_plugs_compact:
-
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -215,8 +220,20 @@ async def async_setup_entry(
             )
         )
 
-    for switch in session.device_helper.camera_eyes:
+    for switch in session.device_helper.micromodule_relays:
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["micromodule_relay"],
+            )
+        )
 
+    for switch in session.device_helper.camera_eyes:
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -314,6 +331,7 @@ async def async_setup_entry(
         + session.device_helper.roomthermostats
         + session.device_helper.micromodule_shutter_controls
         + session.device_helper.micromodule_light_attached
+        + session.device_helper.micromodule_relays
     ):
         entities.append(
             SHCSwitch(
