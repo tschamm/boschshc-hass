@@ -135,17 +135,17 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
     @property
     def current_cover_tilt_position(self):
         """Return the current cover tilt position."""
-        return round((1.0 - self._device.current_angle) * 100.0)
+        return round(self._device.current_angle * 100.0)
 
     def open_cover_tilt(self, **kwargs):
         """Open the cover tilt."""
-        self._device.target_angle = 0.0
+        self._device.target_angle = 1.0
 
     def close_cover_tilt(self, **kwargs):
         """Close cover tilt."""
-        self._device.target_angle = 1.0
+        self._device.target_angle = 0.0
 
     def set_cover_tilt_position(self, **kwargs):
         """Move the cover tilt to a specific position."""
         tilt_position = kwargs[ATTR_TILT_POSITION]
-        self._device.target_angle = (1.0 - tilt_position) / 100.0
+        self._device.target_angle = tilt_position / 100.0
