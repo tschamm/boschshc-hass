@@ -1,12 +1,18 @@
 """Platform for cover integration."""
 from boschshcpy import SHCSession, SHCShutterControl
+from boschshcpy.device import SHCDevice
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
+    ATTR_TILT_POSITION,
     SUPPORT_CLOSE,
+    SUPPORT_CLOSE_TILT,
     SUPPORT_OPEN,
+    SUPPORT_OPEN_TILT,
     SUPPORT_SET_POSITION,
+    SUPPORT_SET_TILT_POSITION,
     SUPPORT_STOP,
+    SUPPORT_STOP_TILT,
     CoverDeviceClass,
     CoverEntity,
 )
@@ -36,6 +42,16 @@ async def async_setup_entry(
         entities.append(
             ShutterControlCover(
                 device=cover,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for blind in session.device_helper.micromodule_blinds:
+        await async_migrate_to_new_unique_id(hass, Platform.COVER, device=blind)
+        entities.append(
+            BlindsControlCover(
+                device=blind,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
@@ -95,3 +111,44 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         """Move the cover to a specific position."""
         position = kwargs[ATTR_POSITION]
         self._device.level = position / 100.0
+
+
+class BlindsControlCover(SHCShutterControl, CoverEntity):
+    """Representation of a SHC blinds cover device."""
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        parent_id: str,
+        entry_id: str,
+    ) -> None:
+        """Initialize a SHC blinds cover."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_device_class = CoverDeviceClass.BLIND
+        self._attr_supported_features = (
+            SUPPORT_OPEN
+            | SUPPORT_CLOSE
+            | SUPPORT_STOP
+            | SUPPORT_SET_POSITION
+            | SUPPORT_OPEN_TILT
+            | SUPPORT_CLOSE_TILT
+            | SUPPORT_SET_TILT_POSITION
+        )
+
+    @property
+    def current_cover_tilt_position(self):
+        """Return the current cover tilt position."""
+        return round(self._device.current_angle * 100.0)
+
+    def open_cover_tilt(self, **kwargs):
+        """Open the cover tilt."""
+        self._device.target_angle = 1.0
+
+    def close_cover_tilt(self, **kwargs):
+        """Close cover tilt."""
+        self._device.level = 0.0
+
+    def set_cover_tilt_position(self, **kwargs):
+        """Move the cover tilt to a specific position."""
+        tilt_position = kwargs[ATTR_TILT_POSITION]
+        self._device.target_angle = tilt_position / 100.0
