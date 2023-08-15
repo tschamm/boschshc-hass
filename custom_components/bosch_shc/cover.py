@@ -1,5 +1,10 @@
 """Platform for cover integration."""
-from boschshcpy import SHCSession, SHCShutterControl
+from boschshcpy import (
+    SHCSession,
+    SHCShutterControl,
+    SHCMicromoduleShutterControl,
+    SHCMicromoduleBlinds,
+)
 from boschshcpy.device import SHCDevice
 
 from homeassistant.components.cover import (
@@ -64,10 +69,18 @@ async def async_setup_entry(
 class ShutterControlCover(SHCEntity, CoverEntity):
     """Representation of a SHC shutter control device."""
 
-    _attr_device_class = CoverDeviceClass.SHUTTER
-    _attr_supported_features = (
-        SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
-    )
+    def __init__(
+        self,
+        device: SHCShutterControl | SHCMicromoduleShutterControl,
+        parent_id: str,
+        entry_id: str,
+    ) -> None:
+        """Initialize a SHC blinds cover."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_device_class = CoverDeviceClass.SHUTTER
+        self._attr_supported_features = (
+            SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        )
 
     @property
     def current_cover_position(self):
@@ -113,12 +126,12 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         self._device.level = position / 100.0
 
 
-class BlindsControlCover(SHCShutterControl, CoverEntity):
+class BlindsControlCover(ShutterControlCover, CoverEntity):
     """Representation of a SHC blinds cover device."""
 
     def __init__(
         self,
-        device: SHCDevice,
+        device: SHCMicromoduleBlinds,
         parent_id: str,
         entry_id: str,
     ) -> None:
@@ -146,7 +159,7 @@ class BlindsControlCover(SHCShutterControl, CoverEntity):
 
     def close_cover_tilt(self, **kwargs):
         """Close cover tilt."""
-        self._device.level = 0.0
+        self._device.target_angle = 0.0
 
     def set_cover_tilt_position(self, **kwargs):
         """Move the cover tilt to a specific position."""
