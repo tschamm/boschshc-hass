@@ -12,6 +12,20 @@ trigger_scenario:
       description: Name of the scenario to trigger
       example: "Scenario Name"
 
+trigger_rawscan:
+  description: Triggers a rawscan on Bosch SHC to discover devices.
+  fields:
+    command:
+      description: Rawscan command to trigger. Possible commands are "devices", "device", "services", ...
+      example: "devices"
+    device_id:
+      description: Device id in case the command is "device", "device_services" or "device_service"
+      example: "hdm:ZigBee:000d6"
+    service_id:
+      description: Service id in case the command is "device_service"
+      example: "BatteryLevel"
+
+
 smokedetector_alarmstate:
   description: Triggers a custom alarm state on a smoke detector.
   fields:

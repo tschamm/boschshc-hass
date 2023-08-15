@@ -5,6 +5,7 @@ ATTR_NAME = "name"
 ATTR_EVENT_TYPE = "event_type"
 ATTR_EVENT_SUBTYPE = "event_subtype"
 ATTR_LAST_TIME_TRIGGERED = "lastTimeTriggered"
+ATTR_SERVICE_ID = "service_id"
 
 CONF_HOSTNAME = "hostname"
 CONF_SHC_CERT = "bosch_shc-cert"
@@ -25,6 +26,7 @@ LOGGER = logging.getLogger(__package__)
 SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
+SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
 
 SUPPORTED_INPUTS_EVENTS_TYPES = {
     "PRESS_SHORT",
