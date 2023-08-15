@@ -1,37 +1,45 @@
 smokedetector_check:
-  description: Calls test routine of a smoke detector.
   fields:
     entity_id:
-      description: Name of the smoke detector entity to set
       example: "binary_sensor.smokedetector_living_room"
+      required: true
+      selector:
+        text:
 
 trigger_scenario:
-  description: Triggers a scenario on Bosch SHC.
   fields:
     name:
-      description: Name of the scenario to trigger
       example: "Scenario Name"
+      required: true
+      selector:
+        text:
 
 trigger_rawscan:
-  description: Triggers a rawscan on Bosch SHC to discover devices.
   fields:
     command:
-      description: Rawscan command to trigger. Possible commands are "devices", "device", "services", ...
       example: "devices"
+      required: true
+      selector:
+        text:
     device_id:
-      description: Device id in case the command is "device", "device_services" or "device_service"
       example: "hdm:ZigBee:000d6"
+      selector:
+        text:
     service_id:
-      description: Service id in case the command is "device_service"
       example: "BatteryLevel"
+      selector:
+        text:
 
 
 smokedetector_alarmstate:
-  description: Triggers a custom alarm state on a smoke detector.
   fields:
     entity_id:
-      description: Name of the smoke detector entity to set
       example: "binary_sensor.smokedetector_living_room"
+      required: true
+      selector:
+        text:
     command:
-      description: "Command string to send to the smoke detector."
       example: "CUSTOM_COMMAND"
+      required: true
+      selector:
+        text:

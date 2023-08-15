@@ -1,4 +1,5 @@
 {
+  "title": "Bosch SHC",
   "config": {
     "step": {
       "user": {
@@ -56,6 +57,60 @@
       "MOTION": "Motion detected",
       "SCENARIO": "Scenario {subtype} triggered",
       "ALARM": "{subtype} triggered"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Smokedetector Check",
+      "description": "Calls test routine of a smoke detector.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity id",
+          "description": "Name of the smoke detector entity."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Trigger Scenario",
+      "description": "Triggers a scenario on Bosch SHC.",
+      "fields": {
+        "name": {
+          "name": "Scenario name",
+          "description": "Name of the scenario to trigger"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Trigger Rawscan",
+      "description": "Triggers a rawscan on Bosch SHC to discover devices. Result streamed to info logger.",
+      "fields": {
+        "command": {
+          "name": "Rawscan command",
+          "description": "Rawscan command to trigger. Possible commands are 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Device id",
+          "description": "Device id in case the command is 'device', 'device_services' or 'device_service'"
+        },
+        "service_id": {
+          "name": "Service id",
+          "description": "Service id in case the command is 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Smokedetector Alarmstate",
+      "description": "Name of the smoke detector entity to set",
+      "fields": {
+        "entity_id": {
+          "name": "Entity id",
+          "description": "Name of the smoke detector entity."
+        },
+        "command": {
+          "name": "Custom command",
+          "description": "Command string to send to the smoke detector."
+        }
+      }
     }
   }
 }

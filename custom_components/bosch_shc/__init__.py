@@ -182,7 +182,7 @@ def register_services(hass, entry):
         }
     )
 
-    async def rawscan_service_call(call) -> ServiceResponse:
+    async def rawscan_service_call(call):
         """SHC Scenario service call."""
         # device_id = call.data[ATTR_DEVICE_ID]
         rawscan = await hass.async_add_executor_job(
@@ -194,14 +194,12 @@ def register_services(hass, entry):
             )
         )
         LOGGER.info(rawscan)
-        return rawscan
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_TRIGGER_RAWSCAN,
         rawscan_service_call,
         schema=RAWSCAN_TRIGGER_SCHEMA,
-        supports_response=SupportsResponse.OPTIONAL,
     )
 
 

@@ -37,5 +37,59 @@
         "title": "SHC Authentifizierungsparameter"
       }
     }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Rauchmelder Testroutine",
+      "description": "Aufruf der Testroutine des Rauchmelders.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity id",
+          "description": "Rauchmelder."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Szenario auslösen",
+      "description": "Auslösen eines Bosch SHC Szenarios.",
+      "fields": {
+        "name": {
+          "name": "Szenario",
+          "description": "Szenario Name"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Rawscan auslösen",
+      "description": "Auslösen eines Bosch SHC Rawscan. Das Ergebnis wird dem 'info' Logger übergeben.",
+      "fields": {
+        "command": {
+          "name": "Rawscan Befehl",
+          "description": "Mögliche Befehle sind 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Device id",
+          "description": "Device id für die Befehle 'device', 'device_services' or 'device_service'"
+        },
+        "service_id": {
+          "name": "Service id",
+          "description": "Service id für die Befehle 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Smokedetector Alarmstate",
+      "description": "Rauchmelders",
+      "fields": {
+        "entity_id": {
+          "name": "Entity id",
+          "description": "Name des Rauchmelders."
+        },
+        "command": {
+          "name": "Custom command",
+          "description": "Befehl welcher an den Rauchmelder gesendet werden soll."
+        }
+      }
+    }
   }
 }
