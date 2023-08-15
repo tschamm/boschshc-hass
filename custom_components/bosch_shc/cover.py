@@ -69,18 +69,10 @@ async def async_setup_entry(
 class ShutterControlCover(SHCEntity, CoverEntity):
     """Representation of a SHC shutter control device."""
 
-    def __init__(
-        self,
-        device: SHCShutterControl | SHCMicromoduleShutterControl,
-        parent_id: str,
-        entry_id: str,
-    ) -> None:
-        """Initialize a SHC blinds cover."""
-        super().__init__(device, parent_id, entry_id)
-        self._attr_device_class = CoverDeviceClass.SHUTTER
-        self._attr_supported_features = (
-            SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
-        )
+    _attr_device_class = CoverDeviceClass.SHUTTER
+    _attr_supported_features = (
+        SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+    )
 
     @property
     def current_cover_position(self):
@@ -129,24 +121,16 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 class BlindsControlCover(ShutterControlCover, CoverEntity):
     """Representation of a SHC blinds cover device."""
 
-    def __init__(
-        self,
-        device: SHCMicromoduleBlinds,
-        parent_id: str,
-        entry_id: str,
-    ) -> None:
-        """Initialize a SHC blinds cover."""
-        super().__init__(device, parent_id, entry_id)
-        self._attr_device_class = CoverDeviceClass.BLIND
-        self._attr_supported_features = (
-            SUPPORT_OPEN
-            | SUPPORT_CLOSE
-            | SUPPORT_STOP
-            | SUPPORT_SET_POSITION
-            | SUPPORT_OPEN_TILT
-            | SUPPORT_CLOSE_TILT
-            | SUPPORT_SET_TILT_POSITION
-        )
+    _attr_device_class = CoverDeviceClass.BLIND
+    _attr_supported_features = (
+        SUPPORT_OPEN
+        | SUPPORT_CLOSE
+        | SUPPORT_STOP
+        | SUPPORT_SET_POSITION
+        | SUPPORT_OPEN_TILT
+        | SUPPORT_CLOSE_TILT
+        | SUPPORT_SET_TILT_POSITION
+    )
 
     @property
     def current_cover_tilt_position(self):
