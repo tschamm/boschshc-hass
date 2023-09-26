@@ -105,6 +105,9 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     @property
     def state(self):
         """Return the state of the device."""
+        if self._device.alarm_state == SHCIntrusionSystem.AlarmState.ALARM_ON:
+            return STATE_ALARM_TRIGGERED
+
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_ARMING:
             return STATE_ALARM_ARMING
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_DISARMED:
@@ -127,8 +130,6 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
                 == SHCIntrusionSystem.Profile.CUSTOM_PROTECTION
             ):
                 return STATE_ALARM_ARMED_CUSTOM_BYPASS
-        if self._device.alarm_state == SHCIntrusionSystem.AlarmState.ALARM_ON:
-            return STATE_ALARM_TRIGGERED
         return None
 
     @property
