@@ -19,11 +19,15 @@
             "credentials": {
                 "data": {
                     "password": "Heslo ovl\u00e1da\u010da Smart Home Controller"
+          	    "name": "Meno klienta pre certifikát"
                 }
             },
             "reauth_confirm": {
                 "description": "Integr\u00e1cia bosch_shc mus\u00ed znova overi\u0165 v\u00e1\u0161 \u00fa\u010det",
                 "title": "Znova overi\u0165 integr\u00e1ciu"
+        	"data": {
+          	  "host": "Host"
+        	}
             },
             "user": {
                 "data": {
@@ -33,5 +37,59 @@
                 "title": "Parametre autentifik\u00e1cie SHC"
             }
         }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Kontrola detektora dymu",
+      "description": "Vyvolá testovaciu rutinu detektora dymu.",
+      "fields": {
+        "entity_id": {
+          "name": "ID entity",
+          "description": "Názov entity detektora dymu."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Spúšťací scenár",
+      "description": "Spustí scenár na Bosch SHC.",
+      "fields": {
+        "name": {
+          "name": "Názov scenára",
+          "description": "Názov scenára, ktorý sa má spustiť"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Spustite Rawscan",
+      "description": "Spustí rawscan na Bosch SHC na objavenie zariadení. Výsledok streamovaný do informačného záznamníka.",
+      "fields": {
+        "command": {
+          "name": "Rawscan príkaz",
+          "description": "Príkaz Rawscan na spustenie. Možné príkazy sú'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID zariadenia",
+          "description": "ID zariadenia v prípade, že príkaz je 'device', 'device_services' alebo 'device_service'"
+        },
+        "service_id": {
+          "name": "ID služby",
+          "description": "ID služby v prípade, že príkaz je 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Stav alarmu detektora dymu",
+      "description": "Názov entity detektora dymu, ktorú chcete nastaviť",
+      "fields": {
+        "entity_id": {
+          "name": "ID entity",
+          "description": "Názov entity detektora dymu."
+        },
+        "command": {
+          "name": "Vlastný príkaz",
+          "description": "Príkazový reťazec na odoslanie do detektora dymu."
+        }
+      }
     }
+  }
 }
