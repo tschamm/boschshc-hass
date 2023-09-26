@@ -330,6 +330,7 @@ async def async_setup_entry(
         session.device_helper.thermostats
         + session.device_helper.roomthermostats
         + session.device_helper.micromodule_shutter_controls
+        + session.device_helper.micromodule_blinds
         + session.device_helper.micromodule_light_attached
         + session.device_helper.micromodule_relays
     ):

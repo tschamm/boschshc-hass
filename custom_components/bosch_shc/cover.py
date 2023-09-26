@@ -1,4 +1,5 @@
 """Platform for cover integration."""
+from typing import Any
 from boschshcpy import (
     SHCSession,
     SHCShutterControl,
@@ -125,12 +126,29 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
     _attr_supported_features = (
         SUPPORT_OPEN
         | SUPPORT_CLOSE
-        | SUPPORT_STOP
-        | SUPPORT_SET_POSITION
-        | SUPPORT_OPEN_TILT
         | SUPPORT_CLOSE_TILT
+        | SUPPORT_OPEN_TILT
         | SUPPORT_SET_TILT_POSITION
+        | SUPPORT_SET_POSITION
+        | SUPPORT_STOP
+        | SUPPORT_STOP_TILT
     )
+
+    def open_cover(self, **kwargs):
+        """Open the cover."""
+        self._device.blinds_level = 1.0
+
+    def close_cover(self, **kwargs):
+        """Close cover."""
+        self._device.blinds_level = 0.0
+
+    def set_cover_position(self, **kwargs):
+        """Move the cover to a specific position."""
+        position = kwargs[ATTR_POSITION]
+        self._device.blinds_level = position / 100.0
+
+    def stop_cover_tilt(self, **kwargs: Any) -> None:
+        self._device.stop_blinds()
 
     @property
     def current_cover_tilt_position(self):

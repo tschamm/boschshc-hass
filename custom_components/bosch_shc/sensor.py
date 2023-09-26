@@ -170,6 +170,7 @@ async def async_setup_entry(
         + session.device_helper.light_switches_bsm
         + session.device_helper.micromodule_light_controls
         + session.device_helper.micromodule_shutter_controls
+        + session.device_helper.micromodule_blinds
     ):
         await async_migrate_to_new_unique_id(
             hass,
