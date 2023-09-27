@@ -70,10 +70,17 @@ async def async_setup_entry(
 class ShutterControlCover(SHCEntity, CoverEntity):
     """Representation of a SHC shutter control device."""
 
-    _attr_device_class = CoverDeviceClass.SHUTTER
     _attr_supported_features = (
         SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
     )
+
+    @property
+    def device_class(self) -> CoverDeviceClass | None:
+        return (
+            CoverDeviceClass.AWNING
+            if self._device.device_model == "MICROMODULE_AWNING"
+            else CoverDeviceClass.SHUTTER
+        )
 
     @property
     def current_cover_position(self):
