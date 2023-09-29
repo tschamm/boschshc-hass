@@ -43,6 +43,10 @@
     "trigger_subtype": {
       "LOWER_BUTTON": "Lower button",
       "UPPER_BUTTON": "Upper button",
+      "LOWER_LEFT_BUTTON": "Lower left button",
+      "UPPER_LEFT_BUTTON": "Upper left button",
+      "LOWER_RIGHT_BUTTON": "Lower right button",
+      "UPPER_RIGHT_BUTTON": "Upper right button",
       "IDLE_OFF": "Alarm off",
       "INTRUSION_ALARM": "Intrusion alarm",
       "SECONDARY_ALARM": "Secondary alarm",
