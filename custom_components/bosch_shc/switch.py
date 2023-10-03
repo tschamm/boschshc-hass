@@ -333,6 +333,7 @@ async def async_setup_entry(
         + session.device_helper.micromodule_blinds
         + session.device_helper.micromodule_light_attached
         + session.device_helper.micromodule_relays
+        + session.device_helper.micromodule_impulse_relays
     ):
         entities.append(
             SHCSwitch(
