@@ -41,6 +41,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class ClimateControl(SHCEntity, ClimateEntity):
     """Representation of a SHC room climate control."""
 
+    _attr_target_temperature_step = 0.5
+
     def __init__(
         self,
         device: SHCClimateControl,
@@ -162,7 +164,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
             return
 
         if self.min_temp <= temperature <= self.max_temp:
-            self._device.setpoint_temperature = float(temperature)
+            self._device.setpoint_temperature = float(round(temperature * 2.0) / 2.0)
 
     def set_hvac_mode(self, hvac_mode: str):
         """Set hvac mode."""
