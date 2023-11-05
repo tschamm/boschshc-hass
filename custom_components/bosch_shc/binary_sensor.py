@@ -9,6 +9,7 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
     SHCShutterContact,
+    SHCShutterContact2Plus,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
     SHCWaterLeakageSensor,
@@ -111,6 +112,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
+    for binary_sensor in session.device_helper.shutter_contacts2:
+        if isinstance(binary_sensor, SHCShutterContact2Plus):
+            entities.append(
+                ShutterContactVibrationSensor(
+                    device=binary_sensor,
+                    parent_id=session.information.unique_id,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+
     for binary_sensor in (
         session.device_helper.motion_detectors
         + session.device_helper.shutter_contacts
@@ -171,6 +182,27 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):
             "GENERIC": BinarySensorDeviceClass.WINDOW,
         }
         return switcher.get(self._device.device_class, BinarySensorDeviceClass.WINDOW)
+
+
+class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC shutter contact vibration sensor."""
+
+    _attr_device_class = BinarySensorDeviceClass.VIBRATION
+
+    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+        """Initialize an SHC temperature reporting sensor."""
+        super().__init__(device, parent_id, entry_id)
+        self._attr_name = f"{device.name} Vibration"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    @property
+    def is_on(self):
+        """Return the state of the sensor."""
+        return (
+            self._device.vibrationsensor
+            == SHCShutterContact2Plus.VibrationSensorService.State.VIBRATION_DETECTED
+        )
 
 
 class MotionDetectionSensor(SHCEntity, BinarySensorEntity):

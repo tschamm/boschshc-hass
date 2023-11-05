@@ -12,6 +12,7 @@ from boschshcpy import (
     SHCMicromoduleRelay,
     SHCSmartPlugCompact,
     SHCShutterContact2,
+    SHCShutterContact2Plus,
     SHCThermostat,
 )
 from boschshcpy.device import SHCDevice
@@ -142,7 +143,6 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
         on_value=SHCShutterContact2.BypassService.State.BYPASS_ACTIVE,
-        entity_category=EntityCategory.CONFIG,
         should_poll=False,
     ),
     "child_lock": SHCSwitchEntityDescription(
@@ -153,6 +153,14 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
         icon="mdi:lock",
+    ),
+    "vibration_enabled": SHCSwitchEntityDescription(
+        key="vibration_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
     ),
 }
 
@@ -325,6 +333,15 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["bypass"],
             )
         )
+        if isinstance(switch, SHCShutterContact2Plus):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    parent_id=session.information.unique_id,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["vibration_enabled"],
+                )
+            )
 
     for switch in (
         session.device_helper.thermostats
