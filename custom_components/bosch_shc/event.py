@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from boschshcpy import (
     SHCUniversalSwitch,
+    SHCMotionDetector,
     SHCSession,
 )
 
@@ -48,7 +49,7 @@ async def async_setup_entry(
     for switch_device in session.device_helper.universal_switches:
         for keystate in switch_device.keystates:
             entities.append(
-                SHCUniversalSwitchEntity(
+                UniversalSwitchEntity(
                     switch_device,
                     parent_id=session.information.unique_id,
                     entry_id=entry.entry_id,
@@ -67,10 +68,19 @@ async def async_setup_entry(
             )
         )
 
+    for motion_detector in session.device_helper.motion_detectors:
+        entities.append(
+            MotionDetectorEntity(
+                device=motion_detector,
+                parent_id=session.information.unique_id,
+                entry_id=entry.entry_id,
+            )
+        )
+
     async_add_entities(entities, True)
 
 
-class SHCUniversalSwitchEntity(SHCEntity, EventEntity):
+class UniversalSwitchEntity(SHCEntity, EventEntity):
     """Representation of a SHC UniversalSwitch Entity."""
 
     _attr_device_class = EventDeviceClass.BUTTON
@@ -167,6 +177,41 @@ class SHCScenarioEntity(EventEntity):
             ATTR_ID: event_data["id"],
             ATTR_NAME: event_data["name"],
             ATTR_LAST_TIME_TRIGGERED: event_data["lastTimeTriggered"],
+        }
+        self._trigger_event(event_type, event_attributes)
+        self.schedule_update_ha_state()
+
+
+class MotionDetectorEntity(SHCEntity, EventEntity):
+    """Representation of a SHC MotionDetector Entity."""
+
+    _attr_device_class = EventDeviceClass.MOTION
+    _attr_event_types = ["MOTION"]
+
+    def __init__(
+        self, device: SHCMotionDetector, parent_id: str, entry_id: str
+    ) -> None:
+        """Initialize the Universal Switch device."""
+        super().__init__(device, parent_id, entry_id)
+        self._device = device
+
+    async def async_added_to_hass(self) -> None:
+        """Call when entity is added to hass."""
+        await super().async_added_to_hass()
+
+        for service in self._device.device_services:
+            if service.id == "LatestMotion":
+                service.register_event(self._device.id, self._event_callback)
+
+    @callback
+    def _event_callback(self) -> None:
+        event_type = "MOTION"
+        event_attributes = {
+            ATTR_DEVICE_ID: self.device_id,
+            ATTR_EVENT_TYPE: event_type,
+            ATTR_ID: self._device.id,
+            ATTR_NAME: self._device.name,
+            ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
         }
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
