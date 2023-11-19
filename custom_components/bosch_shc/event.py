@@ -5,6 +5,8 @@ from boschshcpy import (
     SHCUniversalSwitch,
     SHCMotionDetector,
     SHCSession,
+    SHCSmokeDetectionSystem,
+    SHCSmokeDetector,
 )
 
 from homeassistant.components.event import (
@@ -30,6 +32,7 @@ from .entity import SHCEntity
 from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     ATTR_EVENT_TYPE,
+    ATTR_EVENT_SUBTYPE,
     DATA_SESSION,
     DATA_SHC,
     DOMAIN,
@@ -49,7 +52,7 @@ async def async_setup_entry(
     for switch_device in session.device_helper.universal_switches:
         for keystate in switch_device.keystates:
             entities.append(
-                UniversalSwitchEntity(
+                UniversalSwitchEvent(
                     switch_device,
                     parent_id=session.information.unique_id,
                     entry_id=entry.entry_id,
@@ -59,7 +62,7 @@ async def async_setup_entry(
 
     for scenario in session.scenarios:
         entities.append(
-            SHCScenarioEntity(
+            SHCScenarioEvent(
                 scenario,
                 session,
                 hass,
@@ -70,8 +73,27 @@ async def async_setup_entry(
 
     for motion_detector in session.device_helper.motion_detectors:
         entities.append(
-            MotionDetectorEntity(
+            MotionDetectorEvent(
                 device=motion_detector,
+                parent_id=session.information.unique_id,
+                entry_id=entry.entry_id,
+            )
+        )
+
+    smoke_detection_system = session.device_helper.smoke_detection_system
+    if smoke_detection_system:
+        entities.append(
+            SmokeDetectionSystemEvent(
+                device=smoke_detection_system,
+                parent_id=session.information.unique_id,
+                entry_id=entry.entry_id,
+            )
+        )
+
+    for smoke_detector in session.device_helper.smoke_detectors:
+        entities.append(
+            SmokeDetectorEvent(
+                device=smoke_detector,
                 parent_id=session.information.unique_id,
                 entry_id=entry.entry_id,
             )
@@ -80,7 +102,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class UniversalSwitchEntity(SHCEntity, EventEntity):
+class UniversalSwitchEvent(SHCEntity, EventEntity):
     """Representation of a SHC UniversalSwitch Entity."""
 
     _attr_device_class = EventDeviceClass.BUTTON
@@ -122,7 +144,7 @@ class UniversalSwitchEntity(SHCEntity, EventEntity):
             self.schedule_update_ha_state()
 
 
-class SHCScenarioEntity(EventEntity):
+class SHCScenarioEvent(EventEntity):
     """Representation of a SHC Scenario Entity."""
 
     _attr_device_class = EventDeviceClass.BUTTON
@@ -182,7 +204,7 @@ class SHCScenarioEntity(EventEntity):
         self.schedule_update_ha_state()
 
 
-class MotionDetectorEntity(SHCEntity, EventEntity):
+class MotionDetectorEvent(SHCEntity, EventEntity):
     """Representation of a SHC MotionDetector Entity."""
 
     _attr_device_class = EventDeviceClass.MOTION
@@ -212,6 +234,80 @@ class MotionDetectorEntity(SHCEntity, EventEntity):
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
             ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+        }
+        self._trigger_event(event_type, event_attributes)
+        self.schedule_update_ha_state()
+
+
+class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
+    """Representation of a SHC smoke detection system event entity."""
+
+    _attr_event_types = ["ALARM"]
+
+    def __init__(
+        self,
+        device: SHCSmokeDetectionSystem,
+        parent_id: str,
+        entry_id: str,
+    ):
+        """Initialize the smoke detection system device."""
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
+
+    async def async_added_to_hass(self) -> None:
+        """Call when entity is added to hass."""
+        await super().async_added_to_hass()
+
+        for service in self._device.device_services:
+            if service.id == "SurveillanceAlarm":
+                service.register_event(self._device.id, self._event_callback)
+
+    @callback
+    def _event_callback(self) -> None:
+        event_type = "ALARM"
+        event_attributes = {
+            ATTR_DEVICE_ID: self.device_id,
+            ATTR_EVENT_TYPE: event_type,
+            ATTR_EVENT_SUBTYPE: self._device.alarm.name,
+            ATTR_ID: self._device.id,
+            ATTR_NAME: self._device.name,
+        }
+        self._trigger_event(event_type, event_attributes)
+        self.schedule_update_ha_state()
+
+
+class SmokeDetectorEvent(SHCEntity, EventEntity):
+    """Representation of a SHC smoke detector event entity."""
+
+    _attr_event_types = ["ALARM"]
+
+    def __init__(
+        self,
+        device: SHCSmokeDetector,
+        parent_id: str,
+        entry_id: str,
+    ):
+        """Initialize the smoke detection system device."""
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
+
+    async def async_added_to_hass(self) -> None:
+        """Call when entity is added to hass."""
+        await super().async_added_to_hass()
+
+        for service in self._device.device_services:
+            if service.id == "Alarm":
+                service.register_event(self._device.id, self._event_callback)
+
+    @callback
+    def _event_callback(self) -> None:
+        event_type = "ALARM"
+        event_attributes = {
+            ATTR_DEVICE_ID: self.device_id,
+            ATTR_EVENT_TYPE: event_type,
+            ATTR_EVENT_SUBTYPE: self._device.alarmstate.name,
+            ATTR_ID: self._device.id,
+            ATTR_NAME: self._device.name,
         }
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
