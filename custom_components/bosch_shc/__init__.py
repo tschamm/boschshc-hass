@@ -7,43 +7,35 @@ from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_ID,
-    ATTR_ID,
     ATTR_NAME,
     ATTR_COMMAND,
     CONF_HOST,
     EVENT_HOMEASSISTANT_STOP,
     Platform,
 )
-from homeassistant.core import (
-    HomeAssistant,
-    callback,
-    ServiceResponse,
-    SupportsResponse,
-)
+from homeassistant.core import HomeAssistant
+
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
-    ATTR_EVENT_SUBTYPE,
-    ATTR_EVENT_TYPE,
-    ATTR_LAST_TIME_TRIGGERED,
     ATTR_SERVICE_ID,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DATA_POLLING_HANDLER,
     DATA_SESSION,
+    DATA_SHC,
     DOMAIN,
-    EVENT_BOSCH_SHC,
     LOGGER,
     SERVICE_TRIGGER_SCENARIO,
     SERVICE_TRIGGER_RAWSCAN,
-    SUPPORTED_INPUTS_EVENTS_TYPES,
 )
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.COVER,
+    Platform.EVENT,
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.CLIMATE,
@@ -77,9 +69,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         LOGGER.warning("Please check for software updates in the Bosch Smart Home App")
 
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = {
-        DATA_SESSION: session,
-    }
 
     device_registry = dr.async_get(hass)
     device_entry = device_registry.async_get_or_create(
@@ -91,7 +80,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         model="SmartHomeController",
         sw_version=shc_info.version,
     )
-    device_id = device_entry.id
+    hass.data[DOMAIN][entry.entry_id] = {
+        DATA_SESSION: session,
+        DATA_SHC: device_entry,
+    }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -104,26 +96,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_POLLING_HANDLER
     ] = hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
 
-    @callback
-    def _async_scenario_trigger(scenario_id, name, last_time_triggered):
-        hass.bus.async_fire(
-            EVENT_BOSCH_SHC,
-            {
-                ATTR_DEVICE_ID: device_id,
-                ATTR_ID: scenario_id,
-                ATTR_NAME: shc_info.name,
-                ATTR_LAST_TIME_TRIGGERED: last_time_triggered,
-                ATTR_EVENT_TYPE: "SCENARIO",
-                ATTR_EVENT_SUBTYPE: name,
-            },
-        )
-
-    session.subscribe_scenario_callback(_async_scenario_trigger)
-
-    for switch_device in session.device_helper.universal_switches:
-        event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
-        await event_listener.async_setup()
-
     register_services(hass, entry)
     return True
 
@@ -131,7 +103,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
-    session.unsubscribe_scenario_callback()
 
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
     hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
@@ -201,71 +172,3 @@ def register_services(hass, entry):
         rawscan_service_call,
         schema=RAWSCAN_TRIGGER_SCHEMA,
     )
-
-
-class SwitchDeviceEventListener:
-    """Event listener for a Switch device."""
-
-    def __init__(self, hass, entry, device: SHCUniversalSwitch):
-        """Initialize the Switch device event listener."""
-        self.hass = hass
-        self.entry = entry
-        self._device = device
-        self._service = None
-        self.device_id = None
-
-        for service in self._device.device_services:
-            if service.id == "Keypad":
-                self._service = service
-                self._service.subscribe_callback(
-                    self._device.id, self._async_input_events_handler
-                )
-
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
-
-    @callback
-    def _async_input_events_handler(self):
-        """Handle device input events."""
-        event_type = self._device.eventtype.name
-
-        if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
-            self.hass.bus.async_fire(
-                EVENT_BOSCH_SHC,
-                {
-                    ATTR_DEVICE_ID: self.device_id,
-                    ATTR_ID: self._device.id,
-                    ATTR_NAME: self._device.name,
-                    ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
-                    ATTR_EVENT_SUBTYPE: self._device.keyname.name,
-                    ATTR_EVENT_TYPE: self._device.eventtype.name,
-                },
-            )
-        else:
-            LOGGER.warning(
-                "Switch input event %s for device %s is not supported, please open issue",
-                event_type,
-                self._device.name,
-            )
-
-    async def async_setup(self):
-        """Set up the listener."""
-        device_registry = dr.async_get(self.hass)
-        device_entry = device_registry.async_get_or_create(
-            config_entry_id=self.entry.entry_id,
-            name=self._device.name,
-            identifiers={(DOMAIN, self._device.id)},
-            manufacturer=self._device.manufacturer,
-            model=self._device.device_model,
-            via_device=(DOMAIN, self._device.parent_device_id),
-        )
-        self.device_id = device_entry.id
-
-    def shutdown(self):
-        """Shutdown the listener."""
-        self._service.unsubscribe_callback(self._device.id)
-
-    @callback
-    def _handle_ha_stop(self, _):
-        """Handle Home Assistant stopping."""
-        LOGGER.debug("Stopping Switch event listener for %s", self._device.name)
-        self.shutdown()

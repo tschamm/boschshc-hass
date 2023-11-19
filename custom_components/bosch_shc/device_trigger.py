@@ -30,7 +30,6 @@ from .const import (
     DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
-    INPUTS_EVENTS_SUBTYPES,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
 
@@ -46,7 +45,6 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
     """Get the device for the given device id."""
     dev_registry = dr.async_get(hass)
     for config_entry in hass.data[DOMAIN]:
-
         session: SHCSession = hass.data[DOMAIN][config_entry][DATA_SESSION]
 
         for shc_device in session.devices:
@@ -82,24 +80,6 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
     if not device:
         raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
 
-    if dev_type == "WRC2":
-        input_triggers = []
-        for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
-            if trigger in ("PRESS_SHORT", "PRESS_LONG"):
-                for subtype in INPUTS_EVENTS_SUBTYPES:
-                    input_triggers.append((trigger, subtype))
-
-        for trigger, subtype in input_triggers:
-            triggers.append(
-                {
-                    CONF_PLATFORM: "device",
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_TYPE: trigger,
-                    CONF_SUBTYPE: subtype,
-                }
-            )
-
     if dev_type == "MD":
         triggers.append(
             {
@@ -131,18 +111,6 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
                     CONF_DEVICE_ID: device_id,
                     CONF_DOMAIN: DOMAIN,
                     CONF_TYPE: "ALARM",
-                    CONF_SUBTYPE: subtype,
-                }
-            )
-
-    if dev_type == "SHC":
-        for subtype in device.scenario_names:
-            triggers.append(
-                {
-                    CONF_PLATFORM: "device",
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_TYPE: "SCENARIO",
                     CONF_SUBTYPE: subtype,
                 }
             )

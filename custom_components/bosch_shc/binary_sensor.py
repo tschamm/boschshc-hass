@@ -194,7 +194,6 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):
         super().__init__(device, parent_id, entry_id)
         self._attr_name = f"{device.name} Vibration"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
     def is_on(self):
