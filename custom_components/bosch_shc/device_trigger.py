@@ -30,7 +30,8 @@ from .const import (
     DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
-    INPUTS_EVENTS_SUBTYPES,
+    INPUTS_EVENTS_SUBTYPES_WRC2,
+    INPUTS_EVENTS_SUBTYPES_SWITCH2,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
 
@@ -81,12 +82,16 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
     if not device:
         raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
 
-    if dev_type == "WRC2":
+    if dev_type == "WRC2" or dev_type == "SWITCH2":
         input_triggers = []
         for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
-            if trigger in ("PRESS_SHORT", "PRESS_LONG"):
-                for subtype in INPUTS_EVENTS_SUBTYPES:
-                    input_triggers.append((trigger, subtype))
+            if trigger in ("PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"):
+                if dev_type == "WRC2":
+                    for subtype in INPUTS_EVENTS_SUBTYPES_WRC2:
+                        input_triggers.append((trigger, subtype))
+                if dev_type == "SWITCH2":
+                    for subtype in INPUTS_EVENTS_SUBTYPES_SWITCH2:
+                        input_triggers.append((trigger, subtype))
 
         for trigger, subtype in input_triggers:
             triggers.append(
