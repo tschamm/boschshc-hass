@@ -21,9 +21,7 @@ from homeassistant.const import (
     ATTR_NAME,
 )
 
-from homeassistant.helpers.device_registry import (
-    DeviceEntry,
-)
+from homeassistant.helpers.device_registry import DeviceEntry
 
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
