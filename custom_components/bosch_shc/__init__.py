@@ -153,7 +153,6 @@ def register_services(hass, entry):
         {
             vol.Required(ATTR_NAME): vol.All(
                 cv.string,
-                vol.In(hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenario_names),
             )
         }
     )
@@ -191,15 +190,18 @@ def register_services(hass, entry):
     async def rawscan_service_call(call):
         """SHC Scenario service call."""
         # device_id = call.data[ATTR_DEVICE_ID]
-        rawscan = await hass.async_add_executor_job(
-            ft.partial(
-                hass.data[DOMAIN][entry.entry_id][DATA_SESSION].rawscan,
-                command=call.data[ATTR_COMMAND],
-                device_id=call.data[ATTR_DEVICE_ID],
-                service_id=call.data[ATTR_SERVICE_ID],
-            )
-        )
-        LOGGER.info(rawscan)
+        for controller_data in hass.data[DOMAIN].values():
+            session = controller_data[DATA_SESSION]
+            if isinstance(session, SHCSession):
+                rawscan = await hass.async_add_executor_job(
+                    ft.partial(
+                        session.rawscan,
+                        command=call.data[ATTR_COMMAND],
+                        device_id=call.data[ATTR_DEVICE_ID],
+                        service_id=call.data[ATTR_SERVICE_ID],
+                    )
+                )
+                LOGGER.info(rawscan)
 
     hass.services.async_register(
         DOMAIN,
