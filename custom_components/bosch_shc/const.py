@@ -6,6 +6,7 @@ ATTR_EVENT_TYPE = "event_type"
 ATTR_EVENT_SUBTYPE = "event_subtype"
 ATTR_LAST_TIME_TRIGGERED = "lastTimeTriggered"
 ATTR_SERVICE_ID = "service_id"
+ATTR_TITLE = "title"
 
 CONF_HOSTNAME = "hostname"
 CONF_SHC_CERT = "bosch_shc-cert"
@@ -16,6 +17,7 @@ CONF_SSL_KEY = "ssl_key"
 
 DATA_SESSION = "session"
 DATA_SHC = "shc"
+DATA_TITLE = "title"
 DATA_POLLING_HANDLER = "polling_handler"
 
 DOMAIN = "bosch_shc"

@@ -78,6 +78,10 @@
       "name": "Trigger Scenario",
       "description": "Triggers a scenario on Bosch SHC.",
       "fields": {
+        "title": {
+          "name": "SHC name",
+          "description": "Title of the SHC"
+        },
         "name": {
           "name": "Scenario name",
           "description": "Name of the scenario to trigger"
@@ -88,6 +92,10 @@
       "name": "Trigger Rawscan",
       "description": "Triggers a rawscan on Bosch SHC to discover devices. Result streamed to info logger.",
       "fields": {
+        "title": {
+          "name": "SHC name",
+          "description": "Title of the SHC"
+        },
         "command": {
           "name": "Rawscan command",
           "description": "Rawscan command to trigger. Possible commands are 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"

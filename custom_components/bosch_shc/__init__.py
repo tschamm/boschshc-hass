@@ -28,11 +28,13 @@ from .const import (
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
     ATTR_SERVICE_ID,
+    ATTR_TITLE,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DATA_POLLING_HANDLER,
     DATA_SESSION,
     DATA_SHC,
+    DATA_TITLE,
     DOMAIN,
     EVENT_BOSCH_SHC,
     LOGGER,
@@ -93,6 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = {
         DATA_SESSION: session,
         DATA_SHC: device_entry,
+        DATA_TITLE: entry.title,
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -151,21 +154,22 @@ def register_services(hass, entry):
     """Register services for the component."""
     SCENARIO_TRIGGER_SCHEMA = vol.Schema(
         {
-            vol.Required(ATTR_NAME): vol.All(
-                cv.string,
-            )
+            vol.Optional(ATTR_TITLE, default=""): cv.string,
+            vol.Required(ATTR_NAME): cv.string,
         }
     )
 
     async def scenario_service_call(call: ServiceCall) -> None:
         """SHC Scenario service call."""
         name = call.data[ATTR_NAME]
+        title = call.data[ATTR_TITLE]
         for controller_data in hass.data[DOMAIN].values():
-            session = controller_data[DATA_SESSION]
-            if isinstance(session, SHCSession):
-                for scenario in session.scenarios:
-                    if scenario.name == name:
-                        hass.async_add_executor_job(scenario.trigger)
+            if title in ("", controller_data[DATA_TITLE]):
+                session = controller_data[DATA_SESSION]
+                if isinstance(session, SHCSession):
+                    for scenario in session.scenarios:
+                        if scenario.name == name:
+                            hass.async_add_executor_job(scenario.trigger)
 
     hass.services.async_register(
         DOMAIN,
@@ -176,6 +180,7 @@ def register_services(hass, entry):
 
     RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
         {
+            vol.Optional(ATTR_TITLE, default=""): cv.string,
             vol.Required(ATTR_COMMAND): vol.All(
                 cv.string,
                 vol.In(
@@ -190,18 +195,20 @@ def register_services(hass, entry):
     async def rawscan_service_call(call):
         """SHC Scenario service call."""
         # device_id = call.data[ATTR_DEVICE_ID]
+        title = call.data[ATTR_TITLE]
         for controller_data in hass.data[DOMAIN].values():
-            session = controller_data[DATA_SESSION]
-            if isinstance(session, SHCSession):
-                rawscan = await hass.async_add_executor_job(
-                    ft.partial(
-                        session.rawscan,
-                        command=call.data[ATTR_COMMAND],
-                        device_id=call.data[ATTR_DEVICE_ID],
-                        service_id=call.data[ATTR_SERVICE_ID],
+            if title in ("", controller_data[DATA_TITLE]):
+                session = controller_data[DATA_SESSION]
+                if isinstance(session, SHCSession):
+                    rawscan = await hass.async_add_executor_job(
+                        ft.partial(
+                            session.rawscan,
+                            command=call.data[ATTR_COMMAND],
+                            device_id=call.data[ATTR_DEVICE_ID],
+                            service_id=call.data[ATTR_SERVICE_ID],
+                        )
                     )
-                )
-                LOGGER.info(rawscan)
+                    LOGGER.info(rawscan)
 
     hass.services.async_register(
         DOMAIN,

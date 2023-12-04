@@ -8,6 +8,11 @@ smokedetector_check:
 
 trigger_scenario:
   fields:
+    title:
+      example: "shc012345"
+      required: false
+      selector:
+        text:
     name:
       example: "Scenario Name"
       required: true
@@ -16,6 +21,11 @@ trigger_scenario:
 
 trigger_rawscan:
   fields:
+    title:
+      example: "shc012345"
+      required: false
+      selector:
+        text:
     command:
       example: "devices"
       required: true

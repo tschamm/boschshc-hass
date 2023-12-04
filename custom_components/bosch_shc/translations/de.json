@@ -53,6 +53,10 @@
       "name": "Szenario auslösen",
       "description": "Auslösen eines Bosch SHC Szenarios.",
       "fields": {
+        "title": {
+          "name": "SHC Name",
+          "description": "Name des SHC"
+        },
         "name": {
           "name": "Szenario",
           "description": "Szenario Name"
@@ -63,6 +67,10 @@
       "name": "Rawscan auslösen",
       "description": "Auslösen eines Bosch SHC Rawscan. Das Ergebnis wird dem 'info' Logger übergeben.",
       "fields": {
+        "title": {
+          "name": "SHC Name",
+          "description": "Name des SHC"
+        },
         "command": {
           "name": "Rawscan Befehl",
           "description": "Mögliche Befehle sind 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
