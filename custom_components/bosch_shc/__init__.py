@@ -16,6 +16,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import (
     HomeAssistant,
+    ServiceCall,
     callback,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
@@ -157,12 +158,15 @@ def register_services(hass, entry):
         }
     )
 
-    async def scenario_service_call(call):
+    async def scenario_service_call(call: ServiceCall) -> None:
         """SHC Scenario service call."""
         name = call.data[ATTR_NAME]
-        for scenario in hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenarios:
-            if scenario.name == name:
-                hass.async_add_executor_job(scenario.trigger)
+        for controller_data in hass.data[DOMAIN].values():
+            session = controller_data[DATA_SESSION]
+            if isinstance(session, SHCSession):
+                for scenario in session.scenarios:
+                    if scenario.name == name:
+                        hass.async_add_executor_job(scenario.trigger)
 
     hass.services.async_register(
         DOMAIN,
