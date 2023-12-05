@@ -53,6 +53,10 @@
       "name": "Spúšťací scenár",
       "description": "Spustí scenár na Bosch SHC.",
       "fields": {
+        "title": {
+          "name": "SHC názov",
+          "description": "Názov pre SHC"
+        },
         "name": {
           "name": "Názov scenára",
           "description": "Názov scenára, ktorý sa má spustiť"
@@ -63,6 +67,10 @@
       "name": "Spustite Rawscan",
       "description": "Spustí rawscan na Bosch SHC na objavenie zariadení. Výsledok streamovaný do informačného záznamníka.",
       "fields": {
+        "title": {
+          "name": "SHC názov",
+          "description": "Názov pre SHC"
+        },
         "command": {
           "name": "Rawscan príkaz",
           "description": "Príkaz Rawscan na spustenie. Možné príkazy sú'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
