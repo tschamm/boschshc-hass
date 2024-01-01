@@ -57,7 +57,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     "smartplug": SHCSwitchEntityDescription(
         key="smartplug",
         device_class=SwitchDeviceClass.OUTLET,
-        on_key="state",
+        on_key="switchstate",
         on_value=SHCSmartPlug.PowerSwitchService.State.ON,
         should_poll=False,
     ),
@@ -73,21 +73,21 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     "smartplugcompact": SHCSwitchEntityDescription(
         key="smartplugcompact",
         device_class=SwitchDeviceClass.OUTLET,
-        on_key="state",
+        on_key="switchstate",
         on_value=SHCSmartPlugCompact.PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "micromodule_relay": SHCSwitchEntityDescription(
         key="micromodule_relay",
         device_class=SwitchDeviceClass.OUTLET,
-        on_key="state",
+        on_key="switchstate",
         on_value=SHCMicromoduleRelay.PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "lightswitch": SHCSwitchEntityDescription(
         key="lightswitch",
         device_class=SwitchDeviceClass.SWITCH,
-        on_key="state",
+        on_key="switchstate",
         on_value=SHCLightSwitch.PowerSwitchService.State.ON,
         should_poll=False,
     ),

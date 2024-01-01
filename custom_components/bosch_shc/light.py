@@ -26,9 +26,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
-    for light in ( 
-        session.device_helper.ledvance_lights +
-        session.device_helper.micromodule_dimmers
+    for light in (
+        session.device_helper.ledvance_lights
+        + session.device_helper.micromodule_dimmers
     ):
         await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
         entities.append(
@@ -41,6 +41,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     if entities:
         async_add_entities(entities)
+
 
 class LightSwitch(SHCEntity, LightEntity):
     """Representation of a SHC controlled light."""
@@ -61,7 +62,7 @@ class LightSwitch(SHCEntity, LightEntity):
     @property
     def is_on(self):
         """Return light state."""
-        return self._device.state
+        return self._device.binarystate
 
     @property
     def brightness(self) -> int:
@@ -112,8 +113,8 @@ class LightSwitch(SHCEntity, LightEntity):
             self._device.color = color_temp
 
         if not self.is_on:
-            self._device.state = True
+            self._device.binarystate = True
 
     def turn_off(self, **kwargs):
         """Turn the light off."""
-        self._device.state = False
+        self._device.binarystate = False
