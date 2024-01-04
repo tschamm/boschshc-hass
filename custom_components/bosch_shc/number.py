@@ -9,7 +9,7 @@ from homeassistant.components.number import (
     NumberEntity,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -48,7 +48,7 @@ class SHCNumber(SHCEntity, NumberEntity):
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_native_unit_of_measurement = TEMP_CELSIUS
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
 
     def __init__(
         self,

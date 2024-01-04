@@ -12,10 +12,10 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
-    ENERGY_KILO_WATT_HOUR,
     PERCENTAGE,
-    POWER_WATT,
-    TEMP_CELSIUS,
+    UnitOfEnergy,
+    UnitOfPower,
+    UnitOfTemperature,
     Platform,
 )
 from homeassistant.core import HomeAssistant
@@ -262,7 +262,7 @@ class TemperatureSensor(SHCEntity, SensorEntity):
     """Representation of an SHC temperature reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = TEMP_CELSIUS
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
@@ -405,7 +405,7 @@ class PowerSensor(SHCEntity, SensorEntity):
     """Representation of an SHC power reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.POWER
-    _attr_native_unit_of_measurement = POWER_WATT
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
@@ -424,7 +424,7 @@ class EnergySensor(SHCEntity, SensorEntity):
     """Representation of an SHC energy reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.ENERGY
-    _attr_native_unit_of_measurement = ENERGY_KILO_WATT_HOUR
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:

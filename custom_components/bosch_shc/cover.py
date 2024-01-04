@@ -11,14 +11,7 @@ from boschshcpy.device import SHCDevice
 from homeassistant.components.cover import (
     ATTR_POSITION,
     ATTR_TILT_POSITION,
-    SUPPORT_CLOSE,
-    SUPPORT_CLOSE_TILT,
-    SUPPORT_OPEN,
-    SUPPORT_OPEN_TILT,
-    SUPPORT_SET_POSITION,
-    SUPPORT_SET_TILT_POSITION,
-    SUPPORT_STOP,
-    SUPPORT_STOP_TILT,
+    CoverEntityFeature,
     CoverDeviceClass,
     CoverEntity,
 )
@@ -71,7 +64,10 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     """Representation of a SHC shutter control device."""
 
     _attr_supported_features = (
-        SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        CoverEntityFeature.OPEN
+        | CoverEntityFeature.CLOSE
+        | CoverEntityFeature.STOP
+        | CoverEntityFeature.SET_POSITION
     )
 
     @property
@@ -131,14 +127,14 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
 
     _attr_device_class = CoverDeviceClass.BLIND
     _attr_supported_features = (
-        SUPPORT_OPEN
-        | SUPPORT_CLOSE
-        | SUPPORT_CLOSE_TILT
-        | SUPPORT_OPEN_TILT
-        | SUPPORT_SET_TILT_POSITION
-        | SUPPORT_SET_POSITION
-        | SUPPORT_STOP
-        | SUPPORT_STOP_TILT
+        CoverEntityFeature.OPEN
+        | CoverEntityFeature.CLOSE
+        | CoverEntityFeature.CLOSE_TILT
+        | CoverEntityFeature.OPEN_TILT
+        | CoverEntityFeature.SET_TILT_POSITION
+        | CoverEntityFeature.SET_POSITION
+        | CoverEntityFeature.STOP
+        | CoverEntityFeature.STOP_TILT
     )
 
     def open_cover(self, **kwargs):

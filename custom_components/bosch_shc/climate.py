@@ -3,16 +3,13 @@ from boschshcpy import SHCClimateControl, SHCSession
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_HVAC_MODE,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_OFF,
+    HVACMode,
+    ClimateEntityFeature,
     PRESET_BOOST,
     PRESET_ECO,
     PRESET_NONE,
-    SUPPORT_PRESET_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity
@@ -68,7 +65,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the temperature unit."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
     @property
     def current_temperature(self):
@@ -99,20 +96,20 @@ class ClimateControl(SHCEntity, ClimateEntity):
     def hvac_mode(self):
         """Return the hvac mode."""
         if self._device.summer_mode:
-            return HVAC_MODE_OFF
+            return HVACMode.OFF
 
         if (
             self._device.operation_mode
             == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
         ):
-            return HVAC_MODE_AUTO
+            return HVACMode.AUTO
 
-        return HVAC_MODE_HEAT
+        return HVACMode.HEAT
 
     @property
     def hvac_modes(self):
         """Return available hvac modes."""
-        return [HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        return [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
 
     # @property
     # def hvac_action(self):
@@ -142,9 +139,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
         return presets
 
     @property
-    def supported_features(self):
+    def supported_features(self) -> ClimateEntityFeature:
         """Return supported features."""
-        return SUPPORT_TARGET_TEMPERATURE + SUPPORT_PRESET_MODE
+        return (
+            ClimateEntityFeature.TARGET_TEMPERATURE + ClimateEntityFeature.PRESET_MODE
+        )
 
     def set_temperature(self, **kwargs):
         """Set the temperature."""
@@ -156,7 +155,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
             kwargs.get(ATTR_HVAC_MODE)
         )  # set_temperature args may provide HVAC mode as well
 
-        if self.hvac_mode == HVAC_MODE_OFF or self.preset_mode == PRESET_ECO:
+        if self.hvac_mode == HVACMode.OFF or self.preset_mode == PRESET_ECO:
             LOGGER.debug(
                 "Skipping setting temperature as device %s is off or in low_mode.",
                 self.device_name,
@@ -173,17 +172,17 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if self.preset_mode == PRESET_ECO:
             return
 
-        if hvac_mode == HVAC_MODE_AUTO:
+        if hvac_mode == HVACMode.AUTO:
             self._device.summer_mode = False
             self._device.operation_mode = (
                 SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
             )
-        if hvac_mode == HVAC_MODE_HEAT:
+        if hvac_mode == HVACMode.HEAT:
             self._device.summer_mode = False
             self._device.operation_mode = (
                 SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
             )
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             self._device.summer_mode = True
 
     def set_preset_mode(self, preset_mode: str):
