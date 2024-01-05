@@ -1,5 +1,6 @@
 """Platform for climate integration."""
 from boschshcpy import SHCClimateControl, SHCSession
+from enum import IntFlag
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_HVAC_MODE,
@@ -141,7 +142,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def supported_features(self) -> ClimateEntityFeature:
         """Return supported features."""
-        return (
+        return ClimateEntityFeature(
             ClimateEntityFeature.TARGET_TEMPERATURE + ClimateEntityFeature.PRESET_MODE
         )
 
