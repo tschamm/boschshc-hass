@@ -129,10 +129,10 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20double%20espresso-donate-yellow.svg?style=for-the-badge
-[hassfest]: https://github.com/tschamm/boschshc-hass/actions
-[hassfestbadge]: https://img.shields.io/github/workflow/status/tschamm/boschshc-hass/Validate%20with%20hassfest?style=for-the-badge
-[validatehacs]: https://github.com/tschamm/boschshc-hass/actions
-[validatehacsbadge]: https://img.shields.io/github/workflow/status/tschamm/boschshc-hass/Validate%20HACS?style=for-the-badge
+[hassfestbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg?style=for-the-badge
+[hassfest]: https://github.com/tschamm/boschshc-hass/actions/workflows/hassfest.yaml
+[validatehacsbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20for%20HACS/badge.svg?style=for-the-badge
+[validatehacs]: https://github.com/tschamm/boschshc-hass/actions/workflows/hacs.yaml
 [hacs]: https://github.com/custom-components/hacs
 [hacsbadge]: https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
