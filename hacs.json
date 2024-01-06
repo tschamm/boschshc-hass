@@ -1,16 +1,5 @@
 {
   "name": "Bosch Smart Home Controller (SHC) integration",
-  "domains": [
-    "alarm_control_panel",
-    "binary_sensor",
-    "climate",
-    "cover",
-    "light",
-    "number",
-    "sensor",
-    "switch"
-  ],
-  "iot_class": ["Local Push", "Local Polling"],
   "render_readme": false,
   "homeassistant": "2021.1.5"
 }
