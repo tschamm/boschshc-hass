@@ -53,6 +53,7 @@ PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.LIGHT,
     Platform.NUMBER,
+    Platform.VALVE,
 ]
 
 
