@@ -2,8 +2,8 @@
 [![hacs_badge][hacsbadge]][hacs]
 <!-- [![Validate with HACS][validatehacsbadge]][validatehacs] -->
 
-[![Stars][stars-shield]][bosch_shc]
 [![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
+[![Stars][stars-shield]][bosch_shc]
 
 # Bosch Smart Home Controller (SHC) for Home Assistant
 
@@ -128,12 +128,12 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 * Arming and disarming of alarm control panel does not support using a code.
 
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20double%20espresso-donate-yellow.svg?style=for-the-badge
-[hassfestbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg?style=for-the-badge
+[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20double%20espresso-donate-yellow.svg
+[hassfestbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg
 [hassfest]: https://github.com/tschamm/boschshc-hass/actions/workflows/hassfest.yaml
-[validatehacsbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20for%20HACS/badge.svg?style=for-the-badge
+[validatehacsbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20for%20HACS/badge.svg
 [validatehacs]: https://github.com/tschamm/boschshc-hass/actions/workflows/hacs.yaml
 [hacs]: https://github.com/custom-components/hacs
-[hacsbadge]: https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge
+[hacsbadge]: https://img.shields.io/badge/HACS-Default-orange.svg
 [bosch_shc]: https://github.com/tschamm/boschshc-hass
-[stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/tschamm/boschshc-hass
