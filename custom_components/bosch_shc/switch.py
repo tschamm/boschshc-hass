@@ -397,7 +397,9 @@ async def async_setup_entry(
 
     # register listener for new switches
     config_entry.async_on_unload(
-        session.subscribe((SHCUserDefinedState, async_add_userdefinedstateswitch))
+        config_entry.add_update_listener(
+            session.subscribe((SHCUserDefinedState, async_add_userdefinedstateswitch))
+        )
     )
 
 

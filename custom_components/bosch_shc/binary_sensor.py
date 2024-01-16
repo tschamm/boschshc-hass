@@ -78,7 +78,9 @@ async def async_setup_entry(
 
     # register listener for new binary sensors
     config_entry.async_on_unload(
-        session.subscribe((SHCShutterContact, async_add_shuttercontact))
+        config_entry.add_update_listener(
+            session.subscribe((SHCShutterContact, async_add_shuttercontact))
+        )
     )
 
     for binary_sensor in session.device_helper.motion_detectors:
@@ -422,6 +424,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._service = None
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
+        self._attr_name = f"{device.root_device_id} {device.name}"
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
