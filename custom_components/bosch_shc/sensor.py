@@ -470,7 +470,6 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
     """Representation of an SHC illuminance level reporting sensor."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""

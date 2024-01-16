@@ -7,6 +7,7 @@ from homeassistant.components.light import (
     SUPPORT_BRIGHTNESS,
     SUPPORT_COLOR,
     SUPPORT_COLOR_TEMP,
+    ColorMode,
     LightEntity,
 )
 from homeassistant.const import Platform
@@ -29,6 +30,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for light in (
         session.device_helper.ledvance_lights
         + session.device_helper.micromodule_dimmers
+        + session.device_helper.hue_lights
     ):
         await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
         entities.append(
@@ -46,18 +48,22 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class LightSwitch(SHCEntity, LightEntity):
     """Representation of a SHC controlled light."""
 
-    @property
-    def supported_features(self):
-        """Flag supported features."""
-        feature = 0
-        if self._device.supports_brightness:
-            feature |= SUPPORT_BRIGHTNESS
-        if self._device.supports_color_temp:
-            feature |= SUPPORT_COLOR_TEMP
+    def __init__(self, device, parent_id, entry_id) -> None:
+        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        self._supported_color_modes: set[ColorMode | str] = set()
         if self._device.supports_color_hsb:
-            feature |= SUPPORT_COLOR
-            feature |= SUPPORT_COLOR_TEMP
-        return feature
+            self._supported_color_modes.add(ColorMode.HS)
+        if self._device.supports_color_temp:
+            self._supported_color_modes.add(ColorMode.COLOR_TEMP)
+        if self._device.supports_brightness:
+            if len(self._supported_color_modes) == 0:
+                # only add color mode brightness if no color variants
+                self._supported_color_modes.add(ColorMode.BRIGHTNESS)
+
+    @property
+    def supported_color_modes(self) -> set | None:
+        """Flag supported features."""
+        return self._supported_color_modes
 
     @property
     def is_on(self):
