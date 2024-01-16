@@ -351,6 +351,7 @@ async def async_setup_entry(
                     parent_id=session.information.unique_id,
                     entry_id=config_entry.entry_id,
                     description=SWITCH_TYPES["vibration_enabled"],
+                    attr_name="VibrationEnabled",
                 )
             )
 
