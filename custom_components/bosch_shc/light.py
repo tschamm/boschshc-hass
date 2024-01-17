@@ -30,7 +30,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for light in (
         session.device_helper.ledvance_lights
         + session.device_helper.micromodule_dimmers
-        + session.device_helper.hue_lights
     ):
         await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
         entities.append(
