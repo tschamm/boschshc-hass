@@ -1,4 +1,5 @@
 """Platform for binarysensor integration."""
+
 import asyncio
 from datetime import datetime, timedelta
 
@@ -151,6 +152,7 @@ async def async_setup_entry(
         + session.device_helper.twinguards
         + session.device_helper.universal_switches
         + session.device_helper.wallthermostats
+        + session.device_helper.roomthermostats
         + session.device_helper.water_leakage_detectors
     ):
         await async_migrate_to_new_unique_id(
