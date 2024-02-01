@@ -1,4 +1,5 @@
 """Platform for switch integration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -77,8 +78,8 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=SHCSmartPlugCompact.PowerSwitchService.State.ON,
         should_poll=False,
     ),
-    "micromodule_relay": SHCSwitchEntityDescription(
-        key="micromodule_relay",
+    "micromodule_relay_switch": SHCSwitchEntityDescription(
+        key="micromodule_relay_switch",
         device_class=SwitchDeviceClass.OUTLET,
         on_key="switchstate",
         on_value=SHCMicromoduleRelay.PowerSwitchService.State.ON,
@@ -248,7 +249,7 @@ async def async_setup_entry(
                 device=switch,
                 parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
-                description=SWITCH_TYPES["micromodule_relay"],
+                description=SWITCH_TYPES["micromodule_relay_switch"],
             )
         )
 
