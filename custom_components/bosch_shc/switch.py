@@ -158,6 +158,15 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
         icon="mdi:lock",
     ),
+    "silent_mode": SHCSwitchEntityDescription(
+        key="silentmode",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="silentmode",
+        on_value=SHCThermostat.SilentModeService.State.MODE_SILENT,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:sleep",
+    ),
     "vibration_enabled": SHCSwitchEntityDescription(
         key="vibration_enabled",
         device_class=SwitchDeviceClass.SWITCH,
@@ -355,6 +364,17 @@ async def async_setup_entry(
                     attr_name="VibrationEnabled",
                 )
             )
+    
+    for switch in session.device_helper.thermostats:
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                parent_id=session.information.unique_id,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["silent_mode"],
+                attr_name="SilentMode",
+            )
+        )
 
     for switch in (
         session.device_helper.thermostats
