@@ -140,7 +140,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         device_class=SwitchDeviceClass.SWITCH,
         on_key="enabled",
         on_value=True,
-        should_poll=True,
+        should_poll=False,
     ),
     "bypass": SHCSwitchEntityDescription(
         key="bypass",
@@ -364,7 +364,7 @@ async def async_setup_entry(
                     attr_name="VibrationEnabled",
                 )
             )
-    
+
     for switch in session.device_helper.thermostats:
         if switch.supports_silentmode:
             entities.append(
