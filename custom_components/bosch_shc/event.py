@@ -1,4 +1,5 @@
 """Support for Bosch SHC event entities."""
+
 from __future__ import annotations
 
 from boschshcpy import (
@@ -34,6 +35,7 @@ from .const import (
     DATA_SESSION,
     DATA_SHC,
     DOMAIN,
+    LOGGER,
 )
 
 
@@ -138,8 +140,14 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
             ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
         }
         if event_type in ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]:
-            self._trigger_event(event_type, event_attributes)
-            self.schedule_update_ha_state()
+            try:
+                self._trigger_event(event_type, event_attributes)
+            except ValueError:
+                LOGGER.warning(
+                    "Invalid event type %s for %s", event_type, self.entity_id
+                )
+                return
+        self.async_write_ha_state()
 
 
 class SHCScenarioEvent(EventEntity):
