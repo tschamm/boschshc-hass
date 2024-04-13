@@ -1,4 +1,5 @@
 """Provides device triggers for Bosch Smart Home Controller integration."""
+
 from typing import List, Tuple
 
 import voluptuous as vol

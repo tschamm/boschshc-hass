@@ -65,7 +65,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     zeroconf = await async_get_instance(hass)
     try:
-        session = await hass.async_add_executor_job(
+        session: SHCSession = await hass.async_add_executor_job(
             SHCSession,
             data[CONF_HOST],
             data[CONF_SSL_CERTIFICATE],
@@ -110,9 +110,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
     )
 
-    @callback
-    def _async_scenario_trigger(event_data):
-        hass.bus.async_fire(
+    def _scenario_trigger(event_data):
+        hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: device_id,
@@ -125,7 +124,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     for scenario in hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenarios:
-        session.subscribe_scenario_callback("shc", _async_scenario_trigger)
+        session.subscribe_scenario_callback("shc", _scenario_trigger)
 
     for switch_device in session.device_helper.universal_switches:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
@@ -205,7 +204,6 @@ def register_services(hass, entry):
 
     async def rawscan_service_call(call):
         """SHC Scenario service call."""
-        # device_id = call.data[ATTR_DEVICE_ID]
         title = call.data[ATTR_TITLE]
         for controller_data in hass.data[DOMAIN].values():
             if title in ("", controller_data[DATA_TITLE]):
@@ -237,25 +235,25 @@ class SwitchDeviceEventListener:
         self.hass = hass
         self.entry = entry
         self._device = device
-        self._service = None
+        self._keypad_service = None
         self.device_id = None
 
         for service in self._device.device_services:
             if service.id == "Keypad":
-                self._service = service
-                self._service.subscribe_callback(
-                    self._device.id, self._async_input_events_handler
+                self._keypad_service = service
+                self._keypad_service.subscribe_callback(
+                    self._device.id, self._input_events_handler
                 )
+                break
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
-    @callback
-    def _async_input_events_handler(self):
+    def _input_events_handler(self):
         """Handle device input events."""
         event_type = self._device.eventtype.name
 
         if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
-            self.hass.bus.async_fire(
+            self.hass.bus.fire(
                 EVENT_BOSCH_SHC,
                 {
                     ATTR_DEVICE_ID: self.device_id,
@@ -288,7 +286,7 @@ class SwitchDeviceEventListener:
 
     def shutdown(self):
         """Shutdown the listener."""
-        self._service.unsubscribe_callback(self._device.id)
+        self._keypad_service.unsubscribe_callback(self._device.id)
 
     @callback
     def _handle_ha_stop(self, _):

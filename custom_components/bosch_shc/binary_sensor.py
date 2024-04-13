@@ -79,7 +79,7 @@ async def async_setup_entry(
 
     # register listener for new binary sensors
     config_entry.async_on_unload(
-        config_entry.add_update_listener(
+        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
             session.subscribe((SHCShutterContact, async_add_shuttercontact))
         )
     )
@@ -241,18 +241,17 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
             if service.id == "LatestMotion":
                 self._service = service
                 self._service.subscribe_callback(
-                    self._device.id + "_eventlistener", self._async_input_events_handler
+                    self._device.id + "_eventlistener", self._input_events_handler
                 )
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
-    @callback
-    def _async_input_events_handler(self):
+    def _input_events_handler(self):
         """Handle device input events."""
-        self.hass.bus.async_fire(
+        self.hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
+                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(  # This is definitely not running in the event loop thread if this call works
                     async_get_device_id(self.hass, self._device.id), self.hass.loop
                 ).result(),
                 ATTR_ID: self._device.id,
@@ -320,18 +319,17 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             if service.id == "Alarm":
                 self._service = service
                 self._service.subscribe_callback(
-                    self._device.id + "_eventlistener", self._async_input_events_handler
+                    self._device.id + "_eventlistener", self._input_events_handler
                 )
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
-    @callback
-    def _async_input_events_handler(self):
+    def _input_events_handler(self):
         """Handle device input events."""
-        self._hass.bus.async_fire(
+        self._hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
+                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(  # This is definitely not running in the event loop thread if this call works
                     async_get_device_id(self._hass, self._device.id), self._hass.loop
                 ).result(),
                 ATTR_ID: self._device.id,
@@ -432,18 +430,17 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
             if service.id == "SurveillanceAlarm":
                 self._service = service
                 self._service.subscribe_callback(
-                    self._device.id + "_eventlistener", self._async_input_events_handler
+                    self._device.id + "_eventlistener", self._input_events_handler
                 )
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
-    @callback
-    def _async_input_events_handler(self):
+    def _input_events_handler(self):
         """Handle device input events."""
-        self._hass.bus.async_fire(
+        self._hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(
+                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(  # This is definitely not running in the event loop thread if this call works
                     async_get_device_id(self._hass, self._device.id), self._hass.loop
                 ).result(),
                 ATTR_ID: self._device.id,

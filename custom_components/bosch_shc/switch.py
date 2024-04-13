@@ -420,7 +420,7 @@ async def async_setup_entry(
 
     # register listener for new switches
     config_entry.async_on_unload(
-        config_entry.add_update_listener(
+        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
             session.subscribe((SHCUserDefinedState, async_add_userdefinedstateswitch))
         )
     )
@@ -521,6 +521,9 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         def update_entity_information():
             if self._device.deleted:
                 self._attr_available = False
+                # async_will_remove_from_hass isn't intended to be called
+                # directly and should only be called by the entity platform
+                # it should be split into another function
                 self.hass.add_job(self.async_will_remove_from_hass)
             self.schedule_update_ha_state()
 

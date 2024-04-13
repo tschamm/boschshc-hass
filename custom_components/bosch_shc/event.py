@@ -24,7 +24,7 @@ from homeassistant.const import (
 
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from homeassistant.core import callback, HomeAssistant
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .entity import SHCEntity
@@ -44,7 +44,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Fibaro event entities."""
+    """Set up the BoschSHC event entities."""
     entities = []
     session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
 
@@ -129,7 +129,6 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
             if service.id == "Keypad":
                 service.register_event(self._key_id, self._event_callback)
 
-    @callback
     def _event_callback(self) -> None:
         event_type = self._device.eventtype.name
         event_attributes = {
@@ -147,7 +146,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
                     "Invalid event type %s for %s", event_type, self.entity_id
                 )
                 return
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
 
 class SHCScenarioEvent(EventEntity):
@@ -197,7 +196,6 @@ class SHCScenarioEvent(EventEntity):
             self._scenario.id, self._event_callback
         )
 
-    @callback
     def _event_callback(self, event_data) -> None:
         event_type = "SCENARIO"
         event_attributes = {
@@ -231,7 +229,6 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
             if service.id == "LatestMotion":
                 service.register_event(self._device.id, self._event_callback)
 
-    @callback
     def _event_callback(self) -> None:
         event_type = "MOTION"
         event_attributes = {
@@ -268,7 +265,6 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
             if service.id == "SurveillanceAlarm":
                 service.register_event(self._device.id, self._event_callback)
 
-    @callback
     def _event_callback(self) -> None:
         event_type = "ALARM"
         event_attributes = {
@@ -305,7 +301,6 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
             if service.id == "Alarm":
                 service.register_event(self._device.id, self._event_callback)
 
-    @callback
     def _event_callback(self) -> None:
         event_type = "ALARM"
         event_attributes = {
