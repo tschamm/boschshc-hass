@@ -10,6 +10,7 @@ from homeassistant.const import (
     STATE_ALARM_ARMED_HOME,
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
+    STATE_ALARM_PENDING,
     STATE_ALARM_TRIGGERED,
     Platform,
 )
@@ -105,11 +106,14 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         """Return the state of the device."""
         if self._device.alarm_state == SHCIntrusionSystem.AlarmState.ALARM_ON:
             return STATE_ALARM_TRIGGERED
+        if self._device.alarm_state == SHCIntrusionSystem.AlarmState.PRE_ALARM:
+            return STATE_ALARM_PENDING
 
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_ARMING:
             return STATE_ALARM_ARMING
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_DISARMED:
             return STATE_ALARM_DISARMED
+
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_ARMED:
             if (
                 self._device.active_configuration_profile
