@@ -1,4 +1,5 @@
 """Platform for climate integration."""
+
 from boschshcpy import SHCClimateControl, SHCSession
 from enum import IntFlag
 from homeassistant.components.climate import ClimateEntity
@@ -40,6 +41,13 @@ class ClimateControl(SHCEntity, ClimateEntity):
     """Representation of a SHC room climate control."""
 
     _attr_target_temperature_step = 0.5
+    _attr_supported_features = (
+        ClimateEntityFeature.TURN_ON
+        | ClimateEntityFeature.TURN_OFF
+        | ClimateEntityFeature.PRESET_MODE
+        | ClimateEntityFeature.TARGET_TEMPERATURE
+    )
+    _enable_turn_on_off_backwards_compatibility = False
 
     def __init__(
         self,
