@@ -1,4 +1,5 @@
 """Platform for light integration."""
+
 from boschshcpy import SHCSession
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -50,10 +51,13 @@ class LightSwitch(SHCEntity, LightEntity):
     def __init__(self, device, parent_id, entry_id) -> None:
         super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
         self._supported_color_modes: set[ColorMode | str] = set()
+        self._attr_color_mode = ColorMode.BRIGHTNESS
         if self._device.supports_color_hsb:
             self._supported_color_modes.add(ColorMode.HS)
+            self._attr_color_mode = ColorMode.HS
         if self._device.supports_color_temp:
             self._supported_color_modes.add(ColorMode.COLOR_TEMP)
+            self._attr_color_mode = ColorMode.COLOR_TEMP
         if self._device.supports_brightness:
             if len(self._supported_color_modes) == 0:
                 # only add color mode brightness if no color variants
