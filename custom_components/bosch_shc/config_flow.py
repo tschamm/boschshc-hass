@@ -1,4 +1,5 @@
 """Config flow for Bosch Smart Home Controller integration."""
+
 from os import makedirs
 
 import voluptuous as vol
@@ -159,12 +160,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
                 existing_entry = await self.async_set_unique_id(self.info["unique_id"])
                 if existing_entry:
-                    self.hass.config_entries.async_update_entry(
+                    return self.async_update_reload_and_abort(
                         existing_entry,
                         data=entry_data,
                     )
-                    await self.hass.config_entries.async_reload(existing_entry.entry_id)
-                    return self.async_abort(reason="reauth_successful")
 
                 return self.async_create_entry(
                     title=self.info["title"],
