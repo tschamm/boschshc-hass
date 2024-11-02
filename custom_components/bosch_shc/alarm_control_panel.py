@@ -2,16 +2,9 @@
 from boschshcpy import SHCIntrusionSystem, SHCSession
 from homeassistant.components.alarm_control_panel import AlarmControlPanelEntity
 from homeassistant.components.alarm_control_panel.const import (
-    AlarmControlPanelEntityFeature,
+    AlarmControlPanelEntityFeature, AlarmControlPanelState
 )
 from homeassistant.const import (
-    STATE_ALARM_ARMED_AWAY,
-    STATE_ALARM_ARMED_CUSTOM_BYPASS,
-    STATE_ALARM_ARMED_HOME,
-    STATE_ALARM_ARMING,
-    STATE_ALARM_DISARMED,
-    STATE_ALARM_PENDING,
-    STATE_ALARM_TRIGGERED,
     Platform,
 )
 
@@ -102,36 +95,36 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         return False
 
     @property
-    def state(self):
+    def alarm_state(self):
         """Return the state of the device."""
         if self._device.alarm_state == SHCIntrusionSystem.AlarmState.ALARM_ON:
-            return STATE_ALARM_TRIGGERED
+            return AlarmControlPanelState.TRIGGERED
         if self._device.alarm_state == SHCIntrusionSystem.AlarmState.PRE_ALARM:
-            return STATE_ALARM_PENDING
+            return AlarmControlPanelState.PENDING
 
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_ARMING:
-            return STATE_ALARM_ARMING
+            return AlarmControlPanelState.ARMING
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_DISARMED:
-            return STATE_ALARM_DISARMED
+            return AlarmControlPanelState.DISARMED
 
         if self._device.arming_state == SHCIntrusionSystem.ArmingState.SYSTEM_ARMED:
             if (
                 self._device.active_configuration_profile
                 == SHCIntrusionSystem.Profile.FULL_PROTECTION
             ):
-                return STATE_ALARM_ARMED_AWAY
+                return AlarmControlPanelState.ARMED_AWAY
 
             if (
                 self._device.active_configuration_profile
                 == SHCIntrusionSystem.Profile.PARTIAL_PROTECTION
             ):
-                return STATE_ALARM_ARMED_HOME
+                return AlarmControlPanelState.ARMED_HOME
 
             if (
                 self._device.active_configuration_profile
                 == SHCIntrusionSystem.Profile.CUSTOM_PROTECTION
             ):
-                return STATE_ALARM_ARMED_CUSTOM_BYPASS
+                return AlarmControlPanelState.ARMED_CUSTOM_BYPASS
         return None
 
     @property
