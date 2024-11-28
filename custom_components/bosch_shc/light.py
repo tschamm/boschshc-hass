@@ -104,7 +104,7 @@ class LightSwitch(SHCEntity, LightEntity):
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
         if brightness is not None and self._device.supports_brightness:
-            self._device.brightness = round(brightness * 100 / 255)
+            self._device.brightness = max(round(brightness * 100 / 255), 1)
         if self._device.supports_color_hsb:
             if color_temp is not None:
                 if color_temp < self._device.min_color_temperature:
