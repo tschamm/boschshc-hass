@@ -27,7 +27,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             ClimateControl(
                 device=climate,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 name=f"Room Climate {session.room(room_id).name}",
             )
@@ -52,12 +51,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
     def __init__(
         self,
         device: SHCClimateControl,
-        parent_id: str,
         name: str,
         entry_id: str,
     ):
         """Initialize the SHC device."""
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        super().__init__(device=device, entry_id=entry_id)
         self._name = name
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 

@@ -1,4 +1,5 @@
 """Platform for cover integration."""
+
 from typing import Any
 from boschshcpy import (
     SHCSession,
@@ -41,7 +42,6 @@ async def async_setup_entry(
         entities.append(
             ShutterControlCover(
                 device=cover,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -51,7 +51,6 @@ async def async_setup_entry(
         entities.append(
             BlindsControlCover(
                 device=blind,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )

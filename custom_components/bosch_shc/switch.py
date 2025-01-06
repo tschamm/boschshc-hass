@@ -202,7 +202,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["smartplug"],
             )
@@ -213,7 +212,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["smartplug_routing"],
                 attr_name="Routing",
@@ -230,7 +228,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["lightswitch"],
             )
@@ -243,7 +240,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["smartplugcompact"],
             )
@@ -256,7 +252,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["micromodule_relay_switch"],
             )
@@ -271,7 +266,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraeyes"],
             )
@@ -282,7 +276,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraeyes_cameralight"],
                 attr_name="Light",
@@ -294,7 +287,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraeyes_notification"],
                 attr_name="Notification",
@@ -308,7 +300,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360"],
             )
@@ -319,7 +310,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360_notification"],
                 attr_name="Notification",
@@ -336,7 +326,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=presence_simulation_system,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["presencesimulation"],
             )
@@ -349,7 +338,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["bypass"],
             )
@@ -358,7 +346,6 @@ async def async_setup_entry(
             entities.append(
                 SHCSwitch(
                     device=switch,
-                    parent_id=session.information.unique_id,
                     entry_id=config_entry.entry_id,
                     description=SWITCH_TYPES["vibration_enabled"],
                     attr_name="VibrationEnabled",
@@ -370,7 +357,6 @@ async def async_setup_entry(
             entities.append(
                 SHCSwitch(
                     device=switch,
-                    parent_id=session.information.unique_id,
                     entry_id=config_entry.entry_id,
                     description=SWITCH_TYPES["silent_mode"],
                     attr_name="SilentMode",
@@ -389,7 +375,6 @@ async def async_setup_entry(
         entities.append(
             SHCSwitch(
                 device=switch,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["child_lock"],
                 attr_name="ChildLock",
@@ -408,7 +393,6 @@ async def async_setup_entry(
             device=switch,
             hass=hass,
             session=session,
-            parent_id=session.information.unique_id,
             entry_id=config_entry.entry_id,
             description=SWITCH_TYPES["user_defined_state"],
         )
@@ -434,13 +418,12 @@ class SHCSwitch(SHCEntity, SwitchEntity):
     def __init__(
         self,
         device: SHCDevice,
-        parent_id: str,
         entry_id: str,
         description: SHCSwitchEntityDescription,
         attr_name: str | None = None,
     ) -> None:
         """Initialize a SHC switch."""
-        super().__init__(device, parent_id, entry_id)
+        super().__init__(device, entry_id)
         self.entity_description = description
         self._attr_name = (
             f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
@@ -487,7 +470,6 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         device: SHCUserDefinedState,
         hass: HomeAssistant,
         session: SHCSession,
-        parent_id: str,
         entry_id: str,
         description: SHCSwitchEntityDescription,
         attr_name: str | None = None,
@@ -495,7 +477,6 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         """Initialize a SHC switch."""
         self._device = device
         self._session = session
-        self._parent_id = parent_id
         self._entry_id = entry_id
         self.entity_description = description
         self._attr_name = (
@@ -505,9 +486,9 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             f"userdefinedstate_{self._device.name}"
         )
         self._attr_unique_id = (
-            f"{self._parent_id}_{device.id}"
+            f"{device.root_device_id}_{device.id}"
             if attr_name is None
-            else f"{self._parent_id}_{device.id}_{attr_name.lower()}"
+            else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
         self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
 

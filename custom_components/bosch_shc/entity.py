@@ -1,4 +1,5 @@
 """Bosch Smart Home Controller base entity."""
+
 from boschshcpy.device import SHCDevice
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
@@ -72,10 +73,9 @@ async def async_migrate_to_new_unique_id(
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
-    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the generic SHC device."""
         self._device = device
-        self._parent_id = parent_id
         self._entry_id = entry_id
         self._attr_name = f"{device.name}"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
@@ -122,12 +122,7 @@ class SHCEntity(Entity):
             "name": self.device_name,
             "manufacturer": self._device.manufacturer,
             "model": self._device.device_model,
-            "via_device": (
-                DOMAIN,
-                self._device.parent_device_id
-                if self._device.parent_device_id is not None
-                else self._parent_id,
-            ),
+            "via_device": (DOMAIN, self._device.root_device_id),
         }
 
     @property

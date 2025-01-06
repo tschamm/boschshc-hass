@@ -47,7 +47,6 @@ async def async_setup_entry(
         entities.append(
             SHCRelayButton(
                 device=button,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -62,12 +61,11 @@ class SHCRelayButton(SHCEntity, ButtonEntity):
     def __init__(
         self,
         device: SHCDevice,
-        parent_id: str,
         entry_id: str,
         attr_name: str | None = None,
     ) -> None:
         """Initialize a SHC switch."""
-        super().__init__(device, parent_id, entry_id)
+        super().__init__(device, entry_id)
         self._attr_name = (
             f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
         )

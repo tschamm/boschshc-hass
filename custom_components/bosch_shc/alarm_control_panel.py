@@ -1,8 +1,10 @@
 """Platform for alarm control panel integration."""
+
 from boschshcpy import SHCIntrusionSystem, SHCSession
 from homeassistant.components.alarm_control_panel import AlarmControlPanelEntity
 from homeassistant.components.alarm_control_panel.const import (
-    AlarmControlPanelEntityFeature, AlarmControlPanelState
+    AlarmControlPanelEntityFeature,
+    AlarmControlPanelState,
 )
 from homeassistant.const import (
     Platform,
@@ -28,7 +30,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     )
     alarm_control_panel = IntrusionSystemAlarmControlPanel(
         device=intrusion_system,
-        parent_id=session.information.unique_id,
         entry_id=config_entry.entry_id,
     )
     devices.append(alarm_control_panel)
@@ -39,10 +40,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
-    def __init__(self, device: SHCIntrusionSystem, parent_id: str, entry_id: str):
+    def __init__(self, device: SHCIntrusionSystem, entry_id: str):
         """Initialize the intrusion detection control."""
         self._device = device
-        self._parent_id = parent_id
         self._entry_id = entry_id
         self._attr_unique_id = f"{self._device.root_device_id}_{self._device.id}"
 
@@ -80,7 +80,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
             "model": self._device.device_model,
             "via_device": (
                 DOMAIN,
-                self._parent_id,
+                self._device.root_device_id,
             ),
         }
 

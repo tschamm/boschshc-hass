@@ -54,7 +54,6 @@ async def async_setup_entry(
             entities.append(
                 UniversalSwitchEvent(
                     switch_device,
-                    parent_id=session.information.unique_id,
                     entry_id=entry.entry_id,
                     key_id=keystate,
                 )
@@ -67,7 +66,6 @@ async def async_setup_entry(
                 session,
                 hass,
                 entry_id=entry.entry_id,
-                parent_id=session.information.unique_id,
             )
         )
 
@@ -75,7 +73,6 @@ async def async_setup_entry(
         entities.append(
             MotionDetectorEvent(
                 device=motion_detector,
-                parent_id=session.information.unique_id,
                 entry_id=entry.entry_id,
             )
         )
@@ -85,7 +82,6 @@ async def async_setup_entry(
         entities.append(
             SmokeDetectionSystemEvent(
                 device=smoke_detection_system,
-                parent_id=session.information.unique_id,
                 entry_id=entry.entry_id,
             )
         )
@@ -94,7 +90,6 @@ async def async_setup_entry(
         entities.append(
             SmokeDetectorEvent(
                 device=smoke_detector,
-                parent_id=session.information.unique_id,
                 entry_id=entry.entry_id,
             )
         )
@@ -108,11 +103,9 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]
 
-    def __init__(
-        self, device: SHCUniversalSwitch, parent_id: str, entry_id: str, key_id: str
-    ) -> None:
+    def __init__(self, device: SHCUniversalSwitch, entry_id: str, key_id: str) -> None:
         """Initialize the Universal Switch device."""
-        super().__init__(device, parent_id, entry_id)
+        super().__init__(device, entry_id)
 
         self._device = device
         self._key_id = key_id
@@ -155,7 +148,7 @@ class SHCScenarioEvent(EventEntity):
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["SCENARIO"]
 
-    def __init__(self, scenario, session, hass, entry_id: str, parent_id: str) -> None:
+    def __init__(self, scenario, session, hass, entry_id: str) -> None:
         """Initialize the Scenario device."""
 
         self._scenario = scenario
@@ -163,7 +156,7 @@ class SHCScenarioEvent(EventEntity):
         self.entity_id = ENTITY_ID_FORMAT.format(f"scenario_{self._scenario.name}")
 
         self._attr_name = f"{self._scenario.name} Scenario"
-        self._attr_unique_id = f"{parent_id}_{self._scenario.id}"
+        self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"
 
         self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
 
@@ -214,11 +207,9 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
     _attr_device_class = EventDeviceClass.MOTION
     _attr_event_types = ["MOTION"]
 
-    def __init__(
-        self, device: SHCMotionDetector, parent_id: str, entry_id: str
-    ) -> None:
+    def __init__(self, device: SHCMotionDetector, entry_id: str) -> None:
         """Initialize the Universal Switch device."""
-        super().__init__(device, parent_id, entry_id)
+        super().__init__(device, entry_id)
         self._device = device
 
     async def async_added_to_hass(self) -> None:
@@ -250,11 +241,10 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
     def __init__(
         self,
         device: SHCSmokeDetectionSystem,
-        parent_id: str,
         entry_id: str,
     ):
         """Initialize the smoke detection system device."""
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     async def async_added_to_hass(self) -> None:
@@ -286,11 +276,10 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
     def __init__(
         self,
         device: SHCSmokeDetector,
-        parent_id: str,
         entry_id: str,
     ):
         """Initialize the smoke detection system device."""
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     async def async_added_to_hass(self) -> None:

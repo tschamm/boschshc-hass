@@ -64,7 +64,6 @@ async def async_setup_entry(
         """Add Shutter Contact 2 Binary Sensor."""
         binary_sensor = ShutterContactSensor(
             device=device,
-            parent_id=session.information.unique_id,
             entry_id=config_entry.entry_id,
         )
         async_add_entities([binary_sensor])
@@ -92,7 +91,6 @@ async def async_setup_entry(
             MotionDetectionSensor(
                 hass=hass,
                 device=binary_sensor,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -104,7 +102,6 @@ async def async_setup_entry(
         entities.append(
             SmokeDetectorSensor(
                 device=binary_sensor,
-                parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -115,7 +112,6 @@ async def async_setup_entry(
         entities.append(
             SmokeDetectionSystemSensor(
                 device=binary_sensor,
-                parent_id=session.information.unique_id,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -128,7 +124,6 @@ async def async_setup_entry(
         entities.append(
             WaterLeakageDetectorSensor(
                 device=binary_sensor,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -138,7 +133,6 @@ async def async_setup_entry(
             entities.append(
                 ShutterContactVibrationSensor(
                     device=binary_sensor,
-                    parent_id=session.information.unique_id,
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -162,7 +156,6 @@ async def async_setup_entry(
             entities.append(
                 BatterySensor(
                     device=binary_sensor,
-                    parent_id=session.information.unique_id,
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -211,9 +204,9 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.VIBRATION
 
-    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
-        super().__init__(device, parent_id, entry_id)
+        super().__init__(device, entry_id)
         self._attr_name = f"{device.name} Vibration"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
 
@@ -231,11 +224,11 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.MOTION
 
-    def __init__(self, hass, device, parent_id: str, entry_id: str):
+    def __init__(self, hass, device, entry_id: str):
         """Initialize the motion detection device."""
         self.hass = hass
         self._service = None
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
             if service.id == "LatestMotion":
@@ -306,14 +299,13 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     def __init__(
         self,
         device: SHCSmokeDetector,
-        parent_id: str,
         hass: HomeAssistant,
         entry_id: str,
     ):
         """Initialize the smoke detector device."""
         self._hass = hass
         self._service = None
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
             if service.id == "Alarm":
@@ -415,14 +407,13 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     def __init__(
         self,
         device: SHCSmokeDetectionSystem,
-        parent_id: str,
         hass: HomeAssistant,
         entry_id: str,
     ):
         """Initialize the smoke detection system device."""
         self._hass = hass
         self._service = None
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
+        super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._attr_name = f"{device.root_device_id} {device.name}"
 
@@ -482,9 +473,9 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.BATTERY
 
-    def __init__(self, device: SHCDevice, parent_id: str, entry_id: str) -> None:
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
-        super().__init__(device, parent_id, entry_id)
+        super().__init__(device, entry_id)
         self._attr_name = f"{device.name} Battery"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC

@@ -3,11 +3,8 @@
 from boschshcpy import SHCSession
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_HS_COLOR,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
-    SUPPORT_COLOR_TEMP,
     ColorMode,
     LightEntity,
 )
@@ -36,7 +33,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         entities.append(
             LightSwitch(
                 device=light,
-                parent_id=session.information.unique_id,
                 entry_id=config_entry.entry_id,
             )
         )
@@ -48,25 +44,22 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class LightSwitch(SHCEntity, LightEntity):
     """Representation of a SHC controlled light."""
 
-    def __init__(self, device, parent_id, entry_id) -> None:
-        super().__init__(device=device, parent_id=parent_id, entry_id=entry_id)
-        self._supported_color_modes: set[ColorMode | str] = set()
+    _attr_supported_color_modes: set[ColorMode] | set[str] | None = None
+
+    def __init__(self, device, entry_id) -> None:
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_supported_color_modes: set[ColorMode | str] = set()
         self._attr_color_mode = ColorMode.BRIGHTNESS
         if self._device.supports_color_hsb:
-            self._supported_color_modes.add(ColorMode.HS)
+            self._attr_supported_color_modes.add(ColorMode.HS)
             self._attr_color_mode = ColorMode.HS
         if self._device.supports_color_temp:
-            self._supported_color_modes.add(ColorMode.COLOR_TEMP)
+            self._attr_supported_color_modes.add(ColorMode.COLOR_TEMP)
             self._attr_color_mode = ColorMode.COLOR_TEMP
         if self._device.supports_brightness:
-            if len(self._supported_color_modes) == 0:
+            if len(self._attr_supported_color_modes) == 0:
                 # only add color mode brightness if no color variants
-                self._supported_color_modes.add(ColorMode.BRIGHTNESS)
-
-    @property
-    def supported_color_modes(self) -> set | None:
-        """Flag supported features."""
-        return self._supported_color_modes
+                self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
 
     @property
     def is_on(self):
@@ -100,7 +93,7 @@ class LightSwitch(SHCEntity, LightEntity):
     def turn_on(self, **kwargs):
         """Turn the light on."""
         hs_color = kwargs.get(ATTR_HS_COLOR)
-        color_temp = kwargs.get(ATTR_COLOR_TEMP)
+        color_temp = kwargs.get(ATTR_COLOR_TEMP_KELVIN)
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
         if brightness is not None and self._device.supports_brightness:

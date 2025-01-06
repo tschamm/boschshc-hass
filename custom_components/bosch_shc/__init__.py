@@ -280,7 +280,7 @@ class SwitchDeviceEventListener:
             identifiers={(DOMAIN, self._device.id)},
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
-            via_device=(DOMAIN, self._device.parent_device_id),
+            via_device=(DOMAIN, self._device.root_device_id),
         )
         self.device_id = device_entry.id
 
