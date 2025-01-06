@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 import voluptuous as vol
 from boschshcpy import SHCDevice, SHCSession
-from homeassistant.components.automation import TriggerActionType
+from homeassistant.helpers.trigger import TriggerActionType
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (
     InvalidDeviceAutomationConfig,
