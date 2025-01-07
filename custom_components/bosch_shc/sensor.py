@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from boschshcpy import SHCSession
+from boschshcpy import SHCSession, SHCEmma
 from boschshcpy.device import SHCDevice
 
 from homeassistant.components.sensor import (
@@ -19,7 +19,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     Platform,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -35,6 +35,7 @@ async def async_setup_entry(
     """Set up the SHC sensor platform."""
     entities: list[SensorEntity] = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    sensor: SHCDevice
 
     for sensor in session.device_helper.thermostats:
         await async_migrate_to_new_unique_id(
@@ -241,6 +242,29 @@ async def async_setup_entry(
     if entities:
         async_add_entities(entities)
 
+    @callback
+    def async_add_emmapowersensor(
+        sensor: SHCDevice,
+    ) -> None:
+        """Add Emma Power Sensor."""
+        print(f"adding emma power sensor: {sensor.status == "AVAILABLE"}")
+        if sensor.status == "AVAILABLE":
+            sensor = EmmaPowerSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+            async_add_entities([sensor])
+
+    # add all current items in session
+    async_add_emmapowersensor(session.emma)
+
+    # register listener for emma power sensor
+    config_entry.async_on_unload(
+        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
+            session.subscribe((SHCEmma, async_add_emmapowersensor))
+        )
+    )
+
 
 class TemperatureSensor(SHCEntity, SensorEntity):
     """Representation of an SHC temperature reporting sensor."""
@@ -402,6 +426,25 @@ class PowerSensor(SHCEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         return self._device.powerconsumption
+
+
+class EmmaPowerSensor(SHCEntity, SensorEntity):
+    """Representation of an SHC power reporting sensor."""
+
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, device: SHCEmma, entry_id: str) -> None:
+        """Initialize an SHC power reporting sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = f"{device.name} Power"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        return self._device.parsedInformation
 
 
 class EnergySensor(SHCEntity, SensorEntity):
