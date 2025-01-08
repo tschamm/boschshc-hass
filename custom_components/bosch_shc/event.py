@@ -178,7 +178,6 @@ class SHCScenarioEvent(EventEntity):
             "name": self._shc.name,
             "manufacturer": self._shc.manufacturer,
             "model": self._shc.model,
-            "via_device": self._shc.via_device_id,
         }
 
     async def async_added_to_hass(self) -> None:

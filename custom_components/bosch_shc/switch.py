@@ -563,5 +563,4 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             "name": self._shc.name,
             "manufacturer": self._shc.manufacturer,
             "model": self._shc.model,
-            "via_device": self._shc.via_device_id,
         }
