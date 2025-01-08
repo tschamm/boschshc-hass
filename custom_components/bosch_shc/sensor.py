@@ -239,31 +239,16 @@ async def async_setup_entry(
             )
         )
 
-    if entities:
-        async_add_entities(entities)
-
-    @callback
-    def async_add_emmapowersensor(
-        sensor: SHCDevice,
-    ) -> None:
-        """Add Emma Power Sensor."""
-        print(f"adding emma power sensor: {sensor.status == "AVAILABLE"}")
-        if sensor.status == "AVAILABLE":
-            sensor = EmmaPowerSensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
-            )
-            async_add_entities([sensor])
-
-    # add all current items in session
-    async_add_emmapowersensor(session.emma)
-
-    # register listener for emma power sensor
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
-            session.subscribe((SHCEmma, async_add_emmapowersensor))
+    sensor = session.emma
+    entities.append(
+        EmmaPowerSensor(
+            device=sensor,
+            entry_id=config_entry.entry_id,
         )
     )
+
+    if entities:
+        async_add_entities(entities)
 
 
 class TemperatureSensor(SHCEntity, SensorEntity):
@@ -431,6 +416,7 @@ class PowerSensor(SHCEntity, SensorEntity):
 class EmmaPowerSensor(SHCEntity, SensorEntity):
     """Representation of an SHC power reporting sensor."""
 
+    _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -440,6 +426,20 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):
         super().__init__(device, entry_id)
         self._attr_name = f"{device.name} Power"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
+
+    async def async_added_to_hass(self):
+        """Subscribe to SHC events."""
+        await super().async_added_to_hass()
+
+        def update_entity_information():
+            self.schedule_update_ha_state()
+
+        self._device.subscribe_callback(self.entity_id, update_entity_information)
+
+    async def async_will_remove_from_hass(self):
+        """Unsubscribe from SHC events."""
+        await super().async_will_remove_from_hass()
+        self._device.unsubscribe_callback(self.entity_id)
 
     @property
     def native_value(self):
