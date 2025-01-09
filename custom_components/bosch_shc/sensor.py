@@ -443,8 +443,15 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Return the state of the sensor."""
-        return self._device.parsedInformation
+        """Return the state of the sensor. Negative value if power is consumed from the grid, positive if fed to the grid."""
+        return self._device.value
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "power_flow": self._device.localizedSubtitles,
+        }
 
 
 class EnergySensor(SHCEntity, SensorEntity):
