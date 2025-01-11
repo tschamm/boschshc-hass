@@ -41,10 +41,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     _attr_target_temperature_step = 0.5
     _attr_supported_features = (
-        ClimateEntityFeature.TURN_ON
-        | ClimateEntityFeature.TURN_OFF
+        ClimateEntityFeature.TARGET_TEMPERATURE 
         | ClimateEntityFeature.PRESET_MODE
-        | ClimateEntityFeature.TARGET_TEMPERATURE
+        | ClimateEntityFeature.TURN_OFF
+        | ClimateEntityFeature.TURN_ON
     )
     _enable_turn_on_off_backwards_compatibility = False
 
@@ -148,8 +148,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def supported_features(self) -> ClimateEntityFeature:
         """Return supported features."""
-        return ClimateEntityFeature(
-            ClimateEntityFeature.TARGET_TEMPERATURE + ClimateEntityFeature.PRESET_MODE
+        return (
+            ClimateEntityFeature.TARGET_TEMPERATURE 
+            | ClimateEntityFeature.PRESET_MODE
+            | ClimateEntityFeature.TURN_OFF 
+            | ClimateEntityFeature.TURN_ON
         )
 
     def set_temperature(self, **kwargs):
@@ -172,7 +175,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if self.min_temp <= temperature <= self.max_temp:
             self._device.setpoint_temperature = float(round(temperature * 2.0) / 2.0)
 
-    def set_hvac_mode(self, hvac_mode: str):
+    async def async_set_hvac_mode(self, hvac_mode: str):
         """Set hvac mode."""
         if hvac_mode not in self.hvac_modes:
             return
@@ -180,17 +183,29 @@ class ClimateControl(SHCEntity, ClimateEntity):
             return
 
         if hvac_mode == HVACMode.AUTO:
-            self._device.summer_mode = False
-            self._device.operation_mode = (
+            await self.hass.async_add_executor_job(
+                setattr, self._device, "summer_mode", False
+            )
+            await self.hass.async_add_executor_job(
+                setattr, 
+                self._device,
+                "operation_mode",
                 SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
             )
         if hvac_mode == HVACMode.HEAT:
-            self._device.summer_mode = False
-            self._device.operation_mode = (
+            await self.hass.async_add_executor_job(
+                setattr, self._device, "summer_mode", False
+            )
+            await self.hass.async_add_executor_job(
+                setattr,
+                self._device,
+                "operation_mode",
                 SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
             )
         if hvac_mode == HVACMode.OFF:
-            self._device.summer_mode = True
+            await self.hass.async_add_executor_job(
+                setattr, self._device, "summer_mode", True
+            )
 
     def set_preset_mode(self, preset_mode: str):
         """Set preset mode."""
@@ -219,3 +234,13 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
             if not self._device.low:
                 self._device.low = True
+
+    async def async_turn_on(self) -> None:
+        """Turn the climate device on."""
+        if self.hvac_mode == HVACMode.OFF:
+            await self.async_set_hvac_mode(HVACMode.HEAT)
+
+    async def async_turn_off(self) -> None:
+        """Turn the climate device off."""
+        if self.hvac_mode != HVACMode.OFF:
+            await self.async_set_hvac_mode(HVACMode.OFF)
