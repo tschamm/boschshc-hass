@@ -91,22 +91,6 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         """Return if the cover is closed or not."""
         return self.current_cover_position == 0
 
-    @property
-    def is_opening(self):
-        """Return if the cover is opening or not."""
-        return (
-            self._device.operation_state
-            == SHCShutterControl.ShutterControlService.State.OPENING
-        )
-
-    @property
-    def is_closing(self):
-        """Return if the cover is closing or not."""
-        return (
-            self._device.operation_state
-            == SHCShutterControl.ShutterControlService.State.CLOSING
-        )
-
     def open_cover(self, **kwargs):
         """Open the cover."""
         self._device.level = 1.0
@@ -119,6 +103,13 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         """Move the cover to a specific position."""
         position = kwargs[ATTR_POSITION]
         self._device.level = position / 100.0
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "operation_state": self._device.operation_state,
+        }
 
 
 class BlindsControlCover(ShutterControlCover, CoverEntity):
