@@ -161,7 +161,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if temperature is None:
             return
 
-        self.set_hvac_mode(
+        self.async_set_hvac_mode(
             kwargs.get(ATTR_HVAC_MODE)
         )  # set_temperature args may provide HVAC mode as well
 
