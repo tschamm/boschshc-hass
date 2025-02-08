@@ -14,6 +14,7 @@ from homeassistant import config_entries, core
 from homeassistant.components import zeroconf
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .const import (
     CONF_HOSTNAME,
@@ -188,7 +189,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_zeroconf(
-        self, discovery_info: zeroconf.ZeroconfServiceInfo
+        self, discovery_info: ZeroconfServiceInfo
     ) -> FlowResult:
         """Handle zeroconf discovery."""
         if not discovery_info.name.startswith("Bosch SHC"):

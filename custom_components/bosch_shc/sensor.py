@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from boschshcpy import SHCSession, SHCEmma
+from boschshcpy import SHCSession
 from boschshcpy.device import SHCDevice
 
 from homeassistant.components.sensor import (
@@ -415,6 +415,8 @@ class PowerSensor(SHCEntity, SensorEntity):
 
 class EmmaPowerSensor(SHCEntity, SensorEntity):
     """Representation of an SHC power reporting sensor."""
+
+    from boschshcpy import SHCEmma
 
     _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.POWER
