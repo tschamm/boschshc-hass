@@ -68,36 +68,6 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         | CoverEntityFeature.STOP
         | CoverEntityFeature.SET_POSITION
     )
-    _current_operation_state = None
-    _l1_position = _l2_position = None
-
-    def _update_attr(self) -> None:
-        """Recomputes the attributes values either at init or when the device state changes."""
-        self._attr_current_cover_position = round(self._device.level * 100.0)
-        self._current_operation_state = self._device.operation_state
-
-        if self._l1_position is None:
-            self._l2_position = self._l1_position = self._attr_current_cover_position
-
-        # calculate movement direction between current cover position and second last reported position
-        if (
-            self._current_operation_state
-            == SHCShutterControl.ShutterControlService.State.MOVING
-        ):
-            if self._l2_position > self._attr_current_cover_position:
-                self._attr_is_closing = True
-            else:
-                self._attr_is_opening = True
-
-        if (
-            self._current_operation_state
-            == SHCShutterControl.ShutterControlService.State.STOPPED
-        ):
-            self._attr_is_closing = False
-            self._attr_is_opening = False
-
-        self._l2_position = self._l1_position
-        self._l1_position = self._attr_current_cover_position
 
     @property
     def device_class(self) -> CoverDeviceClass | None:
@@ -114,28 +84,20 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 
     def stop_cover(self, **kwargs):
         """Stop the cover."""
-        self._attr_is_opening = False
-        self._attr_is_closing = False
         self._device.stop()
 
     @property
     def is_closed(self):
         """Return if the cover is closed or not."""
-        return self._l2_position == 0
+        return self.current_cover_position == 0
 
     def open_cover(self, **kwargs):
         """Open the cover."""
-        # opens effectively only if cover is not already opening and not fully opened
-        if not self._attr_is_opening and self.current_cover_position != 100:
-            self._attr_is_opening = True
-            self._device.level = 1.0
+        self._device.level = 1.0
 
     def close_cover(self, **kwargs):
         """Close cover."""
-        # closes effectively only if cover is not already closing and not fully closed
-        if not self._attr_is_closing and self.current_cover_position != 0:
-            self._attr_is_closing = True
-            self._device.level = 0.0
+        self._device.level = 0.0
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
