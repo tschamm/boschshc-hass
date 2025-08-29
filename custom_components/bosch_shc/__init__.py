@@ -30,8 +30,10 @@ from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     ATTR_SERVICE_ID,
     ATTR_TITLE,
+    CERT_EXPIRY_WARNING_DAYS,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
+    DOMAIN_NOTIFICATION_ID,
     DATA_POLLING_HANDLER,
     DATA_SESSION,
     DATA_SHC,
@@ -43,6 +45,7 @@ from .const import (
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
+from .certificate import parse_certificate
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -62,6 +65,44 @@ PLATFORMS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bosch SHC from a config entry."""
     data = entry.data
+
+    # Pre-flight certificate validity check for clearer user feedback
+    cert_path = data.get(CONF_SSL_CERTIFICATE, "")
+    try:
+        cert_info = parse_certificate(cert_path) if cert_path else None
+    except Exception as err:  # broad: parsing issues shouldn't fully block reauth paths
+        LOGGER.warning(
+            "Unable to parse Bosch SHC certificate (%s): %s", cert_path, err
+        )
+        cert_info = None
+
+    if cert_info is not None:
+        if cert_info.days_remaining < 0:
+            from homeassistant.exceptions import ConfigEntryAuthFailed
+
+            expiry = cert_info.not_after.date()
+            LOGGER.error(
+                "Bosch SHC client certificate expired on %s. Reconfigure integration (put controller in pairing mode and re-authenticate).",
+                expiry,
+            )
+            raise ConfigEntryAuthFailed(
+                f"Client certificate expired on {expiry}. Reconfigure the integration."
+            )
+        if cert_info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
+            expiry = cert_info.not_after.date()
+            LOGGER.warning(
+                "Bosch SHC client certificate will expire in %d days (on %s). Put controller in pairing mode and reconfigure integration to renew.",
+                cert_info.days_remaining,
+                expiry,
+            )
+            hass.components.persistent_notification.create(
+                (
+                    f"Bosch SHC client certificate will expire in {cert_info.days_remaining} days (on {expiry}).\n"
+                    "To renew: Put the controller into pairing mode (press front button until LEDs flash) and start re-authentication from the integration options."
+                ),
+                title="Bosch SHC certificate expiring",
+                notification_id=DOMAIN_NOTIFICATION_ID,
+            )
 
     zeroconf = await async_get_instance(hass)
     try:

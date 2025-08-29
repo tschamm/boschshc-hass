@@ -31,6 +31,10 @@ SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
 
+# Certificate handling
+CERT_EXPIRY_WARNING_DAYS = 30
+DOMAIN_NOTIFICATION_ID = "bosch_shc_certificate"
+
 SUPPORTED_INPUTS_EVENTS_TYPES = {
     "PRESS_SHORT",
     "PRESS_LONG",
