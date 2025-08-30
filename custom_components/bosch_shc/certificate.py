@@ -40,14 +40,11 @@ def parse_certificate(cert_path: str) -> CertificateInfo:
 
     now = datetime.now(timezone.utc)
     # Use *_utc properties when available (cryptography >= 41), fallback otherwise.
-    if hasattr(cert, "not_valid_before_utc"):
-        not_before = cert.not_valid_before_utc
-    else:  # fallback -> add tzinfo
-        not_before = cert.not_valid_before.replace(tzinfo=timezone.utc)
-
-    if hasattr(cert, "not_valid_after_utc"):
-        not_after = cert.not_valid_after_utc
-    else:
-        not_after = cert.not_valid_after.replace(tzinfo=timezone.utc)
+    not_before = getattr(cert, "not_valid_before_utc", cert.not_valid_before)
+    if not_before.tzinfo is None:
+        not_before = not_before.replace(tzinfo=timezone.utc)
+    not_after = getattr(cert, "not_valid_after_utc", cert.not_valid_after)
+    if not_after.tzinfo is None:
+        not_after = not_after.replace(tzinfo=timezone.utc)
     days_remaining = int((not_after - now).total_seconds() // 86400)
     return CertificateInfo(not_before, not_after, days_remaining)
