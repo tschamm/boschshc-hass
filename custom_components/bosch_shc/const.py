@@ -19,6 +19,7 @@ DATA_SESSION = "session"
 DATA_SHC = "shc"
 DATA_TITLE = "title"
 DATA_POLLING_HANDLER = "polling_handler"
+DATA_CERT_CHECK_UNSUB = "cert_check_unsub"
 
 DOMAIN = "bosch_shc"
 

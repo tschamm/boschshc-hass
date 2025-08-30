@@ -126,7 +126,7 @@ Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/1158
 * After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
 * Hue Lights added to SHC do not appear in HomeAssistant. Please use the provided [hue component](https://www.home-assistant.io/integrations/hue/) instead.
 * Arming and disarming of alarm control panel does not support using a code.
-* Client certificate renewal is manual. A warning (log + persistent notification) appears 30 days before the stored client certificate expires; after expiry the integration requires re-auth (put controller in pairing mode and reconfigure).
+* Client certificate renewal is manual. A warning (log + persistent notification) appears 30 days before the stored client certificate expires; after expiry the integration requires re-auth (put controller in pairing mode and reconfigure). A daily background check runs to surface warnings without requiring a restart.
 
 [buymecoffee]: https://www.buymeacoffee.com/tschamm
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20double%20espresso-donate-yellow.svg

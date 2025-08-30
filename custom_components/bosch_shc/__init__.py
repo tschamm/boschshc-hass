@@ -23,6 +23,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -69,7 +70,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Pre-flight certificate validity check for clearer user feedback
     cert_path = data.get(CONF_SSL_CERTIFICATE, "")
     try:
-        cert_info = parse_certificate(cert_path) if cert_path else None
+        cert_info = (
+            await hass.async_add_executor_job(parse_certificate, cert_path)
+            if cert_path
+            else None
+        )
     except Exception as err:  # broad: parsing issues shouldn't fully block reauth paths
         LOGGER.warning(
             "Unable to parse Bosch SHC certificate (%s): %s", cert_path, err
@@ -142,6 +147,39 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_TITLE: entry.title,
     }
 
+    # Daily certificate re-check scheduling
+    from datetime import timedelta
+    from .const import DATA_CERT_CHECK_UNSUB
+
+    def _scheduled_cert_check(_now):
+        async def _run():
+            try:
+                info = await hass.async_add_executor_job(parse_certificate, cert_path)
+            except Exception:  # silently ignore parsing issues
+                return
+            if info.days_remaining < 0:
+                LOGGER.error(
+                    "Bosch SHC client certificate expired on %s (daily check). Triggering reload for re-auth.",
+                    info.not_after.date(),
+                )
+                hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+            elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
+                expiry = info.not_after.date()
+                hass.components.persistent_notification.create(
+                    (
+                        f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
+                        "To renew: Put the controller into pairing mode and re-authenticate the integration."
+                    ),
+                    title="Bosch SHC certificate expiring",
+                    notification_id=DOMAIN_NOTIFICATION_ID,
+                )
+
+        hass.async_create_task(_run())
+
+    hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = async_track_time_interval(
+        hass, _scheduled_cert_check, timedelta(days=1)
+    )
+
     async def stop_polling(event):
         """Stop polling service."""
         await hass.async_add_executor_job(session.stop_polling)
@@ -191,6 +229,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session.unsubscribe_scenario_callback("shc")
 
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
+    # cancel daily cert check
+    from .const import DATA_CERT_CHECK_UNSUB
+    unsub = hass.data[DOMAIN][entry.entry_id].pop(DATA_CERT_CHECK_UNSUB, None)
+    if unsub:
+        unsub()
     hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
     await hass.async_add_executor_job(session.stop_polling)
 
