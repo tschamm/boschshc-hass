@@ -55,14 +55,18 @@ The following platforms are implemented:
 
 For installation, follow these steps to add Bosch Smart Home devices to `HomeAssistant`.
 
-1. Install bosch_shc custom component
+## Installation via HACS
+
+1. Install bosch_shc custom component in HACS
 2. Configure bosch_shc integration in HA.
 
-1.) To install `bosch_shc` as custom component, inside your HA configuration directory create a new folder called  `custom_components`. This is the folder that Home Assistant will look at when looking for custom code. Install the custom component there:
-Just copy paste the content of the `boschshc-hass/bosch_shc` folder in your  `config/custom_components`  directory. As example, you will get the  `entity.py`  file in the following path:  `config/custom_components/bosch_shc/entity.py`.
+## Manual Installation
+
+1. To install `bosch_shc` as custom component, inside your HA configuration directory create a new folder called  `custom_components`. This is the folder that Home Assistant will look at when looking for custom code. Install the custom component there:
+  Just copy paste the content of the `boschshc-hass/bosch_shc` folder in your  `config/custom_components`  directory. As example, you will get the  `entity.py`  file in the following path:  `config/custom_components/bosch_shc/entity.py`.
 Afterwards, restart `HomeAssistant`.
 
-2.) For configuration of `bosch_shc` custom component, follow the steps described in [configuration](#configuration). During configuration, you have to enter the password of your SHC, which you defined during setup of your SHC.
+2. For configuration of `bosch_shc` custom component, follow the steps described in [configuration](#configuration). During configuration, you have to enter the password of your SHC, which you defined during setup of your SHC.
 
 
 # Configuration
