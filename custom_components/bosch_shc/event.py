@@ -39,6 +39,15 @@ from .const import (
 )
 
 
+def _format(input_string: str) -> str:
+    import re
+
+    """Format a string to be used in an entity_id."""
+    for search, replace in {"ä": "ae", "ö": "oe", "ü": "ue"}.items():
+        input_string = input_string.casefold().replace(search, replace)
+    return re.sub(r"\s+", "_", re.sub("[^0-9a-z_ ]", "", input_string))
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -109,8 +118,10 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
 
         self._device = device
         self._key_id = key_id
-        self.entity_id = ENTITY_ID_FORMAT.format(f"{self._device.name}_button_{key_id}")
 
+        self.entity_id = ENTITY_ID_FORMAT.format(
+            f"{_format(self._device.name)}_button_{key_id.casefold()}"
+        )
         self._attr_name = f"{self._device.name} Button {key_id}"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
@@ -153,8 +164,10 @@ class SHCScenarioEvent(EventEntity):
 
         self._scenario = scenario
         self._session = session
-        self.entity_id = ENTITY_ID_FORMAT.format(f"scenario_{self._scenario.name}")
 
+        self.entity_id = ENTITY_ID_FORMAT.format(
+            f"scenario_{_format(self._scenario.name)}"
+        )
         self._attr_name = f"{self._scenario.name} Scenario"
         self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"
 
