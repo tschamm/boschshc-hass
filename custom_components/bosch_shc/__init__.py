@@ -2,6 +2,7 @@
 
 import voluptuous as vol
 import functools as ft
+import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
 from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError
 from homeassistant.components.zeroconf import async_get_instance
@@ -18,6 +19,8 @@ from homeassistant.const import (
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
+    SupportsResponse,
+    ServiceResponse,
     callback,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
@@ -76,9 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             else None
         )
     except Exception as err:  # broad: parsing issues shouldn't fully block reauth paths
-        LOGGER.warning(
-            "Unable to parse Bosch SHC certificate (%s): %s", cert_path, err
-        )
+        LOGGER.warning("Unable to parse Bosch SHC certificate (%s): %s", cert_path, err)
         cert_info = None
 
     if cert_info is not None:
@@ -176,8 +177,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         hass.async_create_task(_run())
 
-    hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = async_track_time_interval(
-        hass, _scheduled_cert_check, timedelta(days=1)
+    hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
+        async_track_time_interval(hass, _scheduled_cert_check, timedelta(days=1))
     )
 
     async def stop_polling(event):
@@ -231,6 +232,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
     # cancel daily cert check
     from .const import DATA_CERT_CHECK_UNSUB
+
     unsub = hass.data[DOMAIN][entry.entry_id].pop(DATA_CERT_CHECK_UNSUB, None)
     if unsub:
         unsub()
@@ -286,7 +288,7 @@ def register_services(hass, entry):
         }
     )
 
-    async def rawscan_service_call(call):
+    async def rawscan_service_call(call) -> ServiceResponse:
         """SHC Scenario service call."""
         title = call.data[ATTR_TITLE]
         for controller_data in hass.data[DOMAIN].values():
@@ -301,13 +303,15 @@ def register_services(hass, entry):
                             service_id=call.data[ATTR_SERVICE_ID],
                         )
                     )
-                    LOGGER.info(rawscan)
+                    # LOGGER.debug(rawscan)
+                    return {call.data[ATTR_COMMAND]: rawscan}
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_TRIGGER_RAWSCAN,
         rawscan_service_call,
         schema=RAWSCAN_TRIGGER_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
 
 
