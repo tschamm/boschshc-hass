@@ -41,7 +41,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     _attr_target_temperature_step = 0.5
     _attr_supported_features = (
-        ClimateEntityFeature.TARGET_TEMPERATURE 
+        ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.PRESET_MODE
         | ClimateEntityFeature.TURN_OFF
         | ClimateEntityFeature.TURN_ON
@@ -149,19 +149,19 @@ class ClimateControl(SHCEntity, ClimateEntity):
     def supported_features(self) -> ClimateEntityFeature:
         """Return supported features."""
         return (
-            ClimateEntityFeature.TARGET_TEMPERATURE 
+            ClimateEntityFeature.TARGET_TEMPERATURE
             | ClimateEntityFeature.PRESET_MODE
-            | ClimateEntityFeature.TURN_OFF 
+            | ClimateEntityFeature.TURN_OFF
             | ClimateEntityFeature.TURN_ON
         )
 
-    def set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs):
         """Set the temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
 
-        self.async_set_hvac_mode(
+        await self.async_set_hvac_mode(
             kwargs.get(ATTR_HVAC_MODE)
         )  # set_temperature args may provide HVAC mode as well
 
@@ -173,7 +173,12 @@ class ClimateControl(SHCEntity, ClimateEntity):
             return
 
         if self.min_temp <= temperature <= self.max_temp:
-            self._device.setpoint_temperature = float(round(temperature * 2.0) / 2.0)
+            await self.hass.async_add_executor_job(
+                setattr,
+                self._device,
+                "setpoint_temperature",
+                float(round(temperature * 2.0) / 2.0),
+            )
 
     async def async_set_hvac_mode(self, hvac_mode: str):
         """Set hvac mode."""
@@ -187,10 +192,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 setattr, self._device, "summer_mode", False
             )
             await self.hass.async_add_executor_job(
-                setattr, 
+                setattr,
                 self._device,
                 "operation_mode",
-                SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
+                SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC,
             )
         if hvac_mode == HVACMode.HEAT:
             await self.hass.async_add_executor_job(
@@ -200,7 +205,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 setattr,
                 self._device,
                 "operation_mode",
-                SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
+                SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
             )
         if hvac_mode == HVACMode.OFF:
             await self.hass.async_add_executor_job(
