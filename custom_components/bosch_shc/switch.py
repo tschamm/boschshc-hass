@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from boschshcpy import (
     SHCCamera360,
     SHCCameraEyes,
+    SHCCameraOutdoorGen2,
     SHCLightSwitch,
     SHCSession,
     SHCSmartPlug,
@@ -42,9 +43,13 @@ from .entity import SHCEntity, async_migrate_to_new_unique_id
 class SHCSwitchRequiredKeysMixin:
     """Mixin for SHC switch required keys."""
 
+    key: str
     on_key: str
     on_value: StateType
-    should_poll: bool
+    should_poll: bool | False
+    device_class: SwitchDeviceClass | None = None
+    icon: str | None = None
+    entity_category: EntityCategory | None = None
 
 
 @dataclass
@@ -136,6 +141,32 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         entity_category=EntityCategory.CONFIG,
         icon="mdi:message-badge",
     ),
+    "cameraoutdoorgen2": SHCSwitchEntityDescription(
+        key="cameraoutdoorgen2",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="privacymode",
+        on_value=SHCCameraOutdoorGen2.PrivacyModeService.State.DISABLED,
+        should_poll=True,
+        icon="mdi:video",
+    ),
+    "cameraoutdoorgen2_camerafrontlight": SHCSwitchEntityDescription(
+        key="cameraoutdoorgen2_camerafrontlight",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="camerafrontlight",
+        on_value=SHCCameraOutdoorGen2.CameraFrontLightService.State.ON,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+        icon="mdi:light-flood-down",
+    ),
+    "cameraoutdoorgen2_cameraambientlight": SHCSwitchEntityDescription(
+        key="cameraoutdoorgen2_cameraambientlight",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="cameraambientlight",
+        on_value=SHCCameraOutdoorGen2.CameraAmbientLightService.State.ON,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+        icon="mdi:wall-sconce-flat",
+    ),
     "presencesimulation": SHCSwitchEntityDescription(
         key="presencesimulation",
         device_class=SwitchDeviceClass.SWITCH,
@@ -188,9 +219,9 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
 
 
 def _format(input_string: str) -> str:
+    """Format a string to be used in an entity_id."""
     import re
 
-    """Format a string to be used in an entity_id."""
     for search, replace in {"ä": "ae", "ö": "oe", "ü": "ue"}.items():
         input_string = input_string.casefold().replace(search, replace)
     return re.sub(r"\s+", "_", re.sub("[^0-9a-z_ ]", "", input_string))
@@ -323,6 +354,39 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["camera360_notification"],
                 attr_name="Notification",
+            )
+        )
+
+    for switch in session.device_helper.camera_outdoor_gen2:
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraoutdoorgen2"],
+            )
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Light"
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
+                attr_name="Light",
+            )
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
+                attr_name="Light",
             )
         )
 

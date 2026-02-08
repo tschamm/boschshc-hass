@@ -1,9 +1,9 @@
 """Tests for certificate parsing helper."""
+
 from datetime import datetime, timedelta, timezone
 
-from homeassistant.exceptions import HomeAssistantError
-
-from homeassistant.components.bosch_shc.certificate import parse_certificate
+from boschshcpy.certificate import parse_certificate
+from boschshcpy.exceptions import SHCCertificateError
 
 
 def _build_selfsigned_pem(days_valid: int) -> bytes:
@@ -18,7 +18,7 @@ def _build_selfsigned_pem(days_valid: int) -> bytes:
         pytest.skip("cryptography not available")
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, u"Test")])
+    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Test")])
     now = datetime.now(timezone.utc)
     cert = (
         x509.CertificateBuilder()
@@ -26,18 +26,19 @@ def _build_selfsigned_pem(days_valid: int) -> bytes:
         .issuer_name(issuer)
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(now - timedelta(minutes=1))
+        .not_valid_before(
+            now
+            + timedelta(days=days_valid if days_valid < 0 else 0)
+            - timedelta(minutes=1)
+        )
         .not_valid_after(now + timedelta(days=days_valid))
         .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
         .sign(key, hashes.SHA256())
     )
-    return (
-        cert.public_bytes(serialization.Encoding.PEM)
-        + key.private_bytes(
-            serialization.Encoding.PEM,
-            serialization.PrivateFormat.TraditionalOpenSSL,
-            serialization.NoEncryption(),
-        )
+    return cert.public_bytes(serialization.Encoding.PEM) + key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption(),
     )
 
 
@@ -61,7 +62,7 @@ def test_parse_certificate_missing(tmp_path):
     missing = tmp_path / "missing.pem"
     try:
         parse_certificate(str(missing))
-    except HomeAssistantError as err:
+    except SHCCertificateError as err:
         assert "missing" in str(err).lower()
     else:  # pragma: no cover
-        assert False, "Expected HomeAssistantError"
+        assert False, "Expected SHCCertificateError"

@@ -4,7 +4,12 @@ import voluptuous as vol
 import functools as ft
 import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
-from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError
+from boschshcpy.certificate import parse_certificate
+from boschshcpy.exceptions import (
+    SHCAuthenticationError,
+    SHCConnectionError,
+    SHCCertificateError,
+)
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -49,7 +54,6 @@ from .const import (
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
-from .certificate import parse_certificate
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -84,8 +88,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if cert_info is not None:
         if cert_info.days_remaining < 0:
-            from homeassistant.exceptions import ConfigEntryAuthFailed
-
             expiry = cert_info.not_after.date()
             LOGGER.error(
                 "Bosch SHC client certificate expired on %s. Reconfigure integration (put controller in pairing mode and re-authenticate).",
