@@ -378,7 +378,7 @@ async def async_setup_entry(
                 device=switch,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
-                attr_name="Light",
+                attr_name="Frontlight",
             )
         )
         entities.append(
@@ -386,7 +386,7 @@ async def async_setup_entry(
                 device=switch,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
-                attr_name="Light",
+                attr_name="AmbientLight",
             )
         )
 
