@@ -70,25 +70,22 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     )
 
     _current_operation_state = None
-    _l1_position = _l2_position = None
+    _target_position = None
+    _last_position = None
+    _skip_update = False
+    _app_command = False
+
+    def _micromodule_keypad_switch_off(self) -> None:
+        if self._device.device_model == "MICROMODULE_SHUTTER":
+            # Stopping a micromodule shutter requires setting the eventtype to SWITCH_OFF, in case the manual switch was not put to off position
+            self._device.eventtype = (
+                SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
+            )
 
     def _update_attr(self) -> None:
         """Recomputes the attributes values either at init or when the device state changes."""
         self._attr_current_cover_position = self.current_cover_position
         self._current_operation_state = self._device.operation_state
-
-        if self._l1_position is None:
-            self._l2_position = self._l1_position = self._attr_current_cover_position
-
-        # calculate movement direction between current cover position and second last reported position
-        if (
-            self._current_operation_state
-            == SHCShutterControl.ShutterControlService.State.MOVING
-        ):
-            if self._l2_position > self._attr_current_cover_position:
-                self._attr_is_closing = True
-            else:
-                self._attr_is_opening = True
 
         if (
             self._current_operation_state
@@ -96,9 +93,65 @@ class ShutterControlCover(SHCEntity, CoverEntity):
         ):
             self._attr_is_closing = False
             self._attr_is_opening = False
+            if not self._skip_update:
+                if self._device.device_model == "BBL" or self._app_command:
+                    self._last_position = self.current_cover_position
+                    self._app_command = False
+            else:
+                # In case of HA commands, the first STOPPED state is not reliable, so we skip it and reset the flag for the next update
+                self._skip_update = False
 
-        self._l2_position = self._l1_position
-        self._l1_position = self._attr_current_cover_position
+            # Initiallize the last position for MM at start
+            if self._last_position is None:
+                self._last_position = self.current_cover_position
+
+        if (
+            self._current_operation_state
+            == SHCShutterControl.ShutterControlService.State.MOVING
+        ):
+            if self._device.device_model == "BBL":
+                self._target_position = round(self._device.level * 100.0)
+                if self._last_position is not None:
+                    if self._target_position > self._last_position:
+                        self._attr_is_closing = False
+                        self._attr_is_opening = True
+                    elif self._target_position < self._last_position:
+                        self._attr_is_closing = True
+                        self._attr_is_opening = False
+            elif self._device.device_model == "MICROMODULE_SHUTTER":
+                if (
+                    self._device.eventtype
+                    == SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
+                    and self._device.keycode == 1
+                ):
+                    # When the event is triggered by the physical switch, we can determine the movement direction based on the keycode (1 for open, 2 for close), as the level attribute is not reliable during movement
+                    self._last_position = round(self._device.level * 100.0)
+                    self._attr_is_closing = False
+                    self._attr_is_opening = True
+                    self._target_position = 100
+                elif (
+                    self._device.eventtype
+                    == SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
+                    and self._device.keycode == 2
+                ):
+                    self._last_position = round(self._device.level * 100.0)
+                    self._attr_is_closing = True
+                    self._attr_is_opening = False
+                    self._target_position = 0
+                else:
+                    self._target_position = round(self._device.level * 100.0)
+                    if self._target_position > self._last_position:
+                        self._attr_is_closing = False
+                        self._attr_is_opening = True
+                    elif self._target_position < self._last_position:
+                        self._attr_is_closing = True
+                        self._attr_is_opening = False
+
+            else:
+                # for other devices, we cannot determine the movement direction, so we set both to None
+                print("  No plan what to do")
+                self._attr_is_closing = None
+                self._attr_is_opening = None
 
     @property
     def device_class(self) -> CoverDeviceClass | None:
@@ -110,36 +163,64 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 
     @property
     def current_cover_position(self):
-        """Return the current cover position."""
-        return round(self._device.level * 100.0)
+        """Return the current or target cover position."""
+        if self._device.device_model == "MICROMODULE_SHUTTER":
+            return (
+                round(self._device.level * 100.0)
+                if self._device.operation_state
+                == SHCShutterControl.ShutterControlService.State.STOPPED
+                else self._target_position
+            )
+        else:
+            # for BBL devices, we can rely on the level attribute to determine the current position, even when moving
+            return round(self._device.level * 100.0)
 
     def stop_cover(self, **kwargs):
         """Stop the cover."""
+        self._micromodule_keypad_switch_off()
         self._attr_is_opening = False
         self._attr_is_closing = False
         self._device.stop()
+        self._skip_update = True
+        self._app_command = True
 
     @property
     def is_closed(self):
         """Return if the cover is closed or not."""
-        return self._l2_position == 0
+        return (
+            self._device.operation_state
+            == SHCShutterControl.ShutterControlService.State.STOPPED
+            and self._device.level == 0.0
+        )
 
     def open_cover(self, **kwargs):
         """Open the cover."""
-        if not self._attr_is_opening and self._device.level < 1.0:
-            self._attr_is_opening = True
-            self._device.level = 1.0
+        self._micromodule_keypad_switch_off()
+        self._attr_is_opening = True
+        self._device.level = 1.0
+        self._target_position = 100
+        self._skip_update = True
+        self._app_command = True
 
     def close_cover(self, **kwargs):
         """Close cover."""
-        if not self._attr_is_closing and self._device.level > 0:
-            self._attr_is_closing = True
-            self._device.level = 0.0
+        self._micromodule_keypad_switch_off()
+        self._attr_is_closing = True
+        self._device.level = 0.0
+        self._target_position = 0
+        self._skip_update = True
+        self._app_command = True
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
+        if self._device.device_model == "MICROMODULE_SHUTTER":
+            self._micromodule_keypad_switch_off()
+            self._last_position = self.current_cover_position
         position = kwargs[ATTR_POSITION]
+        self._target_position = position
         self._device.level = position / 100.0
+        self._skip_update = True
+        self._app_command = True
 
     @property
     def extra_state_attributes(self):
