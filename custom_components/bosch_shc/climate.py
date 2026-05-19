@@ -105,6 +105,9 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if self._device.summer_mode:
             return HVACMode.OFF
 
+        if self._device.supports_cooling and self._device.cooling_mode:
+            return HVACMode.COOL
+
         if (
             self._device.operation_mode
             == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
@@ -116,7 +119,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def hvac_modes(self):
         """Return available hvac modes."""
-        return [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
+        modes = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
+        if self._device.supports_cooling:
+            modes.append(HVACMode.COOL)
+        return modes
 
     # @property
     # def hvac_action(self):
@@ -191,6 +197,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
             await self.hass.async_add_executor_job(
                 setattr, self._device, "summer_mode", False
             )
+            if self._device.supports_cooling:
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "cooling_mode", False
+                )
             await self.hass.async_add_executor_job(
                 setattr,
                 self._device,
@@ -201,13 +211,28 @@ class ClimateControl(SHCEntity, ClimateEntity):
             await self.hass.async_add_executor_job(
                 setattr, self._device, "summer_mode", False
             )
+            if self._device.supports_cooling:
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "cooling_mode", False
+                )
             await self.hass.async_add_executor_job(
                 setattr,
                 self._device,
                 "operation_mode",
                 SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
             )
+        if hvac_mode == HVACMode.COOL:
+            await self.hass.async_add_executor_job(
+                setattr, self._device, "summer_mode", False
+            )
+            await self.hass.async_add_executor_job(
+                setattr, self._device, "cooling_mode", True
+            )
         if hvac_mode == HVACMode.OFF:
+            if self._device.supports_cooling:
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "cooling_mode", False
+                )
             await self.hass.async_add_executor_job(
                 setattr, self._device, "summer_mode", True
             )
