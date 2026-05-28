@@ -507,12 +507,22 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         )
 
     @property
-    def is_on(self) -> bool:
-        """Return the state of the switch."""
-        return (
-            getattr(self._device, self.entity_description.on_key)
-            == self.entity_description.on_value
-        )
+    def is_on(self) -> bool | None:
+        """Return the state of the switch.
+
+        Defensive: cameras registered via SHC local API can have a None
+        underlying service (e.g. PrivacyModeService for cameraeyes / camera360
+        switches), causing boschshcpy to crash with AttributeError on every
+        state update. Return None (unavailable) instead of crash-looping the
+        state writer. See mosandlt/boschshc-hass branch fix/code-quality-improvements.
+        """
+        try:
+            return (
+                getattr(self._device, self.entity_description.on_key)
+                == self.entity_description.on_value
+            )
+        except AttributeError:
+            return None
 
     def turn_on(self, **kwargs) -> None:
         """Turn the switch on."""
