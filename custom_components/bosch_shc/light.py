@@ -32,6 +32,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
+    for light in session.device_helper.motion_detectors2:
+        await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
+        entities.append(
+            MotionDetectorLight(
+                device=light,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -120,3 +129,41 @@ class LightSwitch(SHCEntity, LightEntity):
     def turn_off(self, **kwargs):
         """Turn the light off."""
         self._device.binarystate = False
+
+
+class MotionDetectorLight(SHCEntity, LightEntity):
+    """Representation of a SHC Motion Detector 2 controlled light."""
+
+    def __init__(self, device, entry_id) -> None:
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = "Motion Light"
+        self._attr_supported_color_modes: set[ColorMode] = {ColorMode.BRIGHTNESS}
+        self._attr_color_mode = ColorMode.BRIGHTNESS
+
+    @property
+    def is_on(self):
+        """Return light state."""
+        return self._device.binaryswitch
+
+    @property
+    def brightness(self) -> int:
+        """Return the brightness of this light between 0..255."""
+        level = self._device.multi_level_switch
+        return round(level * 255 / 100) if level is not None else 0
+
+    def turn_on(self, **kwargs):
+        """Turn the light on."""
+        brightness = kwargs.get(ATTR_BRIGHTNESS)
+
+        if brightness is not None:
+            # Convert Home Assistant brightness (0-255) to device level (0-100)
+            level = max(round(brightness * 100 / 255), 1)
+            self._device._multi_level_switch_service.put_state_element("level", level)
+
+        # Turn on the light if it's not already on
+        if not self.is_on:
+            self._device._binaryswitch_service.put_state_element("on", True)
+
+    def turn_off(self, **kwargs):
+        """Turn the light off."""
+        self._device._binaryswitch_service.put_state_element("on", False)
