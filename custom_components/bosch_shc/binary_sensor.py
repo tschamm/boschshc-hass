@@ -95,6 +95,27 @@ async def async_setup_entry(
             )
         )
 
+    for binary_sensor in session.device_helper.motion_detectors2:
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor
+        )
+        entities.append(
+            MotionDetectionSensor(
+                hass=hass,
+                device=binary_sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor, attr_name="Occupancy"
+        )
+        entities.append(
+            OccupancyDetectionSensor(
+                device=binary_sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     for binary_sensor in session.device_helper.smoke_detectors:
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor
@@ -139,6 +160,7 @@ async def async_setup_entry(
 
     for binary_sensor in (
         session.device_helper.motion_detectors
+        + session.device_helper.motion_detectors2
         + session.device_helper.shutter_contacts
         + session.device_helper.shutter_contacts2
         + session.device_helper.smoke_detectors
@@ -205,7 +227,7 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.VIBRATION
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize an SHC temperature reporting sensor."""
+        """Initialize an SHC vibration reporting sensor."""
         super().__init__(device, entry_id)
         self._attr_name = f"{device.name} Vibration"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
@@ -468,13 +490,37 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         }
 
 
+class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC occupancy detection sensor."""
+
+    _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the occupancy detection device."""
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = f"{device.name} Occupancy"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_occupancy"
+
+    @property
+    def is_on(self):
+        """Return the state of the sensor."""
+        return self._device.occupied
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "last_occupancy_change": self._device.last_occupancy_change_time,
+        }
+
+
 class BatterySensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC battery reporting sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.BATTERY
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize an SHC temperature reporting sensor."""
+        """Initialize an SHC battery reporting sensor."""
         super().__init__(device, entry_id)
         self._attr_name = f"{device.name} Battery"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery"

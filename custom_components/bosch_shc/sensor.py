@@ -232,8 +232,53 @@ async def async_setup_entry(
         )
 
     for sensor in session.device_helper.motion_detectors:
+        await async_migrate_to_new_unique_id(
+            hass,
+            Platform.SENSOR,
+            device=sensor,
+            attr_name="Illuminance",
+        )
         entities.append(
             IlluminanceLevelSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for sensor in session.device_helper.motion_detectors2:
+        await async_migrate_to_new_unique_id(
+            hass,
+            Platform.SENSOR,
+            device=sensor,
+            attr_name="Illuminance",
+        )
+        entities.append(
+            IlluminanceLevelSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        await async_migrate_to_new_unique_id(
+            hass,
+            Platform.SENSOR,
+            device=sensor,
+            attr_name="Temperature"
+        )
+        entities.append(
+            TemperatureSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        await async_migrate_to_new_unique_id(
+            hass,
+            Platform.SENSOR,
+            device=sensor,
+            attr_name="CommunicationQuality",
+            old_unique_id=f"{sensor.serial}_communication_quality",
+        )
+        entities.append(
+            CommunicationQualitySensor(
                 device=sensor,
                 entry_id=config_entry.entry_id,
             )
