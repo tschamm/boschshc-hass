@@ -190,6 +190,18 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
         icon="mdi:lock",
     ),
+    "child_lock_thermostat": SHCSwitchEntityDescription(
+        key="child_lock_thermostat",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="child_lock",
+        # Thermostats expose child lock as a ThermostatService.State enum, not a
+        # bool. State.ON != True, so reusing the bool "child_lock" description
+        # made the switch read OFF permanently. Compare against the enum member.
+        on_value=SHCThermostat.ThermostatService.State.ON,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:lock",
+    ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
@@ -435,14 +447,32 @@ async def async_setup_entry(
                 )
             )
 
+    # Thermostats / room thermostats expose child lock as a ThermostatService
+    # .State enum (ON/OFF) -> needs the enum-aware description.
     for switch in (
         session.device_helper.thermostats
         + session.device_helper.roomthermostats
-        + session.device_helper.micromodule_shutter_controls
+    ):
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["child_lock_thermostat"],
+                attr_name="ChildLock",
+            )
+        )
+
+    # ChildProtection devices expose child lock as a bool (childLockActive).
+    # micromodule_dimmers and light_switches_bsm also carry the ChildProtection
+    # service but were previously not wired -> no child-lock entity was created.
+    for switch in (
+        session.device_helper.micromodule_shutter_controls
         + session.device_helper.micromodule_blinds
         + session.device_helper.micromodule_light_attached
         + session.device_helper.micromodule_relays
         + session.device_helper.micromodule_impulse_relays
+        + session.device_helper.micromodule_dimmers
+        + session.device_helper.light_switches_bsm
     ):
         entities.append(
             SHCSwitch(
