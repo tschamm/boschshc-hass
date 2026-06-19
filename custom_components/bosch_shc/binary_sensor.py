@@ -274,8 +274,11 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         try:
             latestmotion = datetime.strptime(
                 self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
-        except ValueError:
+            ).replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            # ValueError: unparseable timestamp; TypeError: latestmotion is None.
+            # The trailing literal "Z" makes strptime return a naive datetime, so
+            # it must be marked UTC-aware to subtract from datetime.now(timezone.utc).
             return False
 
         elapsed = datetime.now(timezone.utc) - latestmotion
