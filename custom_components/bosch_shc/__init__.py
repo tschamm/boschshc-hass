@@ -6,12 +6,12 @@ import voluptuous as vol
 import functools as ft
 import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
-from boschshcpy.certificate import parse_certificate
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
-    SHCCertificateError,
 )
+
+from .certificate import parse_certificate
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
