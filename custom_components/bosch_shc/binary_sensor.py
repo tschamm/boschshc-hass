@@ -9,7 +9,6 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
     SHCShutterContact,
-    SHCShutterContact2,
     SHCShutterContact2Plus,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
@@ -75,12 +74,22 @@ async def async_setup_entry(
         )
         async_add_shuttercontact(device=binary_sensor)
 
-    # register listener for new binary sensors
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
-            session.subscribe((SHCShutterContact, async_add_shuttercontact))
-        )
-    )
+    # Register listener for new binary sensors and ensure it is torn down on
+    # config entry unload.  session.subscribe() appends the tuple to
+    # session._subscribers but returns None, so we build the unsubscribe
+    # closure ourselves.  add_update_listener is NOT used here because it
+    # expects an options-update callback (hass, entry) -> None, not the SHC
+    # subscriber tuple.
+    _shutter_subscriber = (SHCShutterContact, async_add_shuttercontact)
+    session.subscribe(_shutter_subscriber)
+
+    def _unsubscribe_shutter():
+        try:
+            session._subscribers.remove(_shutter_subscriber)
+        except ValueError:
+            pass
+
+    config_entry.async_on_unload(_unsubscribe_shutter)
 
     for binary_sensor in session.device_helper.motion_detectors:
         await async_migrate_to_new_unique_id(

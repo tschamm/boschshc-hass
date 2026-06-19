@@ -510,9 +510,13 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
 
 
 class IlluminanceLevelSensor(SHCEntity, SensorEntity):
-    """Representation of an SHC illuminance level reporting sensor."""
+    """Representation of an SHC illuminance level reporting sensor.
 
-    _attr_state_class = SensorStateClass.MEASUREMENT
+    Gen1 SHCMotionDetector returns a qualitative string (e.g. "MEDIUM") while
+    Gen2 SHCMotionDetector2 returns an int. state_class=MEASUREMENT is omitted
+    because HA rejects non-numeric values with that state class, and Gen1 devices
+    would trigger state-validation errors.
+    """
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""

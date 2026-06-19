@@ -497,12 +497,20 @@ async def async_setup_entry(
     for switch in session.userdefinedstates:
         async_add_userdefinedstateswitch(device=switch)
 
-    # register listener for new switches
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
-            session.subscribe((SHCUserDefinedState, async_add_userdefinedstateswitch))
-        )
-    )
+    # Register listener for new user-defined state switches and ensure it is
+    # torn down on config entry unload.  session.subscribe() returns None, so
+    # we build the unsubscribe closure ourselves.  add_update_listener expects
+    # an options-update callback (hass, entry) -> None and must NOT be used here.
+    _uds_subscriber = (SHCUserDefinedState, async_add_userdefinedstateswitch)
+    session.subscribe(_uds_subscriber)
+
+    def _unsubscribe_uds():
+        try:
+            session._subscribers.remove(_uds_subscriber)
+        except ValueError:
+            pass
+
+    config_entry.async_on_unload(_unsubscribe_uds)
 
 
 class SHCSwitch(SHCEntity, SwitchEntity):

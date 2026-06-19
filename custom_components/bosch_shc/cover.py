@@ -273,6 +273,11 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
         position = kwargs[ATTR_POSITION]
         self._device.blinds_level = position / 100.0
 
+    @property
+    def current_cover_position(self):
+        """Return the current cover position using blinds_level (BlindsSceneControl)."""
+        return round(self._device.blinds_level * 100.0)
+
     def stop_cover_tilt(self, **kwargs: Any) -> None:
         self._device.stop_blinds()
 
