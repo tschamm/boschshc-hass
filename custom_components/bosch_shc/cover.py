@@ -140,6 +140,17 @@ class ShutterControlCover(SHCEntity, CoverEntity):
                     self._target_position = 0
                 else:
                     self._target_position = round(self._device.level * 100.0)
+                    if self._last_position is not None:
+                        if self._target_position > self._last_position:
+                            self._attr_is_closing = False
+                            self._attr_is_opening = True
+                        elif self._target_position < self._last_position:
+                            self._attr_is_closing = True
+                            self._attr_is_opening = False
+
+            elif self._device.device_model == "MICROMODULE_BLINDS":
+                self._target_position = round(self._device.level * 100.0)
+                if self._last_position is not None:
                     if self._target_position > self._last_position:
                         self._attr_is_closing = False
                         self._attr_is_opening = True

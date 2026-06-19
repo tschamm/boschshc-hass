@@ -23,7 +23,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
@@ -497,8 +497,15 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
+        try:
+            valve_tappet_state = self._device.valvestate.name
+        except ValueError as err:
+            LOGGER.warning(
+                "Unknown valve tappet state for %s: %s", self._device.name, err
+            )
+            valve_tappet_state = None
         return {
-            "valve_tappet_state": self._device.valvestate.name,
+            "valve_tappet_state": valve_tappet_state,
         }
 
 

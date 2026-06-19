@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
 from boschshcpy import (
@@ -28,6 +27,7 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.util import slugify
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -228,13 +228,6 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
     ),
 }
-
-
-def _format(input_string: str) -> str:
-    """Format a string to be used in an entity_id."""
-    for search, replace in {"ä": "ae", "ö": "oe", "ü": "ue"}.items():
-        input_string = input_string.casefold().replace(search, replace)
-    return re.sub(r"\s+", "_", re.sub("[^0-9a-z_ ]", "", input_string))
 
 
 async def async_setup_entry(
@@ -596,7 +589,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         )
 
         self.entity_id = ENTITY_ID_FORMAT.format(
-            f"userdefinedstate_{_format(self._device.name)}"
+            f"userdefinedstate_{slugify(self._device.name)}"
         )
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
