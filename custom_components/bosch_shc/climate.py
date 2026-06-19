@@ -1,10 +1,11 @@
 """Platform for climate integration."""
 
-from boschshcpy import SHCClimateControl, SHCSession
+from boschshcpy import SHCClimateControl, SHCHeatingCircuit, SHCSession
 from enum import IntFlag
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_HVAC_MODE,
+    HVACAction,
     HVACMode,
     ClimateEntityFeature,
     PRESET_BOOST,
@@ -29,6 +30,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 device=climate,
                 entry_id=config_entry.entry_id,
                 name=f"Room Climate {session.room(room_id).name}",
+            )
+        )
+
+    for heating_circuit in session.device_helper.heating_circuits:
+        entities.append(
+            HeatingCircuit(
+                device=heating_circuit,
+                entry_id=config_entry.entry_id,
+                name=heating_circuit.name,
             )
         )
 
@@ -249,3 +259,82 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Turn the climate device off."""
         if self.hvac_mode != HVACMode.OFF:
             await self.async_set_hvac_mode(HVACMode.OFF)
+
+
+class HeatingCircuit(SHCEntity, ClimateEntity):
+    """Representation of a SHC heating circuit.
+
+    The HeatingCircuit service exposes a setpoint temperature and an operation
+    mode (AUTOMATIC/MANUAL); there is no measured room temperature and the on
+    state is read-only, so this maps to a HEAT/AUTO climate entity with a
+    heating/idle action and no OFF mode.
+    """
+
+    _attr_target_temperature_step = 0.5
+    _enable_turn_on_off_backwards_compatibility = False
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_max_temp = 30.0
+    _attr_min_temp = 5.0
+    _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT]
+    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
+
+    def __init__(
+        self,
+        device: SHCHeatingCircuit,
+        name: str,
+        entry_id: str,
+    ) -> None:
+        """Initialize the SHC heating circuit."""
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
+
+    @property
+    def current_temperature(self):
+        """Heating circuits expose no measured temperature."""
+        return None
+
+    @property
+    def target_temperature(self):
+        """Return the setpoint temperature."""
+        return self._device.setpoint_temperature
+
+    @property
+    def hvac_mode(self):
+        """Return the hvac mode derived from the operation mode."""
+        if (
+            self._device.operation_mode
+            == SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC
+        ):
+            return HVACMode.AUTO
+        return HVACMode.HEAT
+
+    @property
+    def hvac_action(self):
+        """Return whether the circuit is currently heating."""
+        return HVACAction.HEATING if self._device.on else HVACAction.IDLE
+
+    async def async_set_temperature(self, **kwargs):
+        """Set a new setpoint temperature."""
+        temperature = kwargs.get(ATTR_TEMPERATURE)
+        if temperature is None:
+            return
+        if self.min_temp <= temperature <= self.max_temp:
+            await self.hass.async_add_executor_job(
+                setattr,
+                self._device,
+                "setpoint_temperature",
+                float(round(temperature * 2.0) / 2.0),
+            )
+
+    async def async_set_hvac_mode(self, hvac_mode: str):
+        """Set the operation mode."""
+        if hvac_mode not in self.hvac_modes:
+            return
+        mode = (
+            SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC
+            if hvac_mode == HVACMode.AUTO
+            else SHCHeatingCircuit.HeatingCircuitService.OperationMode.MANUAL
+        )
+        await self.hass.async_add_executor_job(
+            setattr, self._device, "operation_mode", mode
+        )
