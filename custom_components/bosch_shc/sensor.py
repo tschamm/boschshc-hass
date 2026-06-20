@@ -246,6 +246,30 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        await async_migrate_to_new_unique_id(
+            hass,
+            Platform.SENSOR,
+            device=sensor,
+            attr_name="Temperature",
+        )
+        entities.append(
+            TemperatureSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+        await async_migrate_to_new_unique_id(
+            hass,
+            Platform.SENSOR,
+            device=sensor,
+            attr_name="CommunicationQuality",
+        )
+        entities.append(
+            CommunicationQualitySensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
 
     sensor = session.emma
     entities.append(

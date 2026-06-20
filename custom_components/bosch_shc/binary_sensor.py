@@ -115,6 +115,15 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        await async_migrate_to_new_unique_id(
+            hass, Platform.BINARY_SENSOR, device=binary_sensor, attr_name="Occupancy"
+        )
+        entities.append(
+            OccupancyDetectionSensor(
+                device=binary_sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
 
     for binary_sensor in session.device_helper.smoke_detectors:
         await async_migrate_to_new_unique_id(
@@ -569,3 +578,27 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
         return (
             self._device.batterylevel != SHCBatteryDevice.BatteryLevelService.State.OK
         )
+
+
+class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC Motion Detector II [+M] occupancy sensor."""
+
+    _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+
+    def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
+        """Initialize the occupancy detection sensor."""
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = f"{device.name} Occupancy"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_occupancy"
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the zone is occupied."""
+        return self._device.occupied
+
+    @property
+    def extra_state_attributes(self):
+        """Return last occupancy change time as an extra attribute."""
+        return {
+            "last_occupancy_change": self._device.last_occupancy_change_time,
+        }

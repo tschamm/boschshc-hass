@@ -33,6 +33,17 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
+    for light in session.device_helper.motion_detectors2:
+        await async_migrate_to_new_unique_id(
+            hass, Platform.LIGHT, device=light, attr_name="MotionLight"
+        )
+        entities.append(
+            MotionDetectorLight(
+                device=light,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -130,3 +141,45 @@ class LightSwitch(SHCEntity, LightEntity):
     def turn_off(self, **kwargs):
         """Turn the light off."""
         self._device.binarystate = False
+
+
+class MotionDetectorLight(SHCEntity, LightEntity):
+    """Representation of the indicator light on a SHC Motion Detector II [+M]."""
+
+    _attr_supported_color_modes: set[ColorMode] = {ColorMode.BRIGHTNESS}
+    _attr_color_mode = ColorMode.BRIGHTNESS
+
+    def __init__(self, device, entry_id: str) -> None:
+        """Initialize the Motion Detector II light entity."""
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = f"{device.name} Motion Light"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_motionlight"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return the current on/off state."""
+        return self._device.binaryswitch
+
+    @property
+    def brightness(self) -> int:
+        """Return the brightness scaled to 0-255."""
+        level = self._device.multi_level_switch
+        if level is None:
+            return 0
+        return round(level * 255 / 100)
+
+    def turn_on(self, **kwargs) -> None:
+        """Turn the light on, optionally setting brightness."""
+        brightness = kwargs.get(ATTR_BRIGHTNESS)
+        if brightness is not None:
+            # Clamp to 1 so near-zero HA values don't silently turn the light off.
+            level = max(round(brightness * 100 / 255), 1)
+            self._device.multi_level_switch = level
+        if not self.is_on:
+            self._device.binaryswitch = True
+
+    def turn_off(self, **kwargs) -> None:
+        """Turn the light off."""
+        self._device.binaryswitch = False

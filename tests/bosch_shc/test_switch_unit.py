@@ -734,6 +734,7 @@ def test_switch_types_all_keys_present():
         "bypass",
         "child_lock",
         "child_lock_thermostat",
+        "pet_immunity_enabled",
         "silent_mode",
         "vibration_enabled",
         "user_defined_state",

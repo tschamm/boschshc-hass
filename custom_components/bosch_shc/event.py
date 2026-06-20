@@ -70,7 +70,10 @@ async def async_setup_entry(
             )
         )
 
-    for motion_detector in session.device_helper.motion_detectors:
+    for motion_detector in (
+        session.device_helper.motion_detectors
+        + session.device_helper.motion_detectors2
+    ):
         entities.append(
             MotionDetectorEvent(
                 device=motion_detector,

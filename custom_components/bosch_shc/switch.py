@@ -205,6 +205,15 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
         icon="mdi:lock",
     ),
+    "pet_immunity_enabled": SHCSwitchEntityDescription(
+        key="pet_immunity_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="pet_immunity_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:paw",
+    ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
@@ -479,6 +488,22 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["child_lock"],
                 attr_name="ChildLock",
+            )
+        )
+
+    for switch in session.device_helper.motion_detectors2:
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+            attr_name="PetImmunity",
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["pet_immunity_enabled"],
+                attr_name="PetImmunity",
             )
         )
 
