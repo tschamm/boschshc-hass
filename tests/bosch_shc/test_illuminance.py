@@ -1,22 +1,18 @@
-"""Regression test for IlluminanceLevelSensor state_class vs Gen1 string value.
+"""Tests for IlluminanceLevelSensor state_class conditional logic (#315).
 
-Bug: IlluminanceLevelSensor declares SensorStateClass.MEASUREMENT, which requires
-a numeric native_value. SHCMotionDetector (Gen1, model "MD") returns a string
-from .illuminance (e.g. "MEDIUM"). Returning a string with MEASUREMENT makes HA
-reject/log an error for the state update.
+The Bosch SHC API spec defines illuminance as integer for both Gen1 (model "MD")
+and Gen2 (model "MD2").  In practice Gen1 devices report numeric lux values too.
 
-SHCMotionDetector2 (Gen2, model "MD2") returns an int — no issue there.
-
-Fix: IlluminanceLevelSensor must NOT set state_class=MEASUREMENT for Gen1 devices
-whose .illuminance is a string. Options: (a) drop state_class entirely so it works
-for both, or (b) guard native_value / override based on type.
-
-The chosen fix here: drop state_class on the class level (leave it None) — Gen1
-is a qualitative enum, Gen2 is numeric; without state_class both are still reported
-correctly by HA.
+Fix: state_class=MEASUREMENT, device_class=illuminance, unit=lx are set
+conditionally — only when native_value is numeric (int/float).  If a firmware
+variant returns a qualitative string the sensor degrades gracefully without
+triggering state_class_removed repairs.
 """
 
 from types import SimpleNamespace
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import LIGHT_LUX
 
 from custom_components.bosch_shc.sensor import IlluminanceLevelSensor
 
@@ -35,56 +31,68 @@ def _make_sensor(illuminance_value):
     return sensor
 
 
-class TestIlluminanceSensorGen1:
-    """Gen1 SHCMotionDetector returns a string — MEASUREMENT must not be set."""
+class TestIlluminanceSensorNumericGen1:
+    """Gen1 'MD' devices that report numeric lux (e.g. 13, 9, 22) — #315."""
 
-    def test_gen1_native_value_is_string(self):
-        """native_value for Gen1 returns the string as-is (e.g. 'MEDIUM')."""
-        sensor = _make_sensor("MEDIUM")
-        assert sensor.native_value == "MEDIUM"
+    def test_native_value_int(self):
+        assert _make_sensor(13).native_value == 13
 
-    def test_gen1_no_measurement_state_class(self):
-        """CORE BUG: state_class=MEASUREMENT must NOT be set when value is a string.
+    def test_native_value_zero(self):
+        assert _make_sensor(0).native_value == 0
 
-        HA rejects non-numeric values with MEASUREMENT state_class. The fix is
-        to remove state_class from the class declaration so it is None by default,
-        or to guard it per device type.
-        """
-        sensor = _make_sensor("MEDIUM")
-        # After fix: state_class must be None (not MEASUREMENT) for string-valued sensors
-        assert sensor.state_class is None, (
-            f"state_class should be None for Gen1 string illuminance, got {sensor.state_class!r}"
-        )
+    def test_state_class_is_measurement(self):
+        assert _make_sensor(13).state_class == SensorStateClass.MEASUREMENT
+
+    def test_device_class_is_illuminance(self):
+        assert _make_sensor(22).device_class == SensorDeviceClass.ILLUMINANCE
+
+    def test_unit_is_lux(self):
+        assert _make_sensor(9).native_unit_of_measurement == LIGHT_LUX
+
+
+class TestIlluminanceSensorStringFallback:
+    """Graceful fallback for any firmware returning a qualitative string."""
+
+    def test_native_value_is_string(self):
+        assert _make_sensor("MEDIUM").native_value == "MEDIUM"
+
+    def test_no_state_class_for_string(self):
+        """HA rejects MEASUREMENT with non-numeric values — must be None."""
+        assert _make_sensor("MEDIUM").state_class is None
+
+    def test_no_device_class_for_string(self):
+        assert _make_sensor("LOW").device_class is None
+
+    def test_no_unit_for_string(self):
+        assert _make_sensor("HIGH").native_unit_of_measurement is None
 
     def test_gen1_low_value(self):
-        sensor = _make_sensor("LOW")
-        assert sensor.native_value == "LOW"
+        assert _make_sensor("LOW").native_value == "LOW"
 
     def test_gen1_high_value(self):
-        sensor = _make_sensor("HIGH")
-        assert sensor.native_value == "HIGH"
+        assert _make_sensor("HIGH").native_value == "HIGH"
 
 
 class TestIlluminanceSensorGen2:
-    """Gen2 SHCMotionDetector2 returns an int — numeric reporting must work."""
+    """Gen2 SHCMotionDetector2 ('MD2') always returns int."""
 
-    def test_gen2_native_value_is_int(self):
-        sensor = _make_sensor(320)
-        assert sensor.native_value == 320
+    def test_native_value(self):
+        assert _make_sensor(320).native_value == 320
 
-    def test_gen2_zero_value(self):
-        sensor = _make_sensor(0)
-        assert sensor.native_value == 0
+    def test_state_class_measurement(self):
+        assert _make_sensor(320).state_class == SensorStateClass.MEASUREMENT
 
-    def test_gen2_high_lux(self):
-        sensor = _make_sensor(1000)
-        assert sensor.native_value == 1000
+    def test_device_class_illuminance(self):
+        assert _make_sensor(500).device_class == SensorDeviceClass.ILLUMINANCE
 
-    def test_gen2_state_class_is_none(self):
-        """After removing class-level state_class, it should be None for all instances.
+    def test_unit_lux(self):
+        assert _make_sensor(1000).native_unit_of_measurement == LIGHT_LUX
 
-        If a future improvement restores numeric state_class dynamically per type,
-        this test should be updated accordingly.
-        """
-        sensor = _make_sensor(500)
-        assert sensor.state_class is None
+    def test_zero_lux(self):
+        assert _make_sensor(0).state_class == SensorStateClass.MEASUREMENT
+
+    def test_float_value(self):
+        """Float illuminance values are also treated as numeric."""
+        assert _make_sensor(13.5).state_class == SensorStateClass.MEASUREMENT
+        assert _make_sensor(13.5).device_class == SensorDeviceClass.ILLUMINANCE
+        assert _make_sensor(13.5).native_unit_of_measurement == LIGHT_LUX

@@ -407,6 +407,7 @@ def _illum_sensor(illuminance_value):
 
 
 class TestIlluminanceLevelSensor:
+    # native_value passthrough
     def test_gen1_string_medium(self):
         assert _illum_sensor("MEDIUM").native_value == "MEDIUM"
 
@@ -422,7 +423,17 @@ class TestIlluminanceLevelSensor:
     def test_gen2_int_zero(self):
         assert _illum_sensor(0).native_value == 0
 
-    def test_state_class_is_none(self):
-        """No state_class — HA rejects MEASUREMENT with Gen1 string values."""
-        s = _illum_sensor("MEDIUM")
-        assert s.state_class is None
+    # conditional state_class (#315)
+    def test_state_class_is_none_for_string(self):
+        """No state_class for string-valued sensors — avoids state_class_removed repair."""
+        assert _illum_sensor("MEDIUM").state_class is None
+
+    def test_state_class_measurement_for_int(self):
+        """Numeric Gen1 and Gen2 devices should get MEASUREMENT state_class (#315)."""
+        assert _illum_sensor(13).state_class == SensorStateClass.MEASUREMENT
+
+    def test_device_class_illuminance_for_int(self):
+        assert _illum_sensor(9).device_class == SensorDeviceClass.ILLUMINANCE
+
+    def test_device_class_none_for_string(self):
+        assert _illum_sensor("HIGH").device_class is None
