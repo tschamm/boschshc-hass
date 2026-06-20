@@ -69,8 +69,9 @@ PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.LIGHT,
     Platform.NUMBER,
-    Platform.VALVE,
 ]
+if hasattr(Platform, "VALVE"):
+    PLATFORMS.append(Platform.VALVE)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
