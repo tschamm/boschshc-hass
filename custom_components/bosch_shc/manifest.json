@@ -8,7 +8,7 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/tschamm/boschshc-hass/issues",
   "loggers": ["boschshcpy"],
-  "requirements": ["boschshcpy==0.2.116"],
-  "version": "0.4.108",
+  "requirements": ["boschshcpy==0.2.117"],
+  "version": "0.4.109",
   "zeroconf": [{ "type": "_http._tcp.local.", "name": "bosch shc*" }]
 }
