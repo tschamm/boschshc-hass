@@ -1,0 +1,18 @@
+{
+  "entity": {
+    "climate": {
+      "room_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "mdi:calendar-clock",
+              "manual": "mdi:hand-back-right",
+              "eco": "mdi:leaf",
+              "boost": "mdi:rocket-launch"
+            }
+          }
+        }
+      }
+    }
+  }
+}
