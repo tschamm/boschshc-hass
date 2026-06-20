@@ -469,6 +469,38 @@ class TestBlindsSetCoverPosition:
 
 
 # ---------------------------------------------------------------------------
+# Regression: BlindsControlCover.stop_cover must call stop_blinds(), NOT stop()
+# ---------------------------------------------------------------------------
+
+class TestBlindsStopCover:
+    def test_stop_cover_calls_stop_blinds_not_stop(self):
+        """BlindsControlCover.stop_cover() must call stop_blinds() (blind endpoint),
+        not the inherited stop() (ShutterControl endpoint)."""
+        cover = _make_blinds()
+        # Ensure there is no `stop` method on the tracking device — if the
+        # inherited ShutterControlCover.stop_cover() were called it would raise.
+        assert not hasattr(cover._device, "stop"), (
+            "Test setup error: _TrackingDevice must not have a stop() method"
+        )
+        cover.stop_cover()
+        assert len(cover._device._stop_blinds_calls) == 1
+
+    def test_stop_cover_clears_opening_closing_flags(self):
+        cover = _make_blinds()
+        cover._attr_is_opening = True
+        cover._attr_is_closing = True
+        cover.stop_cover()
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False
+
+    def test_stop_cover_sets_skip_update_and_app_command(self):
+        cover = _make_blinds()
+        cover.stop_cover()
+        assert cover._skip_update is True
+        assert cover._app_command is True
+
+
+# ---------------------------------------------------------------------------
 # Line 297: BlindsControlCover.stop_cover_tilt
 # ---------------------------------------------------------------------------
 

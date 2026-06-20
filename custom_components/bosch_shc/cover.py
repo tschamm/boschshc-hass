@@ -303,6 +303,14 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
         """Return the current cover position using blinds_level (BlindsSceneControl)."""
         return round(self._device.blinds_level * 100.0)
 
+    def stop_cover(self, **kwargs: Any) -> None:
+        """Stop the cover using the blind-specific stop endpoint."""
+        self._attr_is_opening = False
+        self._attr_is_closing = False
+        self._device.stop_blinds()
+        self._skip_update = True
+        self._app_command = True
+
     def stop_cover_tilt(self, **kwargs: Any) -> None:
         self._device.stop_blinds()
 

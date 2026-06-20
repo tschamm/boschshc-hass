@@ -394,6 +394,54 @@ class TestSetupConnectionErrors:
 # ---------------------------------------------------------------------------
 
 class TestScenarioSubscription:
+    def test_scenario_callback_subscribed_with_no_scenarios(self):
+        """Regression (Bug 1): subscribe_scenario_callback must be called ONCE even
+        when the SHC has NO scenarios — otherwise scenario-triggered automations
+        never fire on a controller that starts with an empty scenario list."""
+        session = _make_fake_session(scenarios=[])
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        dr_mock = _make_fake_device_registry()
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            _run(async_setup_entry(hass, entry))
+
+        session.subscribe_scenario_callback.assert_called_once_with("shc", ANY_callable)
+
+    def test_scenario_callback_subscribed_once_even_with_multiple_scenarios(self):
+        """Regression (Bug 1): when multiple scenarios exist, subscribe_scenario_callback
+        must still only be called ONCE — the old loop caused N duplicate registrations."""
+        scenarios = [
+            SimpleNamespace(name="Morning", id="s1"),
+            SimpleNamespace(name="Evening", id="s2"),
+            SimpleNamespace(name="Night", id="s3"),
+        ]
+        session = _make_fake_session(scenarios=scenarios)
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        dr_mock = _make_fake_device_registry()
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            _run(async_setup_entry(hass, entry))
+
+        session.subscribe_scenario_callback.assert_called_once_with("shc", ANY_callable)
+
     def test_scenario_callback_subscribed(self):
         """subscribe_scenario_callback called once per scenario in the list."""
         fake_scenario = SimpleNamespace(name="Guten Morgen", id="s1")
@@ -716,7 +764,10 @@ class TestSwitchDeviceEventListener:
         dev.keyname = SimpleNamespace(name="UPPER_BUTTON")
         return dev
 
-    def test_init_subscribes_keypad(self):
+    def test_init_does_not_subscribe_keypad_before_setup(self):
+        """Regression (Bug 2): subscribe_callback must NOT be called in __init__ —
+        device_id is None at that point, so events fired before async_setup() would
+        carry ATTR_DEVICE_ID=None and never match device-trigger automations."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
         hass = _make_fake_hass()
@@ -724,8 +775,34 @@ class TestSwitchDeviceEventListener:
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks)
 
+        SwitchDeviceEventListener(hass, entry, dev)
+        ks.subscribe_callback.assert_not_called()
+
+    def test_async_setup_subscribes_keypad_after_device_id_set(self):
+        """Regression (Bug 2): subscribe_callback is called in async_setup(), after
+        self.device_id is populated — guaranteeing events carry a valid device_id."""
+        from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        ks = self._make_keypad_service()
+        dev = self._make_switch_device(keypad_service=ks)
+
+        fake_dev_entry = SimpleNamespace(id="reg-dev-id-999")
+        dr_mock = MagicMock()
+        dr_mock.async_get_or_create = MagicMock(return_value=fake_dev_entry)
+
         listener = SwitchDeviceEventListener(hass, entry, dev)
+        # Not subscribed yet
+        ks.subscribe_callback.assert_not_called()
+        assert listener.device_id is None
+
+        with patch(PATCH_DR_GET, return_value=dr_mock):
+            _run(listener.async_setup())
+
+        # Now subscribed, and device_id is already set before subscribe
         ks.subscribe_callback.assert_called_once_with(dev.id, listener._input_events_handler)
+        assert listener.device_id == "reg-dev-id-999"
 
     def test_init_registers_ha_stop_listener(self):
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener

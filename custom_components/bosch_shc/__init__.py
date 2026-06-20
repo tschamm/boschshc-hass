@@ -208,8 +208,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             },
         )
 
-    for scenario in hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenarios:
-        session.subscribe_scenario_callback("shc", _scenario_trigger)
+    session.subscribe_scenario_callback("shc", _scenario_trigger)
 
     for switch_device in session.device_helper.universal_switches:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
@@ -334,9 +333,6 @@ class SwitchDeviceEventListener:
         for service in self._device.device_services:
             if service.id == "Keypad":
                 self._keypad_service = service
-                self._keypad_service.subscribe_callback(
-                    self._device.id, self._input_events_handler
-                )
                 break
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
@@ -376,6 +372,10 @@ class SwitchDeviceEventListener:
             via_device=(DOMAIN, self._device.root_device_id),
         )
         self.device_id = device_entry.id
+        if self._keypad_service is not None:
+            self._keypad_service.subscribe_callback(
+                self._device.id, self._input_events_handler
+            )
 
     def shutdown(self):
         """Shutdown the listener."""
