@@ -1,10 +1,8 @@
 smokedetector_check:
-  fields:
-    entity_id:
-      example: "binary_sensor.smokedetector_living_room"
-      required: true
-      selector:
-        text:
+  target:
+    entity:
+      integration: bosch_shc
+      domain: binary_sensor
 
 trigger_scenario:
   fields:
@@ -42,12 +40,11 @@ trigger_rawscan:
 
 
 smokedetector_alarmstate:
+  target:
+    entity:
+      integration: bosch_shc
+      domain: binary_sensor
   fields:
-    entity_id:
-      example: "binary_sensor.smokedetector_living_room"
-      required: true
-      selector:
-        text:
     command:
       example: "CUSTOM_COMMAND"
       required: true
