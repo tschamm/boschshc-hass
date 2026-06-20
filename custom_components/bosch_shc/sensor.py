@@ -24,7 +24,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN, LOGGER
+from .const import DATA_SESSION, DOMAIN, LOGGER, OPT_DIAGNOSTIC_ENTITIES
 from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
@@ -37,6 +37,7 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
     sensor: SHCDevice
+    diagnostic_enabled = config_entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True)
 
     for sensor in session.device_helper.thermostats:
         await async_migrate_to_new_unique_id(
@@ -48,15 +49,16 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
-        await async_migrate_to_new_unique_id(
-            hass, Platform.SENSOR, device=sensor, attr_name="Valvetappet"
-        )
-        entities.append(
-            ValveTappetSensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
+        if diagnostic_enabled:
+            await async_migrate_to_new_unique_id(
+                hass, Platform.SENSOR, device=sensor, attr_name="Valvetappet"
             )
-        )
+            entities.append(
+                ValveTappetSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in (
         session.device_helper.wallthermostats + session.device_helper.roomthermostats
@@ -220,19 +222,20 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
-        await async_migrate_to_new_unique_id(
-            hass,
-            Platform.SENSOR,
-            device=sensor,
-            attr_name="CommunicationQuality",
-            old_unique_id=f"{sensor.serial}_communication_quality",
-        )
-        entities.append(
-            CommunicationQualitySensor(
+        if diagnostic_enabled:
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
                 device=sensor,
-                entry_id=config_entry.entry_id,
+                attr_name="CommunicationQuality",
+                old_unique_id=f"{sensor.serial}_communication_quality",
             )
-        )
+            entities.append(
+                CommunicationQualitySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in session.device_helper.motion_detectors:
         entities.append(
@@ -261,18 +264,19 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
-        await async_migrate_to_new_unique_id(
-            hass,
-            Platform.SENSOR,
-            device=sensor,
-            attr_name="CommunicationQuality",
-        )
-        entities.append(
-            CommunicationQualitySensor(
+        if diagnostic_enabled:
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
                 device=sensor,
-                entry_id=config_entry.entry_id,
+                attr_name="CommunicationQuality",
             )
-        )
+            entities.append(
+                CommunicationQualitySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     sensor = session.emma
     entities.append(
