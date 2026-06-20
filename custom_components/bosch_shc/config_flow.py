@@ -14,6 +14,15 @@ from homeassistant import config_entries, core
 from homeassistant.components import zeroconf
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    BooleanSelector,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .const import (
@@ -24,11 +33,17 @@ from .const import (
     CONF_SSL_KEY,
     DOMAIN,
     LOGGER,
+    OPT_DIAGNOSTIC_ENTITIES,
+    OPT_LONG_POLL_TIMEOUT,
+    OPT_SCENARIOS_AS_BUTTONS,
+    OPT_SSL_VERIFY_HOSTNAME,
 )
 
 HOST_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HOST): str,
+        vol.Required(CONF_HOST): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.TEXT)
+        ),
     }
 )
 
@@ -83,6 +98,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     host = None
     hostname = None
 
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Return the options flow for this handler."""
+        return OptionsFlowHandler()
+
     async def async_step_reauth(self, user_input=None):
         """Perform reauth upon an API authentication error."""
         return await self.async_step_reauth_confirm()
@@ -97,6 +117,41 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.host = host = user_input[CONF_HOST]
         self.info = await self._get_info(host)
         return await self.async_step_credentials()
+
+    async def async_step_reconfigure(self, user_input=None):
+        """Allow the user to change the SHC host/IP without re-pairing."""
+        entry = self._get_reconfigure_entry()
+        errors = {}
+        if user_input is not None:
+            new_host = user_input[CONF_HOST]
+            try:
+                info = await self._get_info(new_host)
+            except SHCConnectionError:
+                errors["base"] = "cannot_connect"
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception("Unexpected exception during reconfigure")
+                errors["base"] = "unknown"
+            else:
+                await self.async_set_unique_id(info["unique_id"])
+                self._abort_if_unique_id_mismatch(reason="wrong_shc")
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={CONF_HOST: new_host},
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_HOST, default=entry.data.get(CONF_HOST, "")
+                    ): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT)
+                    ),
+                }
+            ),
+            errors=errors,
+        )
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
@@ -177,10 +232,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     CONF_PASSWORD, default=user_input.get(CONF_PASSWORD, "")
-                ): str,
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
                 vol.Optional(
                     CONF_NAME, default=user_input.get(CONF_NAME, "HomeAssistant")
-                ): str,
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
             }
         )
 
@@ -234,3 +293,43 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host,
             zeroconf_instance,
         )
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle options flow for Bosch SHC."""
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current = self.config_entry.options
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    OPT_SCENARIOS_AS_BUTTONS,
+                    default=current.get(OPT_SCENARIOS_AS_BUTTONS, False),
+                ): BooleanSelector(),
+                vol.Optional(
+                    OPT_DIAGNOSTIC_ENTITIES,
+                    default=current.get(OPT_DIAGNOSTIC_ENTITIES, True),
+                ): BooleanSelector(),
+                vol.Optional(
+                    OPT_SSL_VERIFY_HOSTNAME,
+                    default=current.get(OPT_SSL_VERIFY_HOSTNAME, False),
+                ): BooleanSelector(),
+                vol.Optional(
+                    OPT_LONG_POLL_TIMEOUT,
+                    default=current.get(OPT_LONG_POLL_TIMEOUT, 30),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=5,
+                        max=300,
+                        step=1,
+                        unit_of_measurement="s",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)
