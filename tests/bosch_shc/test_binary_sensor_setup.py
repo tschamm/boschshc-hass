@@ -100,6 +100,7 @@ def _make_fake_session(
     shutter_contacts=None,
     shutter_contacts2=None,
     motion_detectors=None,
+    motion_detectors2=None,
     smoke_detectors=None,
     smoke_detection_system=None,
     water_leakage_detectors=None,
@@ -122,6 +123,7 @@ def _make_fake_session(
         shutter_contacts=shutter_contacts or [],
         shutter_contacts2=shutter_contacts2 or [],
         motion_detectors=motion_detectors or [],
+        motion_detectors2=motion_detectors2 or [],
         smoke_detectors=smoke_detectors or [],
         smoke_detection_system=smoke_detection_system,
         water_leakage_detectors=water_leakage_detectors or [],
@@ -382,6 +384,94 @@ class TestAsyncSetupEntry:
         battery_entities = [e for e in entities if isinstance(e, BatterySensor)]
         # One battery sensor per device_type entry in the loop
         assert len(battery_entities) == 6
+
+    # -- motion detectors2 (MD2) --
+    def test_motion_detector2_added(self):
+        """MD2 device in motion_detectors2 → MotionDetectionSensor entity created."""
+        lm_svc = _make_service("LatestMotion")
+        dev = _make_base_device("md2-1", device_services=[lm_svc])
+        dev.latestmotion = None
+        session = _make_fake_session(motion_detectors2=[dev])
+        hass = _make_hass()
+        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
+        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        entities_collected = []
+
+        async def _run_setup():
+            with (
+                patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
+                patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+            ):
+                _cp.get.return_value = MagicMock()
+                await async_setup_entry(hass, config_entry, lambda ents, **kw: entities_collected.extend(ents))
+
+        _run(_run_setup())
+        motion_entities = [e for e in entities_collected if isinstance(e, MotionDetectionSensor)]
+        assert len(motion_entities) == 1
+
+    def test_motion_detector2_latestmotion_service_subscribed(self):
+        """LatestMotion subscribe_callback is called for MD2 device during __init__."""
+        cb_store = {}
+
+        def record_subscribe(key, cb):
+            cb_store[key] = cb
+
+        lm_svc = _make_service("LatestMotion", subscribe_callback=record_subscribe)
+        dev = _make_base_device("md2-2", device_services=[lm_svc])
+        dev.latestmotion = None
+        session = _make_fake_session(motion_detectors2=[dev])
+        hass = _make_hass()
+        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
+        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+
+        async def _run_setup():
+            with (
+                patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
+                patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+            ):
+                _cp.get.return_value = MagicMock()
+                await async_setup_entry(hass, config_entry, lambda ents, **kw: None)
+
+        _run(_run_setup())
+        assert any("_eventlistener" in k for k in cb_store)
+
+    def test_motion_detector2_battery_added_when_supported(self):
+        """MD2 device with battery support → BatterySensor entity created."""
+        lm_svc = _make_service("LatestMotion")
+        dev = _make_base_device("md2-bat", device_services=[lm_svc], supports_batterylevel=True)
+        dev.latestmotion = None
+        dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        session = _make_fake_session(motion_detectors2=[dev])
+        entities, _ = self._setup(session)
+        assert any(isinstance(e, BatterySensor) for e in entities)
+
+    def test_motion_detector2_and_gen1_both_added(self):
+        """Gen1 and MD2 devices both present → two MotionDetectionSensor entities."""
+        lm_svc1 = _make_service("LatestMotion")
+        dev1 = _make_base_device("md1-x", device_services=[lm_svc1])
+        dev1.latestmotion = None
+
+        lm_svc2 = _make_service("LatestMotion")
+        dev2 = _make_base_device("md2-x", device_services=[lm_svc2])
+        dev2.latestmotion = None
+
+        session = _make_fake_session(motion_detectors=[dev1], motion_detectors2=[dev2])
+        hass = _make_hass()
+        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
+        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        entities_collected = []
+
+        async def _run_setup():
+            with (
+                patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
+                patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+            ):
+                _cp.get.return_value = MagicMock()
+                await async_setup_entry(hass, config_entry, lambda ents, **kw: entities_collected.extend(ents))
+
+        _run(_run_setup())
+        motion_entities = [e for e in entities_collected if isinstance(e, MotionDetectionSensor)]
+        assert len(motion_entities) == 2
 
     # -- service registration --
     def test_platform_services_registered(self):

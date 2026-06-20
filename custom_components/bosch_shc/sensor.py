@@ -239,6 +239,14 @@ async def async_setup_entry(
             )
         )
 
+    for sensor in session.device_helper.motion_detectors2:
+        entities.append(
+            IlluminanceLevelSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     sensor = session.emma
     entities.append(
         EmmaPowerSensor(
@@ -293,6 +301,7 @@ class PuritySensor(SHCEntity, SensorEntity):
     """Representation of an SHC purity reporting sensor."""
 
     _attr_icon = "mdi:molecule-co2"
+    _attr_device_class = SensorDeviceClass.CO2
     _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
 
@@ -320,7 +329,11 @@ class AirQualitySensor(SHCEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self._device.combined_rating.name
+        try:
+            return self._device.combined_rating.name
+        except ValueError as err:
+            LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
+            return None
 
     @property
     def extra_state_attributes(self):
@@ -342,7 +355,13 @@ class TemperatureRatingSensor(SHCEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self._device.temperature_rating.name
+        try:
+            return self._device.temperature_rating.name
+        except ValueError as err:
+            LOGGER.warning(
+                "Unknown temperature rating for %s: %s", self._device.name, err
+            )
+            return None
 
 
 class CommunicationQualitySensor(SHCEntity, SensorEntity):
@@ -376,7 +395,13 @@ class HumidityRatingSensor(SHCEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self._device.humidity_rating.name
+        try:
+            return self._device.humidity_rating.name
+        except ValueError as err:
+            LOGGER.warning(
+                "Unknown humidity rating for %s: %s", self._device.name, err
+            )
+            return None
 
 
 class PurityRatingSensor(SHCEntity, SensorEntity):
@@ -391,7 +416,13 @@ class PurityRatingSensor(SHCEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self._device.purity_rating.name
+        try:
+            return self._device.purity_rating.name
+        except ValueError as err:
+            LOGGER.warning(
+                "Unknown purity rating for %s: %s", self._device.name, err
+            )
+            return None
 
 
 class PowerSensor(SHCEntity, SensorEntity):

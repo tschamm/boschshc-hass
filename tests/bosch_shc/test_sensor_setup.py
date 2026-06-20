@@ -92,6 +92,7 @@ def _make_fake_session(
     micromodule_blinds=(),
     smart_plugs_compact=(),
     motion_detectors=(),
+    motion_detectors2=(),
     emma=None,
 ):
     if emma is None:
@@ -110,6 +111,7 @@ def _make_fake_session(
             micromodule_blinds=list(micromodule_blinds),
             smart_plugs_compact=list(smart_plugs_compact),
             motion_detectors=list(motion_detectors),
+            motion_detectors2=list(motion_detectors2),
         ),
         emma=emma,
     )
@@ -270,6 +272,25 @@ class TestAsyncSetupEntryEntityCounts:
         # 1 + EMMA
         assert len(entities) == 2
         assert isinstance(entities[0], IlluminanceLevelSensor)
+
+    def test_motion_detector2_yields_illuminance(self):
+        """Gen2 MD2 must also produce an IlluminanceLevelSensor (closes #268/#303)."""
+        dev = _fake_device(name="MD2", device_id="hdm:MD2:001")
+        session = _make_fake_session(motion_detectors2=[dev])
+        entities = _run_setup(session)
+        # 1 IlluminanceLevelSensor + EMMA
+        assert len(entities) == 2
+        assert isinstance(entities[0], IlluminanceLevelSensor)
+
+    def test_motion_detector2_and_gen1_both_yield_illuminance(self):
+        """Gen1 + Gen2 MD each produce their own IlluminanceLevelSensor."""
+        dev1 = _fake_device(name="MD1", device_id="hdm:MD:001")
+        dev2 = _fake_device(name="MD2-G2", device_id="hdm:MD2:001")
+        session = _make_fake_session(motion_detectors=[dev1], motion_detectors2=[dev2])
+        entities = _run_setup(session)
+        # 2 IlluminanceLevelSensors + EMMA
+        assert len(entities) == 3
+        assert sum(isinstance(e, IlluminanceLevelSensor) for e in entities) == 2
 
     def test_no_entities_without_devices_adds_nothing_except_emma(self):
         """async_add_entities is called once (EMMA always present); result has 1 entity."""

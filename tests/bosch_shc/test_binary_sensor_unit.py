@@ -155,6 +155,59 @@ class TestMotionDetectionSensor:
 
 
 # ---------------------------------------------------------------------------
+# MotionDetectionSensor — MD2 (SHCMotionDetector2 reuses the same entity class)
+# ---------------------------------------------------------------------------
+# MD2 exposes the same `latestmotion` property as Gen1, so MotionDetectionSensor
+# works for both without modification.  These tests pin that contract.
+
+
+def _motion_sensor_md2(latestmotion):
+    """Build a MotionDetectionSensor as if backed by an MD2 device."""
+    s = MotionDetectionSensor.__new__(MotionDetectionSensor)
+    # MD2 has illuminance (int) in addition to latestmotion, but MotionDetectionSensor
+    # only touches latestmotion — so the fake device only needs that attribute.
+    s._device = SimpleNamespace(latestmotion=latestmotion)
+    return s
+
+
+class TestMotionDetectionSensorMD2:
+    def test_device_class_is_motion(self):
+        s = _motion_sensor_md2(None)
+        assert s._attr_device_class == BinarySensorDeviceClass.MOTION
+
+    def test_is_on_recent_motion(self):
+        from datetime import datetime, timedelta, timezone
+        recent = datetime.now(timezone.utc) - timedelta(seconds=10)
+        ts = recent.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        assert _motion_sensor_md2(ts).is_on is True
+
+    def test_is_on_old_motion_is_false(self):
+        from datetime import datetime, timedelta, timezone
+        old = datetime.now(timezone.utc) - timedelta(minutes=10)
+        ts = old.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        assert _motion_sensor_md2(ts).is_on is False
+
+    def test_is_on_none_returns_false(self):
+        assert _motion_sensor_md2(None).is_on is False
+
+    def test_is_on_garbage_returns_false(self):
+        assert _motion_sensor_md2("not-a-date").is_on is False
+
+    def test_extra_state_attributes_contains_last_motion(self):
+        ts = "2026-06-20T10:00:00.000Z"
+        s = _motion_sensor_md2(ts)
+        assert s.extra_state_attributes == {"last_motion_detected": ts}
+
+    def test_extra_state_attributes_none_timestamp(self):
+        s = _motion_sensor_md2(None)
+        assert s.extra_state_attributes == {"last_motion_detected": None}
+
+    def test_should_poll_is_true(self):
+        s = _motion_sensor_md2("2026-06-20T10:00:00.000Z")
+        assert s.should_poll is True
+
+
+# ---------------------------------------------------------------------------
 # SmokeDetectorSensor
 # ---------------------------------------------------------------------------
 # Covers the PRIMARY/SECONDARY allowlist and INTRUSION_ALARM exclusion (issue #191)
@@ -230,6 +283,23 @@ class TestSmokeDetectorSensor:
         )
         attrs = sensor.extra_state_attributes
         assert attrs["smokedetectorcheck_state"] == "SMOKE_TEST_FAILED"
+
+    def test_extra_state_attributes_unknown_check_state_returns_none(self):
+        s = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
+
+        class _BadEnum:
+            @property
+            def name(self):
+                raise ValueError("unknown_state")
+
+        s._device = SimpleNamespace(
+            smokedetectorcheck_state=_BadEnum(),
+            alarmstate=_BadEnum(),
+            name="test_smoke",
+        )
+        attrs = s.extra_state_attributes
+        assert attrs["smokedetectorcheck_state"] is None
+        assert attrs["alarmstate"] is None
 
 
 # ---------------------------------------------------------------------------

@@ -117,6 +117,12 @@ class TestPuritySensor:
     def test_state_class(self):
         assert _purity_sensor(800).state_class == SensorStateClass.MEASUREMENT
 
+    def test_device_class(self):
+        assert _purity_sensor(400).device_class == SensorDeviceClass.CO2
+
+    def test_unit(self):
+        assert _purity_sensor(400).native_unit_of_measurement == CONCENTRATION_PARTS_PER_MILLION
+
 
 # ---------------------------------------------------------------------------
 # AirQualitySensor
@@ -149,6 +155,17 @@ class TestAirQualitySensor:
         rating = AirQualityLevelService.RatingState.GOOD
         s = _air_quality_sensor(rating, description="Fresh")
         assert s.extra_state_attributes == {"rating_description": "Fresh"}
+
+    def test_native_value_unknown_rating_returns_none(self):
+        s = AirQualitySensor.__new__(AirQualitySensor)
+
+        class _BadEnum:
+            @property
+            def name(self):
+                raise ValueError("unknown_rating")
+
+        s._device = SimpleNamespace(combined_rating=_BadEnum(), name="test")
+        assert s.native_value is None
 
 
 # ---------------------------------------------------------------------------
