@@ -443,11 +443,12 @@ async def async_setup_entry(
                 )
             )
 
-    # Thermostats / room thermostats expose child lock as a ThermostatService
-    # .State enum (ON/OFF) -> needs the enum-aware description.
+    # Thermostats / room thermostats / wall thermostats expose child lock as a
+    # ThermostatService.State enum (ON/OFF) -> needs the enum-aware description.
     for switch in (
         session.device_helper.thermostats
         + session.device_helper.roomthermostats
+        + session.device_helper.wallthermostats
     ):
         entities.append(
             SHCSwitch(

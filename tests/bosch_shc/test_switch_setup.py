@@ -145,6 +145,7 @@ def _make_session(**helper_lists):
         shutter_contacts2=[],
         thermostats=[],
         roomthermostats=[],
+        wallthermostats=[],
         micromodule_shutter_controls=[],
         micromodule_blinds=[],
         micromodule_impulse_relays=[],
@@ -427,6 +428,32 @@ def test_setup_roomthermostat_child_lock_only():
     entities, _ = _setup(session)
     keys = {e.entity_description.key for e in entities}
     assert keys == {"child_lock_thermostat"}
+
+
+# ---------------------------------------------------------------------------
+# wallthermostats (THB/BWTH/BWTH24) → child_lock_thermostat (enum-aware)
+# ---------------------------------------------------------------------------
+
+
+def test_setup_wallthermostat_child_lock_only():
+    """THB/BWTH wall thermostat gets child_lock_thermostat (ThermostatService enum)."""
+    wt = _fake_device(name="WallThermo", dev_id="wt1")
+    session = _make_session(wallthermostats=[wt])
+    entities, _ = _setup(session)
+    keys = {e.entity_description.key for e in entities}
+    assert keys == {"child_lock_thermostat"}
+
+
+def test_setup_wallthermostat_uses_enum_description():
+    """Confirms the wallthermostat child_lock entity uses the enum-aware description."""
+    from boschshcpy import SHCThermostat
+
+    wt = _fake_device(name="WallThermo2", dev_id="wt2")
+    session = _make_session(wallthermostats=[wt])
+    entities, _ = _setup(session)
+    cl_entities = [e for e in entities if e.entity_description.key == "child_lock_thermostat"]
+    assert len(cl_entities) == 1
+    assert cl_entities[0].entity_description.on_value == SHCThermostat.ThermostatService.State.ON
 
 
 # ---------------------------------------------------------------------------
