@@ -44,6 +44,8 @@ def _make_device(
     setpoint_temperature=20.0,
     temperature=19.0,
     operation_mode_value="AUTOMATIC",
+    supports_cooling=False,
+    cooling_mode=False,
 ):
     from boschshcpy.services_impl import RoomClimateControlService
 
@@ -56,6 +58,8 @@ def _make_device(
         setpoint_temperature=setpoint_temperature,
         temperature=temperature,
         operation_mode=op,
+        supports_cooling=supports_cooling,
+        cooling_mode=cooling_mode,
         root_device_id="test-root",
         id="test-id",
     )
@@ -258,3 +262,129 @@ class TestNormalHeatSetTemp:
         entity, written = self._entity_capturing_writes()
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 31.0}))
         assert written == [], "Value above max_temp must not be written"
+
+
+# ---------------------------------------------------------------------------
+# PR #304 — COOL HVACMode on ClimateControl (supports_cooling)
+# ---------------------------------------------------------------------------
+
+def _make_device_cooling(
+    *,
+    supports_cooling=True,
+    cooling_mode=False,
+    summer_mode=False,
+    operation_mode_value="AUTOMATIC",
+):
+    from boschshcpy.services_impl import RoomClimateControlService
+
+    op = RoomClimateControlService.OperationMode(operation_mode_value)
+    return SimpleNamespace(
+        boost_mode=False,
+        low=False,
+        summer_mode=summer_mode,
+        supports_boost_mode=False,
+        supports_cooling=supports_cooling,
+        cooling_mode=cooling_mode,
+        setpoint_temperature=20.0,
+        temperature=19.0,
+        operation_mode=op,
+        root_device_id="test-root",
+        id="test-id",
+    )
+
+
+class TestCoolingHvacMode:
+    """PR #304: hvac_mode returns COOL when supports_cooling and cooling_mode."""
+
+    def test_hvac_mode_cool_when_cooling_active(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=True)
+        entity = _make_entity(device)
+        assert entity.hvac_mode == HVACMode.COOL
+
+    def test_hvac_mode_auto_when_not_cooling(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=False,
+                                      operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
+        assert entity.hvac_mode == HVACMode.AUTO
+
+    def test_hvac_modes_includes_cool_when_supported(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True)
+        entity = _make_entity(device)
+        assert HVACMode.COOL in entity.hvac_modes
+
+    def test_hvac_modes_excludes_cool_when_not_supported(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=False)
+        entity = _make_entity(device)
+        assert HVACMode.COOL not in entity.hvac_modes
+
+    def test_set_hvac_mode_cool_sets_cooling_mode(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=False)
+        entity = _make_entity(device)
+        written = {}
+
+        async def _executor(func, *args):
+            if func is setattr and len(args) == 3:
+                written[args[1]] = args[2]
+            else:
+                func(*args)
+
+        entity.hass = _make_hass(_executor)
+        _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
+        assert written.get("cooling_mode") is True
+        assert written.get("summer_mode") is False
+
+    def test_set_hvac_mode_auto_clears_cooling_mode(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=True,
+                                      operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
+        written = {}
+
+        async def _executor(func, *args):
+            if func is setattr and len(args) == 3:
+                written[args[1]] = args[2]
+            else:
+                func(*args)
+
+        entity.hass = _make_hass(_executor)
+        _run_async(entity.async_set_hvac_mode(HVACMode.AUTO))
+        assert written.get("cooling_mode") is False
+
+    def test_set_hvac_mode_heat_clears_cooling_mode(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=True,
+                                      operation_mode_value="MANUAL")
+        entity = _make_entity(device)
+        written = {}
+
+        async def _executor(func, *args):
+            if func is setattr and len(args) == 3:
+                written[args[1]] = args[2]
+            else:
+                func(*args)
+
+        entity.hass = _make_hass(_executor)
+        _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
+        assert written.get("cooling_mode") is False
+
+    def test_set_hvac_mode_off_clears_cooling_mode(self):
+        from homeassistant.components.climate.const import HVACMode
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=True)
+        entity = _make_entity(device)
+        written = {}
+
+        async def _executor(func, *args):
+            if func is setattr and len(args) == 3:
+                written[args[1]] = args[2]
+            else:
+                func(*args)
+
+        entity.hass = _make_hass(_executor)
+        _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
+        assert written.get("cooling_mode") is False
+        assert written.get("summer_mode") is True

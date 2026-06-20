@@ -192,3 +192,43 @@ def test_bounds_consistency_at_extremes():
     for offset in (-5.0, 0.0, 5.0):
         entity = _make_number(offset=offset, min_offset=-5.0, max_offset=5.0)
         assert entity.native_min_value <= entity.native_value <= entity.native_max_value
+
+
+# ---------------------------------------------------------------------------
+# set_native_value clamping (out-of-range values are clamped, not passed through)
+# ---------------------------------------------------------------------------
+
+
+def test_set_native_value_above_max_clamps_to_max():
+    """Value above native_max_value must be clamped to max, never sent raw."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity.set_native_value(10.0)
+    assert entity._device.offset == 5.0
+
+
+def test_set_native_value_below_min_clamps_to_min():
+    """Value below native_min_value must be clamped to min, never sent raw."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity.set_native_value(-20.0)
+    assert entity._device.offset == -5.0
+
+
+def test_set_native_value_in_range_passes_through():
+    """In-range value must reach _device.offset unchanged."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity.set_native_value(2.5)
+    assert entity._device.offset == 2.5
+
+
+def test_set_native_value_exactly_at_max_passes_through():
+    """Boundary-equal max must pass through, not be rejected."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity.set_native_value(5.0)
+    assert entity._device.offset == 5.0
+
+
+def test_set_native_value_exactly_at_min_passes_through():
+    """Boundary-equal min must pass through, not be rejected."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity.set_native_value(-5.0)
+    assert entity._device.offset == -5.0

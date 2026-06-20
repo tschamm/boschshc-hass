@@ -99,6 +99,8 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         """Return the state of the device."""
         if self._device.alarm_state == SHCIntrusionSystem.AlarmState.ALARM_ON:
             return AlarmControlPanelState.TRIGGERED
+        if self._device.alarm_state == SHCIntrusionSystem.AlarmState.ALARM_MUTED:
+            return AlarmControlPanelState.TRIGGERED
         if self._device.alarm_state == SHCIntrusionSystem.AlarmState.PRE_ALARM:
             return AlarmControlPanelState.PENDING
 
@@ -132,8 +134,8 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         """Return the list of supported features."""
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
-            + AlarmControlPanelEntityFeature.ARM_HOME
-            + AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
+            | AlarmControlPanelEntityFeature.ARM_HOME
+            | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
         )
 
     @property

@@ -5,7 +5,6 @@ No HA harness required.
 """
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock
 
 from homeassistant.components.light import ColorMode
 from homeassistant.util import color as color_util
@@ -53,7 +52,9 @@ def _make_switch(device):
         sw._attr_color_mode = ColorMode.HS
     if device.supports_color_temp:
         sw._attr_supported_color_modes.add(ColorMode.COLOR_TEMP)
-        sw._attr_color_mode = ColorMode.COLOR_TEMP
+        # Mirror the fixed __init__: COLOR_TEMP wins only when HS is NOT also present
+        if not device.supports_color_hsb:
+            sw._attr_color_mode = ColorMode.COLOR_TEMP
     if device.supports_color_hsb or device.supports_color_temp:
         sw._attr_min_color_temp_kelvin = color_util.color_temperature_mired_to_kelvin(
             device.min_color_temperature
@@ -120,6 +121,12 @@ def test_brightness_one_percent():
 def test_brightness_99_percent():
     sw = _make_switch(_make_device(brightness=99))
     assert sw.brightness == round(99 * 255 / 100)
+
+
+def test_brightness_none_guard():
+    """brightness property must return None when device reports None (e.g. unavailable)."""
+    sw = _make_switch(_make_device(brightness=None))
+    assert sw.brightness is None
 
 
 # ---------------------------------------------------------------------------
@@ -229,12 +236,13 @@ def test_color_mode_color_temp_only():
 
 
 def test_color_mode_hs_and_color_temp():
+    # When both HS and COLOR_TEMP are supported, HS takes priority as the
+    # default color_mode (richer capability; COLOR_TEMP no longer last-write-wins).
     sw = _make_switch(_make_device(supports_color_hsb=True, supports_color_temp=True, supports_brightness=True))
     assert ColorMode.HS in sw._attr_supported_color_modes
     assert ColorMode.COLOR_TEMP in sw._attr_supported_color_modes
     assert ColorMode.BRIGHTNESS not in sw._attr_supported_color_modes
-    # color_mode ends up COLOR_TEMP (last assignment in __init__)
-    assert sw._attr_color_mode == ColorMode.COLOR_TEMP
+    assert sw._attr_color_mode == ColorMode.HS
 
 
 def test_min_max_color_temp_kelvin_set_when_color_hsb():
