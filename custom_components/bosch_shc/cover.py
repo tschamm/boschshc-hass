@@ -109,7 +109,17 @@ class ShutterControlCover(SHCEntity, CoverEntity):
             self._attr_is_closing = False
             self._attr_is_opening = False
             if not self._skip_update:
-                if self._device.device_model == "BBL" or self._app_command:
+                # Refresh the reference position on every rest for level-based
+                # devices, so the next movement's direction is computed against the
+                # actual resting position. This must include physical-switch moves
+                # of MICROMODULE shutters/blinds: their Keypad events arrive as
+                # PRESS_SHORT (not SWITCH_ON), so they never hit the keycode
+                # direction branch below and rely on this reference (issue #294).
+                if (
+                    self._device.device_model
+                    in ("BBL", "MICROMODULE_SHUTTER", "MICROMODULE_BLINDS")
+                    or self._app_command
+                ):
                     self._last_position = self.current_cover_position
                     self._app_command = False
             else:

@@ -546,3 +546,44 @@ class TestBlindsSetCoverTiltPosition:
         cover = _make_blinds()
         cover.set_cover_tilt_position(**{ATTR_TILT_POSITION: 0})
         assert cover._device.target_angle == 1.0
+
+
+# ---------------------------------------------------------------------------
+# Regression: issue #294 — MICROMODULE_SHUTTER moved by its physical switch
+# ---------------------------------------------------------------------------
+
+def test_micromodule_shutter_physical_down_after_up_shows_closing_issue_294():
+    """A MICROMODULE_SHUTTER moved by its physical switch sends Keypad
+    eventType=PRESS_SHORT (not SWITCH_ON), so the keycode direction branch never
+    fires and direction comes from level vs _last_position. _last_position must
+    refresh at every rest (incl. physical moves) — otherwise the reference is
+    frozen at the load-time position and the down move keeps showing 'opening'.
+    Verified against a live device (deviceModel MICROMODULE_SHUTTER, Keypad
+    eventType PRESS_SHORT)."""
+    cover = _make_cover(
+        "MICROMODULE_SHUTTER", level=0.0, operation_state=STOPPED,
+        eventtype="PRESS_SHORT", keycode=2,
+    )
+    # 1. initial rest at fully closed -> reference initialises to 0
+    cover._update_attr()
+    assert cover._last_position == 0
+
+    # 2. physical UP move (level reports the target 1.0 == open) -> opening
+    cover._device.level = 1.0
+    cover._device.operation_state = MOVING
+    cover._update_attr()
+    assert cover._attr_is_opening is True
+    assert cover._attr_is_closing is False
+
+    # 3. comes to rest fully open -> reference MUST refresh to 100 (the fix;
+    #    without it this stays 0 for a physical MICROMODULE move)
+    cover._device.operation_state = STOPPED
+    cover._update_attr()
+    assert cover._last_position == 100
+
+    # 4. physical DOWN move (level reports the target 0.0 == closed) -> closing
+    cover._device.level = 0.0
+    cover._device.operation_state = MOVING
+    cover._update_attr()
+    assert cover._attr_is_closing is True
+    assert cover._attr_is_opening is False
