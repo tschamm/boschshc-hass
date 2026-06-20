@@ -329,6 +329,7 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
+                hue_lights=[],
             )
         )
         result = self._run(session)
@@ -342,6 +343,7 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[],
                 micromodule_dimmers=[dev],
+                hue_lights=[],
             )
         )
         result = self._run(session)
@@ -354,6 +356,7 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[_light_device()],
                 micromodule_dimmers=[_light_device()],
+                hue_lights=[],
             )
         )
         result = self._run(session)
@@ -366,6 +369,7 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[],
                 micromodule_dimmers=[],
+                hue_lights=[],
             )
         )
         result = self._run(session)
@@ -378,6 +382,7 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
+                hue_lights=[],
             )
         )
         result = self._run(session)
@@ -396,6 +401,7 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
+                hue_lights=[],
             )
         )
         result = self._run(session)
@@ -415,11 +421,45 @@ class TestLightSetupEntry:
             device_helper=SimpleNamespace(
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
+                hue_lights=[],
             )
         )
         result = self._run(session)
         assert len(result) == 1
         assert result[0]._attr_color_mode == ColorMode.ONOFF
+
+    def test_hue_lights_produce_light_switch_entities(self) -> None:
+        """hue_lights → LightSwitch (ONOFF mode for a BinarySwitch-only device)."""
+        dev = _light_device(
+            supports_color_hsb=False,
+            supports_color_temp=False,
+            supports_brightness=False,
+        )
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[],
+                micromodule_dimmers=[],
+                hue_lights=[dev],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], LightSwitch)
+
+    def test_hue_lights_mixed_with_others_all_collected(self) -> None:
+        """ledvance + hue → 2 LightSwitch entities."""
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[_light_device()],
+                micromodule_dimmers=[],
+                hue_lights=[_light_device(supports_color_hsb=False,
+                                          supports_color_temp=False,
+                                          supports_brightness=False)],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 2
+        assert all(isinstance(e, LightSwitch) for e in result)
 
 
 # ---------------------------------------------------------------------------

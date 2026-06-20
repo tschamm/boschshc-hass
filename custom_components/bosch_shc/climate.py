@@ -128,12 +128,12 @@ class ClimateControl(SHCEntity, ClimateEntity):
             modes.append(HVACMode.COOL)
         return modes
 
-    # @property
-    # def hvac_action(self):
-    #     if self.valve_tappet_position > 5:
-    #         return CURRENT_HVAC_HEAT
-    #     else:
-    #         return CURRENT_HVAC_IDLE
+    @property
+    def hvac_action(self):
+        """Return the current HVAC action."""
+        if self.hvac_mode == HVACMode.OFF:
+            return HVACAction.OFF
+        return HVACAction.HEATING if self._device.has_demand else HVACAction.IDLE
 
     @property
     def preset_mode(self):

@@ -14,6 +14,7 @@ from boschshcpy import SHCHeatingCircuit
 from boschshcpy.services_impl import RoomClimateControlService
 from homeassistant.components.climate.const import (
     HVACMode,
+    HVACAction,
     PRESET_BOOST,
     PRESET_ECO,
     PRESET_NONE,
@@ -41,6 +42,7 @@ def _make_cc_device(
     operation_mode_value="AUTOMATIC",
     supports_cooling=False,
     cooling_mode=False,
+    has_demand=False,
 ):
     return SimpleNamespace(
         boost_mode=boost_mode,
@@ -52,6 +54,7 @@ def _make_cc_device(
         operation_mode=OM_CC(operation_mode_value),
         supports_cooling=supports_cooling,
         cooling_mode=cooling_mode,
+        has_demand=has_demand,
         root_device_id="r",
         id="d",
     )
@@ -493,3 +496,93 @@ class TestHeatingCircuitInit:
         device = self._make_full_hc_device(root_device_id="abc", id_="xyz")
         entity = HeatingCircuit(device=device, name="HC Other", entry_id="e2")
         assert entity._attr_unique_id == "abc_xyz"
+
+
+# ===========================================================================
+# ClimateControl — hvac_action (lines 132-136)
+# ===========================================================================
+
+class TestHvacAction:
+    """ClimateControl.hvac_action delegates to has_demand + hvac_mode."""
+
+    def test_hvac_action_heating_when_has_demand_and_mode_auto(self):
+        """has_demand=True, mode=AUTO → HVACAction.HEATING."""
+        device = _make_cc_device(summer_mode=False, operation_mode_value="AUTOMATIC", has_demand=True)
+        entity = _make_cc(device)
+        assert entity.hvac_action == HVACAction.HEATING
+
+    def test_hvac_action_heating_when_has_demand_and_mode_heat(self):
+        """has_demand=True, mode=HEAT → HVACAction.HEATING."""
+        device = _make_cc_device(summer_mode=False, operation_mode_value="MANUAL", has_demand=True)
+        entity = _make_cc(device)
+        assert entity.hvac_action == HVACAction.HEATING
+
+    def test_hvac_action_idle_when_no_demand(self):
+        """has_demand=False, mode=AUTO → HVACAction.IDLE."""
+        device = _make_cc_device(summer_mode=False, operation_mode_value="AUTOMATIC", has_demand=False)
+        entity = _make_cc(device)
+        assert entity.hvac_action == HVACAction.IDLE
+
+    def test_hvac_action_off_when_summer_mode(self):
+        """summer_mode=True → hvac_mode=OFF → HVACAction.OFF regardless of has_demand."""
+        device = _make_cc_device(summer_mode=True, has_demand=True)
+        entity = _make_cc(device)
+        assert entity.hvac_action == HVACAction.OFF
+
+    def test_hvac_action_off_when_off_and_no_demand(self):
+        """summer_mode=True, has_demand=False → HVACAction.OFF."""
+        device = _make_cc_device(summer_mode=True, has_demand=False)
+        entity = _make_cc(device)
+        assert entity.hvac_action == HVACAction.OFF
+
+
+# ===========================================================================
+# ClimateControl — hvac_action (has_demand / hasDemand)
+# ===========================================================================
+
+class TestHvacAction:
+    """hvac_action returns HEATING when has_demand, IDLE otherwise, OFF when mode=OFF."""
+
+    def _entity(self, *, summer_mode=False, has_demand=False,
+                operation_mode_value="AUTOMATIC", supports_cooling=False):
+        from homeassistant.components.climate.const import HVACAction
+        device = SimpleNamespace(
+            summer_mode=summer_mode,
+            has_demand=has_demand,
+            operation_mode=OM_CC(operation_mode_value),
+            supports_cooling=supports_cooling,
+            cooling_mode=False,
+            boost_mode=False,
+            low=False,
+            supports_boost_mode=True,
+            setpoint_temperature=20.0,
+            temperature=19.0,
+            root_device_id="r",
+            id="d",
+        )
+        entity = ClimateControl.__new__(ClimateControl)
+        entity._device = device
+        entity._name = "Test"
+        entity._attr_unique_id = "r_d"
+        return entity
+
+    def test_hvac_action_heating_when_has_demand(self):
+        from homeassistant.components.climate.const import HVACAction
+        entity = self._entity(has_demand=True, summer_mode=False)
+        assert entity.hvac_action == HVACAction.HEATING
+
+    def test_hvac_action_idle_when_no_demand(self):
+        from homeassistant.components.climate.const import HVACAction
+        entity = self._entity(has_demand=False, summer_mode=False)
+        assert entity.hvac_action == HVACAction.IDLE
+
+    def test_hvac_action_off_when_summer_mode(self):
+        from homeassistant.components.climate.const import HVACAction
+        entity = self._entity(has_demand=True, summer_mode=True)
+        assert entity.hvac_action == HVACAction.OFF
+
+    def test_hvac_action_off_overrides_has_demand(self):
+        """Even when has_demand=True, summer_mode (OFF) wins."""
+        from homeassistant.components.climate.const import HVACAction
+        entity = self._entity(has_demand=True, summer_mode=True)
+        assert entity.hvac_action == HVACAction.OFF
