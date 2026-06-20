@@ -7,12 +7,19 @@
         "title": "SHC authentication parameters",
         "data": {
           "host": "[%key:common::config_flow::data::host%]"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
         }
       },
       "credentials": {
         "data": {
           "password": "Password of the Smart Home Controller",
           "name": "Client name for certificate"
+        },
+        "data_description": {
+          "password": "The password set in the Bosch Smart Home app.",
+          "name": "Name shown in the SHC app under connected clients."
         }
       },
       "confirm_discovery": {
@@ -23,6 +30,19 @@
         "description": "The Bosch SHC integration needs to re-authenticate your account",
         "data": {
           "host": "[%key:common::config_flow::data::host%]"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Bosch SHC",
+        "description": "Update the IP address or hostname of your Bosch Smart Home Controller. Your certificates and credentials will be preserved.",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]"
+        },
+        "data_description": {
+          "host": "New IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
         }
       }
     },
@@ -35,9 +55,30 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
-      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]",
+      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]",
+      "wrong_shc": "The entered host belongs to a different Bosch SHC controller. Please enter the correct host for this entry."
     },
     "flow_title": "Bosch SHC: {name}"
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC options",
+        "data": {
+          "scenarios_as_buttons": "Expose scenarios as button entities",
+          "diagnostic_entities": "Create diagnostic sensors (valve tappet, communication quality)",
+          "ssl_verify_hostname": "Verify SSL hostname (advanced, not yet effective)",
+          "long_poll_timeout": "Long-poll timeout in seconds (advanced, not yet effective)"
+        },
+        "data_description": {
+          "scenarios_as_buttons": "When enabled, Bosch SHC scenarios appear as button entities in addition to the trigger service.",
+          "diagnostic_entities": "When disabled, diagnostic sensors such as valve tappet position and communication quality are not created.",
+          "ssl_verify_hostname": "Requires a future boschshcpy update to take effect.",
+          "long_poll_timeout": "Requires a future boschshcpy update to take effect. Default: 30 s."
+        }
+      }
+    }
   },
   "device_automation": {
     "trigger_subtype": {
