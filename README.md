@@ -123,6 +123,57 @@ Press *finish* to end the configuration process.
 
 Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/115864) for discussions on the Bosch Smart Home Controller Home Assistant integration.
 
+# Creating a rawscan (for bug reports)
+
+A *rawscan* is the raw JSON the Bosch controller reports for a device. When a
+device behaves wrong (e.g. a cover shows the wrong direction), a rawscan of that
+device is the single most useful thing to attach to a GitHub issue — it shows
+the exact services, state values and device model the controller exposes.
+
+You do **not** need the command line or the client certificate. The integration
+ships a Home Assistant action for it:
+
+**1. Find the device id**
+
+In Home Assistant go to **Developer Tools → Actions** (older versions: *Services*),
+pick the action **Bosch SHC: Trigger rawscan** (`bosch_shc.trigger_rawscan`),
+switch to **YAML mode** and run:
+
+```yaml
+action: bosch_shc.trigger_rawscan
+data:
+  command: devices
+```
+
+Press **Perform action**. The response is a JSON list of all devices. Find the
+device you care about and copy its `"id"` (it looks like `hdm:HomeMaticIP:3014...`
+or `hdm:ZigBee:000d6f...`).
+
+**2. Dump that one device's services (this is what to attach)**
+
+```yaml
+action: bosch_shc.trigger_rawscan
+data:
+  command: device_services
+  device_id: hdm:ZigBee:000d6f0000abcdef   # the id from step 1
+```
+
+Copy the JSON from the response and paste it into the issue (please remove
+anything you consider private). For movement/direction bugs, run this **while the
+device is moving up** and again **while moving down**, so we can see how the
+state differs.
+
+Available `command` values: `devices`, `device_services`, `device_service`
+(needs `device_id` + `service_id`), `services`, `scenarios`, `rooms`,
+`information`, `public_information`, `intrusion_detection`, `userdefinedstates`.
+
+For controllers with more than one SHC, add `title: <controller name>`.
+
+> Advanced: the same data is available from the command line via the
+> `boschshc_rawscan` script shipped with
+> [`boschshcpy`](https://github.com/tschamm/boschshcpy#rawscans) (needs the
+> client certificate + key).
+
 # Known Issues
 
 * Encrypted SSL private key is not supported due to limitations of `requests` library.
