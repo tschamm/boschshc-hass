@@ -123,6 +123,21 @@ Press *finish* to end the configuration process.
 
 Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/115864) for discussions on the Bosch Smart Home Controller Home Assistant integration.
 
+# Reporting a bug
+
+The fastest way to a fix is data. In order of convenience:
+
+1. **Download diagnostics** (easiest, one click) — **Settings → Devices & Services
+   → Bosch SHC → ⋮ → Download diagnostics**. This produces a redacted JSON snapshot
+   of every device and its raw service state (credentials, host/IP, MAC and serials
+   are removed automatically). For a device behaving wrong, this usually contains
+   everything needed.
+2. **A rawscan** of the specific device — see below.
+3. **Debug logs** while reproducing the problem — see below.
+
+Attach the relevant file to the GitHub issue, and remove anything you consider
+private.
+
 # Creating a rawscan (for bug reports)
 
 A *rawscan* is the raw JSON the Bosch controller reports for a device. When a
