@@ -13,6 +13,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
+    LIGHT_LUX,
     PERCENTAGE,
     UnitOfEnergy,
     UnitOfPower,
@@ -575,10 +576,15 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
 class IlluminanceLevelSensor(SHCEntity, SensorEntity):
     """Representation of an SHC illuminance level reporting sensor.
 
-    Gen1 SHCMotionDetector returns a qualitative string (e.g. "MEDIUM") while
-    Gen2 SHCMotionDetector2 returns an int. state_class=MEASUREMENT is omitted
-    because HA rejects non-numeric values with that state class, and Gen1 devices
-    would trigger state-validation errors.
+    The Bosch SHC API spec defines illuminance as integer for both Gen1
+    (SHCMotionDetector, model "MD") and Gen2 (SHCMotionDetector2, model "MD2").
+    In practice, Gen1 devices also report numeric lux values (e.g. 13, 9, 22).
+
+    state_class, device_class, and unit are set conditionally: only when the
+    current illuminance value is numeric (int or float).  If any firmware
+    variant were to return a qualitative string the entity degrades gracefully
+    to a plain state sensor without statistics, rather than raising a
+    state_class_removed repair in HA.
     """
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -591,3 +597,24 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         return self._device.illuminance
+
+    @property
+    def state_class(self):
+        """Return MEASUREMENT only when the illuminance value is numeric."""
+        if isinstance(self._device.illuminance, (int, float)):
+            return SensorStateClass.MEASUREMENT
+        return None
+
+    @property
+    def device_class(self):
+        """Return illuminance device class only for numeric values."""
+        if isinstance(self._device.illuminance, (int, float)):
+            return SensorDeviceClass.ILLUMINANCE
+        return None
+
+    @property
+    def native_unit_of_measurement(self):
+        """Return lux unit only for numeric values."""
+        if isinstance(self._device.illuminance, (int, float)):
+            return LIGHT_LUX
+        return None
