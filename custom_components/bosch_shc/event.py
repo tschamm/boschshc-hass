@@ -121,7 +121,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"{slugify(self._device.name)}_button_{key_id.casefold()}"
         )
-        self._attr_name = f"{self._device.name} Button {key_id}"
+        self._attr_name = f"Button {key_id}"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
     async def async_added_to_hass(self) -> None:
@@ -176,6 +176,7 @@ class SHCScenarioEvent(EventEntity):
 
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["SCENARIO"]
+    _attr_has_entity_name = True
 
     def __init__(self, scenario, session, hass, entry_id: str) -> None:
         """Initialize the Scenario device."""
@@ -186,6 +187,7 @@ class SHCScenarioEvent(EventEntity):
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"scenario_{slugify(self._scenario.name)}"
         )
+        # Scenario name is the feature label; HA prepends the device (controller) name.
         self._attr_name = f"{self._scenario.name} Scenario"
         self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"
 

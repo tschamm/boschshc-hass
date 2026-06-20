@@ -238,7 +238,7 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = f"{device.name} Vibration"
+        self._attr_name = "Vibration"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
 
     @property
@@ -484,7 +484,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._cached_device_id = None
         super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-        self._attr_name = f"{device.root_device_id} {device.name}"
+        self._attr_name = None
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
@@ -550,7 +550,7 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = f"{device.name} Battery"
+        self._attr_name = "Battery"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -588,7 +588,7 @@ class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):
     def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
         """Initialize the occupancy detection sensor."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = f"{device.name} Occupancy"
+        self._attr_name = "Occupancy"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_occupancy"
 
     @property

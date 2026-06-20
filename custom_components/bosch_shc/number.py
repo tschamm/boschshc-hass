@@ -58,9 +58,7 @@ class SHCNumber(SHCEntity, NumberEntity):
     ) -> None:
         """Initialize a SHC number."""
         super().__init__(device, entry_id)
-        self._attr_name = (
-            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
-        )
+        self._attr_name = None if attr_name is None else attr_name
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None

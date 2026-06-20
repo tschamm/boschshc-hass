@@ -60,18 +60,15 @@ class ClimateControl(SHCEntity, ClimateEntity):
     ):
         """Initialize the SHC device."""
         super().__init__(device=device, entry_id=entry_id)
-        self._name = name
+        # _attr_has_entity_name is True (set on SHCEntity base).
+        # Climate represents a room — use the room/circuit name as the feature label.
+        self._attr_name = name
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._name
 
     @property
     def device_name(self):
         """Name of the device."""
-        return self._name
+        return self._attr_name
 
     @property
     def temperature_unit(self):
