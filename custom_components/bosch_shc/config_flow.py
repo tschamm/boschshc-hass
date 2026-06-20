@@ -1,6 +1,7 @@
 """Config flow for Bosch Smart Home Controller integration."""
 
 from os import makedirs
+from typing import Any
 
 import voluptuous as vol
 from boschshcpy import SHCRegisterClient, SHCSession
@@ -13,7 +14,7 @@ from boschshcpy.exceptions import (
 from homeassistant import config_entries, core
 from homeassistant.components import zeroconf
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.helpers.selector import (
     BooleanSelector,
     EntitySelector,
@@ -42,6 +43,65 @@ from .const import (
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
 )
+
+# ── Section layout (single source of truth) ──────────────────────────────────
+# Maps each section key to the flat OPT_* keys it contains.
+# _flatten_sections() uses this to lift nested section dicts back to the flat
+# shape that the rest of the integration (sensor.py, __init__.py) expects.
+OPTIONS_SECTIONS: dict[str, list[str]] = {
+    "features": [
+        OPT_SCENARIOS_AS_BUTTONS,
+        OPT_DIAGNOSTIC_ENTITIES,
+    ],
+    "presence": [
+        OPT_PRESENCE_ENTITY,
+        OPT_PRESENCE_STATE,
+    ],
+    "advanced": [
+        OPT_SSL_VERIFY_HOSTNAME,
+        OPT_LONG_POLL_TIMEOUT,
+    ],
+}
+
+
+def _flatten_sections(user_input: dict[str, Any]) -> dict[str, Any]:
+    """Flatten section-grouped submit dict back to a single flat dict.
+
+    HA's section() helper returns nested input in the shape
+    {section_key: {field: value, ...}, ...}.  This helper lifts every nested
+    field up to the top level so the rest of the integration keeps reading
+    flat OPT_* keys unchanged.
+
+    Non-sectioned keys (e.g. from older tests or programmatic updates)
+    pass through unchanged.  Duplicate keys raise ValueError.
+    """
+    flat: dict[str, Any] = {}
+    seen_section_keys: set[str] = set()
+
+    for section_key, _fields in OPTIONS_SECTIONS.items():
+        seen_section_keys.add(section_key)
+        sec_payload = user_input.get(section_key)
+        if sec_payload is None or not isinstance(sec_payload, dict):
+            continue
+        for field, value in sec_payload.items():
+            if field in flat:
+                raise ValueError(
+                    f"_flatten_sections: duplicate key {field!r} from "
+                    f"section {section_key!r}"
+                )
+            flat[field] = value
+
+    for key, value in user_input.items():
+        if key in seen_section_keys:
+            continue
+        if key in flat:
+            raise ValueError(
+                f"_flatten_sections: duplicate key {key!r} at top level and inside a section"
+            )
+        flat[key] = value
+
+    return flat
+
 
 HOST_SCHEMA = vol.Schema(
     {
@@ -305,55 +365,79 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # HA's section() nests fields; flatten back to the flat OPT_* shape
+            # that sensor.py, __init__.py, etc. read.
+            flat = _flatten_sections(user_input)
+            return self.async_create_entry(title="", data=flat)
 
         current = self.config_entry.options
         schema = vol.Schema(
             {
-                vol.Optional(
-                    OPT_SCENARIOS_AS_BUTTONS,
-                    default=current.get(OPT_SCENARIOS_AS_BUTTONS, False),
-                ): BooleanSelector(),
-                vol.Optional(
-                    OPT_DIAGNOSTIC_ENTITIES,
-                    default=current.get(OPT_DIAGNOSTIC_ENTITIES, True),
-                ): BooleanSelector(),
-                vol.Optional(
-                    OPT_SSL_VERIFY_HOSTNAME,
-                    default=current.get(OPT_SSL_VERIFY_HOSTNAME, False),
-                ): BooleanSelector(),
-                vol.Optional(
-                    OPT_LONG_POLL_TIMEOUT,
-                    default=current.get(OPT_LONG_POLL_TIMEOUT, 30),
-                ): NumberSelector(
-                    NumberSelectorConfig(
-                        min=5,
-                        max=300,
-                        step=1,
-                        unit_of_measurement="s",
-                        mode=NumberSelectorMode.BOX,
-                    )
+                vol.Required("features"): section(
+                    vol.Schema(
+                        {
+                            vol.Optional(
+                                OPT_SCENARIOS_AS_BUTTONS,
+                                default=current.get(OPT_SCENARIOS_AS_BUTTONS, False),
+                            ): BooleanSelector(),
+                            vol.Optional(
+                                OPT_DIAGNOSTIC_ENTITIES,
+                                default=current.get(OPT_DIAGNOSTIC_ENTITIES, True),
+                            ): BooleanSelector(),
+                        }
+                    ),
+                    {"collapsed": False},
                 ),
-                vol.Optional(
-                    OPT_PRESENCE_ENTITY,
-                    default=current.get(OPT_PRESENCE_ENTITY, ""),
-                ): EntitySelector(
-                    EntitySelectorConfig(
-                        domain=[
-                            "person",
-                            "device_tracker",
-                            "binary_sensor",
-                            "input_boolean",
-                            "zone",
-                            "group",
-                        ]
-                    )
+                vol.Required("presence"): section(
+                    vol.Schema(
+                        {
+                            vol.Optional(
+                                OPT_PRESENCE_ENTITY,
+                                default=current.get(OPT_PRESENCE_ENTITY, ""),
+                            ): EntitySelector(
+                                EntitySelectorConfig(
+                                    domain=[
+                                        "person",
+                                        "device_tracker",
+                                        "binary_sensor",
+                                        "input_boolean",
+                                        "zone",
+                                        "group",
+                                    ]
+                                )
+                            ),
+                            vol.Optional(
+                                OPT_PRESENCE_STATE,
+                                default=current.get(OPT_PRESENCE_STATE, "home"),
+                            ): TextSelector(
+                                TextSelectorConfig(type=TextSelectorType.TEXT)
+                            ),
+                        }
+                    ),
+                    {"collapsed": True},
                 ),
-                vol.Optional(
-                    OPT_PRESENCE_STATE,
-                    default=current.get(OPT_PRESENCE_STATE, "home"),
-                ): TextSelector(
-                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                vol.Required("advanced"): section(
+                    vol.Schema(
+                        {
+                            vol.Optional(
+                                OPT_SSL_VERIFY_HOSTNAME,
+                                default=current.get(OPT_SSL_VERIFY_HOSTNAME, False),
+                            ): BooleanSelector(),
+                            vol.Optional(
+                                OPT_LONG_POLL_TIMEOUT,
+                                default=current.get(OPT_LONG_POLL_TIMEOUT, 30),
+                            ): NumberSelector(
+                                NumberSelectorConfig(
+                                    min=5,
+                                    max=300,
+                                    step=1,
+                                    unit_of_measurement="s",
+                                    mode=NumberSelectorMode.BOX,
+                                )
+                            ),
+                        }
+                    ),
+                    {"collapsed": True},
                 ),
             }
         )

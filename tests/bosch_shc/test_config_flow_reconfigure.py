@@ -218,13 +218,19 @@ class TestOptionsFlow:
         assert flow.async_show_form.call_args[1]["step_id"] == "init"
 
     def test_options_flow_saves_submitted_values(self):
-        """Submitted user_input is passed directly to async_create_entry."""
+        """Sectioned user_input is flattened and passed to async_create_entry."""
         flow, _ = self._make_options_flow()
+        # HA section() returns nested dicts; simulate that shape.
         user_input = {
-            OPT_SCENARIOS_AS_BUTTONS: True,
-            OPT_DIAGNOSTIC_ENTITIES: False,
-            OPT_SSL_VERIFY_HOSTNAME: False,
-            OPT_LONG_POLL_TIMEOUT: 60,
+            "features": {
+                OPT_SCENARIOS_AS_BUTTONS: True,
+                OPT_DIAGNOSTIC_ENTITIES: False,
+            },
+            "presence": {},
+            "advanced": {
+                OPT_SSL_VERIFY_HOSTNAME: False,
+                OPT_LONG_POLL_TIMEOUT: 60,
+            },
         }
         result = asyncio.run(flow.async_step_init(user_input=user_input))
         assert flow.async_create_entry.called
@@ -232,6 +238,24 @@ class TestOptionsFlow:
         assert saved[OPT_DIAGNOSTIC_ENTITIES] is False
         assert saved[OPT_SCENARIOS_AS_BUTTONS] is True
         assert saved[OPT_LONG_POLL_TIMEOUT] == 60
+
+    def _extract_section_defaults(self, schema):
+        """Walk a sectioned vol.Schema and collect defaults from all sections."""
+        defaults = {}
+        for key in schema.schema:
+            section_schema = schema.schema[key]
+            # section() returns a wrapped schema; unwrap if needed
+            inner = getattr(section_schema, "schema", None)
+            if inner is None:
+                # Not a section — plain key
+                if hasattr(key, "default") and callable(key.default):
+                    defaults[str(key)] = key.default()
+                continue
+            if hasattr(inner, "schema"):
+                for sub_key in inner.schema:
+                    if hasattr(sub_key, "default") and callable(sub_key.default):
+                        defaults[str(sub_key)] = sub_key.default()
+        return defaults
 
     def test_options_flow_defaults_match_current_behavior(self):
         """Submitting the form without changes preserves existing defaults."""
@@ -241,11 +265,7 @@ class TestOptionsFlow:
         asyncio.run(flow.async_step_init(user_input=None))
         schema = flow.async_show_form.call_args[1]["data_schema"]
 
-        # Extract defaults
-        defaults = {}
-        for key in schema.schema:
-            if hasattr(key, "default") and callable(key.default):
-                defaults[str(key)] = key.default()
+        defaults = self._extract_section_defaults(schema)
 
         # Default diagnostic_entities must be True (current behavior is always-on)
         assert defaults.get(OPT_DIAGNOSTIC_ENTITIES) is True
@@ -261,10 +281,7 @@ class TestOptionsFlow:
         )
         asyncio.run(flow.async_step_init(user_input=None))
         schema = flow.async_show_form.call_args[1]["data_schema"]
-        defaults = {}
-        for key in schema.schema:
-            if hasattr(key, "default") and callable(key.default):
-                defaults[str(key)] = key.default()
+        defaults = self._extract_section_defaults(schema)
         assert defaults.get(OPT_DIAGNOSTIC_ENTITIES) is False
         assert defaults.get(OPT_SCENARIOS_AS_BUTTONS) is True
 

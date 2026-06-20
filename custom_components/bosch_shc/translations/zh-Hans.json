@@ -1,14 +1,195 @@
 {
-    "config": {
-        "error": {
-            "pairing_failed": "\u914d\u5bf9\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u535a\u4e16 Smart Home Controller \u662f\u5426\u6b63\u5728\u5904\u4e8e\u914d\u5bf9\u6a21\u5f0f(LED \u706f\u95ea\u70c1)\uff0c\u4ee5\u53ca\u952e\u5165\u7684\u5bc6\u7801\u662f\u5426\u6b63\u786e"
+  "config": {
+    "abort": {
+      "already_configured": "设备已配置",
+      "reauth_successful": "重新验证成功",
+      "reconfigure_successful": "重新配置成功",
+      "wrong_shc": "输入的主机属于其他 Bosch SHC 控制器，请为此条目输入正确的主机。"
+    },
+    "error": {
+      "cannot_connect": "连接失败",
+      "invalid_auth": "身份验证无效",
+      "pairing_failed": "配对失败，请检查博世智能家居控制器是否处于配对模式（LED 闪烁）以及密码是否正确。",
+      "session_error": "会话错误：API 返回非正常结果。",
+      "unknown": "意外错误"
+    },
+    "flow_title": "Bosch SHC：{name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I：请按住前侧按钮直到 LED 开始闪烁。\nSmart Home Controller II：短按功能按钮。云端和网络指示灯开始橙色闪烁。\n设备现已准备好配对。\n\n是否继续在 Home Assistant 中设置 {model} @ {host}？"
+      },
+      "credentials": {
+        "data": {
+          "name": "证书客户端名称",
+          "password": "Smart Home Controller 密码"
         },
-        "step": {
-            "credentials": {
-                "data": {
-                    "password": "Smart Home Controller \u5bc6\u7801"
-                }
-            }
+        "data_description": {
+          "name": "在 SHC 应用中已连接客户端列表中显示的名称。",
+          "password": "在博世智能家居应用中设置的密码。"
         }
+      },
+      "reauth_confirm": {
+        "description": "Bosch SHC 集成需要重新验证您的账户。",
+        "title": "重新验证集成",
+        "data": {
+          "host": "主机"
+        },
+        "data_description": {
+          "host": "SHC 控制器的 IP 地址或主机名（例如 192.168.x.y）。"
+        }
+      },
+      "reconfigure": {
+        "title": "重新配置 Bosch SHC",
+        "description": "更新博世智能家居控制器的 IP 地址或主机名，证书和凭据将保留。",
+        "data": {
+          "host": "主机"
+        },
+        "data_description": {
+          "host": "SHC 控制器的新 IP 地址或主机名（例如 192.168.x.y）。"
+        }
+      },
+      "user": {
+        "data": {
+          "host": "主机"
+        },
+        "data_description": {
+          "host": "SHC 控制器的 IP 地址或主机名（例如 192.168.x.y）。"
+        },
+        "description": "配置博世智能家居控制器，以便通过 Home Assistant 进行监控和控制。",
+        "title": "SHC 身份验证参数"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — 设置",
+        "description": "配置博世智能家居控制器集成创建和管理的实体及自动化。",
+        "sections": {
+          "features": {
+            "name": "功能",
+            "description": "切换集成创建的实体类型。",
+            "data": {
+              "scenarios_as_buttons": "将场景作为按钮实体公开",
+              "diagnostic_entities": "创建诊断传感器"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "开启时：每个 Bosch SHC 场景也会在 Home Assistant 中显示为按钮实体（除 `trigger_scenario` 服务外）。适用于直接触发场景的仪表板磁贴和自动化。默认：关闭。",
+              "diagnostic_entities": "开启时（默认）：为每个受支持的设备创建诊断传感器实体——阀门顶针位置（温控器）和通信质量（智能插座）。如不需要这些传感器，可关闭以减少实体数量。"
+            }
+          },
+          "presence": {
+            "name": "基于在家状态的童锁",
+            "description": "有人回家时自动启用所有 SHC 温控器的童锁，所有人离家时自动禁用。",
+            "data": {
+              "child_lock_presence_entity": "在家状态实体（可选）",
+              "child_lock_present_state": "表示「在家」的状态"
+            },
+            "data_description": {
+              "child_lock_presence_entity": "控制所有 SHC 温控器童锁的实体。支持的域：person、device_tracker、binary_sensor、input_boolean、zone、group。留空则禁用此功能。",
+              "child_lock_present_state": "表示「有人在家」的实体状态——实体进入此状态时启用童锁，离开时禁用。典型值：`home`（适用于 person / device_tracker），`on`（适用于 binary_sensor / input_boolean）。默认：home。"
+            }
+          },
+          "advanced": {
+            "name": "高级",
+            "description": "低级连接参数，更改后通常没有帮助——修改前请查阅文档。",
+            "data": {
+              "ssl_verify_hostname": "验证 SSL 主机名",
+              "long_poll_timeout": "长轮询超时（秒）"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "开启时：boschshcpy 库验证 SHC 控制器 SSL 证书的主机名与其 IP/主机名是否匹配。目前无效——需要未来的 boschshcpy 更新才能生效。默认：关闭。",
+              "long_poll_timeout": "向 SHC 控制器发送长轮询请求后等待推送事件的时间（秒），超时后重新连接。范围：5–300。默认：30。网络较慢时若出现频繁重连可增大此值；若路由器断开空闲连接可减小此值。需要未来的 boschshcpy 更新才能生效。"
+            }
+          }
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "下方按钮",
+      "UPPER_BUTTON": "上方按钮",
+      "LOWER_LEFT_BUTTON": "左下方按钮",
+      "UPPER_LEFT_BUTTON": "左上方按钮",
+      "LOWER_RIGHT_BUTTON": "右下方按钮",
+      "UPPER_RIGHT_BUTTON": "右上方按钮",
+      "IDLE_OFF": "警报关闭",
+      "INTRUSION_ALARM": "入侵警报",
+      "SECONDARY_ALARM": "次级警报",
+      "PRIMARY_ALARM": "主警报",
+      "ALARM_OFF": "警报关闭",
+      "ALARM_ON": "警报开启",
+      "ALARM_MUTED": "警报已静音"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} 短按",
+      "PRESS_LONG": "{subtype} 长按",
+      "MOTION": "检测到动作",
+      "SCENARIO": "场景 {subtype} 已触发",
+      "ALARM": "{subtype} 已触发"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "烟雾探测器测试",
+      "description": "调用烟雾探测器的测试程序。",
+      "fields": {
+        "entity_id": {
+          "name": "实体 ID",
+          "description": "烟雾探测器实体的名称。"
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "触发场景",
+      "description": "在 Bosch SHC 上触发场景。",
+      "fields": {
+        "title": {
+          "name": "SHC 名称",
+          "description": "SHC 的标题"
+        },
+        "name": {
+          "name": "场景名称",
+          "description": "要触发的场景名称"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "触发原始扫描",
+      "description": "在 Bosch SHC 上触发原始扫描以发现设备，结果输出到信息日志。",
+      "fields": {
+        "title": {
+          "name": "SHC 名称",
+          "description": "SHC 的标题"
+        },
+        "command": {
+          "name": "原始扫描命令",
+          "description": "可用命令：'devices'、'device'、'services'、'device_services'、'device_service'、'rooms'、'scenarios'、'info'、'information'、'public_information'、'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "设备 ID",
+          "description": "命令为 'device'、'device_services' 或 'device_service' 时所需的设备 ID"
+        },
+        "service_id": {
+          "name": "服务 ID",
+          "description": "命令为 'device_service' 时所需的服务 ID"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "烟雾探测器警报状态",
+      "description": "向烟雾探测器发送自定义命令。",
+      "fields": {
+        "entity_id": {
+          "name": "实体 ID",
+          "description": "烟雾探测器实体的名称。"
+        },
+        "command": {
+          "name": "自定义命令",
+          "description": "发送到烟雾探测器的命令字符串。"
+        }
+      }
+    }
+  }
 }

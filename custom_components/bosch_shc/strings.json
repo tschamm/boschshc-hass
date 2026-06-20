@@ -64,22 +64,45 @@
   "options": {
     "step": {
       "init": {
-        "title": "Bosch SHC options",
-        "data": {
-          "scenarios_as_buttons": "Expose scenarios as button entities",
-          "diagnostic_entities": "Create diagnostic sensors (valve tappet, communication quality)",
-          "ssl_verify_hostname": "Verify SSL hostname (advanced, not yet effective)",
-          "long_poll_timeout": "Long-poll timeout in seconds (advanced, not yet effective)",
-          "child_lock_presence_entity": "Presence entity for child lock automation (optional)",
-          "child_lock_present_state": "State that counts as 'present' (default: home)"
-        },
-        "data_description": {
-          "scenarios_as_buttons": "When enabled, Bosch SHC scenarios appear as button entities in addition to the trigger service.",
-          "diagnostic_entities": "When disabled, diagnostic sensors such as valve tappet position and communication quality are not created.",
-          "ssl_verify_hostname": "Requires a future boschshcpy update to take effect.",
-          "long_poll_timeout": "Requires a future boschshcpy update to take effect. Default: 30 s.",
-          "child_lock_presence_entity": "When this entity enters the present state, child lock is enabled on all SHC thermostats and supported devices. When it leaves, child lock is disabled. Leave empty to disable this feature.",
-          "child_lock_present_state": "The entity state that means 'someone is home'. Typically 'home' for person/device_tracker or 'on' for binary_sensor/input_boolean."
+        "title": "Bosch SHC — Settings",
+        "description": "Configure which entities and automations the Bosch Smart Home Controller integration creates and manages.",
+        "sections": {
+          "features": {
+            "name": "Features",
+            "description": "Toggle the entity types the integration creates.",
+            "data": {
+              "scenarios_as_buttons": "Expose scenarios as button entities",
+              "diagnostic_entities": "Create diagnostic sensors"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
+              "diagnostic_entities": "When ON (default): diagnostic sensor entities are created for each supported device — valve tappet position (thermostats) and communication quality (smart plugs). Turn OFF to reduce entity count if you do not need these sensors."
+            }
+          },
+          "presence": {
+            "name": "Presence-based child lock",
+            "description": "Automatically enable child lock on all SHC thermostats when someone arrives home, and disable it when everyone leaves.",
+            "data": {
+              "child_lock_presence_entity": "Presence entity (optional)",
+              "child_lock_present_state": "State that means 'present'"
+            },
+            "data_description": {
+              "child_lock_presence_entity": "Entity whose state controls child lock on all SHC thermostats. Supported domains: person, device_tracker, binary_sensor, input_boolean, zone, group. Leave empty to disable this feature.",
+              "child_lock_present_state": "The entity state that counts as 'someone is home' — child lock is enabled when the entity enters this state, disabled when it leaves. Typical values: `home` for person / device_tracker, `on` for binary_sensor / input_boolean. Default: home."
+            }
+          },
+          "advanced": {
+            "name": "Advanced",
+            "description": "Low-level connection parameters. Changing these rarely helps — consult the docs before touching them.",
+            "data": {
+              "ssl_verify_hostname": "Verify SSL hostname",
+              "long_poll_timeout": "Long-poll timeout (seconds)"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "When ON: the boschshcpy library verifies that the SHC controller's SSL certificate hostname matches its IP/hostname. Currently has no effect — a future boschshcpy update is required to activate this check. Default: off.",
+              "long_poll_timeout": "How long (seconds) the long-poll request to the SHC controller waits for push events before reconnecting. Range: 5–300. Default: 30. Increase if you see frequent reconnects on a slow network; decrease if idle connections are dropped by your router. Requires a future boschshcpy update to take effect."
+            }
+          }
         }
       }
     }

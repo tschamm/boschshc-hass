@@ -2,13 +2,15 @@
   "config": {
     "abort": {
       "already_configured": "Device is already configured",
-      "reauth_successful": "Re-authentication was successful"
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Reconfiguration was successful",
+      "wrong_shc": "The entered host belongs to a different Bosch SHC controller. Please enter the correct host for this entry."
     },
     "error": {
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "pairing_failed": "Pairing failed; please check the Bosch Smart Home Controller is in pairing mode (LED flashing) as well as your password is correct.",
-      "session_error": "Session error: API return Non-OK result.",
+      "session_error": "Session error: API returned Non-OK result.",
       "unknown": "Unexpected error"
     },
     "flow_title": "Bosch SHC: {name}",
@@ -18,33 +20,123 @@
       },
       "credentials": {
         "data": {
-          "password": "Password of the Smart Home Controller",
-          "name": "Client name for certificate"
+          "name": "Client name for certificate",
+          "password": "Password of the Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Name shown in the SHC app under connected clients.",
+          "password": "The password set in the Bosch Smart Home app."
         }
       },
       "reauth_confirm": {
-        "description": "The bosch_shc integration needs to re-authenticate your account",
-        "title": "Reauthenticate Integration",
+        "description": "The Bosch SHC integration needs to re-authenticate your account.",
+        "title": "Re-authenticate integration",
         "data": {
           "host": "Host"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Bosch SHC",
+        "description": "Update the IP address or hostname of your Bosch Smart Home Controller. Your certificates and credentials will be preserved.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "New IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
         }
       },
       "user": {
         "data": {
           "host": "Host"
         },
+        "data_description": {
+          "host": "IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
+        },
         "description": "Set up your Bosch Smart Home Controller to allow monitoring and control with Home Assistant.",
         "title": "SHC authentication parameters"
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Settings",
+        "description": "Configure which entities and automations the Bosch Smart Home Controller integration creates and manages.",
+        "sections": {
+          "features": {
+            "name": "Features",
+            "description": "Toggle the entity types the integration creates.",
+            "data": {
+              "scenarios_as_buttons": "Expose scenarios as button entities",
+              "diagnostic_entities": "Create diagnostic sensors"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
+              "diagnostic_entities": "When ON (default): diagnostic sensor entities are created for each supported device — valve tappet position (thermostats) and communication quality (smart plugs). Turn OFF to reduce entity count if you do not need these sensors."
+            }
+          },
+          "presence": {
+            "name": "Presence-based child lock",
+            "description": "Automatically enable child lock on all SHC thermostats when someone arrives home, and disable it when everyone leaves.",
+            "data": {
+              "child_lock_presence_entity": "Presence entity (optional)",
+              "child_lock_present_state": "State that means 'present'"
+            },
+            "data_description": {
+              "child_lock_presence_entity": "Entity whose state controls child lock on all SHC thermostats. Supported domains: person, device_tracker, binary_sensor, input_boolean, zone, group. Leave empty to disable this feature.",
+              "child_lock_present_state": "The entity state that counts as 'someone is home' — child lock is enabled when the entity enters this state, disabled when it leaves. Typical values: `home` for person / device_tracker, `on` for binary_sensor / input_boolean. Default: home."
+            }
+          },
+          "advanced": {
+            "name": "Advanced",
+            "description": "Low-level connection parameters. Changing these rarely helps — consult the docs before touching them.",
+            "data": {
+              "ssl_verify_hostname": "Verify SSL hostname",
+              "long_poll_timeout": "Long-poll timeout (seconds)"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "When ON: the boschshcpy library verifies that the SHC controller's SSL certificate hostname matches its IP/hostname. Currently has no effect — a future boschshcpy update is required to activate this check. Default: off.",
+              "long_poll_timeout": "How long (seconds) the long-poll request to the SHC controller waits for push events before reconnecting. Range: 5–300. Default: 30. Increase if you see frequent reconnects on a slow network; decrease if idle connections are dropped by your router. Requires a future boschshcpy update to take effect."
+            }
+          }
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Lower button",
+      "UPPER_BUTTON": "Upper button",
+      "LOWER_LEFT_BUTTON": "Lower left button",
+      "UPPER_LEFT_BUTTON": "Upper left button",
+      "LOWER_RIGHT_BUTTON": "Lower right button",
+      "UPPER_RIGHT_BUTTON": "Upper right button",
+      "IDLE_OFF": "Alarm off",
+      "INTRUSION_ALARM": "Intrusion alarm",
+      "SECONDARY_ALARM": "Secondary alarm",
+      "PRIMARY_ALARM": "Primary alarm",
+      "ALARM_OFF": "Alarm off",
+      "ALARM_ON": "Alarm on",
+      "ALARM_MUTED": "Alarm muted"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} short clicked",
+      "PRESS_LONG": "{subtype} long clicked",
+      "MOTION": "Motion detected",
+      "SCENARIO": "Scenario {subtype} triggered",
+      "ALARM": "{subtype} triggered"
+    }
+  },
   "services": {
     "smokedetector_check": {
-      "name": "Smokedetector Check",
-      "description": "Calls test routine of a smoke detector.",
+      "name": "Smoke Detector Check",
+      "description": "Calls the test routine of a smoke detector.",
       "fields": {
         "entity_id": {
-          "name": "Entity id",
+          "name": "Entity ID",
           "description": "Name of the smoke detector entity."
         }
       }
@@ -65,7 +157,7 @@
     },
     "trigger_rawscan": {
       "name": "Trigger Rawscan",
-      "description": "Triggers a rawscan on Bosch SHC to discover devices. Result streamed to info logger.",
+      "description": "Triggers a rawscan on Bosch SHC to discover devices. Result is streamed to the info logger.",
       "fields": {
         "title": {
           "name": "SHC name",
@@ -73,24 +165,24 @@
         },
         "command": {
           "name": "Rawscan command",
-          "description": "Rawscan command to trigger. Possible commands are 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+          "description": "Rawscan command to trigger. Possible commands: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
         },
         "device_id": {
-          "name": "Device id",
-          "description": "Device id in case the command is 'device', 'device_services' or 'device_service'"
+          "name": "Device ID",
+          "description": "Device ID — required for commands 'device', 'device_services', or 'device_service'"
         },
         "service_id": {
-          "name": "Service id",
-          "description": "Service id in case the command is 'device_service'"
+          "name": "Service ID",
+          "description": "Service ID — required for command 'device_service'"
         }
       }
     },
     "smokedetector_alarmstate": {
-      "name": "Smokedetector Alarmstate",
-      "description": "Name of the smoke detector entity to set",
+      "name": "Smoke Detector Alarm State",
+      "description": "Send a custom command to a smoke detector.",
       "fields": {
         "entity_id": {
-          "name": "Entity id",
+          "name": "Entity ID",
           "description": "Name of the smoke detector entity."
         },
         "command": {
