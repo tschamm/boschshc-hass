@@ -174,6 +174,31 @@ For controllers with more than one SHC, add `title: <controller name>`.
 > [`boschshcpy`](https://github.com/tschamm/boschshcpy#rawscans) (needs the
 > client certificate + key).
 
+# Enabling debug logs (for bug reports)
+
+Debug logs show what the controller actually reports and how the integration
+reacts — useful for timing/state bugs. There are two ways:
+
+**Easiest (UI button):** go to **Settings → Devices & Services → Bosch SHC**,
+open the **⋮** menu on the integration entry and choose **Enable debug logging**.
+Reproduce the problem, then open the **⋮** menu again and choose **Disable debug
+logging** — Home Assistant downloads the captured log automatically. This now
+also includes the underlying `boschshcpy` library logs.
+
+**YAML alternative:** add this to `configuration.yaml`, restart Home Assistant,
+reproduce the problem, then read the log under **Settings → System → Logs**:
+
+```yaml
+logger:
+  default: info
+  logs:
+    custom_components.bosch_shc: debug
+    boschshcpy: debug
+```
+
+Please attach the relevant log section (around the moment the problem happens) to
+the GitHub issue, and remove anything you consider private.
+
 # Known Issues
 
 * Encrypted SSL private key is not supported due to limitations of `requests` library.
