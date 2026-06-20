@@ -65,16 +65,15 @@ class LightSwitch(SHCEntity, LightEntity):
             if not self._device.supports_color_hsb:
                 self._attr_color_mode = ColorMode.COLOR_TEMP
         if self._device.supports_color_hsb or self._device.supports_color_temp:
-            self._attr_min_color_temp_kelvin = (
-                color_util.color_temperature_mired_to_kelvin(
-                    self._device.min_color_temperature
+            min_ct = self._device.min_color_temperature
+            max_ct = self._device.max_color_temperature
+            if min_ct and max_ct:
+                self._attr_min_color_temp_kelvin = (
+                    color_util.color_temperature_mired_to_kelvin(min_ct)
                 )
-            )
-            self._attr_max_color_temp_kelvin = (
-                color_util.color_temperature_mired_to_kelvin(
-                    self._device.max_color_temperature
+                self._attr_max_color_temp_kelvin = (
+                    color_util.color_temperature_mired_to_kelvin(max_ct)
                 )
-            )
         if self._device.supports_brightness:
             if (
                 len(self._attr_supported_color_modes) == 0
@@ -111,6 +110,8 @@ class LightSwitch(SHCEntity, LightEntity):
     @property
     def color_temp_kelvin(self):
         """Return the color temp of this light."""
+        if not self._device.color:
+            return None
         return color_util.color_temperature_mired_to_kelvin(self._device.color)
 
     def turn_on(self, **kwargs):
@@ -129,14 +130,18 @@ class LightSwitch(SHCEntity, LightEntity):
             self._device.color = color_util.color_temperature_kelvin_to_mired(
                 color_temp_kelvin
             )
+            self._attr_color_mode = ColorMode.COLOR_TEMP
 
         if hs_color is not None and self._device.supports_color_hsb:
             rgb = color_util.color_hs_to_RGB(*hs_color)
             raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
             self._device.rgb = raw_rgb
+            self._attr_color_mode = ColorMode.HS
 
         if not self.is_on:
             self._device.binarystate = True
+
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs):
         """Turn the light off."""

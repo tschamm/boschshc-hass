@@ -296,7 +296,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     def _scenario_trigger(event_data):
-        hass.bus.fire(
+        hass.loop.call_soon_threadsafe(
+            hass.bus.fire,
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: device_id,
@@ -363,11 +364,14 @@ class SwitchDeviceEventListener:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
     def _input_events_handler(self):
-        """Handle device input events."""
+        """Handle device input events (called from SHCPollingThread)."""
+        if self._device.eventtype is None:
+            return
         event_type = self._device.eventtype.name
 
         if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
-            self.hass.bus.fire(
+            self.hass.loop.call_soon_threadsafe(
+                self.hass.bus.fire,
                 EVENT_BOSCH_SHC,
                 {
                     ATTR_DEVICE_ID: self.device_id,
@@ -375,7 +379,7 @@ class SwitchDeviceEventListener:
                     ATTR_NAME: self._device.name,
                     ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
                     ATTR_EVENT_SUBTYPE: self._device.keyname.name,
-                    ATTR_EVENT_TYPE: self._device.eventtype.name,
+                    ATTR_EVENT_TYPE: event_type,
                 },
             )
         else:

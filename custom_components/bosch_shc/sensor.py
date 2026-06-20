@@ -72,12 +72,13 @@ async def async_setup_entry(
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Humidity"
         )
-        entities.append(
-            HumiditySensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
+        if getattr(sensor, "supports_humidity", True):
+            entities.append(
+                HumiditySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
             )
-        )
 
     for sensor in session.device_helper.twinguards:
         await async_migrate_to_new_unique_id(
@@ -92,12 +93,13 @@ async def async_setup_entry(
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Humidity"
         )
-        entities.append(
-            HumiditySensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
+        if getattr(sensor, "supports_humidity", True):
+            entities.append(
+                HumiditySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
             )
-        )
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Purity"
         )
@@ -404,7 +406,13 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self._device.communicationquality.name
+        try:
+            return self._device.communicationquality.name
+        except (ValueError, AttributeError) as err:
+            LOGGER.warning(
+                "Unknown communication quality for %s: %s", self._device.name, err
+            )
+            return None
 
 
 class HumidityRatingSensor(SHCEntity, SensorEntity):

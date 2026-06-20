@@ -71,7 +71,7 @@ class SHCValve(SHCEntity, ValveEntity):
         """
         try:
             return self._device.position
-        except (ValueError, KeyError) as err:
+        except (ValueError, KeyError, AttributeError) as err:
             LOGGER.debug(
                 "Could not read valve position for %s: %s", self._device.name, err
             )

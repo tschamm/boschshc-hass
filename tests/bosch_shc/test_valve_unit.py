@@ -26,20 +26,23 @@ def _fake_device(name="test-valve", root_device_id="root1", device_id="dev1"):
 class TestSHCValveInit:
     """Cover SHCValve.__init__ lines 57-66."""
 
-    def test_init_no_attr_name_sets_name_from_device(self):
+    def test_init_no_attr_name_sets_name_none(self):
+        # With _attr_has_entity_name=True (from SHCEntity), _attr_name=None means
+        # HA uses the device name as the entity name.
         dev = _fake_device()
         valve = SHCValve(device=dev, entry_id="test", attr_name=None)
-        assert valve._attr_name == "test-valve"
+        assert valve._attr_name is None
 
     def test_init_no_attr_name_sets_unique_id(self):
         dev = _fake_device()
         valve = SHCValve(device=dev, entry_id="test", attr_name=None)
         assert valve._attr_unique_id == "root1_dev1"
 
-    def test_init_with_attr_name_appends_to_name(self):
+    def test_init_with_attr_name_sets_attr_name(self):
+        # _attr_name stores only the suffix; HA auto-prepends the device name at runtime.
         dev = _fake_device()
         valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
-        assert valve._attr_name == "test-valve Valve"
+        assert valve._attr_name == "Valve"
 
     def test_init_with_attr_name_lowercased_in_unique_id(self):
         dev = _fake_device()
@@ -60,7 +63,7 @@ class TestSHCValveInit:
         dev = _fake_device(name="my-cam", root_device_id="root2", device_id="dev2")
         valve = SHCValve(device=dev, entry_id="e", attr_name="ThermoValve")
         assert valve._attr_unique_id == "root2_dev2_thermovalve"
-        assert valve._attr_name == "my-cam ThermoValve"
+        assert valve._attr_name == "ThermoValve"
 
 
 class TestSHCValveClassAttrs:

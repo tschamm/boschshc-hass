@@ -24,7 +24,7 @@ from homeassistant.const import (
 
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
@@ -161,6 +161,13 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
             ATTR_NAME: self._device.name,
             ATTR_LAST_TIME_TRIGGERED: current_ts,
         }
+        self.hass.loop.call_soon_threadsafe(
+            self._dispatch_event, event_type, event_attributes
+        )
+
+    @callback
+    def _dispatch_event(self, event_type, event_attributes):
+        """Dispatch the event on the event loop (thread-safe)."""
         try:
             self._trigger_event(event_type, event_attributes)
         except ValueError:
@@ -229,6 +236,13 @@ class SHCScenarioEvent(EventEntity):
             ATTR_NAME: event_data["name"],
             ATTR_LAST_TIME_TRIGGERED: event_data["lastTimeTriggered"],
         }
+        self.hass.loop.call_soon_threadsafe(
+            self._dispatch_event, event_type, event_attributes
+        )
+
+    @callback
+    def _dispatch_event(self, event_type, event_attributes):
+        """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
 
@@ -261,6 +275,13 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
             ATTR_NAME: self._device.name,
             ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
         }
+        self.hass.loop.call_soon_threadsafe(
+            self._dispatch_event, event_type, event_attributes
+        )
+
+    @callback
+    def _dispatch_event(self, event_type, event_attributes):
+        """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
 
@@ -296,6 +317,13 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
+        self.hass.loop.call_soon_threadsafe(
+            self._dispatch_event, event_type, event_attributes
+        )
+
+    @callback
+    def _dispatch_event(self, event_type, event_attributes):
+        """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
 
@@ -331,5 +359,12 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
+        self.hass.loop.call_soon_threadsafe(
+            self._dispatch_event, event_type, event_attributes
+        )
+
+    @callback
+    def _dispatch_event(self, event_type, event_attributes):
+        """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()

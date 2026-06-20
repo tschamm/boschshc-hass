@@ -14,6 +14,18 @@ from unittest.mock import MagicMock
 
 from custom_components.bosch_shc.event import UniversalSwitchEvent
 
+
+def _make_hass_sync():
+    """Return a minimal hass mock whose call_soon_threadsafe executes the fn immediately."""
+    hass = MagicMock(name="hass")
+
+    def _sync_call(fn, *args, **kwargs):
+        fn(*args, **kwargs)
+
+    hass.loop.call_soon_threadsafe.side_effect = _sync_call
+    return hass
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -47,6 +59,9 @@ def _make_entity(eventtype, eventtimestamp, root_device_id="root1", device_id="d
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
     # device_id is a property on SHCEntity reading _device.id — already set above
+
+    # Wire up a sync hass so call_soon_threadsafe executes immediately in tests
+    entity.hass = _make_hass_sync()
 
     return entity
 

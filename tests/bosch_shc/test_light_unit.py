@@ -178,12 +178,16 @@ def test_init_brightness_not_added_when_hs_present():
 # ---------------------------------------------------------------------------
 
 def test_init_base_fields_set():
-    """Verify SHCEntity.__init__ sets _attr_name and _attr_unique_id correctly."""
+    """Verify SHCEntity.__init__ sets _attr_name and _attr_unique_id correctly.
+
+    LightSwitch is a primary entity (_attr_has_entity_name=True) so _attr_name=None;
+    HA uses the device name as the full entity name at runtime.
+    """
     sw = LightSwitch(device=_make_device(
         name="My Light",
         root_device_id="root-X",
         id="dev-Y",
     ), entry_id="entry-42")
-    assert sw._attr_name == "My Light"
+    assert sw._attr_name is None
     assert sw._attr_unique_id == "root-X_dev-Y"
     assert sw._entry_id == "entry-42"

@@ -201,12 +201,15 @@ class ShutterControlCover(SHCEntity, CoverEntity):
     def current_cover_position(self):
         """Return the current or target cover position."""
         if self._device.device_model == "MICROMODULE_SHUTTER":
-            return (
-                round(self._device.level * 100.0)
-                if self._device.operation_state
+            if (
+                self._device.operation_state
                 == SHCShutterControl.ShutterControlService.State.STOPPED
-                else self._target_position
-            )
+            ):
+                return round(self._device.level * 100.0)
+            # MOVING: use target if set, else fall back to current level reading
+            if self._target_position is not None:
+                return self._target_position
+            return round(self._device.level * 100.0)
         else:
             # for BBL devices, we can rely on the level attribute to determine the current position, even when moving
             return round(self._device.level * 100.0)
@@ -286,17 +289,26 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
         self._attr_is_opening = True
         self._attr_is_closing = False
         self._device.blinds_level = 1.0
+        self._target_position = 100
+        self._skip_update = True
+        self._app_command = True
 
     def close_cover(self, **kwargs):
         """Close cover."""
         self._attr_is_closing = True
         self._attr_is_opening = False
         self._device.blinds_level = 0.0
+        self._target_position = 0
+        self._skip_update = True
+        self._app_command = True
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
         position = kwargs[ATTR_POSITION]
         self._device.blinds_level = position / 100.0
+        self._target_position = position
+        self._skip_update = True
+        self._app_command = True
 
     @property
     def current_cover_position(self):

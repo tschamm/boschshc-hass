@@ -47,6 +47,21 @@ _SWITCH_ON = SimpleNamespace(name="SWITCH_ON")
 _SHC_ENTITY_ADDED = "custom_components.bosch_shc.event.SHCEntity.async_added_to_hass"
 
 
+def _make_hass_sync():
+    """Return a minimal hass mock whose call_soon_threadsafe executes the fn immediately.
+
+    This allows unit tests that drive _event_callback() directly to still verify
+    _trigger_event/schedule_update_ha_state without needing a real event loop.
+    """
+    hass = MagicMock(name="hass")
+
+    def _sync_call(fn, *args, **kwargs):
+        fn(*args, **kwargs)
+
+    hass.loop.call_soon_threadsafe.side_effect = _sync_call
+    return hass
+
+
 def _make_universal_switch_entity(
     eventtype=_PRESS_SHORT,
     eventtimestamp: int = 1000,
@@ -74,6 +89,7 @@ def _make_universal_switch_entity(
     entity._last_fired_timestamp = -1
     entity._attr_unique_id = f"{root_device_id}_{device_id}_{key_id}"
     entity.entity_id = f"event.{name.lower().replace(' ', '_')}_button_{key_id.lower()}"
+    entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
     return entity
@@ -99,11 +115,13 @@ class TestUniversalSwitchEventInit:
         )
 
     def test_name_set_correctly(self):
+        # _attr_name contains only the suffix ("Button LOWER_BUTTON").
+        # With _attr_has_entity_name=True HA auto-prepends the device name at runtime.
         dev = self._make_dev(name="Living Room Switch", device_id="hdm:sw:42", root_device_id="root:x")
         entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
         with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "LOWER_BUTTON")
-        assert entity._attr_name == "Living Room Switch Button LOWER_BUTTON"
+        assert entity._attr_name == "Button LOWER_BUTTON"
 
     def test_unique_id_set_correctly(self):
         dev = self._make_dev(name="SW", device_id="hdm:sw:99", root_device_id="root:r")
@@ -177,7 +195,7 @@ class TestUniversalSwitchEventSubscribe:
             extra_services=[keypad_svc, FakeNonKeypadService()],
         )
         entity._entry_id = "entry1"
-        entity.hass = None
+        entity.hass = _make_hass_sync()
 
         async def _run():
             with patch(_SHC_ENTITY_ADDED, return_value=None):
@@ -195,7 +213,7 @@ class TestUniversalSwitchEventSubscribe:
             extra_services=[non_kp, keypad_svc],
         )
         entity._entry_id = "entry1"
-        entity.hass = None
+        entity.hass = _make_hass_sync()
 
         async def _run():
             with patch(_SHC_ENTITY_ADDED, return_value=None):
@@ -215,7 +233,7 @@ class TestUniversalSwitchEventSubscribe:
             extra_services=[keypad_svc],
         )
         entity._entry_id = "entry1"
-        entity.hass = None
+        entity.hass = _make_hass_sync()
 
         async def _run():
             with patch(_SHC_ENTITY_ADDED, return_value=None):
@@ -233,7 +251,7 @@ class TestUniversalSwitchEventSubscribe:
             extra_services=[FakeNonKeypadService()],
         )
         entity._entry_id = "entry1"
-        entity.hass = None
+        entity.hass = _make_hass_sync()
 
         async def _run():
             with patch(_SHC_ENTITY_ADDED, return_value=None):
@@ -360,6 +378,7 @@ def _make_motion_entity(
     )
     entity.entity_id = "event.motion_sensor"
     entity._entry_id = "entry1"
+    entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
     return entity
@@ -518,6 +537,7 @@ def _make_smoke_system_entity(
     )
     entity.entity_id = "event.smoke_system"
     entity._entry_id = "entry1"
+    entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
     return entity
@@ -684,6 +704,7 @@ def _make_smoke_detector_entity(
     )
     entity.entity_id = "event.smoke_detector"
     entity._entry_id = "entry1"
+    entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
     return entity

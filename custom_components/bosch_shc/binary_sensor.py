@@ -279,8 +279,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         )
 
     def _input_events_handler(self):
-        """Handle device input events."""
-        self.hass.bus.fire(
+        """Handle device input events (called from SHCPollingThread)."""
+        self.hass.loop.call_soon_threadsafe(
+            self.hass.bus.fire,
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self._cached_device_id,
@@ -365,8 +366,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         )
 
     def _input_events_handler(self):
-        """Handle device input events."""
-        self._hass.bus.fire(
+        """Handle device input events (called from SHCPollingThread)."""
+        self._hass.loop.call_soon_threadsafe(
+            self._hass.bus.fire,
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self._cached_device_id,
@@ -503,8 +505,9 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         )
 
     def _input_events_handler(self):
-        """Handle device input events."""
-        self._hass.bus.fire(
+        """Handle device input events (called from SHCPollingThread)."""
+        self._hass.loop.call_soon_threadsafe(
+            self._hass.bus.fire,
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self._cached_device_id,

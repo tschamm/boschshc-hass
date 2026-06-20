@@ -1,0 +1,194 @@
+"""Unit tests for thread-safe bus.fire wrapping in __init__.py and binary_sensor.py.
+
+Verifies that _input_events_handler and _scenario_trigger call
+hass.loop.call_soon_threadsafe instead of hass.bus.fire directly.
+
+Pattern: __new__ bypass + SimpleNamespace device + MagicMock hass.
+No HA harness, no async_setup_entry.
+
+Run with:
+  PYTHONPATH="<boschshc-hass>:<boschshcpy>" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+    python3 -m pytest tests/bosch_shc/test_thread_safety_fire.py -q -o addopts=""
+"""
+from __future__ import annotations
+
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
+from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
+from custom_components.bosch_shc.binary_sensor import (
+    MotionDetectionSensor,
+    SmokeDetectorSensor,
+    SmokeDetectionSystemSensor,
+)
+from custom_components.bosch_shc.const import (
+    EVENT_BOSCH_SHC,
+    ATTR_EVENT_TYPE,
+    ATTR_EVENT_SUBTYPE,
+)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_hass():
+    """Minimal hass mock with a tracked loop."""
+    hass = MagicMock(name="hass")
+    hass.loop = MagicMock(name="loop")
+    hass.bus = MagicMock(name="bus")
+    return hass
+
+
+def _make_switch_listener(eventtype_name="PRESS_SHORT", keyname_name="UPPER_BUTTON",
+                          eventtimestamp=1234):
+    """Build a SwitchDeviceEventListener without going through async_setup."""
+    listener = SwitchDeviceEventListener.__new__(SwitchDeviceEventListener)
+    listener.hass = _make_hass()
+    listener.device_id = "ha-device-id-1"
+    listener._device = SimpleNamespace(
+        id="hdm:switch:1",
+        name="Test Switch",
+        eventtype=SimpleNamespace(name=eventtype_name),
+        keyname=SimpleNamespace(name=keyname_name),
+        eventtimestamp=eventtimestamp,
+    )
+    return listener
+
+
+# ---------------------------------------------------------------------------
+# SwitchDeviceEventListener
+# ---------------------------------------------------------------------------
+
+class TestSwitchListenerThreadSafe:
+    def test_supported_event_uses_call_soon_threadsafe(self):
+        """PRESS_SHORT must go via call_soon_threadsafe, not bus.fire directly."""
+        listener = _make_switch_listener(eventtype_name="PRESS_SHORT")
+        listener._input_events_handler()
+
+        # call_soon_threadsafe must have been called
+        assert listener.hass.loop.call_soon_threadsafe.called
+        # hass.bus.fire must NOT have been called directly
+        assert not listener.hass.bus.fire.called
+
+    def test_call_soon_threadsafe_passes_correct_event_type(self):
+        """call_soon_threadsafe must pass EVENT_BOSCH_SHC as the event name arg."""
+        listener = _make_switch_listener(eventtype_name="PRESS_LONG")
+        listener._input_events_handler()
+
+        args = listener.hass.loop.call_soon_threadsafe.call_args[0]
+        assert args[0] is listener.hass.bus.fire
+        assert args[1] == EVENT_BOSCH_SHC
+
+    def test_none_eventtype_does_not_fire(self):
+        """None eventtype must short-circuit before any fire/call_soon_threadsafe."""
+        listener = _make_switch_listener()
+        listener._device.eventtype = None
+        listener._input_events_handler()
+
+        assert not listener.hass.loop.call_soon_threadsafe.called
+        assert not listener.hass.bus.fire.called
+
+    def test_unsupported_event_logs_warning_not_fire(self):
+        """Unsupported event types must not call fire or call_soon_threadsafe."""
+        listener = _make_switch_listener(eventtype_name="SWITCH_ON")
+        listener._input_events_handler()
+
+        assert not listener.hass.loop.call_soon_threadsafe.called
+        assert not listener.hass.bus.fire.called
+
+
+# ---------------------------------------------------------------------------
+# MotionDetectionSensor
+# ---------------------------------------------------------------------------
+
+class TestMotionSensorThreadSafe:
+    def _make_sensor(self):
+        sensor = MotionDetectionSensor.__new__(MotionDetectionSensor)
+        sensor.hass = _make_hass()
+        sensor._cached_device_id = "ha-device-motion-1"
+        sensor._device = SimpleNamespace(
+            id="hdm:motion:1",
+            name="Motion Sensor",
+            latestmotion="2026-06-20T10:00:00.000Z",
+        )
+        return sensor
+
+    def test_uses_call_soon_threadsafe_not_direct_fire(self):
+        sensor = self._make_sensor()
+        sensor._input_events_handler()
+
+        assert sensor.hass.loop.call_soon_threadsafe.called
+        assert not sensor.hass.bus.fire.called
+
+    def test_event_type_is_motion(self):
+        sensor = self._make_sensor()
+        sensor._input_events_handler()
+
+        args = sensor.hass.loop.call_soon_threadsafe.call_args[0]
+        payload = args[2]
+        assert payload[ATTR_EVENT_TYPE] == "MOTION"
+
+
+# ---------------------------------------------------------------------------
+# SmokeDetectorSensor
+# ---------------------------------------------------------------------------
+
+class TestSmokeDetectorSensorThreadSafe:
+    def _make_sensor(self):
+        sensor = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
+        sensor._hass = _make_hass()
+        sensor._cached_device_id = "ha-device-smoke-1"
+        sensor._device = SimpleNamespace(
+            id="hdm:smoke:1",
+            name="Smoke Detector",
+            alarmstate=SimpleNamespace(name="PRIMARY_ALARM"),
+        )
+        return sensor
+
+    def test_uses_call_soon_threadsafe_not_direct_fire(self):
+        sensor = self._make_sensor()
+        sensor._input_events_handler()
+
+        assert sensor._hass.loop.call_soon_threadsafe.called
+        assert not sensor._hass.bus.fire.called
+
+    def test_event_subtype_is_alarm_state(self):
+        sensor = self._make_sensor()
+        sensor._input_events_handler()
+
+        args = sensor._hass.loop.call_soon_threadsafe.call_args[0]
+        payload = args[2]
+        assert payload[ATTR_EVENT_SUBTYPE] == "PRIMARY_ALARM"
+
+
+# ---------------------------------------------------------------------------
+# SmokeDetectionSystemSensor
+# ---------------------------------------------------------------------------
+
+class TestSmokeDetectionSystemSensorThreadSafe:
+    def _make_sensor(self):
+        sensor = SmokeDetectionSystemSensor.__new__(SmokeDetectionSystemSensor)
+        sensor._hass = _make_hass()
+        sensor._cached_device_id = "ha-device-smokedsys-1"
+        sensor._device = SimpleNamespace(
+            id="hdm:smokedsys:1",
+            name="Smoke Detection System",
+            alarm=SimpleNamespace(name="ALARM_ON"),
+        )
+        return sensor
+
+    def test_uses_call_soon_threadsafe_not_direct_fire(self):
+        sensor = self._make_sensor()
+        sensor._input_events_handler()
+
+        assert sensor._hass.loop.call_soon_threadsafe.called
+        assert not sensor._hass.bus.fire.called
+
+    def test_event_subtype_is_alarm_name(self):
+        sensor = self._make_sensor()
+        sensor._input_events_handler()
+
+        args = sensor._hass.loop.call_soon_threadsafe.call_args[0]
+        payload = args[2]
+        assert payload[ATTR_EVENT_SUBTYPE] == "ALARM_ON"
