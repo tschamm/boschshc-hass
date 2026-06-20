@@ -438,6 +438,7 @@ def test_setup_roomthermostat_child_lock_only():
 def test_setup_wallthermostat_child_lock_only():
     """THB/BWTH wall thermostat gets child_lock_thermostat (ThermostatService enum)."""
     wt = _fake_device(name="WallThermo", dev_id="wt1")
+    wt.child_lock = "ON"  # boschshcpy >= 0.2.119 exposes child_lock on wall thermostats
     session = _make_session(wallthermostats=[wt])
     entities, _ = _setup(session)
     keys = {e.entity_description.key for e in entities}
@@ -449,6 +450,7 @@ def test_setup_wallthermostat_uses_enum_description():
     from boschshcpy import SHCThermostat
 
     wt = _fake_device(name="WallThermo2", dev_id="wt2")
+    wt.child_lock = "ON"  # boschshcpy >= 0.2.119 exposes child_lock on wall thermostats
     session = _make_session(wallthermostats=[wt])
     entities, _ = _setup(session)
     cl_entities = [e for e in entities if e.entity_description.key == "child_lock_thermostat"]
@@ -1069,3 +1071,16 @@ def test_uds_switch_update_entity_information_deleted():
     # Entity should be marked unavailable and add_job called for removal
     assert sw._attr_available is False
     assert len(add_job_calls) == 1
+
+
+def test_setup_wallthermostat_without_child_lock_skipped_old_lib():
+    """Guard (0.4.112): a wall thermostat from an older boschshcpy (no child_lock
+    attribute) must be skipped, not crash, when the lib is pinned to 0.2.117."""
+    wt = _fake_device(name="OldWallThermo", dev_id="wt-old")
+    # ensure the attribute is absent (older lib)
+    if hasattr(wt, "child_lock"):
+        del wt.child_lock
+    session = _make_session(wallthermostats=[wt])
+    entities, _ = _setup(session)
+    keys = {e.entity_description.key for e in entities}
+    assert "child_lock_thermostat" not in keys

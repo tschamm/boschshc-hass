@@ -448,7 +448,9 @@ async def async_setup_entry(
     for switch in (
         session.device_helper.thermostats
         + session.device_helper.roomthermostats
-        + session.device_helper.wallthermostats
+        # wall thermostats expose child_lock only with boschshcpy >= 0.2.119;
+        # hasattr guard so an older (pinned) lib does not raise on device.child_lock
+        + [d for d in session.device_helper.wallthermostats if hasattr(d, "child_lock")]
     ):
         entities.append(
             SHCSwitch(

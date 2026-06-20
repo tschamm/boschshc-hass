@@ -133,7 +133,12 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Return the current HVAC action."""
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
-        return HVACAction.HEATING if self._device.has_demand else HVACAction.IDLE
+        # getattr guard: has_demand needs boschshcpy >= 0.2.120; tolerate older libs
+        return (
+            HVACAction.HEATING
+            if getattr(self._device, "has_demand", False)
+            else HVACAction.IDLE
+        )
 
     @property
     def preset_mode(self):
