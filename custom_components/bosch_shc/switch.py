@@ -534,9 +534,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         """Initialize a SHC switch."""
         super().__init__(device, entry_id)
         self.entity_description = description
-        self._attr_name = (
-            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
-        )
+        self._attr_name = None if attr_name is None else attr_name
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
@@ -605,6 +603,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
     """Representation of a SHC User Defined State Entity."""
 
     entity_description: SHCSwitchEntityDescription
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -620,9 +619,8 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         self._session = session
         self._entry_id = entry_id
         self.entity_description = description
-        self._attr_name = (
-            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
-        )
+        # Primary entity: _attr_name = None means HA uses the device name.
+        self._attr_name = None if attr_name is None else attr_name
 
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"userdefinedstate_{slugify(self._device.name)}"

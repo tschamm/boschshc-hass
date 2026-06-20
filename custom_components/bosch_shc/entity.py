@@ -73,11 +73,16 @@ async def async_migrate_to_new_unique_id(
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the generic SHC device."""
         self._device = device
         self._entry_id = entry_id
-        self._attr_name = f"{device.name}"
+        # Primary entity: _attr_name = None means HA uses the device name as the
+        # entity name.  Sub-classes that represent a feature set _attr_name to the
+        # feature label (without the device name prefix, since HA prepends it).
+        self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._update_attr()
 
