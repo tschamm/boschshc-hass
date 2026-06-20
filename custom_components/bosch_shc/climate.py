@@ -1,6 +1,7 @@
 """Platform for climate integration."""
 
 from boschshcpy import SHCClimateControl, SHCSession
+from boschshcpy.exceptions import JSONRPCError, SHCException
 from enum import IntFlag
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -166,13 +167,28 @@ class ClimateControl(SHCEntity, ClimateEntity):
             )
             return
 
-        if self.min_temp <= temperature <= self.max_temp:
-            await self.hass.async_add_executor_job(
-                setattr,
-                self._device,
-                "setpoint_temperature",
-                float(round(temperature * 2.0) / 2.0),
+        if self.preset_mode == PRESET_BOOST:
+            LOGGER.warning(
+                "Cannot set temperature on device %s while in BOOST mode "
+                "(SHC rejects setpoint writes in this state).",
+                self.device_name,
             )
+            return
+
+        if self.min_temp <= temperature <= self.max_temp:
+            try:
+                await self.hass.async_add_executor_job(
+                    setattr,
+                    self._device,
+                    "setpoint_temperature",
+                    float(round(temperature * 2.0) / 2.0),
+                )
+            except (JSONRPCError, SHCException) as err:
+                LOGGER.warning(
+                    "Failed to set temperature on device %s: %s",
+                    self.device_name,
+                    err,
+                )
 
     async def async_set_hvac_mode(self, hvac_mode: str):
         """Set hvac mode."""
