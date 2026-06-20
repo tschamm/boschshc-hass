@@ -23,7 +23,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
@@ -497,15 +497,26 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
+        try:
+            valve_tappet_state = self._device.valvestate.name
+        except ValueError as err:
+            LOGGER.warning(
+                "Unknown valve tappet state for %s: %s", self._device.name, err
+            )
+            valve_tappet_state = None
         return {
-            "valve_tappet_state": self._device.valvestate.name,
+            "valve_tappet_state": valve_tappet_state,
         }
 
 
 class IlluminanceLevelSensor(SHCEntity, SensorEntity):
-    """Representation of an SHC illuminance level reporting sensor."""
+    """Representation of an SHC illuminance level reporting sensor.
 
-    _attr_state_class = SensorStateClass.MEASUREMENT
+    Gen1 SHCMotionDetector returns a qualitative string (e.g. "MEDIUM") while
+    Gen2 SHCMotionDetector2 returns an int. state_class=MEASUREMENT is omitted
+    because HA rejects non-numeric values with that state class, and Gen1 devices
+    would trigger state-validation errors.
+    """
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""

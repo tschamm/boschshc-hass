@@ -40,12 +40,6 @@ class ClimateControl(SHCEntity, ClimateEntity):
     """Representation of a SHC room climate control."""
 
     _attr_target_temperature_step = 0.5
-    _attr_supported_features = (
-        ClimateEntityFeature.TARGET_TEMPERATURE
-        | ClimateEntityFeature.PRESET_MODE
-        | ClimateEntityFeature.TURN_OFF
-        | ClimateEntityFeature.TURN_ON
-    )
     _enable_turn_on_off_backwards_compatibility = False
 
     def __init__(
@@ -212,7 +206,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 setattr, self._device, "summer_mode", True
             )
 
-    def set_preset_mode(self, preset_mode: str):
+    async def async_set_preset_mode(self, preset_mode: str):
         """Set preset mode."""
         if preset_mode not in self.preset_modes:
             return
@@ -220,25 +214,37 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if preset_mode == PRESET_NONE:
             if self._device.supports_boost_mode:
                 if self._device.boost_mode:
-                    self._device.boost_mode = False
+                    await self.hass.async_add_executor_job(
+                        setattr, self._device, "boost_mode", False
+                    )
 
             if self._device.low:
-                self._device.low = False
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "low", False
+                )
 
         elif preset_mode == PRESET_BOOST:
             if not self._device.boost_mode:
-                self._device.boost_mode = True
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "boost_mode", True
+                )
 
             if self._device.low:
-                self._device.low = False
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "low", False
+                )
 
         elif preset_mode == PRESET_ECO:
             if self._device.supports_boost_mode:
                 if self._device.boost_mode:
-                    self._device.boost_mode = False
+                    await self.hass.async_add_executor_job(
+                        setattr, self._device, "boost_mode", False
+                    )
 
             if not self._device.low:
-                self._device.low = True
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "low", True
+                )
 
     async def async_turn_on(self) -> None:
         """Turn the climate device on."""

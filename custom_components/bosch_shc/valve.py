@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity
 
 
@@ -71,4 +71,10 @@ class SHCValve(SHCEntity, ValveEntity):
 
         None is unknown, 0 is closed, 100 is fully open.
         """
-        return self._device.position
+        try:
+            return self._device.position
+        except (ValueError, KeyError) as err:
+            LOGGER.debug(
+                "Could not read valve position for %s: %s", self._device.name, err
+            )
+            return None

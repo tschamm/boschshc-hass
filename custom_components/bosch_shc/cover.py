@@ -21,7 +21,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 
@@ -140,6 +140,17 @@ class ShutterControlCover(SHCEntity, CoverEntity):
                     self._target_position = 0
                 else:
                     self._target_position = round(self._device.level * 100.0)
+                    if self._last_position is not None:
+                        if self._target_position > self._last_position:
+                            self._attr_is_closing = False
+                            self._attr_is_opening = True
+                        elif self._target_position < self._last_position:
+                            self._attr_is_closing = True
+                            self._attr_is_opening = False
+
+            elif self._device.device_model == "MICROMODULE_BLINDS":
+                self._target_position = round(self._device.level * 100.0)
+                if self._last_position is not None:
                     if self._target_position > self._last_position:
                         self._attr_is_closing = False
                         self._attr_is_opening = True
@@ -149,7 +160,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 
             else:
                 # for other devices, we cannot determine the movement direction, so we set both to None
-                print("  No plan what to do")
+                LOGGER.debug("Cannot determine movement direction for %s", self._device.name)
                 self._attr_is_closing = None
                 self._attr_is_opening = None
 
@@ -247,16 +258,25 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
 
     def open_cover(self, **kwargs):
         """Open the cover."""
+        self._attr_is_opening = True
+        self._attr_is_closing = False
         self._device.blinds_level = 1.0
 
     def close_cover(self, **kwargs):
         """Close cover."""
+        self._attr_is_closing = True
+        self._attr_is_opening = False
         self._device.blinds_level = 0.0
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
         position = kwargs[ATTR_POSITION]
         self._device.blinds_level = position / 100.0
+
+    @property
+    def current_cover_position(self):
+        """Return the current cover position using blinds_level (BlindsSceneControl)."""
+        return round(self._device.blinds_level * 100.0)
 
     def stop_cover_tilt(self, **kwargs: Any) -> None:
         self._device.stop_blinds()

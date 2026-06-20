@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from dataclasses import dataclass
 
 from boschshcpy import (
@@ -28,6 +27,7 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.util import slugify
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -190,6 +190,18 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
         icon="mdi:lock",
     ),
+    "child_lock_thermostat": SHCSwitchEntityDescription(
+        key="child_lock_thermostat",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="child_lock",
+        # Thermostats expose child lock as a ThermostatService.State enum, not a
+        # bool. State.ON != True, so reusing the bool "child_lock" description
+        # made the switch read OFF permanently. Compare against the enum member.
+        on_value=SHCThermostat.ThermostatService.State.ON,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:lock",
+    ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
@@ -216,15 +228,6 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
     ),
 }
-
-
-def _format(input_string: str) -> str:
-    """Format a string to be used in an entity_id."""
-    import re
-
-    for search, replace in {"ä": "ae", "ö": "oe", "ü": "ue"}.items():
-        input_string = input_string.casefold().replace(search, replace)
-    return re.sub(r"\s+", "_", re.sub("[^0-9a-z_ ]", "", input_string))
 
 
 async def async_setup_entry(
@@ -437,14 +440,32 @@ async def async_setup_entry(
                 )
             )
 
+    # Thermostats / room thermostats expose child lock as a ThermostatService
+    # .State enum (ON/OFF) -> needs the enum-aware description.
     for switch in (
         session.device_helper.thermostats
         + session.device_helper.roomthermostats
-        + session.device_helper.micromodule_shutter_controls
+    ):
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["child_lock_thermostat"],
+                attr_name="ChildLock",
+            )
+        )
+
+    # ChildProtection devices expose child lock as a bool (childLockActive).
+    # micromodule_dimmers and light_switches_bsm also carry the ChildProtection
+    # service but were previously not wired -> no child-lock entity was created.
+    for switch in (
+        session.device_helper.micromodule_shutter_controls
         + session.device_helper.micromodule_blinds
         + session.device_helper.micromodule_light_attached
         + session.device_helper.micromodule_relays
         + session.device_helper.micromodule_impulse_relays
+        + session.device_helper.micromodule_dimmers
+        + session.device_helper.light_switches_bsm
     ):
         entities.append(
             SHCSwitch(
@@ -460,28 +481,36 @@ async def async_setup_entry(
 
     @callback
     def async_add_userdefinedstateswitch(
-        switch: SHCUserDefinedStateSwitch,
+        device: SHCUserDefinedState,
     ) -> None:
         """Add User Defined State Switch."""
-        switch = SHCUserDefinedStateSwitch(
-            device=switch,
+        entity = SHCUserDefinedStateSwitch(
+            device=device,
             hass=hass,
             session=session,
             entry_id=config_entry.entry_id,
             description=SWITCH_TYPES["user_defined_state"],
         )
-        async_add_entities([switch])
+        async_add_entities([entity])
 
     # add all current items in session
     for switch in session.userdefinedstates:
-        async_add_userdefinedstateswitch(switch=switch)
+        async_add_userdefinedstateswitch(device=switch)
 
-    # register listener for new switches
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
-            session.subscribe((SHCUserDefinedState, async_add_userdefinedstateswitch))
-        )
-    )
+    # Register listener for new user-defined state switches and ensure it is
+    # torn down on config entry unload.  session.subscribe() returns None, so
+    # we build the unsubscribe closure ourselves.  add_update_listener expects
+    # an options-update callback (hass, entry) -> None and must NOT be used here.
+    _uds_subscriber = (SHCUserDefinedState, async_add_userdefinedstateswitch)
+    session.subscribe(_uds_subscriber)
+
+    def _unsubscribe_uds():
+        try:
+            session._subscribers.remove(_uds_subscriber)
+        except ValueError:
+            pass
+
+    config_entry.async_on_unload(_unsubscribe_uds)
 
 
 class SHCSwitch(SHCEntity, SwitchEntity):
@@ -509,12 +538,22 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         )
 
     @property
-    def is_on(self) -> bool:
-        """Return the state of the switch."""
-        return (
-            getattr(self._device, self.entity_description.on_key)
-            == self.entity_description.on_value
-        )
+    def is_on(self) -> bool | None:
+        """Return the state of the switch.
+
+        Defensive: cameras registered via SHC local API can have a None
+        underlying service (e.g. PrivacyModeService for cameraeyes / camera360
+        switches), causing boschshcpy to crash with AttributeError on every
+        state update. Return None (unavailable) instead of crash-looping the
+        state writer. See mosandlt/boschshc-hass branch fix/code-quality-improvements.
+        """
+        try:
+            return (
+                getattr(self._device, self.entity_description.on_key)
+                == self.entity_description.on_value
+            )
+        except AttributeError:
+            return None
 
     def turn_on(self, **kwargs) -> None:
         """Turn the switch on."""
@@ -558,7 +597,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         )
 
         self.entity_id = ENTITY_ID_FORMAT.format(
-            f"userdefinedstate_{_format(self._device.name)}"
+            f"userdefinedstate_{slugify(self._device.name)}"
         )
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"

@@ -1,7 +1,6 @@
 """Platform for binarysensor integration."""
 
-import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -10,7 +9,6 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
     SHCShutterContact,
-    SHCShutterContact2,
     SHCShutterContact2Plus,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
@@ -76,12 +74,22 @@ async def async_setup_entry(
         )
         async_add_shuttercontact(device=binary_sensor)
 
-    # register listener for new binary sensors
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
-            session.subscribe((SHCShutterContact, async_add_shuttercontact))
-        )
-    )
+    # Register listener for new binary sensors and ensure it is torn down on
+    # config entry unload.  session.subscribe() appends the tuple to
+    # session._subscribers but returns None, so we build the unsubscribe
+    # closure ourselves.  add_update_listener is NOT used here because it
+    # expects an options-update callback (hass, entry) -> None, not the SHC
+    # subscriber tuple.
+    _shutter_subscriber = (SHCShutterContact, async_add_shuttercontact)
+    session.subscribe(_shutter_subscriber)
+
+    def _unsubscribe_shutter():
+        try:
+            session._subscribers.remove(_shutter_subscriber)
+        except ValueError:
+            pass
+
+    config_entry.async_on_unload(_unsubscribe_shutter)
 
     for binary_sensor in session.device_helper.motion_detectors:
         await async_migrate_to_new_unique_id(
@@ -228,6 +236,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         """Initialize the motion detection device."""
         self.hass = hass
         self._service = None
+        self._cached_device_id = None
         super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
@@ -239,14 +248,19 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
+    async def async_added_to_hass(self):
+        """Subscribe to SHC events and cache device_id."""
+        await super().async_added_to_hass()
+        self._cached_device_id = await async_get_device_id(
+            self.hass, self._device.id
+        )
+
     def _input_events_handler(self):
         """Handle device input events."""
         self.hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(  # This is definitely not running in the event loop thread if this call works
-                    async_get_device_id(self.hass, self._device.id), self.hass.loop
-                ).result(),
+                ATTR_DEVICE_ID: self._cached_device_id,
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
@@ -269,11 +283,14 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         try:
             latestmotion = datetime.strptime(
                 self._device.latestmotion, "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
-        except ValueError:
+            ).replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            # ValueError: unparseable timestamp; TypeError: latestmotion is None.
+            # The trailing literal "Z" makes strptime return a naive datetime, so
+            # it must be marked UTC-aware to subtract from datetime.now(timezone.utc).
             return False
 
-        elapsed = datetime.utcnow() - latestmotion
+        elapsed = datetime.now(timezone.utc) - latestmotion
         if elapsed > timedelta(seconds=4 * 60):
             return False
         return True
@@ -305,6 +322,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         """Initialize the smoke detector device."""
         self._hass = hass
         self._service = None
+        self._cached_device_id = None
         super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
@@ -316,14 +334,19 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
+    async def async_added_to_hass(self):
+        """Subscribe to SHC events and cache device_id."""
+        await super().async_added_to_hass()
+        self._cached_device_id = await async_get_device_id(
+            self._hass, self._device.id
+        )
+
     def _input_events_handler(self):
         """Handle device input events."""
         self._hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(  # This is definitely not running in the event loop thread if this call works
-                    async_get_device_id(self._hass, self._device.id), self._hass.loop
-                ).result(),
+                ATTR_DEVICE_ID: self._cached_device_id,
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_EVENT_TYPE: "ALARM",
@@ -413,6 +436,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         """Initialize the smoke detection system device."""
         self._hass = hass
         self._service = None
+        self._cached_device_id = None
         super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._attr_name = f"{device.root_device_id} {device.name}"
@@ -426,14 +450,19 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
+    async def async_added_to_hass(self):
+        """Subscribe to SHC events and cache device_id."""
+        await super().async_added_to_hass()
+        self._cached_device_id = await async_get_device_id(
+            self._hass, self._device.id
+        )
+
     def _input_events_handler(self):
         """Handle device input events."""
         self._hass.bus.fire(
             EVENT_BOSCH_SHC,
             {
-                ATTR_DEVICE_ID: asyncio.run_coroutine_threadsafe(  # This is definitely not running in the event loop thread if this call works
-                    async_get_device_id(self._hass, self._device.id), self._hass.loop
-                ).result(),
+                ATTR_DEVICE_ID: self._cached_device_id,
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_EVENT_TYPE: "ALARM",

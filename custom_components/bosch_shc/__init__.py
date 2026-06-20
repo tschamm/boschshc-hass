@@ -1,15 +1,17 @@
 """The Bosch Smart Home Controller integration."""
 
+from datetime import timedelta
+
 import voluptuous as vol
 import functools as ft
 import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
-from boschshcpy.certificate import parse_certificate
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
-    SHCCertificateError,
 )
+
+from .certificate import parse_certificate
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -43,6 +45,7 @@ from .const import (
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DOMAIN_NOTIFICATION_ID,
+    DATA_CERT_CHECK_UNSUB,
     DATA_POLLING_HANDLER,
     DATA_SESSION,
     DATA_SHC,
@@ -151,33 +154,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     # Daily certificate re-check scheduling
-    from datetime import timedelta
-    from .const import DATA_CERT_CHECK_UNSUB
-
-    def _scheduled_cert_check(_now):
-        async def _run():
-            try:
-                info = await hass.async_add_executor_job(parse_certificate, cert_path)
-            except Exception:  # silently ignore parsing issues
-                return
-            if info.days_remaining < 0:
-                LOGGER.error(
-                    "Bosch SHC client certificate expired on %s (daily check). Triggering reload for re-auth.",
-                    info.not_after.date(),
-                )
-                hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
-            elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
-                expiry = info.not_after.date()
-                hass.components.persistent_notification.create(
-                    (
-                        f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
-                        "To renew: Put the controller into pairing mode and re-authenticate the integration."
-                    ),
-                    title="Bosch SHC certificate expiring",
-                    notification_id=DOMAIN_NOTIFICATION_ID,
-                )
-
-        hass.async_create_task(_run())
+    async def _scheduled_cert_check(_now):
+        # async_track_time_interval dispatches sync callbacks to a worker
+        # thread, where hass.async_create_task triggers HA 2026.x's escalated
+        # report_non_thread_safe_operation RuntimeError for custom integrations.
+        # Making the callback async makes async_track_time_interval schedule it
+        # directly on the event loop, eliminating both the wrapper and the bug.
+        try:
+            info = await hass.async_add_executor_job(parse_certificate, cert_path)
+        except Exception:  # silently ignore parsing issues
+            return
+        if info.days_remaining < 0:
+            LOGGER.error(
+                "Bosch SHC client certificate expired on %s (daily check). Triggering reload for re-auth.",
+                info.not_after.date(),
+            )
+            hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+        elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
+            expiry = info.not_after.date()
+            hass.components.persistent_notification.create(
+                (
+                    f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
+                    "To renew: Put the controller into pairing mode and re-authenticate the integration."
+                ),
+                title="Bosch SHC certificate expiring",
+                notification_id=DOMAIN_NOTIFICATION_ID,
+            )
 
     hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
         async_track_time_interval(hass, _scheduled_cert_check, timedelta(days=1))
@@ -233,8 +235,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
     # cancel daily cert check
-    from .const import DATA_CERT_CHECK_UNSUB
-
     unsub = hass.data[DOMAIN][entry.entry_id].pop(DATA_CERT_CHECK_UNSUB, None)
     if unsub:
         unsub()
