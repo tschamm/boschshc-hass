@@ -214,6 +214,14 @@ logger:
 Please attach the relevant log section (around the moment the problem happens) to
 the GitHub issue, and remove anything you consider private.
 
+# Removal
+
+To remove the integration:
+
+1. Go to **Settings → Devices & Services**, find the **Bosch SHC** integration entry and click **⋮ → Delete**.
+2. Restart Home Assistant.
+3. **Manual cleanup required:** the integration writes client certificate and key files to `/config/bosch_shc/` (files named `bosch_shc-cert_<hostname>.pem` and `bosch_shc-key_<hostname>.pem`). These are **not** deleted automatically when you remove the integration. Delete them manually if you no longer intend to use the integration.
+
 # Known Issues
 
 * Encrypted SSL private key is not supported due to limitations of `requests` library.
