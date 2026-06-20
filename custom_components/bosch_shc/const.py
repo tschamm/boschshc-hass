@@ -37,6 +37,8 @@ OPT_SCENARIOS_AS_BUTTONS = "scenarios_as_buttons"
 OPT_DIAGNOSTIC_ENTITIES = "diagnostic_entities"
 OPT_SSL_VERIFY_HOSTNAME = "ssl_verify_hostname"
 OPT_LONG_POLL_TIMEOUT = "long_poll_timeout"
+OPT_PRESENCE_ENTITY = "child_lock_presence_entity"
+OPT_PRESENCE_STATE = "child_lock_present_state"
 
 # Certificate handling
 CERT_EXPIRY_WARNING_DAYS = 30

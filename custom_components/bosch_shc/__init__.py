@@ -38,7 +38,10 @@ from homeassistant.exceptions import (
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_interval,
+)
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -58,6 +61,8 @@ from .const import (
     DOMAIN,
     EVENT_BOSCH_SHC,
     LOGGER,
+    OPT_PRESENCE_ENTITY,
+    OPT_PRESENCE_STATE,
     SERVICE_TRIGGER_SCENARIO,
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
@@ -283,6 +288,79 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.runtime_data.cert_check_unsub
     )
 
+    # Presence-based child lock: optional; zero overhead when unconfigured.
+    presence_entity = entry.options.get(OPT_PRESENCE_ENTITY, "")
+    if presence_entity:
+        present_state = entry.options.get(OPT_PRESENCE_STATE, "home")
+
+        def _child_lock_devices(session):
+            """Return (thermostat_devices, bool_devices) from this SHC session."""
+            dh = session.device_helper
+            thermostats = (
+                dh.thermostats
+                + dh.roomthermostats
+                + [d for d in dh.wallthermostats if hasattr(d, "child_lock")]
+            )
+            bool_devices = (
+                dh.micromodule_shutter_controls
+                + dh.micromodule_blinds
+                + dh.micromodule_light_attached
+                + dh.micromodule_relays
+                + dh.micromodule_impulse_relays
+                + dh.micromodule_dimmers
+                + dh.light_switches_bsm
+            )
+            return thermostats, bool_devices
+
+        def _apply_child_lock(lock_state: bool):
+            """Set child lock on all SHC devices (blocking; run in executor)."""
+            from boschshcpy.exceptions import SHCException
+            from boschshcpy.api import JSONRPCError
+            thermostats, bool_devices = _child_lock_devices(session)
+            for device in thermostats:
+                try:
+                    device.child_lock = lock_state
+                except (JSONRPCError, SHCException) as err:
+                    LOGGER.warning(
+                        "Failed to set child_lock=%s on thermostat %s: %s",
+                        lock_state, device.id, err,
+                    )
+            for device in bool_devices:
+                try:
+                    device.child_lock = lock_state
+                except (JSONRPCError, SHCException) as err:
+                    LOGGER.warning(
+                        "Failed to set child_lock=%s on device %s: %s",
+                        lock_state, device.id, err,
+                    )
+
+        @callback
+        def _presence_state_changed(event):
+            """Handle presence entity state changes."""
+            old_state = event.data.get("old_state")
+            new_state = event.data.get("new_state")
+            if new_state is None:
+                return
+            old_state_str = old_state.state if old_state is not None else None
+            new_state_str = new_state.state
+            # Skip unavailable/unknown and no-op transitions
+            if new_state_str in ("unavailable", "unknown"):
+                return
+            if old_state_str == new_state_str:
+                return
+            lock_on = new_state_str == present_state
+            # Only act on actual transitions into / out of the present state
+            was_present = old_state_str == present_state
+            if lock_on == was_present:
+                return
+            hass.async_create_task(
+                hass.async_add_executor_job(_apply_child_lock, lock_on)
+            )
+
+        entry.runtime_data.presence_unsub = async_track_state_change_event(
+            hass, [presence_entity], _presence_state_changed
+        )
+
     async def stop_polling(event):
         """Stop polling service."""
         await hass.async_add_executor_job(session.stop_polling)
@@ -336,6 +414,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         runtime.polling_handler()
     if runtime.cert_check_unsub is not None:
         runtime.cert_check_unsub()
+    if runtime.presence_unsub is not None:
+        runtime.presence_unsub()
     await hass.async_add_executor_job(runtime.session.stop_polling)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

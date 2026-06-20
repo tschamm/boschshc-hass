@@ -18,3 +18,4 @@ class SHCData:
     title: str
     polling_handler: Callable[[], None] | None = field(default=None)
     cert_check_unsub: Callable[[], None] | None = field(default=None)
+    presence_unsub: Callable[[], None] | None = field(default=None)

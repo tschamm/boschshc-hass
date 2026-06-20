@@ -16,6 +16,8 @@ from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -35,6 +37,8 @@ from .const import (
     LOGGER,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_LONG_POLL_TIMEOUT,
+    OPT_PRESENCE_ENTITY,
+    OPT_PRESENCE_STATE,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
 )
@@ -329,6 +333,27 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         unit_of_measurement="s",
                         mode=NumberSelectorMode.BOX,
                     )
+                ),
+                vol.Optional(
+                    OPT_PRESENCE_ENTITY,
+                    default=current.get(OPT_PRESENCE_ENTITY, ""),
+                ): EntitySelector(
+                    EntitySelectorConfig(
+                        domain=[
+                            "person",
+                            "device_tracker",
+                            "binary_sensor",
+                            "input_boolean",
+                            "zone",
+                            "group",
+                        ]
+                    )
+                ),
+                vol.Optional(
+                    OPT_PRESENCE_STATE,
+                    default=current.get(OPT_PRESENCE_STATE, "home"),
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
                 ),
             }
         )

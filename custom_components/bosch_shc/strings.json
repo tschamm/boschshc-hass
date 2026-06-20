@@ -69,13 +69,17 @@
           "scenarios_as_buttons": "Expose scenarios as button entities",
           "diagnostic_entities": "Create diagnostic sensors (valve tappet, communication quality)",
           "ssl_verify_hostname": "Verify SSL hostname (advanced, not yet effective)",
-          "long_poll_timeout": "Long-poll timeout in seconds (advanced, not yet effective)"
+          "long_poll_timeout": "Long-poll timeout in seconds (advanced, not yet effective)",
+          "child_lock_presence_entity": "Presence entity for child lock automation (optional)",
+          "child_lock_present_state": "State that counts as 'present' (default: home)"
         },
         "data_description": {
           "scenarios_as_buttons": "When enabled, Bosch SHC scenarios appear as button entities in addition to the trigger service.",
           "diagnostic_entities": "When disabled, diagnostic sensors such as valve tappet position and communication quality are not created.",
           "ssl_verify_hostname": "Requires a future boschshcpy update to take effect.",
-          "long_poll_timeout": "Requires a future boschshcpy update to take effect. Default: 30 s."
+          "long_poll_timeout": "Requires a future boschshcpy update to take effect. Default: 30 s.",
+          "child_lock_presence_entity": "When this entity enters the present state, child lock is enabled on all SHC thermostats and supported devices. When it leaves, child lock is disabled. Leave empty to disable this feature.",
+          "child_lock_present_state": "The entity state that means 'someone is home'. Typically 'home' for person/device_tracker or 'on' for binary_sensor/input_boolean."
         }
       }
     }
