@@ -11,6 +11,7 @@ from boschshcpy.services_impl import AirQualityLevelService, ValveTappetService
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
+    LIGHT_LUX,
     PERCENTAGE,
     UnitOfEnergy,
     UnitOfPower,
@@ -407,15 +408,9 @@ def _illum_sensor(illuminance_value):
 
 
 class TestIlluminanceLevelSensor:
-    # native_value passthrough
-    def test_gen1_string_medium(self):
-        assert _illum_sensor("MEDIUM").native_value == "MEDIUM"
-
-    def test_gen1_string_low(self):
-        assert _illum_sensor("LOW").native_value == "LOW"
-
-    def test_gen1_string_high(self):
-        assert _illum_sensor("HIGH").native_value == "HIGH"
+    # native_value: numeric passthrough, non-numeric coerced to None (#315)
+    def test_gen1_string_coerced_none(self):
+        assert _illum_sensor("MEDIUM").native_value is None
 
     def test_gen2_int_value(self):
         assert _illum_sensor(320).native_value == 320
@@ -423,17 +418,19 @@ class TestIlluminanceLevelSensor:
     def test_gen2_int_zero(self):
         assert _illum_sensor(0).native_value == 0
 
-    # conditional state_class (#315)
-    def test_state_class_is_none_for_string(self):
-        """No state_class for string-valued sensors — avoids state_class_removed repair."""
-        assert _illum_sensor("MEDIUM").state_class is None
+    def test_none_value(self):
+        assert _illum_sensor(None).native_value is None
 
-    def test_state_class_measurement_for_int(self):
-        """Numeric Gen1 and Gen2 devices should get MEASUREMENT state_class (#315)."""
+    # static metadata — stable regardless of value (#315)
+    def test_state_class_measurement(self):
         assert _illum_sensor(13).state_class == SensorStateClass.MEASUREMENT
 
-    def test_device_class_illuminance_for_int(self):
+    def test_state_class_stable_when_none(self):
+        """A None value must keep MEASUREMENT — not re-raise state_class_removed."""
+        assert _illum_sensor(None).state_class == SensorStateClass.MEASUREMENT
+
+    def test_device_class_illuminance(self):
         assert _illum_sensor(9).device_class == SensorDeviceClass.ILLUMINANCE
 
-    def test_device_class_none_for_string(self):
-        assert _illum_sensor("HIGH").device_class is None
+    def test_unit_lux(self):
+        assert _illum_sensor(9).native_unit_of_measurement == LIGHT_LUX

@@ -1,12 +1,13 @@
-"""Tests for IlluminanceLevelSensor state_class conditional logic (#315).
+"""Tests for IlluminanceLevelSensor metadata + value handling (#315).
 
 The Bosch SHC API spec defines illuminance as integer for both Gen1 (model "MD")
-and Gen2 (model "MD2").  In practice Gen1 devices report numeric lux values too.
+and Gen2 (model "MD2").  Gen1 devices report numeric lux values too.
 
-Fix: state_class=MEASUREMENT, device_class=illuminance, unit=lx are set
-conditionally — only when native_value is numeric (int/float).  If a firmware
-variant returns a qualitative string the sensor degrades gracefully without
-triggering state_class_removed repairs.
+Fix: state_class=MEASUREMENT, device_class=illuminance, unit=lx are STATIC so
+they never flip-flop (a momentary None value used to drop state_class and
+re-raise the state_class_removed repair).  native_value coerces any non-numeric
+value to None so a hypothetical qualitative-string firmware degrades to
+"unknown" instead of conflicting with the measurement state_class.
 """
 
 from types import SimpleNamespace
@@ -31,68 +32,57 @@ def _make_sensor(illuminance_value):
     return sensor
 
 
-class TestIlluminanceSensorNumericGen1:
-    """Gen1 'MD' devices that report numeric lux (e.g. 13, 9, 22) — #315."""
+class TestStaticMetadata:
+    """Metadata is static — independent of the current value."""
 
-    def test_native_value_int(self):
-        assert _make_sensor(13).native_value == 13
-
-    def test_native_value_zero(self):
-        assert _make_sensor(0).native_value == 0
-
-    def test_state_class_is_measurement(self):
+    def test_state_class_numeric(self):
         assert _make_sensor(13).state_class == SensorStateClass.MEASUREMENT
 
-    def test_device_class_is_illuminance(self):
-        assert _make_sensor(22).device_class == SensorDeviceClass.ILLUMINANCE
+    def test_device_class_numeric(self):
+        assert _make_sensor(13).device_class == SensorDeviceClass.ILLUMINANCE
 
-    def test_unit_is_lux(self):
-        assert _make_sensor(9).native_unit_of_measurement == LIGHT_LUX
+    def test_unit_numeric(self):
+        assert _make_sensor(13).native_unit_of_measurement == LIGHT_LUX
 
+    def test_metadata_stable_when_value_none(self):
+        """Regression #315: a None value must NOT drop state_class/unit
+        (that re-raised the state_class_removed repair + unit-change warnings)."""
+        s = _make_sensor(None)
+        assert s.state_class == SensorStateClass.MEASUREMENT
+        assert s.device_class == SensorDeviceClass.ILLUMINANCE
+        assert s.native_unit_of_measurement == LIGHT_LUX
 
-class TestIlluminanceSensorStringFallback:
-    """Graceful fallback for any firmware returning a qualitative string."""
-
-    def test_native_value_is_string(self):
-        assert _make_sensor("MEDIUM").native_value == "MEDIUM"
-
-    def test_no_state_class_for_string(self):
-        """HA rejects MEASUREMENT with non-numeric values — must be None."""
-        assert _make_sensor("MEDIUM").state_class is None
-
-    def test_no_device_class_for_string(self):
-        assert _make_sensor("LOW").device_class is None
-
-    def test_no_unit_for_string(self):
-        assert _make_sensor("HIGH").native_unit_of_measurement is None
-
-    def test_gen1_low_value(self):
-        assert _make_sensor("LOW").native_value == "LOW"
-
-    def test_gen1_high_value(self):
-        assert _make_sensor("HIGH").native_value == "HIGH"
+    def test_metadata_stable_for_string(self):
+        s = _make_sensor("MEDIUM")
+        assert s.state_class == SensorStateClass.MEASUREMENT
+        assert s.device_class == SensorDeviceClass.ILLUMINANCE
+        assert s.native_unit_of_measurement == LIGHT_LUX
 
 
-class TestIlluminanceSensorGen2:
-    """Gen2 SHCMotionDetector2 ('MD2') always returns int."""
+class TestNativeValue:
+    """native_value returns numeric lux, else None."""
 
-    def test_native_value(self):
-        assert _make_sensor(320).native_value == 320
+    def test_int(self):
+        assert _make_sensor(13).native_value == 13
 
-    def test_state_class_measurement(self):
-        assert _make_sensor(320).state_class == SensorStateClass.MEASUREMENT
+    def test_zero(self):
+        assert _make_sensor(0).native_value == 0
 
-    def test_device_class_illuminance(self):
-        assert _make_sensor(500).device_class == SensorDeviceClass.ILLUMINANCE
+    def test_float(self):
+        assert _make_sensor(13.5).native_value == 13.5
 
-    def test_unit_lux(self):
-        assert _make_sensor(1000).native_unit_of_measurement == LIGHT_LUX
+    def test_large_gen2(self):
+        assert _make_sensor(1000).native_value == 1000
 
-    def test_zero_lux(self):
-        assert _make_sensor(0).state_class == SensorStateClass.MEASUREMENT
+    def test_none_value(self):
+        assert _make_sensor(None).native_value is None
 
-    def test_float_value(self):
-        """Float illuminance values are also treated as numeric."""
-        assert _make_sensor(13.5).state_class == SensorStateClass.MEASUREMENT
-        assert _make_sensor(13.5).device_class == SensorDeviceClass.ILLUMINANCE
-        assert _make_sensor(13.5).native_unit_of_measurement == LIGHT_LUX
+    def test_string_coerced_to_none(self):
+        """Qualitative string degrades to None (no measurement conflict)."""
+        assert _make_sensor("MEDIUM").native_value is None
+        assert _make_sensor("LOW").native_value is None
+
+    def test_bool_coerced_to_none(self):
+        """bool is an int subclass but is not a real lux reading."""
+        assert _make_sensor(True).native_value is None
+        assert _make_sensor(False).native_value is None

@@ -578,14 +578,20 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
 
     The Bosch SHC API spec defines illuminance as integer for both Gen1
     (SHCMotionDetector, model "MD") and Gen2 (SHCMotionDetector2, model "MD2").
-    In practice, Gen1 devices also report numeric lux values (e.g. 13, 9, 22).
+    Gen1 devices report numeric lux values too (e.g. 13, 9, 22) — see #315.
 
-    state_class, device_class, and unit are set conditionally: only when the
-    current illuminance value is numeric (int or float).  If any firmware
-    variant were to return a qualitative string the entity degrades gracefully
-    to a plain state sensor without statistics, rather than raising a
-    state_class_removed repair in HA.
+    Metadata (state_class/device_class/unit) is STATIC so it never flip-flops:
+    a previous conditional implementation dropped state_class whenever the
+    value was momentarily None (offline / between polls), which re-raised the
+    very state_class_removed repair this restores (and emitted "unit changed"
+    warnings). Instead the metadata stays put and native_value coerces any
+    non-numeric/qualitative value to None, so a hypothetical string-reporting
+    firmware degrades to "unknown" rather than conflicting with MEASUREMENT.
     """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.ILLUMINANCE
+    _attr_native_unit_of_measurement = LIGHT_LUX
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""
@@ -595,26 +601,10 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Return the state of the sensor."""
-        return self._device.illuminance
-
-    @property
-    def state_class(self):
-        """Return MEASUREMENT only when the illuminance value is numeric."""
-        if isinstance(self._device.illuminance, (int, float)):
-            return SensorStateClass.MEASUREMENT
-        return None
-
-    @property
-    def device_class(self):
-        """Return illuminance device class only for numeric values."""
-        if isinstance(self._device.illuminance, (int, float)):
-            return SensorDeviceClass.ILLUMINANCE
-        return None
-
-    @property
-    def native_unit_of_measurement(self):
-        """Return lux unit only for numeric values."""
-        if isinstance(self._device.illuminance, (int, float)):
-            return LIGHT_LUX
+        """Return the numeric lux value, or None for non-numeric values."""
+        value = self._device.illuminance
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            return value
         return None
