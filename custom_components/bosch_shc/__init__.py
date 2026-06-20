@@ -12,6 +12,7 @@ from boschshcpy.exceptions import (
 )
 
 from .certificate import parse_certificate
+from .data import SHCData
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -30,7 +31,11 @@ from homeassistant.core import (
     ServiceResponse,
     callback,
 )
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    ServiceValidationError,
+)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
@@ -72,6 +77,89 @@ PLATFORMS = [
 ]
 if hasattr(Platform, "VALVE"):
     PLATFORMS.append(Platform.VALVE)
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up the Bosch SHC component.
+
+    Domain-level services (trigger_scenario, trigger_rawscan) are registered
+    here so they exist even when a config entry fails to load, allowing HA to
+    validate automations that reference them.  Entity services
+    (smokedetector_check, smokedetector_alarmstate) are registered per-entry in
+    their respective platform setup (binary_sensor.py) as allowed by the rule.
+    """
+
+    SCENARIO_TRIGGER_SCHEMA = vol.Schema(
+        {
+            vol.Optional(ATTR_TITLE, default=""): cv.string,
+            vol.Required(ATTR_NAME): cv.string,
+        }
+    )
+
+    async def scenario_service_call(call: ServiceCall) -> None:
+        """SHC Scenario service call."""
+        name = call.data[ATTR_NAME]
+        title = call.data[ATTR_TITLE]
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            if not hasattr(config_entry, "runtime_data"):
+                continue
+            runtime: SHCData = config_entry.runtime_data
+            if title in ("", runtime.title):
+                for scenario in runtime.session.scenarios:
+                    if scenario.name == name:
+                        await hass.async_add_executor_job(scenario.trigger)
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TRIGGER_SCENARIO,
+        scenario_service_call,
+        SCENARIO_TRIGGER_SCHEMA,
+    )
+
+    RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
+        {
+            vol.Optional(ATTR_TITLE, default=""): cv.string,
+            vol.Required(ATTR_COMMAND): cv.string,
+            vol.Optional(ATTR_DEVICE_ID, default=""): cv.string,
+            vol.Optional(ATTR_SERVICE_ID, default=""): cv.string,
+        }
+    )
+
+    async def rawscan_service_call(call: ServiceCall) -> ServiceResponse:
+        """SHC Rawscan service call."""
+        title = call.data[ATTR_TITLE]
+        command = call.data[ATTR_COMMAND]
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            if not hasattr(config_entry, "runtime_data"):
+                continue
+            runtime: SHCData = config_entry.runtime_data
+            if title in ("", runtime.title):
+                session = runtime.session
+                # Runtime validation: confirm the command is valid for this session
+                if command not in session.rawscan_commands:
+                    raise ServiceValidationError(
+                        f"Unknown rawscan command '{command}'. "
+                        f"Valid commands: {sorted(session.rawscan_commands)}"
+                    )
+                rawscan = await hass.async_add_executor_job(
+                    ft.partial(
+                        session.rawscan,
+                        command=command,
+                        device_id=call.data[ATTR_DEVICE_ID],
+                        service_id=call.data[ATTR_SERVICE_ID],
+                    )
+                )
+                return {command: rawscan}
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TRIGGER_RAWSCAN,
+        rawscan_service_call,
+        schema=RAWSCAN_TRIGGER_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -135,8 +223,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if shc_info.updateState.name == "UPDATE_AVAILABLE":
         LOGGER.warning("Please check for software updates in the Bosch Smart Home App")
 
-    hass.data.setdefault(DOMAIN, {})
-
     device_registry = dr.async_get(hass)
     device_entry = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
@@ -148,6 +234,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         sw_version=shc_info.version,
     )
     device_id = device_entry.id
+    entry.runtime_data = SHCData(
+        session=session,
+        shc_device=device_entry,
+        title=entry.title,
+    )
+    # Keep hass.data[DOMAIN] populated so legacy code paths (device_trigger,
+    # diagnostics) that still read hass.data work during the transition.
+    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         DATA_SESSION: session,
         DATA_SHC: device_entry,
@@ -182,8 +276,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 notification_id=DOMAIN_NOTIFICATION_ID,
             )
 
+    entry.runtime_data.cert_check_unsub = async_track_time_interval(
+        hass, _scheduled_cert_check, timedelta(days=1)
+    )
     hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
-        async_track_time_interval(hass, _scheduled_cert_check, timedelta(days=1))
+        entry.runtime_data.cert_check_unsub
     )
 
     async def stop_polling(event):
@@ -191,8 +288,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.async_add_executor_job(session.stop_polling)
 
     await hass.async_add_executor_job(session.start_polling)
+    entry.runtime_data.polling_handler = hass.bus.async_listen_once(
+        EVENT_HOMEASSISTANT_STOP, stop_polling
+    )
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER] = (
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
+        entry.runtime_data.polling_handler
     )
 
     def _scenario_trigger(event_data):
@@ -214,8 +314,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
         await event_listener.async_setup()
 
-    register_services(hass, entry)
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
@@ -230,93 +328,20 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
-    session.unsubscribe_scenario_callback("shc")
+    runtime: SHCData = entry.runtime_data
+    runtime.session.unsubscribe_scenario_callback("shc")
 
-    hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
-    # cancel daily cert check
-    unsub = hass.data[DOMAIN][entry.entry_id].pop(DATA_CERT_CHECK_UNSUB, None)
-    if unsub:
-        unsub()
-    hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
-    await hass.async_add_executor_job(session.stop_polling)
+    if runtime.polling_handler is not None:
+        runtime.polling_handler()
+    if runtime.cert_check_unsub is not None:
+        runtime.cert_check_unsub()
+    await hass.async_add_executor_job(runtime.session.stop_polling)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
 
     return unload_ok
-
-
-def register_services(hass, entry):
-    """Register services for the component."""
-    SCENARIO_TRIGGER_SCHEMA = vol.Schema(
-        {
-            vol.Optional(ATTR_TITLE, default=""): cv.string,
-            vol.Required(ATTR_NAME): cv.string,
-        }
-    )
-
-    async def scenario_service_call(call: ServiceCall) -> None:
-        """SHC Scenario service call."""
-        name = call.data[ATTR_NAME]
-        title = call.data[ATTR_TITLE]
-        for controller_data in hass.data[DOMAIN].values():
-            if title in ("", controller_data[DATA_TITLE]):
-                session = controller_data[DATA_SESSION]
-                if isinstance(session, SHCSession):
-                    for scenario in session.scenarios:
-                        if scenario.name == name:
-                            # await so a failed trigger surfaces instead of being
-                            # silently discarded (async migration, phase 0).
-                            await hass.async_add_executor_job(scenario.trigger)
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_TRIGGER_SCENARIO,
-        scenario_service_call,
-        SCENARIO_TRIGGER_SCHEMA,
-    )
-
-    RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
-        {
-            vol.Optional(ATTR_TITLE, default=""): cv.string,
-            vol.Required(ATTR_COMMAND): vol.All(
-                cv.string,
-                vol.In(
-                    hass.data[DOMAIN][entry.entry_id][DATA_SESSION].rawscan_commands
-                ),
-            ),
-            vol.Optional(ATTR_DEVICE_ID, default=""): cv.string,
-            vol.Optional(ATTR_SERVICE_ID, default=""): cv.string,
-        }
-    )
-
-    async def rawscan_service_call(call) -> ServiceResponse:
-        """SHC Scenario service call."""
-        title = call.data[ATTR_TITLE]
-        for controller_data in hass.data[DOMAIN].values():
-            if title in ("", controller_data[DATA_TITLE]):
-                session = controller_data[DATA_SESSION]
-                if isinstance(session, SHCSession):
-                    rawscan = await hass.async_add_executor_job(
-                        ft.partial(
-                            session.rawscan,
-                            command=call.data[ATTR_COMMAND],
-                            device_id=call.data[ATTR_DEVICE_ID],
-                            service_id=call.data[ATTR_SERVICE_ID],
-                        )
-                    )
-                    # LOGGER.debug(rawscan)
-                    return {call.data[ATTR_COMMAND]: rawscan}
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_TRIGGER_RAWSCAN,
-        rawscan_service_call,
-        schema=RAWSCAN_TRIGGER_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
 
 
 class SwitchDeviceEventListener:
