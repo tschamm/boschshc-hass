@@ -267,7 +267,9 @@ def register_services(hass, entry):
                 if isinstance(session, SHCSession):
                     for scenario in session.scenarios:
                         if scenario.name == name:
-                            hass.async_add_executor_job(scenario.trigger)
+                            # await so a failed trigger surfaces instead of being
+                            # silently discarded (async migration, phase 0).
+                            await hass.async_add_executor_job(scenario.trigger)
 
     hass.services.async_register(
         DOMAIN,

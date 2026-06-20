@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from boschshcpy import (
@@ -37,6 +38,8 @@ from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DOMAIN, DATA_SHC
 from .entity import SHCEntity, async_migrate_to_new_unique_id
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -556,12 +559,34 @@ class SHCSwitch(SHCEntity, SwitchEntity):
             return None
 
     def turn_on(self, **kwargs) -> None:
-        """Turn the switch on."""
-        setattr(self._device, self.entity_description.on_key, True)
+        """Turn the switch on.
+
+        Guard against AttributeError: some devices (e.g. MicromoduleRelay with
+        no connected load, Camera360 with no PrivacyMode service) expose a
+        property whose underlying service is None.  Swallow and log instead of
+        crash-looping the entity.  Fixes issues #185 (relay) and #206
+        (camera_360).
+        """
+        try:
+            setattr(self._device, self.entity_description.on_key, True)
+        except AttributeError:
+            LOGGER.debug(
+                "turn_on skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
 
     def turn_off(self, **kwargs) -> None:
-        """Turn the switch off."""
-        setattr(self._device, self.entity_description.on_key, False)
+        """Turn the switch off.
+
+        Same guard as turn_on — see that docstring.
+        """
+        try:
+            setattr(self._device, self.entity_description.on_key, False)
+        except AttributeError:
+            LOGGER.debug(
+                "turn_off skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
 
     @property
     def should_poll(self) -> bool:

@@ -1,4 +1,4 @@
-"""Platform for switch integration."""
+"""Platform for number integration."""
 
 from __future__ import annotations
 
@@ -69,8 +69,9 @@ class SHCNumber(SHCEntity, NumberEntity):
         self._device: SHCThermostat = device
 
     def set_native_value(self, value: float) -> None:
-        """Update the current value."""
-        self._device.offset = value
+        """Update the current value, clamped to [native_min_value, native_max_value]."""
+        clamped = max(self.native_min_value, min(self.native_max_value, value))
+        self._device.offset = clamped
 
     @property
     def native_value(self) -> float:

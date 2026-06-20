@@ -363,7 +363,15 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        return self._device.alarmstate != SHCSmokeDetector.AlarmService.State.IDLE_OFF
+        # Only PRIMARY_ALARM and SECONDARY_ALARM are smoke-related states.
+        # INTRUSION_ALARM is set by the IDS (intrusion detection system) on all
+        # smoke detectors when a surveillance alarm fires — it must NOT be treated
+        # as a smoke event, or every detector reports smoke whenever any burglar
+        # alarm triggers (issue #191).
+        return self._device.alarmstate in (
+            SHCSmokeDetector.AlarmService.State.PRIMARY_ALARM,
+            SHCSmokeDetector.AlarmService.State.SECONDARY_ALARM,
+        )
 
     @property
     def icon(self):

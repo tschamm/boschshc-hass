@@ -48,7 +48,10 @@ class LightSwitch(SHCEntity, LightEntity):
             self._attr_color_mode = ColorMode.HS
         if self._device.supports_color_temp:
             self._attr_supported_color_modes.add(ColorMode.COLOR_TEMP)
-            self._attr_color_mode = ColorMode.COLOR_TEMP
+            # Only set COLOR_TEMP as default when HS is NOT also supported;
+            # when both are present, HS takes priority (set above).
+            if not self._device.supports_color_hsb:
+                self._attr_color_mode = ColorMode.COLOR_TEMP
         if self._device.supports_color_hsb or self._device.supports_color_temp:
             self._attr_min_color_temp_kelvin = (
                 color_util.color_temperature_mired_to_kelvin(
@@ -79,9 +82,12 @@ class LightSwitch(SHCEntity, LightEntity):
         return self._device.binarystate
 
     @property
-    def brightness(self) -> int:
+    def brightness(self) -> int | None:
         """Return the brightness of this light between 0..255."""
-        return round(self._device.brightness * 255 / 100)
+        raw = self._device.brightness
+        if raw is None:
+            return None
+        return round(raw * 255 / 100)
 
     @property
     def hs_color(self):
@@ -102,6 +108,9 @@ class LightSwitch(SHCEntity, LightEntity):
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
         if brightness is not None and self._device.supports_brightness:
+            # Bosch API does not accept brightness=0; HA uses brightness=0 to
+            # mean "off", which is handled via binarystate. Clamp to 1 so that
+            # a near-zero HA value (e.g. 1/255) never silently turns off.
             self._device.brightness = max(round(brightness * 100 / 255), 1)
 
         if color_temp_kelvin is not None and self._device.supports_color_temp:
