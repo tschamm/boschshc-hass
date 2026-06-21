@@ -1,6 +1,10 @@
 """Platform for binarysensor integration."""
 
+from __future__ import annotations
+
+import json
 from datetime import datetime, timedelta, timezone
+from typing import Callable
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -137,15 +141,38 @@ async def async_setup_entry(
             )
         )
 
-    binary_sensor = session.device_helper.smoke_detection_system
-    if binary_sensor:
+    smoke_detection_system = session.device_helper.smoke_detection_system
+    if smoke_detection_system:
         entities.append(
             SmokeDetectionSystemSensor(
-                device=binary_sensor,
+                device=smoke_detection_system,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
         )
+        twinguards = session.device_helper.twinguards
+        if twinguards:
+            tracker = TwinguardAlarmTracker(
+                session=session,
+                smoke_detection_system=smoke_detection_system,
+            )
+            # Initial refresh on executor so blocking HTTP stays off the event loop.
+            await hass.async_add_executor_job(tracker.refresh)
+
+            def _cleanup_tracker():
+                tracker.teardown()
+
+            config_entry.async_on_unload(_cleanup_tracker)
+            hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, lambda _: tracker.teardown())
+
+            for binary_sensor in twinguards:
+                entities.append(
+                    TwinguardSmokeAlarmSensor(
+                        device=binary_sensor,
+                        entry_id=config_entry.entry_id,
+                        tracker=tracker,
+                    )
+                )
 
     for binary_sensor in session.device_helper.water_leakage_detectors:
         await async_migrate_to_new_unique_id(
@@ -542,6 +569,228 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         """Return the state attributes."""
         return {
             "alarm_state": self._device.alarm.name,
+        }
+
+
+class TwinguardAlarmTracker:
+    """Track which Twinguard device(s) are actively triggering a smoke alarm.
+
+    The SHC does not expose per-device alarm state directly on the Twinguard.
+    Instead the shared SMOKE_DETECTION_SYSTEM fires a SurveillanceAlarm callback
+    and the /messages endpoint carries SMOKE_ALARM messages whose
+    ``arguments.surveillanceEvents[].triggerId`` maps back to the individual
+    Twinguard device id.
+
+    Thread-safety: subscribe_callback fires from SHCPollingThread.
+    ``refresh()`` does blocking HTTP and MUST NOT be called from the event loop.
+    Listeners are always called via ``hass.loop.call_soon_threadsafe``.
+    """
+
+    def __init__(
+        self,
+        session: SHCSession,
+        smoke_detection_system: SHCSmokeDetectionSystem,
+    ) -> None:
+        """Initialize the tracker (no I/O; call refresh() separately)."""
+        self._session = session
+        self._smoke_detection_system = smoke_detection_system
+        self._service = None
+        self._listeners: list[Callable[[], None]] = []
+        self._active_trigger_ids: set[str] = set()
+        self._last_alarm_state: str | None = None
+        self._torn_down = False
+
+        for service in self._smoke_detection_system.device_services:
+            if service.id == "SurveillanceAlarm":
+                self._service = service
+                self._service.subscribe_callback(
+                    self._smoke_detection_system.id + "_twinguard_alarm_listener",
+                    self._handle_alarm_update,
+                )
+                break
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    @property
+    def alarm_state(self) -> str | None:
+        """Return the global surveillance alarm state name."""
+        try:
+            return self._smoke_detection_system.alarm.name
+        except ValueError as err:
+            LOGGER.warning(
+                "Unknown smoke detection system alarm state for %s: %s",
+                self._smoke_detection_system.name,
+                err,
+            )
+            return None
+
+    def register_listener(self, hass: HomeAssistant, listener: Callable[[], None]) -> None:
+        """Register a listener (called from event loop via async_added_to_hass)."""
+        self._listeners.append((hass, listener))
+
+    def unregister_listener(self, listener: Callable[[], None]) -> None:
+        """Unregister a listener by the listener callable."""
+        self._listeners = [(h, cb) for (h, cb) in self._listeners if cb is not listener]
+
+    def is_alarm_active_for(self, device_id: str) -> bool:
+        """Return whether a smoke alarm is active for the given Twinguard device id."""
+        return device_id in self._active_trigger_ids
+
+    def refresh(self) -> None:
+        """Refresh active trigger ids from the SHC (blocking HTTP — run on executor).
+
+        Safe to call multiple times; skips notification if state did not change.
+        """
+        if self._torn_down:
+            return
+        alarm_state = self.alarm_state
+        if (
+            alarm_state
+            == SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF.name
+        ):
+            new_trigger_ids: set[str] = set()
+        else:
+            new_trigger_ids = self._extract_trigger_ids_from_messages()
+
+        if (
+            new_trigger_ids == self._active_trigger_ids
+            and alarm_state == self._last_alarm_state
+        ):
+            return
+
+        self._active_trigger_ids = new_trigger_ids
+        self._last_alarm_state = alarm_state
+        self._notify_listeners()
+
+    def teardown(self) -> None:
+        """Unsubscribe from the SHC service and clear all listeners.
+
+        Called on config-entry unload and on EVENT_HOMEASSISTANT_STOP.
+        Idempotent — safe to call more than once.
+        """
+        if self._torn_down:
+            return
+        self._torn_down = True
+        self._listeners = []
+        if self._service is not None:
+            self._service.unsubscribe_callback(
+                self._smoke_detection_system.id + "_twinguard_alarm_listener"
+            )
+
+    # ------------------------------------------------------------------
+    # Private
+    # ------------------------------------------------------------------
+
+    def _handle_alarm_update(self) -> None:
+        """Handle a SurveillanceAlarm update (called from SHCPollingThread)."""
+        self.refresh()
+
+    def _extract_trigger_ids_from_messages(self) -> set[str]:
+        """Extract active Twinguard trigger ids from SMOKE_ALARM messages."""
+        try:
+            messages = self._session.api.get_messages()
+        except Exception as err:  # pylint: disable=broad-except
+            LOGGER.warning("Unable to fetch Bosch SHC messages: %s", err)
+            return self._active_trigger_ids
+
+        trigger_ids: set[str] = set()
+        for message in messages:
+            message_code = message.get("messageCode", {})
+            if message_code.get("name") != "SMOKE_ALARM":
+                continue
+            if message.get("sourceId") != self._smoke_detection_system.id:
+                continue
+
+            events = self._parse_surveillance_events(
+                message.get("arguments", {}).get("surveillanceEvents")
+            )
+            # A message that contains an ALARM_OFF event signals the end of that
+            # alarm cycle — skip the whole message so we don't re-add its triggers.
+            if any(event.get("type") == "ALARM_OFF" for event in events):
+                continue
+
+            for event in events:
+                trigger_id = event.get("triggerId")
+                if trigger_id:
+                    trigger_ids.add(trigger_id)
+
+        return trigger_ids
+
+    @staticmethod
+    def _parse_surveillance_events(raw_events) -> list[dict]:
+        """Parse surveillanceEvents from a Bosch SHC message payload.
+
+        The field may already be a list (native JSON parse) or a JSON-encoded
+        string (observed in some firmware versions).
+        """
+        if isinstance(raw_events, list):
+            return [e for e in raw_events if isinstance(e, dict)]
+        if not raw_events:
+            return []
+        try:
+            parsed = json.loads(raw_events)
+        except (TypeError, json.JSONDecodeError):
+            return []
+        if not isinstance(parsed, list):
+            return []
+        return [e for e in parsed if isinstance(e, dict)]
+
+    def _notify_listeners(self) -> None:
+        """Notify all registered entity listeners (threadsafe via event loop)."""
+        for hass, listener in list(self._listeners):
+            hass.loop.call_soon_threadsafe(listener)
+
+
+class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
+    """Per-Twinguard binary sensor: True when that device is the active smoke alarm source."""
+
+    _attr_device_class = BinarySensorDeviceClass.SMOKE
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        entry_id: str,
+        tracker: TwinguardAlarmTracker,
+    ) -> None:
+        """Initialize the Twinguard smoke alarm sensor."""
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = "Smoke"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke"
+        self._tracker = tracker
+        self._tracker_listener = self._handle_tracker_update
+
+    async def async_added_to_hass(self) -> None:
+        """Register with tracker when entity is added to HA."""
+        await super().async_added_to_hass()
+        self._tracker.register_listener(self.hass, self._tracker_listener)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister from tracker when entity is removed."""
+        self._tracker.unregister_listener(self._tracker_listener)
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_tracker_update(self) -> None:
+        """Called on the event loop when tracker state changes."""
+        self.schedule_update_ha_state()
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when this Twinguard is the source of an active smoke alarm."""
+        return self._tracker.is_alarm_active_for(self._device.id)
+
+    @property
+    def icon(self) -> str:
+        """Return the icon of the sensor."""
+        return "mdi:smoke-detector"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra state attributes."""
+        return {
+            "alarm_state": self._tracker.alarm_state,
         }
 
 
