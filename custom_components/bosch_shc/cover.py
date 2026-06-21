@@ -91,6 +91,14 @@ class ShutterControlCover(SHCEntity, CoverEntity):
 
     def _micromodule_keypad_switch_off(self) -> None:
         if self._device.device_model == "MICROMODULE_SHUTTER":
+            # Some MICROMODULE_SHUTTER devices expose no Keypad service (no
+            # physical wall switch wired). On the released lib the eventtype
+            # setter then dereferences a None keypad service and open/close/
+            # stop crash with "'NoneType' object has no attribute 'eventType'"
+            # (issue #318). eventType is only local bookkeeping for the
+            # physical-switch direction logic, so skipping it is safe.
+            if getattr(self._device, "_keypad_service", None) is None:
+                return
             # Stopping a micromodule shutter requires setting the eventtype to SWITCH_OFF, in case the manual switch was not put to off position
             self._device.eventtype = (
                 SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF

@@ -308,3 +308,62 @@ class TestShutterIIOperationStateDirection:
         assert cover._last_position is None
         cover._update_attr()  # must not raise
         assert cover._attr_is_opening is True
+
+
+# ---------------------------------------------------------------------------
+# Issue #318: MICROMODULE_SHUTTER with NO Keypad service (no physical wall
+# switch wired). The lib's eventtype setter dereferences a None keypad service,
+# so open/close/stop crashed with
+# "'NoneType' object has no attribute 'eventType'". _micromodule_keypad_switch_off
+# must skip the eventtype write when the device has no keypad service.
+# ---------------------------------------------------------------------------
+
+class TestMicromoduleShutterNoKeypad:
+    @staticmethod
+    def _no_keypad_cover():
+        cover = ShutterControlCover.__new__(ShutterControlCover)
+
+        class _NoKeypadDevice:
+            device_model = "MICROMODULE_SHUTTER"
+            _keypad_service = None  # device exposes no Keypad service
+            level = 0.0
+
+            @property
+            def eventtype(self):
+                raise AttributeError("'NoneType' object has no attribute 'eventType'")
+
+            @eventtype.setter
+            def eventtype(self, value):
+                # Mirrors the released-lib crash when _keypad_service is None.
+                raise AttributeError(
+                    "'NoneType' object has no attribute 'eventType'"
+                )
+
+            def stop(self):
+                pass
+
+        cover._device = _NoKeypadDevice()
+        cover._target_position = None
+        cover._last_position = None
+        cover._skip_update = False
+        cover._app_command = False
+        cover._attr_is_opening = None
+        cover._attr_is_closing = None
+        cover._attr_current_cover_position = None
+        return cover
+
+    def test_open_cover_does_not_crash_without_keypad(self):
+        cover = self._no_keypad_cover()
+        cover.open_cover()  # must not raise (issue #318)
+        assert cover._attr_is_opening is True
+
+    def test_close_cover_does_not_crash_without_keypad(self):
+        cover = self._no_keypad_cover()
+        cover.close_cover()  # must not raise
+        assert cover._attr_is_closing is True
+
+    def test_stop_cover_does_not_crash_without_keypad(self):
+        cover = self._no_keypad_cover()
+        cover.stop_cover()  # must not raise
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False
