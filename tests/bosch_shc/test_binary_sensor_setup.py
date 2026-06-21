@@ -1194,10 +1194,10 @@ class TestTwinguardAlarmTracker:
                 }
             ],
         )
-        tracker = self._make_tracker(sds, session)
-
         called = []
         hass = _make_hass()
+        hass.async_add_executor_job = lambda fn, *args: fn(*args)
+        tracker = self._make_tracker(sds, session, hass=hass)
         tracker.register_listener(hass, lambda: called.append(1))
         tracker._handle_alarm_update()
         assert tracker.is_alarm_active_for("tw1") is True
