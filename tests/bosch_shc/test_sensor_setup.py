@@ -136,7 +136,7 @@ def _make_fake_session(
 def _run_setup(session):
     """Run async_setup_entry with a fake session. Returns list of added entities."""
     hass = SimpleNamespace(data={DOMAIN: {ENTRY_ID: {DATA_SESSION: session}}})
-    config_entry = SimpleNamespace(entry_id=ENTRY_ID, options={})
+    config_entry = SimpleNamespace(options={}, entry_id=ENTRY_ID)
     collected: list = []
 
     def _add_entities(entity_list):

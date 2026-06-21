@@ -123,7 +123,7 @@ def _make_hass_and_entry(session, shc_device=None):
             }
         }
     )
-    config_entry = SimpleNamespace(
+    config_entry = SimpleNamespace(options={},
         entry_id=entry_id,
         async_on_unload=MagicMock(),
     )

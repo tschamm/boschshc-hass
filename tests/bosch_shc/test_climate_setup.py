@@ -128,7 +128,7 @@ def _make_hass(session, entry_id="entry-1"):
 
 
 def _make_config_entry(entry_id="entry-1"):
-    return SimpleNamespace(entry_id=entry_id)
+    return SimpleNamespace(options={}, entry_id=entry_id)
 
 
 # ---------------------------------------------------------------------------

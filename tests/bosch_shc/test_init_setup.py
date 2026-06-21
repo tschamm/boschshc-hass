@@ -85,6 +85,9 @@ def _make_fake_hass(*, domain_data=None):
     # services mock
     hass.services = MagicMock()
     hass.services.async_register = MagicMock()
+    # No service registered yet — so _register_rawscan_service (idempotent via
+    # has_service) actually registers on first entry setup.
+    hass.services.has_service = MagicMock(return_value=False)
 
     # async_create_task
     hass.async_create_task = MagicMock()

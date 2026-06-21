@@ -459,9 +459,11 @@ class TestMicromoduleBlindsMoving:
 # ---------------------------------------------------------------------------
 
 class TestNonStoppedNonMovingStates:
-    @pytest.mark.parametrize("state", [CALIBRATING, OPENING, CLOSING])
+    @pytest.mark.parametrize("state", [CALIBRATING])
     def test_other_state_does_not_alter_flags(self, state):
-        """CALIBRATING/OPENING/CLOSING: neither if-branch fires, flags unchanged."""
+        """CALIBRATING: neither branch fires, flags unchanged. (OPENING/CLOSING now
+        set the direction flags via the Shutter-II handler — see issue #100 and
+        test_cover.py::TestShutterIIOperationStateDirection.)"""
         cover = _make_cover(device_model="BBL", level=0.5, operation_state=state)
         cover._attr_is_opening = True
         cover._attr_is_closing = False

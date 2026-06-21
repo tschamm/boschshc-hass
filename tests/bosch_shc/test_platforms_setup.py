@@ -7,7 +7,7 @@ session via asyncio.run — NO HA harness, NO tests.common, NO network.
 Pattern
 -------
 - hass   = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: fake_session}}})
-- config_entry = SimpleNamespace(entry_id="E1")
+- config_entry = SimpleNamespace(options={}, entry_id="E1")
 - async_add_entities collects the created entities into a list
 - async_migrate_to_new_unique_id (cover + light) is patched to a no-op coroutine
   because it calls entity_registry.async_get(hass) which needs a real HA instance.
@@ -39,7 +39,7 @@ def _make_hass(session: object) -> SimpleNamespace:
 
 
 def _make_config_entry() -> SimpleNamespace:
-    return SimpleNamespace(entry_id="E1")
+    return SimpleNamespace(options={}, entry_id="E1")
 
 
 def _collect() -> tuple[list, callable]:

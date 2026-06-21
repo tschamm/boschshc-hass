@@ -177,7 +177,7 @@ def _make_setup_hass(session, shc_entry=None):
 
 
 def _make_entry(entry_id="entry1"):
-    return SimpleNamespace(entry_id=entry_id)
+    return SimpleNamespace(options={}, entry_id=entry_id)
 
 
 def _collecting_add_fn():

@@ -201,7 +201,7 @@ class TestAsyncSetupEntry:
             return fn(*args)
 
         hass.async_add_executor_job = _fake_executor_job
-        config_entry = SimpleNamespace(
+        config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: None,
         )
@@ -306,7 +306,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session(motion_detectors=[dev])
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
         entities_collected = []
 
         async def _run_setup():
@@ -334,7 +334,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session(motion_detectors=[dev])
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
 
         async def _run_setup():
             with (
@@ -499,7 +499,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session(motion_detectors2=[dev])
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
         entities_collected = []
 
         async def _run_setup():
@@ -527,7 +527,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session(motion_detectors2=[dev])
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
 
         async def _run_setup():
             with (
@@ -563,7 +563,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session(motion_detectors=[dev1], motion_detectors2=[dev2])
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
         entities_collected = []
 
         async def _run_setup():
@@ -593,7 +593,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session()
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(
+        config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: unload_callbacks.append(fn),
         )
@@ -620,7 +620,7 @@ class TestAsyncSetupEntry:
         session = _make_fake_session()
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
-        config_entry = SimpleNamespace(
+        config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: unload_callbacks.append(fn),
         )
@@ -654,7 +654,7 @@ class TestAsyncSetupEntry:
             return fn(*args)
 
         hass.async_add_executor_job = _fake_executor_job
-        config_entry = SimpleNamespace(
+        config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: unload_callbacks.append(fn),
         )
