@@ -169,17 +169,28 @@ def _battery_sensor(battery_level):
 
 
 class TestBatterySensorLoggingPaths:
-    """is_on must log at debug/warning for certain states but still return True."""
+    """is_on must log at debug/warning for certain states."""
 
-    def test_not_available_logs_debug(self):
+    def test_not_available_logs_debug_and_returns_false(self):
+        """NOT_AVAILABLE → debug log, is_on is False (no battery state yet)."""
         s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE)
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
         mock_log.debug.assert_called_once()
-        assert result is True
+        assert result is False
 
     def test_critical_low_logs_warning(self):
         s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW)
+        with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
+            result = s.is_on
+        mock_log.warning.assert_called_once()
+        assert result is True
+
+    def test_critically_low_battery_logs_warning(self):
+        """CRITICALLY_LOW_BATTERY → warning log + is_on True."""
+        s = _battery_sensor(
+            SHCBatteryDevice.BatteryLevelService.State.CRITICALLY_LOW_BATTERY
+        )
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
         mock_log.warning.assert_called_once()

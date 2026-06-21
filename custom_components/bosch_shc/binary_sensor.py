@@ -50,6 +50,8 @@ from .const import (
 )
 from .entity import SHCEntity, async_get_device_id, async_migrate_to_new_unique_id
 
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -837,28 +839,32 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
 
     @property
     def is_on(self):
-        """Return the state of the sensor."""
-        if (
-            self._device.batterylevel
-            == SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE
-        ):
-            LOGGER.debug("Battery state of device %s is not available", self.name)
+        """Return the state of the sensor.
 
-        if (
-            self._device.batterylevel
-            == SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW
-        ):
+        Returns True (battery problem) only for LOW_BATTERY, CRITICAL_LOW, and
+        CRITICALLY_LOW_BATTERY.  NOT_AVAILABLE means the device has not yet
+        reported battery state — this must NOT be treated as a low-battery
+        condition.
+        """
+        level = self._device.batterylevel
+        BatteryState = SHCBatteryDevice.BatteryLevelService.State
+
+        if level == BatteryState.NOT_AVAILABLE:
+            LOGGER.debug("Battery state of device %s is not available", self.name)
+            return False
+
+        if level == BatteryState.CRITICAL_LOW:
             LOGGER.warning("Battery state of device %s is critical low", self.name)
 
-        if (
-            self._device.batterylevel
-            == SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY
-        ):
+        if level == BatteryState.CRITICALLY_LOW_BATTERY:
+            LOGGER.warning(
+                "Battery state of device %s is critically low", self.name
+            )
+
+        if level == BatteryState.LOW_BATTERY:
             LOGGER.warning("Battery state of device %s is low", self.name)
 
-        return (
-            self._device.batterylevel != SHCBatteryDevice.BatteryLevelService.State.OK
-        )
+        return level != BatteryState.OK
 
 
 class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):

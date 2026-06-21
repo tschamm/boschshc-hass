@@ -127,14 +127,20 @@ def _make_session(
     switches=None,
     scenarios=None,
     motion_detectors=None,
+    motion_detectors2=None,
     smoke_detection_system=None,
     smoke_detectors=None,
 ):
-    """Build a fake SHCSession-like object."""
+    """Build a fake SHCSession-like object.
+
+    motion_detectors2 must be present in device_helper because event.py
+    async_setup_entry iterates (motion_detectors + motion_detectors2).
+    """
     return SimpleNamespace(
         device_helper=SimpleNamespace(
             universal_switches=switches or [],
             motion_detectors=motion_detectors or [],
+            motion_detectors2=motion_detectors2 or [],
             smoke_detection_system=smoke_detection_system,
             smoke_detectors=smoke_detectors or [],
         ),
@@ -426,6 +432,9 @@ def _make_bare_usw(eventtype=_PRESS_SHORT, eventtimestamp=1000,
     entity.entity_id = "event.sw_button_upper_button"
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
+    # _event_callback dispatches via hass.loop.call_soon_threadsafe; use a
+    # synchronous shim so _trigger_event assertions work in unit tests.
+    entity.hass = _make_sync_hass()
     return entity
 
 
@@ -483,6 +492,24 @@ class TestUniversalSwitchEventDedupGuards:
 # ===========================================================================
 
 
+def _make_sync_hass(data_extra=None):
+    """Return a fake hass whose loop.call_soon_threadsafe executes synchronously.
+
+    SHCScenarioEvent._event_callback schedules _dispatch_event via
+    hass.loop.call_soon_threadsafe.  Without a real event loop in unit
+    tests, that call would silently drop.  This fake executes the callable
+    immediately so _trigger_event assertions work.
+    """
+    def _sync_call_soon_threadsafe(fn, *args):
+        fn(*args)
+
+    fake_loop = SimpleNamespace(call_soon_threadsafe=_sync_call_soon_threadsafe)
+    hass = SimpleNamespace(loop=fake_loop)
+    if data_extra:
+        hass.data = data_extra
+    return hass
+
+
 def _make_scenario_entity(
     scenario_name="Night Mode",
     scenario_id="scn:42",
@@ -503,8 +530,8 @@ def _make_scenario_entity(
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(
-        data={
+    hass = _make_sync_hass(
+        data_extra={
             DOMAIN: {
                 "entry1": {
                     DATA_SHC: shc_entry,
@@ -515,6 +542,11 @@ def _make_scenario_entity(
     entity = SHCScenarioEvent(scenario, session, hass, entry_id="entry1")
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
+    # SHCScenarioEvent inherits EventEntity (not SHCEntity); the HA infrastructure
+    # normally sets entity.hass after async_added_to_hass.  Inject a synchronous
+    # shim so _event_callback tests can call the method directly without a real
+    # event loop.  (hass passed to __init__ is only used for DATA_SHC lookup.)
+    entity.hass = _make_sync_hass()
     return entity, session, shc_entry
 
 

@@ -434,9 +434,9 @@ class TestBatterySensor:
         assert s.is_on is True
 
     def test_not_available_is_on(self):
-        """NOT_AVAILABLE is != OK, so is_on is True (diagnostic)."""
+        """NOT_AVAILABLE means no battery state reported — is_on is False (not a problem)."""
         s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE)
-        assert s.is_on is True
+        assert s.is_on is False
 
     def test_device_class_is_battery(self):
         s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.OK)
