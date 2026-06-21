@@ -250,6 +250,18 @@ async def async_setup_entry(
                 )
             )
 
+    # Room-climate "call for heat" (#205): expose RoomClimateControl.has_demand
+    # as a binary_sensor so automations can see when a room is requesting heat.
+    for climate in session.device_helper.climate_controls:
+        if device_excluded(climate, config_entry.options):
+            continue
+        entities.append(
+            CallForHeatSensor(
+                device=climate,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     platform = entity_platform.current_platform.get()
 
     platform.async_register_entity_service(
@@ -267,6 +279,28 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+class CallForHeatSensor(SHCEntity, BinarySensorEntity):
+    """Room-climate 'call for heat' sensor — on when the room requests heat.
+
+    Reads RoomClimateControl.has_demand (#205). getattr-guarded so it tolerates
+    an older boschshcpy without the property (degrades to off rather than crash).
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+    _attr_icon = "mdi:radiator"
+
+    def __init__(self, device, entry_id: str) -> None:
+        """Initialize a call-for-heat binary sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Call for Heat"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_callforheat"
+
+    @property
+    def is_on(self):
+        """Return True when the room climate control is calling for heat."""
+        return bool(getattr(self._device, "has_demand", False))
 
 
 class ShutterContactSensor(SHCEntity, BinarySensorEntity):

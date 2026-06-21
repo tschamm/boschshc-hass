@@ -138,6 +138,7 @@ def _make_fake_session(
     universal_switches=None,
     wallthermostats=None,
     roomthermostats=None,
+    climate_controls=None,
     messages=None,
 ):
     """Build a fake session with device_helper, api, and _subscribers."""
@@ -163,6 +164,7 @@ def _make_fake_session(
         universal_switches=universal_switches or [],
         wallthermostats=wallthermostats or [],
         roomthermostats=roomthermostats or [],
+        climate_controls=climate_controls or [],
     )
     return session
 

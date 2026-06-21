@@ -21,6 +21,7 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
 from custom_components.bosch_shc.binary_sensor import (
     BatterySensor,
+    CallForHeatSensor,
     MotionDetectionSensor,
     ShutterContactSensor,
     ShutterContactVibrationSensor,
@@ -441,3 +442,32 @@ class TestBatterySensor:
     def test_device_class_is_battery(self):
         s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.OK)
         assert s._attr_device_class == BinarySensorDeviceClass.BATTERY
+
+
+# ---------------------------------------------------------------------------
+# CallForHeatSensor (#205)
+# ---------------------------------------------------------------------------
+
+
+class TestCallForHeatSensor:
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = CallForHeatSensor.__new__(CallForHeatSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_on_when_demand(self):
+        assert self._sensor(has_demand=True).is_on is True
+
+    def test_off_when_no_demand(self):
+        assert self._sensor(has_demand=False).is_on is False
+
+    def test_off_when_attr_missing(self):
+        # older boschshcpy without has_demand -> degrade to off, no crash
+        assert self._sensor().is_on is False
+
+    def test_device_class_running(self):
+        assert (
+            self._sensor(has_demand=True)._attr_device_class
+            == BinarySensorDeviceClass.RUNNING
+        )
