@@ -1,0 +1,60 @@
+title: "[Show & Tell] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share your setup, dashboard, automation, or creative use of the integration!
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version
+      placeholder: "e.g. 0.4.108"
+    validations:
+      required: true
+  - type: dropdown
+    id: shc_generation
+    attributes:
+      label: SHC generation(s) in your setup
+      options:
+        - SHC 1
+        - SHC 2
+        - Both
+      multiple: true
+    validations:
+      required: false
+  - type: dropdown
+    id: category
+    attributes:
+      label: What are you sharing?
+      options:
+        - Dashboard / Lovelace card
+        - Automation
+        - Script / Blueprint
+        - Node-RED flow
+        - Full smart home setup
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: "Describe what you built and why it is useful."
+    validations:
+      required: true
+  - type: textarea
+    id: code_config
+    attributes:
+      label: Config / code snippet (optional)
+      description: "Paste YAML, JSON, or code if you want to share the details."
+      render: yaml
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / links (optional)
+      description: "Drag & drop images or paste links."
+    validations:
+      required: false

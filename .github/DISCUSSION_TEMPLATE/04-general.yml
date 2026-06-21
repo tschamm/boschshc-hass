@@ -1,0 +1,30 @@
+title: "[General] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for general discussions that don't fit Q&A, Ideas, or Show & Tell.
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version (if relevant)
+      placeholder: "e.g. 0.4.108"
+    validations:
+      required: false
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic / discussion
+      description: "What would you like to discuss?"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: This is not a bug report (bugs go to GitHub Issues)
+          required: true
+        - label: This is not a question (questions go to Q&A)
+          required: true

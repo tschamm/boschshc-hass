@@ -1,0 +1,139 @@
+name: Bug Report
+description: Report a bug in the Bosch Smart Home Controller integration
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you submit
+
+        Collect debug data first — it saves follow-up round-trips:
+
+        1. **Enable debug logging** — HA Developer Tools → Services:
+           ```yaml
+           service: logger.set_level
+           data:
+             custom_components.bosch_shc: debug
+             boschshcpy: debug
+           ```
+           Or via the UI: **Settings → Devices & Services → Bosch Smart Home Controller → Enable debug logging**.
+
+        2. **Collect a rawscan** (for device-related bugs) — HA Developer Tools → Services:
+           ```yaml
+           service: bosch_shc.trigger_rawscan
+           ```
+           This writes a JSON dump of live SHC device state to the HA log.
+
+        3. **Reproduce the issue**, then copy the relevant log lines.
+
+        4. **Disable debug logging** again after collecting data.
+
+        **No real SHC serial numbers, passwords, or other credentials in reports.** Use redacted/placeholder values.
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "e.g. 2026.5.3"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version (boschshc-hass)
+      description: Shown in HACS under the integration entry.
+      placeholder: "e.g. 0.4.108"
+    validations:
+      required: true
+
+  - type: input
+    id: lib_version
+    attributes:
+      label: boschshcpy version
+      description: Shown in HA Settings → System → Repairs → Logs, or run `pip show boschshcpy` in the HA container.
+      placeholder: "e.g. 0.2.116"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: shc_generation
+    attributes:
+      label: SHC generation
+      options:
+        - SHC 1
+        - SHC 2
+        - Unknown
+    validations:
+      required: true
+
+  - type: input
+    id: device_model
+    attributes:
+      label: Affected device model(s)
+      description: e.g. "Radiator Thermostat II", "Shutter Control II", "Smoke Detector II"
+      placeholder: "e.g. Radiator Thermostat II"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug. What did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Set thermostat target temperature to 22 °C
+        2. Temperature jumps back to 20 °C immediately
+        3. Check HA log — see error "..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug logs
+      description: |
+        Paste relevant log lines for `custom_components.bosch_shc` and `boschshcpy`.
+        Include timestamps. Enable debug logging first (see instructions above).
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: rawscan
+    attributes:
+      label: Rawscan output (for device bugs)
+      description: |
+        If the bug is device-related, paste the rawscan JSON output here.
+        Trigger via: Developer Tools → Services → `bosch_shc.trigger_rawscan`.
+        Redact any serial numbers or credentials before posting.
+      render: json
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Any other relevant information (SHC firmware, network setup, etc.).
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and did not find a duplicate
+          required: true
+        - label: This report contains no real serial numbers, passwords, or credentials
+          required: true
+        - label: I have attached debug logs (and rawscan if device-related)
+          required: true

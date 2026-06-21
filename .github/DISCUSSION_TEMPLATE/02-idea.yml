@@ -1,0 +1,53 @@
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got a feature idea? Describe it below so others can vote and comment.
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version you are using
+      placeholder: "e.g. 0.4.108"
+    validations:
+      required: false
+  - type: dropdown
+    id: shc_generation
+    attributes:
+      label: Relevant SHC generation (if applicable)
+      options:
+        - SHC 1
+        - SHC 2
+        - Both / model-agnostic
+        - Not applicable
+    validations:
+      required: false
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: "What problem does this solve? What workflow would it enable?"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: "Describe your idea. If you know the relevant Bosch API service, mention it."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: "Any workarounds you already tried?"
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing Ideas discussions and did not find a duplicate
+          required: true
