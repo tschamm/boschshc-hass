@@ -684,3 +684,16 @@ class TestBlindsControlCoverSupportedFeatures:
         features = cover.supported_features
         assert not (features & CoverEntityFeature.OPEN_TILT)
         assert not (features & CoverEntityFeature.CLOSE_TILT)
+
+
+# ---------------------------------------------------------------------------
+# N1: PARALLEL_UPDATES = 1 module-level constant (serialises HA update calls)
+# ---------------------------------------------------------------------------
+
+def test_parallel_updates_is_one():
+    """cover.py must declare PARALLEL_UPDATES = 1 at module level (N1 requirement)."""
+    import custom_components.bosch_shc.cover as cover_module
+    assert hasattr(cover_module, "PARALLEL_UPDATES"), (
+        "cover.py is missing module-level PARALLEL_UPDATES"
+    )
+    assert cover_module.PARALLEL_UPDATES == 1

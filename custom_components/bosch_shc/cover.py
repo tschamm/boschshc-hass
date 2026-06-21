@@ -1,6 +1,7 @@
 """Platform for cover integration."""
 
 from typing import Any
+
 from boschshcpy import (
     SHCSession,
     SHCShutterControl,
@@ -23,6 +24,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
