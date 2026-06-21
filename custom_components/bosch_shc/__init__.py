@@ -334,7 +334,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             for device in thermostats:
                 try:
                     device.child_lock = lock_state
-                except (JSONRPCError, SHCException) as err:
+                except (JSONRPCError, SHCException, AttributeError) as err:
                     LOGGER.warning(
                         "Failed to set child_lock=%s on thermostat %s: %s",
                         lock_state, device.id, err,
@@ -342,7 +342,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             for device in bool_devices:
                 try:
                     device.child_lock = lock_state
-                except (JSONRPCError, SHCException) as err:
+                except (JSONRPCError, SHCException, AttributeError) as err:
                     LOGGER.warning(
                         "Failed to set child_lock=%s on device %s: %s",
                         lock_state, device.id, err,
