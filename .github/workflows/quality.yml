@@ -1,0 +1,39 @@
+name: Quality
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-quality:
+    name: flake8 · codespell · pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install tooling
+        run: pip install flake8 flake8-docstrings codespell pip-audit
+      - name: flake8
+        # Uses the repo .flake8 (max-line-length=88, ignore E501/W503).
+        # Scoped to production code; tests/ is not maintained flake8-clean
+        # upstream.
+        run: flake8 custom_components
+      - name: codespell
+        # Skip translations/ (legit foreign-language strings flagged as typos);
+        # "hass" is the HA idiom, "unparseable" a valid variant.
+        run: >-
+          codespell custom_components
+          --skip="*/translations/*"
+          --ignore-words-list=hass,nd,childs,unparseable
+      - name: pip-audit (our manifest deps)
+        run: |
+          python3 -c "import json;print(chr(10).join(json.load(open('custom_components/bosch_shc/manifest.json'))['requirements']))" > /tmp/our_reqs.txt
+          pip-audit -r /tmp/our_reqs.txt
