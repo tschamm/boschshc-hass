@@ -71,23 +71,25 @@
             "description": "Ative ou desative os tipos de entidades que a integração cria.",
             "data": {
               "scenarios_as_buttons": "Expor cenários como entidades de botão",
-              "diagnostic_entities": "Criar sensores de diagnóstico"
+              "diagnostic_entities": "Criar sensores de diagnóstico",
+              "enable_rawscan_service": "Ativar o serviço de diagnóstico rawscan"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC aparece também como entidade de botão no Home Assistant (além do serviço `trigger_scenario`). Útil para mosaicos do painel e automatizações que ativam cenários diretamente. Predefinição: desativado.",
-              "diagnostic_entities": "Quando ATIVADO (predefinição): entidades de sensor de diagnóstico são criadas para cada dispositivo compatível — posição do taquet da válvula (termostatos) e qualidade de comunicação (tomadas inteligentes). Desative para reduzir o número de entidades se não precisar destes sensores."
+              "diagnostic_entities": "Quando ATIVADO (predefinição): entidades de sensor de diagnóstico são criadas para cada dispositivo compatível — posição do taquet da válvula (termostatos) e qualidade de comunicação (tomadas inteligentes). Desative para reduzir o número de entidades se não precisar destes sensores.",
+              "enable_rawscan_service": "Quando ATIVADO: regista o serviço bosch_shc.trigger_rawscan para depuração bruta da API. Desative para o ocultar. Predefinição: ativado."
             }
           },
           "presence": {
-            "name": "Bloqueio infantil por presença",
-            "description": "Ative automaticamente o bloqueio infantil em todos os termostatos SHC quando alguém chega a casa e desative-o quando todos saem.",
+            "name": "Bloqueio infantil baseado em presença",
+            "description": "Bloqueie automaticamente todos os termostatos e interruptores SHC quando alguém estiver em casa, e desbloqueie quando todos saírem.",
             "data": {
-              "child_lock_presence_entity": "Entidade de presença (opcional)",
-              "child_lock_present_state": "Estado que significa 'presente'"
+              "child_lock_enabled": "Ativar bloqueio infantil baseado em presença",
+              "child_lock_presence_entity": "Entidades de presença"
             },
             "data_description": {
-              "child_lock_presence_entity": "Entidade cujo estado controla o bloqueio infantil em todos os termostatos SHC. Domínios suportados: person, device_tracker, binary_sensor, input_boolean, zone, group. Deixe vazio para desativar esta funcionalidade.",
-              "child_lock_present_state": "O estado da entidade que significa 'alguém está em casa' — o bloqueio infantil é ativado quando a entidade entra neste estado e desativado quando o abandona. Valores típicos: `home` para person / device_tracker, `on` para binary_sensor / input_boolean. Predefinição: home."
+              "child_lock_enabled": "Interruptor principal. Quando ATIVADO, o bloqueio infantil em todos os termostatos e dispositivos de interruptor SHC segue as entidades de presença abaixo — bloqueado quando alguém está em casa, desbloqueado quando todos estão ausentes. Quando DESATIVADO, a integração nunca toca no bloqueio infantil.",
+              "child_lock_presence_entity": "As pessoas/dispositivos que decidem o bloqueio infantil. Ativa assim que QUALQUER um deles estiver em casa, e desativa apenas quando TODOS estiverem ausentes. Escolha, por exemplo, as entidades Pessoa da sua residência. 'Em casa' é detetado automaticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean)."
             }
           },
           "advanced": {
@@ -95,11 +97,15 @@
             "description": "Parâmetros de ligação de baixo nível. Alterá-los raramente ajuda — consulte a documentação antes de os modificar.",
             "data": {
               "ssl_verify_hostname": "Verificar nome de host SSL",
-              "long_poll_timeout": "Tempo limite de long-poll (segundos)"
+              "long_poll_timeout": "Tempo limite de long-poll (segundos)",
+              "excluded_devices": "Dispositivos excluídos",
+              "excluded_rooms": "Divisões excluídas"
             },
             "data_description": {
               "ssl_verify_hostname": "Quando ATIVADO: a biblioteca boschshcpy verifica se o nome de host do certificado SSL do controlador SHC corresponde ao seu IP/nome de host. Atualmente sem efeito — é necessária uma atualização futura de boschshcpy. Predefinição: desativado.",
-              "long_poll_timeout": "Quanto tempo (em segundos) o pedido long-poll ao controlador SHC aguarda eventos push antes de se reconectar. Intervalo: 5–300. Predefinição: 30. Aumente se vir reconexões frequentes numa rede lenta; reduza se o router interromper ligações inativas. Requer uma atualização futura de boschshcpy."
+              "long_poll_timeout": "Quanto tempo (em segundos) o pedido long-poll ao controlador SHC aguarda eventos push antes de se reconectar. Intervalo: 5–300. Predefinição: 30. Aumente se vir reconexões frequentes numa rede lenta; reduza se o router interromper ligações inativas. Requer uma atualização futura de boschshcpy.",
+              "excluded_devices": "Dispositivos a ocultar — não são criadas entidades para eles. Deixe vazio para incluir todos. As entidades existentes para dispositivos recentemente excluídos permanecem até serem removidas manualmente.",
+              "excluded_rooms": "Ocultar todos os dispositivos nestas divisões Bosch. Deixe vazio para incluir todas."
             }
           }
         }

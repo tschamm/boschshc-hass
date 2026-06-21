@@ -104,14 +104,14 @@
           },
           "presence": {
             "name": "Anwesenheitsbasierte Kindersicherung",
-            "description": "Kindersicherung an allen SHC-Thermostaten automatisch aktivieren, wenn eine der ausgewählten Personen nach Hause kommt, und deaktivieren, wenn alle das Haus verlassen haben.",
+            "description": "Sperrt automatisch alle SHC-Thermostate und Schalter, wenn jemand zu Hause ist, und entsperrt sie, wenn alle das Haus verlassen.",
             "data": {
-              "child_lock_presence_entity": "Anwesenheitsentitäten (optional)",
-              "child_lock_present_state": "Status für 'anwesend'"
+              "child_lock_enabled": "Anwesenheitsbasierte Kindersicherung aktivieren",
+              "child_lock_presence_entity": "Anwesenheitsentitäten"
             },
             "data_description": {
-              "child_lock_presence_entity": "Eine oder mehrere Entitäten, deren Status die Kindersicherung an allen SHC-Thermostaten und Schaltgeräten steuert. Kindersicherung wird aktiviert, wenn EINE der Entitäten den Anwesenheitsstatus annimmt; deaktiviert, wenn ALLE den Status verlassen. Unterstützte Domains: person, device_tracker, binary_sensor, input_boolean, zone, group. Leer lassen, um dieses Feature zu deaktivieren.",
-              "child_lock_present_state": "Der Entitätsstatus, der als 'jemand ist zu Hause' gilt — Kindersicherung wird aktiviert, wenn EINE Entität diesen Status annimmt, und deaktiviert, wenn ALLE Entitäten ihn verlassen. Typische Werte: `home` für person / device_tracker, `on` für binary_sensor / input_boolean. Standard: home."
+              "child_lock_enabled": "Hauptschalter. Wenn EIN, folgt die Kindersicherung aller SHC-Thermostate und Schalter den unten gewählten Anwesenheitsentitäten — gesperrt wenn jemand zu Hause ist, entsperrt wenn alle weg sind. Wenn AUS, fasst die Integration die Kindersicherung nie an.",
+              "child_lock_presence_entity": "Die Personen/Geräte, die die Kindersicherung steuern. Sie geht AN, sobald EINE davon zu Hause ist, und AUS erst wenn ALLE weg sind. Wähle z. B. die Personen-Entitäten deines Haushalts. 'Zu Hause' wird automatisch erkannt (home für person/device_tracker/zone/group, on für binary_sensor/input_boolean)."
             }
           },
           "advanced": {

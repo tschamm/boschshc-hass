@@ -40,13 +40,13 @@ from .const import (
     DATA_SESSION,
     DOMAIN,
     LOGGER,
+    OPT_CHILD_LOCK_ENABLED,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_ENABLE_RAWSCAN,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
-    OPT_PRESENCE_STATE,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
 )
@@ -62,8 +62,8 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_ENABLE_RAWSCAN,
     ],
     "presence": [
+        OPT_CHILD_LOCK_ENABLED,
         OPT_PRESENCE_ENTITY,
-        OPT_PRESENCE_STATE,
     ],
     "advanced": [
         OPT_SSL_VERIFY_HOSTNAME,
@@ -516,6 +516,12 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                     vol.Schema(
                         {
                             vol.Optional(
+                                OPT_CHILD_LOCK_ENABLED,
+                                default=current.get(
+                                    OPT_CHILD_LOCK_ENABLED, bool(_presence_default)
+                                ),
+                            ): BooleanSelector(),
+                            vol.Optional(
                                 OPT_PRESENCE_ENTITY,
                                 default=_presence_default,
                             ): EntitySelector(
@@ -530,12 +536,6 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                                         "group",
                                     ],
                                 )
-                            ),
-                            vol.Optional(
-                                OPT_PRESENCE_STATE,
-                                default=current.get(OPT_PRESENCE_STATE, "home"),
-                            ): TextSelector(
-                                TextSelectorConfig(type=TextSelectorType.TEXT)
                             ),
                         }
                     ),

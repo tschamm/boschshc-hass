@@ -66,8 +66,8 @@ from .const import (
     LOGGER,
     OPT_ENABLE_RAWSCAN,
     OPT_LONG_POLL_TIMEOUT,
+    OPT_CHILD_LOCK_ENABLED,
     OPT_PRESENCE_ENTITY,
-    OPT_PRESENCE_STATE,
     OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_TRIGGER_SCENARIO,
     SERVICE_TRIGGER_RAWSCAN,
@@ -330,8 +330,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     else:
         presence_entities = [e for e in _raw_presence if e]
 
-    if presence_entities:
-        present_state = entry.options.get(OPT_PRESENCE_STATE, "home")
+    # Master on/off switch. Defaults to ON when presence entities are already
+    # configured (preserves behaviour for setups made before the toggle existed).
+    child_lock_enabled = entry.options.get(
+        OPT_CHILD_LOCK_ENABLED, bool(presence_entities)
+    )
+
+    if child_lock_enabled and presence_entities:
+        # "Present" is auto-inferred per entity domain — no config knob needed:
+        #   person / device_tracker / group  -> state == "home"
+        #   zone                             -> occupancy count > 0
+        #   binary_sensor / input_boolean    -> state == "on"
+        def _entity_is_present(entity_id, state_obj) -> bool:
+            domain = entity_id.split(".", 1)[0]
+            value = state_obj.state
+            if domain == "zone":
+                try:
+                    return int(value) > 0
+                except (TypeError, ValueError):
+                    return False
+            if domain in ("binary_sensor", "input_boolean"):
+                return value == "on"
+            # person, device_tracker, group and anything else use the standard
+            # home/away semantics (group of presence entities reports "home").
+            return value in ("home", "on")
+
         # Track last-applied lock state to suppress redundant API writes.
         _last_lock_state: list[bool | None] = [None]
 
@@ -380,25 +403,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         def _presence_state_changed(event):
             """Handle state changes for any tracked presence entity.
 
-            Semantics: child lock ON when ANY entity is in present_state;
-            OFF when ALL entities are out of present_state.
+            Semantics: child lock ON when ANY tracked entity is present;
+            OFF when ALL are away. "Present" is auto-inferred per domain.
             Redundant writes are suppressed via _last_lock_state.
             """
             new_state = event.data.get("new_state")
             if new_state is None:
                 return
-            new_state_str = new_state.state
             # Skip unavailable/unknown — entity is in a transient state.
-            if new_state_str in ("unavailable", "unknown"):
+            if new_state.state in ("unavailable", "unknown"):
                 return
 
-            # Recompute aggregate: any entity in present_state?
+            # Recompute aggregate: is ANY tracked entity present?
             any_present = False
             for eid in presence_entities:
                 state_obj = hass.states.get(eid)
                 if state_obj is None:
                     continue
-                if state_obj.state == present_state:
+                if _entity_is_present(eid, state_obj):
                     any_present = True
                     break
 

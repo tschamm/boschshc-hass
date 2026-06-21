@@ -71,23 +71,25 @@
             "description": "切换集成创建的实体类型。",
             "data": {
               "scenarios_as_buttons": "将场景作为按钮实体公开",
-              "diagnostic_entities": "创建诊断传感器"
+              "diagnostic_entities": "创建诊断传感器",
+              "enable_rawscan_service": "启用 rawscan 诊断服务"
             },
             "data_description": {
               "scenarios_as_buttons": "开启时：每个 Bosch SHC 场景也会在 Home Assistant 中显示为按钮实体（除 `trigger_scenario` 服务外）。适用于直接触发场景的仪表板磁贴和自动化。默认：关闭。",
-              "diagnostic_entities": "开启时（默认）：为每个受支持的设备创建诊断传感器实体——阀门顶针位置（温控器）和通信质量（智能插座）。如不需要这些传感器，可关闭以减少实体数量。"
+              "diagnostic_entities": "开启时（默认）：为每个受支持的设备创建诊断传感器实体——阀门顶针位置（温控器）和通信质量（智能插座）。如不需要这些传感器，可关闭以减少实体数量。",
+              "enable_rawscan_service": "开启时：注册 bosch_shc.trigger_rawscan 服务用于原始 API 调试。关闭则隐藏该服务。默认：开启。"
             }
           },
           "presence": {
             "name": "基于在家状态的童锁",
-            "description": "有人回家时自动启用所有 SHC 温控器的童锁，所有人离家时自动禁用。",
+            "description": "有人在家时自动锁定所有 SHC 温控器和开关，所有人离家后自动解锁。",
             "data": {
-              "child_lock_presence_entity": "在家状态实体（可选）",
-              "child_lock_present_state": "表示「在家」的状态"
+              "child_lock_enabled": "启用基于在家状态的童锁",
+              "child_lock_presence_entity": "在家检测实体"
             },
             "data_description": {
-              "child_lock_presence_entity": "控制所有 SHC 温控器童锁的实体。支持的域：person、device_tracker、binary_sensor、input_boolean、zone、group。留空则禁用此功能。",
-              "child_lock_present_state": "表示「有人在家」的实体状态——实体进入此状态时启用童锁，离开时禁用。典型值：`home`（适用于 person / device_tracker），`on`（适用于 binary_sensor / input_boolean）。默认：home。"
+              "child_lock_enabled": "主开关。开启时，所有 SHC 温控器和开关设备的童锁跟随下方的在家检测实体——有人在家时锁定，所有人离家时解锁。关闭时，集成不会触碰童锁。",
+              "child_lock_presence_entity": "决定童锁状态的人员/设备。任意一个在家即开启，所有人都离家才关闭。例如选择家庭成员的 Person 实体。「在家」自动判断（person/device_tracker/zone/group 为 home，binary_sensor/input_boolean 为 on）。"
             }
           },
           "advanced": {
@@ -95,11 +97,15 @@
             "description": "低级连接参数，更改后通常没有帮助——修改前请查阅文档。",
             "data": {
               "ssl_verify_hostname": "验证 SSL 主机名",
-              "long_poll_timeout": "长轮询超时（秒）"
+              "long_poll_timeout": "长轮询超时（秒）",
+              "excluded_devices": "排除的设备",
+              "excluded_rooms": "排除的房间"
             },
             "data_description": {
               "ssl_verify_hostname": "开启时：boschshcpy 库验证 SHC 控制器 SSL 证书的主机名与其 IP/主机名是否匹配。目前无效——需要未来的 boschshcpy 更新才能生效。默认：关闭。",
-              "long_poll_timeout": "向 SHC 控制器发送长轮询请求后等待推送事件的时间（秒），超时后重新连接。范围：5–300。默认：30。网络较慢时若出现频繁重连可增大此值；若路由器断开空闲连接可减小此值。需要未来的 boschshcpy 更新才能生效。"
+              "long_poll_timeout": "向 SHC 控制器发送长轮询请求后等待推送事件的时间（秒），超时后重新连接。范围：5–300。默认：30。网络较慢时若出现频繁重连可增大此值；若路由器断开空闲连接可减小此值。需要未来的 boschshcpy 更新才能生效。",
+              "excluded_devices": "要隐藏的设备——不为其创建任何实体。留空则包含所有设备。新排除设备的现有实体将保留，直到手动删除。",
+              "excluded_rooms": "隐藏这些 Bosch 房间中的所有设备。留空则包含所有房间。"
             }
           }
         }

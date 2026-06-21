@@ -19,8 +19,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.bosch_shc.const import (
+    OPT_CHILD_LOCK_ENABLED,
     OPT_PRESENCE_ENTITY,
-    OPT_PRESENCE_STATE,
 )
 
 
@@ -225,6 +225,35 @@ class TestPresenceDisabled:
         hass, entry, _ = _do_setup(session, options={})
         assert entry.runtime_data.presence_unsub is None
 
+    def test_master_toggle_off_disables_even_with_entities(self):
+        """child_lock_enabled=False must suppress the feature even when
+        presence entities are configured (explicit off switch)."""
+        session = _make_fake_session()
+        with patch(PATCH_TRACK_STATE) as mock_track:
+            hass, entry, _ = _do_setup(
+                session,
+                options={
+                    OPT_CHILD_LOCK_ENABLED: False,
+                    OPT_PRESENCE_ENTITY: ["person.felix"],
+                },
+            )
+            mock_track.assert_not_called()
+            assert entry.runtime_data.presence_unsub is None
+
+    def test_master_toggle_on_with_entities_registers_tracker(self):
+        """child_lock_enabled=True + entities -> tracker registered."""
+        session = _make_fake_session()
+        with patch(PATCH_TRACK_STATE) as mock_track:
+            mock_track.return_value = MagicMock()
+            _do_setup(
+                session,
+                options={
+                    OPT_CHILD_LOCK_ENABLED: True,
+                    OPT_PRESENCE_ENTITY: ["person.felix"],
+                },
+            )
+            mock_track.assert_called_once()
+
 
 # ---------------------------------------------------------------------------
 # Tests: backward compat — stored value is a plain str (old single-select)
@@ -262,7 +291,7 @@ class TestBackwardCompatStr:
         """Backward compat str: entering present_state still locks devices."""
         therm = _make_device("therm-1")
         session = _make_fake_session(thermostats=[therm])
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
+        opts = {OPT_PRESENCE_ENTITY: "person.felix"}
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
             hass_states={"person.felix": "home"},
@@ -279,7 +308,7 @@ class TestBackwardCompatStr:
         therm = _make_device("therm-1")
         therm.child_lock = True
         session = _make_fake_session(thermostats=[therm])
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
+        opts = {OPT_PRESENCE_ENTITY: "person.felix"}
         # Simulate entity now away
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -348,7 +377,6 @@ class TestChildLockOn:
         if opts is None:
             opts = {
                 OPT_PRESENCE_ENTITY: ["person.felix"],
-                OPT_PRESENCE_STATE: "home",
             }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -383,7 +411,6 @@ class TestChildLockOn:
         session = _make_fake_session(thermostats=[therm])
         opts = {
             OPT_PRESENCE_ENTITY: ["input_boolean.guests"],
-            OPT_PRESENCE_STATE: "on",
         }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -407,7 +434,6 @@ class TestChildLockOff:
         session = _make_fake_session(thermostats=[therm])
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
-            OPT_PRESENCE_STATE: "home",
         }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -436,7 +462,6 @@ class TestMultiEntityAnyHome:
         session = _make_fake_session(thermostats=[therm])
         opts = {
             OPT_PRESENCE_ENTITY: ["person.alice", "person.bob"],
-            OPT_PRESENCE_STATE: "home",
         }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -489,7 +514,6 @@ class TestMultiEntityAnyHome:
         session = _make_fake_session()
         opts = {
             OPT_PRESENCE_ENTITY: ["person.alice", "person.bob"],
-            OPT_PRESENCE_STATE: "home",
         }
         with patch(PATCH_TRACK_STATE) as mock_track:
             mock_track.return_value = MagicMock()
@@ -540,7 +564,6 @@ class TestNoOp:
         session = _make_fake_session(thermostats=[therm])
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
-            OPT_PRESENCE_STATE: "home",
         }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -604,7 +627,6 @@ class TestErrorHandling:
         session = _make_fake_session(thermostats=[therm])
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
-            OPT_PRESENCE_STATE: "home",
         }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,
@@ -629,7 +651,6 @@ class TestErrorHandling:
         session = _make_fake_session(bool_devices=[booldev])
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
-            OPT_PRESENCE_STATE: "home",
         }
         hass, entry, state_cb = _do_setup(
             session, options=opts, capture_state_cb=True,

@@ -1,30 +1,82 @@
 {
     "config": {
         "abort": {
-            "already_configured": "\u05ea\u05e6\u05d5\u05e8\u05ea \u05d4\u05d4\u05ea\u05e7\u05df \u05db\u05d1\u05e8 \u05e0\u05e7\u05d1\u05e2\u05d4",
-            "reauth_successful": "\u05d4\u05d0\u05d9\u05de\u05d5\u05ea \u05de\u05d7\u05d3\u05e9 \u05d4\u05e6\u05dc\u05d9\u05d7"
+            "already_configured": "תצורת ההתקן כבר נקבעה",
+            "reauth_successful": "האימות מחדש הצליח"
         },
         "error": {
-            "cannot_connect": "\u05d4\u05d4\u05ea\u05d7\u05d1\u05e8\u05d5\u05ea \u05e0\u05db\u05e9\u05dc\u05d4",
-            "invalid_auth": "\u05d0\u05d9\u05de\u05d5\u05ea \u05dc\u05d0 \u05d7\u05d5\u05e7\u05d9",
-            "pairing_failed": "\u05d4\u05e9\u05d9\u05d5\u05da \u05e0\u05db\u05e9\u05dc; \u05e0\u05d0 \u05d1\u05d3\u05d5\u05e7 \u05e9\u05d1\u05e7\u05e8 \u05d4\u05d1\u05d9\u05ea \u05d4\u05d7\u05db\u05dd \u05e9\u05dc Bosch \u05e0\u05de\u05e6\u05d0 \u05d1\u05de\u05e6\u05d1 \u05e9\u05d9\u05d5\u05da (\u05de\u05d4\u05d1\u05d4\u05d1 LED) \u05db\u05de\u05d5 \u05d2\u05dd \u05d4\u05e1\u05d9\u05e1\u05de\u05d4 \u05e9\u05dc\u05da \u05e0\u05db\u05d5\u05e0\u05d4.",
-            "unknown": "\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05dc\u05ea\u05d9 \u05e6\u05e4\u05d5\u05d9\u05d4"
+            "cannot_connect": "ההתחברות נכשלה",
+            "invalid_auth": "אימות לא חוקי",
+            "pairing_failed": "השיוך נכשל; נא בדוק שבקר הבית החכם של Bosch נמצא במצב שיוך (מהבהב LED) כמו גם הסיסמה שלך נכונה.",
+            "unknown": "שגיאה בלתי צפויה"
         },
         "step": {
             "confirm_discovery": {
-                "description": "\u05dc\u05d7\u05e5 \u05e2\u05dc \u05db\u05e4\u05ea\u05d5\u05e8 \u05d4\u05e6\u05d3 \u05d4\u05e7\u05d3\u05de\u05d9 \u05e9\u05dc \u05d1\u05e7\u05e8\u05ea \u05d4\u05d1\u05d9\u05ea \u05d4\u05d7\u05db\u05dd \u05e9\u05dc Bosch \u05e2\u05d3 \u05e9\u05d4\u05e0\u05d5\u05e8\u05d9\u05ea \u05ea\u05ea\u05d7\u05d9\u05dc \u05dc\u05d4\u05d1\u05d4\u05d1.\n \u05de\u05d5\u05db\u05df \u05dc\u05d4\u05de\u05e9\u05d9\u05da \u05d5\u05dc\u05d4\u05d2\u05d3\u05d9\u05e8 \u05d0\u05ea {model} @ {host} \u05d1\u05d0\u05de\u05e6\u05e2\u05d5\u05ea Home Assistant?"
+                "description": "לחץ על כפתור הצד הקדמי של בקר הבית החכם של Bosch עד שהנורית תתחיל להבהב.\n מוכן להמשיך ולהגדיר את {model} @ {host} באמצעות Home Assistant?"
             },
             "credentials": {
                 "data": {
-                    "password": "\u05e1\u05d9\u05e1\u05de\u05ea \u05d1\u05e7\u05e8 \u05d4\u05d1\u05d9\u05ea \u05d4\u05d7\u05db\u05dd"
+                    "password": "סיסמת בקר הבית החכם"
                 }
             },
             "reauth_confirm": {
-                "title": "\u05d0\u05d9\u05de\u05d5\u05ea \u05de\u05d7\u05d3\u05e9 \u05e9\u05dc \u05e9\u05d9\u05dc\u05d5\u05d1"
+                "title": "אימות מחדש של שילוב"
             },
             "user": {
                 "data": {
-                    "host": "\u05de\u05d0\u05e8\u05d7"
+                    "host": "מארח"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — הגדרות",
+                "description": "הגדר אילו ישויות ואוטומציות שילוב Bosch Smart Home Controller יוצר ומנהל.",
+                "sections": {
+                    "features": {
+                        "name": "תכונות",
+                        "description": "הפעל או השבת את סוגי הישויות שהשילוב יוצר.",
+                        "data": {
+                            "scenarios_as_buttons": "חשוף תרחישים כישויות כפתורים",
+                            "diagnostic_entities": "צור חיישנים אבחוניים",
+                            "enable_rawscan_service": "הפעל שירות אבחון rawscan"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "כאשר מופעל: כל תרחיש Bosch SHC מופיע גם כישות כפתור ב-Home Assistant (בנוסף לשירות trigger_scenario). שימושי לאריחי לוח מחוונים ואוטומציות המפעילות תרחישים ישירות. ברירת מחדל: כבוי.",
+                            "diagnostic_entities": "כאשר מופעל (ברירת מחדל): נוצרות ישויות חיישן אבחוניות עבור כל מכשיר נתמך — מיקום ברז שסתום (תרמוסטטים) ואיכות תקשורת (שקעים חכמים). כבה כדי להפחית מספר ישויות אם אינך זקוק לחיישנים אלה.",
+                            "enable_rawscan_service": "כאשר מופעל: רושם את השירות bosch_shc.trigger_rawscan לאיתור שגיאות API גולמי. כבה כדי להסתיר אותו. ברירת מחדל: מופעל."
+                        }
+                    },
+                    "presence": {
+                        "name": "נעילת ילדים מבוססת נוכחות",
+                        "description": "נועל אוטומטית את כל התרמוסטטים והמתגים של SHC כאשר מישהו בבית, ומשחרר אותם כאשר כולם יוצאים.",
+                        "data": {
+                            "child_lock_enabled": "הפעל נעילת ילדים מבוססת נוכחות",
+                            "child_lock_presence_entity": "ישויות נוכחות"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "מתג ראשי. כאשר מופעל, נעילת הילדים בכל תרמוסטטי SHC ומכשירי המתג עוקבת אחר ישויות הנוכחות שלהלן — נעול כאשר מישהו בבית, פתוח כאשר כולם בחוץ. כאשר מושבת, השילוב לעולם אינו נוגע בנעילת הילדים.",
+                            "child_lock_presence_entity": "האנשים/המכשירים שמחליטים על נעילת הילדים. מופעל ברגע שאחד מהם בבית, ומכובה רק כאשר כולם בחוץ. בחר למשל את ישויות Person של משק הבית. 'בבית' מזוהה אוטומטית (home עבור person/device_tracker/zone/group, on עבור binary_sensor/input_boolean)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "מתקדם",
+                        "description": "פרמטרי חיבור ברמה נמוכה. שינויים אלה לעיתים נדירות עוזרים — עיין בתיעוד לפני שתגע בהם.",
+                        "data": {
+                            "ssl_verify_hostname": "אמת שם מארח של אישור SHC",
+                            "long_poll_timeout": "פסק זמן long-poll (שניות)",
+                            "excluded_devices": "מכשירים מוחרגים",
+                            "excluded_rooms": "חדרים מוחרגים"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "מומחה: כאשר מופעל, מתבצע אימות שם המארח של אישור ה-TLS של ה-SHC. שם המארח של אישור Bosch SHC בדרך כלל לא תואם את ה-IP שלו, לכן הפעלה בדרך כלל שוברת את החיבור — השאר כבוי אלא אם ידוע לך שההגדרה שלך תואמת. ברירת מחדל: כבוי.",
+                            "long_poll_timeout": "כמה זמן כל בקשת long-poll מחכה לאירועים לפני התחברות מחדש. ברירת מחדל: 10. הגדל כדי להפחית התחברויות מחדש, הקטן אם הרשת שלך מפסיקה חיבורים סרק.",
+                            "excluded_devices": "מכשירים להסתרה — לא נוצרות ישויות עבורם. השאר ריק לכלול הכול. ישויות קיימות של מכשירים שהוחרגו לאחרונה נשארות עד להסרתן ידנית.",
+                            "excluded_rooms": "הסתר כל מכשיר בחדרי Bosch אלה. השאר ריק לכלול הכול."
+                        }
+                    }
                 }
             }
         }

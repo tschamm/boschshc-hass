@@ -105,14 +105,14 @@
           },
           "presence": {
             "name": "Presence-based child lock",
-            "description": "Automatically enable child lock on all SHC thermostats when anyone arrives home, and disable it when everyone leaves.",
+            "description": "Automatically lock all SHC thermostats and switches when someone is home, and unlock them when everyone leaves.",
             "data": {
-              "child_lock_presence_entity": "Presence entities (optional)",
-              "child_lock_present_state": "State that means 'present'"
+              "child_lock_enabled": "Enable presence-based child lock",
+              "child_lock_presence_entity": "Presence entities"
             },
             "data_description": {
-              "child_lock_presence_entity": "One or more entities whose state controls child lock on all SHC thermostats and switch devices. Child lock turns ON when ANY selected entity is in the present state; OFF when ALL are out of it. Supported domains: person, device_tracker, binary_sensor, input_boolean, zone, group. Leave empty to disable this feature.",
-              "child_lock_present_state": "The entity state that counts as 'someone is home' — child lock is enabled when ANY entity enters this state, disabled when ALL entities leave it. Typical values: `home` for person / device_tracker, `on` for binary_sensor / input_boolean. Default: home."
+              "child_lock_enabled": "Master switch. When ON, child lock on all SHC thermostats and switch devices follows the presence entities below — locked when someone is home, unlocked when everyone is away. When OFF, the integration never touches child lock.",
+              "child_lock_presence_entity": "The people/devices that decide child lock. It turns ON as soon as ANY of them is home, and OFF only when ALL are away. Pick e.g. the Person entities of your household. 'Home' is detected automatically (home for person/device_tracker/zone/group, on for binary_sensor/input_boolean)."
             }
           },
           "advanced": {

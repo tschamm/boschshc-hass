@@ -6,9 +6,7 @@ from boschshcpy import (
     SHCSession,
     SHCShutterControl,
     SHCMicromoduleShutterControl,
-    SHCMicromoduleBlinds,
 )
-from boschshcpy.device import SHCDevice
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
@@ -133,7 +131,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):
                 # In case of HA commands, the first STOPPED state is not reliable, so we skip it and reset the flag for the next update
                 self._skip_update = False
 
-            # Initiallize the last position for MM at start
+            # Initialize the last position for MM at start
             if self._last_position is None:
                 self._last_position = self.current_cover_position
 

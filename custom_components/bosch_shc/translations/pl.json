@@ -71,23 +71,25 @@
             "description": "Włącz lub wyłącz typy encji tworzonych przez integrację.",
             "data": {
               "scenarios_as_buttons": "Udostępnij scenariusze jako encje przycisków",
-              "diagnostic_entities": "Utwórz czujniki diagnostyczne"
+              "diagnostic_entities": "Utwórz czujniki diagnostyczne",
+              "enable_rawscan_service": "Włącz diagnostyczną usługę rawscan"
             },
             "data_description": {
               "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
-              "diagnostic_entities": "Gdy WŁĄCZONE (domyślnie): encje czujników diagnostycznych są tworzone dla każdego obsługiwanego urządzenia — pozycja zaworu (termostaty) i jakość komunikacji (inteligentne wtyczki). Wyłącz, aby zmniejszyć liczbę encji, jeśli nie potrzebujesz tych czujników."
+              "diagnostic_entities": "Gdy WŁĄCZONE (domyślnie): encje czujników diagnostycznych są tworzone dla każdego obsługiwanego urządzenia — pozycja zaworu (termostaty) i jakość komunikacji (inteligentne wtyczki). Wyłącz, aby zmniejszyć liczbę encji, jeśli nie potrzebujesz tych czujników.",
+              "enable_rawscan_service": "Gdy WŁĄCZONE: rejestruje usługę bosch_shc.trigger_rawscan do debugowania surowego API. Wyłącz, aby ją ukryć. Domyślnie: włączone."
             }
           },
           "presence": {
             "name": "Blokada rodzicielska oparta na obecności",
-            "description": "Automatycznie włączaj blokadę rodzicielską na wszystkich termostatach SHC, gdy ktoś wróci do domu, i wyłączaj ją, gdy wszyscy wyjdą.",
+            "description": "Automatycznie blokuj wszystkie termostaty i przełączniki SHC, gdy ktoś jest w domu, i odblokowuj, gdy wszyscy wyjdą.",
             "data": {
-              "child_lock_presence_entity": "Encja obecności (opcjonalnie)",
-              "child_lock_present_state": "Stan oznaczający 'obecny'"
+              "child_lock_enabled": "Włącz blokadę rodzicielską opartą na obecności",
+              "child_lock_presence_entity": "Encje obecności"
             },
             "data_description": {
-              "child_lock_presence_entity": "Encja, której stan steruje blokadą rodzicielską na wszystkich termostatach SHC. Obsługiwane domeny: person, device_tracker, binary_sensor, input_boolean, zone, group. Pozostaw puste, aby wyłączyć tę funkcję.",
-              "child_lock_present_state": "Stan encji oznaczający 'ktoś jest w domu' — blokada rodzicielska jest włączana, gdy encja wchodzi w ten stan, i wyłączana, gdy go opuszcza. Typowe wartości: `home` dla person / device_tracker, `on` dla binary_sensor / input_boolean. Domyślnie: home."
+              "child_lock_enabled": "Przełącznik główny. Gdy WŁĄCZONA, blokada rodzicielska na wszystkich termostatach i przełącznikach SHC podąża za poniższymi encjami obecności — zablokowane gdy ktoś jest w domu, odblokowane gdy wszyscy wyszli. Gdy WYŁĄCZONA, integracja nigdy nie dotyka blokady rodzicielskiej.",
+              "child_lock_presence_entity": "Osoby/urządzenia decydujące o blokadzie rodzicielskiej. Włącza się, gdy tylko KTÓRAKOLWIEK z nich jest w domu, i wyłącza się dopiero, gdy WSZYSTKIE wyjdą. Wybierz np. encje Person członków gospodarstwa domowego. 'W domu' jest wykrywane automatycznie (home dla person/device_tracker/zone/group, on dla binary_sensor/input_boolean)."
             }
           },
           "advanced": {
@@ -95,11 +97,15 @@
             "description": "Parametry połączenia niskiego poziomu. Ich zmiana rzadko pomaga — zapoznaj się z dokumentacją przed modyfikacją.",
             "data": {
               "ssl_verify_hostname": "Weryfikuj nazwę hosta SSL",
-              "long_poll_timeout": "Limit czasu długiego odpytywania (sekundy)"
+              "long_poll_timeout": "Limit czasu długiego odpytywania (sekundy)",
+              "excluded_devices": "Wykluczone urządzenia",
+              "excluded_rooms": "Wykluczone pomieszczenia"
             },
             "data_description": {
               "ssl_verify_hostname": "Gdy WŁĄCZONE: biblioteka boschshcpy sprawdza, czy nazwa hosta certyfikatu SSL kontrolera SHC odpowiada jego adresowi IP/nazwie hosta. Obecnie nie ma żadnego efektu — wymagana jest przyszła aktualizacja boschshcpy. Domyślnie: wyłączone.",
-              "long_poll_timeout": "Jak długo (w sekundach) żądanie długiego odpytywania do kontrolera SHC czeka na zdarzenia push przed ponownym połączeniem. Zakres: 5–300. Domyślnie: 30. Zwiększ, jeśli widzisz częste ponowne połączenia w wolnej sieci; zmniejsz, jeśli router rozłącza bezczynne połączenia. Wymaga przyszłej aktualizacji boschshcpy."
+              "long_poll_timeout": "Jak długo (w sekundach) żądanie długiego odpytywania do kontrolera SHC czeka na zdarzenia push przed ponownym połączeniem. Zakres: 5–300. Domyślnie: 30. Zwiększ, jeśli widzisz częste ponowne połączenia w wolnej sieci; zmniejsz, jeśli router rozłącza bezczynne połączenia. Wymaga przyszłej aktualizacji boschshcpy.",
+              "excluded_devices": "Urządzenia do ukrycia — nie są dla nich tworzone żadne encje. Pozostaw puste, aby uwzględnić wszystkie. Istniejące encje nowo wykluczonych urządzeń pozostają do czasu ich ręcznego usunięcia.",
+              "excluded_rooms": "Ukryj wszystkie urządzenia w tych pomieszczeniach Bosch. Pozostaw puste, aby uwzględnić wszystkie."
             }
           }
         }

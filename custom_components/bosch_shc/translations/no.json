@@ -33,5 +33,57 @@
                 "title": "SHC-autentiseringsparametere"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Innstillinger",
+                "description": "Konfigurer hvilke enheter og automatiseringer Bosch Smart Home Controller-integrasjonen oppretter og administrerer.",
+                "sections": {
+                    "features": {
+                        "name": "Funksjoner",
+                        "description": "Slå av og på enhetstyper integrasjonen oppretter.",
+                        "data": {
+                            "scenarios_as_buttons": "Vis scenarier som knappenheter",
+                            "diagnostic_entities": "Opprett diagnostikksensorer",
+                            "enable_rawscan_service": "Aktiver rawscan-diagnosetjeneste"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
+                            "diagnostic_entities": "Når PÅ (standard): diagnostikksensorenheter opprettes for hver støttet enhet — ventilstøtterposisjon (termostater) og kommunikasjonskvalitet (smarte stikkontakter). Slå AV for å redusere antall enheter hvis du ikke trenger disse sensorene.",
+                            "enable_rawscan_service": "Når PÅ: registrerer bosch_shc.trigger_rawscan-tjenesten for rå API-feilsøking. Slå AV for å skjule den. Standard: på."
+                        }
+                    },
+                    "presence": {
+                        "name": "Tilstedeværelsesbasert barnesikring",
+                        "description": "Lås automatisk alle SHC-termostater og -bryterenheter når noen er hjemme, og lås opp når alle drar.",
+                        "data": {
+                            "child_lock_enabled": "Aktiver tilstedeværelsesbasert barnesikring",
+                            "child_lock_presence_entity": "Tilstedeværelsesenheter"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Hovedbryter. Når PÅ følger barnesikringen på alle SHC-termostater og bryterenheter tilstedeværelsesenhetene nedenfor — låst når noen er hjemme, ulåst når alle er borte. Når AV berører integrasjonen aldri barnesikringen.",
+                            "child_lock_presence_entity": "Personene/enhetene som bestemmer barnesikringen. Den slås PÅ så snart NOEN av dem er hjemme, og AV kun når ALLE er borte. Velg f.eks. Person-enhetene til husstandsmedlemmene dine. 'Hjemme' oppdages automatisk (home for person/device_tracker/zone/group, on for binary_sensor/input_boolean)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Avansert",
+                        "description": "Lavnivå tilkoblingsparametere. Det hjelper sjelden å endre disse — se dokumentasjonen før du gjør endringer.",
+                        "data": {
+                            "ssl_verify_hostname": "Verifiser SHC-sertifikatets vertsnavn",
+                            "long_poll_timeout": "Lang polling-tidsavbrudd (sekunder)",
+                            "excluded_devices": "Ekskluderte enheter",
+                            "excluded_rooms": "Ekskluderte rom"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Ekspert: når PÅ, verifiseres SHC-ens TLS-sertifikatets vertsnavn. Bosch SHC-sertifikatets vertsnavn samsvarer normalt IKKE med IP-adressen, så aktivering av dette bryter vanligvis tilkoblingen — la stå AV med mindre du er sikker på at oppsettet ditt samsvarer. Standard: av.",
+                            "long_poll_timeout": "Hvor lenge hver lang polling-forespørsel venter på hendelser før tilkobling på nytt. Standard 10. Øk for å redusere tilkoblinger på nytt, reduser hvis nettverket ditt dropper inaktive tilkoblinger.",
+                            "excluded_devices": "Enheter som skal skjules — ingen enheter opprettes for dem. La stå tomt for å inkludere alle. Eksisterende enheter for nylig ekskluderte enheter forblir til de fjernes manuelt.",
+                            "excluded_rooms": "Skjul alle enheter i disse Bosch-rommene. La stå tomt for å inkludere alle."
+                        }
+                    }
+                }
+            }
+        }
     }
 }

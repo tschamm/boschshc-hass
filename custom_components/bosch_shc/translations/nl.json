@@ -71,23 +71,25 @@
             "description": "Schakel de entiteitstypes in of uit die de integratie aanmaakt.",
             "data": {
               "scenarios_as_buttons": "Scenario's blootstellen als knopentiteiten",
-              "diagnostic_entities": "Diagnostische sensoren aanmaken"
+              "diagnostic_entities": "Diagnostische sensoren aanmaken",
+              "enable_rawscan_service": "Diagnostische rawscan-service inschakelen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
-              "diagnostic_entities": "Wanneer AAN (standaard): diagnostische sensorentiteiten worden aangemaakt voor elk ondersteund apparaat — kleppenpositie (thermostaten) en communicatiekwaliteit (slimme stekkers). Zet UIT om het aantal entiteiten te verminderen als u deze sensoren niet nodig heeft."
+              "diagnostic_entities": "Wanneer AAN (standaard): diagnostische sensorentiteiten worden aangemaakt voor elk ondersteund apparaat — kleppenpositie (thermostaten) en communicatiekwaliteit (slimme stekkers). Zet UIT om het aantal entiteiten te verminderen als u deze sensoren niet nodig heeft.",
+              "enable_rawscan_service": "Wanneer AAN: registreert de bosch_shc.trigger_rawscan service voor ruwe API-foutopsporing. Zet UIT om deze te verbergen. Standaard: aan."
             }
           },
           "presence": {
-            "name": "Aanwezigheidsgebaseerd kindvergrendeling",
-            "description": "Activeer automatisch de kindvergrendeling op alle SHC-thermostaten wanneer iemand thuiskomt en deactiveer deze wanneer iedereen weg is.",
+            "name": "Aanwezigheidsgebaseerde kindvergrendeling",
+            "description": "Vergrendel automatisch alle SHC-thermostaten en -schakelaars wanneer iemand thuis is, en ontgrendel ze wanneer iedereen weg is.",
             "data": {
-              "child_lock_presence_entity": "Aanwezigheidsentiteit (optioneel)",
-              "child_lock_present_state": "Status die 'aanwezig' betekent"
+              "child_lock_enabled": "Aanwezigheidsgebaseerde kindvergrendeling inschakelen",
+              "child_lock_presence_entity": "Aanwezigheidsentiteiten"
             },
             "data_description": {
-              "child_lock_presence_entity": "Entiteit waarvan de status de kindvergrendeling op alle SHC-thermostaten bestuurt. Ondersteunde domeinen: person, device_tracker, binary_sensor, input_boolean, zone, group. Leeg laten om deze functie uit te schakelen.",
-              "child_lock_present_state": "De entiteitsstatus die betekent 'iemand is thuis' — kindvergrendeling wordt ingeschakeld wanneer de entiteit deze status ingaat en uitgeschakeld wanneer deze verlaat. Typische waarden: `home` voor person / device_tracker, `on` voor binary_sensor / input_boolean. Standaard: home."
+              "child_lock_enabled": "Hoofdschakelaar. Wanneer AAN volgt de kindvergrendeling op alle SHC-thermostaten en schakelaarapparaten de aanwezigheidsentiteiten hieronder — vergrendeld wanneer iemand thuis is, ontgrendeld wanneer iedereen weg is. Wanneer UIT raakt de integratie de kindvergrendeling nooit aan.",
+              "child_lock_presence_entity": "De personen/apparaten die de kindvergrendeling bepalen. Deze gaat AAN zodra ENIGE van hen thuis is, en UIT alleen wanneer ALLE weg zijn. Kies bijvoorbeeld de Person-entiteiten van uw huishouden. 'Thuis' wordt automatisch gedetecteerd (home voor person/device_tracker/zone/group, on voor binary_sensor/input_boolean)."
             }
           },
           "advanced": {
@@ -95,11 +97,15 @@
             "description": "Verbindingsparameters op laag niveau. Wijzigingen helpen zelden — raadpleeg de documentatie voordat u ze aanpast.",
             "data": {
               "ssl_verify_hostname": "SSL-hostnaam verifiëren",
-              "long_poll_timeout": "Long-poll timeout (seconden)"
+              "long_poll_timeout": "Long-poll timeout (seconden)",
+              "excluded_devices": "Uitgesloten apparaten",
+              "excluded_rooms": "Uitgesloten kamers"
             },
             "data_description": {
               "ssl_verify_hostname": "Wanneer AAN: de boschshcpy-bibliotheek controleert of de SSL-certificaat hostnaam van de SHC controller overeenkomt met zijn IP/hostnaam. Heeft momenteel geen effect — een toekomstige boschshcpy-update is vereist. Standaard: uit.",
-              "long_poll_timeout": "Hoe lang (in seconden) het long-poll-verzoek aan de SHC controller wacht op push-gebeurtenissen voor het opnieuw verbinden. Bereik: 5–300. Standaard: 30. Verhoog bij frequente herverbindingen op een traag netwerk; verlaag als uw router inactieve verbindingen verbreekt. Vereist een toekomstige boschshcpy-update."
+              "long_poll_timeout": "Hoe lang (in seconden) het long-poll-verzoek aan de SHC controller wacht op push-gebeurtenissen voor het opnieuw verbinden. Bereik: 5–300. Standaard: 30. Verhoog bij frequente herverbindingen op een traag netwerk; verlaag als uw router inactieve verbindingen verbreekt. Vereist een toekomstige boschshcpy-update.",
+              "excluded_devices": "Apparaten om te verbergen — er worden geen entiteiten voor aangemaakt. Leeg laten om alles op te nemen. Bestaande entiteiten voor nieuw uitgesloten apparaten blijven tot ze handmatig zijn verwijderd.",
+              "excluded_rooms": "Verberg alle apparaten in deze Bosch-kamers. Leeg laten om alles op te nemen."
             }
           }
         }
