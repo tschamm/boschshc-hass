@@ -27,3 +27,7 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # `brands` is the one outstanding Bronze item: bosch_shc is a Home
+          # Assistant Core domain, which conflicts with the HACS custom-brand
+          # check. Ignored until brand assets are submitted to home-assistant/brands.
+          ignore: brands
