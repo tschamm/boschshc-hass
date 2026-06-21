@@ -85,11 +85,20 @@ short/long), scenario triggers, motion events, and smoke-detector alarms.
 2. Restart Home Assistant.
 3. Go to **Settings → Devices & Services** and set up **Bosch SHC** (see below).
 
-### Manual
+### Manual (no HACS)
 
-1. Copy `custom_components/bosch_shc/` into `<config>/custom_components/bosch_shc/`.
-2. Restart Home Assistant.
-3. Follow the setup steps below.
+1. Download the source zip of the [latest release](https://github.com/tschamm/boschshc-hass/releases/latest)
+   and unzip it (the green **Code → Download ZIP** works too).
+2. Copy `custom_components/bosch_shc/` into `<config>/custom_components/bosch_shc/`
+   (create `custom_components/` if it doesn't exist).
+3. Restart Home Assistant. On restart HA reads `manifest.json` and automatically
+   pip-installs the pinned `boschshcpy` library — no manual Python steps needed,
+   as long as the HA host has internet access.
+4. Follow the setup steps below.
+
+> **Updating:** delete the old `custom_components/bosch_shc/` folder first (so no stale
+> files remain), copy the new one in, then restart. Your config entry and certificate
+> pairing are preserved. Manual installs don't auto-update — re-copy the folder per release.
 
 ---
 
