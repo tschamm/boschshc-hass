@@ -947,10 +947,16 @@ class TestSHCUserDefinedStateSwitch:
         sw = _make_uds_switch()
         assert sw.device_info["name"] == "SHC Controller"
 
-    def test_attr_name_none_for_primary_entity(self):
-        """Primary entity: _attr_name must be None."""
-        sw = _make_uds_switch()
-        assert sw._attr_name is None
+    def test_attr_name_is_device_name_for_uds(self):
+        """UDS entity: _attr_name must equal the UDS state name.
+
+        UDS entities attach to the SHC hub device (not a physical device), so
+        _attr_name=None would display the hub name only, losing the state label.
+        The correct fix is to use device.name (e.g. 'My State') so HA shows a
+        meaningful entity name like 'SHC Controller My State'.
+        """
+        sw = _make_uds_switch(name="My State")
+        assert sw._attr_name == "My State"
 
     def test_uds_update_calls_device_update(self):
         """SHCUserDefinedStateSwitch.update() must call device.update()."""

@@ -65,19 +65,11 @@ async def async_setup_entry(
 class ShutterControlCover(SHCEntity, CoverEntity):
     """Representation of a SHC shutter control device.
 
-    Issue #183 — state stops refreshing after hours:
-    The root cause lives in boschshcpy's long-polling loop
-    (session.py::_long_poll).  When the SHC invalidates the poll-ID
-    (JSONRPCError -32001), the library resets _poll_id to None and
-    re-subscribes on the next iteration, but does NOT push a fresh state
-    snapshot to the registered _callbacks.  Any STOPPED/level changes that
-    occurred during the gap are therefore never delivered to this entity.
-    Fixing this properly requires boschshcpy to call short_poll() on each
-    service after re-subscription, which is outside the scope of this
-    integration.  A workaround would be to enable should_poll=True here and
-    implement async_update() calling service.short_poll(), but that doubles
-    API traffic during normal operation.  Tracked upstream; do not attempt
-    to paper over it by adding polling here without a companion boschshcpy fix.
+    Issue #183 (resolved): State stops refreshing after hours was caused by
+    boschshcpy's long-polling loop not pushing a fresh state snapshot after
+    re-subscribing on poll-ID invalidation (JSONRPCError -32001).  The lib
+    now calls short_poll() on each service immediately after re-subscription,
+    so callbacks are delivered and state is restored without HA-side polling.
     """
 
     _attr_supported_features = (

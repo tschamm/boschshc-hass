@@ -41,6 +41,8 @@ from .entity import SHCEntity, async_migrate_to_new_unique_id
 
 LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 1
+
 
 @dataclass
 class SHCSwitchRequiredKeysMixin:
@@ -644,8 +646,11 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         self._session = session
         self._entry_id = entry_id
         self.entity_description = description
-        # Primary entity: _attr_name = None means HA uses the device name.
-        self._attr_name = None if attr_name is None else attr_name
+        # UDS entity: the state name IS the entity's distinguishing name.
+        # With has_entity_name=True and _attr_name=None HA would show the SHC hub
+        # name only; set _attr_name to the UDS state name so the entity is
+        # identifiable (e.g. "Vacation Mode").
+        self._attr_name = device.name if attr_name is None else attr_name
 
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"userdefinedstate_{slugify(self._device.name)}"

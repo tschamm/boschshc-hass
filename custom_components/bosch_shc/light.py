@@ -14,6 +14,8 @@ from homeassistant.util import color as color_util
 from .const import DATA_SESSION, DOMAIN
 from .entity import SHCEntity, async_migrate_to_new_unique_id
 
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the light platform."""
