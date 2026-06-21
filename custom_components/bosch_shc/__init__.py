@@ -263,6 +263,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # report_non_thread_safe_operation RuntimeError for custom integrations.
         # Making the callback async makes async_track_time_interval schedule it
         # directly on the event loop, eliminating both the wrapper and the bug.
+        if not cert_path:
+            return  # no cert configured — nothing to check (mirrors startup guard)
         try:
             info = await hass.async_add_executor_job(parse_certificate, cert_path)
         except Exception:  # silently ignore parsing issues
@@ -438,7 +440,11 @@ class SwitchDeviceEventListener:
                 self._keypad_service = service
                 break
 
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+        # Store the unsub callable so it can be cancelled on unload/shutdown,
+        # preventing a stale listener from leaking across reloads.
+        self._ha_stop_unsub = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
 
     def _input_events_handler(self):
         """Handle device input events (called from SHCPollingThread)."""
@@ -485,6 +491,10 @@ class SwitchDeviceEventListener:
 
     def shutdown(self):
         """Shutdown the listener."""
+        # Cancel the HA-stop listener to prevent leaks across reloads.
+        if self._ha_stop_unsub is not None:
+            self._ha_stop_unsub()
+            self._ha_stop_unsub = None
         self._keypad_service.unsubscribe_callback(self._device.id)
 
     @callback

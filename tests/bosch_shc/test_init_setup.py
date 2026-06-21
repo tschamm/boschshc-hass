@@ -207,8 +207,13 @@ class TestAsyncSetupEntryHappyPath:
         assert fwd_args[0][0] is entry  # first positional arg = entry
 
     def test_services_registered(self):
+        """Services are registered in async_setup (module-level Bronze action); test
+        must call async_setup first so the handlers exist."""
+        from custom_components.bosch_shc.__init__ import async_setup
         session = _make_fake_session()
         _, hass, _, _ = self._do_setup(session)
+        # Run module-level setup so domain services are registered
+        _run(async_setup(hass, {}))
         calls = [c.args[1] for c in hass.services.async_register.call_args_list]
         assert SERVICE_TRIGGER_SCENARIO in calls
         assert SERVICE_TRIGGER_RAWSCAN in calls
@@ -495,9 +500,14 @@ class TestScenarioSubscription:
         assert len(captured_callbacks) == 1
         cb = captured_callbacks[0]
         cb({"id": "sc1", "lastTimeTriggered": 1234567, "name": "Away"})
-        hass.bus.fire.assert_called_once()
-        fired_event, fired_data = hass.bus.fire.call_args.args
-        assert fired_event == EVENT_BOSCH_SHC
+        # _scenario_trigger uses hass.loop.call_soon_threadsafe(hass.bus.fire, ...)
+        # The fake hass.loop is a MagicMock that records but doesn't execute calls.
+        # Assert on call_soon_threadsafe to verify correct thread-safe dispatch.
+        hass.loop.call_soon_threadsafe.assert_called_once()
+        args = hass.loop.call_soon_threadsafe.call_args.args
+        assert args[0] is hass.bus.fire
+        assert args[1] == EVENT_BOSCH_SHC
+        fired_data = args[2]
         assert fired_data[ATTR_EVENT_TYPE] == "SCENARIO"
         assert fired_data[ATTR_EVENT_SUBTYPE] == "Away"
 
@@ -616,7 +626,7 @@ class TestServiceHandlers:
     """Test that registered service handlers call session methods correctly."""
 
     def _setup_with_session(self, session):
-        from custom_components.bosch_shc.__init__ import async_setup_entry
+        from custom_components.bosch_shc.__init__ import async_setup, async_setup_entry
 
         hass = _make_fake_hass()
         entry = _make_fake_entry()
@@ -629,7 +639,12 @@ class TestServiceHandlers:
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
         ):
+            # async_setup registers domain-level services (Bronze action); must run first
+            _run(async_setup(hass, {}))
             _run(async_setup_entry(hass, entry))
+
+        # Wire async_entries so service handlers can look up runtime_data
+        hass.config_entries.async_entries.return_value = [entry]
 
         # Extract registered service handlers by service name
         handlers = {}
@@ -857,9 +872,14 @@ class TestSwitchDeviceEventListener:
         listener.device_id = "hass-device-id-123"
         listener._input_events_handler()
 
-        hass.bus.fire.assert_called_once()
-        event_name, event_data = hass.bus.fire.call_args.args
-        assert event_name == EVENT_BOSCH_SHC
+        # _input_events_handler uses hass.loop.call_soon_threadsafe(hass.bus.fire, ...)
+        # for thread-safe dispatch from the SHCPollingThread.
+        # The fake hass.loop is a MagicMock that records but doesn't execute calls.
+        hass.loop.call_soon_threadsafe.assert_called_once()
+        args = hass.loop.call_soon_threadsafe.call_args.args
+        assert args[0] is hass.bus.fire
+        assert args[1] == EVENT_BOSCH_SHC
+        event_data = args[2]
         assert event_data[ATTR_EVENT_TYPE] == "PRESS_SHORT"
         assert event_data[ATTR_EVENT_SUBTYPE] == "UPPER_BUTTON"
         assert event_data[ATTR_ID] == dev.id
