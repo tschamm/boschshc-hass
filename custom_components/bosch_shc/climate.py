@@ -17,6 +17,8 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity
 
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the SHC climate platform."""
@@ -41,6 +43,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 name=heating_circuit.name,
             )
         )
+
+    # DEFERRED (#253, #242): TRV I (model "TRV") and TRV_GEN2 (SHCThermostat)
+    # are not added as climate entities here.  Both devices lack a direct
+    # setpoint-write API; temperature is controlled at room level via the
+    # RoomClimateControl virtual device above.  Adding per-TRV climate entities
+    # requires an architectural decision (one entity per TRV vs. room-level only)
+    # and possibly a lib change to expose the room association.  Tracked in #253
+    # and #242 — do not implement without that design decision.
 
     if entities:
         async_add_entities(entities)
@@ -173,6 +183,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if temperature is None:
             return
 
+        # P2-B: call async_set_hvac_mode BEFORE the ECO/OFF guard so that a
+        # combined temperature+mode call from ECO state can exit ECO first
+        # (async_set_hvac_mode clears low=False when in ECO; the device cache
+        # reflects the change immediately after the await).
         await self.async_set_hvac_mode(
             kwargs.get(ATTR_HVAC_MODE)
         )  # set_temperature args may provide HVAC mode as well
@@ -208,13 +222,24 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 )
 
     async def async_set_hvac_mode(self, hvac_mode: str):
-        """Set hvac mode."""
+        """Set hvac mode.
+
+        #196: ECO (low mode) and HVAC mode are independent state fields on the
+        SHC.  The old guard (return-if-ECO) silently blocked turn_off from ECO,
+        leaving the device stuck.  We now exit ECO first so the HVAC write always
+        proceeds.
+        """
         if hvac_mode not in self.hvac_modes:
-            return
-        if self.preset_mode == PRESET_ECO:
             return
 
         try:
+            # Exit ECO (low) before applying any HVAC mode change so that
+            # turn_off / mode changes are never silently no-oped. #196
+            if self.preset_mode == PRESET_ECO:
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "low", False
+                )
+
             if hvac_mode == HVACMode.AUTO:
                 await self.hass.async_add_executor_job(
                     setattr, self._device, "summer_mode", False
@@ -244,11 +269,20 @@ class ClimateControl(SHCEntity, ClimateEntity):
                     SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
                 )
             if hvac_mode == HVACMode.COOL:
+                # P2-C: also set operation_mode=MANUAL to match Bosch app
+                # behaviour and avoid a stale AUTOMATIC operationMode when
+                # cooling_mode is active.
                 await self.hass.async_add_executor_job(
                     setattr, self._device, "summer_mode", False
                 )
                 await self.hass.async_add_executor_job(
                     setattr, self._device, "cooling_mode", True
+                )
+                await self.hass.async_add_executor_job(
+                    setattr,
+                    self._device,
+                    "operation_mode",
+                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
                 )
             if hvac_mode == HVACMode.OFF:
                 if self._device.supports_cooling:
@@ -404,6 +438,13 @@ class HeatingCircuit(SHCEntity, ClimateEntity):
             if hvac_mode == HVACMode.AUTO
             else SHCHeatingCircuit.HeatingCircuitService.OperationMode.MANUAL
         )
-        await self.hass.async_add_executor_job(
-            setattr, self._device, "operation_mode", mode
-        )
+        try:
+            await self.hass.async_add_executor_job(
+                setattr, self._device, "operation_mode", mode
+            )
+        except (JSONRPCError, SHCException) as err:
+            LOGGER.warning(
+                "Failed to set HVAC mode on HeatingCircuit %s: %s",
+                self._attr_unique_id,
+                err,
+            )

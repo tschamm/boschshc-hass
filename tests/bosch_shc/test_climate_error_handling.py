@@ -4,6 +4,7 @@ Covers:
 - ClimateControl.async_set_hvac_mode: JSONRPCError caught + LOGGER.warning
 - ClimateControl.async_set_preset_mode: JSONRPCError caught + LOGGER.warning
 - HeatingCircuit.async_set_temperature: JSONRPCError caught + LOGGER.warning
+- HeatingCircuit.async_set_hvac_mode: JSONRPCError caught + LOGGER.warning (#273)
 
 Pattern: __new__ bypass + fake async_add_executor_job that raises + asyncio.run().
 No HA harness.
@@ -175,3 +176,56 @@ class TestHeatingCircuitTemperatureErrors:
         """Temperature outside min/max must not trigger an executor job."""
         entity = _make_heating_circuit(hass=_make_hass_raises(_JRPC("x")))
         asyncio.run(entity.async_set_temperature(temperature=99.0))
+
+
+# ---------------------------------------------------------------------------
+# HeatingCircuit.async_set_hvac_mode — error handling (#273 / P1-D)
+# ---------------------------------------------------------------------------
+
+def _make_hc_entity(hass):
+    """HeatingCircuit bypassing SHCEntity.__init__."""
+    from boschshcpy import SHCHeatingCircuit
+    entity = HeatingCircuit.__new__(HeatingCircuit)
+    entity._device = SimpleNamespace(
+        name="HC1",
+        id="hc-1",
+        root_device_id="root-1",
+        setpoint_temperature=20.0,
+        operation_mode=SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC,
+        on=False,
+    )
+    entity._attr_unique_id = "root-1_hc-1"
+    entity._attr_min_temp = 5.0
+    entity._attr_max_temp = 30.0
+    # HeatingCircuit class attr defines hvac_modes list
+    entity.hass = hass
+    return entity
+
+
+class TestHeatingCircuitHvacModeErrors:
+    """HeatingCircuit.async_set_hvac_mode must catch JSONRPCError / SHCException.
+
+    Addresses #273 / P1-D: the old code had no try/except; a WRONG_THERMOSTAT_GROUP_MODE
+    400 from the SHC would propagate unhandled into HA.
+    """
+
+    def test_jsonrpc_error_is_caught_and_logged(self):
+        entity = _make_hc_entity(hass=_make_hass_raises(_JRPC("timeout")))
+
+        with patch("custom_components.bosch_shc.climate.LOGGER") as mock_log:
+            asyncio.run(entity.async_set_hvac_mode("heat"))
+            mock_log.warning.assert_called_once()
+            assert "HeatingCircuit" in mock_log.warning.call_args[0][0]
+
+    def test_shc_exception_is_caught_and_logged(self):
+        entity = _make_hc_entity(hass=_make_hass_raises(SHCException("conn")))
+
+        with patch("custom_components.bosch_shc.climate.LOGGER") as mock_log:
+            asyncio.run(entity.async_set_hvac_mode("heat"))
+            mock_log.warning.assert_called_once()
+
+    def test_invalid_mode_returns_early_no_executor(self):
+        """Invalid mode must short-circuit before executor call — no error."""
+        entity = _make_hc_entity(hass=_make_hass_raises(_JRPC("x")))
+        # "off" is not in HeatingCircuit.hvac_modes → early return, no exception
+        asyncio.run(entity.async_set_hvac_mode("off"))

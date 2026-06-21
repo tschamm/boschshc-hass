@@ -110,9 +110,14 @@ def _make_hc(device):
 # ===========================================================================
 
 class TestSetHvacModeEcoGuard:
-    """Line 213: async_set_hvac_mode must return early when preset=ECO."""
+    """#196: async_set_hvac_mode in ECO must exit ECO first, then write mode.
 
-    def test_set_hvac_mode_ignored_in_eco(self):
+    Old behaviour: returned early when preset==ECO → mode change silently no-oped.
+    New behaviour: clears low=False first, then proceeds with the requested mode.
+    """
+
+    def test_set_hvac_mode_in_eco_exits_eco_and_writes_mode(self):
+        """#196: In ECO, AUTO mode must clear low and set operation_mode=AUTOMATIC."""
         device = _make_cc_device(low=True, operation_mode_value="MANUAL")
         entity = _make_cc(device)
         hass, writes = _make_hass()
@@ -120,8 +125,11 @@ class TestSetHvacModeEcoGuard:
 
         _run(entity.async_set_hvac_mode(HVACMode.AUTO))
 
-        # ECO guard fires first → nothing written
-        assert writes == {}, f"Expected no writes in ECO, got {writes}"
+        # ECO is exited first, then AUTO is applied
+        assert writes.get("low") is False, "ECO (low) must be cleared"
+        assert writes.get("operation_mode") == OM_CC.AUTOMATIC, (
+            "operation_mode must be set to AUTOMATIC"
+        )
 
 
 # ===========================================================================
@@ -586,3 +594,130 @@ class TestHvacAction:
         from homeassistant.components.climate.const import HVACAction
         entity = self._entity(has_demand=True, summer_mode=True)
         assert entity.hvac_action == HVACAction.OFF
+
+
+# ===========================================================================
+# #196 / P2-A — async_turn_off from ECO now actually turns off (#196)
+# ===========================================================================
+
+class TestTurnOffFromEco:
+    """#196: turn_off must work even when preset_mode==ECO.
+
+    Old code: async_set_hvac_mode returned early if preset==ECO → summer_mode
+    never written → device stayed on.
+    New code: exit ECO (low=False) first, then write summer_mode=True.
+    """
+
+    def test_turn_off_from_eco_exits_eco_and_sets_summer_mode(self):
+        """In ECO mode, turn_off must clear low AND set summer_mode=True."""
+        device = _make_cc_device(low=True, summer_mode=False,
+                                 operation_mode_value="MANUAL")
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_turn_off())
+
+        assert writes.get("low") is False, "ECO (low) was not cleared before turning off"
+        assert writes.get("summer_mode") is True, "summer_mode was not set to True"
+
+    def test_set_hvac_mode_off_from_eco_clears_eco(self):
+        """async_set_hvac_mode(OFF) in ECO must clear low before setting summer_mode."""
+        device = _make_cc_device(low=True, summer_mode=False,
+                                 operation_mode_value="AUTOMATIC")
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_set_hvac_mode(HVACMode.OFF))
+
+        assert writes.get("low") is False
+        assert writes.get("summer_mode") is True
+
+    def test_set_hvac_mode_heat_from_eco_clears_eco(self):
+        """async_set_hvac_mode(HEAT) in ECO must clear low before setting operation_mode."""
+        device = _make_cc_device(low=True, summer_mode=False,
+                                 operation_mode_value="AUTOMATIC")
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_set_hvac_mode(HVACMode.HEAT))
+
+        assert writes.get("low") is False
+        assert writes.get("operation_mode") == OM_CC.MANUAL
+
+    def test_set_hvac_mode_auto_from_eco_clears_eco(self):
+        """async_set_hvac_mode(AUTO) in ECO must clear low before writing."""
+        device = _make_cc_device(low=True, summer_mode=False,
+                                 operation_mode_value="MANUAL")
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
+
+        assert writes.get("low") is False
+        assert writes.get("operation_mode") == OM_CC.AUTOMATIC
+
+    def test_set_hvac_mode_not_in_eco_does_not_touch_low(self):
+        """When not in ECO, low must not be written."""
+        device = _make_cc_device(low=False, summer_mode=False,
+                                 operation_mode_value="MANUAL")
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
+
+        assert "low" not in writes, "low must not be touched when not in ECO"
+
+
+# ===========================================================================
+# P2-C — COOL branch now also writes operation_mode=MANUAL
+# ===========================================================================
+
+class TestCoolSetsOperationMode:
+    """P2-C: switching to COOL must write cooling_mode=True AND operation_mode=MANUAL.
+
+    Without the operation_mode write, a stale AUTOMATIC mode could confuse the
+    SHC device logic when roomControlMode=COOLING.
+    """
+
+    def test_cool_writes_cooling_mode_and_operation_mode_manual(self):
+        device = _make_cc_device(
+            summer_mode=False,
+            supports_cooling=True,
+            cooling_mode=False,
+            operation_mode_value="AUTOMATIC",
+        )
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_set_hvac_mode(HVACMode.COOL))
+
+        assert writes.get("cooling_mode") is True, "cooling_mode must be set to True"
+        assert writes.get("operation_mode") == OM_CC.MANUAL, (
+            "operation_mode must be set to MANUAL when entering COOL mode"
+        )
+        assert writes.get("summer_mode") is False, "summer_mode must be cleared"
+
+    def test_cool_from_eco_exits_eco_and_sets_cooling_and_operation(self):
+        """From ECO, switching to COOL should also clear low first."""
+        device = _make_cc_device(
+            low=True,
+            summer_mode=False,
+            supports_cooling=True,
+            cooling_mode=False,
+            operation_mode_value="AUTOMATIC",
+        )
+        entity = _make_cc(device)
+        hass, writes = _make_hass()
+        entity.hass = hass
+
+        _run(entity.async_set_hvac_mode(HVACMode.COOL))
+
+        assert writes.get("low") is False
+        assert writes.get("cooling_mode") is True
+        assert writes.get("operation_mode") == OM_CC.MANUAL
