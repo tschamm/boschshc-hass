@@ -88,14 +88,29 @@ Open **Settings → Devices & Services → Bosch SHC → ⋮ → Reconfigure**. 
 
 ### Options flow
 
-After setup, open **Settings → Devices & Services → Bosch SHC → Configure** to adjust:
+After setup, open **Settings → Devices & Services → Bosch SHC → Configure**. The options are
+grouped into collapsible sections:
 
-- **Features section** — toggle *Scenarios as buttons* (expose each scenario as a button
-  entity) and *Diagnostic entities* (granular battery level sensors, valve-tappet sensors,
-  communication quality sensors).
-- **Presence-based child lock section** — choose a presence entity and the "home" state;
-  when no one is home, child lock is automatically enabled on all supported devices.
-- **Advanced section** — SSL hostname verification toggle, long-poll timeout.
+- **Features** —
+  - *Scenarios as buttons*: expose each SHC scenario as a button entity (default off).
+  - *Diagnostic entities*: create the granular diagnostic sensors — battery level,
+    valve-tappet position, communication quality (default on).
+  - *Rawscan diagnostic service*: register the `bosch_shc.trigger_rawscan` action; turn off
+    to hide it (default on).
+- **Presence-based child lock** —
+  - *Enable presence-based child lock*: master on/off switch.
+  - *Presence entities*: pick one or more people/devices. Child lock turns **on** as soon as
+    **any** of them is home and **off** only when **all** are away. "Home" is detected
+    automatically (no extra setting): `home` for person/device_tracker/zone/group, `on` for
+    binary_sensor/input_boolean.
+- **Advanced** —
+  - *Excluded devices* / *Excluded rooms*: hide specific Bosch devices or whole rooms — no
+    entities are created for them (default: include everything).
+  - *Long-poll timeout* (seconds) and *Verify SHC certificate hostname* (expert; usually
+    leave off).
+
+All options default to the previous behaviour, so existing setups are unaffected until you
+change something.
 
 ### Translations
 
