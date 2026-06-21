@@ -525,30 +525,32 @@ class TestMicromoduleShutterCurrentPositionMovingTargetSet:
 
 
 # ---------------------------------------------------------------------------
-# BlindsControlCover._update_attr caches blinds_level into _attr_current_cover_position
+# BlindsControlCover._update_attr caches ShutterControl.level into
+# _attr_current_cover_position (issue #100 — NOT blinds_level/BlindsSceneControl)
 # ---------------------------------------------------------------------------
 
-class TestBlindsUpdateAttrCachesBlindLevel:
-    def test_stopped_attr_current_cover_position_uses_blinds_level(self):
-        """BlindsControlCover STOPPED: _attr_current_cover_position must reflect blinds_level."""
+class TestBlindsUpdateAttrCachesLevel:
+    def test_stopped_attr_current_cover_position_uses_level(self):
+        """BlindsControlCover STOPPED: _attr_current_cover_position reflects
+        ShutterControl.level (the live lift), not blinds_level (#100)."""
         cover = _make_blinds(blinds_level=0.6, level=0.3, operation_state=STOPPED)
         cover._update_attr()
-        # BlindsControlCover.current_cover_position uses blinds_level
-        assert cover._attr_current_cover_position == 60  # round(0.6*100)
+        # current_cover_position uses ShutterControl.level → round(0.3*100)
+        assert cover._attr_current_cover_position == 30
 
-    def test_moving_attr_current_cover_position_uses_blinds_level(self):
-        """BlindsControlCover MOVING: _attr_current_cover_position uses blinds_level, not level."""
+    def test_moving_attr_current_cover_position_uses_level(self):
+        """BlindsControlCover MOVING: _attr_current_cover_position uses
+        ShutterControl.level (#100), independent of blinds_level."""
         cover = _make_blinds(blinds_level=0.4, level=0.9, operation_state=MOVING)
-        cover._last_position = 20  # direction: 40 > 20 → opening
+        cover._last_position = 20  # direction: 90 > 20 → opening
         cover._update_attr()
-        # BlindsControlCover overrides current_cover_position to use blinds_level
-        assert cover._attr_current_cover_position == 40  # round(0.4*100)
-        # MOVING MICROMODULE_BLINDS branch: target set from device.level (ShutterControlService)
+        assert cover._attr_current_cover_position == 90  # round(0.9*100)
+        # MOVING MICROMODULE_BLINDS branch: target also from device.level
         assert cover._target_position == 90  # round(0.9*100)
 
     def test_blinds_current_cover_position_rounds_correctly(self):
-        """round(0.333 * 100) == 33."""
-        cover = _make_blinds(blinds_level=0.333, level=0.5)
+        """round(0.333 * 100) == 33 (from ShutterControl.level)."""
+        cover = _make_blinds(blinds_level=0.5, level=0.333)
         assert cover.current_cover_position == 33
 
 

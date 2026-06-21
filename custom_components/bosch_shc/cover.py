@@ -315,35 +315,51 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):
     )
 
     def open_cover(self, **kwargs):
-        """Open the cover."""
+        """Open the cover (lift) via ShutterControl.level."""
         self._attr_is_opening = True
         self._attr_is_closing = False
-        self._device.blinds_level = 1.0
+        self._device.level = 1.0
         self._target_position = 100
         self._skip_update = True
         self._app_command = True
 
     def close_cover(self, **kwargs):
-        """Close cover."""
+        """Close cover (lift) via ShutterControl.level."""
         self._attr_is_closing = True
         self._attr_is_opening = False
-        self._device.blinds_level = 0.0
+        self._device.level = 0.0
         self._target_position = 0
         self._skip_update = True
         self._app_command = True
 
     def set_cover_position(self, **kwargs):
-        """Move the cover to a specific position."""
+        """Move the cover (lift) to a specific position via ShutterControl.level."""
         position = kwargs[ATTR_POSITION]
-        self._device.blinds_level = position / 100.0
+        self._device.level = position / 100.0
         self._target_position = position
         self._skip_update = True
         self._app_command = True
 
     @property
     def current_cover_position(self):
-        """Return the current cover position using blinds_level (BlindsSceneControl)."""
-        return round(self._device.blinds_level * 100.0)
+        """Return the current cover (lift) position from ShutterControl.level.
+
+        Issue #100 ("fully up shows 0%", reporter-confirmed on a DEGREE_180
+        MICROMODULE_BLINDS, dev 6c5cb1…): venetian blinds expose THREE services
+        - ShutterControl (level = the live lift, 1=up/open .. 0=down/closed),
+          operationState only ever STOPPED/MOVING (never directional);
+        - BlindsControl (currentAngle = slat tilt); and
+        - BlindsSceneControl (level/angle = the last *scene* values, not the
+          live lift).
+        The previous code read the lift from blinds_level
+        (BlindsSceneControl.level), which on this device sat at 0.0 while the
+        blind was fully up -> HA showed 0% for a fully-open blind. The authori-
+        tative lift is ShutterControl.level (inherited self._device.level), the
+        same source the parent ShutterControlCover uses for non-
+        MICROMODULE_SHUTTER models, so this also matches the BBL mapping. Tilt
+        stays on BlindsControl (see current_cover_tilt_position).
+        """
+        return round(self._device.level * 100.0)
 
     def stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover using the blind-specific stop endpoint."""

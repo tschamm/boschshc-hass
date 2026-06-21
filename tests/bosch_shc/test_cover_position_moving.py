@@ -128,17 +128,18 @@ class TestBlindsControlCoverCommandFlags:
         assert cover._skip_update is True
         assert cover._app_command is True
 
-    def test_open_cover_sets_blinds_level_to_1(self):
+    def test_open_cover_sets_level_to_1(self):
+        # #100: lift command uses ShutterControl.level, not blinds_level
         cover = _make_blinds()
         cover.open_cover()
-        assert cover._device.blinds_level == 1.0
+        assert cover._device.level == 1.0
 
-    def test_close_cover_sets_blinds_level_to_0(self):
+    def test_close_cover_sets_level_to_0(self):
         cover = _make_blinds()
         cover.close_cover()
-        assert cover._device.blinds_level == 0.0
+        assert cover._device.level == 0.0
 
     def test_set_cover_position_divides_by_100(self):
         cover = _make_blinds()
         cover.set_cover_position(position=40)
-        assert abs(cover._device.blinds_level - 0.4) < 0.001
+        assert abs(cover._device.level - 0.4) < 0.001

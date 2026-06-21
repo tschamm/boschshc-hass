@@ -434,17 +434,18 @@ class TestExtraStateAttributes:
 # ---------------------------------------------------------------------------
 
 class TestBlindsOpenCloseCover:
-    def test_open_cover_sets_blinds_level_and_flags(self):
-        cover = _make_blinds(blinds_level=0.0)
+    def test_open_cover_sets_level_and_flags(self):
+        # #100: lift uses ShutterControl.level, not blinds_level
+        cover = _make_blinds(level=0.0)
         cover.open_cover()
-        assert cover._device.blinds_level == 1.0
+        assert cover._device.level == 1.0
         assert cover._attr_is_opening is True
         assert cover._attr_is_closing is False
 
-    def test_close_cover_sets_blinds_level_and_flags(self):
-        cover = _make_blinds(blinds_level=1.0)
+    def test_close_cover_sets_level_and_flags(self):
+        cover = _make_blinds(level=1.0)
         cover.close_cover()
-        assert cover._device.blinds_level == 0.0
+        assert cover._device.level == 0.0
         assert cover._attr_is_closing is True
         assert cover._attr_is_opening is False
 
@@ -454,21 +455,87 @@ class TestBlindsOpenCloseCover:
 # ---------------------------------------------------------------------------
 
 class TestBlindsSetCoverPosition:
-    def test_set_cover_position_uses_blinds_level(self):
-        cover = _make_blinds(blinds_level=0.0)
+    def test_set_cover_position_uses_level(self):
+        # #100: lift uses ShutterControl.level, not blinds_level
+        cover = _make_blinds(level=0.0)
         cover.set_cover_position(**{ATTR_POSITION: 65})
         import pytest
-        assert cover._device.blinds_level == pytest.approx(0.65)
+        assert cover._device.level == pytest.approx(0.65)
 
     def test_set_cover_position_fully_open(self):
-        cover = _make_blinds(blinds_level=0.0)
+        cover = _make_blinds(level=0.0)
         cover.set_cover_position(**{ATTR_POSITION: 100})
-        assert cover._device.blinds_level == 1.0
+        assert cover._device.level == 1.0
 
     def test_set_cover_position_fully_closed(self):
-        cover = _make_blinds(blinds_level=1.0)
+        cover = _make_blinds(level=1.0)
         cover.set_cover_position(**{ATTR_POSITION: 0})
-        assert cover._device.blinds_level == 0.0
+        assert cover._device.level == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Regression: issue #100 — MICROMODULE_BLINDS lift position must come from
+# ShutterControl.level (the live lift), NOT blinds_level (BlindsSceneControl,
+# which holds the last *scene* level). Reporter-confirmed device (DEGREE_180,
+# dev 6c5cb1…) sat at BlindsSceneControl.level=0.0 while fully up, so reading
+# blinds_level showed 0% for a fully-open blind ("fully up shows 0%").
+# ---------------------------------------------------------------------------
+
+class TestBlindsCurrentCoverPositionIssue100:
+    def test_current_cover_position_reads_shuttercontrol_level(self):
+        cover = _make_blinds(level=0.42)
+        # round(0.42 * 100) = 42 — taken from ShutterControl.level
+        assert cover.current_cover_position == 42
+
+    def test_fully_up_blind_reads_100_not_scene_level_zero(self):
+        """The exact #100 symptom: blind fully up → ShutterControl.level=1.0
+        (=100%) while BlindsSceneControl.level (blinds_level) is 0.0. Position
+        must follow the live lift (100%), NOT the stale scene level (0%)."""
+        cover = _make_blinds(level=1.0, blinds_level=0.0)
+        assert cover.current_cover_position == 100
+
+    def test_position_ignores_blinds_level_entirely(self):
+        """Whatever the scene level is, position tracks ShutterControl.level."""
+        cover = _make_blinds(level=0.6, blinds_level=0.0)
+        assert cover.current_cover_position == 60
+        cover = _make_blinds(level=0.0, blinds_level=1.0)
+        assert cover.current_cover_position == 0
+
+    def test_fully_open_and_closed(self):
+        assert _make_blinds(level=1.0).current_cover_position == 100
+        assert _make_blinds(level=0.0).current_cover_position == 0
+
+    def test_stopped_moving_stopped_cycle_uses_level_for_reference_and_direction(self):
+        """End-to-end on a real BlindsControlCover instance: _last_position and
+        the MOVING direction inference must both track ShutterControl.level, not
+        the stale BlindsSceneControl.level (blinds_level). Mirrors an external
+        (Bosch-app / wall-switch) move where operationState is only STOPPED/
+        MOVING and level jumps to the target early."""
+        # 1. rest fully down: ShutterControl.level=0, scene level frozen at 1.0
+        cover = _make_blinds(level=0.0, blinds_level=1.0, operation_state=STOPPED)
+        cover._update_attr()
+        assert cover._last_position == 0           # from level, NOT blinds_level(=100)
+        assert cover._attr_current_cover_position == 0
+
+        # 2. external UP move: level jumps to target 1.0 while MOVING
+        cover._device.level = 1.0
+        cover._device.operation_state = MOVING
+        cover._update_attr()
+        assert cover._attr_is_opening is True       # 100 > last 0 → opening
+        assert cover._attr_is_closing is False
+        assert cover._attr_current_cover_position == 100
+
+        # 3. rest fully up: reference refreshes to 100 (from level)
+        cover._device.operation_state = STOPPED
+        cover._update_attr()
+        assert cover._last_position == 100
+
+        # 4. external DOWN move: level jumps to 0.0 while MOVING
+        cover._device.level = 0.0
+        cover._device.operation_state = MOVING
+        cover._update_attr()
+        assert cover._attr_is_closing is True       # 0 < last 100 → closing
+        assert cover._attr_is_opening is False
 
 
 # ---------------------------------------------------------------------------
