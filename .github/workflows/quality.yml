@@ -19,6 +19,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
+          cache-dependency-path: requirements_test.txt
       - name: Install tooling
         run: pip install flake8 flake8-docstrings codespell pip-audit
       - name: flake8
