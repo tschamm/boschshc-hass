@@ -87,7 +87,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Settings",
-        "description": "Configure which entities and automations the Bosch Smart Home Controller integration creates and manages.",
+        "description": "Configure which entities and automations the Bosch Smart Home Controller integration creates and manages. {camera_tool}",
         "sections": {
           "features": {
             "name": "Features",
@@ -219,6 +219,12 @@
           "description": "Command string to send to the smoke detector."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "More for your Bosch cameras",
+      "description": "Bosch cameras were detected. This integration covers the basics; the dedicated **Bosch Smart Home Camera Tool** does much more for them (snapshots, motion / FCM push, lights, streams). Open \"Learn more\" for the project, then dismiss this notice."
     }
   }
 }

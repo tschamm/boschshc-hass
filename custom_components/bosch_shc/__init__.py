@@ -41,6 +41,7 @@ from homeassistant.exceptions import (
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_interval,
@@ -489,6 +490,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _register_rawscan_service(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Tip (not a problem): the dedicated Bosch camera tool offers far more for
+    # the SHC cameras than this integration. Surface a single dismissible
+    # suggestion when at least one camera is present; remove it otherwise.
+    camera_count = (
+        len(session.device_helper.camera_eyes)
+        + len(session.device_helper.camera_360)
+        + len(session.device_helper.camera_outdoor_gen2)
+    )
+    if camera_count:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            "camera_tool_available",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="camera_tool_available",
+            learn_more_url=(
+                "https://github.com/mosandlt/"
+                "Bosch-Smart-Home-Camera-Tool-HomeAssistant"
+            ),
+        )
+    else:
+        ir.async_delete_issue(hass, DOMAIN, "camera_tool_available")
 
     return True
 

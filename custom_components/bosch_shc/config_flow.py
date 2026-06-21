@@ -471,10 +471,16 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
         # Build device/room option lists from the live session.
         device_options = []
         room_options = []
+        _has_cameras = False
         try:
             data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
             if data:
                 session = data[DATA_SESSION]
+                _has_cameras = bool(
+                    session.device_helper.camera_eyes
+                    or session.device_helper.camera_360
+                    or session.device_helper.camera_outdoor_gen2
+                )
                 rooms = {r.id: r.name for r in session.rooms}
                 for dev in session.devices:
                     room_name = rooms.get(getattr(dev, "room_id", None), "")
@@ -598,4 +604,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 ),
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        camera_note = (
+            "\n\n💡 You have Bosch cameras connected — for advanced camera "
+            "features beyond this integration, see the dedicated Camera Tool: "
+            "https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant"
+            if _has_cameras
+            else ""
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=schema,
+            description_placeholders={"camera_tool": camera_note},
+        )
