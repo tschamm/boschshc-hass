@@ -17,6 +17,8 @@ from custom_components.bosch_shc.cover import ShutterControlCover
 
 MOVING = SHCShutterControl.ShutterControlService.State.MOVING
 STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
+OPENING = SHCShutterControl.ShutterControlService.State.OPENING
+CLOSING = SHCShutterControl.ShutterControlService.State.CLOSING
 SWITCH_ON = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
 SWITCH_OFF = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
 
@@ -244,3 +246,65 @@ class TestStoppedInitialisesLastPosition:
         cover._update_attr()
         # After STOPPED, _last_position must be non-None (initialised from level)
         assert cover._last_position is not None
+
+
+# ---------------------------------------------------------------------------
+# Issue #100: Shutter Control II reports direction via operationState
+# (enum [STOPPED, OPENING, CLOSING] — never MOVING). The STOPPED/MOVING
+# branches never matched these states, so physical-switch / Bosch-app moves
+# left is_opening/is_closing unset. The new OPENING/CLOSING handlers map the
+# state straight to the HA flags, additively, without touching _target_position.
+# ---------------------------------------------------------------------------
+
+class TestShutterIIOperationStateDirection:
+    def test_blinds_opening_state_sets_is_opening(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_BLINDS",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+
+    def test_blinds_closing_state_sets_is_closing(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_BLINDS",
+            level=0.4,
+            operation_state=CLOSING,
+        )
+        cover._update_attr()
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+
+    def test_shutter_opening_state_sets_is_opening(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+
+    def test_opening_state_does_not_snap_target_position(self):
+        """The handler must NOT touch _target_position (no position snap)."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        cover._target_position = 30
+        cover._update_attr()
+        assert cover._target_position == 30  # unchanged
+
+    def test_opening_works_without_last_position(self):
+        """Direction from operationState needs no _last_position reference."""
+        cover = _make_cover(
+            device_model="MICROMODULE_BLINDS",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        assert cover._last_position is None
+        cover._update_attr()  # must not raise
+        assert cover._attr_is_opening is True

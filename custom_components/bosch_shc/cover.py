@@ -184,6 +184,31 @@ class ShutterControlCover(SHCEntity, CoverEntity):
                 self._attr_is_closing = None
                 self._attr_is_opening = None
 
+        # Shutter Control II devices (MICROMODULE_BLINDS / MICROMODULE_SHUTTER)
+        # report the movement direction DIRECTLY via operationState — the Bosch
+        # spec enum is [STOPPED, OPENING, CLOSING] and they never emit MOVING
+        # (Shutter-II-local-openapi-v3.yml). The STOPPED/MOVING branches above
+        # therefore never matched these states, so physical-switch and Bosch-app
+        # moves left is_opening/is_closing unset while HA-initiated moves (which
+        # set the flags directly in open_cover/close_cover) looked correct — the
+        # exact direction symptom in issue #100. We set ONLY the direction flags
+        # here: it is purely additive (handles states that previously fell
+        # through) and deliberately does not touch _target_position, so the
+        # position-during-move display is unchanged for all models.
+        if (
+            self._current_operation_state
+            == SHCShutterControl.ShutterControlService.State.OPENING
+        ):
+            self._attr_is_opening = True
+            self._attr_is_closing = False
+
+        if (
+            self._current_operation_state
+            == SHCShutterControl.ShutterControlService.State.CLOSING
+        ):
+            self._attr_is_closing = True
+            self._attr_is_opening = False
+
     @property
     def device_class(self) -> CoverDeviceClass | None:
         return (
