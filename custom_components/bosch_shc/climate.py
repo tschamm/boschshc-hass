@@ -217,6 +217,25 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
         if self.min_temp <= temperature <= self.max_temp:
             try:
+                # SHC rejects a setpoint write while operationMode=AUTOMATIC
+                # (HTTP 400 WRONG_THERMOSTAT_GROUP_MODE).  For a bare
+                # set_temperature (no hvac_mode given, e.g. from a script) drop
+                # to MANUAL first — matching the Bosch app.  Gated on no explicit
+                # hvac_mode so a combined set_temperature(hvac_mode=auto) is not
+                # overridden; kept inside the try + range branch so a failed mode
+                # write is caught and an out-of-range value can't cancel the
+                # schedule. #73 #180
+                if (
+                    kwargs.get(ATTR_HVAC_MODE) is None
+                    and self._device.operation_mode
+                    == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
+                ):
+                    await self.hass.async_add_executor_job(
+                        setattr,
+                        self._device,
+                        "operation_mode",
+                        SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
+                    )
                 await self.hass.async_add_executor_job(
                     setattr,
                     self._device,

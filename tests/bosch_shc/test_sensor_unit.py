@@ -119,7 +119,9 @@ class TestPuritySensor:
         assert _purity_sensor(800).state_class == SensorStateClass.MEASUREMENT
 
     def test_device_class(self):
-        assert _purity_sensor(400).device_class == SensorDeviceClass.CO2
+        # Bosch "purity" is air-purity/VOC ppm, not CO2 — no device_class (#204),
+        # matching HA Core's own bosch_shc integration.
+        assert _purity_sensor(400).device_class is None
 
     def test_unit(self):
         assert _purity_sensor(400).native_unit_of_measurement == CONCENTRATION_PARTS_PER_MILLION

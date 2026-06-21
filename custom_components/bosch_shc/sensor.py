@@ -386,8 +386,11 @@ class HumiditySensor(SHCEntity, SensorEntity):
 class PuritySensor(SHCEntity, SensorEntity):
     """Representation of an SHC purity reporting sensor."""
 
-    _attr_icon = "mdi:molecule-co2"
-    _attr_device_class = SensorDeviceClass.CO2
+    # Bosch "purity" is an air-purity/VOC ppm value, NOT CO2.  HA Core's own
+    # bosch_shc integration assigns no device_class here either; the previous
+    # SensorDeviceClass.CO2 mis-classified the reading (and pulled in HA's CO2
+    # safety thresholds / statistics handling). #204
+    _attr_icon = "mdi:air-filter"
     _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
