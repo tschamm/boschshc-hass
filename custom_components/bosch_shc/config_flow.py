@@ -460,6 +460,14 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
 
         current = self.config_entry.options
 
+        # The presence entity option became multi-select; existing entries may
+        # still hold a single entity id as a plain string. Coerce to a list so
+        # the multiple=True EntitySelector never receives a string (which makes
+        # the frontend ha-entities-picker crash with "t.map is not a function").
+        _presence_default = current.get(OPT_PRESENCE_ENTITY, [])
+        if isinstance(_presence_default, str):
+            _presence_default = [_presence_default] if _presence_default else []
+
         # Build device/room option lists from the live session.
         device_options = []
         room_options = []
@@ -509,7 +517,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                         {
                             vol.Optional(
                                 OPT_PRESENCE_ENTITY,
-                                default=current.get(OPT_PRESENCE_ENTITY, []),
+                                default=_presence_default,
                             ): EntitySelector(
                                 EntitySelectorConfig(
                                     multiple=True,

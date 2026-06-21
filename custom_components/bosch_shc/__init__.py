@@ -1,5 +1,6 @@
 """The Bosch Smart Home Controller integration."""
 
+import inspect
 from datetime import timedelta
 
 import voluptuous as vol
@@ -227,6 +228,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # number of seconds, so coerce it.
     long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
     verify_hostname = entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False)
+    # Only forward the long_poll_timeout / verify_hostname kwargs if the
+    # installed boschshcpy actually supports them. This keeps the integration
+    # working against an older pinned lib (the advanced options are simply
+    # inert until the lib is updated) instead of crashing with a TypeError.
+    _session_params = inspect.signature(SHCSession.__init__).parameters
+    _session_kwargs = {}
+    if "long_poll_timeout" in _session_params:
+        _session_kwargs["long_poll_timeout"] = long_poll_timeout
+    if "verify_hostname" in _session_params:
+        _session_kwargs["verify_hostname"] = verify_hostname
     try:
         session: SHCSession = await hass.async_add_executor_job(
             ft.partial(
@@ -236,8 +247,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 data[CONF_SSL_KEY],
                 False,
                 zeroconf,
-                long_poll_timeout=long_poll_timeout,
-                verify_hostname=verify_hostname,
+                **_session_kwargs,
             )
         )
     except SHCAuthenticationError as err:
