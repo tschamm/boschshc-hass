@@ -118,12 +118,12 @@
             "name": "Erweitert",
             "description": "Low-Level-Verbindungsparameter. Eine Änderung hilft selten — Dokumentation lesen, bevor diese Parameter geändert werden.",
             "data": {
-              "ssl_verify_hostname": "SSL-Hostname prüfen",
+              "ssl_verify_hostname": "SHC-Zertifikat-Hostname prüfen",
               "long_poll_timeout": "Long-Poll-Timeout (Sekunden)"
             },
             "data_description": {
-              "ssl_verify_hostname": "Wenn EIN: Die boschshcpy-Bibliothek prüft, ob der SSL-Zertifikat-Hostname des SHC Controllers mit dessen IP/Hostname übereinstimmt. Aktuell ohne Wirkung — ein zukünftiges boschshcpy-Update ist erforderlich. Standard: aus.",
-              "long_poll_timeout": "Wie lange (Sekunden) die Long-Poll-Anfrage an den SHC Controller auf Push-Ereignisse wartet, bevor die Verbindung neu aufgebaut wird. Bereich: 5–300. Standard: 30. Erhöhen bei häufigen Reconnects in langsamen Netzwerken; verringern, wenn Verbindungen vom Router getrennt werden. Erfordert ein zukünftiges boschshcpy-Update."
+              "ssl_verify_hostname": "Experte: Wenn EIN, wird der Hostname des SHC-TLS-Zertifikats geprüft. Der Hostname des Bosch-SHC-Zertifikats stimmt normalerweise NICHT mit der IP überein, daher bricht das meist die Verbindung — AUS lassen, außer dein Setup passt. Standard: aus.",
+              "long_poll_timeout": "Wie lange jede Long-Poll-Anfrage auf Ereignisse wartet, bevor neu verbunden wird. Standard 10. Höher = weniger Reconnects, niedriger wenn das Netz inaktive Verbindungen trennt."
             }
           }
         }

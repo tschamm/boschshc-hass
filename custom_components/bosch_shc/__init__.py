@@ -64,8 +64,10 @@ from .const import (
     EVENT_BOSCH_SHC,
     LOGGER,
     OPT_ENABLE_RAWSCAN,
+    OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_PRESENCE_STATE,
+    OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_TRIGGER_SCENARIO,
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
@@ -221,14 +223,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     zeroconf = await async_get_instance(hass)
+    # NumberSelector yields a float; the SHC long-poll RPC expects an integer
+    # number of seconds, so coerce it.
+    long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
+    verify_hostname = entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False)
     try:
         session: SHCSession = await hass.async_add_executor_job(
-            SHCSession,
-            data[CONF_HOST],
-            data[CONF_SSL_CERTIFICATE],
-            data[CONF_SSL_KEY],
-            False,
-            zeroconf,
+            ft.partial(
+                SHCSession,
+                data[CONF_HOST],
+                data[CONF_SSL_CERTIFICATE],
+                data[CONF_SSL_KEY],
+                False,
+                zeroconf,
+                long_poll_timeout=long_poll_timeout,
+                verify_hostname=verify_hostname,
+            )
         )
     except SHCAuthenticationError as err:
         raise ConfigEntryAuthFailed from err

@@ -510,11 +510,11 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                             ): BooleanSelector(),
                             vol.Optional(
                                 OPT_LONG_POLL_TIMEOUT,
-                                default=current.get(OPT_LONG_POLL_TIMEOUT, 30),
+                                default=current.get(OPT_LONG_POLL_TIMEOUT, 10),
                             ): NumberSelector(
                                 NumberSelectorConfig(
                                     min=5,
-                                    max=300,
+                                    max=60,
                                     step=1,
                                     unit_of_measurement="s",
                                     mode=NumberSelectorMode.BOX,

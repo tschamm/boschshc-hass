@@ -119,12 +119,12 @@
             "name": "Advanced",
             "description": "Low-level connection parameters. Changing these rarely helps — consult the docs before touching them.",
             "data": {
-              "ssl_verify_hostname": "Verify SSL hostname",
+              "ssl_verify_hostname": "Verify SHC certificate hostname",
               "long_poll_timeout": "Long-poll timeout (seconds)"
             },
             "data_description": {
-              "ssl_verify_hostname": "When ON: the boschshcpy library verifies that the SHC controller's SSL certificate hostname matches its IP/hostname. Currently has no effect — a future boschshcpy update is required to activate this check. Default: off.",
-              "long_poll_timeout": "How long (seconds) the long-poll request to the SHC controller waits for push events before reconnecting. Range: 5–300. Default: 30. Increase if you see frequent reconnects on a slow network; decrease if idle connections are dropped by your router. Requires a future boschshcpy update to take effect."
+              "ssl_verify_hostname": "Expert: when ON, the SHC's TLS certificate hostname is verified. The Bosch SHC certificate's hostname normally does NOT match its IP, so enabling this usually breaks the connection — leave OFF unless you know your setup matches. Default: off.",
+              "long_poll_timeout": "How long each long-poll request waits for events before reconnecting. Default 10. Increase to reduce reconnects, decrease if your network drops idle connections."
             }
           }
         }
