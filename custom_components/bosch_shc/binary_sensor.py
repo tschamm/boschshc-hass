@@ -155,6 +155,7 @@ async def async_setup_entry(
             tracker = TwinguardAlarmTracker(
                 session=session,
                 smoke_detection_system=smoke_detection_system,
+                hass=hass,
             )
             # Initial refresh on executor so blocking HTTP stays off the event loop.
             await hass.async_add_executor_job(tracker.refresh)
@@ -163,7 +164,13 @@ async def async_setup_entry(
                 tracker.teardown()
 
             config_entry.async_on_unload(_cleanup_tracker)
-            hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, lambda _: tracker.teardown())
+            # async_listen_once returns an unsubscribe callable; register it so the
+            # listener is removed on config-entry reload (prevents closure leak).
+            config_entry.async_on_unload(
+                hass.bus.async_listen_once(
+                    EVENT_HOMEASSISTANT_STOP, lambda _: tracker.teardown()
+                )
+            )
 
             for binary_sensor in twinguards:
                 entities.append(
@@ -590,12 +597,14 @@ class TwinguardAlarmTracker:
         self,
         session: SHCSession,
         smoke_detection_system: SHCSmokeDetectionSystem,
+        hass: HomeAssistant,
     ) -> None:
         """Initialize the tracker (no I/O; call refresh() separately)."""
         self._session = session
         self._smoke_detection_system = smoke_detection_system
+        self._hass = hass
         self._service = None
-        self._listeners: list[Callable[[], None]] = []
+        self._listeners: list[tuple[HomeAssistant, Callable[[], None]]] = []
         self._active_trigger_ids: set[str] = set()
         self._last_alarm_state: str | None = None
         self._torn_down = False
@@ -684,37 +693,57 @@ class TwinguardAlarmTracker:
     # ------------------------------------------------------------------
 
     def _handle_alarm_update(self) -> None:
-        """Handle a SurveillanceAlarm update (called from SHCPollingThread)."""
-        self.refresh()
+        """Handle a SurveillanceAlarm update (called from SHCPollingThread).
+
+        refresh() does blocking HTTP and must NOT run inline on the poll thread.
+        Dispatch it via the event loop → executor so the poll thread is freed
+        immediately (M1 fix — prevents up-to-30s stall on get_messages()).
+        """
+        self._hass.loop.call_soon_threadsafe(
+            lambda: self._hass.async_create_task(
+                self._hass.async_add_executor_job(self.refresh)
+            )
+        )
 
     def _extract_trigger_ids_from_messages(self) -> set[str]:
         """Extract active Twinguard trigger ids from SMOKE_ALARM messages."""
         try:
             messages = self._session.api.get_messages()
+
+            trigger_ids: set[str] = set()
+            for message in messages:
+                # Defensive: messageCode may not be a dict (malformed payload).
+                message_code = message.get("messageCode", {})
+                if not isinstance(message_code, dict):
+                    continue
+                if message_code.get("name") != "SMOKE_ALARM":
+                    continue
+                if message.get("sourceId") != self._smoke_detection_system.id:
+                    continue
+
+                # Defensive: arguments may not be a dict (malformed payload).
+                # triggerId==device.id is assumed based on observed message shape;
+                # pending rawscan confirmation (#203).
+                arguments = message.get("arguments", {})
+                if not isinstance(arguments, dict):
+                    continue
+
+                events = self._parse_surveillance_events(
+                    arguments.get("surveillanceEvents")
+                )
+                # A message that contains an ALARM_OFF event signals the end of that
+                # alarm cycle — skip the whole message so we don't re-add its triggers.
+                if any(event.get("type") == "ALARM_OFF" for event in events):
+                    continue
+
+                for event in events:
+                    trigger_id = event.get("triggerId")
+                    if trigger_id:
+                        trigger_ids.add(trigger_id)
+
         except Exception as err:  # pylint: disable=broad-except
             LOGGER.warning("Unable to fetch Bosch SHC messages: %s", err)
             return self._active_trigger_ids
-
-        trigger_ids: set[str] = set()
-        for message in messages:
-            message_code = message.get("messageCode", {})
-            if message_code.get("name") != "SMOKE_ALARM":
-                continue
-            if message.get("sourceId") != self._smoke_detection_system.id:
-                continue
-
-            events = self._parse_surveillance_events(
-                message.get("arguments", {}).get("surveillanceEvents")
-            )
-            # A message that contains an ALARM_OFF event signals the end of that
-            # alarm cycle — skip the whole message so we don't re-add its triggers.
-            if any(event.get("type") == "ALARM_OFF" for event in events):
-                continue
-
-            for event in events:
-                trigger_id = event.get("triggerId")
-                if trigger_id:
-                    trigger_ids.add(trigger_id)
 
         return trigger_ids
 

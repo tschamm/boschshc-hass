@@ -86,17 +86,54 @@ def _make_base_device(device_id="dev1", name="FakeDev", root_device_id="root1",
 
 
 def _make_hass():
-    """Return a fake hass with bus.async_listen_once that records calls."""
+    """Return a fake hass with bus.async_listen_once that records calls.
+
+    async_create_task and async_add_executor_job execute their callables
+    synchronously in tests so that _handle_alarm_update dispatch can be
+    verified without a real event loop.
+    call_soon_threadsafe also executes the callback immediately.
+    """
+    unsub_store = {}
+
+    def _async_listen_once(event, cb):
+        # Return an unsubscribe callable (mimics real HA behaviour for L4 test).
+        token = object()
+        unsub_store[token] = (event, cb)
+
+        def _unsub():
+            unsub_store.pop(token, None)
+
+        return _unsub
+
     bus = SimpleNamespace(
-        async_listen_once=lambda event, cb: None,
+        async_listen_once=_async_listen_once,
         fire=lambda *args, **kwargs: None,
     )
+
+    # Synchronous executor: run fn(*args) immediately (no thread).
+    async def _async_add_executor_job(fn, *args):
+        return fn(*args)
+
+    # Synchronous task creation: drain the coroutine immediately so refresh()
+    # runs synchronously in unit tests (no real event loop needed).
+    def _async_create_task(coro):
+        import asyncio as _asyncio
+        try:
+            loop = _asyncio.get_running_loop()
+            # Already inside an event loop — schedule as a task (async tests).
+            loop.create_task(coro)
+        except RuntimeError:
+            # No running loop — run synchronously (direct unit-test calls).
+            _asyncio.run(coro)
+
     # call_soon_threadsafe executes the callback immediately in tests (synchronous)
     loop = SimpleNamespace(call_soon_threadsafe=lambda cb, *args: cb(*args))
     hass = SimpleNamespace(
         bus=bus,
         data={},
         loop=loop,
+        async_add_executor_job=_async_add_executor_job,
+        async_create_task=_async_create_task,
     )
     return hass
 
@@ -601,6 +638,44 @@ class TestAsyncSetupEntry:
         fn()  # first call
         fn()  # second call — must not raise ValueError
 
+    def test_l4_ha_stop_listener_registered_with_async_on_unload(self):
+        """L4: async_listen_once(EVENT_HOMEASSISTANT_STOP) return value passed to
+        config_entry.async_on_unload so the listener is removed on entry reload."""
+        unload_callbacks = []
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-l4", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        tw = _make_base_device("tw-l4")
+        session = _make_fake_session(smoke_detection_system=sds, twinguards=[tw])
+        hass = _make_hass()
+        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
+
+        async def _fake_executor_job(fn, *args):
+            return fn(*args)
+
+        hass.async_add_executor_job = _fake_executor_job
+        config_entry = SimpleNamespace(
+            entry_id="E1",
+            async_on_unload=lambda fn: unload_callbacks.append(fn),
+        )
+
+        async def _run_setup():
+            with (
+                patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
+                patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+            ):
+                _cp.get.return_value = MagicMock()
+                await async_setup_entry(hass, config_entry, lambda ents, **kw: None)
+
+        _run(_run_setup())
+        # With twinguards present there must be at least 2 unload callbacks:
+        # one for _cleanup_tracker and one that is the async_listen_once unsub.
+        assert len(unload_callbacks) >= 2
+        # Each callback must be callable (the unsub from async_listen_once is a
+        # plain function, not a coroutine or None).
+        for cb in unload_callbacks:
+            assert callable(cb)
+
 
 # ---------------------------------------------------------------------------
 # Real __init__ chains (not bypassing via __new__)
@@ -847,9 +922,13 @@ class TestSmokeDetectionSystemSensorInit:
 class TestTwinguardAlarmTracker:
     """Unit tests for TwinguardAlarmTracker (no HA, no network)."""
 
-    def _make_tracker(self, sds, session):
+    def _make_tracker(self, sds, session, hass=None):
         """Construct a tracker without running refresh()."""
-        return TwinguardAlarmTracker(session=session, smoke_detection_system=sds)
+        return TwinguardAlarmTracker(
+            session=session,
+            smoke_detection_system=sds,
+            hass=hass or _make_hass(),
+        )
 
     # -- _parse_surveillance_events --
 
@@ -1107,7 +1186,12 @@ class TestTwinguardAlarmTracker:
     # -- handle_alarm_update (simulates SHCPollingThread callback) --
 
     def test_handle_alarm_update_triggers_refresh(self):
-        """_handle_alarm_update() → refresh() → listener notified."""
+        """_handle_alarm_update() dispatches refresh() off the poll thread.
+
+        With our fake hass (call_soon_threadsafe + async_create_task run
+        synchronously), the full chain executes inline in the test so that
+        we can assert the resulting state without a real event loop.
+        """
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-upd", device_services=[surv_svc])
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
@@ -1132,6 +1216,21 @@ class TestTwinguardAlarmTracker:
         assert tracker.is_alarm_active_for("tw1") is True
         assert called == [1]
 
+    def test_handle_alarm_update_dispatches_via_call_soon_threadsafe(self):
+        """M1: _handle_alarm_update must schedule via call_soon_threadsafe (not inline)."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-m1", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        session = _make_fake_session(smoke_detection_system=sds)
+        hass = _make_hass()
+        dispatched = []
+        hass.loop.call_soon_threadsafe = lambda fn, *args: dispatched.append(fn)
+        tracker = self._make_tracker(sds, session, hass=hass)
+        tracker._handle_alarm_update()
+        # Must have been scheduled, NOT run inline.
+        assert len(dispatched) == 1
+        assert callable(dispatched[0])
+
     # -- get_messages error handling --
 
     def test_extract_trigger_ids_handles_api_error_gracefully(self):
@@ -1147,6 +1246,114 @@ class TestTwinguardAlarmTracker:
         # Falls back to the existing set
         assert result == {"tw-prev"}
 
+    # -- M2: malformed message payloads --
+
+    def test_malformed_message_code_string_does_not_raise(self):
+        """M2: messageCode as string (not dict) must be skipped, not raise."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-m2a", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        session = _make_fake_session(
+            smoke_detection_system=sds,
+            messages=[
+                # messageCode is a plain string, not a dict
+                {"messageCode": "SMOKE_ALARM", "sourceId": "sds-m2a", "arguments": {}},
+            ],
+        )
+        tracker = self._make_tracker(sds, session)
+        # Must not raise; no triggers extracted from malformed message.
+        result = tracker._extract_trigger_ids_from_messages()
+        assert result == set()
+
+    def test_malformed_arguments_string_does_not_raise(self):
+        """M2: arguments as string (not dict) must be skipped, not raise."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-m2b", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        session = _make_fake_session(
+            smoke_detection_system=sds,
+            messages=[
+                # arguments is a JSON string instead of a dict
+                {
+                    "messageCode": {"name": "SMOKE_ALARM"},
+                    "sourceId": "sds-m2b",
+                    "arguments": '{"surveillanceEvents":[{"type":"SMOKE_LIGHT","triggerId":"tw1"}]}',
+                },
+            ],
+        )
+        tracker = self._make_tracker(sds, session)
+        # Must not raise; string arguments are skipped.
+        result = tracker._extract_trigger_ids_from_messages()
+        assert result == set()
+
+    def test_malformed_arguments_none_does_not_raise(self):
+        """M2: arguments as None must be skipped, not raise."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-m2c", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        session = _make_fake_session(
+            smoke_detection_system=sds,
+            messages=[
+                {
+                    "messageCode": {"name": "SMOKE_ALARM"},
+                    "sourceId": "sds-m2c",
+                    "arguments": None,
+                },
+            ],
+        )
+        tracker = self._make_tracker(sds, session)
+        result = tracker._extract_trigger_ids_from_messages()
+        assert result == set()
+
+    def test_malformed_message_in_loop_does_not_abort_processing(self):
+        """M2: one malformed message must not prevent processing of subsequent valid ones."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-m2d", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        session = _make_fake_session(
+            smoke_detection_system=sds,
+            messages=[
+                # Malformed: messageCode is a string → skipped.
+                {"messageCode": "SMOKE_ALARM", "sourceId": "sds-m2d", "arguments": {}},
+                # Malformed: arguments is None → skipped.
+                {"messageCode": {"name": "SMOKE_ALARM"}, "sourceId": "sds-m2d", "arguments": None},
+                # Valid message → should still extract tw1.
+                {
+                    "messageCode": {"name": "SMOKE_ALARM"},
+                    "sourceId": "sds-m2d",
+                    "arguments": {
+                        "surveillanceEvents": [{"type": "SMOKE_LIGHT", "triggerId": "tw1"}]
+                    },
+                },
+            ],
+        )
+        tracker = self._make_tracker(sds, session)
+        result = tracker._extract_trigger_ids_from_messages()
+        assert "tw1" in result
+
+    # -- L3: _listeners type annotation (structural check) --
+
+    def test_listeners_stored_as_tuple_of_hass_and_callable(self):
+        """L3: _listeners must contain (hass, callable) tuples, not bare callables."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-l3", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        session = _make_fake_session(smoke_detection_system=sds)
+        hass = _make_hass()
+        tracker = self._make_tracker(sds, session)
+
+        def listener_fn():
+            pass
+
+        tracker.register_listener(hass, listener_fn)
+        assert len(tracker._listeners) == 1
+        entry = tracker._listeners[0]
+        # Must be a 2-tuple (hass, callable).
+        assert isinstance(entry, tuple) and len(entry) == 2
+        stored_hass, stored_cb = entry
+        assert stored_hass is hass
+        assert stored_cb is listener_fn
+
 
 # ---------------------------------------------------------------------------
 # TwinguardSmokeAlarmSensor unit tests
@@ -1160,7 +1367,9 @@ class TestTwinguardSmokeAlarmSensor:
         sds = _make_base_device("sds-sensor", device_services=[surv_svc])
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
-        tracker = TwinguardAlarmTracker(session=session, smoke_detection_system=sds)
+        tracker = TwinguardAlarmTracker(
+            session=session, smoke_detection_system=sds, hass=_make_hass()
+        )
         dev = _make_base_device(device_id, root_device_id=root_device_id)
         sensor = TwinguardSmokeAlarmSensor(device=dev, entry_id="E1", tracker=tracker)
         return sensor, tracker
