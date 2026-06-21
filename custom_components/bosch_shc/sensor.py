@@ -286,6 +286,28 @@ async def async_setup_entry(
         )
     )
 
+    if diagnostic_enabled:
+        for sensor in (
+            session.device_helper.motion_detectors
+            + session.device_helper.motion_detectors2
+            + session.device_helper.shutter_contacts
+            + session.device_helper.shutter_contacts2
+            + session.device_helper.smoke_detectors
+            + session.device_helper.thermostats
+            + session.device_helper.twinguards
+            + session.device_helper.universal_switches
+            + session.device_helper.wallthermostats
+            + session.device_helper.roomthermostats
+            + session.device_helper.water_leakage_detectors
+        ):
+            if sensor.supports_batterylevel:
+                entities.append(
+                    BatteryLevelSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
+
     if entities:
         async_add_entities(entities)
 
@@ -612,3 +634,41 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
         if isinstance(value, (int, float)):
             return value
         return None
+
+
+class BatteryLevelSensor(SHCEntity, SensorEntity):
+    """Granular battery-level diagnostic sensor (ENUM, all 5 BatteryLevelService states).
+
+    Complements the binary BatterySensor (binary_sensor.py) which only signals
+    OK vs. not-OK.  This sensor exposes the raw enum value so automations can
+    distinguish LOW_BATTERY from CRITICALLY_LOW_BATTERY.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_options = [
+        "OK",
+        "LOW_BATTERY",
+        "CRITICAL_LOW",
+        "CRITICALLY_LOW_BATTERY",
+        "NOT_AVAILABLE",
+    ]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a battery-level sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Battery Level"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_battery_level"
+        )
+
+    @property
+    def native_value(self):
+        """Return the battery level state string, or None on unknown value."""
+        try:
+            return self._device.batterylevel.value
+        except (ValueError, AttributeError) as err:
+            LOGGER.warning(
+                "Unknown battery level for %s: %s", self._device.name, err
+            )
+            return None
