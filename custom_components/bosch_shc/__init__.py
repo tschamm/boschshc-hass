@@ -295,9 +295,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     # Presence-based child lock: optional; zero overhead when unconfigured.
-    presence_entity = entry.options.get(OPT_PRESENCE_ENTITY, "")
-    if presence_entity:
+    # Backward compat: stored value may be a str (old single-select) or a list.
+    _raw_presence = entry.options.get(OPT_PRESENCE_ENTITY, [])
+    if isinstance(_raw_presence, str):
+        presence_entities = [_raw_presence] if _raw_presence else []
+    else:
+        presence_entities = [e for e in _raw_presence if e]
+
+    if presence_entities:
         present_state = entry.options.get(OPT_PRESENCE_STATE, "home")
+        # Track last-applied lock state to suppress redundant API writes.
+        _last_lock_state: list[bool | None] = [None]
 
         def _child_lock_devices(session):
             """Return (thermostat_devices, bool_devices) from this SHC session."""
@@ -342,29 +350,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         @callback
         def _presence_state_changed(event):
-            """Handle presence entity state changes."""
-            old_state = event.data.get("old_state")
+            """Handle state changes for any tracked presence entity.
+
+            Semantics: child lock ON when ANY entity is in present_state;
+            OFF when ALL entities are out of present_state.
+            Redundant writes are suppressed via _last_lock_state.
+            """
             new_state = event.data.get("new_state")
             if new_state is None:
                 return
-            old_state_str = old_state.state if old_state is not None else None
             new_state_str = new_state.state
-            # Skip unavailable/unknown and no-op transitions
+            # Skip unavailable/unknown — entity is in a transient state.
             if new_state_str in ("unavailable", "unknown"):
                 return
-            if old_state_str == new_state_str:
+
+            # Recompute aggregate: any entity in present_state?
+            any_present = False
+            for eid in presence_entities:
+                state_obj = hass.states.get(eid)
+                if state_obj is None:
+                    continue
+                if state_obj.state == present_state:
+                    any_present = True
+                    break
+
+            lock_on = any_present
+            # Suppress redundant API writes.
+            if lock_on == _last_lock_state[0]:
                 return
-            lock_on = new_state_str == present_state
-            # Only act on actual transitions into / out of the present state
-            was_present = old_state_str == present_state
-            if lock_on == was_present:
-                return
+            _last_lock_state[0] = lock_on
             hass.async_create_task(
                 hass.async_add_executor_job(_apply_child_lock, lock_on)
             )
 
         entry.runtime_data.presence_unsub = async_track_state_change_event(
-            hass, [presence_entity], _presence_state_changed
+            hass, presence_entities, _presence_state_changed
         )
 
     async def stop_polling(event):

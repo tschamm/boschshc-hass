@@ -1,31 +1,31 @@
 """Tests for presence-based child lock automation in __init__.py.
 
 Covers:
-- Feature disabled when OPT_PRESENCE_ENTITY is empty (zero overhead)
-- Transition INTO present_state -> child_lock=True on all devices
-- Transition OUT OF present_state -> child_lock=False on all devices
-- No-op when new_state == old_state (same state, no transition)
-- No-op when new_state is unavailable/unknown
+- Feature disabled when OPT_PRESENCE_ENTITY is empty list / empty string / unset
+- Backward compat: stored value is a plain str (old single-select)
+- Single entity: transition into/out of present_state -> lock on/off
+- Multi-entity any-home semantics:
+    - ANY entity home -> lock ON
+    - ALL away -> lock OFF
+    - One away, other still home -> lock stays ON (no change)
+- Redundant-write suppression (same aggregate -> no second API call)
+- No-op on unavailable/unknown/new_state=None
 - Unsub callback is cleaned up in async_unload_entry
 - Errors from device setters are caught and logged (no crash)
 """
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch, call
-
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.bosch_shc.const import (
     OPT_PRESENCE_ENTITY,
     OPT_PRESENCE_STATE,
-    DOMAIN,
-    DATA_SESSION,
 )
 
 
 # ---------------------------------------------------------------------------
-# Re-use helpers from test_init_setup (local copies to keep test independent)
+# Patch targets
 # ---------------------------------------------------------------------------
 
 PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSession"
@@ -40,9 +40,24 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-def _make_fake_hass():
+def _make_fake_hass(states=None):
+    """Build a minimal hass mock.
+
+    states: dict mapping entity_id -> state string. Used by hass.states.get().
+    """
     hass = MagicMock()
     hass.data = {}
+
+    _states = dict(states or {})
+
+    def _states_get(entity_id):
+        val = _states.get(entity_id)
+        if val is None:
+            return None
+        return SimpleNamespace(state=val)
+
+    hass.states = MagicMock()
+    hass.states.get = MagicMock(side_effect=_states_get)
 
     async def _executor_job(fn, *args):
         return fn(*args)
@@ -131,20 +146,25 @@ def _make_fake_device_registry():
 def _state_event(new_state_str, old_state_str=None):
     """Build a fake state-change event data dict."""
     new_state = SimpleNamespace(state=new_state_str)
-    old_state = SimpleNamespace(state=old_state_str) if old_state_str is not None else None
-    event = SimpleNamespace(data={"new_state": new_state, "old_state": old_state})
-    return event
+    old_state = (
+        SimpleNamespace(state=old_state_str) if old_state_str is not None else None
+    )
+    return SimpleNamespace(data={"new_state": new_state, "old_state": old_state})
 
 
 # ---------------------------------------------------------------------------
 # Setup helper
 # ---------------------------------------------------------------------------
 
-def _do_setup(session, options, *, capture_state_cb=False):
-    """Run async_setup_entry with given options, return (hass, entry, captured_state_cb)."""
+def _do_setup(session, options, *, capture_state_cb=False, hass_states=None):
+    """Run async_setup_entry with given options.
+
+    Returns (hass, entry, captured_state_cb).
+    hass_states: dict of entity_id -> state string pre-populated in hass.states.
+    """
     from custom_components.bosch_shc.__init__ import async_setup_entry
 
-    hass = _make_fake_hass()
+    hass = _make_fake_hass(states=hass_states)
     entry = _make_fake_entry(options=options)
     dr_mock = _make_fake_device_registry()
     track_unsub = MagicMock()
@@ -152,6 +172,7 @@ def _do_setup(session, options, *, capture_state_cb=False):
 
     def _capture_track_state(h, entity_ids, cb):
         captured["state_cb"] = cb
+        captured["entity_ids"] = entity_ids
         return MagicMock()
 
     patches = [
@@ -179,14 +200,21 @@ def _do_setup(session, options, *, capture_state_cb=False):
 # ---------------------------------------------------------------------------
 
 class TestPresenceDisabled:
-    def test_no_state_tracker_registered_when_entity_empty(self):
-        """When OPT_PRESENCE_ENTITY is unset, async_track_state_change_event is NOT called."""
+    def test_no_state_tracker_when_empty_list(self):
+        """When OPT_PRESENCE_ENTITY is [], async_track_state_change_event is NOT called."""
+        session = _make_fake_session()
+        with patch(PATCH_TRACK_STATE) as mock_track:
+            _do_setup(session, options={OPT_PRESENCE_ENTITY: []})
+            mock_track.assert_not_called()
+
+    def test_no_state_tracker_when_missing(self):
         session = _make_fake_session()
         with patch(PATCH_TRACK_STATE) as mock_track:
             _do_setup(session, options={})
             mock_track.assert_not_called()
 
     def test_no_state_tracker_when_entity_is_empty_string(self):
+        """Backward compat: old str "" stored -> treated as disabled."""
         session = _make_fake_session()
         with patch(PATCH_TRACK_STATE) as mock_track:
             _do_setup(session, options={OPT_PRESENCE_ENTITY: ""})
@@ -199,19 +227,18 @@ class TestPresenceDisabled:
 
 
 # ---------------------------------------------------------------------------
-# Tests: feature enabled — state tracker registered
+# Tests: backward compat — stored value is a plain str (old single-select)
 # ---------------------------------------------------------------------------
 
-class TestPresenceEnabled:
-    def test_state_tracker_registered_when_entity_set(self):
-        """async_track_state_change_event called once with the configured entity."""
+class TestBackwardCompatStr:
+    def test_single_str_treated_as_one_entity_list(self):
+        """Old config stores a bare string; must register a listener on it."""
         session = _make_fake_session()
         opts = {OPT_PRESENCE_ENTITY: "person.felix"}
-
         with patch(PATCH_TRACK_STATE) as mock_track:
             mock_track.return_value = MagicMock()
 
-            def _patched_setup():
+            def _inner():
                 from custom_components.bosch_shc.__init__ import async_setup_entry
                 hass = _make_fake_hass()
                 entry = _make_fake_entry(options=opts)
@@ -225,16 +252,82 @@ class TestPresenceEnabled:
                     _run(async_setup_entry(hass, entry))
                 return entry
 
-            entry = _patched_setup()
+            _inner()
 
         mock_track.assert_called_once()
-        call_args = mock_track.call_args
-        entity_ids = call_args[0][1]
+        entity_ids = mock_track.call_args[0][1]
         assert "person.felix" in entity_ids
+
+    def test_single_str_lock_on_when_entity_home(self):
+        """Backward compat str: entering present_state still locks devices."""
+        therm = _make_device("therm-1")
+        session = _make_fake_session(thermostats=[therm])
+        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "home"},
+        )
+        assert state_cb is not None
+
+        state_cb(_state_event("home", "not_home"))
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        assert therm.child_lock is True
+
+    def test_single_str_lock_off_when_entity_leaves(self):
+        """Backward compat str: leaving present_state unlocks devices."""
+        therm = _make_device("therm-1")
+        therm.child_lock = True
+        session = _make_fake_session(thermostats=[therm])
+        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
+        # Simulate entity now away
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "not_home"},
+        )
+        state_cb(_state_event("not_home", "home"))
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        assert therm.child_lock is False
+
+
+# ---------------------------------------------------------------------------
+# Tests: feature enabled — state tracker registered
+# ---------------------------------------------------------------------------
+
+class TestPresenceEnabled:
+    def test_state_tracker_registered_with_list(self):
+        """async_track_state_change_event called with all configured entities."""
+        session = _make_fake_session()
+        opts = {OPT_PRESENCE_ENTITY: ["person.felix", "device_tracker.phone"]}
+
+        with patch(PATCH_TRACK_STATE) as mock_track:
+            mock_track.return_value = MagicMock()
+
+            def _inner():
+                from custom_components.bosch_shc.__init__ import async_setup_entry
+                hass = _make_fake_hass()
+                entry = _make_fake_entry(options=opts)
+                with (
+                    patch(PATCH_SESSION, return_value=session),
+                    patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+                    patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+                    patch(PATCH_PARSE_CERT, return_value=None),
+                    patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+                ):
+                    _run(async_setup_entry(hass, entry))
+                return entry
+
+            _inner()
+
+        mock_track.assert_called_once()
+        entity_ids = mock_track.call_args[0][1]
+        assert "person.felix" in entity_ids
+        assert "device_tracker.phone" in entity_ids
 
     def test_presence_unsub_stored_on_runtime_data(self):
         session = _make_fake_session()
-        opts = {OPT_PRESENCE_ENTITY: "person.felix"}
+        opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
         hass, entry, _ = _do_setup(session, options=opts, capture_state_cb=True)
         assert entry.runtime_data.presence_unsub is not None
 
@@ -244,32 +337,42 @@ class TestPresenceEnabled:
 # ---------------------------------------------------------------------------
 
 class TestChildLockOn:
-    def _setup_with_devices(self, thermostat=None, bool_dev=None):
+    def _setup_with_devices(self, thermostat=None, bool_dev=None,
+                            opts=None, hass_states=None):
         therm = thermostat or _make_device("therm-1")
         booldev = bool_dev or _make_device("bool-1")
         session = _make_fake_session(
             thermostats=[therm],
             bool_devices=[booldev],
         )
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
-        hass, entry, state_cb = _do_setup(session, options=opts, capture_state_cb=True)
+        if opts is None:
+            opts = {
+                OPT_PRESENCE_ENTITY: ["person.felix"],
+                OPT_PRESENCE_STATE: "home",
+            }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states=hass_states,
+        )
         return hass, state_cb, therm, booldev
 
     def test_entering_present_state_sets_child_lock_true_on_thermostat(self):
-        hass, state_cb, therm, booldev = self._setup_with_devices()
+        hass, state_cb, therm, booldev = self._setup_with_devices(
+            hass_states={"person.felix": "home"},
+        )
         assert state_cb is not None
 
         state_cb(_state_event("home", "not_home"))
 
-        # hass.async_create_task was called (executor job scheduled)
         hass.async_create_task.assert_called_once()
-        # Run the created task (it's a coroutine)
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
         assert therm.child_lock is True
 
     def test_entering_present_state_sets_child_lock_true_on_bool_device(self):
-        hass, state_cb, therm, booldev = self._setup_with_devices()
+        hass, state_cb, therm, booldev = self._setup_with_devices(
+            hass_states={"person.felix": "home"},
+        )
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
@@ -278,8 +381,14 @@ class TestChildLockOn:
     def test_custom_present_state_triggers_lock(self):
         therm = _make_device("therm-1")
         session = _make_fake_session(thermostats=[therm])
-        opts = {OPT_PRESENCE_ENTITY: "input_boolean.guests", OPT_PRESENCE_STATE: "on"}
-        hass, entry, state_cb = _do_setup(session, options=opts, capture_state_cb=True)
+        opts = {
+            OPT_PRESENCE_ENTITY: ["input_boolean.guests"],
+            OPT_PRESENCE_STATE: "on",
+        }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"input_boolean.guests": "on"},
+        )
 
         state_cb(_state_event("on", "off"))
         task_coro = hass.async_create_task.call_args[0][0]
@@ -296,8 +405,15 @@ class TestChildLockOff:
         therm = _make_device("therm-1")
         therm.child_lock = True  # initially locked
         session = _make_fake_session(thermostats=[therm])
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
-        hass, entry, state_cb = _do_setup(session, options=opts, capture_state_cb=True)
+        opts = {
+            OPT_PRESENCE_ENTITY: ["person.felix"],
+            OPT_PRESENCE_STATE: "home",
+        }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            # Entity is now away
+            hass_states={"person.felix": "not_home"},
+        )
         return hass, state_cb, therm
 
     def test_leaving_present_state_sets_child_lock_false(self):
@@ -309,6 +425,112 @@ class TestChildLockOff:
 
 
 # ---------------------------------------------------------------------------
+# Tests: multi-entity any-home semantics
+# ---------------------------------------------------------------------------
+
+class TestMultiEntityAnyHome:
+    """Verify ANY-home-ON / ALL-away-OFF logic with two entities."""
+
+    def _setup_multi(self, hass_states):
+        therm = _make_device("therm-1")
+        session = _make_fake_session(thermostats=[therm])
+        opts = {
+            OPT_PRESENCE_ENTITY: ["person.alice", "person.bob"],
+            OPT_PRESENCE_STATE: "home",
+        }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states=hass_states,
+        )
+        return hass, state_cb, therm
+
+    def test_any_entity_home_turns_lock_on(self):
+        """alice=home, bob=not_home -> lock ON when alice arrives."""
+        hass, state_cb, therm = self._setup_multi(
+            {"person.alice": "home", "person.bob": "not_home"}
+        )
+        state_cb(_state_event("home", "not_home"))
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        assert therm.child_lock is True
+
+    def test_all_away_turns_lock_off(self):
+        """alice=not_home, bob=not_home -> lock OFF when last one leaves."""
+        hass, state_cb, therm = self._setup_multi(
+            {"person.alice": "not_home", "person.bob": "not_home"}
+        )
+        therm.child_lock = True
+        state_cb(_state_event("not_home", "home"))
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        assert therm.child_lock is False
+
+    def test_one_away_other_still_home_lock_stays_on(self):
+        """alice=home, bob leaves -> aggregate still ANY-home -> NO API call."""
+        hass, state_cb, therm = self._setup_multi(
+            {"person.alice": "home", "person.bob": "not_home"}
+        )
+        # Simulate the handler was already called once (lock ON, _last_lock_state=True)
+        # by having alice arrive first:
+        state_cb(_state_event("home", "not_home"))  # alice arrives
+        first_task = hass.async_create_task.call_args[0][0]
+        _run(first_task)
+        assert therm.child_lock is True
+
+        hass.async_create_task.reset_mock()
+
+        # Now bob leaves — but alice is still home. Aggregate stays True.
+        state_cb(_state_event("not_home", "home"))  # bob leaves
+        # No second API call because _last_lock_state already True
+        hass.async_create_task.assert_not_called()
+
+    def test_both_entities_registered_as_listeners(self):
+        """async_track_state_change_event receives both entity IDs."""
+        session = _make_fake_session()
+        opts = {
+            OPT_PRESENCE_ENTITY: ["person.alice", "person.bob"],
+            OPT_PRESENCE_STATE: "home",
+        }
+        with patch(PATCH_TRACK_STATE) as mock_track:
+            mock_track.return_value = MagicMock()
+
+            def _inner():
+                from custom_components.bosch_shc.__init__ import async_setup_entry
+                hass = _make_fake_hass()
+                entry = _make_fake_entry(options=opts)
+                with (
+                    patch(PATCH_SESSION, return_value=session),
+                    patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+                    patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+                    patch(PATCH_PARSE_CERT, return_value=None),
+                    patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+                ):
+                    _run(async_setup_entry(hass, entry))
+
+            _inner()
+
+        mock_track.assert_called_once()
+        registered = mock_track.call_args[0][1]
+        assert "person.alice" in registered
+        assert "person.bob" in registered
+
+    def test_redundant_write_suppressed_both_already_home(self):
+        """If aggregate is already True and another home event arrives -> no second write."""
+        hass, state_cb, therm = self._setup_multi(
+            {"person.alice": "home", "person.bob": "home"}
+        )
+        # First arrival
+        state_cb(_state_event("home", "not_home"))
+        assert hass.async_create_task.call_count == 1
+        _run(hass.async_create_task.call_args[0][0])
+
+        # Second arrival while first is still home -> aggregate stays True
+        hass.async_create_task.reset_mock()
+        state_cb(_state_event("home", "not_home"))
+        hass.async_create_task.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # Tests: no-op cases
 # ---------------------------------------------------------------------------
 
@@ -316,14 +538,15 @@ class TestNoOp:
     def _setup(self):
         therm = _make_device("therm-1")
         session = _make_fake_session(thermostats=[therm])
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
-        hass, entry, state_cb = _do_setup(session, options=opts, capture_state_cb=True)
+        opts = {
+            OPT_PRESENCE_ENTITY: ["person.felix"],
+            OPT_PRESENCE_STATE: "home",
+        }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "not_home"},
+        )
         return hass, state_cb, therm
-
-    def test_no_task_when_old_state_equals_new_state(self):
-        hass, state_cb, therm = self._setup()
-        state_cb(_state_event("home", "home"))
-        hass.async_create_task.assert_not_called()
 
     def test_no_task_when_new_state_is_unavailable(self):
         hass, state_cb, therm = self._setup()
@@ -335,17 +558,31 @@ class TestNoOp:
         state_cb(_state_event("unknown", "home"))
         hass.async_create_task.assert_not_called()
 
-    def test_no_task_when_neither_old_nor_new_is_present_state(self):
-        """Transition between two non-present states: no action needed."""
-        hass, state_cb, therm = self._setup()
-        state_cb(_state_event("not_home", "away"))
-        hass.async_create_task.assert_not_called()
-
     def test_no_task_when_new_state_is_none(self):
         """new_state=None (entity removed): ignore."""
         hass, state_cb, therm = self._setup()
-        event = SimpleNamespace(data={"new_state": None, "old_state": SimpleNamespace(state="home")})
+        event = SimpleNamespace(
+            data={
+                "new_state": None,
+                "old_state": SimpleNamespace(state="home"),
+            }
+        )
         state_cb(event)
+        hass.async_create_task.assert_not_called()
+
+    def test_no_task_when_aggregate_unchanged_away(self):
+        """Transition between two non-present states: aggregate stays False -> no write."""
+        hass, state_cb, therm = self._setup()
+        # person.felix is not_home (hass_states); any transition to another
+        # non-home state must not trigger a write.
+        # First ensure _last_lock_state is primed to False by an initial away event:
+        state_cb(_state_event("not_home", "home"))  # leaves -> aggregate False
+        first_count = hass.async_create_task.call_count
+        _run(hass.async_create_task.call_args[0][0]) if first_count else None
+
+        hass.async_create_task.reset_mock()
+        # Another away->away transition: no change in aggregate
+        state_cb(_state_event("away", "not_home"))
         hass.async_create_task.assert_not_called()
 
 
@@ -365,8 +602,14 @@ class TestErrorHandling:
         )
 
         session = _make_fake_session(thermostats=[therm])
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
-        hass, entry, state_cb = _do_setup(session, options=opts, capture_state_cb=True)
+        opts = {
+            OPT_PRESENCE_ENTITY: ["person.felix"],
+            OPT_PRESENCE_STATE: "home",
+        }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "home"},
+        )
 
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
@@ -384,8 +627,14 @@ class TestErrorHandling:
         )
 
         session = _make_fake_session(bool_devices=[booldev])
-        opts = {OPT_PRESENCE_ENTITY: "person.felix", OPT_PRESENCE_STATE: "home"}
-        hass, entry, state_cb = _do_setup(session, options=opts, capture_state_cb=True)
+        opts = {
+            OPT_PRESENCE_ENTITY: ["person.felix"],
+            OPT_PRESENCE_STATE: "home",
+        }
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "home"},
+        )
 
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
@@ -402,7 +651,7 @@ class TestUnloadCleansUp:
 
         session = _make_fake_session()
         hass = _make_fake_hass()
-        entry = _make_fake_entry(options={OPT_PRESENCE_ENTITY: "person.felix"})
+        entry = _make_fake_entry(options={OPT_PRESENCE_ENTITY: ["person.felix"]})
         dr_mock = _make_fake_device_registry()
         presence_unsub_mock = MagicMock()
 

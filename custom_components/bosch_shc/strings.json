@@ -103,14 +103,14 @@
           },
           "presence": {
             "name": "Presence-based child lock",
-            "description": "Automatically enable child lock on all SHC thermostats when someone arrives home, and disable it when everyone leaves.",
+            "description": "Automatically enable child lock on all SHC thermostats when anyone arrives home, and disable it when everyone leaves.",
             "data": {
-              "child_lock_presence_entity": "Presence entity (optional)",
+              "child_lock_presence_entity": "Presence entities (optional)",
               "child_lock_present_state": "State that means 'present'"
             },
             "data_description": {
-              "child_lock_presence_entity": "Entity whose state controls child lock on all SHC thermostats. Supported domains: person, device_tracker, binary_sensor, input_boolean, zone, group. Leave empty to disable this feature.",
-              "child_lock_present_state": "The entity state that counts as 'someone is home' — child lock is enabled when the entity enters this state, disabled when it leaves. Typical values: `home` for person / device_tracker, `on` for binary_sensor / input_boolean. Default: home."
+              "child_lock_presence_entity": "One or more entities whose state controls child lock on all SHC thermostats and switch devices. Child lock turns ON when ANY selected entity is in the present state; OFF when ALL are out of it. Supported domains: person, device_tracker, binary_sensor, input_boolean, zone, group. Leave empty to disable this feature.",
+              "child_lock_present_state": "The entity state that counts as 'someone is home' — child lock is enabled when ANY entity enters this state, disabled when ALL entities leave it. Typical values: `home` for person / device_tracker, `on` for binary_sensor / input_boolean. Default: home."
             }
           },
           "advanced": {

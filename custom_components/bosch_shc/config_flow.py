@@ -471,9 +471,10 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                         {
                             vol.Optional(
                                 OPT_PRESENCE_ENTITY,
-                                default=current.get(OPT_PRESENCE_ENTITY, ""),
+                                default=current.get(OPT_PRESENCE_ENTITY, []),
                             ): EntitySelector(
                                 EntitySelectorConfig(
+                                    multiple=True,
                                     domain=[
                                         "person",
                                         "device_tracker",
@@ -481,7 +482,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                                         "input_boolean",
                                         "zone",
                                         "group",
-                                    ]
+                                    ],
                                 )
                             ),
                             vol.Optional(
