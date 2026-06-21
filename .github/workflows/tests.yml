@@ -35,6 +35,8 @@ jobs:
       - name: Run unit tests
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          # Repo root on the path so `import custom_components.bosch_shc` resolves.
+          PYTHONPATH: ${{ github.workspace }}
         run: >-
           pytest tests/bosch_shc -q -o addopts=""
           --ignore=tests/bosch_shc/test_config_flow.py
