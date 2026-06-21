@@ -30,20 +30,24 @@ def _fake_device(name="test-number", root_device_id="root1", device_id="dev1"):
 class TestSHCNumberInit:
     """Cover SHCNumber.__init__ lines 60-69."""
 
-    def test_init_no_attr_name_sets_name_from_device(self):
+    def test_init_no_attr_name_sets_name_none(self):
+        # has_entity_name=True + _attr_name=None means this is the primary entity
+        # — HA uses the device name as the display name; .name property returns None.
         dev = _fake_device()
         number = SHCNumber(device=dev, entry_id="test", attr_name=None)
-        assert number._attr_name == "test-number"
+        assert number._attr_name is None
 
     def test_init_no_attr_name_sets_unique_id(self):
         dev = _fake_device()
         number = SHCNumber(device=dev, entry_id="test", attr_name=None)
         assert number._attr_unique_id == "root1_dev1"
 
-    def test_init_with_attr_name_appends_to_name(self):
+    def test_init_with_attr_name_sets_attr_name(self):
+        # has_entity_name=True: _attr_name is just the feature label (no device prefix).
+        # HA prepends the device name when building the display name.
         dev = _fake_device()
         number = SHCNumber(device=dev, entry_id="test", attr_name="Offset")
-        assert number._attr_name == "test-number Offset"
+        assert number._attr_name == "Offset"
 
     def test_init_with_attr_name_lowercased_in_unique_id(self):
         dev = _fake_device()
@@ -64,7 +68,8 @@ class TestSHCNumberInit:
         dev = _fake_device(name="my-thermo", root_device_id="root2", device_id="dev2")
         number = SHCNumber(device=dev, entry_id="e", attr_name="TempOffset")
         assert number._attr_unique_id == "root2_dev2_tempoffset"
-        assert number._attr_name == "my-thermo TempOffset"
+        # has_entity_name=True: _attr_name is just the feature label (no device prefix)
+        assert number._attr_name == "TempOffset"
 
 
 class TestSHCNumberClassAttrs:

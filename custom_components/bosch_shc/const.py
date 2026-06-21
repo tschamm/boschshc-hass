@@ -32,6 +32,21 @@ SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
 
+# Options flow keys
+OPT_SCENARIOS_AS_BUTTONS = "scenarios_as_buttons"
+OPT_DIAGNOSTIC_ENTITIES = "diagnostic_entities"
+OPT_ENABLE_RAWSCAN = "enable_rawscan_service"
+OPT_SSL_VERIFY_HOSTNAME = "ssl_verify_hostname"
+OPT_LONG_POLL_TIMEOUT = "long_poll_timeout"
+OPT_CHILD_LOCK_ENABLED = "child_lock_enabled"
+OPT_PRESENCE_ENTITY = "child_lock_presence_entity"
+# Deprecated: the explicit "present state" is now auto-inferred per entity
+# domain (home for person/device_tracker/zone/group, on for binary_sensor/
+# input_boolean). Kept for backward-compat reads of older stored options.
+OPT_PRESENCE_STATE = "child_lock_present_state"
+OPT_EXCLUDED_DEVICES = "excluded_devices"
+OPT_EXCLUDED_ROOMS = "excluded_rooms"
+
 # Certificate handling
 CERT_EXPIRY_WARNING_DAYS = 30
 DOMAIN_NOTIFICATION_ID = "bosch_shc_certificate"

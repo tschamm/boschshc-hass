@@ -33,5 +33,57 @@
                 "title": "SHC kimlik do\u011frulama parametreleri"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Ayarlar",
+                "description": "Bosch Smart Home Controller entegrasyonunun oluşturduğu ve yönettiği varlıkları ve otomasyonları yapılandırın.",
+                "sections": {
+                    "features": {
+                        "name": "Özellikler",
+                        "description": "Entegrasyonun oluşturduğu varlık türlerini açıp kapatın.",
+                        "data": {
+                            "scenarios_as_buttons": "Senaryoları düğme varlıkları olarak göster",
+                            "diagnostic_entities": "Tanılama sensörleri oluştur",
+                            "enable_rawscan_service": "rawscan tanılama hizmetini etkinleştir"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
+                            "diagnostic_entities": "AÇIK olduğunda (varsayılan): desteklenen her cihaz için tanılama sensör varlıkları oluşturulur — valf tırnağı konumu (termostatlar) ve iletişim kalitesi (akıllı prizler). Bu sensörlere ihtiyaç duymuyorsanız KAPALI yaparak varlık sayısını azaltın.",
+                            "enable_rawscan_service": "AÇIK olduğunda: ham API hata ayıklaması için bosch_shc.trigger_rawscan hizmetini kaydeder. Gizlemek için KAPALI yapın. Varsayılan: açık."
+                        }
+                    },
+                    "presence": {
+                        "name": "Varlığa dayalı çocuk kilidi",
+                        "description": "Evde biri olduğunda tüm SHC termostatlarını ve anahtarlarını otomatik olarak kilitleyin, herkes ayrıldığında kilidi açın.",
+                        "data": {
+                            "child_lock_enabled": "Varlığa dayalı çocuk kilidini etkinleştir",
+                            "child_lock_presence_entity": "Varlık entiteleri"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Ana anahtar. AÇIK olduğunda, tüm SHC termostatları ve anahtar cihazlarındaki çocuk kilidi aşağıdaki varlık entitelerini takip eder — evde biri olduğunda kilitli, herkes dışarıda olduğunda açık. KAPALI olduğunda entegrasyon çocuk kilidine hiç dokunmaz.",
+                            "child_lock_presence_entity": "Çocuk kilidine karar veren kişiler/cihazlar. HERHANGİ biri evde olur olmaz AÇILIR ve yalnızca TÜMÜ dışarıda olduğunda KAPANIR. Örneğin hanenizdeki Person entitelerini seçin. 'Evde' otomatik olarak algılanır (person/device_tracker/zone/group için home, binary_sensor/input_boolean için on)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Gelişmiş",
+                        "description": "Düşük seviyeli bağlantı parametreleri. Bunları değiştirmek nadiren yardımcı olur — dokunmadan önce belgelere başvurun.",
+                        "data": {
+                            "ssl_verify_hostname": "SHC sertifikası ana bilgisayar adını doğrula",
+                            "long_poll_timeout": "Uzun yoklama zaman aşımı (saniye)",
+                            "excluded_devices": "Hariç tutulan cihazlar",
+                            "excluded_rooms": "Hariç tutulan odalar"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Uzman: AÇIK olduğunda SHC'nin TLS sertifikası ana bilgisayar adı doğrulanır. Bosch SHC sertifikasının ana bilgisayar adı normalde IP adresiyle EŞLEŞMEDİĞİNDEN bunu etkinleştirmek genellikle bağlantıyı keser — kurulumunuzun eşleştiğinden emin değilseniz KAPALI bırakın. Varsayılan: kapalı.",
+                            "long_poll_timeout": "Her uzun yoklama isteğinin yeniden bağlanmadan önce olayları ne kadar süre beklediği. Varsayılan 10. Yeniden bağlanmaları azaltmak için artırın, ağınız boşta kalan bağlantıları kesiyorsa azaltın.",
+                            "excluded_devices": "Gizlenecek cihazlar — bunlar için varlık oluşturulmaz. Tümünü dahil etmek için boş bırakın. Yeni hariç tutulan cihazlar için mevcut varlıklar manuel olarak kaldırılana kadar kalır.",
+                            "excluded_rooms": "Bu Bosch odalarındaki tüm cihazları gizleyin. Tümünü dahil etmek için boş bırakın."
+                        }
+                    }
+                }
+            }
+        }
     }
 }

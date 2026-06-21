@@ -9,9 +9,12 @@ from homeassistant.components.alarm_control_panel.const import (
 from homeassistant.const import (
     Platform,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DATA_SESSION, DOMAIN
 from .entity import async_migrate_to_new_unique_id
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -71,18 +74,15 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         return self._device.id
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device.id)},
-            "name": self._device.name,
-            "manufacturer": self._device.manufacturer,
-            "model": self._device.device_model,
-            "via_device": (
-                DOMAIN,
-                self._device.root_device_id,
-            ),
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device.id)},
+            name=self._device.name,
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+            via_device=(DOMAIN, self._device.root_device_id),
+        )
 
     @property
     def available(self):

@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: pytest (unit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+
+      # Mirrors scripts/local-ci.sh (hass leg): the pure-unit suite runs with
+      # the pytest-homeassistant autoload DISABLED. test_config_flow.py and
+      # test_device_trigger.py (+ tests/harness) need the full HA harness
+      # (tests.common.MockConfigEntry) and are still WIP — excluded here.
+      - name: Run unit tests
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          # Repo root on the path so `import custom_components.bosch_shc` resolves.
+          PYTHONPATH: ${{ github.workspace }}
+        run: >-
+          pytest tests/bosch_shc -q -o addopts=""
+          --ignore=tests/bosch_shc/test_config_flow.py
+          --ignore=tests/bosch_shc/test_device_trigger.py

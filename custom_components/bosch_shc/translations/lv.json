@@ -3,5 +3,57 @@
         "abort": {
             "already_configured": "Ier\u012bce jau pievienota Home Assistant."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Iestatījumi",
+                "description": "Konfigurējiet, kuras entītijas un automatizācijas Bosch Smart Home Controller integrācija izveido un pārvalda.",
+                "sections": {
+                    "features": {
+                        "name": "Funkcijas",
+                        "description": "Pārslēdziet entītiju tipus, kurus integrācija izveido.",
+                        "data": {
+                            "scenarios_as_buttons": "Rādīt scenārijus kā pogu entītijas",
+                            "diagnostic_entities": "Izveidot diagnostikas sensorus",
+                            "enable_rawscan_service": "Iespējot rawscan diagnostikas pakalpojumu"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
+                            "diagnostic_entities": "Ieslēgts (noklusējums): katrai atbalstītajai ierīcei tiek izveidotas diagnostikas sensoru entītijas — vārsta kloķa pozīcija (termostati) un komunikācijas kvalitāte (viedās kontaktligzdas). Izslēdziet, lai samazinātu entītiju skaitu, ja šie sensori nav nepieciešami.",
+                            "enable_rawscan_service": "Ieslēgts: reģistrē bosch_shc.trigger_rawscan pakalpojumu neapstrādātas API atkļūdošanai. Izslēdziet, lai to paslēptu. Noklusējums: ieslēgts."
+                        }
+                    },
+                    "presence": {
+                        "name": "Klātbūtnes bērnu bloķēšana",
+                        "description": "Automātiski bloķējiet visus SHC termostatus un slēdžus, kad kāds ir mājās, un atbloķējiet, kad visi aiziet.",
+                        "data": {
+                            "child_lock_enabled": "Iespējot klātbūtnes bērnu bloķēšanu",
+                            "child_lock_presence_entity": "Klātbūtnes entītijas"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Galvenais slēdzis. Kad IESLĒGTS, bērnu bloķēšana uz visiem SHC termostatiem un slēdžu ierīcēm seko zemāk norādītajām klātbūtnes entītijām — bloķēts, kad kāds ir mājās, atbloķēts, kad visi ir prom. Kad IZSLĒGTS, integrācija nekad nepieskaras bērnu bloķēšanai.",
+                            "child_lock_presence_entity": "Cilvēki/ierīces, kas nosaka bērnu bloķēšanu. Ieslēdzas, tiklīdz JEBKURA no tām ir mājās, un izslēdzas tikai tad, kad VISAS ir prom. Izvēlieties, piemēram, savas mājsaimniecības locekļu Person entītijas. 'Mājās' tiek automātiski noteikts (home person/device_tracker/zone/group, on binary_sensor/input_boolean)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Papildu iestatījumi",
+                        "description": "Zema līmeņa savienojuma parametri. Šo maiņa reti palīdz — pirms maiņas konsultējieties ar dokumentāciju.",
+                        "data": {
+                            "ssl_verify_hostname": "Pārbaudīt SHC sertifikāta resursdatora nosaukumu",
+                            "long_poll_timeout": "Garā aptaujāšanas taimauts (sekundes)",
+                            "excluded_devices": "Izslēgtās ierīces",
+                            "excluded_rooms": "Izslēgtās telpas"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Eksperts: ieslēgts — tiek pārbaudīts SHC TLS sertifikāta resursdatora nosaukums. Bosch SHC sertifikāta resursdatora nosaukums parasti nesakrīt ar tā IP, tāpēc šīs opcijas ieslēgšana parasti pārrāvums savienojumu — atstājiet izslēgtu, ja vien neesat pārliecināts, ka jūsu iestatījums sakrīt. Noklusējums: izslēgts.",
+                            "long_poll_timeout": "Cik ilgi katrs garais aptaujāšanas pieprasījums gaida notikumus pirms atkārtotas savienošanās. Noklusējums 10. Palieliniet, lai samazinātu atkārtotas savienošanās, samaziniet, ja tīkls pārtrauc dīkstāves savienojumus.",
+                            "excluded_devices": "Ierīces, ko slēpt — tām netiek izveidotas entītijas. Atstājiet tukšu, lai iekļautu visas. Esošās entītijas jaunizsludinātajām ierīcēm paliek līdz manuālai noņemšanai.",
+                            "excluded_rooms": "Slēpiet visas ierīces šajās Bosch telpās. Atstājiet tukšu, lai iekļautu visas."
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -17,6 +17,8 @@ from custom_components.bosch_shc.cover import ShutterControlCover
 
 MOVING = SHCShutterControl.ShutterControlService.State.MOVING
 STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
+OPENING = SHCShutterControl.ShutterControlService.State.OPENING
+CLOSING = SHCShutterControl.ShutterControlService.State.CLOSING
 SWITCH_ON = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
 SWITCH_OFF = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
 
@@ -244,3 +246,124 @@ class TestStoppedInitialisesLastPosition:
         cover._update_attr()
         # After STOPPED, _last_position must be non-None (initialised from level)
         assert cover._last_position is not None
+
+
+# ---------------------------------------------------------------------------
+# Issue #100: Shutter Control II reports direction via operationState
+# (enum [STOPPED, OPENING, CLOSING] — never MOVING). The STOPPED/MOVING
+# branches never matched these states, so physical-switch / Bosch-app moves
+# left is_opening/is_closing unset. The new OPENING/CLOSING handlers map the
+# state straight to the HA flags, additively, without touching _target_position.
+# ---------------------------------------------------------------------------
+
+class TestShutterIIOperationStateDirection:
+    def test_blinds_opening_state_sets_is_opening(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_BLINDS",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+
+    def test_blinds_closing_state_sets_is_closing(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_BLINDS",
+            level=0.4,
+            operation_state=CLOSING,
+        )
+        cover._update_attr()
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+
+    def test_shutter_opening_state_sets_is_opening(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+
+    def test_opening_state_does_not_snap_target_position(self):
+        """The handler must NOT touch _target_position (no position snap)."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        cover._target_position = 30
+        cover._update_attr()
+        assert cover._target_position == 30  # unchanged
+
+    def test_opening_works_without_last_position(self):
+        """Direction from operationState needs no _last_position reference."""
+        cover = _make_cover(
+            device_model="MICROMODULE_BLINDS",
+            level=0.4,
+            operation_state=OPENING,
+        )
+        assert cover._last_position is None
+        cover._update_attr()  # must not raise
+        assert cover._attr_is_opening is True
+
+
+# ---------------------------------------------------------------------------
+# Issue #318: MICROMODULE_SHUTTER with NO Keypad service (no physical wall
+# switch wired). The lib's eventtype setter dereferences a None keypad service,
+# so open/close/stop crashed with
+# "'NoneType' object has no attribute 'eventType'". _micromodule_keypad_switch_off
+# must skip the eventtype write when the device has no keypad service.
+# ---------------------------------------------------------------------------
+
+class TestMicromoduleShutterNoKeypad:
+    @staticmethod
+    def _no_keypad_cover():
+        cover = ShutterControlCover.__new__(ShutterControlCover)
+
+        class _NoKeypadDevice:
+            device_model = "MICROMODULE_SHUTTER"
+            _keypad_service = None  # device exposes no Keypad service
+            level = 0.0
+
+            @property
+            def eventtype(self):
+                raise AttributeError("'NoneType' object has no attribute 'eventType'")
+
+            @eventtype.setter
+            def eventtype(self, value):
+                # Mirrors the released-lib crash when _keypad_service is None.
+                raise AttributeError(
+                    "'NoneType' object has no attribute 'eventType'"
+                )
+
+            def stop(self):
+                pass
+
+        cover._device = _NoKeypadDevice()
+        cover._target_position = None
+        cover._last_position = None
+        cover._skip_update = False
+        cover._app_command = False
+        cover._attr_is_opening = None
+        cover._attr_is_closing = None
+        cover._attr_current_cover_position = None
+        return cover
+
+    def test_open_cover_does_not_crash_without_keypad(self):
+        cover = self._no_keypad_cover()
+        cover.open_cover()  # must not raise (issue #318)
+        assert cover._attr_is_opening is True
+
+    def test_close_cover_does_not_crash_without_keypad(self):
+        cover = self._no_keypad_cover()
+        cover.close_cover()  # must not raise
+        assert cover._attr_is_closing is True
+
+    def test_stop_cover_does_not_crash_without_keypad(self):
+        cover = self._no_keypad_cover()
+        cover.stop_cover()  # must not raise
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False

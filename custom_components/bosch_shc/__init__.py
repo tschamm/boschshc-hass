@@ -1,10 +1,10 @@
 """The Bosch Smart Home Controller integration."""
 
+import inspect
 from datetime import timedelta
 
 import voluptuous as vol
 import functools as ft
-import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
@@ -13,8 +13,11 @@ from boschshcpy.exceptions import (
 
 from .certificate import parse_certificate
 from .data import SHCData
+from homeassistant.components.persistent_notification import (
+    async_create as pn_async_create,
+)
 from homeassistant.components.zeroconf import async_get_instance
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     ATTR_DEVICE_ID,
     ATTR_ID,
@@ -38,7 +41,10 @@ from homeassistant.exceptions import (
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_interval,
+)
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -58,6 +64,11 @@ from .const import (
     DOMAIN,
     EVENT_BOSCH_SHC,
     LOGGER,
+    OPT_ENABLE_RAWSCAN,
+    OPT_LONG_POLL_TIMEOUT,
+    OPT_CHILD_LOCK_ENABLED,
+    OPT_PRESENCE_ENTITY,
+    OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_TRIGGER_SCENARIO,
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
@@ -82,9 +93,10 @@ if hasattr(Platform, "VALVE"):
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the Bosch SHC component.
 
-    Domain-level services (trigger_scenario, trigger_rawscan) are registered
-    here so they exist even when a config entry fails to load, allowing HA to
-    validate automations that reference them.  Entity services
+    The trigger_scenario service is registered here so it exists even when a
+    config entry fails to load, allowing HA to validate automations that
+    reference it.  The trigger_rawscan service is opt-in and registered per
+    entry in async_setup_entry (default: enabled).  Entity services
     (smokedetector_check, smokedetector_alarmstate) are registered per-entry in
     their respective platform setup (binary_sensor.py) as allowed by the rule.
     """
@@ -115,6 +127,14 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         scenario_service_call,
         SCENARIO_TRIGGER_SCHEMA,
     )
+
+    return True
+
+
+def _register_rawscan_service(hass: HomeAssistant) -> None:
+    """Register the trigger_rawscan service if not already registered."""
+    if hass.services.has_service(DOMAIN, SERVICE_TRIGGER_RAWSCAN):
+        return
 
     RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
         {
@@ -159,8 +179,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         supports_response=SupportsResponse.ONLY,
     )
 
-    return True
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bosch SHC from a config entry."""
@@ -195,7 +213,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 cert_info.days_remaining,
                 expiry,
             )
-            hass.components.persistent_notification.create(
+            pn_async_create(
+                hass,
                 (
                     f"Bosch SHC client certificate will expire in {cert_info.days_remaining} days (on {expiry}).\n"
                     "To renew: Put the controller into pairing mode (press front button until LEDs flash) and start re-authentication from the integration options."
@@ -205,14 +224,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     zeroconf = await async_get_instance(hass)
+    # NumberSelector yields a float; the SHC long-poll RPC expects an integer
+    # number of seconds, so coerce it.
+    long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
+    verify_hostname = entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False)
+    # Only forward the long_poll_timeout / verify_hostname kwargs if the
+    # installed boschshcpy actually supports them. This keeps the integration
+    # working against an older pinned lib (the advanced options are simply
+    # inert until the lib is updated) instead of crashing with a TypeError.
+    _session_params = inspect.signature(SHCSession.__init__).parameters
+    _session_kwargs = {}
+    if "long_poll_timeout" in _session_params:
+        _session_kwargs["long_poll_timeout"] = long_poll_timeout
+    if "verify_hostname" in _session_params:
+        _session_kwargs["verify_hostname"] = verify_hostname
     try:
         session: SHCSession = await hass.async_add_executor_job(
-            SHCSession,
-            data[CONF_HOST],
-            data[CONF_SSL_CERTIFICATE],
-            data[CONF_SSL_KEY],
-            False,
-            zeroconf,
+            ft.partial(
+                SHCSession,
+                data[CONF_HOST],
+                data[CONF_SSL_CERTIFICATE],
+                data[CONF_SSL_KEY],
+                False,
+                zeroconf,
+                **_session_kwargs,
+            )
         )
     except SHCAuthenticationError as err:
         raise ConfigEntryAuthFailed from err
@@ -255,6 +291,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # report_non_thread_safe_operation RuntimeError for custom integrations.
         # Making the callback async makes async_track_time_interval schedule it
         # directly on the event loop, eliminating both the wrapper and the bug.
+        if not cert_path:
+            return  # no cert configured — nothing to check (mirrors startup guard)
         try:
             info = await hass.async_add_executor_job(parse_certificate, cert_path)
         except Exception:  # silently ignore parsing issues
@@ -267,7 +305,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
         elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
             expiry = info.not_after.date()
-            hass.components.persistent_notification.create(
+            pn_async_create(
+                hass,
                 (
                     f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
                     "To renew: Put the controller into pairing mode and re-authenticate the integration."
@@ -282,6 +321,121 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
         entry.runtime_data.cert_check_unsub
     )
+
+    # Presence-based child lock: optional; zero overhead when unconfigured.
+    # Backward compat: stored value may be a str (old single-select) or a list.
+    _raw_presence = entry.options.get(OPT_PRESENCE_ENTITY, [])
+    if isinstance(_raw_presence, str):
+        presence_entities = [_raw_presence] if _raw_presence else []
+    else:
+        presence_entities = [e for e in _raw_presence if e]
+
+    # Master on/off switch. Defaults to ON when presence entities are already
+    # configured (preserves behaviour for setups made before the toggle existed).
+    child_lock_enabled = entry.options.get(
+        OPT_CHILD_LOCK_ENABLED, bool(presence_entities)
+    )
+
+    if child_lock_enabled and presence_entities:
+        # "Present" is auto-inferred per entity domain — no config knob needed:
+        #   person / device_tracker / group  -> state == "home"
+        #   zone                             -> occupancy count > 0
+        #   binary_sensor / input_boolean    -> state == "on"
+        def _entity_is_present(entity_id, state_obj) -> bool:
+            domain = entity_id.split(".", 1)[0]
+            value = state_obj.state
+            if domain == "zone":
+                try:
+                    return int(value) > 0
+                except (TypeError, ValueError):
+                    return False
+            if domain in ("binary_sensor", "input_boolean"):
+                return value == "on"
+            # person, device_tracker, group and anything else use the standard
+            # home/away semantics (group of presence entities reports "home").
+            return value in ("home", "on")
+
+        # Track last-applied lock state to suppress redundant API writes.
+        _last_lock_state: list[bool | None] = [None]
+
+        def _child_lock_devices(session):
+            """Return (thermostat_devices, bool_devices) from this SHC session."""
+            dh = session.device_helper
+            thermostats = (
+                dh.thermostats
+                + dh.roomthermostats
+                + [d for d in dh.wallthermostats if hasattr(d, "child_lock")]
+            )
+            bool_devices = (
+                dh.micromodule_shutter_controls
+                + dh.micromodule_blinds
+                + dh.micromodule_light_attached
+                + dh.micromodule_relays
+                + dh.micromodule_impulse_relays
+                + dh.micromodule_dimmers
+                + dh.light_switches_bsm
+            )
+            return thermostats, bool_devices
+
+        def _apply_child_lock(lock_state: bool):
+            """Set child lock on all SHC devices (blocking; run in executor)."""
+            from boschshcpy.exceptions import SHCException
+            from boschshcpy.api import JSONRPCError
+            thermostats, bool_devices = _child_lock_devices(session)
+            for device in thermostats:
+                try:
+                    device.child_lock = lock_state
+                except (JSONRPCError, SHCException, AttributeError) as err:
+                    LOGGER.warning(
+                        "Failed to set child_lock=%s on thermostat %s: %s",
+                        lock_state, device.id, err,
+                    )
+            for device in bool_devices:
+                try:
+                    device.child_lock = lock_state
+                except (JSONRPCError, SHCException, AttributeError) as err:
+                    LOGGER.warning(
+                        "Failed to set child_lock=%s on device %s: %s",
+                        lock_state, device.id, err,
+                    )
+
+        @callback
+        def _presence_state_changed(event):
+            """Handle state changes for any tracked presence entity.
+
+            Semantics: child lock ON when ANY tracked entity is present;
+            OFF when ALL are away. "Present" is auto-inferred per domain.
+            Redundant writes are suppressed via _last_lock_state.
+            """
+            new_state = event.data.get("new_state")
+            if new_state is None:
+                return
+            # Skip unavailable/unknown — entity is in a transient state.
+            if new_state.state in ("unavailable", "unknown"):
+                return
+
+            # Recompute aggregate: is ANY tracked entity present?
+            any_present = False
+            for eid in presence_entities:
+                state_obj = hass.states.get(eid)
+                if state_obj is None:
+                    continue
+                if _entity_is_present(eid, state_obj):
+                    any_present = True
+                    break
+
+            lock_on = any_present
+            # Suppress redundant API writes.
+            if lock_on == _last_lock_state[0]:
+                return
+            _last_lock_state[0] = lock_on
+            hass.async_create_task(
+                hass.async_add_executor_job(_apply_child_lock, lock_on)
+            )
+
+        entry.runtime_data.presence_unsub = async_track_state_change_event(
+            hass, presence_entities, _presence_state_changed
+        )
 
     async def stop_polling(event):
         """Stop polling service."""
@@ -315,16 +469,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
         await event_listener.async_setup()
 
+    # Register rawscan diagnostic service when the option is enabled (default: on).
+    # The service is domain-scoped but opt-in: only register when at least one
+    # entry enables it; unregister when the last enabling entry is unloaded.
+    if entry.options.get(OPT_ENABLE_RAWSCAN, True):
+        _register_rawscan_service(hass)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_on_unload(entry.add_update_listener(async_update_options))
-
     return True
-
-
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Update options."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -336,11 +489,25 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         runtime.polling_handler()
     if runtime.cert_check_unsub is not None:
         runtime.cert_check_unsub()
+    if runtime.presence_unsub is not None:
+        runtime.presence_unsub()
     await hass.async_add_executor_job(runtime.session.stop_polling)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+
+    # Remove rawscan service if no remaining loaded entries have it enabled.
+    if hass.services.has_service(DOMAIN, SERVICE_TRIGGER_RAWSCAN):
+        remaining = [
+            e
+            for e in hass.config_entries.async_entries(DOMAIN)
+            if e.entry_id != entry.entry_id
+            and e.state is ConfigEntryState.LOADED
+            and e.options.get(OPT_ENABLE_RAWSCAN, True)
+        ]
+        if not remaining:
+            hass.services.async_remove(DOMAIN, SERVICE_TRIGGER_RAWSCAN)
 
     return unload_ok
 
@@ -361,7 +528,11 @@ class SwitchDeviceEventListener:
                 self._keypad_service = service
                 break
 
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+        # Store the unsub callable so it can be cancelled on unload/shutdown,
+        # preventing a stale listener from leaking across reloads.
+        self._ha_stop_unsub = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
 
     def _input_events_handler(self):
         """Handle device input events (called from SHCPollingThread)."""
@@ -408,6 +579,10 @@ class SwitchDeviceEventListener:
 
     def shutdown(self):
         """Shutdown the listener."""
+        # Cancel the HA-stop listener to prevent leaks across reloads.
+        if self._ha_stop_unsub is not None:
+            self._ha_stop_unsub()
+            self._ha_stop_unsub = None
         self._keypad_service.unsubscribe_callback(self._device.id)
 
     @callback

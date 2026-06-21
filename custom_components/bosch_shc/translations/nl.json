@@ -1,37 +1,201 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Apparaat is al geconfigureerd",
-            "reauth_successful": "Herauthenticatie geslaagd"
+  "config": {
+    "abort": {
+      "already_configured": "Apparaat is al geconfigureerd",
+      "reauth_successful": "Herauthenticatie geslaagd",
+      "reconfigure_successful": "Herconfiguratie geslaagd",
+      "wrong_shc": "De ingevoerde host behoort tot een andere Bosch SHC controller. Voer de juiste host in voor dit item."
+    },
+    "error": {
+      "cannot_connect": "Kan geen verbinding maken",
+      "invalid_auth": "Ongeldige authenticatie",
+      "pairing_failed": "Koppelen mislukt; controleer of de Bosch Smart Home Controller in de koppelingsmodus staat (LED knippert) en of uw wachtwoord correct is.",
+      "session_error": "Sessiefout: API retourneert niet-OK resultaat.",
+      "unknown": "Onverwachte fout"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I: Houd de frontknop ingedrukt totdat de LED begint te knipperen.\nSmart Home Controller II: Druk kort op de functieknop. Cloud- en netwerklampen beginnen oranje te knipperen.\nHet apparaat is klaar om te koppelen.\n\nKlaar om {model} @ {host} in te stellen met Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Clientnaam voor certificaat",
+          "password": "Wachtwoord van de Smart Home Controller"
         },
-        "error": {
-            "cannot_connect": "Kan geen verbinding maken",
-            "invalid_auth": "Ongeldige authenticatie",
-            "pairing_failed": "Koppelen mislukt; Controleer of de Bosch Smart Home Controller zich in de koppelingsmodus bevindt (LED knippert) en of uw wachtwoord correct is.",
-            "session_error": "Sessiefout: API retourneert niet-OK resultaat.",
-            "unknown": "Onverwachte fout"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "Druk op de knop aan de voorzijde van de Bosch Smart Home Controller totdat de LED begint te knipperen.\nKlaar om verder te gaan met het instellen van {model} @ {host} met Home Assistant?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Wachtwoord van de Smart Home Controller"
-                }
-            },
-            "reauth_confirm": {
-                "description": "De bosch_shc integratie moet uw account herauthenticeren",
-                "title": "Integratie herauthenticeren"
-            },
-            "user": {
-                "data": {
-                    "host": "Host"
-                },
-                "description": "Stel uw Bosch Smart Home Controller in om monitoring en bediening met Home Assistant mogelijk te maken.",
-                "title": "SHC-authenticatieparameters"
-            }
+        "data_description": {
+          "name": "Naam weergegeven in de SHC-app onder verbonden clients.",
+          "password": "Het wachtwoord ingesteld in de Bosch Smart Home-app."
         }
+      },
+      "reauth_confirm": {
+        "description": "De Bosch SHC integratie moet uw account herauthenticeren.",
+        "title": "Integratie herauthenticeren",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "IP-adres of hostnaam van de SHC controller (bijv. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHC herconfigureren",
+        "description": "Werk het IP-adres of de hostnaam van uw Bosch Smart Home Controller bij. Uw certificaten en inloggegevens blijven bewaard.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "Nieuw IP-adres of hostnaam van de SHC controller (bijv. 192.168.x.y)."
+        }
+      },
+      "user": {
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "IP-adres of hostnaam van de SHC controller (bijv. 192.168.x.y)."
+        },
+        "description": "Stel uw Bosch Smart Home Controller in om bewaking en bediening met Home Assistant mogelijk te maken.",
+        "title": "SHC-authenticatieparameters"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Instellingen",
+        "description": "Configureer welke entiteiten en automatiseringen de Bosch Smart Home Controller integratie aanmaakt en beheert.",
+        "sections": {
+          "features": {
+            "name": "Functies",
+            "description": "Schakel de entiteitstypes in of uit die de integratie aanmaakt.",
+            "data": {
+              "scenarios_as_buttons": "Scenario's blootstellen als knopentiteiten",
+              "diagnostic_entities": "Diagnostische sensoren aanmaken",
+              "enable_rawscan_service": "Diagnostische rawscan-service inschakelen"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
+              "diagnostic_entities": "Wanneer AAN (standaard): diagnostische sensorentiteiten worden aangemaakt voor elk ondersteund apparaat — kleppenpositie (thermostaten) en communicatiekwaliteit (slimme stekkers). Zet UIT om het aantal entiteiten te verminderen als u deze sensoren niet nodig heeft.",
+              "enable_rawscan_service": "Wanneer AAN: registreert de bosch_shc.trigger_rawscan service voor ruwe API-foutopsporing. Zet UIT om deze te verbergen. Standaard: aan."
+            }
+          },
+          "presence": {
+            "name": "Aanwezigheidsgebaseerde kindvergrendeling",
+            "description": "Vergrendel automatisch alle SHC-thermostaten en -schakelaars wanneer iemand thuis is, en ontgrendel ze wanneer iedereen weg is.",
+            "data": {
+              "child_lock_enabled": "Aanwezigheidsgebaseerde kindvergrendeling inschakelen",
+              "child_lock_presence_entity": "Aanwezigheidsentiteiten"
+            },
+            "data_description": {
+              "child_lock_enabled": "Hoofdschakelaar. Wanneer AAN volgt de kindvergrendeling op alle SHC-thermostaten en schakelaarapparaten de aanwezigheidsentiteiten hieronder — vergrendeld wanneer iemand thuis is, ontgrendeld wanneer iedereen weg is. Wanneer UIT raakt de integratie de kindvergrendeling nooit aan.",
+              "child_lock_presence_entity": "De personen/apparaten die de kindvergrendeling bepalen. Deze gaat AAN zodra ENIGE van hen thuis is, en UIT alleen wanneer ALLE weg zijn. Kies bijvoorbeeld de Person-entiteiten van uw huishouden. 'Thuis' wordt automatisch gedetecteerd (home voor person/device_tracker/zone/group, on voor binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Geavanceerd",
+            "description": "Verbindingsparameters op laag niveau. Wijzigingen helpen zelden — raadpleeg de documentatie voordat u ze aanpast.",
+            "data": {
+              "ssl_verify_hostname": "SSL-hostnaam verifiëren",
+              "long_poll_timeout": "Long-poll timeout (seconden)",
+              "excluded_devices": "Uitgesloten apparaten",
+              "excluded_rooms": "Uitgesloten kamers"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Wanneer AAN: de boschshcpy-bibliotheek controleert of de SSL-certificaat hostnaam van de SHC controller overeenkomt met zijn IP/hostnaam. Heeft momenteel geen effect — een toekomstige boschshcpy-update is vereist. Standaard: uit.",
+              "long_poll_timeout": "Hoe lang (in seconden) het long-poll-verzoek aan de SHC controller wacht op push-gebeurtenissen voor het opnieuw verbinden. Bereik: 5–300. Standaard: 30. Verhoog bij frequente herverbindingen op een traag netwerk; verlaag als uw router inactieve verbindingen verbreekt. Vereist een toekomstige boschshcpy-update.",
+              "excluded_devices": "Apparaten om te verbergen — er worden geen entiteiten voor aangemaakt. Leeg laten om alles op te nemen. Bestaande entiteiten voor nieuw uitgesloten apparaten blijven tot ze handmatig zijn verwijderd.",
+              "excluded_rooms": "Verberg alle apparaten in deze Bosch-kamers. Leeg laten om alles op te nemen."
+            }
+          }
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Onderste knop",
+      "UPPER_BUTTON": "Bovenste knop",
+      "LOWER_LEFT_BUTTON": "Onderste linkerknop",
+      "UPPER_LEFT_BUTTON": "Bovenste linkerknop",
+      "LOWER_RIGHT_BUTTON": "Onderste rechterknop",
+      "UPPER_RIGHT_BUTTON": "Bovenste rechterknop",
+      "IDLE_OFF": "Alarm uit",
+      "INTRUSION_ALARM": "Inbraakalarm",
+      "SECONDARY_ALARM": "Secundair alarm",
+      "PRIMARY_ALARM": "Primair alarm",
+      "ALARM_OFF": "Alarm uit",
+      "ALARM_ON": "Alarm aan",
+      "ALARM_MUTED": "Alarm gedempt"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} kort ingedrukt",
+      "PRESS_LONG": "{subtype} lang ingedrukt",
+      "MOTION": "Beweging gedetecteerd",
+      "SCENARIO": "Scenario {subtype} geactiveerd",
+      "ALARM": "{subtype} geactiveerd"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Rookmelder test",
+      "description": "Start de testroutine van een rookmelder.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteit-ID",
+          "description": "Naam van de rookmelderentiteit."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Scenario activeren",
+      "description": "Activeert een scenario op Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "SHC-naam",
+          "description": "Titel van het SHC"
+        },
+        "name": {
+          "name": "Scenarionaam",
+          "description": "Naam van het te activeren scenario"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Rawscan activeren",
+      "description": "Activeert een rawscan op Bosch SHC om apparaten te ontdekken. Resultaat wordt gestreamd naar het informatielogboek.",
+      "fields": {
+        "title": {
+          "name": "SHC-naam",
+          "description": "Titel van het SHC"
+        },
+        "command": {
+          "name": "Rawscan opdracht",
+          "description": "Mogelijke opdrachten: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Apparaat-ID",
+          "description": "Apparaat-ID voor opdrachten 'device', 'device_services' of 'device_service'"
+        },
+        "service_id": {
+          "name": "Service-ID",
+          "description": "Service-ID voor opdracht 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Rookmelder alarmstatus",
+      "description": "Stuurt een aangepaste opdracht naar een rookmelder.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteit-ID",
+          "description": "Naam van de rookmelderentiteit."
+        },
+        "command": {
+          "name": "Aangepaste opdracht",
+          "description": "Opdrachtstring te sturen naar de rookmelder."
+        }
+      }
+    }
+  }
 }

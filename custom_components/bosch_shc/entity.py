@@ -3,10 +3,23 @@
 from boschshcpy.device import SHCDevice
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
-from homeassistant.helpers.device_registry import async_get as get_dev_reg
+from homeassistant.helpers.device_registry import DeviceInfo, async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, OPT_EXCLUDED_DEVICES, OPT_EXCLUDED_ROOMS
+
+
+def device_excluded(device, options) -> bool:
+    """True if the Bosch device is excluded by the device/room filter options."""
+    excluded_devices = options.get(OPT_EXCLUDED_DEVICES) or []
+    excluded_rooms = options.get(OPT_EXCLUDED_ROOMS) or []
+    if not excluded_devices and not excluded_rooms:
+        return False
+    if getattr(device, "id", None) in excluded_devices:
+        return True
+    if getattr(device, "room_id", None) in excluded_rooms:
+        return True
+    return False
 
 
 async def async_get_device_id(hass: HomeAssistant, device_id: str) -> None:
@@ -126,15 +139,15 @@ class SHCEntity(Entity):
         return self._device.id
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device.id)},
-            "name": self.device_name,
-            "manufacturer": self._device.manufacturer,
-            "model": self._device.device_model,
-            "via_device": (DOMAIN, self._device.root_device_id),
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device.id)},
+            name=self.device_name,
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+            via_device=(DOMAIN, self._device.root_device_id),
+        )
 
     @property
     def available(self):

@@ -33,5 +33,57 @@
                 "title": "SHC-autentiseringsparametrar"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Inställningar",
+                "description": "Konfigurera vilka enheter och automatiseringar Bosch Smart Home Controller-integrationen skapar och hanterar.",
+                "sections": {
+                    "features": {
+                        "name": "Funktioner",
+                        "description": "Slå av och på enhetstyper som integrationen skapar.",
+                        "data": {
+                            "scenarios_as_buttons": "Visa scenarier som knappenheter",
+                            "diagnostic_entities": "Skapa diagnostiksensorer",
+                            "enable_rawscan_service": "Aktivera rawscan-diagnostiktjänst"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
+                            "diagnostic_entities": "När PÅ (standard): diagnostiksensorenheter skapas för varje enhet som stöds — ventillyftarposition (termostater) och kommunikationskvalitet (smarta uttag). Stäng AV för att minska antalet enheter om du inte behöver dessa sensorer.",
+                            "enable_rawscan_service": "När PÅ: registrerar bosch_shc.trigger_rawscan-tjänsten för råa API-felsökning. Stäng AV för att dölja den. Standard: på."
+                        }
+                    },
+                    "presence": {
+                        "name": "Närvaro-baserat barnlås",
+                        "description": "Lås automatiskt alla SHC-termostater och strömbrytare när någon är hemma, och lås upp dem när alla lämnar.",
+                        "data": {
+                            "child_lock_enabled": "Aktivera närvaro-baserat barnlås",
+                            "child_lock_presence_entity": "Närvaro-entiteter"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Huvudbrytare. När PÅ följer barnlåset på alla SHC-termostater och strömbrytarenheter närvaro-entiteterna nedan — låst när någon är hemma, upplåst när alla är borta. När AV ändrar integrationen aldrig barnlåset.",
+                            "child_lock_presence_entity": "Personerna/enheterna som avgör barnlåset. Slås PÅ så snart NÅGON av dem är hemma, och AV först när ALLA är borta. Välj t.ex. Person-entiteterna för ditt hushåll. 'Hemma' detekteras automatiskt (home för person/device_tracker/zone/group, on för binary_sensor/input_boolean)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Avancerat",
+                        "description": "Lågnivå anslutningsparametrar. Att ändra dessa hjälper sällan — konsultera dokumentationen innan du ändrar dem.",
+                        "data": {
+                            "ssl_verify_hostname": "Verifiera SHC-certifikatets värdnamn",
+                            "long_poll_timeout": "Lång polling-timeout (sekunder)",
+                            "excluded_devices": "Exkluderade enheter",
+                            "excluded_rooms": "Exkluderade rum"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Expert: när PÅ verifieras SHC:s TLS-certifikatets värdnamn. Bosch SHC-certifikatets värdnamn matchar normalt INTE dess IP, så att aktivera detta bryter vanligtvis anslutningen — lämna AV om du inte är säker på att din konfiguration matchar. Standard: av.",
+                            "long_poll_timeout": "Hur länge varje lång polling-begäran väntar på händelser innan återanslutning. Standard 10. Öka för att minska återanslutningar, minska om ditt nätverk kopplar bort inaktiva anslutningar.",
+                            "excluded_devices": "Enheter att dölja — inga enheter skapas för dem. Lämna tomt för att inkludera alla. Befintliga enheter för nyligen exkluderade enheter kvarstår tills de tas bort manuellt.",
+                            "excluded_rooms": "Dölj alla enheter i dessa Bosch-rum. Lämna tomt för att inkludera alla."
+                        }
+                    }
+                }
+            }
+        }
     }
 }

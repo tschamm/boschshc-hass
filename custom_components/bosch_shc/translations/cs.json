@@ -1,21 +1,73 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Za\u0159\u00edzen\u00ed je ji\u017e nastaveno",
-            "reauth_successful": "Op\u011btovn\u00e9 ov\u011b\u0159en\u00ed bylo \u00fasp\u011b\u0161n\u00e9"
+            "already_configured": "Zařízení je již nastaveno",
+            "reauth_successful": "Opětovné ověření bylo úspěšné"
         },
         "error": {
-            "cannot_connect": "Nepoda\u0159ilo se p\u0159ipojit",
-            "invalid_auth": "Neplatn\u00e9 ov\u011b\u0159en\u00ed",
-            "unknown": "Neo\u010dek\u00e1van\u00e1 chyba"
+            "cannot_connect": "Nepodařilo se připojit",
+            "invalid_auth": "Neplatné ověření",
+            "unknown": "Neočekávaná chyba"
         },
         "step": {
             "reauth_confirm": {
-                "title": "Znovu ov\u011b\u0159it integraci"
+                "title": "Znovu ověřit integraci"
             },
             "user": {
                 "data": {
                     "host": "Hostitel"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Nastavení",
+                "description": "Nastavte, které entity a automatizace integrace Bosch Smart Home Controller vytváří a spravuje.",
+                "sections": {
+                    "features": {
+                        "name": "Funkce",
+                        "description": "Zapněte nebo vypněte typy entit, které integrace vytváří.",
+                        "data": {
+                            "scenarios_as_buttons": "Zobrazit scénáře jako tlačítkové entity",
+                            "diagnostic_entities": "Vytvořit diagnostické senzory",
+                            "enable_rawscan_service": "Povolit diagnostickou službu rawscan"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
+                            "diagnostic_entities": "Pokud ZAPNUTO (výchozí): pro každé podporované zařízení jsou vytvořeny diagnostické senzorové entity — poloha ventilu (termostaty) a kvalita komunikace (chytré zásuvky). Vypnutím snížíte počet entit, pokud tyto senzory nepotřebujete.",
+                            "enable_rawscan_service": "Pokud ZAPNUTO: zaregistruje službu bosch_shc.trigger_rawscan pro ladění surového API. Vypnutím ji skryjete. Výchozí: zapnuto."
+                        }
+                    },
+                    "presence": {
+                        "name": "Dětská pojistka podle přítomnosti",
+                        "description": "Automaticky uzamkne všechny termostaty a spínače SHC, když je někdo doma, a odemkne je, když všichni odejdou.",
+                        "data": {
+                            "child_lock_enabled": "Povolit dětskou pojistku na základě přítomnosti",
+                            "child_lock_presence_entity": "Entity přítomnosti"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Hlavní přepínač. Když je ZAPNUTO, dětská pojistka na všech termostatech a spínacích zařízeních SHC sleduje níže uvedené entity přítomnosti — zamčeno, když je někdo doma, odemčeno, když všichni odejdou. Když je VYPNUTO, integrace se dětské pojistky nikdy nedotkne.",
+                            "child_lock_presence_entity": "Osoby/zařízení, která rozhodují o dětské pojistce. Zapne se, jakmile je doma JAKÁKOLIV z nich, a vypne se teprve, když jsou VŠECHNY pryč. Vyberte např. entity Person vaší domácnosti. 'Doma' je detekováno automaticky (home pro person/device_tracker/zone/group, on pro binary_sensor/input_boolean)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Pokročilé",
+                        "description": "Nízkoúrovňové parametry připojení. Změna těchto hodnot zřídka pomáhá — před úpravou si přečtěte dokumentaci.",
+                        "data": {
+                            "ssl_verify_hostname": "Ověřit název hostitele certifikátu SHC",
+                            "long_poll_timeout": "Časový limit long-poll (sekundy)",
+                            "excluded_devices": "Vyloučená zařízení",
+                            "excluded_rooms": "Vyloučené místnosti"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Expert: pokud ZAPNUTO, ověřuje se název hostitele TLS certifikátu SHC. Název hostitele certifikátu Bosch SHC obvykle NEODPOVÍDÁ jeho IP adrese, takže povolení obvykle přeruší připojení — nechte VYPNUTO, pokud si nejste jisti. Výchozí: vypnuto.",
+                            "long_poll_timeout": "Jak dlouho každý long-poll požadavek čeká na události před opětovným připojením. Výchozí: 10. Zvyšte pro snížení opětovných připojení, snižte pokud vaše síť ukončuje nečinná připojení.",
+                            "excluded_devices": "Zařízení ke skrytí — pro ně nejsou vytvářeny žádné entity. Nechte prázdné pro zahrnutí všech. Stávající entity nově vyloučených zařízení zůstávají, dokud nejsou ručně odstraněny.",
+                            "excluded_rooms": "Skryje všechna zařízení v těchto místnostech Bosch. Nechte prázdné pro zahrnutí všech."
+                        }
+                    }
                 }
             }
         }

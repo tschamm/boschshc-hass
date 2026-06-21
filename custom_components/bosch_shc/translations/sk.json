@@ -38,6 +38,58 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Nastavenia",
+        "description": "Nakonfigurujte, ktoré entity a automatizácie integrácia Bosch Smart Home Controller vytvára a spravuje.",
+        "sections": {
+          "features": {
+            "name": "Funkcie",
+            "description": "Prepínajte typy entít, ktoré integrácia vytvára.",
+            "data": {
+              "scenarios_as_buttons": "Zobraziť scenáre ako tlačidlové entity",
+              "diagnostic_entities": "Vytvoriť diagnostické senzory",
+              "enable_rawscan_service": "Povoliť diagnostickú službu rawscan"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Keď ZAP: každý scenár Bosch SHC sa zobrazí aj ako tlačidlová entita v Home Assistant (okrem služby trigger_scenario). Užitočné pre dlaždice panela a automatizácie, ktoré priamo spúšťajú scenáre. Predvolené: vyp.",
+              "diagnostic_entities": "Keď ZAP (predvolené): pre každé podporované zariadenie sa vytvoria entity diagnostických senzorov — poloha ventilového zdvíhača (termostaty) a kvalita komunikácie (inteligentné zásuvky). Vypnite, aby ste znížili počet entít, ak tieto senzory nepotrebujete.",
+              "enable_rawscan_service": "Keď ZAP: zaregistruje službu bosch_shc.trigger_rawscan na ladenie surového API. Vypnite, aby ste ju skryli. Predvolené: zap."
+            }
+          },
+          "presence": {
+            "name": "Detský zámok na základe prítomnosti",
+            "description": "Automaticky uzamknite všetky termostaty a spínače SHC, keď je niekto doma, a odomknite ich, keď všetci odídu.",
+            "data": {
+              "child_lock_enabled": "Aktivovať detský zámok na základe prítomnosti",
+              "child_lock_presence_entity": "Entity prítomnosti"
+            },
+            "data_description": {
+              "child_lock_enabled": "Hlavný prepínač. Keď ZAP, detský zámok na všetkých termostatoch a spínačoch SHC sleduje entity prítomnosti nižšie — uzamknutý, keď je niekto doma, odomknutý, keď sú všetci preč. Keď VYP, integrácia detský zámok nikdy nemení.",
+              "child_lock_presence_entity": "Osoby/zariadenia, ktoré rozhodujú o detskom zámku. Zapne sa hneď, ako je AKÁKOĽVEK z nich doma, a vypne sa až keď sú VŠETKY preč. Vyberte napríklad entity Person vašej domácnosti. 'Doma' sa zistí automaticky (home pre person/device_tracker/zone/group, on pre binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Pokročilé",
+            "description": "Nízkoúrovňové parametre pripojenia. Ich zmena zriedka pomáha — pred úpravou si pozrite dokumentáciu.",
+            "data": {
+              "ssl_verify_hostname": "Overiť názov hostiteľa certifikátu SHC",
+              "long_poll_timeout": "Časový limit dlhého prieskumu (sekundy)",
+              "excluded_devices": "Vylúčené zariadenia",
+              "excluded_rooms": "Vylúčené miestnosti"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Odborník: keď ZAP, overuje sa názov hostiteľa TLS certifikátu SHC. Názov hostiteľa certifikátu Bosch SHC zvyčajne NEZODPOVEDÁ jeho IP adrese, takže aktivácia tohto nastavenia zvyčajne preruší pripojenie — nechajte VYP, pokiaľ si nie ste istí, že vaše nastavenie zodpovedá. Predvolené: vyp.",
+              "long_poll_timeout": "Ako dlho každá požiadavka dlhého prieskumu čaká na udalosti pred opätovným pripojením. Predvolené 10. Zvýšte, aby ste znížili opätovné pripojenia; znížte, ak vaša sieť preruší nečinné pripojenia.",
+              "excluded_devices": "Zariadenia na skrytie — pre ne sa nevytvárajú žiadne entity. Nechajte prázdne, ak chcete zahrnúť všetky. Existujúce entity pre novo vylúčené zariadenia zostanú až do ručného odstránenia.",
+              "excluded_rooms": "Skryť všetky zariadenia v týchto miestnostiach Bosch. Nechajte prázdne, ak chcete zahrnúť všetky."
+            }
+          }
+        }
+      }
+    }
+  },
   "services": {
     "smokedetector_check": {
       "name": "Kontrola detektora dymu",

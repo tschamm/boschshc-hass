@@ -33,5 +33,57 @@
                 "title": "SHC \uc778\uc99d \ub9e4\uac1c\ubcc0\uc218"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — 설정",
+                "description": "Bosch Smart Home Controller 통합이 생성하고 관리하는 엔티티 및 자동화를 구성합니다.",
+                "sections": {
+                    "features": {
+                        "name": "기능",
+                        "description": "통합이 생성하는 엔티티 유형을 전환합니다.",
+                        "data": {
+                            "scenarios_as_buttons": "시나리오를 버튼 엔티티로 노출",
+                            "diagnostic_entities": "진단 센서 생성",
+                            "enable_rawscan_service": "rawscan 진단 서비스 활성화"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
+                            "diagnostic_entities": "켜짐(기본값): 지원되는 각 장치에 대해 진단 센서 엔티티가 생성됩니다 — 밸브 태핏 위치(온도 조절기) 및 통신 품질(스마트 플러그). 이 센서가 필요 없으면 끄기로 엔티티 수를 줄이세요.",
+                            "enable_rawscan_service": "켜짐: 원시 API 디버깅을 위해 bosch_shc.trigger_rawscan 서비스를 등록합니다. 숨기려면 끄세요. 기본값: 켜짐."
+                        }
+                    },
+                    "presence": {
+                        "name": "재실 기반 아동 잠금",
+                        "description": "누군가 집에 있는 동안 모든 SHC 온도 조절기와 스위치를 자동으로 잠그고, 모든 사람이 외출하면 잠금을 해제합니다.",
+                        "data": {
+                            "child_lock_enabled": "재실 기반 아동 잠금 활성화",
+                            "child_lock_presence_entity": "재실 엔티티"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "마스터 스위치. 켜짐 시 모든 SHC 온도 조절기와 스위치 장치의 아동 잠금이 아래의 재실 엔티티를 따릅니다 — 누군가 집에 있으면 잠금, 모든 사람이 외출하면 잠금 해제. 꺼짐 시 통합이 아동 잠금을 건드리지 않습니다.",
+                            "child_lock_presence_entity": "아동 잠금을 결정하는 사람/장치입니다. 이 중 하나라도 집에 있으면 즉시 켜지고, 모두 외출할 때만 꺼집니다. 예를 들어 가구 구성원의 Person 엔티티를 선택하세요. '집에 있음'은 자동으로 감지됩니다(person/device_tracker/zone/group은 home, binary_sensor/input_boolean은 on)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "고급",
+                        "description": "저수준 연결 매개변수입니다. 변경해도 거의 도움이 되지 않습니다 — 수정 전 문서를 참조하세요.",
+                        "data": {
+                            "ssl_verify_hostname": "SHC 인증서 호스트 이름 확인",
+                            "long_poll_timeout": "롱 폴 타임아웃(초)",
+                            "excluded_devices": "제외된 장치",
+                            "excluded_rooms": "제외된 방"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "전문가용: 켜짐일 때 SHC의 TLS 인증서 호스트 이름을 확인합니다. Bosch SHC 인증서의 호스트 이름은 일반적으로 IP와 일치하지 않으므로, 이 옵션을 활성화하면 보통 연결이 끊어집니다 — 설정이 일치한다고 확실한 경우가 아니면 끄세요. 기본값: 꺼짐.",
+                            "long_poll_timeout": "재연결 전 각 롱 폴 요청이 이벤트를 기다리는 시간입니다. 기본값 10. 재연결을 줄이려면 늘리고, 네트워크가 유휴 연결을 끊으면 줄이세요.",
+                            "excluded_devices": "숨길 장치 — 이 장치에 대한 엔티티가 생성되지 않습니다. 모두 포함하려면 비워두세요. 새로 제외된 장치의 기존 엔티티는 수동으로 제거할 때까지 유지됩니다.",
+                            "excluded_rooms": "이 Bosch 방의 모든 장치를 숨깁니다. 모두 포함하려면 비워두세요."
+                        }
+                    }
+                }
+            }
+        }
     }
 }

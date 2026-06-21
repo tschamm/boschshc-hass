@@ -128,7 +128,7 @@ def _make_hass(session, entry_id="entry-1"):
 
 
 def _make_config_entry(entry_id="entry-1"):
-    return SimpleNamespace(entry_id=entry_id)
+    return SimpleNamespace(options={}, entry_id=entry_id)
 
 
 # ---------------------------------------------------------------------------
@@ -239,9 +239,9 @@ class TestClimateControlInit:
         return ClimateControl(device=dev, name="Test Room Climate", entry_id="e1")
 
     def test_init_sets_name(self):
-        """Line 63: self._name = name."""
+        """Line 63: self._attr_name = name (ClimateControl stores name in _attr_name)."""
         entity = self._make_entity()
-        assert entity._name == "Test Room Climate"
+        assert entity._attr_name == "Test Room Climate"
 
     def test_init_sets_unique_id(self):
         """Line 64: self._attr_unique_id = root_device_id + '_' + id."""
@@ -271,14 +271,14 @@ class TestClimateControlProperties:
         dev = _make_cc_device(**kwargs)
         entity = ClimateControl.__new__(ClimateControl)
         entity._device = dev
-        entity._name = "Prop Test"
+        entity._attr_name = "Prop Test"  # device_name / name reads _attr_name
         entity._attr_unique_id = f"{dev.root_device_id}_{dev.id}"
         return entity
 
     # Line 69: name property
     def test_name_property(self):
         entity = self._entity()
-        entity._name = "Custom Name"
+        entity._attr_name = "Custom Name"
         assert entity.name == "Custom Name"
 
     # Line 79: temperature_unit

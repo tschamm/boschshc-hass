@@ -37,9 +37,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DOMAIN, DATA_SHC
-from .entity import SHCEntity, async_migrate_to_new_unique_id
+from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 1
 
 
 @dataclass
@@ -252,6 +254,8 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for switch in session.device_helper.smart_plugs:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -278,6 +282,8 @@ async def async_setup_entry(
         session.device_helper.light_switches_bsm
         + session.device_helper.micromodule_light_attached
     ):
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -290,6 +296,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.smart_plugs_compact:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -302,6 +310,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.micromodule_relays:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -314,6 +324,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_eyes:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -350,6 +362,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_360:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -373,6 +387,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_outdoor_gen2:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -406,7 +422,9 @@ async def async_setup_entry(
         )
 
     presence_simulation_system = session.device_helper.presence_simulation_system
-    if presence_simulation_system:
+    if presence_simulation_system and not device_excluded(
+        presence_simulation_system, config_entry.options
+    ):
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -421,6 +439,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.shutter_contacts2:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -442,6 +462,8 @@ async def async_setup_entry(
             )
 
     for switch in session.device_helper.thermostats:
+        if device_excluded(switch, config_entry.options):
+            continue
         if switch.supports_silentmode:
             entities.append(
                 SHCSwitch(
@@ -461,6 +483,8 @@ async def async_setup_entry(
         # hasattr guard so an older (pinned) lib does not raise on device.child_lock
         + [d for d in session.device_helper.wallthermostats if hasattr(d, "child_lock")]
     ):
+        if device_excluded(switch, config_entry.options):
+            continue
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -482,6 +506,8 @@ async def async_setup_entry(
         + session.device_helper.micromodule_dimmers
         + session.device_helper.light_switches_bsm
     ):
+        if device_excluded(switch, config_entry.options):
+            continue
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -492,6 +518,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.motion_detectors2:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -644,8 +672,11 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         self._session = session
         self._entry_id = entry_id
         self.entity_description = description
-        # Primary entity: _attr_name = None means HA uses the device name.
-        self._attr_name = None if attr_name is None else attr_name
+        # UDS entity: the state name IS the entity's distinguishing name.
+        # With has_entity_name=True and _attr_name=None HA would show the SHC hub
+        # name only; set _attr_name to the UDS state name so the entity is
+        # identifiable (e.g. "Vacation Mode").
+        self._attr_name = device.name if attr_name is None else attr_name
 
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"userdefinedstate_{slugify(self._device.name)}"

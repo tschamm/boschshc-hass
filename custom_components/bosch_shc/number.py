@@ -16,7 +16,9 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity
+from .entity import SHCEntity, device_excluded
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -31,6 +33,8 @@ async def async_setup_entry(
     for number in (
         session.device_helper.thermostats + session.device_helper.roomthermostats
     ):
+        if device_excluded(number, config_entry.options):
+            continue
         entities.append(
             SHCNumber(
                 device=number,

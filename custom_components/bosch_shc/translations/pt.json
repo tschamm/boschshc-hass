@@ -1,23 +1,201 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "O dispositivo j\u00e1 est\u00e1 configurado",
-            "reauth_successful": "Reautentica\u00e7\u00e3o bem sucedida"
+  "config": {
+    "abort": {
+      "already_configured": "O dispositivo já está configurado",
+      "reauth_successful": "Reautenticação bem-sucedida",
+      "reconfigure_successful": "Reconfiguração bem-sucedida",
+      "wrong_shc": "O host introduzido pertence a outro controlador Bosch SHC. Introduza o host correto para esta entrada."
+    },
+    "error": {
+      "cannot_connect": "A ligação falhou",
+      "invalid_auth": "Autenticação inválida",
+      "pairing_failed": "Emparelhamento falhou; verifique se o Bosch Smart Home Controller está em modo de emparelhamento (LED a piscar) e se a sua senha está correta.",
+      "session_error": "Erro de sessão: a API devolveu um resultado inválido.",
+      "unknown": "Erro inesperado"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I: Mantenha o botão frontal premido até o LED começar a piscar.\nSmart Home Controller II: Prima brevemente o botão de função. As luzes de nuvem e rede piscam a laranja.\nO dispositivo está pronto para emparelhar.\n\nPronto para configurar {model} @ {host} com Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Nome do cliente para o certificado",
+          "password": "Senha do controlador Smart Home"
         },
-        "error": {
-            "cannot_connect": "A liga\u00e7\u00e3o falhou",
-            "invalid_auth": "Autentica\u00e7\u00e3o inv\u00e1lida",
-            "unknown": "Erro inesperado"
-        },
-        "step": {
-            "reauth_confirm": {
-                "title": "Reautenticar integra\u00e7\u00e3o"
-            },
-            "user": {
-                "data": {
-                    "host": "Endere\u00e7o"
-                }
-            }
+        "data_description": {
+          "name": "Nome mostrado na app SHC sob clientes ligados.",
+          "password": "A senha definida na aplicação Bosch Smart Home."
         }
+      },
+      "reauth_confirm": {
+        "description": "A integração Bosch SHC precisa de reautenticar a sua conta.",
+        "title": "Reautenticar integração",
+        "data": {
+          "host": "Endereço"
+        },
+        "data_description": {
+          "host": "Endereço IP ou nome de host do controlador SHC (ex. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar Bosch SHC",
+        "description": "Atualize o endereço IP ou nome de host do seu Bosch Smart Home Controller. Os seus certificados e credenciais serão preservados.",
+        "data": {
+          "host": "Endereço"
+        },
+        "data_description": {
+          "host": "Novo endereço IP ou nome de host do controlador SHC (ex. 192.168.x.y)."
+        }
+      },
+      "user": {
+        "data": {
+          "host": "Endereço"
+        },
+        "data_description": {
+          "host": "Endereço IP ou nome de host do controlador SHC (ex. 192.168.x.y)."
+        },
+        "description": "Configure o seu Bosch Smart Home Controller para permitir monitorização e controlo com Home Assistant.",
+        "title": "Parâmetros de autenticação SHC"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Configurações",
+        "description": "Configure quais entidades e automatizações a integração Bosch Smart Home Controller cria e gere.",
+        "sections": {
+          "features": {
+            "name": "Funcionalidades",
+            "description": "Ative ou desative os tipos de entidades que a integração cria.",
+            "data": {
+              "scenarios_as_buttons": "Expor cenários como entidades de botão",
+              "diagnostic_entities": "Criar sensores de diagnóstico",
+              "enable_rawscan_service": "Ativar o serviço de diagnóstico rawscan"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC aparece também como entidade de botão no Home Assistant (além do serviço `trigger_scenario`). Útil para mosaicos do painel e automatizações que ativam cenários diretamente. Predefinição: desativado.",
+              "diagnostic_entities": "Quando ATIVADO (predefinição): entidades de sensor de diagnóstico são criadas para cada dispositivo compatível — posição do taquet da válvula (termostatos) e qualidade de comunicação (tomadas inteligentes). Desative para reduzir o número de entidades se não precisar destes sensores.",
+              "enable_rawscan_service": "Quando ATIVADO: regista o serviço bosch_shc.trigger_rawscan para depuração bruta da API. Desative para o ocultar. Predefinição: ativado."
+            }
+          },
+          "presence": {
+            "name": "Bloqueio infantil baseado em presença",
+            "description": "Bloqueie automaticamente todos os termostatos e interruptores SHC quando alguém estiver em casa, e desbloqueie quando todos saírem.",
+            "data": {
+              "child_lock_enabled": "Ativar bloqueio infantil baseado em presença",
+              "child_lock_presence_entity": "Entidades de presença"
+            },
+            "data_description": {
+              "child_lock_enabled": "Interruptor principal. Quando ATIVADO, o bloqueio infantil em todos os termostatos e dispositivos de interruptor SHC segue as entidades de presença abaixo — bloqueado quando alguém está em casa, desbloqueado quando todos estão ausentes. Quando DESATIVADO, a integração nunca toca no bloqueio infantil.",
+              "child_lock_presence_entity": "As pessoas/dispositivos que decidem o bloqueio infantil. Ativa assim que QUALQUER um deles estiver em casa, e desativa apenas quando TODOS estiverem ausentes. Escolha, por exemplo, as entidades Pessoa da sua residência. 'Em casa' é detetado automaticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Avançado",
+            "description": "Parâmetros de ligação de baixo nível. Alterá-los raramente ajuda — consulte a documentação antes de os modificar.",
+            "data": {
+              "ssl_verify_hostname": "Verificar nome de host SSL",
+              "long_poll_timeout": "Tempo limite de long-poll (segundos)",
+              "excluded_devices": "Dispositivos excluídos",
+              "excluded_rooms": "Divisões excluídas"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Quando ATIVADO: a biblioteca boschshcpy verifica se o nome de host do certificado SSL do controlador SHC corresponde ao seu IP/nome de host. Atualmente sem efeito — é necessária uma atualização futura de boschshcpy. Predefinição: desativado.",
+              "long_poll_timeout": "Quanto tempo (em segundos) o pedido long-poll ao controlador SHC aguarda eventos push antes de se reconectar. Intervalo: 5–300. Predefinição: 30. Aumente se vir reconexões frequentes numa rede lenta; reduza se o router interromper ligações inativas. Requer uma atualização futura de boschshcpy.",
+              "excluded_devices": "Dispositivos a ocultar — não são criadas entidades para eles. Deixe vazio para incluir todos. As entidades existentes para dispositivos recentemente excluídos permanecem até serem removidas manualmente.",
+              "excluded_rooms": "Ocultar todos os dispositivos nestas divisões Bosch. Deixe vazio para incluir todas."
+            }
+          }
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Botão inferior",
+      "UPPER_BUTTON": "Botão superior",
+      "LOWER_LEFT_BUTTON": "Botão inferior esquerdo",
+      "UPPER_LEFT_BUTTON": "Botão superior esquerdo",
+      "LOWER_RIGHT_BUTTON": "Botão inferior direito",
+      "UPPER_RIGHT_BUTTON": "Botão superior direito",
+      "IDLE_OFF": "Alarme desligado",
+      "INTRUSION_ALARM": "Alarme de intrusão",
+      "SECONDARY_ALARM": "Alarme secundário",
+      "PRIMARY_ALARM": "Alarme principal",
+      "ALARM_OFF": "Alarme desligado",
+      "ALARM_ON": "Alarme ligado",
+      "ALARM_MUTED": "Alarme silenciado"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} pressão curta",
+      "PRESS_LONG": "{subtype} pressão longa",
+      "MOTION": "Movimento detetado",
+      "SCENARIO": "Cenário {subtype} ativado",
+      "ALARM": "{subtype} ativado"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Teste do detetor de fumo",
+      "description": "Executa a rotina de teste de um detetor de fumo.",
+      "fields": {
+        "entity_id": {
+          "name": "ID da entidade",
+          "description": "Nome da entidade do detetor de fumo."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Ativar cenário",
+      "description": "Ativa um cenário no Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Nome do SHC",
+          "description": "Título do SHC"
+        },
+        "name": {
+          "name": "Nome do cenário",
+          "description": "Nome do cenário a ativar"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Ativar rawscan",
+      "description": "Ativa um rawscan no Bosch SHC para descobrir dispositivos. O resultado é transmitido para o registo de informações.",
+      "fields": {
+        "title": {
+          "name": "Nome do SHC",
+          "description": "Título do SHC"
+        },
+        "command": {
+          "name": "Comando rawscan",
+          "description": "Comandos possíveis: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID do dispositivo",
+          "description": "ID do dispositivo para os comandos 'device', 'device_services' ou 'device_service'"
+        },
+        "service_id": {
+          "name": "ID do serviço",
+          "description": "ID do serviço para o comando 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Estado de alarme do detetor de fumo",
+      "description": "Envia um comando personalizado para um detetor de fumo.",
+      "fields": {
+        "entity_id": {
+          "name": "ID da entidade",
+          "description": "Nome da entidade do detetor de fumo."
+        },
+        "command": {
+          "name": "Comando personalizado",
+          "description": "Cadeia de comando para enviar ao detetor de fumo."
+        }
+      }
+    }
+  }
 }

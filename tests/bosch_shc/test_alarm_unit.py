@@ -182,7 +182,7 @@ async def _run_setup_entry():
         data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
     )
 
-    config_entry = SimpleNamespace(entry_id=entry_id)
+    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
 
     added: list = []
 
@@ -232,7 +232,7 @@ def test_async_setup_entry_calls_migrate_with_old_unique_id():
     hass = SimpleNamespace(
         data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
     )
-    config_entry = SimpleNamespace(entry_id=entry_id)
+    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
 
     migrate_mock = AsyncMock(return_value=None)
 

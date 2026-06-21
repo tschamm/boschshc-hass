@@ -5,6 +5,7 @@ No HA harness required.
 """
 
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from homeassistant.components.light import ColorMode
 from homeassistant.util import color as color_util
@@ -45,6 +46,9 @@ def _make_switch(device):
     """Instantiate LightSwitch bypassing SHCEntity.__init__."""
     sw = LightSwitch.__new__(LightSwitch)
     sw._device = device
+    # turn_on() calls schedule_update_ha_state() which needs self.hass; mock it
+    # so harness-free tests don't fail with AttributeError on self.hass.loop.
+    sw.schedule_update_ha_state = MagicMock()
     # Replay the relevant part of __init__ (color-mode detection only)
     sw._attr_supported_color_modes = set()
     if device.supports_color_hsb:

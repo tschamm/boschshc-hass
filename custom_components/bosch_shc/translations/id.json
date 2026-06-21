@@ -33,5 +33,57 @@
                 "title": "Parameter autentikasi SHC"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Pengaturan",
+                "description": "Konfigurasikan entitas dan otomasi apa yang dibuat dan dikelola oleh integrasi Bosch Smart Home Controller.",
+                "sections": {
+                    "features": {
+                        "name": "Fitur",
+                        "description": "Aktifkan atau nonaktifkan jenis entitas yang dibuat oleh integrasi.",
+                        "data": {
+                            "scenarios_as_buttons": "Tampilkan skenario sebagai entitas tombol",
+                            "diagnostic_entities": "Buat sensor diagnostik",
+                            "enable_rawscan_service": "Aktifkan layanan diagnostik rawscan"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "Jika AKTIF: setiap skenario Bosch SHC juga muncul sebagai entitas tombol di Home Assistant (selain layanan trigger_scenario). Berguna untuk ubin dasbor dan otomasi yang memicu skenario secara langsung. Default: nonaktif.",
+                            "diagnostic_entities": "Jika AKTIF (default): entitas sensor diagnostik dibuat untuk setiap perangkat yang didukung — posisi katup termostat dan kualitas komunikasi (colokan pintar). Nonaktifkan untuk mengurangi jumlah entitas jika Anda tidak memerlukan sensor ini.",
+                            "enable_rawscan_service": "Jika AKTIF: mendaftarkan layanan bosch_shc.trigger_rawscan untuk debugging API mentah. Nonaktifkan untuk menyembunyikannya. Default: aktif."
+                        }
+                    },
+                    "presence": {
+                        "name": "Kunci anak berbasis kehadiran",
+                        "description": "Kunci semua termostat dan sakelar SHC secara otomatis saat seseorang ada di rumah, dan buka kuncinya saat semua orang pergi.",
+                        "data": {
+                            "child_lock_enabled": "Aktifkan kunci anak berbasis kehadiran",
+                            "child_lock_presence_entity": "Entitas kehadiran"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Sakelar utama. Saat AKTIF, kunci anak pada semua termostat dan perangkat sakelar SHC mengikuti entitas kehadiran di bawah — terkunci saat seseorang ada di rumah, tidak terkunci saat semua orang pergi. Saat NONAKTIF, integrasi tidak pernah menyentuh kunci anak.",
+                            "child_lock_presence_entity": "Orang/perangkat yang menentukan kunci anak. Kunci AKTIF segera saat SALAH SATU dari mereka ada di rumah, dan NONAKTIF hanya saat SEMUA pergi. Pilih misalnya entitas Person dari anggota rumah tangga Anda. 'Di rumah' terdeteksi otomatis (home untuk person/device_tracker/zone/group, on untuk binary_sensor/input_boolean)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Lanjutan",
+                        "description": "Parameter koneksi tingkat rendah. Mengubahnya jarang membantu — konsultasikan dokumentasi sebelum menyentuhnya.",
+                        "data": {
+                            "ssl_verify_hostname": "Verifikasi nama host sertifikat SHC",
+                            "long_poll_timeout": "Batas waktu long-poll (detik)",
+                            "excluded_devices": "Perangkat yang dikecualikan",
+                            "excluded_rooms": "Ruangan yang dikecualikan"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Ahli: jika AKTIF, nama host sertifikat TLS SHC diverifikasi. Nama host sertifikat Bosch SHC biasanya TIDAK cocok dengan IP-nya, sehingga mengaktifkan ini biasanya memutus koneksi — biarkan NONAKTIF kecuali Anda tahu bahwa konfigurasi Anda cocok. Default: nonaktif.",
+                            "long_poll_timeout": "Berapa lama setiap permintaan long-poll menunggu peristiwa sebelum menyambung kembali. Default: 10. Tingkatkan untuk mengurangi penyambungan ulang, kurangi jika jaringan Anda memutus koneksi idle.",
+                            "excluded_devices": "Perangkat yang disembunyikan — tidak ada entitas yang dibuat untuk mereka. Biarkan kosong untuk menyertakan semua. Entitas yang ada untuk perangkat yang baru dikecualikan tetap ada hingga dihapus secara manual.",
+                            "excluded_rooms": "Sembunyikan setiap perangkat di ruangan Bosch ini. Biarkan kosong untuk menyertakan semua."
+                        }
+                    }
+                }
+            }
+        }
     }
 }

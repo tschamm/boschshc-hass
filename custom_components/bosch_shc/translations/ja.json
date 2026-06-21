@@ -1,36 +1,88 @@
 {
     "config": {
         "abort": {
-            "already_configured": "\u30c7\u30d0\u30a4\u30b9\u306f\u3059\u3067\u306b\u8a2d\u5b9a\u3055\u308c\u3066\u3044\u307e\u3059",
-            "reauth_successful": "\u518d\u8a8d\u8a3c\u306b\u6210\u529f\u3057\u307e\u3057\u305f"
+            "already_configured": "デバイスはすでに設定されています",
+            "reauth_successful": "再認証に成功しました"
         },
         "error": {
-            "cannot_connect": "\u63a5\u7d9a\u306b\u5931\u6557\u3057\u307e\u3057\u305f",
-            "invalid_auth": "\u7121\u52b9\u306a\u8a8d\u8a3c",
-            "pairing_failed": "\u30da\u30a2\u30ea\u30f3\u30b0\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002Bosch Smart Home Controller\u304c\u30da\u30a2\u30ea\u30f3\u30b0\u30e2\u30fc\u30c9\u306b\u306a\u3063\u3066\u3044\u308b(LED\u304c\u70b9\u6ec5)\u3053\u3068\u3068\u3001\u30d1\u30b9\u30ef\u30fc\u30c9\u304c\u6b63\u3057\u3044\u304b\u3069\u3046\u304b\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
-            "session_error": "\u30bb\u30c3\u30b7\u30e7\u30f3\u30a8\u30e9\u30fc: API\u304c\u3001OK\u4ee5\u5916\u306e\u7d50\u679c\u3092\u8fd4\u3057\u307e\u3059\u3002",
-            "unknown": "\u4e88\u671f\u3057\u306a\u3044\u30a8\u30e9\u30fc"
+            "cannot_connect": "接続に失敗しました",
+            "invalid_auth": "無効な認証",
+            "pairing_failed": "ペアリングに失敗しました。Bosch Smart Home Controllerがペアリングモードになっている(LEDが点滅)こと、およびパスワードが正しいかどうかを確認してください。",
+            "session_error": "セッションエラー: APIが、OK以外の結果を返します。",
+            "unknown": "予期しないエラー"
         },
         "flow_title": "Bosch SHC: {name}",
         "step": {
             "confirm_discovery": {
-                "description": "LED\u304c\u70b9\u6ec5\u3057\u59cb\u3081\u308b\u307e\u3067\u3001Bosch Smart Home Controller\u306e\u524d\u9762\u306b\u3042\u308b\u30dc\u30bf\u30f3\u3092\u62bc\u3057\u3066\u304f\u3060\u3055\u3044\u3002\nHome Assistant\u3067\u3001{model} @ {host} \u3092\u8a2d\u5b9a\u3059\u308b\u6e96\u5099\u306f\u3067\u304d\u307e\u3057\u305f\u304b\uff1f"
+                "description": "LEDが点滅し始めるまで、Bosch Smart Home Controllerの前面にあるボタンを押してください。\nHome Assistantで、{model} @ {host} を設定する準備はできましたか？"
             },
             "credentials": {
                 "data": {
-                    "password": "Smart Home Controller\u306e\u30d1\u30b9\u30ef\u30fc\u30c9"
+                    "password": "Smart Home Controllerのパスワード"
                 }
             },
             "reauth_confirm": {
-                "description": "Bosch_shc\u7d71\u5408\u3067\u306f\u3001\u30a2\u30ab\u30a6\u30f3\u30c8\u3092\u518d\u8a8d\u8a3c\u3059\u308b\u5fc5\u8981\u304c\u3042\u308a\u307e\u3059",
-                "title": "\u7d71\u5408\u306e\u518d\u8a8d\u8a3c"
+                "description": "Bosch_shc統合では、アカウントを再認証する必要があります",
+                "title": "統合の再認証"
             },
             "user": {
                 "data": {
-                    "host": "\u30db\u30b9\u30c8"
+                    "host": "ホスト"
                 },
-                "description": "Bosch Smart Home Controller\u3092\u30bb\u30c3\u30c8\u30a2\u30c3\u30d7\u3057\u3066\u3001Home Assistant\u3067\u76e3\u8996\u304a\u3088\u3073\u5236\u5fa1\u3067\u304d\u308b\u3088\u3046\u306b\u3057\u307e\u3059\u3002",
-                "title": "SHC\u8a8d\u8a3c\u30d1\u30e9\u30e1\u30fc\u30bf\u30fc"
+                "description": "Bosch Smart Home Controllerをセットアップして、Home Assistantで監視および制御できるようにします。",
+                "title": "SHC認証パラメーター"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — 設定",
+                "description": "Bosch Smart Home Controllerインテグレーションが作成・管理するエンティティおよびオートメーションを設定します。",
+                "sections": {
+                    "features": {
+                        "name": "機能",
+                        "description": "インテグレーションが作成するエンティティの種類をオンまたはオフにします。",
+                        "data": {
+                            "scenarios_as_buttons": "シナリオをボタンエンティティとして公開する",
+                            "diagnostic_entities": "診断センサーを作成する",
+                            "enable_rawscan_service": "rawscan診断サービスを有効にする"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
+                            "diagnostic_entities": "オンの場合（デフォルト）：サポートされている各デバイスに対して診断センサーエンティティが作成されます — バルブタペット位置（サーモスタット）および通信品質（スマートプラグ）。これらのセンサーが不要な場合はオフにしてエンティティ数を削減できます。",
+                            "enable_rawscan_service": "オンの場合：生のAPIデバッグ用にbosch_shc.trigger_rawscanサービスを登録します。非表示にするにはオフにします。デフォルト：オン。"
+                        }
+                    },
+                    "presence": {
+                        "name": "在宅状況に基づくチャイルドロック",
+                        "description": "誰かが在宅中は全SHCサーモスタットとスイッチを自動的にロックし、全員が外出したときにロックを解除します。",
+                        "data": {
+                            "child_lock_enabled": "在宅ベースのチャイルドロックを有効にする",
+                            "child_lock_presence_entity": "在宅エンティティ"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "マスタースイッチ。オンの場合、全SHCサーモスタットとスイッチデバイスのチャイルドロックは以下の在宅エンティティに従います — 誰かが在宅中はロック、全員が外出するとロック解除。オフの場合、インテグレーションはチャイルドロックに一切触れません。",
+                            "child_lock_presence_entity": "チャイルドロックを決定する人物/デバイス。いずれか1つでも在宅になった瞬間にオンになり、全員が外出したときのみオフになります。例えば、世帯員のPersonエンティティを選択してください。「在宅」は自動検出されます（person/device_tracker/zone/groupはhome、binary_sensor/input_booleanはon）。"
+                        }
+                    },
+                    "advanced": {
+                        "name": "詳細設定",
+                        "description": "低レベルの接続パラメーター。これらを変更してもほとんど効果がありません — 変更前にドキュメントを参照してください。",
+                        "data": {
+                            "ssl_verify_hostname": "SHC証明書のホスト名を検証する",
+                            "long_poll_timeout": "ロングポールタイムアウト（秒）",
+                            "excluded_devices": "除外するデバイス",
+                            "excluded_rooms": "除外する部屋"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "上級者向け：オンの場合、SHCのTLS証明書のホスト名が検証されます。Bosch SHC証明書のホスト名は通常そのIPと一致しないため、有効にすると接続が切断されることがほとんどです — 設定が一致することを確認している場合を除き、オフのままにしてください。デフォルト：オフ。",
+                            "long_poll_timeout": "各ロングポールリクエストが再接続前にイベントを待つ時間。デフォルト：10。再接続を減らすには増やし、ネットワークがアイドル接続を切断する場合は減らします。",
+                            "excluded_devices": "非表示にするデバイス — これらに対してエンティティは作成されません。すべてを含めるには空のままにします。新たに除外されたデバイスの既存エンティティは手動で削除するまで残ります。",
+                            "excluded_rooms": "これらのBosch部屋にあるすべてのデバイスを非表示にします。すべてを含めるには空のままにします。"
+                        }
+                    }
+                }
             }
         }
     }

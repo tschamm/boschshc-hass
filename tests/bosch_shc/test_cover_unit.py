@@ -51,6 +51,9 @@ def _make_cover(device_model, level, operation_state, eventtype=None, keycode=No
         keycode=keycode,
         name="test-cover",
         stop=stop if stop is not None else _stop,
+        # Present Keypad service so _micromodule_keypad_switch_off runs its
+        # eventtype write (the #318 guard skips it only when this is None).
+        _keypad_service=SimpleNamespace(),
     )
     cover._stop_calls = stop_calls
     cover._current_operation_state = None

@@ -1,37 +1,201 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Urz\u0105dzenie jest ju\u017c skonfigurowane",
-            "reauth_successful": "Ponowne uwierzytelnienie powiod\u0142o si\u0119"
+  "config": {
+    "abort": {
+      "already_configured": "Urządzenie jest już skonfigurowane",
+      "reauth_successful": "Ponowne uwierzytelnienie powiodło się",
+      "reconfigure_successful": "Ponowna konfiguracja powiodła się",
+      "wrong_shc": "Podany host należy do innego kontrolera Bosch SHC. Wprowadź właściwy host dla tego wpisu."
+    },
+    "error": {
+      "cannot_connect": "Nie można nawiązać połączenia",
+      "invalid_auth": "Niepoprawne uwierzytelnienie",
+      "pairing_failed": "Parowanie nie powiodło się. Sprawdź, czy kontroler Bosch Smart Home jest w trybie parowania (miga dioda LED) i czy Twoje hasło jest prawidłowe.",
+      "session_error": "Błąd sesji: API zwróciło niepoprawny wynik.",
+      "unknown": "Nieoczekiwany błąd"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I: Naciśnij przycisk z przodu kontrolera, aż dioda LED zacznie migać.\nSmart Home Controller II: Krótko naciśnij przycisk funkcyjny. Wskaźniki chmury i sieci zaczną migać na pomarańczowo.\nUrządzenie jest gotowe do sparowania.\n\nCzy chcesz kontynuować konfigurację {model} @ {host} w Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Nazwa klienta dla certyfikatu",
+          "password": "Hasło kontrolera Smart Home"
         },
-        "error": {
-            "cannot_connect": "Nie mo\u017cna nawi\u0105za\u0107 po\u0142\u0105czenia",
-            "invalid_auth": "Niepoprawne uwierzytelnienie",
-            "pairing_failed": "Parowanie nie powiod\u0142o si\u0119. Sprawd\u017a, czy kontroler Bosch Smart Home jest w trybie parowania (miga dioda LED) i czy Twoje has\u0142o jest prawid\u0142owe.",
-            "session_error": "B\u0142\u0105d sesji: API zwr\u00f3ci\u0142o niepoprawny wynik.",
-            "unknown": "Nieoczekiwany b\u0142\u0105d"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "Naci\u015bnij przycisk z przodu kontrolera Bosch Smart Home, a\u017c dioda LED zacznie miga\u0107. Chcesz kontynuowa\u0107 konfiguracj\u0119 {model} @ {host} z Home Assistantem?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Has\u0142o"
-                }
-            },
-            "reauth_confirm": {
-                "description": "Integracja Bosch_SHC wymaga ponownego uwierzytelnienia Twojego konta",
-                "title": "Ponownie uwierzytelnij integracj\u0119"
-            },
-            "user": {
-                "data": {
-                    "host": "Nazwa hosta lub adres IP"
-                },
-                "description": "Skonfiguruj kontroler Bosch Smart Home, aby umo\u017cliwi\u0107 monitorowanie i sterowanie za pomoc\u0105 Home Assistanta.",
-                "title": "Parametry uwierzytelniania SHC"
-            }
+        "data_description": {
+          "name": "Nazwa wyświetlana w aplikacji SHC pod podłączonymi klientami.",
+          "password": "Hasło ustawione w aplikacji Bosch Smart Home."
         }
+      },
+      "reauth_confirm": {
+        "description": "Integracja Bosch SHC wymaga ponownego uwierzytelnienia Twojego konta.",
+        "title": "Ponownie uwierzytelnij integrację",
+        "data": {
+          "host": "Nazwa hosta lub adres IP"
+        },
+        "data_description": {
+          "host": "Adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Skonfiguruj ponownie Bosch SHC",
+        "description": "Zaktualizuj adres IP lub nazwę hosta kontrolera Bosch Smart Home. Certyfikaty i dane logowania zostaną zachowane.",
+        "data": {
+          "host": "Nazwa hosta lub adres IP"
+        },
+        "data_description": {
+          "host": "Nowy adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y)."
+        }
+      },
+      "user": {
+        "data": {
+          "host": "Nazwa hosta lub adres IP"
+        },
+        "data_description": {
+          "host": "Adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y)."
+        },
+        "description": "Skonfiguruj kontroler Bosch Smart Home, aby umożliwić monitorowanie i sterowanie za pomocą Home Assistant.",
+        "title": "Parametry uwierzytelniania SHC"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Ustawienia",
+        "description": "Skonfiguruj, jakie encje i automatyzacje integracja Bosch Smart Home Controller tworzy i zarządza.",
+        "sections": {
+          "features": {
+            "name": "Funkcje",
+            "description": "Włącz lub wyłącz typy encji tworzonych przez integrację.",
+            "data": {
+              "scenarios_as_buttons": "Udostępnij scenariusze jako encje przycisków",
+              "diagnostic_entities": "Utwórz czujniki diagnostyczne",
+              "enable_rawscan_service": "Włącz diagnostyczną usługę rawscan"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
+              "diagnostic_entities": "Gdy WŁĄCZONE (domyślnie): encje czujników diagnostycznych są tworzone dla każdego obsługiwanego urządzenia — pozycja zaworu (termostaty) i jakość komunikacji (inteligentne wtyczki). Wyłącz, aby zmniejszyć liczbę encji, jeśli nie potrzebujesz tych czujników.",
+              "enable_rawscan_service": "Gdy WŁĄCZONE: rejestruje usługę bosch_shc.trigger_rawscan do debugowania surowego API. Wyłącz, aby ją ukryć. Domyślnie: włączone."
+            }
+          },
+          "presence": {
+            "name": "Blokada rodzicielska oparta na obecności",
+            "description": "Automatycznie blokuj wszystkie termostaty i przełączniki SHC, gdy ktoś jest w domu, i odblokowuj, gdy wszyscy wyjdą.",
+            "data": {
+              "child_lock_enabled": "Włącz blokadę rodzicielską opartą na obecności",
+              "child_lock_presence_entity": "Encje obecności"
+            },
+            "data_description": {
+              "child_lock_enabled": "Przełącznik główny. Gdy WŁĄCZONA, blokada rodzicielska na wszystkich termostatach i przełącznikach SHC podąża za poniższymi encjami obecności — zablokowane gdy ktoś jest w domu, odblokowane gdy wszyscy wyszli. Gdy WYŁĄCZONA, integracja nigdy nie dotyka blokady rodzicielskiej.",
+              "child_lock_presence_entity": "Osoby/urządzenia decydujące o blokadzie rodzicielskiej. Włącza się, gdy tylko KTÓRAKOLWIEK z nich jest w domu, i wyłącza się dopiero, gdy WSZYSTKIE wyjdą. Wybierz np. encje Person członków gospodarstwa domowego. 'W domu' jest wykrywane automatycznie (home dla person/device_tracker/zone/group, on dla binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Zaawansowane",
+            "description": "Parametry połączenia niskiego poziomu. Ich zmiana rzadko pomaga — zapoznaj się z dokumentacją przed modyfikacją.",
+            "data": {
+              "ssl_verify_hostname": "Weryfikuj nazwę hosta SSL",
+              "long_poll_timeout": "Limit czasu długiego odpytywania (sekundy)",
+              "excluded_devices": "Wykluczone urządzenia",
+              "excluded_rooms": "Wykluczone pomieszczenia"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Gdy WŁĄCZONE: biblioteka boschshcpy sprawdza, czy nazwa hosta certyfikatu SSL kontrolera SHC odpowiada jego adresowi IP/nazwie hosta. Obecnie nie ma żadnego efektu — wymagana jest przyszła aktualizacja boschshcpy. Domyślnie: wyłączone.",
+              "long_poll_timeout": "Jak długo (w sekundach) żądanie długiego odpytywania do kontrolera SHC czeka na zdarzenia push przed ponownym połączeniem. Zakres: 5–300. Domyślnie: 30. Zwiększ, jeśli widzisz częste ponowne połączenia w wolnej sieci; zmniejsz, jeśli router rozłącza bezczynne połączenia. Wymaga przyszłej aktualizacji boschshcpy.",
+              "excluded_devices": "Urządzenia do ukrycia — nie są dla nich tworzone żadne encje. Pozostaw puste, aby uwzględnić wszystkie. Istniejące encje nowo wykluczonych urządzeń pozostają do czasu ich ręcznego usunięcia.",
+              "excluded_rooms": "Ukryj wszystkie urządzenia w tych pomieszczeniach Bosch. Pozostaw puste, aby uwzględnić wszystkie."
+            }
+          }
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Dolny przycisk",
+      "UPPER_BUTTON": "Górny przycisk",
+      "LOWER_LEFT_BUTTON": "Dolny lewy przycisk",
+      "UPPER_LEFT_BUTTON": "Górny lewy przycisk",
+      "LOWER_RIGHT_BUTTON": "Dolny prawy przycisk",
+      "UPPER_RIGHT_BUTTON": "Górny prawy przycisk",
+      "IDLE_OFF": "Alarm wyłączony",
+      "INTRUSION_ALARM": "Alarm włamania",
+      "SECONDARY_ALARM": "Alarm pomocniczy",
+      "PRIMARY_ALARM": "Alarm główny",
+      "ALARM_OFF": "Alarm wyłączony",
+      "ALARM_ON": "Alarm włączony",
+      "ALARM_MUTED": "Alarm wyciszony"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} krótkie naciśnięcie",
+      "PRESS_LONG": "{subtype} długie naciśnięcie",
+      "MOTION": "Wykryto ruch",
+      "SCENARIO": "Scenariusz {subtype} uruchomiony",
+      "ALARM": "{subtype} uruchomiony"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Test czujnika dymu",
+      "description": "Uruchamia procedurę testową czujnika dymu.",
+      "fields": {
+        "entity_id": {
+          "name": "ID encji",
+          "description": "Nazwa encji czujnika dymu."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Uruchom scenariusz",
+      "description": "Uruchamia scenariusz na Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Tytuł SHC"
+        },
+        "name": {
+          "name": "Nazwa scenariusza",
+          "description": "Nazwa scenariusza do uruchomienia"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Uruchom rawscan",
+      "description": "Uruchamia rawscan na Bosch SHC w celu odkrycia urządzeń. Wynik jest przesyłany do rejestratora informacji.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Tytuł SHC"
+        },
+        "command": {
+          "name": "Polecenie rawscan",
+          "description": "Możliwe polecenia: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID urządzenia",
+          "description": "ID urządzenia dla poleceń 'device', 'device_services' lub 'device_service'"
+        },
+        "service_id": {
+          "name": "ID usługi",
+          "description": "ID usługi dla polecenia 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Stan alarmu czujnika dymu",
+      "description": "Wysyła niestandardowe polecenie do czujnika dymu.",
+      "fields": {
+        "entity_id": {
+          "name": "ID encji",
+          "description": "Nazwa encji czujnika dymu."
+        },
+        "command": {
+          "name": "Niestandardowe polecenie",
+          "description": "Ciąg polecenia do wysłania do czujnika dymu."
+        }
+      }
+    }
+  }
 }

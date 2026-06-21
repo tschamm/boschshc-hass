@@ -17,8 +17,6 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.sensor import (
     AirQualitySensor,
@@ -33,6 +31,8 @@ from custom_components.bosch_shc.sensor import (
     PuritySensor,
     TemperatureRatingSensor,
     TemperatureSensor,
+    TwinguardCombinedRatingSensor,
+    TwinguardDescriptionSensor,
     ValveTappetSensor,
     async_setup_entry,
 )
@@ -48,6 +48,7 @@ def _fake_device(
     device_id: str = "hdm:Test:0001",
     root_device_id: str = "root-001",
     serial: str = "SER001",
+    supports_batterylevel: bool = False,
     **extra: Any,
 ) -> SimpleNamespace:
     """Minimal fake device accepted by SHCEntity.__init__ and all sensor __init__s."""
@@ -57,6 +58,7 @@ def _fake_device(
         root_device_id=root_device_id,
         serial=serial,
         device_services=[],  # SHCEntity.__init__ calls _update_attr only; no iteration here
+        supports_batterylevel=supports_batterylevel,
         **extra,
     )
 
@@ -93,10 +95,19 @@ def _make_fake_session(
     smart_plugs_compact=(),
     motion_detectors=(),
     motion_detectors2=(),
+    shutter_contacts=(),
+    shutter_contacts2=(),
+    smoke_detectors=(),
+    universal_switches=(),
+    water_leakage_detectors=(),
     emma=None,
 ):
     if emma is None:
-        emma = _fake_device(name="EMMA", device_id="com.bosch.tt.emma.applink")
+        emma = _fake_device(
+            name="EMMA",
+            device_id="com.bosch.tt.emma.applink",
+            supports_batterylevel=False,
+        )
 
     return SimpleNamespace(
         device_helper=SimpleNamespace(
@@ -112,6 +123,11 @@ def _make_fake_session(
             smart_plugs_compact=list(smart_plugs_compact),
             motion_detectors=list(motion_detectors),
             motion_detectors2=list(motion_detectors2),
+            shutter_contacts=list(shutter_contacts),
+            shutter_contacts2=list(shutter_contacts2),
+            smoke_detectors=list(smoke_detectors),
+            universal_switches=list(universal_switches),
+            water_leakage_detectors=list(water_leakage_detectors),
         ),
         emma=emma,
     )
@@ -120,7 +136,7 @@ def _make_fake_session(
 def _run_setup(session):
     """Run async_setup_entry with a fake session. Returns list of added entities."""
     hass = SimpleNamespace(data={DOMAIN: {ENTRY_ID: {DATA_SESSION: session}}})
-    config_entry = SimpleNamespace(entry_id=ENTRY_ID)
+    config_entry = SimpleNamespace(options={}, entry_id=ENTRY_ID)
     collected: list = []
 
     def _add_entities(entity_list):
@@ -196,12 +212,13 @@ class TestAsyncSetupEntryEntityCounts:
         assert sum(isinstance(e, TemperatureSensor) for e in entities) == 2
         assert sum(isinstance(e, HumiditySensor) for e in entities) == 2
 
-    def test_one_twinguard_yields_seven_sensors(self):
+    def test_one_twinguard_yields_nine_sensors(self):
         dev = _fake_device(name="TG1", device_id="hdm:TG:001")
         session = _make_fake_session(twinguards=[dev])
         entities = _run_setup(session)
-        # Temp, Humidity, Purity, AirQuality, TempRating, HumidityRating, PurityRating + EMMA
-        assert len(entities) == 8
+        # Temp, Humidity, Purity, AirQuality, TempRating, HumidityRating, PurityRating
+        # + CombinedRating (diag), Description (diag) + EMMA
+        assert len(entities) == 10
         types = [type(e) for e in entities]
         assert TemperatureSensor in types
         assert HumiditySensor in types
@@ -210,6 +227,8 @@ class TestAsyncSetupEntryEntityCounts:
         assert TemperatureRatingSensor in types
         assert HumidityRatingSensor in types
         assert PurityRatingSensor in types
+        assert TwinguardCombinedRatingSensor in types
+        assert TwinguardDescriptionSensor in types
 
     def test_smart_plug_yields_power_and_energy(self):
         dev = _fake_device(name="SmartPlug1", device_id="hdm:SP:001")
@@ -273,14 +292,17 @@ class TestAsyncSetupEntryEntityCounts:
         assert len(entities) == 2
         assert isinstance(entities[0], IlluminanceLevelSensor)
 
-    def test_motion_detector2_yields_illuminance(self):
-        """Gen2 MD2 must also produce an IlluminanceLevelSensor (closes #268/#303)."""
+    def test_motion_detector2_yields_illuminance_and_temperature(self):
+        """Gen2 MD2 produces IlluminanceLevelSensor + TemperatureSensor + CommunicationQualitySensor."""
         dev = _fake_device(name="MD2", device_id="hdm:MD2:001")
         session = _make_fake_session(motion_detectors2=[dev])
         entities = _run_setup(session)
-        # 1 IlluminanceLevelSensor + EMMA
-        assert len(entities) == 2
-        assert isinstance(entities[0], IlluminanceLevelSensor)
+        # IlluminanceLevelSensor + TemperatureSensor + CommunicationQualitySensor (diag) + EMMA
+        assert len(entities) == 4
+        types = [type(e) for e in entities]
+        assert IlluminanceLevelSensor in types
+        assert TemperatureSensor in types
+        assert CommunicationQualitySensor in types
 
     def test_motion_detector2_and_gen1_both_yield_illuminance(self):
         """Gen1 + Gen2 MD each produce their own IlluminanceLevelSensor."""
@@ -288,8 +310,8 @@ class TestAsyncSetupEntryEntityCounts:
         dev2 = _fake_device(name="MD2-G2", device_id="hdm:MD2:001")
         session = _make_fake_session(motion_detectors=[dev1], motion_detectors2=[dev2])
         entities = _run_setup(session)
-        # 2 IlluminanceLevelSensors + EMMA
-        assert len(entities) == 3
+        # MD1: 1 IlluminanceLevelSensor; MD2: Illuminance + Temperature + CommunicationQuality + EMMA
+        assert len(entities) == 5
         assert sum(isinstance(e, IlluminanceLevelSensor) for e in entities) == 2
 
     def test_no_entities_without_devices_adds_nothing_except_emma(self):
@@ -323,6 +345,8 @@ class TestAsyncSetupEntryEntityCounts:
         assert CommunicationQualitySensor in types
         assert IlluminanceLevelSensor in types
         assert EmmaPowerSensor in types
+        assert TwinguardCombinedRatingSensor in types
+        assert TwinguardDescriptionSensor in types
 
 
 # ---------------------------------------------------------------------------
@@ -342,9 +366,11 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_temperature"
 
     def test_temperature_sensor_name(self):
+        # has_entity_name=True: .name returns just the attr part; device prefix is
+        # applied by the entity registry at display time — not via .name property.
         d = self._dev(name="Living Room TRV")
         s = TemperatureSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Living Room TRV Temperature"
+        assert s.name == "Temperature"
 
     def test_humidity_sensor_unique_id(self):
         d = self._dev()
@@ -354,7 +380,7 @@ class TestRealInitUniqueIdAndName:
     def test_humidity_sensor_name(self):
         d = self._dev(name="Bedroom WT")
         s = HumiditySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Bedroom WT Humidity"
+        assert s.name == "Humidity"
 
     def test_purity_sensor_unique_id(self):
         d = self._dev()
@@ -364,7 +390,7 @@ class TestRealInitUniqueIdAndName:
     def test_purity_sensor_name(self):
         d = self._dev(name="TG Office")
         s = PuritySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "TG Office Purity"
+        assert s.name == "Purity"
 
     def test_air_quality_sensor_unique_id(self):
         d = self._dev()
@@ -374,7 +400,7 @@ class TestRealInitUniqueIdAndName:
     def test_air_quality_sensor_name(self):
         d = self._dev(name="Hall TG")
         s = AirQualitySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Hall TG AirQuality"
+        assert s.name == "Air Quality"
 
     def test_temperature_rating_sensor_unique_id(self):
         d = self._dev()
@@ -384,7 +410,7 @@ class TestRealInitUniqueIdAndName:
     def test_temperature_rating_sensor_name(self):
         d = self._dev(name="Kitchen TG")
         s = TemperatureRatingSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Kitchen TG TemperatureRating"
+        assert s.name == "Temperature Rating"
 
     def test_humidity_rating_sensor_unique_id(self):
         d = self._dev()
@@ -394,7 +420,7 @@ class TestRealInitUniqueIdAndName:
     def test_humidity_rating_sensor_name(self):
         d = self._dev(name="Bedroom TG")
         s = HumidityRatingSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Bedroom TG Humidity Rating"
+        assert s.name == "Humidity Rating"
 
     def test_purity_rating_sensor_unique_id(self):
         d = self._dev()
@@ -404,7 +430,7 @@ class TestRealInitUniqueIdAndName:
     def test_purity_rating_sensor_name(self):
         d = self._dev(name="Cellar TG")
         s = PurityRatingSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Cellar TG Purity Rating"
+        assert s.name == "Purity Rating"
 
     def test_power_sensor_unique_id(self):
         d = self._dev()
@@ -414,7 +440,7 @@ class TestRealInitUniqueIdAndName:
     def test_power_sensor_name(self):
         d = self._dev(name="Smart Plug A")
         s = PowerSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Smart Plug A Power"
+        assert s.name == "Power"
 
     def test_energy_sensor_unique_id(self):
         d = self._dev()
@@ -424,7 +450,7 @@ class TestRealInitUniqueIdAndName:
     def test_energy_sensor_name(self):
         d = self._dev(name="Smart Plug B")
         s = EnergySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Smart Plug B Energy"
+        assert s.name == "Energy"
 
     def test_communication_quality_sensor_unique_id(self):
         d = self._dev()
@@ -434,7 +460,7 @@ class TestRealInitUniqueIdAndName:
     def test_communication_quality_sensor_name(self):
         d = self._dev(name="SPC 1")
         s = CommunicationQualitySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "SPC 1 Communication Quality"
+        assert s.name == "Communication Quality"
 
     def test_valve_tappet_sensor_unique_id(self):
         d = self._dev()
@@ -444,7 +470,7 @@ class TestRealInitUniqueIdAndName:
     def test_valve_tappet_sensor_name(self):
         d = self._dev(name="Bedroom TRV")
         s = ValveTappetSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Bedroom TRV Valvetappet"
+        assert s.name == "Valve Tappet"
 
     def test_illuminance_sensor_unique_id(self):
         d = self._dev()
@@ -454,7 +480,7 @@ class TestRealInitUniqueIdAndName:
     def test_illuminance_sensor_name(self):
         d = self._dev(name="Motion Hall")
         s = IlluminanceLevelSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Motion Hall Illuminance"
+        assert s.name == "Illuminance"
 
     def test_emma_power_sensor_unique_id(self):
         d = _fake_device(
@@ -468,7 +494,7 @@ class TestRealInitUniqueIdAndName:
             name="EMMA", device_id="com.bosch.tt.emma.applink", root_device_id="shc-mac"
         )
         s = EmmaPowerSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "EMMA Power"
+        assert s.name == "Power"
 
     def test_entry_id_stored_on_base_entity(self):
         d = self._dev()

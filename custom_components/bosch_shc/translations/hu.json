@@ -1,20 +1,20 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Az eszk\u00f6z m\u00e1r konfigur\u00e1lva van",
-            "reauth_successful": "Az \u00fajrahiteles\u00edt\u00e9s sikeres volt."
+            "already_configured": "Az eszköz már konfigurálva van",
+            "reauth_successful": "Az újrahitelesítés sikeres volt."
         },
         "error": {
-            "cannot_connect": "Sikertelen csatlakoz\u00e1s",
-            "invalid_auth": "\u00c9rv\u00e9nytelen hiteles\u00edt\u00e9s",
-            "pairing_failed": "A p\u00e1ros\u00edt\u00e1s nem siker\u00fclt; K\u00e9rem, ellen\u0151rizze, hogy a Bosch Smart Home Controller p\u00e1ros\u00edt\u00e1si m\u00f3dban van-e (villog a LED), \u00e9s hogy a jelszava helyes-e.",
-            "session_error": "Munkamenet hiba: Az API nem OK eredm\u00e9nyt ad vissza.",
-            "unknown": "V\u00e1ratlan hiba t\u00f6rt\u00e9nt"
+            "cannot_connect": "Sikertelen csatlakozás",
+            "invalid_auth": "Érvénytelen hitelesítés",
+            "pairing_failed": "A párosítás nem sikerült; Kérem, ellenőrizze, hogy a Bosch Smart Home Controller párosítási módban van-e (villog a LED), és hogy a jelszava helyes-e.",
+            "session_error": "Munkamenet hiba: Az API nem OK eredményt ad vissza.",
+            "unknown": "Váratlan hiba történt"
         },
         "flow_title": "Bosch SHC: {name}",
         "step": {
             "confirm_discovery": {
-                "description": "K\u00e9rem, addig nyomja a Bosch Smart Home Controller el\u00fcls\u0151 gombj\u00e1t, am\u00edg a LED villogni nem kezd.\nK\u00e9szen \u00e1ll {model} @ {host} be\u00e1ll\u00edt\u00e1s\u00e1nak folytat\u00e1s\u00e1ra Home Assistant seg\u00edts\u00e9g\u00e9vel?"
+                "description": "Kérem, addig nyomja a Bosch Smart Home Controller elülső gombját, amíg a LED villogni nem kezd.\nKészen áll {model} @ {host} beállításának folytatására Home Assistant segítségével?"
             },
             "credentials": {
                 "data": {
@@ -22,15 +22,67 @@
                 }
             },
             "reauth_confirm": {
-                "description": "A bosch_shc integr\u00e1ci\u00f3nak \u00fajra hiteles\u00edtenie kell a fi\u00f3kj\u00e1t",
-                "title": "Integr\u00e1ci\u00f3 \u00fajrahiteles\u00edt\u00e9se"
+                "description": "A bosch_shc integrációnak újra hitelesítenie kell a fiókját",
+                "title": "Integráció újrahitelesítése"
             },
             "user": {
                 "data": {
-                    "host": "C\u00edm"
+                    "host": "Cím"
                 },
-                "description": "\u00c1ll\u00edtsa be a Bosch intelligens otthoni vez\u00e9rl\u0151t, hogy lehet\u0151v\u00e9 tegye a fel\u00fcgyeletet \u00e9s a vez\u00e9rl\u00e9st Home Assistant seg\u00edts\u00e9g\u00e9vel.",
-                "title": "SHC hiteles\u00edt\u00e9si param\u00e9terek"
+                "description": "Állítsa be a Bosch intelligens otthoni vezérlőt, hogy lehetővé tegye a felügyeletet és a vezérlést Home Assistant segítségével.",
+                "title": "SHC hitelesítési paraméterek"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bosch SHC — Beállítások",
+                "description": "Konfigurálja, hogy a Bosch Smart Home Controller integráció milyen entitásokat és automatizációkat hoz létre és kezel.",
+                "sections": {
+                    "features": {
+                        "name": "Funkciók",
+                        "description": "Kapcsolja be vagy ki az integráció által létrehozandó entitástípusokat.",
+                        "data": {
+                            "scenarios_as_buttons": "Forgatókönyvek megjelenítése gombentitásokként",
+                            "diagnostic_entities": "Diagnosztikai érzékelők létrehozása",
+                            "enable_rawscan_service": "Rawscan diagnosztikai szolgáltatás engedélyezése"
+                        },
+                        "data_description": {
+                            "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
+                            "diagnostic_entities": "Ha BE van kapcsolva (alapértelmezett): minden támogatott eszközhöz diagnosztikai érzékelőentitások jönnek létre — szelepbetét helyzete (termosztátok) és kommunikációs minőség (okos dugók). Kapcsolja ki az entitásszám csökkentéséhez, ha nincs szüksége ezekre az érzékelőkre.",
+                            "enable_rawscan_service": "Ha BE van kapcsolva: regisztrálja a bosch_shc.trigger_rawscan szolgáltatást a nyers API hibakereséshez. Kapcsolja ki az elrejtéséhez. Alapértelmezett: be."
+                        }
+                    },
+                    "presence": {
+                        "name": "Jelenlét alapú gyermekzár",
+                        "description": "Automatikusan zárolja az összes SHC termosztátot és kapcsolót, amikor valaki otthon van, és feloldja őket, amikor mindenki elmegy.",
+                        "data": {
+                            "child_lock_enabled": "Jelenlét alapú gyermekzár engedélyezése",
+                            "child_lock_presence_entity": "Jelenléti entitások"
+                        },
+                        "data_description": {
+                            "child_lock_enabled": "Főkapcsoló. Amikor BE van kapcsolva, az összes SHC termosztát és kapcsolóeszköz gyermekzára az alábbi jelenléti entitásokat követi — zárolva, ha valaki otthon van, feloldva, ha mindenki távol van. Amikor KI van kapcsolva, az integráció soha nem nyúl a gyermekzárhoz.",
+                            "child_lock_presence_entity": "A gyermekzárat meghatározó személyek/eszközök. Bekapcsol, amint BÁRMELY közülük otthon van, és csak akkor kapcsol ki, ha MINDEGYIK távol van. Válassza ki például a háztartás Person entitásait. Az 'otthon' automatikusan kerül felismerésre (home a person/device_tracker/zone/group esetén, on a binary_sensor/input_boolean esetén)."
+                        }
+                    },
+                    "advanced": {
+                        "name": "Speciális",
+                        "description": "Alacsony szintű kapcsolódási paraméterek. Ezek módosítása ritkán segít — a módosítás előtt olvassa el a dokumentációt.",
+                        "data": {
+                            "ssl_verify_hostname": "SHC tanúsítvány hosztnév ellenőrzése",
+                            "long_poll_timeout": "Hosszú lekérdezés időtúllépése (másodperc)",
+                            "excluded_devices": "Kizárt eszközök",
+                            "excluded_rooms": "Kizárt szobák"
+                        },
+                        "data_description": {
+                            "ssl_verify_hostname": "Szakértő: ha BE van kapcsolva, az SHC TLS-tanúsítványának hosztneve ellenőrzésre kerül. A Bosch SHC tanúsítványának hosztneve általában NEM egyezik az IP-jével, ezért az engedélyezés általában megszakítja a kapcsolatot — hagyja KI, hacsak nem biztos benne, hogy a beállítása megfelel. Alapértelmezett: ki.",
+                            "long_poll_timeout": "Mennyi ideig vár minden hosszú lekérdezési kérés eseményekre az újracsatlakozás előtt. Alapértelmezett: 10. Növelje az újracsatlakozások csökkentéséhez, csökkentse, ha a hálózata bontja az inaktív kapcsolatokat.",
+                            "excluded_devices": "Elrejtendő eszközök — nem jönnek létre entitások számukra. Hagyja üresen az összes bevételéhez. Az újonnan kizárt eszközök meglévő entitásai megmaradnak, amíg manuálisan el nem távolítja őket.",
+                            "excluded_rooms": "Elrejti az összes eszközt ezekben a Bosch szobákban. Hagyja üresen az összes bevételéhez."
+                        }
+                    }
+                }
             }
         }
     }

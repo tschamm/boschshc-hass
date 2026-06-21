@@ -28,7 +28,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
-from .entity import SHCEntity
+from .entity import SHCEntity, device_excluded
 from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     ATTR_EVENT_TYPE,
@@ -38,6 +38,8 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -51,6 +53,8 @@ async def async_setup_entry(
 
     entities = []
     for switch_device in session.device_helper.universal_switches:
+        if device_excluded(switch_device, entry.options):
+            continue
         for keystate in switch_device.keystates:
             entities.append(
                 UniversalSwitchEvent(
@@ -60,6 +64,7 @@ async def async_setup_entry(
                 )
             )
 
+    # Scenarios are not room devices — never filtered by device/room exclusion.
     for scenario in session.scenarios:
         entities.append(
             SHCScenarioEvent(
@@ -74,6 +79,8 @@ async def async_setup_entry(
         session.device_helper.motion_detectors
         + session.device_helper.motion_detectors2
     ):
+        if device_excluded(motion_detector, entry.options):
+            continue
         entities.append(
             MotionDetectorEvent(
                 device=motion_detector,
@@ -82,7 +89,9 @@ async def async_setup_entry(
         )
 
     smoke_detection_system = session.device_helper.smoke_detection_system
-    if smoke_detection_system:
+    if smoke_detection_system and not device_excluded(
+        smoke_detection_system, entry.options
+    ):
         entities.append(
             SmokeDetectionSystemEvent(
                 device=smoke_detection_system,
@@ -91,6 +100,8 @@ async def async_setup_entry(
         )
 
     for smoke_detector in session.device_helper.smoke_detectors:
+        if device_excluded(smoke_detector, entry.options):
+            continue
         entities.append(
             SmokeDetectorEvent(
                 device=smoke_detector,

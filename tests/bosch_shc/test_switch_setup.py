@@ -123,7 +123,7 @@ def _make_hass_and_entry(session, shc_device=None):
             }
         }
     )
-    config_entry = SimpleNamespace(
+    config_entry = SimpleNamespace(options={},
         entry_id=entry_id,
         async_on_unload=MagicMock(),
     )
@@ -150,6 +150,7 @@ def _make_session(**helper_lists):
         micromodule_blinds=[],
         micromodule_impulse_relays=[],
         micromodule_dimmers=[],
+        motion_detectors2=[],
     )
     defaults.update(helper_lists)
 
@@ -308,10 +309,12 @@ def test_setup_camera_eyes_entity_names():
     cam = _fake_device(name="Eyes Outdoor", dev_id="ceyes2")
     session = _make_session(camera_eyes=[cam])
     entities, _ = _setup(session)
+    # With _attr_has_entity_name=True, _attr_name holds only the feature label
+    # (None = primary entity; HA prepends device name for display).
     names = {e._attr_name for e in entities}
-    assert "Eyes Outdoor" in names
-    assert "Eyes Outdoor Light" in names
-    assert "Eyes Outdoor Notification" in names
+    assert None in names          # cameraeyes (primary: _attr_name=None)
+    assert "Light" in names       # cameraeyes_cameralight
+    assert "Notification" in names  # cameraeyes_notification
 
 
 # ---------------------------------------------------------------------------
@@ -348,10 +351,11 @@ def test_setup_camera_outdoor_gen2_attr_names():
     cam = _fake_device(name="Eyes Outdoor II", dev_id="gen2_2")
     session = _make_session(camera_outdoor_gen2=[cam])
     entities, _ = _setup(session)
+    # With _attr_has_entity_name=True, _attr_name holds only the feature label.
     names = {e._attr_name for e in entities}
-    assert "Eyes Outdoor II" in names
-    assert "Eyes Outdoor II Frontlight" in names
-    assert "Eyes Outdoor II AmbientLight" in names
+    assert None in names            # cameraoutdoorgen2 (primary)
+    assert "Frontlight" in names    # camerafrontlight
+    assert "AmbientLight" in names  # cameraambientlight
 
 
 # ---------------------------------------------------------------------------

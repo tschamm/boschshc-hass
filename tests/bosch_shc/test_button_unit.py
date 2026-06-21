@@ -69,12 +69,16 @@ class TestSHCRelayButtonInit:
     """Exercise the actual __init__ so super().__init__ lines are covered."""
 
     def test_name_without_attr_name(self):
+        # With _attr_has_entity_name=True and _attr_name=None, HA uses the device
+        # name as the entity name (primary entity).  _attr_name itself is None.
         btn = _relay_via_init(name="Keller Relay", attr_name=None)
-        assert btn._attr_name == "Keller Relay"
+        assert btn._attr_name is None
 
     def test_name_with_attr_name(self):
+        # _attr_name stores only the feature label; HA prepends device name for
+        # display (e.g. "Garage CH1").
         btn = _relay_via_init(name="Garage", attr_name="CH1")
-        assert btn._attr_name == "Garage CH1"
+        assert btn._attr_name == "CH1"
 
     def test_unique_id_without_attr_name(self):
         btn = _relay_via_init(
@@ -109,12 +113,14 @@ class TestSHCRelayButtonInit:
         assert btn._entry_id == "entry_test"
 
     def test_name_attr_name_none_equals_device_name(self):
+        # _attr_name=None → primary entity; HA resolves to device name for display.
         btn = _relay_via_init(name="Single Relay", attr_name=None)
-        assert btn._attr_name == "Single Relay"
+        assert btn._attr_name is None
 
     def test_name_attr_name_provided_appended(self):
+        # _attr_name holds only the feature label (no device prefix).
         btn = _relay_via_init(name="Multi Relay", attr_name="Output 2")
-        assert btn._attr_name == "Multi Relay Output 2"
+        assert btn._attr_name == "Output 2"
 
     def test_unique_id_attr_name_uppercased_is_lowercased(self):
         btn = _relay_via_init(

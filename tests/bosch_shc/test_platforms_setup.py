@@ -7,7 +7,7 @@ session via asyncio.run — NO HA harness, NO tests.common, NO network.
 Pattern
 -------
 - hass   = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: fake_session}}})
-- config_entry = SimpleNamespace(entry_id="E1")
+- config_entry = SimpleNamespace(options={}, entry_id="E1")
 - async_add_entities collects the created entities into a list
 - async_migrate_to_new_unique_id (cover + light) is patched to a no-op coroutine
   because it calls entity_registry.async_get(hass) which needs a real HA instance.
@@ -39,7 +39,7 @@ def _make_hass(session: object) -> SimpleNamespace:
 
 
 def _make_config_entry() -> SimpleNamespace:
-    return SimpleNamespace(entry_id="E1")
+    return SimpleNamespace(options={}, entry_id="E1")
 
 
 def _collect() -> tuple[list, callable]:
@@ -330,6 +330,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -344,6 +345,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[],
                 micromodule_dimmers=[dev],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -357,6 +359,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[_light_device()],
                 micromodule_dimmers=[_light_device()],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -370,6 +373,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[],
                 micromodule_dimmers=[],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -383,6 +387,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -402,6 +407,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -422,6 +428,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[dev],
                 micromodule_dimmers=[],
                 hue_lights=[],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -440,6 +447,7 @@ class TestLightSetupEntry:
                 ledvance_lights=[],
                 micromodule_dimmers=[],
                 hue_lights=[dev],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -455,6 +463,7 @@ class TestLightSetupEntry:
                 hue_lights=[_light_device(supports_color_hsb=False,
                                           supports_color_temp=False,
                                           supports_brightness=False)],
+                motion_detectors2=[],
             )
         )
         result = self._run(session)
@@ -529,7 +538,11 @@ class TestNumberSetupEntry:
         assert result == []
 
     def test_attr_name_offset_applied(self) -> None:
-        """async_setup_entry always passes attr_name='Offset'."""
+        """async_setup_entry always passes attr_name='Offset'.
+
+        With _attr_has_entity_name=True, _attr_name holds only the feature
+        label; HA prepends the device name for display ('Test Thermostat Offset').
+        """
         dev = _number_device()
         session = SimpleNamespace(
             device_helper=SimpleNamespace(
@@ -538,7 +551,7 @@ class TestNumberSetupEntry:
             )
         )
         result = self._run(session)
-        assert result[0]._attr_name == "Test Thermostat Offset"
+        assert result[0]._attr_name == "Offset"
 
     def test_unique_id_includes_offset_suffix(self) -> None:
         """unique_id for 'Offset' attr_name ends in '_offset'."""
@@ -600,13 +613,17 @@ class TestValveSetupEntry:
         assert result == []
 
     def test_attr_name_valve_applied(self) -> None:
-        """async_setup_entry always passes attr_name='Valve'."""
+        """async_setup_entry always passes attr_name='Valve'.
+
+        With _attr_has_entity_name=True, _attr_name holds only the feature
+        label; HA prepends the device name for display ('Test Valve Valve').
+        """
         dev = _valve_device()
         session = SimpleNamespace(
             device_helper=SimpleNamespace(thermostats=[dev])
         )
         result = self._run(session)
-        assert result[0]._attr_name == "Test Valve Valve"
+        assert result[0]._attr_name == "Valve"
 
     def test_unique_id_includes_valve_suffix(self) -> None:
         """unique_id ends in '_valve'."""
@@ -673,13 +690,17 @@ class TestButtonSetupEntry:
         assert result == []
 
     def test_entity_name_from_device(self) -> None:
-        """SHCRelayButton._attr_name == device.name (no attr_name passed)."""
+        """SHCRelayButton._attr_name is None (no attr_name passed).
+
+        With _attr_has_entity_name=True and _attr_name=None, HA uses the device
+        name as the entity name (primary entity pattern).
+        """
         dev = _button_device()
         session = SimpleNamespace(
             device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
         )
         result = self._run(session)
-        assert result[0]._attr_name == "Test Button"
+        assert result[0]._attr_name is None
 
     def test_unique_id_from_root_and_device_id(self) -> None:
         """unique_id = root_device_id + '_' + device_id."""
