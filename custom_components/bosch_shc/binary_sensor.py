@@ -725,9 +725,7 @@ class TwinguardAlarmTracker:
         immediately (M1 fix — prevents up-to-30s stall on get_messages()).
         """
         self._hass.loop.call_soon_threadsafe(
-            lambda: self._hass.async_create_task(
-                self._hass.async_add_executor_job(self.refresh)
-            )
+            lambda: self._hass.async_add_executor_job(self.refresh)
         )
 
     def _extract_trigger_ids_from_messages(self) -> set[str]:
@@ -839,6 +837,11 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
     def icon(self) -> str:
         """Return the icon of the sensor."""
         return "mdi:smoke-detector"
+
+    async def async_request_smoketest(self) -> None:
+        """Request a Twinguard smoke test."""
+        LOGGER.debug("Requesting smoke test on entity %s", self.name)
+        await self.hass.async_add_executor_job(self._device.smoketest_requested)
 
     @property
     def extra_state_attributes(self) -> dict:

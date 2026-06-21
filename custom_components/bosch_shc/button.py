@@ -33,11 +33,31 @@ async def async_setup_entry(
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
-    for button in session.device_helper.micromodule_impulse_relays:
+    for button in getattr(session.device_helper, "micromodule_impulse_relays", []):
         if device_excluded(button, config_entry.options):
             continue
         entities.append(
             SHCRelayButton(
+                device=button,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for button in getattr(session.device_helper, "smoke_detectors", []):
+        if device_excluded(button, config_entry.options):
+            continue
+        entities.append(
+            SHCSmokeTestButton(
+                device=button,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
+    for button in getattr(session.device_helper, "twinguards", []):
+        if device_excluded(button, config_entry.options):
+            continue
+        entities.append(
+            SHCSmokeTestButton(
                 device=button,
                 entry_id=config_entry.entry_id,
             )
@@ -85,6 +105,22 @@ class SHCRelayButton(SHCEntity, ButtonEntity):
     def press(self) -> None:
         """Triggers impulse."""
         self._device.trigger_impulse_state()
+
+
+class SHCSmokeTestButton(SHCEntity, ButtonEntity):
+    """Button entity that requests a smoke detector self-test."""
+
+    _attr_icon = "mdi:smoke-detector-alert"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the smoke-test button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Smoke Test"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_test"
+
+    def press(self) -> None:
+        """Trigger the device self-test."""
+        self._device.smoketest_requested()
 
 
 class SHCScenarioButton(ButtonEntity):

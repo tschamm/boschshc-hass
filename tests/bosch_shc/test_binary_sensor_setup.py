@@ -88,9 +88,9 @@ def _make_base_device(device_id="dev1", name="FakeDev", root_device_id="root1",
 def _make_hass():
     """Return a fake hass with bus.async_listen_once that records calls.
 
-    async_create_task and async_add_executor_job execute their callables
-    synchronously in tests so that _handle_alarm_update dispatch can be
-    verified without a real event loop.
+    async_add_executor_job executes its callables synchronously in tests so
+    that _handle_alarm_update dispatch can be verified without a real event
+    loop.
     call_soon_threadsafe also executes the callback immediately.
     """
     unsub_store = {}
@@ -114,18 +114,6 @@ def _make_hass():
     async def _async_add_executor_job(fn, *args):
         return fn(*args)
 
-    # Synchronous task creation: drain the coroutine immediately so refresh()
-    # runs synchronously in unit tests (no real event loop needed).
-    def _async_create_task(coro):
-        import asyncio as _asyncio
-        try:
-            loop = _asyncio.get_running_loop()
-            # Already inside an event loop — schedule as a task (async tests).
-            loop.create_task(coro)
-        except RuntimeError:
-            # No running loop — run synchronously (direct unit-test calls).
-            _asyncio.run(coro)
-
     # call_soon_threadsafe executes the callback immediately in tests (synchronous)
     loop = SimpleNamespace(call_soon_threadsafe=lambda cb, *args: cb(*args))
     hass = SimpleNamespace(
@@ -133,7 +121,6 @@ def _make_hass():
         data={},
         loop=loop,
         async_add_executor_job=_async_add_executor_job,
-        async_create_task=_async_create_task,
     )
     return hass
 
@@ -1207,10 +1194,10 @@ class TestTwinguardAlarmTracker:
                 }
             ],
         )
-        tracker = self._make_tracker(sds, session)
-
         called = []
         hass = _make_hass()
+        hass.async_add_executor_job = lambda fn, *args: fn(*args)
+        tracker = self._make_tracker(sds, session, hass=hass)
         tracker.register_listener(hass, lambda: called.append(1))
         tracker._handle_alarm_update()
         assert tracker.is_alarm_active_for("tw1") is True
@@ -1230,6 +1217,26 @@ class TestTwinguardAlarmTracker:
         # Must have been scheduled, NOT run inline.
         assert len(dispatched) == 1
         assert callable(dispatched[0])
+
+    def test_handle_alarm_update_does_not_wrap_executor_future_in_task(self):
+        """Regression: async_add_executor_job may return a Future, not a coroutine."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("sds-future", device_services=[surv_svc])
+        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        session = _make_fake_session(smoke_detection_system=sds)
+        hass = _make_hass()
+
+        executor_calls = []
+
+        def _executor_job(fn, *args):
+            executor_calls.append((fn, args))
+            return object()  # stands in for HA Future-like return value
+
+        hass.async_add_executor_job = _executor_job
+        tracker = self._make_tracker(sds, session, hass=hass)
+        tracker._handle_alarm_update()
+
+        assert executor_calls == [(tracker.refresh, ())]
 
     # -- get_messages error handling --
 
@@ -1404,6 +1411,21 @@ class TestTwinguardSmokeAlarmSensor:
         attrs = sensor.extra_state_attributes
         assert "alarm_state" in attrs
         assert attrs["alarm_state"] == "ALARM_OFF"
+
+    def test_async_request_smoketest(self):
+        jobs = []
+
+        async def _fake_executor(fn, *args):
+            jobs.append((fn, args))
+
+        sensor, _ = self._make_sensor("tw-smoketest")
+        sensor._device.smoketest_requested = MagicMock()
+        sensor.hass = _make_hass()
+        sensor.hass.async_add_executor_job = _fake_executor
+
+        asyncio.run(sensor.async_request_smoketest())
+
+        assert len(jobs) == 1
 
     def test_handle_tracker_update_calls_schedule_update(self):
         """_handle_tracker_update() calls schedule_update_ha_state()."""
