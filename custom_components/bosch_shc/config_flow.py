@@ -37,6 +37,7 @@ from .const import (
     DOMAIN,
     LOGGER,
     OPT_DIAGNOSTIC_ENTITIES,
+    OPT_ENABLE_RAWSCAN,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_PRESENCE_STATE,
@@ -52,6 +53,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
     "features": [
         OPT_SCENARIOS_AS_BUTTONS,
         OPT_DIAGNOSTIC_ENTITIES,
+        OPT_ENABLE_RAWSCAN,
     ],
     "presence": [
         OPT_PRESENCE_ENTITY,
@@ -462,6 +464,10 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                                 OPT_DIAGNOSTIC_ENTITIES,
                                 default=current.get(OPT_DIAGNOSTIC_ENTITIES, True),
                             ): BooleanSelector(),
+                            vol.Optional(
+                                OPT_ENABLE_RAWSCAN,
+                                default=current.get(OPT_ENABLE_RAWSCAN, True),
+                            ): BooleanSelector(),
                         }
                     ),
                     {"collapsed": False},
@@ -493,7 +499,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                             ),
                         }
                     ),
-                    {"collapsed": True},
+                    {"collapsed": False},
                 ),
                 vol.Required("advanced"): section(
                     vol.Schema(
@@ -516,7 +522,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                             ),
                         }
                     ),
-                    {"collapsed": True},
+                    {"collapsed": False},
                 ),
             }
         )

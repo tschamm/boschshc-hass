@@ -93,11 +93,13 @@
             "description": "Welche Entitäten-Typen die Integration anlegt.",
             "data": {
               "scenarios_as_buttons": "Szenarien als Button-Entitäten anzeigen",
-              "diagnostic_entities": "Diagnose-Sensoren erstellen"
+              "diagnostic_entities": "Diagnose-Sensoren erstellen",
+              "enable_rawscan_service": "Rawscan-Diagnosedienst aktivieren"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
-              "diagnostic_entities": "Wenn EIN (Standard): Diagnose-Sensor-Entitäten werden für jedes unterstützte Gerät angelegt — Ventilteller-Position (Thermostate) und Kommunikationsqualität (Smart Plugs). AUS um die Entitätsanzahl zu reduzieren, wenn diese Sensoren nicht benötigt werden."
+              "diagnostic_entities": "Wenn EIN (Standard): Diagnose-Sensor-Entitäten werden für jedes unterstützte Gerät angelegt — Ventilteller-Position (Thermostate) und Kommunikationsqualität (Smart Plugs). AUS um die Entitätsanzahl zu reduzieren, wenn diese Sensoren nicht benötigt werden.",
+              "enable_rawscan_service": "Wenn EIN: registriert den Dienst `bosch_shc.trigger_rawscan` für Roh-API-Debugging. AUS zum Ausblenden. Standard: ein."
             }
           },
           "presence": {

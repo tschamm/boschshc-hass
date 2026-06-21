@@ -16,7 +16,7 @@ from homeassistant.components.persistent_notification import (
     async_create as pn_async_create,
 )
 from homeassistant.components.zeroconf import async_get_instance
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     ATTR_DEVICE_ID,
     ATTR_ID,
@@ -63,6 +63,7 @@ from .const import (
     DOMAIN,
     EVENT_BOSCH_SHC,
     LOGGER,
+    OPT_ENABLE_RAWSCAN,
     OPT_PRESENCE_ENTITY,
     OPT_PRESENCE_STATE,
     SERVICE_TRIGGER_SCENARIO,
@@ -89,9 +90,10 @@ if hasattr(Platform, "VALVE"):
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the Bosch SHC component.
 
-    Domain-level services (trigger_scenario, trigger_rawscan) are registered
-    here so they exist even when a config entry fails to load, allowing HA to
-    validate automations that reference them.  Entity services
+    The trigger_scenario service is registered here so it exists even when a
+    config entry fails to load, allowing HA to validate automations that
+    reference it.  The trigger_rawscan service is opt-in and registered per
+    entry in async_setup_entry (default: enabled).  Entity services
     (smokedetector_check, smokedetector_alarmstate) are registered per-entry in
     their respective platform setup (binary_sensor.py) as allowed by the rule.
     """
@@ -122,6 +124,14 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         scenario_service_call,
         SCENARIO_TRIGGER_SCHEMA,
     )
+
+    return True
+
+
+def _register_rawscan_service(hass: HomeAssistant) -> None:
+    """Register the trigger_rawscan service if not already registered."""
+    if hass.services.has_service(DOMAIN, SERVICE_TRIGGER_RAWSCAN):
+        return
 
     RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
         {
@@ -165,8 +175,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         schema=RAWSCAN_TRIGGER_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
-
-    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -419,6 +427,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
         await event_listener.async_setup()
 
+    # Register rawscan diagnostic service when the option is enabled (default: on).
+    # The service is domain-scoped but opt-in: only register when at least one
+    # entry enables it; unregister when the last enabling entry is unloaded.
+    if entry.options.get(OPT_ENABLE_RAWSCAN, True):
+        _register_rawscan_service(hass)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -440,6 +454,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+
+    # Remove rawscan service if no remaining loaded entries have it enabled.
+    if hass.services.has_service(DOMAIN, SERVICE_TRIGGER_RAWSCAN):
+        remaining = [
+            e
+            for e in hass.config_entries.async_entries(DOMAIN)
+            if e.entry_id != entry.entry_id
+            and e.state is ConfigEntryState.LOADED
+            and e.options.get(OPT_ENABLE_RAWSCAN, True)
+        ]
+        if not remaining:
+            hass.services.async_remove(DOMAIN, SERVICE_TRIGGER_RAWSCAN)
 
     return unload_ok
 

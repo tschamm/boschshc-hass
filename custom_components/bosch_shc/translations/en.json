@@ -93,11 +93,13 @@
             "description": "Toggle the entity types the integration creates.",
             "data": {
               "scenarios_as_buttons": "Expose scenarios as button entities",
-              "diagnostic_entities": "Create diagnostic sensors"
+              "diagnostic_entities": "Create diagnostic sensors",
+              "enable_rawscan_service": "Enable rawscan diagnostic service"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
-              "diagnostic_entities": "When ON (default): diagnostic sensor entities are created for each supported device — valve tappet position (thermostats) and communication quality (smart plugs). Turn OFF to reduce entity count if you do not need these sensors."
+              "diagnostic_entities": "When ON (default): diagnostic sensor entities are created for each supported device — valve tappet position (thermostats) and communication quality (smart plugs). Turn OFF to reduce entity count if you do not need these sensors.",
+              "enable_rawscan_service": "When ON: registers the `bosch_shc.trigger_rawscan` service for raw API debugging. Turn OFF to hide it. Default: on."
             }
           },
           "presence": {
