@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Zariadenie u\u017e je nakonfigurovan\u00e9",
-      "reauth_successful": "Op\u00e4tovn\u00e9 overenie bolo \u00faspe\u0161n\u00e9"
+      "reauth_successful": "Op\u00e4tovn\u00e9 overenie bolo \u00faspe\u0161n\u00e9",
+      "reconfigure_successful": "Rekonfigurácia bola úspešná",
+      "wrong_shc": "Zadaný hostiteľ patrí inému ovládaču Bosch SHC. Zadajte pre tento záznam správneho hostiteľa."
     },
     "error": {
       "cannot_connect": "Nepodarilo sa pripoji\u0165",
@@ -18,8 +20,12 @@
       },
       "credentials": {
         "data": {
-          "password": "Heslo ovl\u00e1da\u010da Smart Home Controller",
-          "name": "Meno klienta pre certifikát"
+          "name": "Meno klienta pre certifikát",
+          "password": "Heslo ovl\u00e1da\u010da Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Názov zobrazený v aplikácii SHC v časti Pripojení klienti.",
+          "password": "Heslo nastavené v aplikácii Bosch Smart Home."
         }
       },
       "reauth_confirm": {
@@ -27,11 +33,49 @@
         "title": "Znova overi\u0165 integr\u00e1ciu",
         "data": {
           "host": "Host"
+        },
+        "data_description": {
+          "host": "IP adresa alebo názov hostiteľa ovládača SHC (napr. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Prekonfigurujte Bosch SHC",
+        "description": "Vyberte, čo chcete prekonfigurovať.",
+        "menu_options": {
+          "reconfigure_host": "Zmeniť iba hostiteľa / IP adresu",
+          "repair_credentials": "Opätovné párovanie (obnovenie klientskeho certifikátu)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Zmena hostiteľa / IP adresy",
+        "description": "Aktualizujte IP adresu alebo názov hostiteľa vášho ovládača Bosch Smart Home Controller. Vaše certifikáty a prihlasovacie údaje zostanú zachované.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "New IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Opraviť párovanie — regenerovať klientsky certifikát",
+        "description": "Stlačte tlačidlo párovania na zariadení SHC (SHC I: predné tlačidlo, kým LED dióda nebliká; SHC II: krátko funkčné tlačidlo) a potom vyplňte formulár nižšie.",
+        "data": {
+          "host": "Hostiteľ",
+          "password": "Heslo ovládača inteligentnej domácnosti",
+          "name": "Názov klienta pre certifikát"
+        },
+        "data_description": {
+          "host": "IP adresa alebo názov hostiteľa ovládača SHC (napr. 192.168.x.y).",
+          "password": "Heslo nastavené v aplikácii Bosch Smart Home.",
+          "name": "Názov zobrazený v aplikácii SHC v časti Pripojení klienti."
         }
       },
       "user": {
         "data": {
           "host": "Hostite\u013e"
+        },
+        "data_description": {
+          "host": "IP adresa alebo názov hostiteľa ovládača SHC (napr. 192.168.x.y)."
         },
         "description": "Nastavte svoj ovl\u00e1da\u010d Bosch Smart Home Controller tak, aby umo\u017e\u0148oval monitorovanie a ovl\u00e1danie pomocou Home Assistant.",
         "title": "Parametre autentifik\u00e1cie SHC"
@@ -88,6 +132,30 @@
           }
         }
       }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Dolné tlačidlo",
+      "UPPER_BUTTON": "Horné tlačidlo",
+      "LOWER_LEFT_BUTTON": "Dolné ľavé tlačidlo",
+      "UPPER_LEFT_BUTTON": "Horné ľavé tlačidlo",
+      "LOWER_RIGHT_BUTTON": "Dolné pravé tlačidlo",
+      "UPPER_RIGHT_BUTTON": "Dolné pravé tlačidlo",
+      "IDLE_OFF": "Alarm VYP",
+      "INTRUSION_ALARM": "Poplašné zariadenie proti vlámaniu",
+      "SECONDARY_ALARM": "Sekundárny alarm",
+      "PRIMARY_ALARM": "Primárny alarm",
+      "ALARM_OFF": "Alarm VYP",
+      "ALARM_ON": "Alarm ZAP",
+      "ALARM_MUTED": "Alarm stlmený"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} krátko kliknuté",
+      "PRESS_LONG": "{subtype} dlho kliknuté",
+      "MOTION": "Zaznamenaný pohyb",
+      "SCENARIO": "Spustený scenár {subtype}",
+      "ALARM": "{subtype} spustený"
     }
   },
   "services": {
