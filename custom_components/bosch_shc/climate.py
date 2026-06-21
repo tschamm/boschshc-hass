@@ -191,9 +191,14 @@ class ClimateControl(SHCEntity, ClimateEntity):
             kwargs.get(ATTR_HVAC_MODE)
         )  # set_temperature args may provide HVAC mode as well
 
-        if self.hvac_mode == HVACMode.OFF or self.preset_mode == PRESET_ECO:
+        # P2-B: do NOT re-check preset_mode == PRESET_ECO here.
+        # async_set_hvac_mode above already called device.low = False to exit ECO,
+        # but put_state_element (HTTP PUT) does NOT update the in-memory _raw_state,
+        # so preset_mode still reads ECO from stale cache → the guard would silently
+        # skip the setpoint write every time.  Only skip when truly OFF. #196
+        if self.hvac_mode == HVACMode.OFF:
             LOGGER.debug(
-                "Skipping setting temperature as device %s is off or in low_mode.",
+                "Skipping setting temperature as device %s is off.",
                 self.device_name,
             )
             return
@@ -382,6 +387,7 @@ class HeatingCircuit(SHCEntity, ClimateEntity):
     ) -> None:
         """Initialize the SHC heating circuit."""
         super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = name
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     @property

@@ -453,14 +453,19 @@ class TestSetHvacModeNoCooling:
         entity.hass = _make_hass_raises(JSONRPCError(-32001, "timeout"))
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
 
-    def test_eco_guard_blocks_hvac_change(self):
-        """preset_mode=ECO → async_set_hvac_mode returns early (line 214)."""
+    def test_eco_exits_then_hvac_mode_written(self):
+        """P2-B: preset_mode=ECO → async_set_hvac_mode exits ECO first (low=False),
+        then writes the requested HVAC mode.  The old early-return is gone. #196"""
         device = _make_cc_device(low=True, operation_mode_value="MANUAL")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
         _run(entity.async_set_hvac_mode(HVACMode.AUTO))
-        assert writes == {}
+        # ECO exit: low must be cleared
+        assert writes.get("low") is False
+        # HVAC mode write must proceed despite starting in ECO
+        assert writes.get("operation_mode") == OM_CC.AUTOMATIC
+        assert writes.get("summer_mode") is False
 
 
 # ===========================================================================

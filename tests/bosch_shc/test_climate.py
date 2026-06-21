@@ -69,7 +69,7 @@ def _make_entity(device):
     """Build a ClimateControl without going through __init__ (no HA session)."""
     entity = ClimateControl.__new__(ClimateControl)
     entity._device = device
-    entity._name = "Test Climate"
+    entity._attr_name = "Test Climate"  # device_name property reads _attr_name
     entity._attr_unique_id = "test-root_test-id"
     return entity
 
@@ -185,8 +185,14 @@ class TestBoostJsonRpcErrorSwallowed:
 # ---------------------------------------------------------------------------
 
 class TestEcoPreset:
-    """preset_mode == PRESET_ECO when device.low is True; temperature write
-    is skipped in ECO mode."""
+    """preset_mode == PRESET_ECO when device.low is True.
+
+    P2-B (#196): the old guard that silently skipped setpoint writes in ECO
+    mode has been removed.  async_set_hvac_mode (called first in
+    async_set_temperature) already clears low=False, but put_state_element
+    does NOT update the in-memory _raw_state cache, so the stale ECO check
+    would always block the write.  The fix: only skip the write when truly OFF.
+    """
 
     def test_preset_mode_eco_when_low(self):
         device = _make_device(low=True)
@@ -198,18 +204,23 @@ class TestEcoPreset:
         entity = _make_entity(device)
         assert entity.preset_mode == PRESET_NONE
 
-    def test_eco_skips_set_temperature(self):
+    def test_eco_set_temperature_writes_setpoint(self):
+        """P2-B: ECO no longer blocks setpoint writes — setpoint IS written. #196"""
         device = _make_device(low=True, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        executor_calls = []
+        written = {}
 
         async def _executor(func, *args):
-            executor_calls.append(func)
+            if func is setattr and len(args) == 3:
+                written[args[1]] = args[2]
             return func(*args)
 
         entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
-        assert executor_calls == [], "No executor call expected in ECO mode"
+        # Setpoint must be written even from ECO state (guard removed)
+        assert written.get("setpoint_temperature") == 19.0, (
+            "setpoint_temperature must be written in ECO mode after P2-B fix"
+        )
 
     def test_eco_does_not_raise(self):
         device = _make_device(low=True, operation_mode_value="MANUAL")

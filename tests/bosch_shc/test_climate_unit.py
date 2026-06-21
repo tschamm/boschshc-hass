@@ -510,7 +510,7 @@ class TestHeatingCircuitInit:
 # ClimateControl — hvac_action (lines 132-136)
 # ===========================================================================
 
-class TestHvacAction:
+class TestHvacActionByMode:
     """ClimateControl.hvac_action delegates to has_demand + hvac_mode."""
 
     def test_hvac_action_heating_when_has_demand_and_mode_auto(self):
