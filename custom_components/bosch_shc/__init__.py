@@ -4,7 +4,6 @@ from datetime import timedelta
 
 import voluptuous as vol
 import functools as ft
-import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
@@ -13,6 +12,9 @@ from boschshcpy.exceptions import (
 
 from .certificate import parse_certificate
 from .data import SHCData
+from homeassistant.components.persistent_notification import (
+    async_create as pn_async_create,
+)
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -200,7 +202,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 cert_info.days_remaining,
                 expiry,
             )
-            hass.components.persistent_notification.create(
+            pn_async_create(
+                hass,
                 (
                     f"Bosch SHC client certificate will expire in {cert_info.days_remaining} days (on {expiry}).\n"
                     "To renew: Put the controller into pairing mode (press front button until LEDs flash) and start re-authentication from the integration options."
@@ -272,7 +275,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
         elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
             expiry = info.not_after.date()
-            hass.components.persistent_notification.create(
+            pn_async_create(
+                hass,
                 (
                     f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
                     "To renew: Put the controller into pairing mode and re-authenticate the integration."
@@ -395,14 +399,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_on_unload(entry.add_update_listener(async_update_options))
-
     return True
-
-
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Update options."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -86,11 +86,6 @@ def _make_fake_hass(*, domain_data=None):
     hass.services = MagicMock()
     hass.services.async_register = MagicMock()
 
-    # components (for persistent_notification)
-    hass.components = MagicMock()
-    hass.components.persistent_notification = MagicMock()
-    hass.components.persistent_notification.create = MagicMock()
-
     # async_create_task
     hass.async_create_task = MagicMock()
 
@@ -154,6 +149,7 @@ PATCH_ZEROCONF = "custom_components.bosch_shc.__init__.async_get_instance"
 PATCH_DR_GET = "custom_components.bosch_shc.__init__.dr.async_get"
 PATCH_PARSE_CERT = "custom_components.bosch_shc.__init__.parse_certificate"
 PATCH_TRACK_INTERVAL = "custom_components.bosch_shc.__init__.async_track_time_interval"
+PATCH_PN_CREATE = "custom_components.bosch_shc.__init__.pn_async_create"
 
 
 def _run(coro):
@@ -229,10 +225,13 @@ class TestAsyncSetupEntryHappyPath:
         listen_args = [c.args[0] for c in hass.bus.async_listen_once.call_args_list]
         assert EVENT_HOMEASSISTANT_STOP in listen_args
 
-    def test_update_listener_registered(self):
+    def test_update_listener_not_registered(self):
+        """B2: add_update_listener must NOT be called — HA auto-reloads on options_flow
+        async_create_entry; registering an extra reload listener caused a double-reload
+        and a DeprecationWarning in HA 2026.6 (hard error in 2026.12)."""
         session = _make_fake_session()
         _, _, entry, _ = self._do_setup(session)
-        entry.add_update_listener.assert_called_once()
+        entry.add_update_listener.assert_not_called()
 
     def test_cert_check_unsub_stored(self):
         session = _make_fake_session()
@@ -279,6 +278,7 @@ class TestSetupCertBranches:
         hass = _make_fake_hass()
         entry = _make_fake_entry(cert_path="/fake/cert.pem")
         dr_mock = _make_fake_device_registry()
+        pn_create_mock = MagicMock()
 
         with (
             patch(PATCH_SESSION, return_value=session),
@@ -286,32 +286,34 @@ class TestSetupCertBranches:
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=cert_info_obj),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+            patch(PATCH_PN_CREATE, pn_create_mock),
         ):
             result = _run(async_setup_entry(hass, entry))
 
-        return result, hass
+        return result, pn_create_mock
 
     def test_valid_cert_no_warning(self):
         """Cert with 60 days remaining: setup succeeds, no notification."""
         cert_info = _make_cert_info(60)
-        result, hass = self._setup_with_cert_info(cert_info)
+        result, pn_create_mock = self._setup_with_cert_info(cert_info)
         assert result is True
-        hass.components.persistent_notification.create.assert_not_called()
+        pn_create_mock.assert_not_called()
 
     def test_expiring_cert_triggers_notification(self):
-        """Cert expiring in 10 days: setup succeeds + persistent_notification created."""
+        """B1: Cert expiring in 10 days: setup succeeds + pn_async_create called
+        (not the deprecated hass.components.persistent_notification.create)."""
         cert_info = _make_cert_info(10)
-        result, hass = self._setup_with_cert_info(cert_info)
+        result, pn_create_mock = self._setup_with_cert_info(cert_info)
         assert result is True
-        hass.components.persistent_notification.create.assert_called_once()
+        pn_create_mock.assert_called_once()
 
     def test_expiring_cert_at_warning_boundary(self):
         """Cert at exactly CERT_EXPIRY_WARNING_DAYS (30): notification triggered."""
         from custom_components.bosch_shc.const import CERT_EXPIRY_WARNING_DAYS
         cert_info = _make_cert_info(CERT_EXPIRY_WARNING_DAYS)
-        result, hass = self._setup_with_cert_info(cert_info)
+        result, pn_create_mock = self._setup_with_cert_info(cert_info)
         assert result is True
-        hass.components.persistent_notification.create.assert_called_once()
+        pn_create_mock.assert_called_once()
 
     def test_expired_cert_raises_auth_failed(self):
         """Expired cert raises ConfigEntryAuthFailed."""
@@ -566,17 +568,44 @@ class TestAsyncUnloadEntry:
 
 
 # ---------------------------------------------------------------------------
-# Tests: async_update_options
+# Tests: B2 — no update listener (options-flow auto-reload)
 # ---------------------------------------------------------------------------
 
-class TestAsyncUpdateOptions:
-    def test_update_options_reloads_entry(self):
-        from custom_components.bosch_shc.__init__ import async_update_options
+class TestB2NoUpdateListener:
+    """B2: async_update_options and add_update_listener were removed.
 
+    HA auto-reloads the config entry when OptionsFlow.async_create_entry is
+    called (the options flow already does this).  Registering an extra
+    add_update_listener that also calls async_reload caused a double-reload
+    and a DeprecationWarning in 2026.6 / hard error in 2026.12.
+    """
+
+    def test_async_update_options_removed(self):
+        """async_update_options must no longer exist in __init__."""
+        import custom_components.bosch_shc.__init__ as init_mod
+        assert not hasattr(init_mod, "async_update_options"), (
+            "async_update_options was removed (B2 fix) but still present"
+        )
+
+    def test_add_update_listener_not_called_during_setup(self):
+        """Setup must not register an add_update_listener (B2 fix)."""
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        session = _make_fake_session()
         hass = _make_fake_hass()
         entry = _make_fake_entry()
-        _run(async_update_options(hass, entry))
-        hass.config_entries.async_reload.assert_called_once_with(entry.entry_id)
+        dr_mock = _make_fake_device_registry()
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            _run(async_setup_entry(hass, entry))
+
+        entry.add_update_listener.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -962,13 +991,14 @@ class TestScheduledCertCheck:
     """
 
     def _run_with_cert_check(self, cert_info_for_check, *, raise_on_check=False):
-        """Setup, capture the daily cert-check callback, call it, return hass."""
+        """Setup, capture the daily cert-check callback, call it, return (hass, pn_mock)."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
         session = _make_fake_session()
         hass = _make_fake_hass()
         entry = _make_fake_entry(cert_path="/fake/cert.pem")
         dr_mock = _make_fake_device_registry()
+        pn_create_mock = MagicMock()
         captured = {}
         call_count = [0]
 
@@ -998,28 +1028,29 @@ class TestScheduledCertCheck:
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, side_effect=_parse),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_track),
+            patch(PATCH_PN_CREATE, pn_create_mock),
         ):
             asyncio.run(_inner())
 
-        return hass
+        return hass, pn_create_mock
 
     def test_expired_cert_triggers_reload(self):
         """Daily check with expired cert creates an async reload task."""
         cert_info = _make_cert_info(-1)
-        hass = self._run_with_cert_check(cert_info)
+        hass, _ = self._run_with_cert_check(cert_info)
         hass.async_create_task.assert_called_once()
 
     def test_expiring_cert_creates_notification(self):
-        """Daily check with expiring cert creates persistent notification."""
+        """B1: Daily check with expiring cert calls pn_async_create (not the deprecated
+        hass.components.persistent_notification.create path)."""
         cert_info = _make_cert_info(10)
-        hass = self._run_with_cert_check(cert_info)
-        # notification called once during initial setup (cert_path check skipped since None),
-        # and once in cert check — but initial returned None so only cert-check notification
-        assert hass.components.persistent_notification.create.call_count >= 1
+        _, pn_create_mock = self._run_with_cert_check(cert_info)
+        # initial parse returned None (no cert_path on setup) so only one call here
+        assert pn_create_mock.call_count >= 1
 
     def test_parse_exception_in_check_silently_returns(self):
         """parse_certificate raising inside daily check → silently return, no crash."""
-        hass = self._run_with_cert_check(None, raise_on_check=True)
+        hass, _ = self._run_with_cert_check(None, raise_on_check=True)
         hass.async_create_task.assert_not_called()
 
 
