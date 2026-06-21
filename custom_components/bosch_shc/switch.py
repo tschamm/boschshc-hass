@@ -401,8 +401,20 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["cameraoutdoorgen2"],
             )
         )
+        # #289-safe migration: in 0.4.106-0.4.111 both Gen2 camera lights shared
+        # attr_name="Light" (uid _light); the Frontlight/AmbientLight split left
+        # the old migration pointing at a phantom _light and gave AmbientLight no
+        # migration at all.  Map the old id (both historical formats) to the real
+        # Frontlight uid; async_migrate skips if the target already exists, so
+        # already-upgraded users are unaffected.
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Light"
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="Frontlight", old_unique_id=f"{switch.serial}_light",
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="Frontlight",
+            old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
         entities.append(
             SHCSwitch(
@@ -411,6 +423,18 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
                 attr_name="Frontlight",
             )
+        )
+        # AmbientLight had no prior migration; the old single _light entity is
+        # claimed by Frontlight above, so these no-op for upgraders but cover a
+        # registry where only AmbientLight's id survived.
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="AmbientLight", old_unique_id=f"{switch.serial}_light",
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="AmbientLight",
+            old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
         entities.append(
             SHCSwitch(
@@ -698,10 +722,13 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         def update_entity_information():
             if self._device.deleted:
                 self._attr_available = False
-                # async_will_remove_from_hass isn't intended to be called
-                # directly and should only be called by the entity platform
-                # it should be split into another function
-                self.hass.add_job(self.async_will_remove_from_hass)
+                # async_will_remove_from_hass must run on the event loop; this
+                # callback fires from the SHC poll thread, so schedule it
+                # thread-safely instead of hass.add_job (#288-cluster).
+                self.hass.loop.call_soon_threadsafe(
+                    self.hass.async_create_task,
+                    self.async_will_remove_from_hass(),
+                )
             self.schedule_update_ha_state()
 
         self._session.subscribe_userdefinedstate_callback(

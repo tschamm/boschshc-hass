@@ -309,7 +309,7 @@ class TestAsyncSetupEntry:
         assert len(motion_entities) == 1
 
     def test_motion_detector_latestmotion_service_subscribed(self):
-        """LatestMotion service subscribe_callback is called during __init__."""
+        """LatestMotion service subscribe_callback is called during async_added_to_hass."""
         cb_store = {}
 
         def record_subscribe(key, cb):
@@ -322,18 +322,30 @@ class TestAsyncSetupEntry:
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        entities_collected = []
 
         async def _run_setup():
             with (
                 patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
                 patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+                patch(
+                    "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                    return_value="ha-device-id",
+                ),
             ):
                 _cp.get.return_value = MagicMock()
-                await async_setup_entry(hass, config_entry, lambda ents, **kw: None)
+                await async_setup_entry(
+                    hass, config_entry,
+                    lambda ents, **kw: entities_collected.extend(ents),
+                )
+                for entity in entities_collected:
+                    entity.hass = hass
+                    entity.entity_id = f"binary_sensor.{entity._device.id}"
+                    await entity.async_added_to_hass()
 
         _run(_run_setup())
-        # subscribe_callback should have been called with the event listener key
-        assert any("_eventlistener" in k for k in cb_store)
+        # subscribe_callback should have been called (during async_added_to_hass)
+        assert any(k is not None and "_eventlistener" in k for k in cb_store)
 
     # -- smoke detectors --
     def test_smoke_detector_added(self):
@@ -346,14 +358,39 @@ class TestAsyncSetupEntry:
         assert any(isinstance(e, SmokeDetectorSensor) for e in entities)
 
     def test_smoke_detector_alarm_service_subscribed(self):
+        """Alarm service subscribe_callback is called during async_added_to_hass."""
         cb_store = {}
         alarm_svc = _make_service("Alarm", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("sd2", device_services=[alarm_svc])
         dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
         dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
         session = _make_fake_session(smoke_detectors=[dev])
-        self._setup(session)
-        assert any("_eventlistener" in k for k in cb_store)
+        hass = _make_hass()
+        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        entities_collected = []
+
+        async def _run_setup():
+            with (
+                patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
+                patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+                patch(
+                    "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                    return_value="ha-device-id",
+                ),
+            ):
+                _cp.get.return_value = MagicMock()
+                await async_setup_entry(
+                    hass, config_entry,
+                    lambda ents, **kw: entities_collected.extend(ents),
+                )
+                for entity in entities_collected:
+                    entity.hass = hass
+                    entity.entity_id = f"binary_sensor.{entity._device.id}"
+                    await entity.async_added_to_hass()
+
+        _run(_run_setup())
+        assert any(k is not None and "_eventlistener" in k for k in cb_store)
 
     # -- smoke detection system --
     def test_smoke_detection_system_added(self):
@@ -370,13 +407,38 @@ class TestAsyncSetupEntry:
         assert not any(isinstance(e, SmokeDetectionSystemSensor) for e in entities)
 
     def test_smoke_detection_system_surveillance_subscribed(self):
+        """SurveillanceAlarm subscribe_callback is called during async_added_to_hass."""
         cb_store = {}
         surv_svc = _make_service("SurveillanceAlarm", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("sds2", device_services=[surv_svc])
         dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=dev)
-        self._setup(session)
-        assert any("_eventlistener" in k for k in cb_store)
+        hass = _make_hass()
+        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
+        config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        entities_collected = []
+
+        async def _run_setup():
+            with (
+                patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
+                patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+                patch(
+                    "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                    return_value="ha-device-id",
+                ),
+            ):
+                _cp.get.return_value = MagicMock()
+                await async_setup_entry(
+                    hass, config_entry,
+                    lambda ents, **kw: entities_collected.extend(ents),
+                )
+                for entity in entities_collected:
+                    entity.hass = hass
+                    entity.entity_id = f"binary_sensor.{entity._device.id}"
+                    await entity.async_added_to_hass()
+
+        _run(_run_setup())
+        assert any(k is not None and "_eventlistener" in k for k in cb_store)
 
     # -- twinguard smoke alarm sensors --
     def test_twinguard_smoke_alarm_sensor_added_when_twinguards_present(self):
@@ -502,7 +564,7 @@ class TestAsyncSetupEntry:
         assert len(motion_entities) == 1
 
     def test_motion_detector2_latestmotion_service_subscribed(self):
-        """LatestMotion subscribe_callback is called for MD2 device during __init__."""
+        """LatestMotion subscribe_callback is called for MD2 device during async_added_to_hass."""
         cb_store = {}
 
         def record_subscribe(key, cb):
@@ -515,17 +577,29 @@ class TestAsyncSetupEntry:
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        entities_collected = []
 
         async def _run_setup():
             with (
                 patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id", return_value=None),
                 patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp,
+                patch(
+                    "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                    return_value="ha-device-id",
+                ),
             ):
                 _cp.get.return_value = MagicMock()
-                await async_setup_entry(hass, config_entry, lambda ents, **kw: None)
+                await async_setup_entry(
+                    hass, config_entry,
+                    lambda ents, **kw: entities_collected.extend(ents),
+                )
+                for entity in entities_collected:
+                    entity.hass = hass
+                    entity.entity_id = f"binary_sensor.{entity._device.id}"
+                    await entity.async_added_to_hass()
 
         _run(_run_setup())
-        assert any("_eventlistener" in k for k in cb_store)
+        assert any(k is not None and "_eventlistener" in k for k in cb_store)
 
     def test_motion_detector2_battery_added_when_supported(self):
         """MD2 device with battery support → BatterySensor entity created."""
@@ -713,6 +787,7 @@ class TestMotionDetectionSensorInit:
         assert sensor._service is None
 
     def test_init_with_latestmotion_service_subscribes(self):
+        """__init__ finds the service (no subscribe yet); async_added_to_hass subscribes."""
         cb_store = {}
         lm_svc = _make_service("LatestMotion", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("md-init2", device_services=[lm_svc])
@@ -720,6 +795,18 @@ class TestMotionDetectionSensorInit:
         hass = _make_hass()
         sensor = MotionDetectionSensor(hass=hass, device=dev, entry_id="E1")
         assert sensor._service is lm_svc
+        # subscribe has NOT happened yet after __init__ alone
+        assert "md-init2_eventlistener" not in cb_store
+
+        async def _add():
+            with patch(
+                "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                return_value="ha-device-id",
+            ):
+                await sensor.async_added_to_hass()
+
+        asyncio.run(_add())
+        # subscribe happens during async_added_to_hass
         assert "md-init2_eventlistener" in cb_store
 
     def test_input_events_handler_fires_event(self):
@@ -752,6 +839,7 @@ class TestMotionDetectionSensorInit:
 
 class TestSmokeDetectorSensorInit:
     def test_init_with_alarm_service_subscribes(self):
+        """__init__ finds the service (no subscribe yet); async_added_to_hass subscribes."""
         cb_store = {}
         alarm_svc = _make_service("Alarm", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("sd-init", device_services=[alarm_svc])
@@ -760,6 +848,18 @@ class TestSmokeDetectorSensorInit:
         hass = _make_hass()
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         assert sensor._service is alarm_svc
+        # subscribe has NOT happened yet after __init__ alone
+        assert "sd-init_eventlistener" not in cb_store
+
+        async def _add():
+            with patch(
+                "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                return_value="ha-device-id",
+            ):
+                await sensor.async_added_to_hass()
+
+        asyncio.run(_add())
+        # subscribe happens during async_added_to_hass
         assert "sd-init_eventlistener" in cb_store
 
     def test_init_without_alarm_service(self):
@@ -854,6 +954,7 @@ class TestSmokeDetectionSystemSensorInit:
         assert sensor._attr_name is None
 
     def test_init_with_surveillance_service_subscribes(self):
+        """__init__ finds the service (no subscribe yet); async_added_to_hass subscribes."""
         cb_store = {}
         surv_svc = _make_service(
             "SurveillanceAlarm",
@@ -864,6 +965,18 @@ class TestSmokeDetectionSystemSensorInit:
         hass = _make_hass()
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         assert sensor._service is surv_svc
+        # subscribe has NOT happened yet after __init__ alone
+        assert "sds-init2_eventlistener" not in cb_store
+
+        async def _add():
+            with patch(
+                "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+                return_value="ha-device-id",
+            ):
+                await sensor.async_added_to_hass()
+
+        asyncio.run(_add())
+        # subscribe happens during async_added_to_hass
         assert "sds-init2_eventlistener" in cb_store
 
     def test_init_without_surveillance_service(self):

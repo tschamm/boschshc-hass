@@ -1027,8 +1027,9 @@ def test_uds_switch_on_state_changed_callback_calls_schedule():
 
 
 def test_uds_switch_update_entity_information_deleted():
-    """update_entity_information callback: deleted device → sets unavailable + schedules job."""
-    add_job_calls: list = []
+    """update_entity_information callback: deleted device → sets unavailable +
+    schedules removal via hass.loop.call_soon_threadsafe (not hass.add_job)."""
+    threadsafe_calls: list = []
     scheduled: list = []
 
     session = SimpleNamespace(
@@ -1056,7 +1057,13 @@ def test_uds_switch_update_entity_information_deleted():
         description=SWITCH_TYPES["user_defined_state"],
     )
     sw.schedule_update_ha_state = lambda: scheduled.append(True)
-    mock_hass = SimpleNamespace(add_job=lambda coro: add_job_calls.append(coro))
+    fake_loop = SimpleNamespace(
+        call_soon_threadsafe=lambda *a, **kw: threadsafe_calls.append(a)
+    )
+    mock_hass = SimpleNamespace(
+        loop=fake_loop,
+        async_create_task=lambda coro: coro,
+    )
     sw.hass = mock_hass
 
     async def _run():
@@ -1072,9 +1079,9 @@ def test_uds_switch_update_entity_information_deleted():
     second_cb = session.subscribe_userdefinedstate_callback.call_args_list[1][0][1]
     second_cb()
 
-    # Entity should be marked unavailable and add_job called for removal
+    # Entity should be marked unavailable and call_soon_threadsafe called for removal
     assert sw._attr_available is False
-    assert len(add_job_calls) == 1
+    assert len(threadsafe_calls) == 1
 
 
 def test_setup_wallthermostat_without_child_lock_skipped_old_lib():

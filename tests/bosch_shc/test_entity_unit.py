@@ -300,9 +300,10 @@ class TestOnStateChangedCallback:
         assert ent.schedule_calls >= 1
 
     def test_update_entity_information_deleted_calls_add_job(self):
-        """When device.deleted is True, update_entity_information should call hass.add_job."""
+        """When device.deleted is True, update_entity_information should call
+        hass.loop.call_soon_threadsafe (not hass.add_job) to schedule removal."""
         svc = FakeService()
-        add_job_calls = []
+        threadsafe_calls = []
         ent = TrackingEntity()
         ent._device = SimpleNamespace(
             name="Dev",
@@ -323,8 +324,14 @@ class TestOnStateChangedCallback:
         ent.update_attr_calls = 0
         ent.schedule_calls = 0
 
-        # We need ent.hass for the add_job call
-        fake_hass = SimpleNamespace(add_job=lambda *a, **kw: add_job_calls.append(a))
+        # Fake hass with loop.call_soon_threadsafe (new path after #288 fix)
+        fake_loop = SimpleNamespace(
+            call_soon_threadsafe=lambda *a, **kw: threadsafe_calls.append(a)
+        )
+        fake_hass = SimpleNamespace(
+            loop=fake_loop,
+            async_create_task=lambda coro: coro,
+        )
         ent.hass = fake_hass
 
         # Capture the update_entity_information callback registered on device
@@ -344,6 +351,8 @@ class TestOnStateChangedCallback:
         assert dev_callbacks, "No device subscribe_callback registered"
         update_entity_information = dev_callbacks[0]
 
-        # Calling it with deleted=True should call hass.add_job
+        # Calling it with deleted=True should call hass.loop.call_soon_threadsafe
         update_entity_information()
-        assert len(add_job_calls) >= 1, "Expected hass.add_job to be called for deleted device"
+        assert len(threadsafe_calls) >= 1, (
+            "Expected hass.loop.call_soon_threadsafe to be called for deleted device"
+        )

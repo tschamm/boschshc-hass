@@ -324,9 +324,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         for service in self._device.device_services:
             if service.id == "LatestMotion":
                 self._service = service
-                self._service.subscribe_callback(
-                    self._device.id + "_eventlistener", self._input_events_handler
-                )
+                break
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
@@ -336,6 +334,12 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         self._cached_device_id = await async_get_device_id(
             self.hass, self._device.id
         )
+        # Subscribe AFTER device_id is cached so events never fire with
+        # device_id=None during the startup window (#288-cluster).
+        if self._service is not None:
+            self._service.subscribe_callback(
+                self._device.id + "_eventlistener", self._input_events_handler
+            )
 
     def _input_events_handler(self):
         """Handle device input events (called from SHCPollingThread)."""
@@ -411,9 +415,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         for service in self._device.device_services:
             if service.id == "Alarm":
                 self._service = service
-                self._service.subscribe_callback(
-                    self._device.id + "_eventlistener", self._input_events_handler
-                )
+                break
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
@@ -423,6 +425,12 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         self._cached_device_id = await async_get_device_id(
             self._hass, self._device.id
         )
+        # Subscribe AFTER device_id is cached so events never fire with
+        # device_id=None during the startup window (#288-cluster).
+        if self._service is not None:
+            self._service.subscribe_callback(
+                self._device.id + "_eventlistener", self._input_events_handler
+            )
 
     def _input_events_handler(self):
         """Handle device input events (called from SHCPollingThread)."""
@@ -550,9 +558,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
                 self._service = service
-                self._service.subscribe_callback(
-                    self._device.id + "_eventlistener", self._input_events_handler
-                )
+                break
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
 
@@ -562,6 +568,12 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._cached_device_id = await async_get_device_id(
             self._hass, self._device.id
         )
+        # Subscribe AFTER device_id is cached so events never fire with
+        # device_id=None during the startup window (#288-cluster).
+        if self._service is not None:
+            self._service.subscribe_callback(
+                self._device.id + "_eventlistener", self._input_events_handler
+            )
 
     def _input_events_handler(self):
         """Handle device input events (called from SHCPollingThread)."""

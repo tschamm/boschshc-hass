@@ -379,13 +379,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         def _apply_child_lock(lock_state: bool):
             """Set child lock on all SHC devices (blocking; run in executor)."""
-            from boschshcpy.exceptions import SHCException
+            import requests.exceptions
+            from boschshcpy.exceptions import SHCException, SHCConnectionError
             from boschshcpy.api import JSONRPCError
             thermostats, bool_devices = _child_lock_devices(session)
             for device in thermostats:
                 try:
                     device.child_lock = lock_state
-                except (JSONRPCError, SHCException, AttributeError) as err:
+                except (
+                    JSONRPCError,
+                    SHCException,
+                    SHCConnectionError,
+                    AttributeError,
+                    requests.exceptions.RequestException,
+                ) as err:
                     LOGGER.warning(
                         "Failed to set child_lock=%s on thermostat %s: %s",
                         lock_state, device.id, err,
@@ -393,7 +400,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             for device in bool_devices:
                 try:
                     device.child_lock = lock_state
-                except (JSONRPCError, SHCException, AttributeError) as err:
+                except (
+                    JSONRPCError,
+                    SHCException,
+                    SHCConnectionError,
+                    AttributeError,
+                    requests.exceptions.RequestException,
+                ) as err:
                     LOGGER.warning(
                         "Failed to set child_lock=%s on device %s: %s",
                         lock_state, device.id, err,
