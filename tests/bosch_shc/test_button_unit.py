@@ -15,7 +15,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from custom_components.bosch_shc.button import SHCRelayButton
+from custom_components.bosch_shc.button import SHCRelayButton, SHCSmokeTestButton
 from custom_components.bosch_shc.entity import SHCEntity
 from homeassistant.components.button import ButtonEntity
 
@@ -153,6 +153,46 @@ class TestPress:
         btn = _relay_via_init()
         btn._device.trigger_impulse_state = lambda: None
         assert btn.press() is None
+
+
+class TestSHCSmokeTestButton:
+    def _smoke_button_via_init(
+        self,
+        name: str = "TwinGuard 1",
+        device_id: str = "hdm:ZigBee:abc123",
+        root_device_id: str = "aa:bb:cc:00:00:99",
+    ) -> SHCSmokeTestButton:
+        dev = _fake_device(
+            name=name, device_id=device_id, root_device_id=root_device_id
+        )
+        dev.smoketest_requested = lambda: None
+        btn = SHCSmokeTestButton.__new__(SHCSmokeTestButton)
+        with patch.object(SHCSmokeTestButton, "_update_attr", lambda self: None):
+            SHCSmokeTestButton.__init__(btn, dev, "entry_test")
+        return btn
+
+    def test_attr_name(self):
+        btn = self._smoke_button_via_init()
+        assert btn._attr_name == "Smoke Test"
+
+    def test_unique_id(self):
+        btn = self._smoke_button_via_init(
+            device_id="hdm:ZigBee:dev1", root_device_id="root1"
+        )
+        assert btn._attr_unique_id == "root1_hdm:ZigBee:dev1_smoke_test"
+
+    def test_press_calls_smoketest_requested(self):
+        calls = []
+        btn = self._smoke_button_via_init()
+        btn._device.smoketest_requested = lambda: calls.append(True)
+        btn.press()
+        assert calls == [True]
+
+    def test_is_button_entity(self):
+        assert issubclass(SHCSmokeTestButton, ButtonEntity)
+
+    def test_is_shc_entity(self):
+        assert issubclass(SHCSmokeTestButton, SHCEntity)
 
 
 # ---------------------------------------------------------------------------

@@ -21,7 +21,7 @@ from unittest.mock import AsyncMock, patch
 
 from boschshcpy import SHCShutterControl
 
-from custom_components.bosch_shc.button import SHCRelayButton
+from custom_components.bosch_shc.button import SHCRelayButton, SHCSmokeTestButton
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControlCover
 from custom_components.bosch_shc.light import LightSwitch
@@ -173,6 +173,27 @@ def _button_device() -> SimpleNamespace:
         device_model="MR",
         status="AVAILABLE",
         deleted=False,
+    )
+
+
+def _smoke_test_device(
+    name: str = "Test Rauchmelder",
+    device_id: str = "hdm:ZigBee:smoke1",
+    root_device_id: str = "aa:bb:cc:00:00:07",
+) -> SimpleNamespace:
+    """Minimal device for SHCSmokeTestButton.__init__."""
+    return SimpleNamespace(
+        name=name,
+        id=device_id,
+        root_device_id=root_device_id,
+        serial=f"serial-{device_id}",
+        device_services=[],
+        manufacturer="Bosch",
+        device_model="SMOKE",
+        status="AVAILABLE",
+        deleted=False,
+        room_id=None,
+        smoketest_requested=lambda: None,
     )
 
 
@@ -659,7 +680,7 @@ class TestValveSetupEntry:
 # ---------------------------------------------------------------------------
 
 class TestButtonSetupEntry:
-    """Button async_setup_entry: micromodule_impulse_relays → SHCRelayButton."""
+    """Button async_setup_entry for relays and smoke-test buttons."""
 
     def _run(self, session: object) -> list:
         from custom_components.bosch_shc.button import async_setup_entry
@@ -725,7 +746,37 @@ class TestButtonSetupEntry:
     def test_entry_id_stored(self) -> None:
         dev = _button_device()
         session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[dev],
+                smoke_detectors=[],
+                twinguards=[],
+            )
         )
         result = self._run(session)
         assert result[0]._entry_id == "E1"
+
+    def test_smoke_detectors_produce_smoke_test_buttons(self) -> None:
+        dev = _smoke_test_device()
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[dev],
+                twinguards=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], SHCSmokeTestButton)
+
+    def test_twinguards_produce_smoke_test_buttons(self) -> None:
+        dev = _smoke_test_device(name="TwinGuard", device_id="hdm:ZigBee:tw1")
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[dev],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], SHCSmokeTestButton)
