@@ -2,157 +2,137 @@
 [![hacs_badge][hacsbadge]][hacs]
 <!-- [![Validate with HACS][validatehacsbadge]][validatehacs] -->
 
-[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
+[![BuyMeCoffee][buymecoffeebadge-tschamm]][buymecoffee-tschamm]
+[![BuyMeCoffee][buymecoffeebadge-mosandlts]][buymecoffee-mosandlts]
 [![Stars][stars-shield]][bosch_shc]
 
 # Bosch Smart Home Controller (SHC) for Home Assistant
 
 ![Bosch Smart Home](https://local.apidocs.bosch-smarthome.com/images/bosch_smart_home_logo.png)
 
-Custom Home Assistant integration for accessing Bosch Smart Home Controller (SHC).
+Custom Home Assistant integration for the Bosch Smart Home Controller (SHC).
+Uses [boschshcpy](https://github.com/tschamm/boschshcpy) (v0.2.122) as the local API backend.
+Communication is local-only (no cloud required): the integration speaks directly to the SHC over
+mutual-TLS on the local network.
 
-The integration is using [boschshcpy](https://github.com/tschamm/boschshcpy) as backend towards the API.
+## Supported platforms
 
-The SmartHomeController is added as a device. The component provides access to:
+| Platform | Devices / features |
+|---|---|
+| `alarm_control_panel` | Intrusion Detection System |
+| `binary_sensor` | Shutter Contact (Gen 1 + Gen 2), Motion Detector (Gen 1 + Gen 2 [+M]), Smoke Detector (Gen 1 + Gen 2), Smoke Detection System, Water Leakage Sensor, Shutter Contact 2 Plus (vibration), Battery state (all battery-powered devices) |
+| `button` | Micromodule Relay (impulse/momentary type) |
+| `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
+| `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
+| `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector alarm events, Smoke Detection System alarm events |
+| `light` | LEDVANCE lights (on/off, brightness, color), Hue lights (via SHC), Micromodule Dimmer, Motion Detector II integrated light |
+| `number` | Thermostat temperature offset |
+| `sensor` | Temperature, Humidity, CO₂ purity, Air quality + rating sensors (Twinguard), Energy + Power (Smart Plug, Smart Plug Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), EMMA grid power, Battery level (diagnostic, optional) |
+| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes (privacy / light / notification), Camera 360 (privacy / notification), Camera Outdoor Gen2 (privacy / front-light / ambient-light), Presence Simulation, Bypass (Shutter Contact 2), Child Lock (thermostats, Shutter Contact 2 Plus), Pet Immunity (Motion Detector), Silent Mode (thermostat), Vibration detection (Shutter Contact 2 Plus), User Defined States |
+| `valve` | Thermostat radiator valve (position, diagnostic) |
 
-* Service calls:
-  * `bosch_shc.trigger_scenario` service call to trigger a scenario by its name
-  * `bosch_shc.smokedetector_check` service call to trigger a check routine of the smokedetector
-* `bosch_shc.event` events:
-  * Button events for Universal Switches devices (lower and upper button, short and long press)
-  * Scenario events for triggered scenarios registered in SHC device, each scenario is identified by its name
-  * Motion events for detected motion triggered by Motion Detector devices
-  * Alarm events for alarms triggered by Smoke Detector devices or by Smoke Detection System
+## Services / actions
 
-The following platforms are implemented:
+| Action | Description |
+|---|---|
+| `bosch_shc.trigger_scenario` | Trigger a scenario by name |
+| `bosch_shc.trigger_rawscan` | Dump raw JSON from the SHC controller (devices, services, rooms, scenarios, …) |
+| `bosch_shc.smokedetector_check` | Trigger a self-test on a Smoke Detector entity |
+| `bosch_shc.smokedetector_alarmstate` | Set the alarm state on a Smoke Detector entity |
 
-* Alarm Control Panel
-  * Intrusion Detection System
-* Binary Sensor
-  * Battery: all battery powered devices
-  * Shutter Contact
-  * Smoke Detector Gen 1 and Gen 2
-  * Motion Detector
-  * Smoke Detection System
-  * Water Leakage Sensor
-* Climate
-  * Room Climate Control
-* Cover
-  * Shutter Control
-* Light
-  * LEDVANCE Light
-* Sensor
-  * Thermostat
-  * Wall Thermostat Gen 1 and Gen 2
-  * Twinguard
-  * Smart Plug, Smart Plug Compact and Light Control (energy and power)
-* Switch
-  * Smart Plug
-  * Smart Plug Compact
-  * Light Control
+## Events
 
-# Installation
+- `bosch_shc.event` — button presses (Universal Switch: lower/upper button, short/long press), scenario triggers, motion events, smoke detector alarms.
 
-For installation, follow these steps to add Bosch Smart Home devices to `HomeAssistant`.
+## Installation
 
-## Installation via HACS
+### Via HACS (recommended)
 
-1. Install bosch_shc custom component in HACS
-2. Configure bosch_shc integration in HA.
+1. Open HACS in Home Assistant.
+2. Search for **Bosch SHC** under Integrations and install it.
+3. Restart Home Assistant.
+4. Go to **Settings → Devices & Services** and configure the **Bosch SHC** integration.
 
-## Manual Installation
+### Manual
 
-1. To install `bosch_shc` as custom component, inside your HA configuration directory create a new folder called  `custom_components`. This is the folder that Home Assistant will look at when looking for custom code. Install the custom component there:
-  Just copy paste the content of the `boschshc-hass/bosch_shc` folder in your  `config/custom_components`  directory. As example, you will get the  `entity.py`  file in the following path:  `config/custom_components/bosch_shc/entity.py`.
-Afterwards, restart `HomeAssistant`.
+1. Copy the `boschshc-hass/custom_components/bosch_shc/` folder into
+   `<config>/custom_components/bosch_shc/`.
+2. Restart Home Assistant.
+3. Follow the [Configuration](#configuration) steps below.
 
-2. For configuration of `bosch_shc` custom component, follow the steps described in [configuration](#configuration). During configuration, you have to enter the password of your SHC, which you defined during setup of your SHC.
+## Configuration
 
+The integration supports auto-discovery via **zeroconf** (mDNS). If the SHC is on the same
+network as Home Assistant it will appear automatically in **Settings → Devices & Services →
+Discovered**. If not, add it manually with **+ Add integration → Bosch SHC**.
 
-# Configuration
+### Initial setup steps
 
-Configuration of the component `bosch_shc` is done via config flow mechanism, either by `zeroconf` detection or by manual configuration:
+1. **Discovered integration** — press *Configure* to start.
+2. **Confirm host** — before clicking *Submit*, press the button on the front of the SHC
+   until the LEDs start flashing. This puts the controller into client-registration mode.
+3. **System password** — enter the system password you set when you first set up the SHC.
+4. **Done** — the integration creates the entry and discovers all paired devices.
 
-If the `SHC` is running in the same network as the `HomeAssistant`, it is even found directly via `zeroconf`.
+<img src='images/config_step1.png' alt='Discovered integration.' width='235pt'/>
+<img src='images/config_step2.png' alt='Confirmation of host.' width='477pt'/>
+<img src='images/config_step3.png' alt='Enter system password.' width='315pt'/>
+<img src='images/config_step4.png' alt='Configuration complete.' width='474pt'/>
 
-### Configuration of the discovered integration
+### Reconfigure (host change or certificate re-pair)
 
-#### 1.) Discovered integration
-Press *configure* to start the configuration process.
+Open **Settings → Devices & Services → Bosch SHC → ⋮ → Reconfigure**. A menu offers:
 
-<img
-  src='images/config_step1.png'
-  alt='Discovered integration.'
-  width='235pt'
-/>
+- **Change host / IP** — update the SHC address without re-pairing.
+- **Re-pair (regenerate certificate)** — full re-registration for a new SHC or after a factory reset.
 
-#### 2.) Confirmation of host
-**Hint:** Please press the Bosch SHC's front-side button until LEDs begin flashing. This will put the SHC into client registration mode, so new clients can be added to communicate with the SHC.
+### Options flow
 
-Press *submit* to continue.
+After setup, open **Settings → Devices & Services → Bosch SHC → Configure** to adjust:
 
-<img
-  src='images/config_step2.png'
-  alt='Confirmation of host.'
-  width='477pt'
-/>
+- **Features section** — toggle *Scenarios as buttons* (expose each scenario as a button
+  entity) and *Diagnostic entities* (granular battery level sensors, valve-tappet sensors,
+  communication quality sensors).
+- **Presence-based child lock section** — choose a presence entity and the "home" state;
+  when no one is home, child lock is automatically enabled on all supported devices.
+- **Advanced section** — SSL hostname verification toggle, long-poll timeout.
 
-#### 3.) Enter credentials: System password
-Use the **system password** of your Bosch Smart Home Controller, which you created upon initial setup of the SHC.
+### Translations
 
-Press *submit* to continue.
+UI strings are available in 30 languages (bg, ca, cs, de, el, en, es, es-419, et, fr, he,
+hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, zh-Hant).
 
-<img
-  src='images/config_step3.png'
-  alt='Enter credentials: SSL certificate public / private key pair.'
-  width='315pt'
-/>
+## Quality
 
-#### 4.) Successful configuration entry created
-You can define areas of all supported devices.
+This integration targets the [Home Assistant Bronze quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
+All Bronze rules are implemented except `brands` (pending PR to home-assistant/brands).
 
-Press *finish* to end the configuration process.
+- `local_push` IoT class — no cloud, no polling (except camera-type devices which only update on poll).
+- Config flow with zeroconf discovery, re-auth, reconfigure, and options flow.
+- Unique config-entry enforcement, test-before-configure validation.
+- `runtime_data` pattern, `has_entity_name = True` on all entities.
+- Domain-level actions (`trigger_scenario`, `trigger_rawscan`) available even when an entry fails to load.
 
-<img
-  src='images/config_step4.png'
-  alt='Successful configuration entry created.'
-  width='474pt'
-/>
+## Reporting a bug
 
-# Additional information
+The fastest path to a fix is data. In order of convenience:
 
-Follow this [thread](https://community.home-assistant.io/t/bosch-smart-home/115864) for discussions on the Bosch Smart Home Controller Home Assistant integration.
-
-# Reporting a bug
-
-The fastest way to a fix is data. In order of convenience:
-
-1. **Download diagnostics** (easiest, one click) — **Settings → Devices & Services
-   → Bosch SHC → ⋮ → Download diagnostics**. This produces a redacted JSON snapshot
-   of every device and its raw service state (credentials, host/IP, MAC and serials
-   are removed automatically). For a device behaving wrong, this usually contains
-   everything needed.
+1. **Download diagnostics** (easiest) — **Settings → Devices & Services → Bosch SHC → ⋮ →
+   Download diagnostics**. Produces a redacted JSON snapshot of every device and its raw service
+   state (credentials, host/IP, MAC, and serials removed automatically).
 2. **A rawscan** of the specific device — see below.
 3. **Debug logs** while reproducing the problem — see below.
 
-Attach the relevant file to the GitHub issue, and remove anything you consider
-private.
+Attach the relevant file to the GitHub issue and remove anything you consider private.
 
-# Creating a rawscan (for bug reports)
+## Creating a rawscan (for bug reports)
 
-A *rawscan* is the raw JSON the Bosch controller reports for a device. When a
-device behaves wrong (e.g. a cover shows the wrong direction), a rawscan of that
-device is the single most useful thing to attach to a GitHub issue — it shows
-the exact services, state values and device model the controller exposes.
-
-You do **not** need the command line or the client certificate. The integration
-ships a Home Assistant action for it:
+A rawscan is the raw JSON the Bosch controller exposes for a device. It is the single most useful
+thing to attach when a device behaves wrong.
 
 **1. Find the device id**
 
-In Home Assistant go to **Developer Tools → Actions** (older versions: *Services*),
-pick the action **Bosch SHC: Trigger rawscan** (`bosch_shc.trigger_rawscan`),
-switch to **YAML mode** and run:
+In **Developer Tools → Actions**, run:
 
 ```yaml
 action: bosch_shc.trigger_rawscan
@@ -160,48 +140,33 @@ data:
   command: devices
 ```
 
-Press **Perform action**. The response is a JSON list of all devices. Find the
-device you care about and copy its `"id"` (it looks like `hdm:HomeMaticIP:3014...`
-or `hdm:ZigBee:000d6f...`).
+Find the device and copy its `"id"` (e.g. `hdm:HomeMaticIP:3014...`).
 
-**2. Dump that one device's services (this is what to attach)**
+**2. Dump that device's services**
 
 ```yaml
 action: bosch_shc.trigger_rawscan
 data:
   command: device_services
-  device_id: hdm:ZigBee:000d6f0000abcdef   # the id from step 1
+  device_id: hdm:ZigBee:000d6f0000abcdef
 ```
-
-Copy the JSON from the response and paste it into the issue (please remove
-anything you consider private). For movement/direction bugs, run this **while the
-device is moving up** and again **while moving down**, so we can see how the
-state differs.
 
 Available `command` values: `devices`, `device_services`, `device_service`
 (needs `device_id` + `service_id`), `services`, `scenarios`, `rooms`,
 `information`, `public_information`, `intrusion_detection`, `userdefinedstates`.
 
-For controllers with more than one SHC, add `title: <controller name>`.
+For setups with more than one SHC, add `title: <controller name>`.
 
-> Advanced: the same data is available from the command line via the
-> `boschshc_rawscan` script shipped with
-> [`boschshcpy`](https://github.com/tschamm/boschshcpy#rawscans) (needs the
-> client certificate + key).
+> The same data is available from the command line via the `boschshc_rawscan` script shipped
+> with [`boschshcpy`](https://github.com/tschamm/boschshcpy) (requires the client certificate + key).
 
-# Enabling debug logs (for bug reports)
+## Enabling debug logs (for bug reports)
 
-Debug logs show what the controller actually reports and how the integration
-reacts — useful for timing/state bugs. There are two ways:
+**Easiest (UI):** go to **Settings → Devices & Services → Bosch SHC → ⋮ → Enable debug logging**.
+Reproduce the problem, then choose **Disable debug logging** — Home Assistant downloads the log
+automatically. This captures both the integration and the underlying `boschshcpy` library logs.
 
-**Easiest (UI button):** go to **Settings → Devices & Services → Bosch SHC**,
-open the **⋮** menu on the integration entry and choose **Enable debug logging**.
-Reproduce the problem, then open the **⋮** menu again and choose **Disable debug
-logging** — Home Assistant downloads the captured log automatically. This now
-also includes the underlying `boschshcpy` library logs.
-
-**YAML alternative:** add this to `configuration.yaml`, restart Home Assistant,
-reproduce the problem, then read the log under **Settings → System → Logs**:
+**YAML alternative:**
 
 ```yaml
 logger:
@@ -211,28 +176,39 @@ logger:
     boschshcpy: debug
 ```
 
-Please attach the relevant log section (around the moment the problem happens) to
-the GitHub issue, and remove anything you consider private.
+## Removal
 
-# Removal
-
-To remove the integration:
-
-1. Go to **Settings → Devices & Services**, find the **Bosch SHC** integration entry and click **⋮ → Delete**.
+1. Go to **Settings → Devices & Services**, find **Bosch SHC** and click **⋮ → Delete**.
 2. Restart Home Assistant.
-3. **Manual cleanup required:** the integration writes client certificate and key files to `/config/bosch_shc/` (files named `bosch_shc-cert_<hostname>.pem` and `bosch_shc-key_<hostname>.pem`). These are **not** deleted automatically when you remove the integration. Delete them manually if you no longer intend to use the integration.
+3. **Manual cleanup:** the integration writes client certificate and key files to `/config/bosch_shc/`
+   (`bosch_shc-cert_<hostname>.pem` / `bosch_shc-key_<hostname>.pem`). These are **not** deleted
+   automatically — remove them manually if you no longer use the integration.
 
-# Known Issues
+## Known limitations
 
-* Encrypted SSL private key is not supported due to limitations of `requests` library.
-* The integration is not (yet) async.
-* After adding new devices to SHC, reloading the component is necessary before these devices appear in HomeAssistant.
-* Hue Lights added to SHC do not appear in HomeAssistant. Please use the provided [hue component](https://www.home-assistant.io/integrations/hue/) instead.
-* Arming and disarming of alarm control panel does not support using a code.
-* Client certificate renewal is manual. A warning (log + persistent notification) appears 30 days before the stored client certificate expires; after expiry the integration requires re-auth (put controller in pairing mode and reconfigure). A daily background check runs to surface warnings without requiring a restart.
+- Encrypted SSL private keys are not supported (limitation of the `requests` library).
+- The integration is not yet fully async (async migration in progress).
+- New devices added to the SHC require reloading the integration before they appear in Home Assistant.
+- Arming/disarming the alarm control panel does not support a PIN code.
+- Client certificate renewal is manual. A warning (log + persistent notification) appears 30 days before
+  expiry; after expiry the integration requires re-auth (put controller in pairing mode and reconfigure).
 
-[buymecoffee]: https://www.buymeacoffee.com/tschamm
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20double%20espresso-donate-yellow.svg
+## Maintainers / support
+
+| Role | GitHub |
+|---|---|
+| Original author & maintainer | [@tschamm](https://github.com/tschamm) |
+| Co-maintainer | [@mosandlt](https://github.com/mosandlt) |
+
+Community discussion: [Bosch Smart Home thread on the HA community forum](https://community.home-assistant.io/t/bosch-smart-home/115864).
+
+[![Buy tschamm a coffee][buymecoffeebadge-tschamm]][buymecoffee-tschamm]
+[![Buy mosandlts a coffee][buymecoffeebadge-mosandlts]][buymecoffee-mosandlts]
+
+[buymecoffee-tschamm]: https://www.buymeacoffee.com/tschamm
+[buymecoffeebadge-tschamm]: https://img.shields.io/badge/buy%20tschamm%20a%20double%20espresso-donate-yellow.svg
+[buymecoffee-mosandlts]: https://buymeacoffee.com/mosandlts
+[buymecoffeebadge-mosandlts]: https://img.shields.io/badge/buy%20mosandlts%20a%20coffee-donate-yellow.svg
 [hassfestbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20with%20hassfest/badge.svg
 [hassfest]: https://github.com/tschamm/boschshc-hass/actions/workflows/hassfest.yaml
 [validatehacsbadge]: https://github.com/tschamm/boschshc-hass/workflows/Validate%20for%20HACS/badge.svg
