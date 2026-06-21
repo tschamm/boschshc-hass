@@ -183,6 +183,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return await self.async_step_credentials()
 
     async def async_step_reconfigure(self, user_input=None):
+        """Show a menu: change host only, or re-pair (regenerate certificate)."""
+        return self.async_show_menu(
+            step_id="reconfigure",
+            menu_options=["reconfigure_host", "repair_credentials"],
+        )
+
+    async def async_step_reconfigure_host(self, user_input=None):
         """Allow the user to change the SHC host/IP without re-pairing."""
         entry = self._get_reconfigure_entry()
         errors = {}
@@ -193,7 +200,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except SHCConnectionError:
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
-                LOGGER.exception("Unexpected exception during reconfigure")
+                LOGGER.exception("Unexpected exception during reconfigure_host")
                 errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(info["unique_id"])
@@ -204,7 +211,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
         return self.async_show_form(
-            step_id="reconfigure",
+            step_id="reconfigure_host",
             data_schema=vol.Schema(
                 {
                     vol.Required(
@@ -214,6 +221,77 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
+            errors=errors,
+        )
+
+    async def async_step_repair_credentials(self, user_input=None):
+        """Re-pair: regenerate the client certificate/key for this SHC entry."""
+        entry = self._get_reconfigure_entry()
+        errors = {}
+        if user_input is not None:
+            host = user_input[CONF_HOST]
+            zeroconf_instance = await zeroconf.async_get_instance(self.hass)
+            try:
+                result = await self.hass.async_add_executor_job(
+                    create_credentials_and_validate,
+                    self.hass,
+                    host,
+                    user_input,
+                    zeroconf_instance,
+                )
+            except SHCAuthenticationError:
+                errors["base"] = "invalid_auth"
+            except SHCConnectionError:
+                errors["base"] = "cannot_connect"
+            except SHCSessionError as err:
+                LOGGER.warning("Session error: %s", err.message)
+                errors["base"] = "session_error"
+            except SHCRegistrationError as err:
+                LOGGER.warning("Registration error: %s", err.message)
+                errors["base"] = "pairing_failed"
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception("Unexpected exception during repair_credentials")
+                errors["base"] = "unknown"
+            else:
+                hostname = result["token"].split(":", 1)[1]
+                new_entry_data = {
+                    CONF_SSL_CERTIFICATE: self.hass.config.path(
+                        DOMAIN, CONF_SHC_CERT + "_" + hostname + ".pem"
+                    ),
+                    CONF_SSL_KEY: self.hass.config.path(
+                        DOMAIN, CONF_SHC_KEY + "_" + hostname + ".pem"
+                    ),
+                    CONF_HOST: host,
+                    CONF_TOKEN: result["token"],
+                    CONF_HOSTNAME: hostname,
+                }
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data=new_entry_data,
+                )
+
+        current_host = entry.data.get(CONF_HOST, "")
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_HOST, default=current_host
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
+                vol.Required(CONF_PASSWORD): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
+                vol.Optional(
+                    CONF_NAME, default="HomeAssistant"
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="repair_credentials",
+            data_schema=schema,
             errors=errors,
         )
 

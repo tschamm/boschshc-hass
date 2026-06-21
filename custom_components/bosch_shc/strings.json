@@ -37,12 +37,34 @@
       },
       "reconfigure": {
         "title": "Reconfigure Bosch SHC",
+        "description": "Choose what you want to reconfigure.",
+        "menu_options": {
+          "reconfigure_host": "Change host / IP address only",
+          "repair_credentials": "Re-pair (regenerate client certificate)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Change host / IP address",
         "description": "Update the IP address or hostname of your Bosch Smart Home Controller. Your certificates and credentials will be preserved.",
         "data": {
           "host": "[%key:common::config_flow::data::host%]"
         },
         "data_description": {
           "host": "New IP address or hostname of the SHC controller (e.g. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Re-pair — regenerate client certificate",
+        "description": "Press the pairing button on the SHC (SHC I: front button until LED flashes; SHC II: function button shortly) then fill in the form below.",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]",
+          "password": "Password of the Smart Home Controller",
+          "name": "Client name for certificate"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the SHC controller (e.g. 192.168.x.y).",
+          "password": "The password set in the Bosch Smart Home app.",
+          "name": "Name shown in the SHC app under connected clients."
         }
       }
     },

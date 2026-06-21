@@ -40,12 +40,34 @@
       },
       "reconfigure": {
         "title": "Bosch SHC neu konfigurieren",
+        "description": "Was möchtest du neu konfigurieren?",
+        "menu_options": {
+          "reconfigure_host": "Nur Host / IP-Adresse ändern",
+          "repair_credentials": "Neu koppeln (Client-Zertifikat neu erstellen)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Host / IP-Adresse ändern",
         "description": "IP-Adresse oder Hostname deines Bosch Smart Home Controllers aktualisieren. Zertifikate und Zugangsdaten bleiben erhalten.",
         "data": {
           "host": "Host"
         },
         "data_description": {
           "host": "Neue IP-Adresse oder Hostname des SHC Controllers (z. B. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Neu koppeln — Client-Zertifikat neu erstellen",
+        "description": "Drücke die Kopplungstaste am SHC (SHC I: frontseitige Taste bis LED blinkt; SHC II: kurz Funktionstaste drücken), dann das Formular ausfüllen.",
+        "data": {
+          "host": "Host",
+          "password": "Passwort des Smart Home Controllers",
+          "name": "Client-Name für das Zertifikat"
+        },
+        "data_description": {
+          "host": "IP-Adresse oder Hostname des SHC Controllers (z. B. 192.168.x.y).",
+          "password": "Das in der Bosch Smart Home App gesetzte Passwort.",
+          "name": "Name, der in der SHC-App unter verbundenen Clients angezeigt wird."
         }
       },
       "user": {

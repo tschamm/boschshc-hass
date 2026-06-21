@@ -5,22 +5,22 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 as part of the local CI gate.
 """
 
 import asyncio
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from custom_components.bosch_shc.config_flow import ConfigFlow, OptionsFlowHandler
 from custom_components.bosch_shc.const import (
-    CONF_SHC_CERT,
-    CONF_SHC_KEY,
+    CONF_HOSTNAME,
+    CONF_SSL_CERTIFICATE,
+    CONF_SSL_KEY,
     DOMAIN,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
     OPT_LONG_POLL_TIMEOUT,
 )
-from homeassistant.const import CONF_HOST
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 
 
 # ---------------------------------------------------------------------------
@@ -79,80 +79,23 @@ def _make_flow(entry=None, unique_id=None):
 class TestReconfigureStep:
     """Unit tests for async_step_reconfigure."""
 
-    def test_reconfigure_shows_form_on_none_input(self):
-        """Initial call (user_input=None) renders the reconfigure form."""
+    def test_reconfigure_shows_menu(self):
+        """async_step_reconfigure (initial call) now shows a menu, not a form."""
         entry = _make_entry(host="10.0.0.1")
         flow = _make_flow(entry=entry)
-
-        # Patch _get_reconfigure_entry to return our mock entry
         flow._get_reconfigure_entry = lambda: entry
-        # Patch async_show_form so we can inspect calls without a real HA
-        flow.async_show_form = MagicMock(return_value={"type": "form", "step_id": "reconfigure"})
+        flow.async_show_menu = MagicMock(return_value={"type": "menu", "step_id": "reconfigure"})
 
-        result = asyncio.run(flow.async_step_reconfigure(user_input=None))
+        asyncio.run(flow.async_step_reconfigure(user_input=None))
 
-        assert flow.async_show_form.called
-        call_kwargs = flow.async_show_form.call_args[1]
+        assert flow.async_show_menu.called
+        call_kwargs = flow.async_show_menu.call_args[1]
         assert call_kwargs["step_id"] == "reconfigure"
-        # Default should be pre-filled with current host
-        schema = call_kwargs["data_schema"]
-        # The schema wraps vol.Required(CONF_HOST, default="10.0.0.1")
-        assert CONF_HOST in {str(k) for k in schema.schema.keys()}
-
-    def test_reconfigure_success_calls_update_reload_and_abort(self):
-        """On valid input with same SHC serial, update-reload-abort is called."""
-        entry = _make_entry(host="10.0.0.1", unique_id="shc-serial-001")
-        flow = _make_flow(entry=entry)
-        flow._get_reconfigure_entry = lambda: entry
-
-        # _get_info returns same unique_id → mismatch check passes
-        async def fake_get_info(host):
-            return {"title": "shc012345", "unique_id": "shc-serial-001"}
-
-        flow._get_info = fake_get_info
-
-        # async_set_unique_id sets context["unique_id"] (backed by property)
-        async def fake_set_uid(uid):
-            flow.context["unique_id"] = uid
-            return None
-
-        flow.async_set_unique_id = fake_set_uid
-        flow._abort_if_unique_id_mismatch = MagicMock()  # noop — same serial
-
-        abort_result = {"type": "abort", "reason": "reconfigure_successful"}
-        flow.async_update_reload_and_abort = MagicMock(return_value=abort_result)
-
-        result = asyncio.run(flow.async_step_reconfigure(user_input={CONF_HOST: "10.0.0.2"}))
-
-        assert flow.async_update_reload_and_abort.called
-        call_kwargs = flow.async_update_reload_and_abort.call_args[1]
-        assert call_kwargs["data_updates"] == {CONF_HOST: "10.0.0.2"}
-        assert result == abort_result
-
-    def test_reconfigure_cannot_connect_shows_error(self):
-        """On SHCConnectionError, form is re-shown with cannot_connect error."""
-        from boschshcpy.exceptions import SHCConnectionError
-
-        entry = _make_entry(host="10.0.0.1")
-        flow = _make_flow(entry=entry)
-        flow._get_reconfigure_entry = lambda: entry
-
-        async def fake_get_info(host):
-            raise SHCConnectionError()
-
-        flow._get_info = fake_get_info
-        flow.async_show_form = MagicMock(return_value={"type": "form", "step_id": "reconfigure"})
-
-        result = asyncio.run(flow.async_step_reconfigure(user_input={CONF_HOST: "bad-host"}))
-
-        assert flow.async_show_form.called
-        errors = flow.async_show_form.call_args[1]["errors"]
-        assert errors.get("base") == "cannot_connect"
+        assert "reconfigure_host" in call_kwargs["menu_options"]
+        assert "repair_credentials" in call_kwargs["menu_options"]
 
     def test_reconfigure_wrong_shc_aborts(self):
         """When a different SHC serial is found, _abort_if_unique_id_mismatch raises."""
-        from homeassistant.exceptions import HomeAssistantError
-
         entry = _make_entry(host="10.0.0.1", unique_id="shc-serial-001")
         flow = _make_flow(entry=entry)
         flow._get_reconfigure_entry = lambda: entry
@@ -182,9 +125,289 @@ class TestReconfigureStep:
         flow._abort_if_unique_id_mismatch = fake_mismatch
 
         with pytest.raises(FakeAbortFlow) as exc_info:
-            asyncio.run(flow.async_step_reconfigure(user_input={CONF_HOST: "10.0.0.3"}))
+            asyncio.run(flow.async_step_reconfigure_host(user_input={CONF_HOST: "10.0.0.3"}))
 
         assert "wrong_shc" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# Part A2 — reconfigure menu
+# ---------------------------------------------------------------------------
+
+class TestReconfigureMenu:
+    """Unit tests for the reconfigure menu step (async_show_menu)."""
+
+    def test_reconfigure_shows_menu(self):
+        """async_step_reconfigure returns a menu result with two options."""
+        entry = _make_entry(host="10.0.0.1")
+        flow = _make_flow(entry=entry)
+        flow._get_reconfigure_entry = lambda: entry
+
+        # async_show_menu is a @callback (sync) in HA; it just builds and
+        # returns a dict — patch it so we can inspect the call.
+        flow.async_show_menu = MagicMock(
+            return_value={"type": "menu", "step_id": "reconfigure"}
+        )
+
+        asyncio.run(flow.async_step_reconfigure(user_input=None))
+
+        assert flow.async_show_menu.called
+        call_kwargs = flow.async_show_menu.call_args[1]
+        assert call_kwargs["step_id"] == "reconfigure"
+        assert "reconfigure_host" in call_kwargs["menu_options"]
+        assert "repair_credentials" in call_kwargs["menu_options"]
+
+    def test_reconfigure_host_shows_form_on_none_input(self):
+        """Initial call to async_step_reconfigure_host renders the host form."""
+        entry = _make_entry(host="10.0.0.1")
+        flow = _make_flow(entry=entry)
+        flow._get_reconfigure_entry = lambda: entry
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "reconfigure_host"}
+        )
+
+        asyncio.run(flow.async_step_reconfigure_host(user_input=None))
+
+        assert flow.async_show_form.called
+        call_kwargs = flow.async_show_form.call_args[1]
+        assert call_kwargs["step_id"] == "reconfigure_host"
+        schema = call_kwargs["data_schema"]
+        assert CONF_HOST in {str(k) for k in schema.schema.keys()}
+
+    def test_reconfigure_host_success(self):
+        """On valid host submit with same SHC serial, update-reload-abort is called."""
+        entry = _make_entry(host="10.0.0.1", unique_id="shc-serial-001")
+        flow = _make_flow(entry=entry)
+        flow._get_reconfigure_entry = lambda: entry
+
+        async def fake_get_info(host):
+            return {"title": "shc012345", "unique_id": "shc-serial-001"}
+
+        flow._get_info = fake_get_info
+
+        async def fake_set_uid(uid):
+            flow.context["unique_id"] = uid
+            return None
+
+        flow.async_set_unique_id = fake_set_uid
+        flow._abort_if_unique_id_mismatch = MagicMock()
+
+        abort_result = {"type": "abort", "reason": "reconfigure_successful"}
+        flow.async_update_reload_and_abort = MagicMock(return_value=abort_result)
+
+        result = asyncio.run(
+            flow.async_step_reconfigure_host(user_input={CONF_HOST: "10.0.0.2"})
+        )
+
+        assert flow.async_update_reload_and_abort.called
+        call_kwargs = flow.async_update_reload_and_abort.call_args[1]
+        assert call_kwargs["data_updates"] == {CONF_HOST: "10.0.0.2"}
+        assert result == abort_result
+
+    def test_reconfigure_host_cannot_connect(self):
+        """SHCConnectionError re-shows the form with cannot_connect error."""
+        from boschshcpy.exceptions import SHCConnectionError
+
+        entry = _make_entry(host="10.0.0.1")
+        flow = _make_flow(entry=entry)
+        flow._get_reconfigure_entry = lambda: entry
+
+        async def fake_get_info(host):
+            raise SHCConnectionError()
+
+        flow._get_info = fake_get_info
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "reconfigure_host"}
+        )
+
+        asyncio.run(flow.async_step_reconfigure_host(user_input={CONF_HOST: "bad-host"}))
+
+        errors = flow.async_show_form.call_args[1]["errors"]
+        assert errors.get("base") == "cannot_connect"
+
+
+# ---------------------------------------------------------------------------
+# Part A3 — repair_credentials step
+# ---------------------------------------------------------------------------
+
+class TestRepairCredentials:
+    """Unit tests for async_step_repair_credentials."""
+
+    def _make_repair_flow(self, host="10.0.0.1"):
+        """Return a ConfigFlow wired for repair_credentials tests."""
+        entry = _make_entry(host=host, unique_id="shc-serial-001", data={
+            CONF_HOST: host,
+            CONF_TOKEN: "old-token:oldhostname",
+            CONF_HOSTNAME: "oldhostname",
+            CONF_SSL_CERTIFICATE: "/tmp/bosch_shc/shc_cert_oldhostname.pem",
+            CONF_SSL_KEY: "/tmp/bosch_shc/shc_key_oldhostname.pem",
+        })
+        flow = _make_flow(entry=entry)
+        flow._get_reconfigure_entry = lambda: entry
+        return flow, entry
+
+    def test_repair_shows_form_on_none_input(self):
+        """Initial call renders the form with host, password, name fields."""
+        flow, entry = self._make_repair_flow()
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "repair_credentials"}
+        )
+
+        asyncio.run(flow.async_step_repair_credentials(user_input=None))
+
+        assert flow.async_show_form.called
+        call_kwargs = flow.async_show_form.call_args[1]
+        assert call_kwargs["step_id"] == "repair_credentials"
+        schema_keys = {str(k) for k in call_kwargs["data_schema"].schema.keys()}
+        assert CONF_HOST in schema_keys
+        assert CONF_PASSWORD in schema_keys
+        assert CONF_NAME in schema_keys
+
+    def test_repair_success_updates_full_entry_data(self):
+        """Successful re-pair calls async_update_reload_and_abort with full new data."""
+        flow, entry = self._make_repair_flow()
+
+        fake_result = {
+            "token": "new-token:newhostname",
+            "cert": b"CERT",
+            "key": b"KEY",
+        }
+        flow.hass.async_add_executor_job = AsyncMock(return_value=fake_result)
+
+        abort_result = {"type": "abort", "reason": "reconfigure_successful"}
+        flow.async_update_reload_and_abort = MagicMock(return_value=abort_result)
+
+        user_input = {
+            CONF_HOST: "10.0.0.1",
+            CONF_PASSWORD: "secret",
+            CONF_NAME: "HomeAssistant",
+        }
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.zeroconf.async_get_instance",
+            new=AsyncMock(return_value=MagicMock()),
+        ):
+            result = asyncio.run(flow.async_step_repair_credentials(user_input=user_input))
+
+        assert flow.async_update_reload_and_abort.called
+        call_args = flow.async_update_reload_and_abort.call_args
+        # First positional arg is the entry
+        assert call_args[0][0] is entry
+        new_data = call_args[1]["data"]
+        assert new_data[CONF_TOKEN] == "new-token:newhostname"
+        assert new_data[CONF_HOSTNAME] == "newhostname"
+        assert "newhostname" in new_data[CONF_SSL_CERTIFICATE]
+        assert "newhostname" in new_data[CONF_SSL_KEY]
+        assert new_data[CONF_HOST] == "10.0.0.1"
+        assert result == abort_result
+
+    def test_repair_invalid_auth_shows_error(self):
+        """SHCAuthenticationError shows invalid_auth error and re-renders form."""
+        from boschshcpy.exceptions import SHCAuthenticationError
+
+        flow, entry = self._make_repair_flow()
+
+        async def fake_executor(fn, *args):
+            raise SHCAuthenticationError()
+
+        flow.hass.async_add_executor_job = fake_executor
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "repair_credentials"}
+        )
+
+        user_input = {
+            CONF_HOST: "10.0.0.1",
+            CONF_PASSWORD: "wrongpass",
+            CONF_NAME: "HomeAssistant",
+        }
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.zeroconf.async_get_instance",
+            new=AsyncMock(return_value=MagicMock()),
+        ):
+            asyncio.run(flow.async_step_repair_credentials(user_input=user_input))
+
+        assert flow.async_show_form.called
+        errors = flow.async_show_form.call_args[1]["errors"]
+        assert errors.get("base") == "invalid_auth"
+
+    def test_repair_cannot_connect_shows_error(self):
+        """SHCConnectionError shows cannot_connect error."""
+        from boschshcpy.exceptions import SHCConnectionError
+
+        flow, entry = self._make_repair_flow()
+
+        async def fake_executor(fn, *args):
+            raise SHCConnectionError()
+
+        flow.hass.async_add_executor_job = fake_executor
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "repair_credentials"}
+        )
+
+        user_input = {
+            CONF_HOST: "10.0.0.1",
+            CONF_PASSWORD: "somepass",
+            CONF_NAME: "HomeAssistant",
+        }
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.zeroconf.async_get_instance",
+            new=AsyncMock(return_value=MagicMock()),
+        ):
+            asyncio.run(flow.async_step_repair_credentials(user_input=user_input))
+
+        assert flow.async_show_form.called
+        errors = flow.async_show_form.call_args[1]["errors"]
+        assert errors.get("base") == "cannot_connect"
+
+    def test_repair_pairing_failed_shows_error(self):
+        """SHCRegistrationError (button not pressed) shows pairing_failed error."""
+        from boschshcpy.exceptions import SHCRegistrationError
+
+        flow, entry = self._make_repair_flow()
+
+        async def fake_executor(fn, *args):
+            raise SHCRegistrationError("SHC not in pairing mode")
+
+        flow.hass.async_add_executor_job = fake_executor
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "repair_credentials"}
+        )
+
+        user_input = {
+            CONF_HOST: "10.0.0.1",
+            CONF_PASSWORD: "somepass",
+            CONF_NAME: "HomeAssistant",
+        }
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.zeroconf.async_get_instance",
+            new=AsyncMock(return_value=MagicMock()),
+        ):
+            asyncio.run(flow.async_step_repair_credentials(user_input=user_input))
+
+        assert flow.async_show_form.called
+        errors = flow.async_show_form.call_args[1]["errors"]
+        assert errors.get("base") == "pairing_failed"
+
+    def test_repair_host_prefilled_from_entry(self):
+        """The repair form pre-fills the host from the existing config entry."""
+        flow, entry = self._make_repair_flow(host="192.168.1.10")
+        flow.async_show_form = MagicMock(
+            return_value={"type": "form", "step_id": "repair_credentials"}
+        )
+
+        asyncio.run(flow.async_step_repair_credentials(user_input=None))
+
+        schema = flow.async_show_form.call_args[1]["data_schema"]
+        # Find the CONF_HOST key and check its default
+        host_default = None
+        for key in schema.schema:
+            if str(key) == CONF_HOST and hasattr(key, "default") and callable(key.default):
+                host_default = key.default()
+                break
+        assert host_default == "192.168.1.10"
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +455,7 @@ class TestOptionsFlow:
                 OPT_LONG_POLL_TIMEOUT: 60,
             },
         }
-        result = asyncio.run(flow.async_step_init(user_input=user_input))
+        asyncio.run(flow.async_step_init(user_input=user_input))
         assert flow.async_create_entry.called
         saved = flow.async_create_entry.call_args[1]["data"]
         assert saved[OPT_DIAGNOSTIC_ENTITIES] is False
