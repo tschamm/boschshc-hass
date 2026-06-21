@@ -307,6 +307,25 @@ async def async_setup_entry(
                 )
             )
 
+    if diagnostic_enabled:
+        for sensor in session.device_helper.shutter_contacts2:
+            if device_excluded(sensor, config_entry.options):
+                continue
+            if not hasattr(sensor, "communicationquality"):
+                continue
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
+                device=sensor,
+                attr_name="CommunicationQuality",
+            )
+            entities.append(
+                CommunicationQualitySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+
     sensor = session.emma
     entities.append(
         EmmaPowerSensor(
@@ -427,10 +446,26 @@ class AirQualitySensor(SHCEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        """Return the state attributes."""
-        return {
+        """Return the state attributes.
+
+        comfort_zone is read from the AirQualityLevelService via a service-level
+        accessor (_airqualitylevel_service.comfortZone). The SHCTwinguard model
+        does not expose a model-level comfort_zone property, so we access the
+        underlying service directly and fall back to None when unavailable.
+        """
+        comfort_zone = None
+        try:
+            service = getattr(self._device, "_airqualitylevel_service", None)
+            if service is not None:
+                comfort_zone = service.comfortZone
+        except (AttributeError, KeyError):
+            pass
+        attrs = {
             "rating_description": self._device.description,
         }
+        if comfort_zone is not None:
+            attrs["comfort_zone"] = comfort_zone
+        return attrs
 
 
 class TemperatureRatingSensor(SHCEntity, SensorEntity):

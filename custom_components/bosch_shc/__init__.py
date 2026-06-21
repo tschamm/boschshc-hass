@@ -75,16 +75,17 @@ from .const import (
 )
 
 PLATFORMS = [
+    Platform.ALARM_CONTROL_PANEL,
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.CLIMATE,
     Platform.COVER,
     Platform.EVENT,
-    Platform.SENSOR,
-    Platform.SWITCH,
-    Platform.CLIMATE,
-    Platform.ALARM_CONTROL_PANEL,
     Platform.LIGHT,
     Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
 ]
 if hasattr(Platform, "VALVE"):
     PLATFORMS.append(Platform.VALVE)

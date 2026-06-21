@@ -34,6 +34,7 @@ STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
 # Shared helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_hass(session: object) -> SimpleNamespace:
     return SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
 
@@ -496,6 +497,21 @@ class TestLightSetupEntry:
 # number.py — async_setup_entry  (lines 28–43)
 # ---------------------------------------------------------------------------
 
+def _make_number_session(
+    thermostats=(), roomthermostats=(),
+    micromodule_impulse_relays=(), heating_circuits=(),
+):
+    """Build a minimal fake session for number.py async_setup_entry."""
+    return SimpleNamespace(
+        device_helper=SimpleNamespace(
+            thermostats=list(thermostats),
+            roomthermostats=list(roomthermostats),
+            micromodule_impulse_relays=list(micromodule_impulse_relays),
+            heating_circuits=list(heating_circuits),
+        )
+    )
+
+
 class TestNumberSetupEntry:
     """Number async_setup_entry: thermostats + roomthermostats → SHCNumber."""
 
@@ -512,12 +528,7 @@ class TestNumberSetupEntry:
     def test_thermostats_produce_shc_number_entities(self) -> None:
         """session.device_helper.thermostats → SHCNumber."""
         dev = _number_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[dev],
-                roomthermostats=[],
-            )
-        )
+        session = _make_number_session(thermostats=[dev])
         result = self._run(session)
         assert len(result) == 1
         assert isinstance(result[0], SHCNumber)
@@ -525,36 +536,24 @@ class TestNumberSetupEntry:
     def test_roomthermostats_produce_shc_number_entities(self) -> None:
         """session.device_helper.roomthermostats → SHCNumber."""
         dev = _number_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[],
-                roomthermostats=[dev],
-            )
-        )
+        session = _make_number_session(roomthermostats=[dev])
         result = self._run(session)
         assert len(result) == 1
         assert isinstance(result[0], SHCNumber)
 
     def test_mixed_thermostats_collected(self) -> None:
         """thermostat + roomthermostat → 2 SHCNumber entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[_number_device()],
-                roomthermostats=[_number_device()],
-            )
+        session = _make_number_session(
+            thermostats=[_number_device()],
+            roomthermostats=[_number_device()],
         )
         result = self._run(session)
         assert len(result) == 2
         assert all(isinstance(e, SHCNumber) for e in result)
 
     def test_no_thermostats_adds_nothing(self) -> None:
-        """No thermostats → nothing added."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[],
-                roomthermostats=[],
-            )
-        )
+        """No thermostats/relays/heating_circuits → nothing added."""
+        session = _make_number_session()
         result = self._run(session)
         assert result == []
 
@@ -565,35 +564,20 @@ class TestNumberSetupEntry:
         label; HA prepends the device name for display ('Test Thermostat Offset').
         """
         dev = _number_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[dev],
-                roomthermostats=[],
-            )
-        )
+        session = _make_number_session(thermostats=[dev])
         result = self._run(session)
         assert result[0]._attr_name == "Offset"
 
     def test_unique_id_includes_offset_suffix(self) -> None:
         """unique_id for 'Offset' attr_name ends in '_offset'."""
         dev = _number_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[dev],
-                roomthermostats=[],
-            )
-        )
+        session = _make_number_session(thermostats=[dev])
         result = self._run(session)
         assert result[0]._attr_unique_id.endswith("_offset")
 
     def test_entry_id_stored(self) -> None:
         dev = _number_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                thermostats=[dev],
-                roomthermostats=[],
-            )
-        )
+        session = _make_number_session(thermostats=[dev])
         result = self._run(session)
         assert result[0]._entry_id == "E1"
 

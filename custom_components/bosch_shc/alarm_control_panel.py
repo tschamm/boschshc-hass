@@ -173,3 +173,16 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     def alarm_mute(self):
         """Mute alarm command."""
         self._device.mute()
+
+    @property
+    def extra_state_attributes(self):
+        """Return additional IDS state attributes.
+
+        Exposes alarm_state_incidents, security_gaps, and remaining_time_until_armed
+        from the SHCIntrusionSystem domain model.
+        """
+        return {
+            "incidents": self._device.alarm_state_incidents,
+            "security_gaps": self._device.security_gaps,
+            "remaining_time_until_armed": self._device.remaining_time_until_armed,
+        }

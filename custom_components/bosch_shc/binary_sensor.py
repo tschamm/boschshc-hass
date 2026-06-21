@@ -141,6 +141,12 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        entities.append(
+            TamperSensor(
+                device=binary_sensor,
+                entry_id=config_entry.entry_id,
+            )
+        )
 
     for binary_sensor in session.device_helper.smoke_detectors:
         if device_excluded(binary_sensor, config_entry.options):
@@ -960,4 +966,33 @@ class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):
         """Return last occupancy change time as an extra attribute."""
         return {
             "last_occupancy_change": self._device.last_occupancy_change_time,
+        }
+
+
+class TamperSensor(SHCEntity, BinarySensorEntity):
+    """Representation of a SHC Motion Detector II [+M] tamper sensor.
+
+    Reports True when the device housing was opened/tampered with.
+    Reads was_tampered from the LatestTamperService via the model accessor.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.TAMPER
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, device, entry_id: str) -> None:
+        """Initialize the tamper sensor."""
+        super().__init__(device=device, entry_id=entry_id)
+        self._attr_name = "Tamper"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_tamper"
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the device has been tampered with."""
+        return bool(getattr(self._device, "was_tampered", False))
+
+    @property
+    def extra_state_attributes(self):
+        """Return the last tamper time as an extra attribute."""
+        return {
+            "last_tamper_time": getattr(self._device, "last_tamper_time", None),
         }
