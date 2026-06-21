@@ -22,6 +22,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -34,10 +37,13 @@ from .const import (
     CONF_SHC_KEY,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
+    DATA_SESSION,
     DOMAIN,
     LOGGER,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_ENABLE_RAWSCAN,
+    OPT_EXCLUDED_DEVICES,
+    OPT_EXCLUDED_ROOMS,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_PRESENCE_STATE,
@@ -62,6 +68,8 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
     "advanced": [
         OPT_SSL_VERIFY_HOSTNAME,
         OPT_LONG_POLL_TIMEOUT,
+        OPT_EXCLUDED_DEVICES,
+        OPT_EXCLUDED_ROOMS,
     ],
 }
 
@@ -451,6 +459,30 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
             return self.async_create_entry(title="", data=flat)
 
         current = self.config_entry.options
+
+        # Build device/room option lists from the live session.
+        device_options = []
+        room_options = []
+        try:
+            data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+            if data:
+                session = data[DATA_SESSION]
+                rooms = {r.id: r.name for r in session.rooms}
+                for dev in session.devices:
+                    room_name = rooms.get(getattr(dev, "room_id", None), "")
+                    label = (
+                        f"{dev.name} ({room_name})" if room_name else dev.name
+                    )
+                    device_options.append({"value": dev.id, "label": label})
+                room_options = [
+                    {"value": rid, "label": name}
+                    for rid, name in rooms.items()
+                ]
+        except Exception:  # never break the options flow if session is unavailable
+            LOGGER.debug(
+                "Could not build device/room filter options", exc_info=True
+            )
+
         schema = vol.Schema(
             {
                 vol.Required("features"): section(
@@ -519,6 +551,38 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                                     unit_of_measurement="s",
                                     mode=NumberSelectorMode.BOX,
                                 )
+                            ),
+                            vol.Optional(
+                                OPT_EXCLUDED_DEVICES,
+                                default=current.get(OPT_EXCLUDED_DEVICES, []),
+                            ): (
+                                SelectSelector(
+                                    SelectSelectorConfig(
+                                        options=device_options,
+                                        multiple=True,
+                                        mode=SelectSelectorMode.DROPDOWN,
+                                        custom_value=False,
+                                        sort=True,
+                                    )
+                                )
+                                if device_options
+                                else vol.Schema(vol.All(list, [str]))
+                            ),
+                            vol.Optional(
+                                OPT_EXCLUDED_ROOMS,
+                                default=current.get(OPT_EXCLUDED_ROOMS, []),
+                            ): (
+                                SelectSelector(
+                                    SelectSelectorConfig(
+                                        options=room_options,
+                                        multiple=True,
+                                        mode=SelectSelectorMode.DROPDOWN,
+                                        custom_value=False,
+                                        sort=True,
+                                    )
+                                )
+                                if room_options
+                                else vol.Schema(vol.All(list, [str]))
                             ),
                         }
                     ),

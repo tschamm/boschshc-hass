@@ -23,7 +23,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
-from .entity import SHCEntity, async_migrate_to_new_unique_id
+from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -41,6 +41,8 @@ async def async_setup_entry(
         session.device_helper.shutter_controls
         + session.device_helper.micromodule_shutter_controls
     ):
+        if device_excluded(cover, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(hass, Platform.COVER, device=cover)
         entities.append(
             ShutterControlCover(
@@ -50,6 +52,8 @@ async def async_setup_entry(
         )
 
     for blind in session.device_helper.micromodule_blinds:
+        if device_excluded(blind, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(hass, Platform.COVER, device=blind)
         entities.append(
             BlindsControlCover(

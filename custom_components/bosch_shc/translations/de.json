@@ -119,11 +119,15 @@
             "description": "Low-Level-Verbindungsparameter. Eine Änderung hilft selten — Dokumentation lesen, bevor diese Parameter geändert werden.",
             "data": {
               "ssl_verify_hostname": "SHC-Zertifikat-Hostname prüfen",
-              "long_poll_timeout": "Long-Poll-Timeout (Sekunden)"
+              "long_poll_timeout": "Long-Poll-Timeout (Sekunden)",
+              "excluded_devices": "Ausgeschlossene Geräte",
+              "excluded_rooms": "Ausgeschlossene Räume"
             },
             "data_description": {
               "ssl_verify_hostname": "Experte: Wenn EIN, wird der Hostname des SHC-TLS-Zertifikats geprüft. Der Hostname des Bosch-SHC-Zertifikats stimmt normalerweise NICHT mit der IP überein, daher bricht das meist die Verbindung — AUS lassen, außer dein Setup passt. Standard: aus.",
-              "long_poll_timeout": "Wie lange jede Long-Poll-Anfrage auf Ereignisse wartet, bevor neu verbunden wird. Standard 10. Höher = weniger Reconnects, niedriger wenn das Netz inaktive Verbindungen trennt."
+              "long_poll_timeout": "Wie lange jede Long-Poll-Anfrage auf Ereignisse wartet, bevor neu verbunden wird. Standard 10. Höher = weniger Reconnects, niedriger wenn das Netz inaktive Verbindungen trennt.",
+              "excluded_devices": "Geräte ausblenden — für sie werden keine Entitäten erstellt. Leer = alle einschließen. Bereits angelegte Entitäten ausgeschlossener Geräte bleiben bis zur manuellen Entfernung erhalten.",
+              "excluded_rooms": "Alle Geräte in diesen Bosch-Räumen ausblenden. Leer = alle einschließen."
             }
           }
         }

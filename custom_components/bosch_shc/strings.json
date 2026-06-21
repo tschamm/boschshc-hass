@@ -120,11 +120,15 @@
             "description": "Low-level connection parameters. Changing these rarely helps — consult the docs before touching them.",
             "data": {
               "ssl_verify_hostname": "Verify SHC certificate hostname",
-              "long_poll_timeout": "Long-poll timeout (seconds)"
+              "long_poll_timeout": "Long-poll timeout (seconds)",
+              "excluded_devices": "Excluded devices",
+              "excluded_rooms": "Excluded rooms"
             },
             "data_description": {
               "ssl_verify_hostname": "Expert: when ON, the SHC's TLS certificate hostname is verified. The Bosch SHC certificate's hostname normally does NOT match its IP, so enabling this usually breaks the connection — leave OFF unless you know your setup matches. Default: off.",
-              "long_poll_timeout": "How long each long-poll request waits for events before reconnecting. Default 10. Increase to reduce reconnects, decrease if your network drops idle connections."
+              "long_poll_timeout": "How long each long-poll request waits for events before reconnecting. Default 10. Increase to reduce reconnects, decrease if your network drops idle connections.",
+              "excluded_devices": "Devices to hide — no entities are created for them. Leave empty to include all. Existing entities for newly-excluded devices remain until removed manually.",
+              "excluded_rooms": "Hide every device in these Bosch rooms. Leave empty to include all."
             }
           }
         }

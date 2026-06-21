@@ -12,7 +12,7 @@ from homeassistant.const import Platform
 from homeassistant.util import color as color_util
 
 from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity, async_migrate_to_new_unique_id
+from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -27,6 +27,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         + session.device_helper.micromodule_dimmers
         + session.device_helper.hue_lights
     ):
+        if device_excluded(light, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(hass, Platform.LIGHT, device=light)
         entities.append(
             LightSwitch(
@@ -36,6 +38,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for light in session.device_helper.motion_detectors2:
+        if device_excluded(light, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.LIGHT, device=light, attr_name="MotionLight"
         )

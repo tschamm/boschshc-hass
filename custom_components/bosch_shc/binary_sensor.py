@@ -48,7 +48,12 @@ from .const import (
     SERVICE_SMOKEDETECTOR_ALARMSTATE,
     SERVICE_SMOKEDETECTOR_CHECK,
 )
-from .entity import SHCEntity, async_get_device_id, async_migrate_to_new_unique_id
+from .entity import (
+    SHCEntity,
+    async_get_device_id,
+    async_migrate_to_new_unique_id,
+    device_excluded,
+)
 
 PARALLEL_UPDATES = 1
 
@@ -76,6 +81,8 @@ async def async_setup_entry(
     for binary_sensor in (
         session.device_helper.shutter_contacts + session.device_helper.shutter_contacts2
     ):
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor
         )
@@ -99,6 +106,8 @@ async def async_setup_entry(
     config_entry.async_on_unload(_unsubscribe_shutter)
 
     for binary_sensor in session.device_helper.motion_detectors:
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor
         )
@@ -111,6 +120,8 @@ async def async_setup_entry(
         )
 
     for binary_sensor in session.device_helper.motion_detectors2:
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor
         )
@@ -132,6 +143,8 @@ async def async_setup_entry(
         )
 
     for binary_sensor in session.device_helper.smoke_detectors:
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor
         )
@@ -144,7 +157,9 @@ async def async_setup_entry(
         )
 
     smoke_detection_system = session.device_helper.smoke_detection_system
-    if smoke_detection_system:
+    if smoke_detection_system and not device_excluded(
+        smoke_detection_system, config_entry.options
+    ):
         entities.append(
             SmokeDetectionSystemSensor(
                 device=smoke_detection_system,
@@ -175,6 +190,8 @@ async def async_setup_entry(
             )
 
             for binary_sensor in twinguards:
+                if device_excluded(binary_sensor, config_entry.options):
+                    continue
                 entities.append(
                     TwinguardSmokeAlarmSensor(
                         device=binary_sensor,
@@ -184,6 +201,8 @@ async def async_setup_entry(
                 )
 
     for binary_sensor in session.device_helper.water_leakage_detectors:
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor
         )
@@ -195,6 +214,8 @@ async def async_setup_entry(
         )
 
     for binary_sensor in session.device_helper.shutter_contacts2:
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         if isinstance(binary_sensor, SHCShutterContact2Plus):
             entities.append(
                 ShutterContactVibrationSensor(
@@ -216,6 +237,8 @@ async def async_setup_entry(
         + session.device_helper.roomthermostats
         + session.device_helper.water_leakage_detectors
     ):
+        if device_excluded(binary_sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.BINARY_SENSOR, device=binary_sensor, attr_name="Battery"
         )

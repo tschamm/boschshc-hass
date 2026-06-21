@@ -40,6 +40,8 @@ OPT_SSL_VERIFY_HOSTNAME = "ssl_verify_hostname"
 OPT_LONG_POLL_TIMEOUT = "long_poll_timeout"
 OPT_PRESENCE_ENTITY = "child_lock_presence_entity"
 OPT_PRESENCE_STATE = "child_lock_present_state"
+OPT_EXCLUDED_DEVICES = "excluded_devices"
+OPT_EXCLUDED_ROOMS = "excluded_rooms"
 
 # Certificate handling
 CERT_EXPIRY_WARNING_DAYS = 30

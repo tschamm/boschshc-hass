@@ -15,7 +15,7 @@ from homeassistant.components.climate.const import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
-from .entity import SHCEntity
+from .entity import SHCEntity, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -26,6 +26,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for climate in session.device_helper.climate_controls:
+        if device_excluded(climate, config_entry.options):
+            continue
         room_id = climate.room_id
         entities.append(
             ClimateControl(
@@ -36,6 +38,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     for heating_circuit in session.device_helper.heating_circuits:
+        if device_excluded(heating_circuit, config_entry.options):
+            continue
         entities.append(
             HeatingCircuit(
                 device=heating_circuit,

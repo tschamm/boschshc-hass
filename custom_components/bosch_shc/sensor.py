@@ -25,7 +25,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN, LOGGER, OPT_DIAGNOSTIC_ENTITIES
-from .entity import SHCEntity, async_migrate_to_new_unique_id
+from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -42,6 +42,8 @@ async def async_setup_entry(
     diagnostic_enabled = config_entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True)
 
     for sensor in session.device_helper.thermostats:
+        if device_excluded(sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Temperature"
         )
@@ -65,6 +67,8 @@ async def async_setup_entry(
     for sensor in (
         session.device_helper.wallthermostats + session.device_helper.roomthermostats
     ):
+        if device_excluded(sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Temperature"
         )
@@ -86,6 +90,8 @@ async def async_setup_entry(
             )
 
     for sensor in session.device_helper.twinguards:
+        if device_excluded(sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass, Platform.SENSOR, device=sensor, attr_name="Temperature"
         )
@@ -183,6 +189,8 @@ async def async_setup_entry(
         + session.device_helper.micromodule_shutter_controls
         + session.device_helper.micromodule_blinds
     ):
+        if device_excluded(sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass,
             Platform.SENSOR,
@@ -211,6 +219,8 @@ async def async_setup_entry(
         )
 
     for sensor in session.device_helper.smart_plugs_compact:
+        if device_excluded(sensor, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass,
             Platform.SENSOR,
@@ -253,6 +263,8 @@ async def async_setup_entry(
             )
 
     for sensor in session.device_helper.motion_detectors:
+        if device_excluded(sensor, config_entry.options):
+            continue
         entities.append(
             IlluminanceLevelSensor(
                 device=sensor,
@@ -261,6 +273,8 @@ async def async_setup_entry(
         )
 
     for sensor in session.device_helper.motion_detectors2:
+        if device_excluded(sensor, config_entry.options):
+            continue
         entities.append(
             IlluminanceLevelSensor(
                 device=sensor,
@@ -315,6 +329,8 @@ async def async_setup_entry(
             + session.device_helper.roomthermostats
             + session.device_helper.water_leakage_detectors
         ):
+            if device_excluded(sensor, config_entry.options):
+                continue
             if sensor.supports_batterylevel:
                 entities.append(
                     BatteryLevelSensor(

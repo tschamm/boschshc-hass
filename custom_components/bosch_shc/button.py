@@ -19,7 +19,7 @@ from .const import (
     LOGGER,
     OPT_SCENARIOS_AS_BUTTONS,
 )
-from .entity import SHCEntity
+from .entity import SHCEntity, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -34,6 +34,8 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for button in session.device_helper.micromodule_impulse_relays:
+        if device_excluded(button, config_entry.options):
+            continue
         entities.append(
             SHCRelayButton(
                 device=button,
