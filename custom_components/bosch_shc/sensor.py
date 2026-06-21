@@ -20,12 +20,14 @@ from homeassistant.const import (
     UnitOfTemperature,
     Platform,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN, LOGGER, OPT_DIAGNOSTIC_ENTITIES
 from .entity import SHCEntity, async_migrate_to_new_unique_id
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -160,6 +162,19 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        if diagnostic_enabled:
+            entities.append(
+                TwinguardCombinedRatingSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+            entities.append(
+                TwinguardDescriptionSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in (
         session.device_helper.smart_plugs
@@ -318,6 +333,7 @@ class TemperatureSensor(SHCEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
@@ -337,6 +353,7 @@ class HumiditySensor(SHCEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.HUMIDITY
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC humidity reporting sensor."""
@@ -357,6 +374,7 @@ class PuritySensor(SHCEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.CO2
     _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC purity reporting sensor."""
@@ -490,6 +508,7 @@ class PowerSensor(SHCEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
@@ -512,6 +531,7 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
 
     def __init__(self, device: SHCEmma, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
@@ -552,6 +572,7 @@ class EnergySensor(SHCEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 2
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC energy reporting sensor."""
@@ -572,6 +593,7 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_suggested_display_precision = 0
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC valve tappet reporting sensor."""
@@ -618,6 +640,7 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_device_class = SensorDeviceClass.ILLUMINANCE
     _attr_native_unit_of_measurement = LIGHT_LUX
+    _attr_suggested_display_precision = 0
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""
@@ -672,3 +695,59 @@ class BatteryLevelSensor(SHCEntity, SensorEntity):
                 "Unknown battery level for %s: %s", self._device.name, err
             )
             return None
+
+
+class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):
+    """Diagnostic ENUM sensor for Twinguard overall combined air-quality rating.
+
+    Surfaces the combinedRating field from AirQualityLevelService (CAT-3e gap).
+    Distinct from AirQualitySensor which exposes the same value as its primary
+    state — this entity is diagnostic-only so it does not clutter the default
+    device view.  net-new unique_id suffix _combined_rating; no migration needed.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_options = ["GOOD", "MEDIUM", "BAD"]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a Twinguard combined-rating diagnostic sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Combined Rating"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_combined_rating"
+        )
+
+    @property
+    def native_value(self):
+        """Return the combined rating enum name, or None on unknown value."""
+        try:
+            return self._device.combined_rating.name
+        except (ValueError, AttributeError) as err:
+            LOGGER.warning(
+                "Unknown combined rating for %s: %s", self._device.name, err
+            )
+            return None
+
+
+class TwinguardDescriptionSensor(SHCEntity, SensorEntity):
+    """Diagnostic sensor for Twinguard air-quality text description.
+
+    Surfaces the description field from AirQualityLevelService (CAT-3e gap).
+    net-new unique_id suffix _description; no migration needed.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a Twinguard air-quality description diagnostic sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Air Quality Description"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_description"
+        )
+
+    @property
+    def native_value(self):
+        """Return the air quality description string."""
+        return self._device.description
