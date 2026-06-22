@@ -43,6 +43,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
+    _attr_has_entity_name = True
+    _attr_name = None  # primary entity — HA uses the device name as the entity name
+
     def __init__(self, device: SHCIntrusionSystem, entry_id: str):
         """Initialize the intrusion detection control."""
         self._device = device
@@ -62,11 +65,6 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         self._device.unsubscribe_callback(self.entity_id)
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._device.name
 
     @property
     def device_id(self):

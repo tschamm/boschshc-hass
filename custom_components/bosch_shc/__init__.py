@@ -1,7 +1,7 @@
 """The Bosch Smart Home Controller integration."""
 
 import inspect
-from datetime import timedelta
+from datetime import timedelta, time as dt_time
 
 import voluptuous as vol
 import functools as ft
@@ -43,8 +43,10 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import (
     async_track_state_change_event,
+    async_track_time_change,
     async_track_time_interval,
 )
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -69,6 +71,10 @@ from .const import (
     OPT_CHILD_LOCK_ENABLED,
     OPT_PRESENCE_ENTITY,
     OPT_SSL_VERIFY_HOSTNAME,
+    OPT_SSL_SKIP_VERIFY,
+    OPT_SILENT_MODE_ENABLED,
+    OPT_SILENT_MODE_START,
+    OPT_SILENT_MODE_END,
     SERVICE_TRIGGER_SCENARIO,
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
@@ -111,6 +117,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
     async def scenario_service_call(call: ServiceCall) -> None:
         """SHC Scenario service call."""
+        from boschshcpy.exceptions import SHCException, SHCConnectionError
         name = call.data[ATTR_NAME]
         title = call.data[ATTR_TITLE]
         for config_entry in hass.config_entries.async_entries(DOMAIN):
@@ -120,7 +127,12 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             if title in ("", runtime.title):
                 for scenario in runtime.session.scenarios:
                     if scenario.name == name:
-                        await hass.async_add_executor_job(scenario.trigger)
+                        try:
+                            await hass.async_add_executor_job(scenario.trigger)
+                        except (SHCException, SHCConnectionError) as err:
+                            raise ServiceValidationError(
+                                f"Failed to trigger scenario '{name}': {err}"
+                            ) from err
 
     hass.services.async_register(
         DOMAIN,
@@ -229,16 +241,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # number of seconds, so coerce it.
     long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
     verify_hostname = entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False)
-    # Only forward the long_poll_timeout / verify_hostname kwargs if the
-    # installed boschshcpy actually supports them. This keeps the integration
-    # working against an older pinned lib (the advanced options are simply
-    # inert until the lib is updated) instead of crashing with a TypeError.
+    # #264: opt-in skip of server-cert verification (default off = verify on).
+    ssl_skip_verify = entry.options.get(OPT_SSL_SKIP_VERIFY, False)
+    # Only forward the long_poll_timeout / verify_hostname / ssl_verify kwargs
+    # if the installed boschshcpy actually supports them. This keeps the
+    # integration working against an older pinned lib (the advanced options are
+    # simply inert until the lib is updated) instead of crashing with a
+    # TypeError.
     _session_params = inspect.signature(SHCSession.__init__).parameters
     _session_kwargs = {}
     if "long_poll_timeout" in _session_params:
         _session_kwargs["long_poll_timeout"] = long_poll_timeout
     if "verify_hostname" in _session_params:
         _session_kwargs["verify_hostname"] = verify_hostname
+    if "ssl_verify" in _session_params:
+        _session_kwargs["ssl_verify"] = not ssl_skip_verify
     try:
         session: SHCSession = await hass.async_add_executor_job(
             ft.partial(
@@ -254,6 +271,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except SHCAuthenticationError as err:
         raise ConfigEntryAuthFailed from err
     except SHCConnectionError as err:
+        LOGGER.warning(
+            "Bosch SHC at %s is unavailable, will retry: %s", data.get(CONF_HOST), err
+        )
         raise ConfigEntryNotReady from err
 
     shc_info = session.information
@@ -451,11 +471,135 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass, presence_entities, _presence_state_changed
         )
 
+    # Presence + time-window driven silent mode: optional, default off.
+    # When enabled and someone is present AND the current time is inside the
+    # configured window, MODE_SILENT is set on every silent-mode-capable device;
+    # otherwise MODE_NORMAL. Mirrors the child-lock feature but adds a window.
+    silent_mode_enabled = entry.options.get(OPT_SILENT_MODE_ENABLED, False)
+
+    def _parse_time(value):
+        """Parse an 'HH:MM[:SS]' option value into a datetime.time, or None."""
+        if not value:
+            return None
+        try:
+            parts = str(value).split(":")
+            hour = int(parts[0])
+            minute = int(parts[1]) if len(parts) > 1 else 0
+            second = int(parts[2]) if len(parts) > 2 else 0
+            return dt_time(hour, minute, second)
+        except (ValueError, IndexError):
+            return None
+
+    silent_start = _parse_time(entry.options.get(OPT_SILENT_MODE_START))
+    silent_end = _parse_time(entry.options.get(OPT_SILENT_MODE_END))
+
+    if silent_mode_enabled and presence_entities and silent_start and silent_end:
+
+        def _silent_entity_is_present(entity_id) -> bool:
+            state_obj = hass.states.get(entity_id)
+            if state_obj is None or state_obj.state in ("unavailable", "unknown"):
+                return False
+            domain = entity_id.split(".", 1)[0]
+            value = state_obj.state
+            if domain == "zone":
+                try:
+                    return int(value) > 0
+                except (TypeError, ValueError):
+                    return False
+            if domain in ("binary_sensor", "input_boolean"):
+                return value == "on"
+            return value in ("home", "on")
+
+        def _within_window() -> bool:
+            now_t = dt_util.now().time()
+            if silent_start == silent_end:
+                return False
+            if silent_start < silent_end:
+                return silent_start <= now_t < silent_end
+            # Overnight window (e.g. 22:00 → 06:00).
+            return now_t >= silent_start or now_t < silent_end
+
+        _last_silent_state: list[bool | None] = [None]
+
+        def _apply_silent(silent_on: bool):
+            """Set silent mode on all capable SHC devices (blocking; executor)."""
+            import requests.exceptions
+            from boschshcpy.exceptions import SHCException, SHCConnectionError
+            from boschshcpy.api import JSONRPCError
+            dh = session.device_helper
+            devices = [
+                d
+                for d in (dh.thermostats + dh.roomthermostats)
+                if getattr(d, "supports_silentmode", False)
+            ]
+            for device in devices:
+                try:
+                    device.silentmode = silent_on
+                except (
+                    JSONRPCError,
+                    SHCException,
+                    SHCConnectionError,
+                    AttributeError,
+                    requests.exceptions.RequestException,
+                ) as err:
+                    LOGGER.warning(
+                        "Failed to set silent_mode=%s on %s: %s",
+                        silent_on, device.id, err,
+                    )
+
+        @callback
+        def _evaluate_silent(*_args):
+            """Recompute desired silent state and apply when it changed."""
+            any_present = any(
+                _silent_entity_is_present(eid) for eid in presence_entities
+            )
+            silent_on = any_present and _within_window()
+            if silent_on == _last_silent_state[0]:
+                return
+            _last_silent_state[0] = silent_on
+            hass.async_create_task(
+                hass.async_add_executor_job(_apply_silent, silent_on)
+            )
+
+        # Re-evaluate on presence change and at the two window boundaries.
+        entry.runtime_data.silent_mode_unsubs.append(
+            async_track_state_change_event(
+                hass, presence_entities, _evaluate_silent
+            )
+        )
+        entry.runtime_data.silent_mode_unsubs.append(
+            async_track_time_change(
+                hass,
+                _evaluate_silent,
+                hour=silent_start.hour,
+                minute=silent_start.minute,
+                second=silent_start.second,
+            )
+        )
+        entry.runtime_data.silent_mode_unsubs.append(
+            async_track_time_change(
+                hass,
+                _evaluate_silent,
+                hour=silent_end.hour,
+                minute=silent_end.minute,
+                second=silent_end.second,
+            )
+        )
+        # Apply the correct state once at startup.
+        _evaluate_silent()
+
     async def stop_polling(event):
         """Stop polling service."""
+        LOGGER.debug(
+            "Bosch SHC '%s': stopping long-poll session (HA shutdown).", entry.title
+        )
         await hass.async_add_executor_job(session.stop_polling)
 
+    LOGGER.debug(
+        "Bosch SHC '%s': starting long-poll session (local_push).", entry.title
+    )
     await hass.async_add_executor_job(session.start_polling)
+    LOGGER.info("Bosch SHC '%s' connected and polling.", entry.title)
     entry.runtime_data.polling_handler = hass.bus.async_listen_once(
         EVENT_HOMEASSISTANT_STOP, stop_polling
     )
@@ -505,6 +649,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         runtime.cert_check_unsub()
     if runtime.presence_unsub is not None:
         runtime.presence_unsub()
+    for _unsub in runtime.silent_mode_unsubs:
+        _unsub()
+    runtime.silent_mode_unsubs.clear()
     await hass.async_add_executor_job(runtime.session.stop_polling)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

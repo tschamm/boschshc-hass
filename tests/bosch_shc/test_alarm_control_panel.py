@@ -7,7 +7,6 @@ PIN_EVERY_MODE: one test per discrete enum value + None/garbage fallback.
 
 from types import SimpleNamespace
 
-import pytest
 from boschshcpy import SHCIntrusionSystem
 from homeassistant.components.alarm_control_panel.const import (
     AlarmControlPanelEntityFeature,
@@ -205,8 +204,11 @@ def test_should_poll_is_false():
 # name / device_id / manufacturer
 # ---------------------------------------------------------------------------
 
-def test_name_delegates_to_device():
-    assert _panel(name="My Alarm").name == "My Alarm"
+def test_has_entity_name_true():
+    """has_entity_name=True: HA uses the device name; _attr_name must be None (primary entity)."""
+    panel = _panel(name="My Alarm")
+    assert panel._attr_has_entity_name is True
+    assert panel._attr_name is None
 
 
 def test_device_id_delegates_to_device():
@@ -301,3 +303,32 @@ def test_alarm_mute_calls_device_mute():
     panel._device.mute = lambda: calls.append("mute")
     panel.alarm_mute()
     assert calls == ["mute"]
+
+
+# ---------------------------------------------------------------------------
+# Quality Scale: has-entity-name + unique_id preservation
+# ---------------------------------------------------------------------------
+
+def test_unique_id_format_unchanged():
+    """Regression: unique_id must remain f'{root_device_id}_{device_id}' forever.
+
+    Changing this would orphan every user's entity, so this test intentionally
+    pins the exact string format.
+    """
+    panel = _panel(root_device_id="root-abc", device_id="dev-xyz")
+    panel._attr_unique_id = f"{panel._device.root_device_id}_{panel._device.id}"
+    assert panel._attr_unique_id == "root-abc_dev-xyz"
+
+
+def test_has_entity_name_property_is_true():
+    """has_entity_name returns True (Bronze: has-entity-name).
+
+    Checked via an instance because AlarmControlPanelEntity's base-class property
+    descriptor shadows direct class-attribute access.
+    """
+    assert _panel().has_entity_name is True
+
+
+def test_instance_attr_name_is_none():
+    """_attr_name=None on the instance: HA uses the device name as the entity name."""
+    assert _panel()._attr_name is None

@@ -16,8 +16,13 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from boschshcpy.exceptions import JSONRPCError, SHCException
-from custom_components.bosch_shc.climate import ClimateControl, HeatingCircuit
-from homeassistant.components.climate.const import HVACMode, PRESET_NONE, PRESET_ECO
+from custom_components.bosch_shc.climate import (
+    ClimateControl,
+    HeatingCircuit,
+    PRESET_MANUAL,
+    PRESET_ECO,
+)
+from homeassistant.components.climate.const import HVACMode
 
 
 # JSONRPCError requires (code, message) — use a subclass for brevity
@@ -68,6 +73,7 @@ def _make_climate_control(hass=None, hvac_modes=None):
         low=False,
     )
     entity._attr_name = "Room Climate"
+    entity._room_label = "Room Climate"
     entity.hass = hass or _make_hass_ok()
     entity._attr_unique_id = "root-1_cc-1"
     if hvac_modes is not None:
@@ -81,13 +87,16 @@ def _make_climate_control(hass=None, hvac_modes=None):
 
 class TestClimateControlHvacModeErrors:
     def test_jsonrpc_error_is_caught_and_logged(self):
-        """JSONRPCError from executor job must not propagate."""
+        """JSONRPCError from executor job must not propagate.
+
+        PR #329: AUTO is no longer an hvac_mode, use HEAT instead.
+        """
         entity = _make_climate_control(hass=_make_hass_raises(_JRPC("timeout")))
         entity._device.summer_mode = False
         entity._device.low = False  # not in ECO
 
         with patch("custom_components.bosch_shc.climate.LOGGER") as mock_log:
-            asyncio.run(entity.async_set_hvac_mode(HVACMode.AUTO))
+            asyncio.run(entity.async_set_hvac_mode(HVACMode.HEAT))
             mock_log.warning.assert_called_once()
             assert "HVAC mode" in mock_log.warning.call_args[0][0]
 
@@ -112,13 +121,14 @@ class TestClimateControlHvacModeErrors:
 # ---------------------------------------------------------------------------
 
 class TestClimateControlPresetModeErrors:
-    def test_jsonrpc_error_preset_none_is_caught(self):
+    def test_jsonrpc_error_preset_manual_is_caught(self):
+        """PR #329: PRESET_NONE replaced by PRESET_MANUAL."""
         entity = _make_climate_control(hass=_make_hass_raises(_JRPC("err")))
         entity._device.boost_mode = True  # will try to turn off
         entity._device.low = False
 
         with patch("custom_components.bosch_shc.climate.LOGGER") as mock_log:
-            asyncio.run(entity.async_set_preset_mode(PRESET_NONE))
+            asyncio.run(entity.async_set_preset_mode(PRESET_MANUAL))
             mock_log.warning.assert_called_once()
 
     def test_shc_exception_preset_eco_is_caught(self):

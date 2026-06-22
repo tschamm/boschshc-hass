@@ -738,6 +738,15 @@ def test_switch_types_all_keys_present():
         "silent_mode",
         "vibration_enabled",
         "user_defined_state",
+        # New APK-batch 2-6 switch types (guarded by hasattr in setup):
+        "energy_saving_mode_enabled",
+        "warning_suppressed",
+        "nightly_promise_enabled",
+        "humidity_warning_enabled",
+        "swap_inputs",
+        "swap_outputs",
+        "pre_alarm_enabled",
+        "smart_sensitivity_enabled",
     }
     assert expected == set(SWITCH_TYPES.keys())
 

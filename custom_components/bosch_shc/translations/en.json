@@ -103,15 +103,21 @@
             }
           },
           "presence": {
-            "name": "Presence-based child lock",
-            "description": "Automatically lock all SHC thermostats and switches when someone is home, and unlock them when everyone leaves.",
+            "name": "Presence-based child lock & silent mode",
+            "description": "Automatically lock all SHC thermostats/switches when someone is home, and optionally switch thermostats to silent mode during a time window when someone is home.",
             "data": {
               "child_lock_enabled": "Enable presence-based child lock",
-              "child_lock_presence_entity": "Presence entities"
+              "child_lock_presence_entity": "Presence entities",
+              "silent_mode_enabled": "Enable presence + time-window silent mode",
+              "silent_mode_start": "Silent mode start time",
+              "silent_mode_end": "Silent mode end time"
             },
             "data_description": {
               "child_lock_enabled": "Master switch. When ON, child lock on all SHC thermostats and switch devices follows the presence entities below — locked when someone is home, unlocked when everyone is away. When OFF, the integration never touches child lock.",
-              "child_lock_presence_entity": "The people/devices that decide child lock. It turns ON as soon as ANY of them is home, and OFF only when ALL are away. Pick e.g. the Person entities of your household. 'Home' is detected automatically (home for person/device_tracker/zone/group, on for binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "The people/devices that decide child lock. It turns ON as soon as ANY of them is home, and OFF only when ALL are away. Pick e.g. the Person entities of your household. 'Home' is detected automatically (home for person/device_tracker/zone/group, on for binary_sensor/input_boolean).",
+              "silent_mode_enabled": "When ON, every silent-mode-capable SHC thermostat is switched to silent mode while someone (per the presence entities above) is home AND the current time is inside the window below; otherwise back to normal. Default: off.",
+              "silent_mode_start": "Start of the daily silent-mode window (local time). Windows may cross midnight (e.g. 22:00 → 06:00).",
+              "silent_mode_end": "End of the daily silent-mode window (local time)."
             }
           },
           "advanced": {
@@ -121,16 +127,202 @@
               "ssl_verify_hostname": "Verify SHC certificate hostname",
               "long_poll_timeout": "Long-poll timeout (seconds)",
               "excluded_devices": "Excluded devices",
-              "excluded_rooms": "Excluded rooms"
+              "excluded_rooms": "Excluded rooms",
+              "ssl_skip_verify": "Skip SHC certificate verification"
             },
             "data_description": {
               "ssl_verify_hostname": "Expert: when ON, the SHC's TLS certificate hostname is verified. The Bosch SHC certificate's hostname normally does NOT match its IP, so enabling this usually breaks the connection — leave OFF unless you know your setup matches. Default: off.",
               "long_poll_timeout": "How long each long-poll request waits for events before reconnecting. Default 10. Increase to reduce reconnects, decrease if your network drops idle connections.",
               "excluded_devices": "Devices to hide — no entities are created for them. Leave empty to include all. Existing entities for newly-excluded devices remain until removed manually.",
-              "excluded_rooms": "Hide every device in these Bosch rooms. Leave empty to include all."
+              "excluded_rooms": "Hide every device in these Bosch rooms. Leave empty to include all.",
+              "ssl_skip_verify": "Expert / local-only LANs: when ON, the SHC server certificate is no longer verified — useful if your offline controller's certificate has expired. The encrypted client-certificate login is unaffected. Only enable on a trusted local network. Default: off."
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatic",
+              "manual": "Manual",
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Smoke Test"
+      },
+      "walk_test": {
+        "name": "Walk Test"
+      },
+      "walk_test_stop": {
+        "name": "Walk Test Stop"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulse Length"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Energy Saving Power Threshold"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Energy Saving Enter Duration"
+      },
+      "led_brightness": {
+        "name": "LED Brightness"
+      },
+      "display_brightness": {
+        "name": "Display Brightness"
+      },
+      "display_on_time": {
+        "name": "Display On Time"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Motion Sensitivity",
+        "state": {
+          "HIGH": "High",
+          "MIDDLE": "Medium",
+          "LOW": "Low"
+        }
+      },
+      "vibration_sensitivity": {
+        "name": "Vibration Sensitivity",
+        "state": {
+          "VERY_HIGH": "Very High",
+          "HIGH": "High",
+          "MEDIUM": "Medium",
+          "LOW": "Low",
+          "VERY_LOW": "Very Low"
+        }
+      },
+      "state_after_power_outage": {
+        "name": "State After Power Outage",
+        "state": {
+          "OFF": "Off",
+          "ON": "On",
+          "LAST_STATE": "Last State"
+        }
+      },
+      "smoke_sensitivity": {
+        "name": "Smoke Sensitivity",
+        "state": {
+          "HIGH": "High",
+          "MIDDLE": "Medium",
+          "LOW": "Low"
+        }
+      },
+      "display_direction": {
+        "name": "Display Direction",
+        "state": {
+          "NORMAL": "Normal",
+          "REVERSED": "Reversed"
+        }
+      },
+      "displayed_temperature": {
+        "name": "Displayed Temperature",
+        "state": {
+          "SETPOINT": "Setpoint",
+          "MEASURED": "Measured"
+        }
+      },
+      "terminal_type": {
+        "name": "Terminal Type",
+        "state": {
+          "NOT_CONNECTED": "Not Connected",
+          "FLOOR_SENSOR_CONNECTED": "Floor Sensor Connected",
+          "FLOOR_SENSOR_USED_FOR_REGULATION": "Floor Sensor Used for Regulation",
+          "FLOOR_SENSOR_DISPLAYED": "Floor Sensor Displayed",
+          "FLOOR_SENSOR_DISPLAYED_AND_USED_FOR_REGULATION": "Floor Sensor Displayed and Used for Regulation",
+          "VOLT_FREE_SENSOR_CONNECTED": "Volt-Free Sensor Connected",
+          "VOLT_FREE_SENSOR_CONNECTED_AND_USED_FOR_OPERATION": "Volt-Free Sensor Connected and Used for Operation",
+          "OUTDOOR_SENSOR_CONNECTED": "Outdoor Sensor Connected"
+        }
+      },
+      "valve_type": {
+        "name": "Valve Type",
+        "state": {
+          "NORMALLY_CLOSE": "Normally Closed",
+          "NORMALLY_OPEN": "Normally Open"
+        }
+      },
+      "heater_type": {
+        "name": "Heater Type",
+        "state": {
+          "FLOOR_HEATING": "Floor Heating",
+          "FLOOR_HEATING_LOW_ENERGY": "Floor Heating (Low Energy)",
+          "RADIATOR": "Radiator",
+          "CONVECTOR_PASSIVE": "Convector (Passive)",
+          "CONVECTOR_ACTIVE": "Convector (Active)"
+        }
+      },
+      "switch_type": {
+        "name": "Switch Type",
+        "state": {
+          "NONE": "None",
+          "PUSHBUTTON": "Push Button",
+          "SWITCH": "Switch",
+          "NO_SWITCH": "No Switch"
+        }
+      },
+      "actuator_type": {
+        "name": "Actuator Type",
+        "state": {
+          "NORMALLY_CLOSED": "Normally Closed",
+          "NORMALLY_OPEN": "Normally Open",
+          "UNSUPPORTED": "Unsupported"
+        }
+      },
+      "output_mode": {
+        "name": "Output Mode",
+        "state": {
+          "ATTACHED": "Attached",
+          "DETACHED": "Detached",
+          "DETACHED_SHORT_PRESS": "Detached (Short Press)",
+          "DETACHED_LONG_PRESS": "Detached (Long Press)",
+          "UNSUPPORTED": "Unsupported"
+        }
+      },
+      "smart_sensitivity_security": {
+        "name": "Security Sensitivity Level",
+        "state": {
+          "HIGH": "High",
+          "MIDDLE": "Medium",
+          "LOW": "Low"
+        }
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Comfort Sensitivity Level",
+        "state": {
+          "HIGH": "High",
+          "MIDDLE": "Medium",
+          "LOW": "Low"
+        }
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Walk Test State"
+      },
+      "battery_level": {
+        "name": "Battery Level"
+      },
+      "combined_rating": {
+        "name": "Combined Rating"
+      },
+      "air_quality_description": {
+        "name": "Air Quality Description"
       }
     }
   },

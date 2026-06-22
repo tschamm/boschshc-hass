@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from boschshcpy import (
     SHCUniversalSwitch,
+    SHCLightControl,
     SHCMotionDetector,
     SHCSession,
     SHCSmokeDetectionSystem,
@@ -71,6 +72,23 @@ async def async_setup_entry(
                 scenario,
                 session,
                 hass,
+                entry_id=entry.entry_id,
+            )
+        )
+
+    # #282: Light Control II configured as a non-switching push-button emits
+    # Keypad events the user can react to. Only create the entity when the
+    # device actually exposes a Keypad service.
+    for light_control in getattr(
+        session.device_helper, "micromodule_light_controls", []
+    ):
+        if device_excluded(light_control, entry.options):
+            continue
+        if not getattr(light_control, "has_keypad", False):
+            continue
+        entities.append(
+            LightControlButtonEvent(
+                light_control,
                 entry_id=entry.entry_id,
             )
         )
@@ -163,6 +181,79 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
                 self.entity_id,
                 current_ts,
             )
+            return
+        self._last_fired_timestamp = current_ts
+        event_attributes = {
+            ATTR_DEVICE_ID: self.device_id,
+            ATTR_EVENT_TYPE: event_type,
+            ATTR_ID: self._device.id,
+            ATTR_NAME: self._device.name,
+            ATTR_LAST_TIME_TRIGGERED: current_ts,
+        }
+        self.hass.loop.call_soon_threadsafe(
+            self._dispatch_event, event_type, event_attributes
+        )
+
+    @callback
+    def _dispatch_event(self, event_type, event_attributes):
+        """Dispatch the event on the event loop (thread-safe)."""
+        try:
+            self._trigger_event(event_type, event_attributes)
+        except ValueError:
+            LOGGER.warning(
+                "Invalid event type %s for %s", event_type, self.entity_id
+            )
+            return
+        self.schedule_update_ha_state()
+
+
+class LightControlButtonEvent(SHCEntity, EventEntity):
+    """Wall push-button press from a Light Control II (#282)."""
+
+    _attr_device_class = EventDeviceClass.BUTTON
+    _attr_event_types = [
+        "PRESS_SHORT",
+        "PRESS_LONG",
+        "PRESS_LONG_RELEASED",
+        "SWITCH_ON",
+        "SWITCH_OFF",
+    ]
+
+    def __init__(self, device: SHCLightControl, entry_id: str) -> None:
+        """Initialize the Light Control button event entity."""
+        super().__init__(device, entry_id)
+        self._device = device
+        # Guard against phantom events: a Keypad update piggybacking on another
+        # state change can replay the last eventTimestamp (cf. #192).
+        self._last_fired_timestamp: int = -1
+        self.entity_id = ENTITY_ID_FORMAT.format(
+            f"{slugify(self._device.name)}_button"
+        )
+        self._attr_name = "Button"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_button"
+
+    async def async_added_to_hass(self) -> None:
+        """Call when entity is added to hass."""
+        await super().async_added_to_hass()
+        for service in self._device.device_services:
+            if service.id == "Keypad":
+                # Keypad events are dispatched by the reported keyName string
+                # (device_service._process_events). The single-button Light
+                # Control II's keyName is not HW-confirmed, so register the
+                # callback under every KeyState value — whichever the device
+                # reports will resolve.
+                for key_state in service.KeyState:
+                    service.register_event(key_state.value, self._event_callback)
+
+    def _event_callback(self) -> None:
+        event_type_raw = self._device.eventtype
+        if event_type_raw is None:
+            return
+        event_type = event_type_raw.name
+        if event_type not in self._attr_event_types:
+            return
+        current_ts = self._device.eventtimestamp
+        if current_ts == self._last_fired_timestamp:
             return
         self._last_fired_timestamp = current_ts
         event_attributes = {

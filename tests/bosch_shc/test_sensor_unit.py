@@ -23,10 +23,12 @@ from custom_components.bosch_shc.sensor import (
     AirQualitySensor,
     CommunicationQualitySensor,
     EnergySensor,
+    EnergyYieldSensor,
     HumidityRatingSensor,
     HumiditySensor,
     IlluminanceLevelSensor,
     PowerSensor,
+    PowerYieldSensor,
     PurityRatingSensor,
     PuritySensor,
     TemperatureRatingSensor,
@@ -436,3 +438,63 @@ class TestIlluminanceLevelSensor:
 
     def test_unit_lux(self):
         assert _illum_sensor(9).native_unit_of_measurement == LIGHT_LUX
+
+
+# ---------------------------------------------------------------------------
+# EnergyYieldSensor / PowerYieldSensor (#331)
+# ---------------------------------------------------------------------------
+
+
+def _energy_yield_sensor(energy_yield):
+    s = EnergyYieldSensor.__new__(EnergyYieldSensor)
+    s._device = SimpleNamespace(energy_yield=energy_yield)
+    return s
+
+
+def _power_yield_sensor(powerconsumption):
+    s = PowerYieldSensor.__new__(PowerYieldSensor)
+    s._device = SimpleNamespace(powerconsumption=powerconsumption)
+    return s
+
+
+class TestEnergyYieldSensor:
+    def test_wh_to_kwh(self):
+        assert _energy_yield_sensor(234.0).native_value == 0.234
+
+    def test_zero(self):
+        assert _energy_yield_sensor(0.0).native_value == 0.0
+
+    def test_none_passthrough(self):
+        assert _energy_yield_sensor(None).native_value is None
+
+    def test_device_class_energy(self):
+        assert _energy_yield_sensor(1.0).device_class == SensorDeviceClass.ENERGY
+
+    def test_state_class_total_increasing(self):
+        assert (
+            _energy_yield_sensor(1.0).state_class
+            == SensorStateClass.TOTAL_INCREASING
+        )
+
+
+class TestPowerYieldSensor:
+    def test_positive_yield_from_negative_consumption(self):
+        assert _power_yield_sensor(-800.0).native_value == 800.0
+
+    def test_zero_while_consuming(self):
+        assert _power_yield_sensor(1.0).native_value == 0.0
+
+    def test_zero_when_zero(self):
+        assert _power_yield_sensor(0.0).native_value == 0.0
+
+    def test_none_passthrough(self):
+        assert _power_yield_sensor(None).native_value is None
+
+    def test_device_class_power(self):
+        assert _power_yield_sensor(-5.0).device_class == SensorDeviceClass.POWER
+
+    def test_unit_watt(self):
+        assert (
+            _power_yield_sensor(-5.0).native_unit_of_measurement
+            == UnitOfPower.WATT
+        )

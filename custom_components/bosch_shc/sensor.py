@@ -217,6 +217,14 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        # #331: Smart Plug [+M] in Mini-PV mode reports PV yield separately.
+        if getattr(sensor, "supports_energy_yield", False):
+            entities.append(
+                EnergyYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+            )
 
     for sensor in session.device_helper.smart_plugs_compact:
         if device_excluded(sensor, config_entry.options):
@@ -247,6 +255,13 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        if getattr(sensor, "supports_energy_yield", False):
+            entities.append(
+                EnergyYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+            )
         if diagnostic_enabled:
             await async_migrate_to_new_unique_id(
                 hass,
@@ -293,6 +308,14 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        # WalkTest state sensor: only created when WalkTest service is present.
+        if getattr(sensor, "supports_walk_test", False) and sensor.walk_state is not None:
+            entities.append(
+                WalkStateSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
         if diagnostic_enabled:
             await async_migrate_to_new_unique_id(
                 hass,
@@ -640,6 +663,59 @@ class EnergySensor(SHCEntity, SensorEntity):
         return self._device.energyconsumption / 1000.0
 
 
+class EnergyYieldSensor(SHCEntity, SensorEntity):
+    """PV energy yield of a Smart Plug [+M] in Mini-PV mode (#331)."""
+
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the energy yield sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Energy Yield"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{self._device.id}_energy_yield"
+        )
+
+    @property
+    def native_value(self):
+        """Return the PV energy yield (kWh), or None when unreported."""
+        value = self._device.energy_yield
+        return None if value is None else value / 1000.0
+
+
+class PowerYieldSensor(SHCEntity, SensorEntity):
+    """PV power yield of a Smart Plug [+M] as a positive value (#331).
+
+    The PowerMeter reports negative powerConsumption while feeding in. This
+    sensor exposes that production as a positive number (0 W while consuming),
+    so it can be added directly to the HA Energy dashboard.
+    """
+
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the power yield sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Power Yield"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{self._device.id}_power_yield"
+        )
+
+    @property
+    def native_value(self):
+        """Return positive PV power (W); 0 while net-consuming."""
+        consumption = self._device.powerconsumption
+        if consumption is None:
+            return None
+        return -consumption if consumption < 0 else 0.0
+
+
 class ValveTappetSensor(SHCEntity, SensorEntity):
     """Representation of an SHC valve tappet reporting sensor."""
 
@@ -805,3 +881,34 @@ class TwinguardDescriptionSensor(SHCEntity, SensorEntity):
     def native_value(self):
         """Return the air quality description string."""
         return self._device.description
+
+
+class WalkStateSensor(SHCEntity, SensorEntity):
+    """Sensor for the Motion Detector II walk-test state.
+
+    Reports the current WalkTest walkState enum name (WALK_TEST_STARTED /
+    STOPPED / UNKNOWN).  The WalkTest service is optional on MD2 hardware;
+    this sensor is only created when walk_state is not None.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["WALK_TEST_STARTED", "WALK_TEST_STOPPED", "UNKNOWN"]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the walk-state sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Walk Test State"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_walk_state"
+        )
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the current walk state as its enum name."""
+        try:
+            val = self._device.walk_state
+            if val is None:
+                return None
+            return val.name
+        except (AttributeError, ValueError):
+            return None

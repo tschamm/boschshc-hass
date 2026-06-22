@@ -36,6 +36,7 @@ KNOWN_BATTERY_DEVICE_CLASSES = {
     "SHCShutterContact2Plus",  # shutter_contacts2
     "SHCSmokeDetector",        # smoke_detectors
     "SHCThermostat",           # thermostats
+    "SHCThermostatGen2",       # thermostats (TRV_GEN2 / TRV_GEN2_DUAL, subclass of SHCThermostat)
     "SHCWallThermostat",       # wallthermostats
     "SHCRoomThermostat2",      # roomthermostats
     "SHCTwinguard",            # twinguards

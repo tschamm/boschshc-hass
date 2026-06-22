@@ -8,9 +8,6 @@ from homeassistant.components.climate.const import (
     HVACAction,
     HVACMode,
     ClimateEntityFeature,
-    PRESET_BOOST,
-    PRESET_ECO,
-    PRESET_NONE,
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
@@ -18,6 +15,15 @@ from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity, device_excluded
 
 PARALLEL_UPDATES = 1
+
+# Preset mode strings (regulation axis — independent of hvac_mode direction axis).
+# Design from PR #329 (jumlu): Bosch separates direction (HEATING/COOLING/OFF)
+# from regulation (AUTOMATIC schedule vs MANUAL setpoint + eco/boost overrides).
+# We map regulation onto HA preset_mode so AUTO is a preset, not an hvac_mode.
+PRESET_AUTO = "auto"
+PRESET_MANUAL = "manual"
+PRESET_BOOST = "boost"
+PRESET_ECO = "eco"
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -61,7 +67,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class ClimateControl(SHCEntity, ClimateEntity):
-    """Representation of a SHC room climate control."""
+    """Representation of a SHC room climate control.
+
+    Design from PR #329 (jumlu): two orthogonal Bosch axes mapped onto HA:
+      Direction axis  → hvac_mode:   summer_mode=True→OFF, cooling_mode=True→COOL, else→HEAT
+      Regulation axis → preset_mode: AUTOMATIC→"auto", MANUAL→"manual", + boost/eco overrides
+    """
 
     _attr_target_temperature_step = 0.5
     _enable_turn_on_off_backwards_compatibility = False
@@ -74,15 +85,18 @@ class ClimateControl(SHCEntity, ClimateEntity):
     ):
         """Initialize the SHC device."""
         super().__init__(device=device, entry_id=entry_id)
-        # _attr_has_entity_name is True (set on SHCEntity base).
-        # Climate represents a room — use the room/circuit name as the feature label.
-        self._attr_name = name
+        # The RoomClimateControl is a per-room virtual device. We name the
+        # DEVICE "Room Climate <room>" and make this the device's primary entity
+        # (_attr_name = None) so the friendly name is just the device name — not
+        # the device name repeated twice (has_entity_name prepends it). #live
+        self._room_label = name
+        self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     @property
     def device_name(self):
         """Name of the device."""
-        return self._attr_name
+        return self._room_label
 
     @property
     def temperature_unit(self):
@@ -116,25 +130,26 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        """Return the hvac mode."""
+        """Return the hvac mode (direction axis).
+
+        Maps the Bosch direction field onto HA hvac_mode:
+          summer_mode=True                              → OFF
+          supports_cooling=True + cooling_mode=True    → COOL
+          otherwise                                     → HEAT
+        The AUTOMATIC/MANUAL regulation axis is expressed via preset_mode.
+        """
         if self._device.summer_mode:
             return HVACMode.OFF
 
         if self._device.supports_cooling and self._device.cooling_mode:
             return HVACMode.COOL
 
-        if (
-            self._device.operation_mode
-            == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
-        ):
-            return HVACMode.AUTO
-
         return HVACMode.HEAT
 
     @property
     def hvac_modes(self):
         """Return available hvac modes."""
-        modes = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
+        modes = [HVACMode.HEAT, HVACMode.OFF]
         if self._device.supports_cooling:
             modes.append(HVACMode.COOL)
         return modes
@@ -144,6 +159,12 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Return the current HVAC action."""
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
+        if (
+            self._device.supports_cooling
+            and self._device.cooling_mode
+            and self.hvac_mode == HVACMode.COOL
+        ):
+            return HVACAction.COOLING
         # getattr guard: has_demand needs boschshcpy >= 0.2.120; tolerate older libs
         return (
             HVACAction.HEATING
@@ -153,22 +174,43 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     @property
     def preset_mode(self):
-        """Return preset mode."""
-        if self._device.supports_boost_mode:
-            if self._device.boost_mode:
-                return PRESET_BOOST
+        """Return preset mode (regulation axis).
 
-        if self._device.low:
+        Maps the Bosch regulation fields onto HA preset_mode:
+          boost_mode=True               → "boost"
+          low=True (eco)                → "eco"   (only if device has `low`)
+          operation_mode=AUTOMATIC      → "auto"
+          operation_mode=MANUAL (else)  → "manual"
+        """
+        if self._device.supports_boost_mode and self._device.boost_mode:
+            return PRESET_BOOST
+
+        if getattr(self._device, "low", False):
             return PRESET_ECO
 
-        return PRESET_NONE
+        if (
+            self._device.operation_mode
+            == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
+        ):
+            return PRESET_AUTO
+
+        return PRESET_MANUAL
 
     @property
     def preset_modes(self):
         """Return available preset modes."""
-        presets = [PRESET_NONE, PRESET_ECO]
+        presets = [PRESET_AUTO, PRESET_MANUAL]
         if self._device.supports_boost_mode:
-            presets += [PRESET_BOOST]
+            presets.append(PRESET_BOOST)
+        # `low` is a Python property that always exists, so the old hasattr check
+        # always added ECO. Gate on the lib capability (the `low` field actually
+        # being present in the device state) instead. Falls back to hasattr for
+        # older libs that predate supports_low.
+        if getattr(self._device, "supports_low", None) is not None:
+            if self._device.supports_low:
+                presets.append(PRESET_ECO)
+        elif hasattr(self._device, "low"):
+            presets.append(PRESET_ECO)
         return presets
 
     @property
@@ -250,7 +292,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 )
 
     async def async_set_hvac_mode(self, hvac_mode: str):
-        """Set hvac mode.
+        """Set hvac mode (direction axis).
 
         #196: ECO (low mode) and HVAC mode are independent state fields on the
         SHC.  The old guard (return-if-ECO) silently blocked turn_off from ECO,
@@ -268,20 +310,6 @@ class ClimateControl(SHCEntity, ClimateEntity):
                     setattr, self._device, "low", False
                 )
 
-            if hvac_mode == HVACMode.AUTO:
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "summer_mode", False
-                )
-                if self._device.supports_cooling:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "cooling_mode", False
-                    )
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "operation_mode",
-                    SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC,
-                )
             if hvac_mode == HVACMode.HEAT:
                 await self.hass.async_add_executor_job(
                     setattr, self._device, "summer_mode", False
@@ -290,29 +318,14 @@ class ClimateControl(SHCEntity, ClimateEntity):
                     await self.hass.async_add_executor_job(
                         setattr, self._device, "cooling_mode", False
                     )
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "operation_mode",
-                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
-                )
-            if hvac_mode == HVACMode.COOL:
-                # P2-C: also set operation_mode=MANUAL to match Bosch app
-                # behaviour and avoid a stale AUTOMATIC operationMode when
-                # cooling_mode is active.
+            elif hvac_mode == HVACMode.COOL:
                 await self.hass.async_add_executor_job(
                     setattr, self._device, "summer_mode", False
                 )
                 await self.hass.async_add_executor_job(
                     setattr, self._device, "cooling_mode", True
                 )
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "operation_mode",
-                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
-                )
-            if hvac_mode == HVACMode.OFF:
+            elif hvac_mode == HVACMode.OFF:
                 if self._device.supports_cooling:
                     await self.hass.async_add_executor_job(
                         setattr, self._device, "cooling_mode", False
@@ -328,45 +341,66 @@ class ClimateControl(SHCEntity, ClimateEntity):
             )
 
     async def async_set_preset_mode(self, preset_mode: str):
-        """Set preset mode."""
+        """Set preset mode (regulation axis).
+
+        "auto"   → operationMode=AUTOMATIC (follow schedule)
+        "manual" → operationMode=MANUAL + clear boost + clear eco
+        "boost"  → boost_mode=True
+        "eco"    → low=True  (only if device exposes `low`)
+        """
         if preset_mode not in self.preset_modes:
             return
 
         try:
-            if preset_mode == PRESET_NONE:
-                if self._device.supports_boost_mode:
-                    if self._device.boost_mode:
-                        await self.hass.async_add_executor_job(
-                            setattr, self._device, "boost_mode", False
-                        )
-
-                if self._device.low:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "low", False
-                    )
-
-            elif preset_mode == PRESET_BOOST:
-                if not self._device.boost_mode:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "boost_mode", True
-                    )
-
-                if self._device.low:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "low", False
-                    )
+            if preset_mode == PRESET_BOOST:
+                await self.hass.async_add_executor_job(
+                    setattr, self._device, "boost_mode", True
+                )
 
             elif preset_mode == PRESET_ECO:
-                if self._device.supports_boost_mode:
-                    if self._device.boost_mode:
+                if hasattr(self._device, "low"):
+                    # Clear boost first so states don't stack
+                    if self._device.supports_boost_mode and self._device.boost_mode:
                         await self.hass.async_add_executor_job(
                             setattr, self._device, "boost_mode", False
                         )
-
-                if not self._device.low:
                     await self.hass.async_add_executor_job(
                         setattr, self._device, "low", True
                     )
+
+            elif preset_mode == PRESET_AUTO:
+                # Clear overrides then set schedule mode
+                if self._device.supports_boost_mode and self._device.boost_mode:
+                    await self.hass.async_add_executor_job(
+                        setattr, self._device, "boost_mode", False
+                    )
+                if hasattr(self._device, "low") and self._device.low:
+                    await self.hass.async_add_executor_job(
+                        setattr, self._device, "low", False
+                    )
+                await self.hass.async_add_executor_job(
+                    setattr,
+                    self._device,
+                    "operation_mode",
+                    SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC,
+                )
+
+            elif preset_mode == PRESET_MANUAL:
+                # Clear overrides then set manual mode
+                if self._device.supports_boost_mode and self._device.boost_mode:
+                    await self.hass.async_add_executor_job(
+                        setattr, self._device, "boost_mode", False
+                    )
+                if hasattr(self._device, "low") and self._device.low:
+                    await self.hass.async_add_executor_job(
+                        setattr, self._device, "low", False
+                    )
+                await self.hass.async_add_executor_job(
+                    setattr,
+                    self._device,
+                    "operation_mode",
+                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
+                )
         except (JSONRPCError, SHCException) as err:
             LOGGER.warning(
                 "Failed to set preset mode on device %s: %s",

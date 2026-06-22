@@ -13,7 +13,7 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature, UnitOfTime
+from homeassistant.const import UnitOfTemperature, UnitOfTime, UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -85,6 +85,71 @@ async def async_setup_entry(
                 setter_name="setpoint_temperature_comfort",
             )
         )
+
+    # EnergySavingMode numbers: power threshold + enter duration (smart plugs).
+    for device in (
+        getattr(session.device_helper, "smart_plugs", [])
+        + getattr(session.device_helper, "smart_plugs_compact", [])
+    ):
+        if device_excluded(device, config_entry.options):
+            continue
+        if (
+            getattr(device, "supports_energy_saving_mode", False)
+            and getattr(device, "power_threshold", None) is not None
+        ):
+            entities.append(
+                PowerThresholdNumber(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        if (
+            getattr(device, "supports_energy_saving_mode", False)
+            and getattr(device, "enter_duration_seconds", None) is not None
+        ):
+            entities.append(
+                EnterDurationNumber(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        if (
+            getattr(device, "supports_led_brightness", False)
+            and getattr(device, "led_brightness", None) is not None
+        ):
+            entities.append(
+                LedBrightnessNumber(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+
+    # Display config numbers: brightness + on-time (ThermostatGen2 / RoomThermostat2).
+    for device in (
+        session.device_helper.thermostats + session.device_helper.roomthermostats
+    ):
+        if device_excluded(device, config_entry.options):
+            continue
+        if (
+            getattr(device, "supports_display_configuration", False)
+            and getattr(device, "display_brightness", None) is not None
+        ):
+            entities.append(
+                DisplayBrightnessNumber(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        if (
+            getattr(device, "supports_display_configuration", False)
+            and getattr(device, "display_on_time", None) is not None
+        ):
+            entities.append(
+                DisplayOnTimeNumber(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     if entities:
         async_add_entities(entities)
@@ -250,3 +315,250 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
                 self._device.name,
                 err,
             )
+
+
+class PowerThresholdNumber(SHCEntity, NumberEntity):
+    """NumberEntity for the energy-saving power threshold of a smart plug.
+
+    When the plug draws less than this value for enterDurationSeconds, energy
+    saving mode turns the outlet off.  Watt range 0–3680 W (16 A socket), step 1 W.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_device_class = NumberDeviceClass.POWER
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 3680.0
+    _attr_native_step = 1.0
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the power threshold number."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Energy Saving Power Threshold"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_power_threshold"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the power threshold in watts."""
+        return getattr(self._device, "power_threshold", None)
+
+    def set_native_value(self, value: float) -> None:
+        """Set the power threshold, clamped to valid range."""
+        clamped = max(
+            self._attr_native_min_value, min(self._attr_native_max_value, value)
+        )
+        self._device.power_threshold = clamped
+
+
+class EnterDurationNumber(SHCEntity, NumberEntity):
+    """NumberEntity for the energy-saving enter duration of a smart plug.
+
+    Number of seconds the plug must draw below the threshold before turning off.
+    Range 1–3600 s, step 1 s.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_native_min_value = 1.0
+    _attr_native_max_value = 3600.0
+    _attr_native_step = 1.0
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the enter duration number."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Energy Saving Enter Duration"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_enter_duration_seconds"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the enter duration in seconds."""
+        val = getattr(self._device, "enter_duration_seconds", None)
+        if val is None:
+            return None
+        return float(val)
+
+    def set_native_value(self, value: float) -> None:
+        """Set the enter duration, clamped to valid range."""
+        clamped = max(
+            self._attr_native_min_value, min(self._attr_native_max_value, value)
+        )
+        self._device.enter_duration_seconds = int(clamped)
+
+
+class LedBrightnessNumber(SHCEntity, NumberEntity):
+    """NumberEntity for the LED brightness of a smart plug.
+
+    Bounds are read from the lib service (min/max/step from device state).
+    Falls back to 0–100 if not yet populated.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the LED brightness number."""
+        super().__init__(device, entry_id)
+        self._attr_name = "LED Brightness"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_led_brightness"
+        )
+
+    @property
+    def native_min_value(self) -> float:
+        """Return min brightness from device service, fallback 0."""
+        svc = getattr(self._device, "_led_brightness_configuration_service", None)
+        if svc is not None:
+            v = getattr(svc, "min_brightness", None)
+            if v is not None:
+                return float(v)
+        return 0.0
+
+    @property
+    def native_max_value(self) -> float:
+        """Return max brightness from device service, fallback 100."""
+        svc = getattr(self._device, "_led_brightness_configuration_service", None)
+        if svc is not None:
+            v = getattr(svc, "max_brightness", None)
+            if v is not None:
+                return float(v)
+        return 100.0
+
+    @property
+    def native_step(self) -> float:
+        """Return step size from device service, fallback 1."""
+        svc = getattr(self._device, "_led_brightness_configuration_service", None)
+        if svc is not None:
+            v = getattr(svc, "step_size", None)
+            if v is not None:
+                return float(v)
+        return 1.0
+
+    @property
+    def native_value(self) -> float | None:
+        """Return current LED brightness."""
+        return getattr(self._device, "led_brightness", None)
+
+    def set_native_value(self, value: float) -> None:
+        """Set the LED brightness."""
+        self._device.led_brightness = value
+
+
+class DisplayBrightnessNumber(SHCEntity, NumberEntity):
+    """NumberEntity for the display brightness of ThermostatGen2 / RoomThermostat2."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the display brightness number."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Display Brightness"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_display_brightness"
+        )
+
+    @property
+    def native_min_value(self) -> float:
+        """Return min brightness from device service, fallback 0."""
+        svc = getattr(self._device, "_display_config_service", None)
+        if svc is not None:
+            v = getattr(svc, "display_brightness_min", None)
+            if v is not None:
+                return float(v)
+        return 0.0
+
+    @property
+    def native_max_value(self) -> float:
+        """Return max brightness from device service, fallback 100."""
+        svc = getattr(self._device, "_display_config_service", None)
+        if svc is not None:
+            v = getattr(svc, "display_brightness_max", None)
+            if v is not None:
+                return float(v)
+        return 100.0
+
+    @property
+    def native_step(self) -> float:
+        """Return step size from device service, fallback 1."""
+        svc = getattr(self._device, "_display_config_service", None)
+        if svc is not None:
+            v = getattr(svc, "display_brightness_step_size", None)
+            if v is not None:
+                return float(v)
+        return 1.0
+
+    @property
+    def native_value(self) -> float | None:
+        """Return current display brightness."""
+        return getattr(self._device, "display_brightness", None)
+
+    def set_native_value(self, value: float) -> None:
+        """Set the display brightness."""
+        self._device.display_brightness = value
+
+
+class DisplayOnTimeNumber(SHCEntity, NumberEntity):
+    """NumberEntity for the display on-time of ThermostatGen2 / RoomThermostat2.
+
+    Display stays lit for this many seconds after interaction. Range from device.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the display on-time number."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Display On Time"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_display_on_time"
+        )
+
+    @property
+    def native_min_value(self) -> float:
+        """Return min on-time from device service, fallback 0."""
+        svc = getattr(self._device, "_display_config_service", None)
+        if svc is not None:
+            v = getattr(svc, "display_on_time_min", None)
+            if v is not None:
+                return float(v)
+        return 0.0
+
+    @property
+    def native_max_value(self) -> float:
+        """Return max on-time from device service, fallback 3600."""
+        svc = getattr(self._device, "_display_config_service", None)
+        if svc is not None:
+            v = getattr(svc, "display_on_time_max", None)
+            if v is not None:
+                return float(v)
+        return 3600.0
+
+    @property
+    def native_step(self) -> float:
+        """Return step size from device service, fallback 1."""
+        svc = getattr(self._device, "_display_config_service", None)
+        if svc is not None:
+            v = getattr(svc, "display_on_time_step_size", None)
+            if v is not None:
+                return float(v)
+        return 1.0
+
+    @property
+    def native_value(self) -> float | None:
+        """Return current display on-time in seconds."""
+        val = getattr(self._device, "display_on_time", None)
+        if val is None:
+            return None
+        return float(val)
+
+    def set_native_value(self, value: float) -> None:
+        """Set the display on-time."""
+        self._device.display_on_time = value

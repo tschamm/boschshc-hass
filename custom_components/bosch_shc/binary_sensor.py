@@ -33,6 +33,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -512,11 +513,18 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
 
     async def async_request_smoketest(self):
         """Request smokedetector test."""
+        from boschshcpy.exceptions import SHCException, SHCConnectionError
         LOGGER.debug("Requesting smoke test on entity %s", self.name)
-        await self._hass.async_add_executor_job(self._device.smoketest_requested)
+        try:
+            await self._hass.async_add_executor_job(self._device.smoketest_requested)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Smoke test request failed for {self.name}: {err}"
+            ) from err
 
     async def async_request_alarmstate(self, command: str):
         """Request smokedetector alarm state."""
+        from boschshcpy.exceptions import SHCException, SHCConnectionError
 
         def set_alarmstate(device, command):
             device.alarmstate = command
@@ -524,7 +532,14 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         LOGGER.debug(
             "Requesting custom alarm state %s on entity %s", command, self.name
         )
-        await self._hass.async_add_executor_job(set_alarmstate, self._device, command)
+        try:
+            await self._hass.async_add_executor_job(
+                set_alarmstate, self._device, command
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Set alarm state failed for {self.name}: {err}"
+            ) from err
 
     @property
     def extra_state_attributes(self):

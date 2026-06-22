@@ -28,6 +28,7 @@ from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
+    TimeSelector,
 )
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
@@ -49,6 +50,10 @@ from .const import (
     OPT_PRESENCE_ENTITY,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
+    OPT_SSL_SKIP_VERIFY,
+    OPT_SILENT_MODE_ENABLED,
+    OPT_SILENT_MODE_START,
+    OPT_SILENT_MODE_END,
 )
 
 # ── Section layout (single source of truth) ──────────────────────────────────
@@ -64,9 +69,13 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
         OPT_PRESENCE_ENTITY,
+        OPT_SILENT_MODE_ENABLED,
+        OPT_SILENT_MODE_START,
+        OPT_SILENT_MODE_END,
     ],
     "advanced": [
         OPT_SSL_VERIFY_HOSTNAME,
+        OPT_SSL_SKIP_VERIFY,
         OPT_LONG_POLL_TIMEOUT,
         OPT_EXCLUDED_DEVICES,
         OPT_EXCLUDED_ROOMS,
@@ -537,6 +546,24 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                                     ],
                                 )
                             ),
+                            vol.Optional(
+                                OPT_SILENT_MODE_ENABLED,
+                                default=current.get(
+                                    OPT_SILENT_MODE_ENABLED, False
+                                ),
+                            ): BooleanSelector(),
+                            vol.Optional(
+                                OPT_SILENT_MODE_START,
+                                default=current.get(
+                                    OPT_SILENT_MODE_START, "22:00:00"
+                                ),
+                            ): TimeSelector(),
+                            vol.Optional(
+                                OPT_SILENT_MODE_END,
+                                default=current.get(
+                                    OPT_SILENT_MODE_END, "06:00:00"
+                                ),
+                            ): TimeSelector(),
                         }
                     ),
                     {"collapsed": False},
@@ -547,6 +574,10 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                             vol.Optional(
                                 OPT_SSL_VERIFY_HOSTNAME,
                                 default=current.get(OPT_SSL_VERIFY_HOSTNAME, False),
+                            ): BooleanSelector(),
+                            vol.Optional(
+                                OPT_SSL_SKIP_VERIFY,
+                                default=current.get(OPT_SSL_SKIP_VERIFY, False),
                             ): BooleanSelector(),
                             vol.Optional(
                                 OPT_LONG_POLL_TIMEOUT,

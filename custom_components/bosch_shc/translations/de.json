@@ -103,15 +103,21 @@
             }
           },
           "presence": {
-            "name": "Anwesenheitsbasierte Kindersicherung",
-            "description": "Sperrt automatisch alle SHC-Thermostate und Schalter, wenn jemand zu Hause ist, und entsperrt sie, wenn alle das Haus verlassen.",
+            "name": "Anwesenheitsbasierte Kindersicherung & Stiller Modus",
+            "description": "Sperrt automatisch alle SHC-Thermostate/Schalter, wenn jemand zu Hause ist, und schaltet Thermostate optional in einem Zeitfenster in den stillen Modus, wenn jemand zu Hause ist.",
             "data": {
               "child_lock_enabled": "Anwesenheitsbasierte Kindersicherung aktivieren",
-              "child_lock_presence_entity": "Anwesenheitsentitäten"
+              "child_lock_presence_entity": "Anwesenheitsentitäten",
+              "silent_mode_enabled": "Stillen Modus per Anwesenheit + Zeitfenster aktivieren",
+              "silent_mode_start": "Startzeit Stiller Modus",
+              "silent_mode_end": "Endzeit Stiller Modus"
             },
             "data_description": {
               "child_lock_enabled": "Hauptschalter. Wenn EIN, folgt die Kindersicherung aller SHC-Thermostate und Schalter den unten gewählten Anwesenheitsentitäten — gesperrt wenn jemand zu Hause ist, entsperrt wenn alle weg sind. Wenn AUS, fasst die Integration die Kindersicherung nie an.",
-              "child_lock_presence_entity": "Die Personen/Geräte, die die Kindersicherung steuern. Sie geht AN, sobald EINE davon zu Hause ist, und AUS erst wenn ALLE weg sind. Wähle z. B. die Personen-Entitäten deines Haushalts. 'Zu Hause' wird automatisch erkannt (home für person/device_tracker/zone/group, on für binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Die Personen/Geräte, die die Kindersicherung steuern. Sie geht AN, sobald EINE davon zu Hause ist, und AUS erst wenn ALLE weg sind. Wähle z. B. die Personen-Entitäten deines Haushalts. 'Zu Hause' wird automatisch erkannt (home für person/device_tracker/zone/group, on für binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Wenn EIN, werden alle stillmodusfähigen SHC-Thermostate in den stillen Modus geschaltet, solange jemand (gemäß den Anwesenheitsentitäten oben) zu Hause ist UND die aktuelle Zeit im Fenster unten liegt; sonst zurück auf normal. Standard: aus.",
+              "silent_mode_start": "Beginn des täglichen Stillmodus-Fensters (Ortszeit). Fenster dürfen über Mitternacht gehen (z. B. 22:00 → 06:00).",
+              "silent_mode_end": "Ende des täglichen Stillmodus-Fensters (Ortszeit)."
             }
           },
           "advanced": {
@@ -121,16 +127,202 @@
               "ssl_verify_hostname": "SHC-Zertifikat-Hostname prüfen",
               "long_poll_timeout": "Long-Poll-Timeout (Sekunden)",
               "excluded_devices": "Ausgeschlossene Geräte",
-              "excluded_rooms": "Ausgeschlossene Räume"
+              "excluded_rooms": "Ausgeschlossene Räume",
+              "ssl_skip_verify": "SHC-Zertifikatsprüfung überspringen"
             },
             "data_description": {
               "ssl_verify_hostname": "Experte: Wenn EIN, wird der Hostname des SHC-TLS-Zertifikats geprüft. Der Hostname des Bosch-SHC-Zertifikats stimmt normalerweise NICHT mit der IP überein, daher bricht das meist die Verbindung — AUS lassen, außer dein Setup passt. Standard: aus.",
               "long_poll_timeout": "Wie lange jede Long-Poll-Anfrage auf Ereignisse wartet, bevor neu verbunden wird. Standard 10. Höher = weniger Reconnects, niedriger wenn das Netz inaktive Verbindungen trennt.",
               "excluded_devices": "Geräte ausblenden — für sie werden keine Entitäten erstellt. Leer = alle einschließen. Bereits angelegte Entitäten ausgeschlossener Geräte bleiben bis zur manuellen Entfernung erhalten.",
-              "excluded_rooms": "Alle Geräte in diesen Bosch-Räumen ausblenden. Leer = alle einschließen."
+              "excluded_rooms": "Alle Geräte in diesen Bosch-Räumen ausblenden. Leer = alle einschließen.",
+              "ssl_skip_verify": "Experte / reine lokale Netze: wenn EIN, wird das SHC-Serverzertifikat nicht mehr geprüft — nützlich, wenn das Zertifikat eines Offline-Controllers abgelaufen ist. Die verschlüsselte Client-Zertifikat-Anmeldung bleibt unberührt. Nur in vertrauenswürdigen lokalen Netzen aktivieren. Standard: aus."
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatisch",
+              "manual": "Manuell",
+              "boost": "Aufheizen",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Rauchmelder-Test"
+      },
+      "walk_test": {
+        "name": "Begehungstest starten"
+      },
+      "walk_test_stop": {
+        "name": "Begehungstest stoppen"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulsdauer"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Energiesparmodus Leistungsschwelle"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Energiesparmodus Einschaltdauer"
+      },
+      "led_brightness": {
+        "name": "LED-Helligkeit"
+      },
+      "display_brightness": {
+        "name": "Display-Helligkeit"
+      },
+      "display_on_time": {
+        "name": "Display-Einschaltdauer"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Bewegungsempfindlichkeit",
+        "state": {
+          "HIGH": "Hoch",
+          "MIDDLE": "Mittel",
+          "LOW": "Niedrig"
+        }
+      },
+      "vibration_sensitivity": {
+        "name": "Vibrationsempfindlichkeit",
+        "state": {
+          "VERY_HIGH": "Sehr hoch",
+          "HIGH": "Hoch",
+          "MEDIUM": "Mittel",
+          "LOW": "Niedrig",
+          "VERY_LOW": "Sehr niedrig"
+        }
+      },
+      "state_after_power_outage": {
+        "name": "Zustand nach Stromausfall",
+        "state": {
+          "OFF": "Aus",
+          "ON": "Ein",
+          "LAST_STATE": "Letzter Zustand"
+        }
+      },
+      "smoke_sensitivity": {
+        "name": "Rauchempfindlichkeit",
+        "state": {
+          "HIGH": "Hoch",
+          "MIDDLE": "Mittel",
+          "LOW": "Niedrig"
+        }
+      },
+      "display_direction": {
+        "name": "Anzeigeausrichtung",
+        "state": {
+          "NORMAL": "Normal",
+          "REVERSED": "Gedreht"
+        }
+      },
+      "displayed_temperature": {
+        "name": "Angezeigte Temperatur",
+        "state": {
+          "SETPOINT": "Sollwert",
+          "MEASURED": "Gemessen"
+        }
+      },
+      "terminal_type": {
+        "name": "Anschlusstyp",
+        "state": {
+          "NOT_CONNECTED": "Nicht angeschlossen",
+          "FLOOR_SENSOR_CONNECTED": "Bodensensor angeschlossen",
+          "FLOOR_SENSOR_USED_FOR_REGULATION": "Bodensensor zur Regelung",
+          "FLOOR_SENSOR_DISPLAYED": "Bodensensor Anzeige",
+          "FLOOR_SENSOR_DISPLAYED_AND_USED_FOR_REGULATION": "Bodensensor Anzeige und Regelung",
+          "VOLT_FREE_SENSOR_CONNECTED": "Potentialfreier Sensor angeschlossen",
+          "VOLT_FREE_SENSOR_CONNECTED_AND_USED_FOR_OPERATION": "Potentialfreier Sensor für Betrieb",
+          "OUTDOOR_SENSOR_CONNECTED": "Außensensor angeschlossen"
+        }
+      },
+      "valve_type": {
+        "name": "Ventiltyp",
+        "state": {
+          "NORMALLY_CLOSE": "Normalerweise geschlossen",
+          "NORMALLY_OPEN": "Normalerweise offen"
+        }
+      },
+      "heater_type": {
+        "name": "Heizungstyp",
+        "state": {
+          "FLOOR_HEATING": "Fußbodenheizung",
+          "FLOOR_HEATING_LOW_ENERGY": "Fußbodenheizung (Niedrigenergie)",
+          "RADIATOR": "Heizkörper",
+          "CONVECTOR_PASSIVE": "Konvektor (passiv)",
+          "CONVECTOR_ACTIVE": "Konvektor (aktiv)"
+        }
+      },
+      "switch_type": {
+        "name": "Schaltertyp",
+        "state": {
+          "NONE": "Kein",
+          "PUSHBUTTON": "Taster",
+          "SWITCH": "Schalter",
+          "NO_SWITCH": "Kein Schalter"
+        }
+      },
+      "actuator_type": {
+        "name": "Aktor-Typ",
+        "state": {
+          "NORMALLY_CLOSED": "Normalerweise geschlossen",
+          "NORMALLY_OPEN": "Normalerweise offen",
+          "UNSUPPORTED": "Nicht unterstützt"
+        }
+      },
+      "output_mode": {
+        "name": "Ausgabemodus",
+        "state": {
+          "ATTACHED": "Gekoppelt",
+          "DETACHED": "Entkoppelt",
+          "DETACHED_SHORT_PRESS": "Entkoppelt (Kurzdruck)",
+          "DETACHED_LONG_PRESS": "Entkoppelt (Langdruck)",
+          "UNSUPPORTED": "Nicht unterstützt"
+        }
+      },
+      "smart_sensitivity_security": {
+        "name": "Sicherheits-Empfindlichkeitsstufe",
+        "state": {
+          "HIGH": "Hoch",
+          "MIDDLE": "Mittel",
+          "LOW": "Niedrig"
+        }
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Komfort-Empfindlichkeitsstufe",
+        "state": {
+          "HIGH": "Hoch",
+          "MIDDLE": "Mittel",
+          "LOW": "Niedrig"
+        }
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Begehungstest-Status"
+      },
+      "battery_level": {
+        "name": "Akkustand"
+      },
+      "combined_rating": {
+        "name": "Gesamtbewertung"
+      },
+      "air_quality_description": {
+        "name": "Luftqualitätsbeschreibung"
       }
     }
   },

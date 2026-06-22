@@ -87,3 +87,11 @@ class TestSHCValveClassAttrs:
     def test_reports_position_is_true(self):
         valve = self._make_valve()
         assert valve.reports_position is True
+
+    def test_no_custom_open_close_in_shcvalve(self):
+        """Valve is read-only: SHCValve does not override open_valve / close_valve."""
+        # SHCValve must NOT define open_valve, close_valve, or set_valve_position
+        # in its own __dict__ (i.e. not overriding the parent no-ops).
+        assert "open_valve" not in SHCValve.__dict__
+        assert "close_valve" not in SHCValve.__dict__
+        assert "set_valve_position" not in SHCValve.__dict__

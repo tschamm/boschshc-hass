@@ -153,8 +153,9 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 
 ## Quality
 
-Targets the [Home Assistant **Bronze** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/) —
-all Bronze rules implemented except `brands` (pending in home-assistant/brands).
+Targets the [Home Assistant **Bronze** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
+All Bronze rules implemented except `brands` (pending in home-assistant/brands).
+All assessed Silver rules complete; remaining Silver rules tracked in `quality_scale.yaml`.
 
 - `local_push` IoT class — no cloud, no polling (camera-type devices update on poll only).
 - Config flow with zeroconf discovery, re-auth, reconfigure and options flow.

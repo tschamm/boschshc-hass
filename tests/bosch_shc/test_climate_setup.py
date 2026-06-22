@@ -171,12 +171,14 @@ class TestAsyncSetupEntry:
         assert isinstance(entities[0], ClimateControl)
 
     def test_climate_control_name_uses_room_name(self):
-        """Line 32-33: entity name = 'Room Climate <room.name>'."""
+        """Device name = 'Room Climate <room.name>'; entity is the primary
+        entity (own name None) so the friendly name is just the device name."""
         dev = _make_cc_device(room_id="r2")
         rooms = {"r2": _make_room("Bedroom")}
         added = self._setup([dev], [], rooms)
         entity = added[0][0]
-        assert entity.name == "Room Climate Bedroom"
+        assert entity.device_name == "Room Climate Bedroom"
+        assert entity._attr_name is None
 
     def test_one_heating_circuit_added(self):
         """Lines 36-43: one heating circuit → one HeatingCircuit entity."""
@@ -239,9 +241,12 @@ class TestClimateControlInit:
         return ClimateControl(device=dev, name="Test Room Climate", entry_id="e1")
 
     def test_init_sets_name(self):
-        """Line 63: self._attr_name = name (ClimateControl stores name in _attr_name)."""
+        """ClimateControl stores the room label in _room_label and keeps
+        _attr_name None (primary entity → friendly name = device name)."""
         entity = self._make_entity()
-        assert entity._attr_name == "Test Room Climate"
+        assert entity._room_label == "Test Room Climate"
+        assert entity._attr_name is None
+        assert entity.device_name == "Test Room Climate"
 
     def test_init_sets_unique_id(self):
         """Line 64: self._attr_unique_id = root_device_id + '_' + id."""
@@ -271,7 +276,8 @@ class TestClimateControlProperties:
         dev = _make_cc_device(**kwargs)
         entity = ClimateControl.__new__(ClimateControl)
         entity._device = dev
-        entity._attr_name = "Prop Test"  # device_name / name reads _attr_name
+        entity._attr_name = "Prop Test"
+        entity._room_label = "Prop Test"  # device_name reads _room_label
         entity._attr_unique_id = f"{dev.root_device_id}_{dev.id}"
         return entity
 

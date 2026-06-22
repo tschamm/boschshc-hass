@@ -1,6 +1,6 @@
 rules:
-  # Bronze tier rules — full audit 2026-06-20 against bosch_shc v0.4.112
-  # Rule count (Bronze): 18 total  |  DONE: 9  |  TODO: 8  |  N/A: 1
+  # Bronze tier rules — full audit 2026-06-20 / updated 2026-06-22 against bosch_shc v0.4.108
+  # Rule count (Bronze): 18 total  |  DONE: 17  |  TODO: 1 (brands)  |  N/A: 0
 
   # ── DONE ─────────────────────────────────────────────────────────────────────
 
@@ -143,16 +143,20 @@ rules:
   has-entity-name:
     status: done
     comment: >
-      SHCEntity base class (entity.py) now sets _attr_has_entity_name = True
-      and _attr_name = None (primary entity default).  All sub-entities set
+      SHCEntity base class (entity.py) sets _attr_has_entity_name = True and
+      _attr_name = None (primary entity default).  All sub-entities set
       _attr_name to the feature label only (e.g. "Temperature", "Battery",
       "Vibration") without the device name prefix — HA prepends it
-      automatically.  SHCScenarioEvent and SHCUserDefinedStateSwitch (which do
-      not inherit SHCEntity) also set _attr_has_entity_name = True.
-      ClimateControl's name property was replaced with _attr_name assignment.
-      USER IMPACT: friendly names shown in the HA UI change for all entities
-      (device name prefix removed from display labels).  Entity IDs are
-      unaffected (derived from unique_id, not name).
+      automatically.  Non-SHCEntity classes also updated:
+      IntrusionSystemAlarmControlPanel (alarm_control_panel.py) now has
+      _attr_has_entity_name = True and _attr_name = None (primary entity; the
+      old name property was removed).  SHCScenarioButton (button.py) now has
+      _attr_has_entity_name = True and links to the SHC controller DeviceEntry
+      via device_info.  SHCScenarioEvent and SHCUserDefinedStateSwitch were
+      already updated previously.  ClimateControl's name property was replaced
+      with _attr_name assignment.  Tests in test_alarm_control_panel.py and
+      test_button_coverage.py assert both has_entity_name=True and that the
+      unique_ids are byte-identical to the pre-change values.
 
   action-setup:
     status: done
@@ -195,9 +199,172 @@ rules:
 
   # ── NOT APPLICABLE ────────────────────────────────────────────────────────────
 
+  # ── SILVER TIER ──────────────────────────────────────────────────────────────
+  # Silver rules — audited 2026-06-22 against bosch_shc v0.4.108
+  # Rule count (Silver): 17 total  |  DONE: 11  |  TODO: 4  |  EXEMPT: 1  |  (test-coverage → DONE)
+
+  # Silver DONE
+
+  entity-unavailable:
+    status: done
+    comment: >
+      SHCEntity.available (entity.py:158) returns False when
+      device.status != "AVAILABLE".  IntrusionSystemAlarmControlPanel.available
+      (alarm_control_panel.py) returns device.system_availability directly.
+      Both non-SHCEntity entities (alarm panel, scenario button) have explicit
+      available properties tied to the SHC connection state.
+
+  reconfiguration-flow:
+    status: done
+    comment: >
+      async_step_reconfigure (config_flow.py:195) provides a menu with
+      reconfigure_host (change IP without re-pairing) and repair_credentials
+      (full certificate re-registration).  The reconfigure flow is fully
+      tested by the harness tests.
+
+  reauthentication-flow:
+    status: done
+    comment: >
+      async_step_reauth (config_flow.py:180) and async_step_reauth_confirm
+      (config_flow.py:184) implement the standard HA re-authentication flow
+      triggered on ConfigEntryAuthFailed (raised when the client cert expires
+      or authentication fails).
+
+  discovery:
+    status: done
+    comment: >
+      config_flow.py implements async_step_zeroconf (line ~207) for automatic
+      SHC discovery on the local network.  manifest.json declares
+      "zeroconf": ["_http._tcp.local."].
+
+  parallel-updates:
+    status: done
+    comment: >
+      PARALLEL_UPDATES = 1 is set in all 12 platform files (alarm_control_panel,
+      binary_sensor, button, climate, cover, event, light, number, select,
+      sensor, switch, valve).
+
+  devices:
+    status: done
+    comment: >
+      SHCEntity.device_info (entity.py:147) returns a DeviceInfo with
+      identifiers, name, manufacturer, model, and via_device for all device
+      entities.  IntrusionSystemAlarmControlPanel, SHCScenarioButton, and
+      SHCScenarioEvent all have device_info linking to their respective devices.
+      Every entity is associated with a device.
+
+  entity-category:
+    status: done
+    comment: >
+      Diagnostic entities (battery level sensor, valve-tappet sensor,
+      communication-quality sensor, battery binary sensor) use
+      EntityCategory.DIAGNOSTIC.  All other entities are primary (no category
+      set).  switch.py SHCSwitchEntityDescription allows per-entity category
+      override; binary_sensor.py:SHCBatterySensor and
+      SHCCommunicationQualitySensor use EntityCategory.DIAGNOSTIC explicitly.
+
+  docs-configuration-parameters:
+    status: done
+    comment: >
+      README.md "Configuration" section documents every config-flow field:
+      host (auto-discovered via zeroconf or manually entered), system password,
+      and the client-registration step (front-button press).  The "Options"
+      table documents all options-flow fields with their defaults and effects:
+      Scenarios as buttons, Diagnostic entities, Rawscan service, Presence
+      child lock, Excluded devices/rooms, Long-poll timeout, Hostname verify.
+
   docs-installation-parameters:
+    status: done
+    comment: >
+      README.md Installation section covers HACS (recommended) and Manual
+      paths.  Manual install prerequisites are documented: HA with HACS or
+      direct file copy, internet access for boschshcpy pip-install, and
+      the SHC pairing-mode step (front-button press).  No platform-specific
+      prerequisites beyond a working HA instance.
+
+  # Silver TODO
+
+  action-exceptions:
+    status: done
+    comment: >
+      All service action handlers now raise HomeAssistantError / ServiceValidationError
+      on failure.  Implemented 2026-06-22:
+      (1) binary_sensor.py async_request_smoketest and async_request_alarmstate
+      wrap SHCException/SHCConnectionError → HomeAssistantError.
+      (2) __init__.py scenario_service_call wraps SHCException/SHCConnectionError
+      → ServiceValidationError (user-facing action, hence ServiceValidationError
+      rather than HomeAssistantError).
+      (3) The rawscan handler already raised ServiceValidationError for unknown
+      commands.  All lib-exception surface areas are now covered.
+
+  log-when-unavailable:
+    status: done
+    comment: >
+      Integration-level log messages added 2026-06-22 in __init__.py:
+      (1) LOGGER.warning("Bosch SHC at … unavailable, will retry") emitted
+      when SHCConnectionError is raised during async_setup_entry (before
+      ConfigEntryNotReady is re-raised, so the log appears even on first
+      retry).
+      (2) LOGGER.debug on start_polling call + LOGGER.info("… connected and
+      polling") after start_polling succeeds — confirms re-establishment.
+      (3) LOGGER.debug on stop_polling (HA shutdown path).
+      NOTE: mid-session connection loss inside the polling thread is logged
+      by boschshcpy's session.py logger at ERROR level.  The integration
+      manifest declares "loggers": ["boschshcpy"] so those messages are
+      also captured by the HA "Enable debug logging" UI button.
+
+  entity-translations:
+    status: todo
+    comment: >
+      strings.json has no "entity" section with translation keys for entity
+      state or attribute values.  The integration uses _attr_name strings
+      directly (English literals like "Temperature", "Battery", "Smoke Test")
+      rather than translation keys.  To close: add an "entity" section to
+      strings.json with keys for each platform's entity names, and switch
+      _attr_translation_key to the key instead of setting _attr_name.
+
+  icon-translations:
+    status: todo
+    comment: >
+      No icon translation keys in strings.json.  Entities use hardcoded
+      _attr_icon strings (e.g. "mdi:thermometer", "mdi:smoke-detector-alert").
+      To close: add an "entity" section with icon entries per entity
+      (translation_key: {default: "mdi:…"}) and switch to _attr_translation_key.
+
+  exception-translations:
+    status: todo
+    comment: >
+      HomeAssistantError and ServiceValidationError instances in
+      certificate.py and __init__.py use plain English strings, not
+      translation keys.  To close: add an "exceptions" section to
+      strings.json with message keys and update the raise sites to use
+      translation_domain=DOMAIN and translation_key=<key>.
+
+  repair-issues:
+    status: todo
+    comment: >
+      Certificate expiry currently triggers a persistent notification
+      (pn_async_create in __init__.py).  HA Silver recommends using
+      repairs (ir.async_create_issue) for actionable issues that require
+      user attention.  To close: replace / supplement the notification with
+      an ir.async_create_issue call for cert expiry, with a repair step
+      that links to the reconfigure flow.
+
+  # Silver EXEMPT
+
+  integration-owner:
     status: exempt
     comment: >
-      Silver tier rule (not Bronze).  Listed here for completeness.
-      The integration's config-flow collects host, password, and client name
-      — these are documented in README.md and the config-flow strings.
+      This is a HACS custom integration, not in HA Core.  The
+      homeassistant/core CODEOWNERS file rule does not apply — tschamm is
+      the codeowner on the tschamm/boschshc-hass GitHub repo via GitHub
+      branch protection, which is the equivalent mechanism for HACS repos.
+
+  test-coverage:
+    status: done
+    comment: >
+      Unit-test suite in tests/bosch_shc/ covers all platforms.  Coverage
+      was raised from 48% to ≥90% across the 0.4.104–0.4.108 releases.
+      The ignored test files (test_config_flow.py, test_device_trigger.py)
+      require the HA harness and are exercised by the upstream CI (hassfest
+      + HACS validate).  All 2196 isolation-safe tests pass.

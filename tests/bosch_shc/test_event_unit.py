@@ -22,6 +22,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from custom_components.bosch_shc.event import (
+    LightControlButtonEvent,
     MotionDetectorEvent,
     SmokeDetectionSystemEvent,
     SmokeDetectorEvent,
@@ -887,3 +888,73 @@ class TestEventEntityStructure:
     def test_smoke_detector_is_event_entity(self):
         from homeassistant.components.event import EventEntity
         assert issubclass(SmokeDetectorEvent, EventEntity)
+
+
+# ---------------------------------------------------------------------------
+# LightControlButtonEvent (#282)
+# ---------------------------------------------------------------------------
+
+
+def _make_light_control_event(
+    eventtype=_PRESS_SHORT,
+    eventtimestamp: int = 1000,
+    last_fired: int = -1,
+):
+    entity = LightControlButtonEvent.__new__(LightControlButtonEvent)
+    entity._device = SimpleNamespace(
+        name="Lichtsteuerung",
+        id="hdm:lc:1",
+        root_device_id="root:1",
+        eventtype=eventtype,
+        eventtimestamp=eventtimestamp,
+        device_services=[],
+        deleted=False,
+        manufacturer="Bosch",
+        device_model="MICROMODULE_LIGHT_ATTACHED",
+        status="AVAILABLE",
+    )
+    entity._last_fired_timestamp = last_fired
+    entity.entity_id = "event.lichtsteuerung_button"
+    entity.hass = _make_hass_sync()
+    entity._trigger_event = MagicMock()
+    entity.schedule_update_ha_state = MagicMock()
+    return entity
+
+
+class TestLightControlButtonEvent:
+    def test_fires_on_press(self):
+        e = _make_light_control_event(eventtype=_PRESS_SHORT, eventtimestamp=42)
+        e._event_callback()
+        e._trigger_event.assert_called_once()
+        args = e._trigger_event.call_args[0]
+        assert args[0] == "PRESS_SHORT"
+        assert args[1][ATTR_LAST_TIME_TRIGGERED] == 42
+
+    def test_switch_on_event_fires(self):
+        e = _make_light_control_event(eventtype=_SWITCH_ON, eventtimestamp=7)
+        e._event_callback()
+        assert e._trigger_event.call_args[0][0] == "SWITCH_ON"
+
+    def test_none_eventtype_no_op(self):
+        e = _make_light_control_event(eventtype=None)
+        e._event_callback()
+        e._trigger_event.assert_not_called()
+
+    def test_unknown_type_ignored(self):
+        e = _make_light_control_event(eventtype=SimpleNamespace(name="MOTION"))
+        e._event_callback()
+        e._trigger_event.assert_not_called()
+
+    def test_duplicate_timestamp_suppressed(self):
+        e = _make_light_control_event(eventtimestamp=99, last_fired=99)
+        e._event_callback()
+        e._trigger_event.assert_not_called()
+
+    def test_advancing_timestamp_updates_guard(self):
+        e = _make_light_control_event(eventtimestamp=5, last_fired=-1)
+        e._event_callback()
+        assert e._last_fired_timestamp == 5
+
+    def test_is_event_entity(self):
+        from homeassistant.components.event import EventEntity
+        assert issubclass(LightControlButtonEvent, EventEntity)

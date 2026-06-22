@@ -46,6 +46,13 @@ OPT_PRESENCE_ENTITY = "child_lock_presence_entity"
 OPT_PRESENCE_STATE = "child_lock_present_state"
 OPT_EXCLUDED_DEVICES = "excluded_devices"
 OPT_EXCLUDED_ROOMS = "excluded_rooms"
+# #264: opt-in skip of SHC server-certificate verification (expired cert on an
+# offline local-only controller). mTLS client-cert auth is unaffected.
+OPT_SSL_SKIP_VERIFY = "ssl_skip_verify"
+# Presence + time-window driven silent mode (mirrors the child-lock feature).
+OPT_SILENT_MODE_ENABLED = "silent_mode_enabled"
+OPT_SILENT_MODE_START = "silent_mode_start"
+OPT_SILENT_MODE_END = "silent_mode_end"
 
 # Certificate handling
 CERT_EXPIRY_WARNING_DAYS = 30

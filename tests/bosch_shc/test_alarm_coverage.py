@@ -201,9 +201,11 @@ class TestAlarmActions:
 # ---------------------------------------------------------------------------
 
 class TestAlarmPanelProperties:
-    def test_name_returns_device_name(self):
+    def test_has_entity_name_true_and_attr_name_none(self):
+        """has_entity_name=True + _attr_name=None: HA displays the device name as entity name."""
         p = _make_panel(name="My Alarm")
-        assert p.name == "My Alarm"
+        assert p._attr_has_entity_name is True
+        assert p._attr_name is None
 
     def test_device_id_returns_device_id(self):
         p = _make_panel(device_id="dev-99")

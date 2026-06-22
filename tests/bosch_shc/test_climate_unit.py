@@ -8,20 +8,21 @@ Pattern: Cls.__new__(Cls) + SimpleNamespace fake device; asyncio.run() for async
 import asyncio
 from types import SimpleNamespace
 
-import pytest
-
 from boschshcpy import SHCHeatingCircuit
 from boschshcpy.services_impl import RoomClimateControlService
 from homeassistant.components.climate.const import (
     HVACMode,
     HVACAction,
-    PRESET_BOOST,
-    PRESET_ECO,
-    PRESET_NONE,
 )
 from homeassistant.const import ATTR_TEMPERATURE
 
-from custom_components.bosch_shc.climate import ClimateControl, HeatingCircuit
+from custom_components.bosch_shc.climate import (
+    ClimateControl,
+    HeatingCircuit,
+    PRESET_MANUAL,
+    PRESET_BOOST,
+    PRESET_ECO,
+)
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -114,21 +115,23 @@ class TestSetHvacModeEcoGuard:
 
     Old behaviour: returned early when preset==ECO → mode change silently no-oped.
     New behaviour: clears low=False first, then proceeds with the requested mode.
+
+    PR #329: AUTO is now a preset, not an hvac_mode. Use HEAT to test the ECO-exit path.
     """
 
     def test_set_hvac_mode_in_eco_exits_eco_and_writes_mode(self):
-        """#196: In ECO, AUTO mode must clear low and set operation_mode=AUTOMATIC."""
+        """#196: In ECO, HEAT mode must clear low and set summer_mode=False."""
         device = _make_cc_device(low=True, operation_mode_value="MANUAL")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
+        _run(entity.async_set_hvac_mode(HVACMode.HEAT))
 
-        # ECO is exited first, then AUTO is applied
+        # ECO is exited first, then HEAT is applied
         assert writes.get("low") is False, "ECO (low) must be cleared"
-        assert writes.get("operation_mode") == OM_CC.AUTOMATIC, (
-            "operation_mode must be set to AUTOMATIC"
+        assert writes.get("summer_mode") is False, (
+            "summer_mode must be set to False for HEAT"
         )
 
 
@@ -136,51 +139,58 @@ class TestSetHvacModeEcoGuard:
 # ClimateControl — async_set_preset_mode (lines 261-295)
 # ===========================================================================
 
-class TestSetPresetModeNone:
-    """PRESET_NONE: clears boost_mode (if active) and low (if active)."""
+class TestSetPresetModeManual:
+    """PRESET_MANUAL: clears boost_mode (if active) and low (if active), sets operation_mode=MANUAL.
 
-    def test_none_clears_boost_mode(self):
-        device = _make_cc_device(boost_mode=True, low=False, supports_boost_mode=True)
+    PR #329: PRESET_NONE is replaced by PRESET_MANUAL (regulation axis).
+    """
+
+    def test_manual_clears_boost_mode(self):
+        device = _make_cc_device(boost_mode=True, low=False, supports_boost_mode=True,
+                                 operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_preset_mode(PRESET_NONE))
+        _run(entity.async_set_preset_mode(PRESET_MANUAL))
 
         assert writes.get("boost_mode") is False
 
-    def test_none_clears_low_when_low_is_true(self):
-        device = _make_cc_device(boost_mode=False, low=True, supports_boost_mode=True)
+    def test_manual_clears_low_when_low_is_true(self):
+        device = _make_cc_device(boost_mode=False, low=True, supports_boost_mode=True,
+                                 operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_preset_mode(PRESET_NONE))
+        _run(entity.async_set_preset_mode(PRESET_MANUAL))
 
         assert writes.get("low") is False
 
-    def test_none_no_write_when_already_none(self):
-        device = _make_cc_device(boost_mode=False, low=False, supports_boost_mode=True)
+    def test_manual_no_boost_write_when_not_in_boost(self):
+        device = _make_cc_device(boost_mode=False, low=False, supports_boost_mode=True,
+                                 operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_preset_mode(PRESET_NONE))
+        _run(entity.async_set_preset_mode(PRESET_MANUAL))
 
-        # Neither boost_mode nor low was active → no writes needed
+        # boost was already False → no write
         assert "boost_mode" not in writes
-        assert "low" not in writes
 
-    def test_none_clears_both_boost_and_low(self):
-        device = _make_cc_device(boost_mode=True, low=True, supports_boost_mode=True)
+    def test_manual_clears_both_boost_and_low(self):
+        device = _make_cc_device(boost_mode=True, low=True, supports_boost_mode=True,
+                                 operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_preset_mode(PRESET_NONE))
+        _run(entity.async_set_preset_mode(PRESET_MANUAL))
 
         assert writes.get("boost_mode") is False
         assert writes.get("low") is False
+        assert writes.get("operation_mode") == OM_CC.MANUAL
 
     def test_invalid_preset_mode_is_ignored(self):
         device = _make_cc_device()
@@ -194,7 +204,11 @@ class TestSetPresetModeNone:
 
 
 class TestSetPresetModeBoost:
-    """PRESET_BOOST: sets boost_mode=True; clears low if active."""
+    """PRESET_BOOST: sets boost_mode=True.
+
+    PR #329: new impl always writes boost_mode=True (no idempotency guard).
+    Low is not cleared by the boost write itself (eco and boost are separate presets).
+    """
 
     def test_boost_sets_boost_mode(self):
         device = _make_cc_device(boost_mode=False, low=False, supports_boost_mode=True)
@@ -206,7 +220,8 @@ class TestSetPresetModeBoost:
 
         assert writes.get("boost_mode") is True
 
-    def test_boost_already_active_no_redundant_write(self):
+    def test_boost_writes_even_if_already_active(self):
+        # New impl: no idempotency guard, always writes
         device = _make_cc_device(boost_mode=True, low=False, supports_boost_mode=True)
         entity = _make_cc(device)
         hass, writes = _make_hass()
@@ -214,20 +229,11 @@ class TestSetPresetModeBoost:
 
         _run(entity.async_set_preset_mode(PRESET_BOOST))
 
-        assert "boost_mode" not in writes
+        assert writes.get("boost_mode") is True
 
-    def test_boost_clears_low_when_low_active(self):
+    def test_boost_no_low_write(self):
+        # New impl: boost does not touch low
         device = _make_cc_device(boost_mode=False, low=True, supports_boost_mode=True)
-        entity = _make_cc(device)
-        hass, writes = _make_hass()
-        entity.hass = hass
-
-        _run(entity.async_set_preset_mode(PRESET_BOOST))
-
-        assert writes.get("low") is False
-
-    def test_boost_no_low_write_when_already_false(self):
-        device = _make_cc_device(boost_mode=False, low=False, supports_boost_mode=True)
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
@@ -238,7 +244,10 @@ class TestSetPresetModeBoost:
 
 
 class TestSetPresetModeEco:
-    """PRESET_ECO: sets low=True; clears boost_mode if active."""
+    """PRESET_ECO: sets low=True; clears boost_mode if active.
+
+    PR #329: new impl always writes low=True (no idempotency guard).
+    """
 
     def test_eco_sets_low(self):
         device = _make_cc_device(boost_mode=False, low=False, supports_boost_mode=True)
@@ -250,7 +259,8 @@ class TestSetPresetModeEco:
 
         assert writes.get("low") is True
 
-    def test_eco_already_low_no_redundant_write(self):
+    def test_eco_writes_low_even_if_already_low(self):
+        # New impl: no idempotency guard, always writes low=True
         device = _make_cc_device(boost_mode=False, low=True, supports_boost_mode=True)
         entity = _make_cc(device)
         hass, writes = _make_hass()
@@ -258,7 +268,7 @@ class TestSetPresetModeEco:
 
         _run(entity.async_set_preset_mode(PRESET_ECO))
 
-        assert "low" not in writes
+        assert writes.get("low") is True
 
     def test_eco_clears_boost_when_active(self):
         device = _make_cc_device(boost_mode=True, low=False, supports_boost_mode=True)
@@ -553,7 +563,6 @@ class TestHvacAction:
 
     def _entity(self, *, summer_mode=False, has_demand=False,
                 operation_mode_value="AUTOMATIC", supports_cooling=False):
-        from homeassistant.components.climate.const import HVACAction
         device = SimpleNamespace(
             summer_mode=summer_mode,
             has_demand=has_demand,
@@ -635,7 +644,10 @@ class TestTurnOffFromEco:
         assert writes.get("summer_mode") is True
 
     def test_set_hvac_mode_heat_from_eco_clears_eco(self):
-        """async_set_hvac_mode(HEAT) in ECO must clear low before setting operation_mode."""
+        """async_set_hvac_mode(HEAT) in ECO must clear low before setting summer_mode=False.
+
+        PR #329: HEAT no longer writes operation_mode; it only sets summer_mode=False.
+        """
         device = _make_cc_device(low=True, summer_mode=False,
                                  operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
@@ -645,20 +657,23 @@ class TestTurnOffFromEco:
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
 
         assert writes.get("low") is False
-        assert writes.get("operation_mode") == OM_CC.MANUAL
+        assert writes.get("summer_mode") is False
 
-    def test_set_hvac_mode_auto_from_eco_clears_eco(self):
-        """async_set_hvac_mode(AUTO) in ECO must clear low before writing."""
+    def test_set_hvac_mode_off_from_eco_clears_eco_via_preset(self):
+        """async_set_hvac_mode(OFF) in ECO must clear low and set summer_mode.
+
+        PR #329: AUTO is now a preset. Use OFF to verify eco-exit + direction change.
+        """
         device = _make_cc_device(low=True, summer_mode=False,
                                  operation_mode_value="MANUAL")
         entity = _make_cc(device)
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
+        _run(entity.async_set_hvac_mode(HVACMode.OFF))
 
         assert writes.get("low") is False
-        assert writes.get("operation_mode") == OM_CC.AUTOMATIC
+        assert writes.get("summer_mode") is True
 
     def test_set_hvac_mode_not_in_eco_does_not_touch_low(self):
         """When not in ECO, low must not be written."""
@@ -668,7 +683,7 @@ class TestTurnOffFromEco:
         hass, writes = _make_hass()
         entity.hass = hass
 
-        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
+        _run(entity.async_set_hvac_mode(HVACMode.HEAT))
 
         assert "low" not in writes, "low must not be touched when not in ECO"
 
@@ -677,14 +692,14 @@ class TestTurnOffFromEco:
 # P2-C — COOL branch now also writes operation_mode=MANUAL
 # ===========================================================================
 
-class TestCoolSetsOperationMode:
-    """P2-C: switching to COOL must write cooling_mode=True AND operation_mode=MANUAL.
+class TestCoolSetsDirectionAxis:
+    """PR #329: COOL sets cooling_mode=True + summer_mode=False (direction axis only).
 
-    Without the operation_mode write, a stale AUTOMATIC mode could confuse the
-    SHC device logic when roomControlMode=COOLING.
+    operation_mode (regulation axis) is NOT touched by set_hvac_mode; it is managed
+    via set_preset_mode. The old P2-C MANUAL write is removed.
     """
 
-    def test_cool_writes_cooling_mode_and_operation_mode_manual(self):
+    def test_cool_writes_cooling_mode_and_summer_false(self):
         device = _make_cc_device(
             summer_mode=False,
             supports_cooling=True,
@@ -698,12 +713,12 @@ class TestCoolSetsOperationMode:
         _run(entity.async_set_hvac_mode(HVACMode.COOL))
 
         assert writes.get("cooling_mode") is True, "cooling_mode must be set to True"
-        assert writes.get("operation_mode") == OM_CC.MANUAL, (
-            "operation_mode must be set to MANUAL when entering COOL mode"
-        )
         assert writes.get("summer_mode") is False, "summer_mode must be cleared"
+        assert "operation_mode" not in writes, (
+            "operation_mode must NOT be written by set_hvac_mode in PR #329 design"
+        )
 
-    def test_cool_from_eco_exits_eco_and_sets_cooling_and_operation(self):
+    def test_cool_from_eco_exits_eco_and_sets_cooling(self):
         """From ECO, switching to COOL should also clear low first."""
         device = _make_cc_device(
             low=True,
@@ -720,4 +735,4 @@ class TestCoolSetsOperationMode:
 
         assert writes.get("low") is False
         assert writes.get("cooling_mode") is True
-        assert writes.get("operation_mode") == OM_CC.MANUAL
+        assert writes.get("summer_mode") is False

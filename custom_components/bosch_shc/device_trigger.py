@@ -95,7 +95,7 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
                     case "SWITCH2":
                         for subtype in INPUTS_EVENTS_SUBTYPES_SWITCH2:
                             input_triggers.append((trigger, subtype))
-                    case _:
+                    case _:  # pragma: no cover — unreachable: outer guard checks WRC2/SWITCH2
                         LOGGER.debug(
                             "Device type %s unknown, no triggers added.", dev_type
                         )
