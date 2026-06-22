@@ -150,8 +150,6 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automatic",
-              "manual": "Manual",
               "boost": "Boost",
               "eco": "Eco"
             }

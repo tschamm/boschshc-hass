@@ -158,9 +158,9 @@ class SHCRelayButton(SHCEntity, ButtonEntity):
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
 
-    def press(self) -> None:
-        """Triggers impulse."""
-        self._device.trigger_impulse_state()
+    async def async_press(self) -> None:
+        """Trigger the relay impulse (awaited — the session is async; #336)."""
+        await self._device.async_trigger_impulse_state()
 
 
 class SHCSmokeTestButton(SHCEntity, ButtonEntity):
@@ -174,9 +174,9 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):
         self._attr_name = "Smoke Test"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_test"
 
-    def press(self) -> None:
-        """Trigger the device self-test."""
-        self._device.smoketest_requested()
+    async def async_press(self) -> None:
+        """Trigger the device self-test (awaited — the session is async; #336)."""
+        await self._device.async_smoketest_requested()
 
 
 class SHCScenarioButton(ButtonEntity):
@@ -217,9 +217,9 @@ class SHCScenarioButton(ButtonEntity):
             "model": self._shc_device.model,
         }
 
-    def press(self) -> None:
-        """Trigger the scenario (runs in executor — scenario.trigger() is sync)."""
-        self._scenario.trigger()
+    async def async_press(self) -> None:
+        """Trigger the scenario (awaited — the session is async; #336)."""
+        await self._scenario.async_trigger()
 
 
 class SHCWalkTestButton(SHCEntity, ButtonEntity):

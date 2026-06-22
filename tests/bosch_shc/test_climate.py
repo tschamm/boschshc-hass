@@ -15,10 +15,8 @@
        by design (the device is not supported in boschshcpy). Documented, no
        code change needed.
 
-PR #329 (jumlu) — direction/regulation axis split:
-       hvac_mode maps the direction axis (HEAT/COOL/OFF).
-       preset_mode maps the regulation axis (auto/manual/boost/eco).
-       AUTO is no longer an hvac_mode; it is expressed as preset "auto".
+#334 — AUTOMATIC is HVACMode.AUTO (not a preset); presets are override-only
+       (boost/eco). AUTO removed from preset_modes; added to hvac_modes.
 """
 
 import asyncio
@@ -30,11 +28,10 @@ import pytest
 from boschshcpy.exceptions import JSONRPCError, SHCException
 from custom_components.bosch_shc.climate import (
     ClimateControl,
-    PRESET_AUTO,
-    PRESET_MANUAL,
     PRESET_BOOST,
     PRESET_ECO,
 )
+from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import ATTR_TEMPERATURE
 
 
@@ -183,11 +180,17 @@ class TestEcoPreset:
         entity = _make_entity(device)
         assert entity.preset_mode == PRESET_ECO
 
-    def test_preset_mode_auto_when_not_low_not_boost(self):
-        # Default _make_device uses operation_mode_value="AUTOMATIC" → preset "auto"
+    def test_preset_mode_none_when_automatic(self):
+        # #334: AUTOMATIC → HVACMode.AUTO, no preset
         device = _make_device(low=False, boost_mode=False, operation_mode_value="AUTOMATIC")
         entity = _make_entity(device)
-        assert entity.preset_mode == PRESET_AUTO
+        assert entity.preset_mode is None
+
+    def test_preset_mode_none_when_manual(self):
+        # #334: MANUAL → HVACMode.HEAT, no preset
+        device = _make_device(low=False, boost_mode=False, operation_mode_value="MANUAL")
+        entity = _make_entity(device)
+        assert entity.preset_mode is None
 
     def test_eco_set_temperature_writes_setpoint(self):
         """P2-B: ECO no longer blocks setpoint writes — setpoint IS written. #196"""
@@ -276,52 +279,51 @@ def _make_device_cooling(
 
 
 class TestCoolingHvacMode:
-    """PR #304: hvac_mode returns COOL when supports_cooling and cooling_mode."""
+    """PR #304 / #334: hvac_mode returns COOL when supports_cooling and cooling_mode."""
 
     def test_hvac_mode_cool_when_cooling_active(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True, cooling_mode=True)
         entity = _make_entity(device)
         assert entity.hvac_mode == HVACMode.COOL
 
-    def test_hvac_mode_heat_when_not_cooling_not_summer(self):
-        # PR #329: AUTO is no longer an hvac_mode; AUTOMATIC operation_mode → preset "auto"
-        # but hvac_mode is still HEAT (direction axis not affected by regulation mode)
-        from homeassistant.components.climate.const import HVACMode
+    def test_hvac_mode_auto_when_not_cooling_not_summer_automatic(self):
+        # #334: AUTOMATIC operation_mode → HVACMode.AUTO
         device = _make_device_cooling(supports_cooling=True, cooling_mode=False,
                                       operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
+        assert entity.hvac_mode == HVACMode.AUTO
+
+    def test_hvac_mode_heat_when_not_cooling_not_summer_manual(self):
+        # MANUAL operation_mode → HVACMode.HEAT
+        device = _make_device_cooling(supports_cooling=True, cooling_mode=False,
+                                      operation_mode_value="MANUAL")
         entity = _make_entity(device)
         assert entity.hvac_mode == HVACMode.HEAT
 
     def test_hvac_modes_includes_cool_when_supported(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True)
         entity = _make_entity(device)
         assert HVACMode.COOL in entity.hvac_modes
 
     def test_hvac_modes_excludes_cool_when_not_supported(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=False)
         entity = _make_entity(device)
         assert HVACMode.COOL not in entity.hvac_modes
 
     def test_set_hvac_mode_cool_sets_cooling_mode(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True, cooling_mode=False)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
         device.async_set_cooling_mode.assert_awaited_with(True)
         device.async_set_summer_mode.assert_awaited_with(False)
 
-    def test_hvac_modes_does_not_include_auto(self):
-        # PR #329: AUTO is no longer an hvac_mode; it is the "auto" preset
-        from homeassistant.components.climate.const import HVACMode
+    def test_hvac_modes_includes_auto(self):
+        # #334: AUTO is always present in hvac_modes for ClimateControl
         device = _make_device_cooling(supports_cooling=True)
         entity = _make_entity(device)
-        assert HVACMode.AUTO not in entity.hvac_modes
+        assert HVACMode.AUTO in entity.hvac_modes
 
     def test_set_hvac_mode_heat_clears_cooling_mode(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True, cooling_mode=True,
                                       operation_mode_value="MANUAL")
         entity = _make_entity(device)
@@ -329,7 +331,6 @@ class TestCoolingHvacMode:
         device.async_set_cooling_mode.assert_awaited_with(False)
 
     def test_set_hvac_mode_off_clears_cooling_mode(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True, cooling_mode=True)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
@@ -338,64 +339,54 @@ class TestCoolingHvacMode:
 
 
 # ---------------------------------------------------------------------------
-# PR #329 (jumlu) — direction/regulation axis split
-# hvac_mode = direction axis; preset_mode = regulation axis
+# #334 — HVACMode.AUTO back as hvac_mode; preset axis is override-only
 # ---------------------------------------------------------------------------
 
 class TestHvacModeDirectionAxis:
-    """hvac_mode maps the Bosch direction axis: summer→OFF, cooling→COOL, else→HEAT."""
+    """#334: hvac_mode maps AUTOMATIC→AUTO, MANUAL→HEAT, summer→OFF, cooling→COOL."""
 
-    def test_hvac_mode_heat(self):
-        from homeassistant.components.climate.const import HVACMode
-        device = _make_device(summer_mode=False, cooling_mode=False, supports_cooling=False)
+    def test_hvac_mode_auto_when_automatic(self):
+        device = _make_device(summer_mode=False, operation_mode_value="AUTOMATIC",
+                              supports_cooling=False)
+        entity = _make_entity(device)
+        assert entity.hvac_mode == HVACMode.AUTO
+
+    def test_hvac_mode_heat_when_manual(self):
+        device = _make_device(summer_mode=False, operation_mode_value="MANUAL",
+                              supports_cooling=False)
         entity = _make_entity(device)
         assert entity.hvac_mode == HVACMode.HEAT
 
     def test_hvac_mode_cool(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=False, cooling_mode=True, supports_cooling=True)
         entity = _make_entity(device)
         assert entity.hvac_mode == HVACMode.COOL
 
     def test_hvac_mode_off(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=True)
         entity = _make_entity(device)
         assert entity.hvac_mode == HVACMode.OFF
 
+    def test_hvac_modes_always_includes_auto(self):
+        device = _make_device(supports_cooling=False)
+        entity = _make_entity(device)
+        assert HVACMode.AUTO in entity.hvac_modes
+
     def test_hvac_modes_heat_and_off_always_present(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device(supports_cooling=False)
         entity = _make_entity(device)
         assert HVACMode.HEAT in entity.hvac_modes
         assert HVACMode.OFF in entity.hvac_modes
 
     def test_hvac_modes_cool_only_when_supported(self):
-        from homeassistant.components.climate.const import HVACMode
         device_with = _make_device(supports_cooling=True)
         device_without = _make_device(supports_cooling=False)
         assert HVACMode.COOL in _make_entity(device_with).hvac_modes
         assert HVACMode.COOL not in _make_entity(device_without).hvac_modes
 
-    def test_hvac_modes_no_auto(self):
-        from homeassistant.components.climate.const import HVACMode
-        device = _make_device(supports_cooling=True)
-        entity = _make_entity(device)
-        assert HVACMode.AUTO not in entity.hvac_modes
 
-
-class TestPresetModeRegulationAxis:
-    """preset_mode maps the Bosch regulation axis: boost/eco override AUTOMATIC/MANUAL."""
-
-    def test_preset_mode_auto(self):
-        device = _make_device(operation_mode_value="AUTOMATIC", boost_mode=False, low=False)
-        entity = _make_entity(device)
-        assert entity.preset_mode == PRESET_AUTO
-
-    def test_preset_mode_manual(self):
-        device = _make_device(operation_mode_value="MANUAL", boost_mode=False, low=False)
-        entity = _make_entity(device)
-        assert entity.preset_mode == PRESET_MANUAL
+class TestPresetModeOverrideAxis:
+    """#334: preset_mode is override-only: boost/eco. auto/manual removed."""
 
     def test_preset_mode_boost_takes_priority(self):
         # boost_mode=True wins over operation_mode
@@ -408,11 +399,17 @@ class TestPresetModeRegulationAxis:
         entity = _make_entity(device)
         assert entity.preset_mode == PRESET_ECO
 
-    def test_preset_modes_always_includes_auto_and_manual(self):
-        device = _make_device()
+    def test_preset_mode_none_when_automatic(self):
+        # #334: AUTOMATIC → HVACMode.AUTO (no preset)
+        device = _make_device(operation_mode_value="AUTOMATIC", boost_mode=False, low=False)
         entity = _make_entity(device)
-        assert PRESET_AUTO in entity.preset_modes
-        assert PRESET_MANUAL in entity.preset_modes
+        assert entity.preset_mode is None
+
+    def test_preset_mode_none_when_manual(self):
+        # #334: MANUAL → HVACMode.HEAT (no preset)
+        device = _make_device(operation_mode_value="MANUAL", boost_mode=False, low=False)
+        entity = _make_entity(device)
+        assert entity.preset_mode is None
 
     def test_preset_modes_includes_boost_when_supported(self):
         device = _make_device(supports_boost_mode=True)
@@ -444,21 +441,57 @@ class TestPresetModeRegulationAxis:
             # NOTE: no `low` attribute
         )
         entity = _make_entity(device)
-        assert PRESET_ECO not in entity.preset_modes
+        assert entity.preset_modes is None or PRESET_ECO not in (entity.preset_modes or [])
+
+    def test_preset_modes_none_when_no_presets(self):
+        """When supports_boost_mode=False and no low attribute, preset_modes is None."""
+        from types import SimpleNamespace
+        from boschshcpy.services_impl import RoomClimateControlService
+        op = RoomClimateControlService.OperationMode("AUTOMATIC")
+        device = SimpleNamespace(
+            boost_mode=False,
+            summer_mode=False,
+            supports_boost_mode=False,
+            supports_cooling=False,
+            cooling_mode=False,
+            setpoint_temperature=20.0,
+            temperature=19.0,
+            operation_mode=op,
+            root_device_id="test-root",
+            id="test-id",
+        )
+        entity = _make_entity(device)
+        assert entity.preset_modes is None
 
 
 class TestSetHvacModeNew:
-    """Tests for async_set_hvac_mode with the direction-axis design."""
+    """Tests for async_set_hvac_mode with the #334 design."""
 
-    def test_set_hvac_mode_heat_sets_summer_false(self):
-        from homeassistant.components.climate.const import HVACMode
-        device = _make_device(summer_mode=True, supports_cooling=False)
+    def test_set_hvac_mode_auto_sets_automatic(self):
+        """#334: AUTO sets operationMode=AUTOMATIC."""
+        from boschshcpy.services_impl import RoomClimateControlService
+        device = _make_device(summer_mode=False, supports_cooling=False,
+                              operation_mode_value="MANUAL")
+        entity = _make_entity(device)
+        _run_async(entity.async_set_hvac_mode(HVACMode.AUTO))
+        device.async_set_operation_mode.assert_awaited_with(
+            RoomClimateControlService.OperationMode.AUTOMATIC
+        )
+        device.async_set_summer_mode.assert_awaited_with(False)
+
+    def test_set_hvac_mode_heat_sets_manual(self):
+        """#334: HEAT sets operationMode=MANUAL."""
+        from boschshcpy.services_impl import RoomClimateControlService
+        device = _make_device(summer_mode=False, supports_cooling=False,
+                              operation_mode_value="AUTOMATIC")
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
+        device.async_set_operation_mode.assert_awaited_with(
+            RoomClimateControlService.OperationMode.MANUAL
+        )
         device.async_set_summer_mode.assert_awaited_with(False)
 
     def test_set_hvac_mode_cool_sets_cooling_true(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=False, cooling_mode=False, supports_cooling=True)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
@@ -466,7 +499,6 @@ class TestSetHvacModeNew:
         device.async_set_summer_mode.assert_awaited_with(False)
 
     def test_set_hvac_mode_off_sets_summer_true(self):
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=False, supports_cooling=False)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
@@ -474,7 +506,6 @@ class TestSetHvacModeNew:
 
     def test_set_hvac_mode_exits_eco_first(self):
         """When device.low=True, set_hvac_mode must clear low before direction change."""
-        from homeassistant.components.climate.const import HVACMode
         device = _make_device(low=True, summer_mode=False, supports_cooling=False,
                               operation_mode_value="MANUAL")
         entity = _make_entity(device)
@@ -500,7 +531,7 @@ class TestSetHvacModeNew:
 
 
 class TestSetPresetModeNew:
-    """Tests for async_set_preset_mode with the regulation-axis design."""
+    """Tests for async_set_preset_mode with the #334 design (override-only)."""
 
     def test_set_preset_boost(self):
         device = _make_device(boost_mode=False, supports_boost_mode=True)
@@ -514,24 +545,6 @@ class TestSetPresetModeNew:
         _run_async(entity.async_set_preset_mode(PRESET_ECO))
         device.async_set_low.assert_awaited_with(True)
 
-    def test_set_preset_auto_sets_operation_mode(self):
-        from boschshcpy.services_impl import RoomClimateControlService
-        device = _make_device(operation_mode_value="MANUAL", boost_mode=False, low=False)
-        entity = _make_entity(device)
-        _run_async(entity.async_set_preset_mode(PRESET_AUTO))
-        device.async_set_operation_mode.assert_awaited_with(
-            RoomClimateControlService.OperationMode.AUTOMATIC
-        )
-
-    def test_set_preset_manual_sets_operation_mode(self):
-        from boschshcpy.services_impl import RoomClimateControlService
-        device = _make_device(operation_mode_value="AUTOMATIC", boost_mode=False, low=False)
-        entity = _make_entity(device)
-        _run_async(entity.async_set_preset_mode(PRESET_MANUAL))
-        device.async_set_operation_mode.assert_awaited_with(
-            RoomClimateControlService.OperationMode.MANUAL
-        )
-
     def test_set_preset_invalid_ignored(self):
         device = _make_device()
         entity = _make_entity(device)
@@ -540,29 +553,14 @@ class TestSetPresetModeNew:
         device.async_set_low.assert_not_awaited()
         device.async_set_operation_mode.assert_not_awaited()
 
-    def test_set_preset_auto_clears_boost_first(self):
-        """PRESET_AUTO with boost active: clears boost_mode before writing AUTOMATIC."""
-        from boschshcpy.services_impl import RoomClimateControlService
+    def test_set_preset_boost_clears_boost_before_eco(self):
+        """PRESET_ECO with boost active: clears boost_mode before writing low=True."""
         device = _make_device(boost_mode=True, low=False,
                               supports_boost_mode=True, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        _run_async(entity.async_set_preset_mode(PRESET_AUTO))
+        _run_async(entity.async_set_preset_mode(PRESET_ECO))
         device.async_set_boost_mode.assert_awaited_with(False)
-        device.async_set_operation_mode.assert_awaited_with(
-            RoomClimateControlService.OperationMode.AUTOMATIC
-        )
-
-    def test_set_preset_auto_clears_low_first(self):
-        """PRESET_AUTO with eco active: clears low before writing AUTOMATIC."""
-        from boschshcpy.services_impl import RoomClimateControlService
-        device = _make_device(boost_mode=False, low=True,
-                              supports_boost_mode=True, operation_mode_value="MANUAL")
-        entity = _make_entity(device)
-        _run_async(entity.async_set_preset_mode(PRESET_AUTO))
-        device.async_set_low.assert_awaited_with(False)
-        device.async_set_operation_mode.assert_awaited_with(
-            RoomClimateControlService.OperationMode.AUTOMATIC
-        )
+        device.async_set_low.assert_awaited_with(True)
 
 
 class TestHvacActionNew:
@@ -579,3 +577,25 @@ class TestHvacActionNew:
         device = _make_device(summer_mode=True)
         entity = _make_entity(device)
         assert entity.hvac_action == HVACAction.OFF
+
+
+class TestTurnOnOff334:
+    """#334: turn_on defaults to AUTO (schedule); turn_off still uses OFF/summer_mode."""
+
+    def test_turn_on_from_off_sets_auto(self):
+        """#334: turn_on → async_set_hvac_mode(AUTO) → sets operationMode=AUTOMATIC."""
+        from boschshcpy.services_impl import RoomClimateControlService
+        device = _make_device(summer_mode=True, supports_cooling=False)
+        entity = _make_entity(device)
+        _run_async(entity.async_turn_on())
+        # AUTO sets summer_mode=False and operationMode=AUTOMATIC
+        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_operation_mode.assert_awaited_with(
+            RoomClimateControlService.OperationMode.AUTOMATIC
+        )
+
+    def test_turn_off_sets_summer_mode(self):
+        device = _make_device(summer_mode=False, operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
+        _run_async(entity.async_turn_off())
+        device.async_set_summer_mode.assert_awaited_with(True)

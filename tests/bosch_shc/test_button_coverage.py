@@ -360,40 +360,56 @@ class TestSHCScenarioButtonInit:
 
 class TestSHCScenarioButtonPress:
     def test_press_calls_trigger(self):
-        """press() must call self._scenario.trigger() (line 146)."""
+        """async_press() must await self._scenario.async_trigger()."""
         calls = []
         sc = _good_scenario()
-        sc.trigger = lambda: calls.append(True)
+
+        async def _trig():
+            calls.append(True)
+
+        sc.async_trigger = _trig
         btn = SHCScenarioButton(
             scenario=sc, entry_unique_id="uid-1", entry_id="entry-1"
         )
-        btn.press()
+        asyncio.run(btn.async_press())
         assert calls == [True]
 
     def test_press_called_twice_triggers_twice(self):
         calls = []
         sc = _good_scenario()
-        sc.trigger = lambda: calls.append(1)
+
+        async def _trig():
+            calls.append(1)
+
+        sc.async_trigger = _trig
         btn = SHCScenarioButton(
             scenario=sc, entry_unique_id=None, entry_id="entry-1"
         )
-        btn.press()
-        btn.press()
+        asyncio.run(btn.async_press())
+        asyncio.run(btn.async_press())
         assert len(calls) == 2
 
     def test_press_returns_none(self):
         sc = _good_scenario()
-        sc.trigger = lambda: None
+
+        async def _trig():
+            return None
+
+        sc.async_trigger = _trig
         btn = SHCScenarioButton(
             scenario=sc, entry_unique_id="uid-1", entry_id="entry-1"
         )
-        assert btn.press() is None
+        assert asyncio.run(btn.async_press()) is None
 
     def test_setup_scenario_button_press_via_setup_entry(self):
         """End-to-end: button created via async_setup_entry, then pressed."""
         trigger_calls = []
         sc = _good_scenario(sid="sc-e2e", name="E2E Scene")
-        sc.trigger = lambda: trigger_calls.append(True)
+
+        async def _trig():
+            trigger_calls.append(True)
+
+        sc.async_trigger = _trig
 
         session = _make_session(scenarios=[sc])
         entry = _make_entry(
@@ -402,7 +418,7 @@ class TestSHCScenarioButtonPress:
         )
         result = _run_setup(session, entry)
         assert len(result) == 1
-        result[0].press()
+        asyncio.run(result[0].async_press())
         assert trigger_calls == [True]
 
 

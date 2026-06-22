@@ -149,8 +149,6 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automatisch",
-              "manual": "Manuell",
               "boost": "Aufheizen",
               "eco": "Eco"
             }

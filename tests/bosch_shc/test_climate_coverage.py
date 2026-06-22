@@ -3,10 +3,13 @@
 Focus: branches / guard paths not yet exercised by existing climate test files.
 - ClimateControl: hvac_mode all branches, hvac_modes, preset_modes, min/max temp,
   async_set_temperature (OFF-mode skip, HVAC-mode kwarg path), async_set_hvac_mode
-  (HEAT/OFF without cooling, COOL branch, ECO preset guard, None guard),
+  (AUTO/HEAT/OFF without cooling, COOL branch, ECO preset guard, None guard),
   async_set_preset_mode error paths with SHCException.
 - HeatingCircuit: class-level attributes, async_set_temperature error swallowed.
 - SHCException catch in async_set_hvac_mode and async_set_preset_mode.
+
+#334: AUTO is HVACMode.AUTO, MANUAL is HVACMode.HEAT.
+preset_modes contains only boost/eco (override states); auto/manual removed.
 
 Pattern: Cls.__new__(Cls) + SimpleNamespace device; asyncio.run() for async.
 No HA harness, no MockConfigEntry.
@@ -30,8 +33,6 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from custom_components.bosch_shc.climate import (
     ClimateControl,
     HeatingCircuit,
-    PRESET_AUTO,
-    PRESET_MANUAL,
     PRESET_BOOST,
     PRESET_ECO,
 )
@@ -118,11 +119,11 @@ def _make_hc(*, on=False, operation_mode=None, setpoint=20.0):
 
 
 # ===========================================================================
-# ClimateControl — hvac_mode property (line 104-118)
+# ClimateControl — hvac_mode property
 # ===========================================================================
 
 class TestHvacModeProperty:
-    """All branches of ClimateControl.hvac_mode."""
+    """All branches of ClimateControl.hvac_mode. #334: AUTOMATIC → AUTO, MANUAL → HEAT."""
 
     def test_summer_mode_returns_off(self):
         """summer_mode=True → HVACMode.OFF regardless of anything else."""
@@ -139,26 +140,20 @@ class TestHvacModeProperty:
         entity = _make_cc(device)
         assert entity.hvac_mode == HVACMode.COOL
 
-    def test_supports_cooling_but_not_active_returns_heat(self):
-        """PR #329: supports_cooling=True but cooling_mode=False → HVACMode.HEAT.
-
-        AUTOMATIC operation_mode is now on the regulation (preset) axis, not hvac_mode.
-        """
+    def test_supports_cooling_but_not_active_automatic_returns_auto(self):
+        """#334: supports_cooling=True + cooling_mode=False + AUTOMATIC → HVACMode.AUTO."""
         device = _make_cc_device(
             summer_mode=False, supports_cooling=True, cooling_mode=False,
             operation_mode_value="AUTOMATIC",
         )
         entity = _make_cc(device)
-        assert entity.hvac_mode == HVACMode.HEAT
+        assert entity.hvac_mode == HVACMode.AUTO
 
-    def test_operation_mode_automatic_returns_heat(self):
-        """PR #329: AUTOMATIC operation mode → HVACMode.HEAT (regulation is preset_mode).
-
-        With the direction/regulation split, operation_mode no longer affects hvac_mode.
-        """
+    def test_operation_mode_automatic_returns_auto(self):
+        """#334: AUTOMATIC operation mode → HVACMode.AUTO."""
         device = _make_cc_device(summer_mode=False, operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
-        assert entity.hvac_mode == HVACMode.HEAT
+        assert entity.hvac_mode == HVACMode.AUTO
 
     def test_operation_mode_manual_returns_heat(self):
         """MANUAL operation mode → HVACMode.HEAT."""
@@ -166,35 +161,32 @@ class TestHvacModeProperty:
         entity = _make_cc(device)
         assert entity.hvac_mode == HVACMode.HEAT
 
-    def test_no_cooling_support_does_not_short_circuit_at_cool_branch(self):
-        """supports_cooling=False / cooling_mode=True → cooling branch skipped → HVACMode.HEAT.
-
-        PR #329: supports_cooling=False means cooling_mode is ignored (same guard as original).
-        """
+    def test_no_cooling_support_skips_cool_branch_returns_auto(self):
+        """supports_cooling=False + cooling_mode=True (impossible, but guard holds) → AUTO."""
         device = _make_cc_device(
             summer_mode=False, supports_cooling=False, cooling_mode=True,
             operation_mode_value="AUTOMATIC",
         )
         entity = _make_cc(device)
-        # cooling_mode=True but supports_cooling=False → cooling branch skipped → HEAT
-        assert entity.hvac_mode == HVACMode.HEAT
+        # cooling_mode=True but supports_cooling=False → cooling branch skipped → AUTO
+        assert entity.hvac_mode == HVACMode.AUTO
 
 
 # ===========================================================================
-# ClimateControl — hvac_modes property (line 121-126)
+# ClimateControl — hvac_modes property
 # ===========================================================================
 
 class TestHvacModesProperty:
-    """ClimateControl.hvac_modes: PR #329 removes AUTO; includes COOL only when supports_cooling."""
+    """ClimateControl.hvac_modes: #334 adds AUTO; includes COOL only when supports_cooling."""
 
     def test_base_modes_without_cooling(self):
         device = _make_cc_device(supports_cooling=False)
         entity = _make_cc(device)
         modes = entity.hvac_modes
+        assert HVACMode.AUTO in modes
         assert HVACMode.HEAT in modes
         assert HVACMode.OFF in modes
         assert HVACMode.COOL not in modes
-        assert HVACMode.AUTO not in modes
 
     def test_cool_added_when_supports_cooling(self):
         device = _make_cc_device(supports_cooling=True)
@@ -202,37 +194,49 @@ class TestHvacModesProperty:
         assert HVACMode.COOL in entity.hvac_modes
 
     def test_modes_count_without_cooling(self):
-        # PR #329: HEAT + OFF = 2 (no AUTO)
+        # #334: AUTO + HEAT + OFF = 3
         device = _make_cc_device(supports_cooling=False)
-        entity = _make_cc(device)
-        assert len(entity.hvac_modes) == 2
-
-    def test_modes_count_with_cooling(self):
-        # PR #329: HEAT + OFF + COOL = 3 (no AUTO)
-        device = _make_cc_device(supports_cooling=True)
         entity = _make_cc(device)
         assert len(entity.hvac_modes) == 3
 
+    def test_modes_count_with_cooling(self):
+        # #334: AUTO + HEAT + COOL + OFF = 4
+        device = _make_cc_device(supports_cooling=True)
+        entity = _make_cc(device)
+        assert len(entity.hvac_modes) == 4
+
 
 # ===========================================================================
-# ClimateControl — preset_modes property (line 153-158)
+# ClimateControl — preset_modes property
 # ===========================================================================
 
 class TestPresetModesProperty:
-    """PR #329: preset_modes includes auto/manual always; eco when device has `low`; boost when supported."""
+    """#334: preset_modes is override-only (boost/eco); auto/manual removed.
+    Returns None when no presets available."""
 
-    def test_base_presets_always_auto_and_manual(self):
-        device = _make_cc_device(supports_boost_mode=False)
+    def test_no_presets_when_no_boost_no_low(self):
+        """Device without boost or low → preset_modes is None."""
+        device = SimpleNamespace(
+            boost_mode=False,
+            summer_mode=False,
+            supports_boost_mode=False,
+            supports_cooling=False,
+            cooling_mode=False,
+            setpoint_temperature=20.0,
+            temperature=19.0,
+            operation_mode=OM_CC("AUTOMATIC"),
+            root_device_id="r",
+            id="d",
+            # NOTE: no `low` attribute
+        )
         entity = _make_cc(device)
-        modes = entity.preset_modes
-        assert PRESET_AUTO in modes
-        assert PRESET_MANUAL in modes
-        assert PRESET_BOOST not in modes
+        assert entity.preset_modes is None
 
     def test_eco_in_presets_when_device_has_low_attr(self):
         # _make_cc_device always adds `low` attribute → eco offered
         device = _make_cc_device(supports_boost_mode=False, low=False)
         entity = _make_cc(device)
+        assert entity.preset_modes is not None
         assert PRESET_ECO in entity.preset_modes
 
     def test_boost_added_when_supported(self):
@@ -240,17 +244,27 @@ class TestPresetModesProperty:
         entity = _make_cc(device)
         assert PRESET_BOOST in entity.preset_modes
 
-    def test_preset_modes_count_without_boost(self):
-        # auto + manual + eco = 3 (device has `low` attr)
+    def test_preset_modes_count_with_only_eco(self):
+        # eco only (device has `low` attr, no boost)
         device = _make_cc_device(supports_boost_mode=False)
         entity = _make_cc(device)
-        assert len(entity.preset_modes) == 3
+        assert entity.preset_modes is not None
+        assert len(entity.preset_modes) == 1
+        assert PRESET_ECO in entity.preset_modes
 
-    def test_preset_modes_count_with_boost(self):
-        # auto + manual + boost + eco = 4 (device has `low` attr)
+    def test_preset_modes_count_with_boost_and_eco(self):
+        # boost + eco = 2 (device has `low` attr)
         device = _make_cc_device(supports_boost_mode=True)
         entity = _make_cc(device)
-        assert len(entity.preset_modes) == 4
+        assert len(entity.preset_modes) == 2
+
+    def test_no_auto_or_manual_in_preset_modes(self):
+        """#334: 'auto' and 'manual' are never in preset_modes."""
+        device = _make_cc_device(supports_boost_mode=True)
+        entity = _make_cc(device)
+        presets = entity.preset_modes or []
+        assert "auto" not in presets
+        assert "manual" not in presets
 
 
 # ===========================================================================
@@ -277,8 +291,6 @@ class TestDeviceName:
         assert entity.device_name == "My Room"
 
     def test_primary_entity_has_no_own_name(self):
-        # Primary entity of the room device → _attr_name is None so HA uses the
-        # device name (no "Room X Room X" doubling); device_name is the label.
         entity = _make_cc(_make_cc_device(), attr_name="Kitchen")
         assert entity._attr_name is None
         assert entity.device_name == "Kitchen"
@@ -298,10 +310,10 @@ class TestSetTemperatureGuards:
         _run(entity.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
         device.async_set_setpoint_temperature.assert_not_awaited()
 
-    def test_hvac_mode_kwarg_sets_mode_first(self):
-        """ATTR_HVAC_MODE kwarg is forwarded to async_set_hvac_mode before write.
+    def test_hvac_mode_kwarg_heat_sets_mode_first(self):
+        """ATTR_HVAC_MODE=HEAT kwarg is forwarded to async_set_hvac_mode before write.
 
-        PR #329: HEAT sets summer_mode=False (direction axis only, no operation_mode write).
+        #334: HEAT sets operationMode=MANUAL + summer_mode=False.
         The setpoint is then written after the direction change.
         """
         device = _make_cc_device(summer_mode=False, operation_mode_value="MANUAL")
@@ -309,7 +321,7 @@ class TestSetTemperatureGuards:
         _run(entity.async_set_temperature(
             **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.HEAT}
         ))
-        # HEAT writes summer_mode=False (direction), but NOT operation_mode (regulation)
+        # HEAT writes summer_mode=False and operationMode=MANUAL
         device.async_set_summer_mode.assert_awaited_with(False)
         device.async_set_setpoint_temperature.assert_awaited_with(22.0)
 
@@ -379,34 +391,34 @@ class TestSetTemperatureGuards:
 
 
 # ===========================================================================
-# ClimateControl — async_set_hvac_mode: HEAT/OFF (no cooling)
+# ClimateControl — async_set_hvac_mode: AUTO/HEAT/OFF
 # ===========================================================================
 
 class TestSetHvacModeNoCooling:
-    """PR #329: async_set_hvac_mode with the direction-axis-only design.
+    """#334: async_set_hvac_mode with AUTO/HEAT/OFF design.
 
-    HEAT/COOL/OFF write direction fields only; regulation (operation_mode) is
-    handled by async_set_preset_mode. AUTO is no longer an hvac_mode.
+    AUTO → operationMode=AUTOMATIC + summer_mode=False.
+    HEAT → operationMode=MANUAL + summer_mode=False.
+    OFF  → summer_mode=True.
     """
 
-    def test_heat_mode_no_cooling_sets_summer_false(self):
-        """PR #329: HEAT only sets summer_mode=False (no operation_mode write)."""
+    def test_auto_mode_sets_automatic_operation_mode(self):
+        """#334: AUTO sets operationMode=AUTOMATIC + summer_mode=False."""
+        device = _make_cc_device(summer_mode=False, supports_cooling=False,
+                                 operation_mode_value="MANUAL")
+        entity = _make_cc(device)
+        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
+        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
+
+    def test_heat_mode_no_cooling_sets_manual_operation_mode(self):
+        """#334: HEAT sets operationMode=MANUAL + summer_mode=False."""
         device = _make_cc_device(summer_mode=False, supports_cooling=False,
                                  operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
         device.async_set_summer_mode.assert_awaited_with(False)
-        device.async_set_operation_mode.assert_not_awaited()
-        device.async_set_cooling_mode.assert_not_awaited()
-
-    def test_auto_mode_not_in_hvac_modes(self):
-        """PR #329: AUTO is not an hvac_mode → set_hvac_mode(AUTO) is a noop."""
-        device = _make_cc_device(summer_mode=False, supports_cooling=False,
-                                 operation_mode_value="MANUAL")
-        entity = _make_cc(device)
-        _run(entity.async_set_hvac_mode(HVACMode.AUTO))
-        device.async_set_summer_mode.assert_not_awaited()
-        device.async_set_operation_mode.assert_not_awaited()
+        device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
 
     def test_off_mode_no_cooling_sets_summer_mode(self):
         device = _make_cc_device(summer_mode=False, supports_cooling=False,
@@ -460,15 +472,16 @@ class TestSetHvacModeNoCooling:
         """P2-B/#196: preset_mode=ECO → async_set_hvac_mode exits ECO first (low=False),
         then writes the requested HVAC direction.
 
-        PR #329: Use HEAT (not AUTO) since AUTO is no longer an hvac_mode.
+        #334: Use HEAT (sets MANUAL) since it writes operationMode.
         """
-        device = _make_cc_device(low=True, operation_mode_value="MANUAL")
+        device = _make_cc_device(low=True, operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
         # ECO exit: low must be cleared
         device.async_set_low.assert_awaited_with(False)
-        # HEAT direction: summer_mode=False
+        # HEAT direction: summer_mode=False + operationMode=MANUAL
         device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
 
 
 # ===========================================================================
@@ -477,14 +490,6 @@ class TestSetHvacModeNoCooling:
 
 class TestSetPresetModeExceptions:
     """SHCException must be swallowed in async_set_preset_mode."""
-
-    def test_shcexception_preset_manual_swallowed(self):
-        # PR #329: PRESET_NONE replaced by PRESET_MANUAL
-        device = _make_cc_device(boost_mode=True, low=False, supports_boost_mode=True,
-                                 operation_mode_value="AUTOMATIC")
-        device.async_set_boost_mode = AsyncMock(side_effect=SHCException("err"))
-        entity = _make_cc(device)
-        _run(entity.async_set_preset_mode(PRESET_MANUAL))
 
     def test_shcexception_preset_boost_swallowed(self):
         device = _make_cc_device(boost_mode=False, low=False, supports_boost_mode=True)
@@ -517,20 +522,65 @@ class TestSetPresetModeExceptions:
 
 
 # ===========================================================================
+# ClimateControl — supported_features (#334 dynamic PRESET_MODE)
+# ===========================================================================
+
+class TestSupportedFeatures:
+    def test_preset_mode_feature_present_when_presets_available(self):
+        """Device with boost/eco → PRESET_MODE feature advertised."""
+        entity = _make_cc(_make_cc_device(supports_boost_mode=True))
+        feats = entity.supported_features
+        assert feats & ClimateEntityFeature.TARGET_TEMPERATURE
+        assert feats & ClimateEntityFeature.PRESET_MODE
+        assert feats & ClimateEntityFeature.TURN_OFF
+        assert feats & ClimateEntityFeature.TURN_ON
+
+    def test_preset_mode_feature_absent_when_no_presets(self):
+        """Device without boost or eco → PRESET_MODE feature NOT advertised."""
+        device = SimpleNamespace(
+            boost_mode=False,
+            summer_mode=False,
+            supports_boost_mode=False,
+            supports_cooling=False,
+            cooling_mode=False,
+            setpoint_temperature=20.0,
+            temperature=19.0,
+            operation_mode=OM_CC("AUTOMATIC"),
+            root_device_id="r",
+            id="d",
+            # NOTE: no `low` attribute
+        )
+        entity = _make_cc(device)
+        feats = entity.supported_features
+        assert feats & ClimateEntityFeature.TARGET_TEMPERATURE
+        assert not (feats & ClimateEntityFeature.PRESET_MODE)
+        assert feats & ClimateEntityFeature.TURN_OFF
+        assert feats & ClimateEntityFeature.TURN_ON
+
+
+# ===========================================================================
 # ClimateControl — async_turn_on / async_turn_off
 # ===========================================================================
 
 class TestTurnOnOffClimate:
     """Lines 315-323: async_turn_on and async_turn_off."""
 
-    def test_turn_on_when_off_calls_heat(self):
-        """summer_mode=True (OFF) → turn_on must set summer_mode=False."""
+    def test_turn_on_when_off_calls_auto(self):
+        """#334: summer_mode=True (OFF) → turn_on must set AUTO (operationMode=AUTOMATIC)."""
         device = _make_cc_device(summer_mode=True, low=False)
         entity = _make_cc(device)
         _run(entity.async_turn_on())
         device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
 
-    def test_turn_on_when_already_on_is_noop(self):
+    def test_turn_on_when_already_auto_is_noop(self):
+        """Mode=AUTO (not OFF) → turn_on is a noop."""
+        device = _make_cc_device(summer_mode=False, operation_mode_value="AUTOMATIC")
+        entity = _make_cc(device)
+        _run(entity.async_turn_on())
+        device.async_set_summer_mode.assert_not_awaited()
+
+    def test_turn_on_when_already_heat_is_noop(self):
         """Mode=HEAT (not OFF) → turn_on is a noop."""
         device = _make_cc_device(summer_mode=False, operation_mode_value="MANUAL")
         entity = _make_cc(device)
@@ -582,30 +632,6 @@ class TestClimateControlHvacAction:
         del device.has_demand  # simulate older lib without attribute
         entity = _make_cc(device)
         assert entity.hvac_action == HVACAction.IDLE
-
-
-# ===========================================================================
-# ClimateControl — supported_features (line 161-168)
-# ===========================================================================
-
-class TestSupportedFeatures:
-    def test_all_four_features_present(self):
-        entity = _make_cc(_make_cc_device())
-        feats = entity.supported_features
-        assert feats & ClimateEntityFeature.TARGET_TEMPERATURE
-        assert feats & ClimateEntityFeature.PRESET_MODE
-        assert feats & ClimateEntityFeature.TURN_OFF
-        assert feats & ClimateEntityFeature.TURN_ON
-
-    def test_supported_features_exact(self):
-        entity = _make_cc(_make_cc_device())
-        expected = (
-            ClimateEntityFeature.TARGET_TEMPERATURE
-            | ClimateEntityFeature.PRESET_MODE
-            | ClimateEntityFeature.TURN_OFF
-            | ClimateEntityFeature.TURN_ON
-        )
-        assert entity.supported_features == expected
 
 
 # ===========================================================================

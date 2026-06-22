@@ -19,7 +19,7 @@ from boschshcpy.exceptions import JSONRPCError, SHCException
 from custom_components.bosch_shc.climate import (
     ClimateControl,
     HeatingCircuit,
-    PRESET_MANUAL,
+    PRESET_BOOST,
     PRESET_ECO,
 )
 from homeassistant.components.climate.const import HVACMode
@@ -104,14 +104,13 @@ class TestClimateControlHvacModeErrors:
 # ---------------------------------------------------------------------------
 
 class TestClimateControlPresetModeErrors:
-    def test_jsonrpc_error_preset_manual_is_caught(self):
-        """PR #329: PRESET_NONE replaced by PRESET_MANUAL."""
-        entity = _make_climate_control(boost_mode=True, low=False)
-        # boost_mode=True → MANUAL will try to clear boost_mode first
+    def test_jsonrpc_error_preset_boost_is_caught(self):
+        """#334: PRESET_BOOST sets boost_mode=True; JSONRPCError must be swallowed."""
+        entity = _make_climate_control(boost_mode=False, low=False)
         entity._device.async_set_boost_mode = AsyncMock(side_effect=_JRPC("err"))
 
         with patch("custom_components.bosch_shc.climate.LOGGER") as mock_log:
-            asyncio.run(entity.async_set_preset_mode(PRESET_MANUAL))
+            asyncio.run(entity.async_set_preset_mode(PRESET_BOOST))
             mock_log.warning.assert_called_once()
 
     def test_shc_exception_preset_eco_is_caught(self):

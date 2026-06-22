@@ -360,6 +360,12 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         self.hass = hass
         self._service = None
         self._cached_device_id = None
+        # Guard against phantom events on poll-id resubscribe (~24 h): the SHC
+        # re-delivers every service's current state, which must not re-fire as a
+        # fresh MOTION event.  Cache the last latestmotion timestamp we fired on;
+        # skip the event when the timestamp is unchanged (replay), fire when it
+        # advances (genuine new motion).
+        self._last_fired_latestmotion: str | None = None
         super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
@@ -383,7 +389,21 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
             )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (called from SHCPollingThread).
+
+        Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
+        re-delivers the last LatestMotion state unchanged.  Only fire when
+        latestmotion has advanced past the last value we fired on.
+        """
+        current_ts = self._device.latestmotion
+        if current_ts == self._last_fired_latestmotion:
+            LOGGER.debug(
+                "Skipping replayed LatestMotion event for %s (ts=%s unchanged)",
+                self._device.name,
+                current_ts,
+            )
+            return
+        self._last_fired_latestmotion = current_ts
         self.hass.loop.call_soon_threadsafe(
             self.hass.bus.fire,
             EVENT_BOSCH_SHC,
@@ -391,7 +411,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
                 ATTR_DEVICE_ID: self._cached_device_id,
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
-                ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+                ATTR_LAST_TIME_TRIGGERED: current_ts,
                 ATTR_EVENT_TYPE: "MOTION",
                 ATTR_EVENT_SUBTYPE: "",
             },
@@ -451,6 +471,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
         self._service = None
         self._cached_device_id = None
+        # Guard against phantom events on poll-id resubscribe (#336): cache the
+        # last alarmstate name we fired on and skip when it is unchanged.
+        self._last_fired_alarmstate: str | None = None
         super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
@@ -474,7 +497,21 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (called from SHCPollingThread).
+
+        Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
+        re-delivers the last Alarm state unchanged.  Only fire when the
+        alarmstate name has changed since the last fired event.
+        """
+        current_state = self._device.alarmstate.name
+        if current_state == self._last_fired_alarmstate:
+            LOGGER.debug(
+                "Skipping replayed Alarm event for %s (state=%s unchanged)",
+                self._device.name,
+                current_state,
+            )
+            return
+        self._last_fired_alarmstate = current_state
         self._hass.loop.call_soon_threadsafe(
             self._hass.bus.fire,
             EVENT_BOSCH_SHC,
@@ -483,7 +520,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_EVENT_TYPE: "ALARM",
-                ATTR_EVENT_SUBTYPE: self._device.alarmstate.name,
+                ATTR_EVENT_SUBTYPE: current_state,
             },
         )
 
@@ -601,6 +638,9 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
         self._service = None
         self._cached_device_id = None
+        # Guard against phantom events on poll-id resubscribe (#336): cache the
+        # last SurveillanceAlarm state name we fired on and skip when unchanged.
+        self._last_fired_alarm: str | None = None
         super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._attr_name = None
@@ -626,7 +666,21 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
             )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (called from SHCPollingThread).
+
+        Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
+        re-delivers the last SurveillanceAlarm state unchanged.  Only fire
+        when the alarm state name has changed since the last fired event.
+        """
+        current_alarm = self._device.alarm.name
+        if current_alarm == self._last_fired_alarm:
+            LOGGER.debug(
+                "Skipping replayed SurveillanceAlarm event for %s (state=%s unchanged)",
+                self._device.name,
+                current_alarm,
+            )
+            return
+        self._last_fired_alarm = current_alarm
         self._hass.loop.call_soon_threadsafe(
             self._hass.bus.fire,
             EVENT_BOSCH_SHC,
@@ -635,7 +689,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_EVENT_TYPE: "ALARM",
-                ATTR_EVENT_SUBTYPE: self._device.alarm.name,
+                ATTR_EVENT_SUBTYPE: current_alarm,
             },
         )
 

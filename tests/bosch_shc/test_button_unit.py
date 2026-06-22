@@ -12,6 +12,7 @@ further platform-specific calls.
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -137,22 +138,34 @@ class TestPress:
     def test_press_calls_trigger_impulse_state_via_init(self):
         btn = _relay_via_init()
         triggered = []
-        btn._device.trigger_impulse_state = lambda: triggered.append(True)
-        btn.press()
+
+        async def _trig():
+            triggered.append(True)
+
+        btn._device.async_trigger_impulse_state = _trig
+        asyncio.run(btn.async_press())
         assert triggered == [True]
 
     def test_press_called_twice_triggers_twice_via_init(self):
         btn = _relay_via_init()
         count = []
-        btn._device.trigger_impulse_state = lambda: count.append(1)
-        btn.press()
-        btn.press()
+
+        async def _trig():
+            count.append(1)
+
+        btn._device.async_trigger_impulse_state = _trig
+        asyncio.run(btn.async_press())
+        asyncio.run(btn.async_press())
         assert len(count) == 2
 
     def test_press_returns_none(self):
         btn = _relay_via_init()
-        btn._device.trigger_impulse_state = lambda: None
-        assert btn.press() is None
+
+        async def _trig():
+            return None
+
+        btn._device.async_trigger_impulse_state = _trig
+        assert asyncio.run(btn.async_press()) is None
 
 
 class TestSHCSmokeTestButton:
@@ -184,8 +197,12 @@ class TestSHCSmokeTestButton:
     def test_press_calls_smoketest_requested(self):
         calls = []
         btn = self._smoke_button_via_init()
-        btn._device.smoketest_requested = lambda: calls.append(True)
-        btn.press()
+
+        async def _smoke():
+            calls.append(True)
+
+        btn._device.async_smoketest_requested = _smoke
+        asyncio.run(btn.async_press())
         assert calls == [True]
 
     def test_is_button_entity(self):

@@ -232,6 +232,7 @@ class TestMotionDetectionSensorInputEventsPayload:
             id=device_id, name=name, latestmotion=latestmotion
         )
         sensor._cached_device_id = cached_device_id
+        sensor._last_fired_latestmotion = None  # replay-guard initial state
         sensor.hass = MagicMock(name="hass")
         sensor.hass.loop = MagicMock(name="loop")
         sensor.hass.bus = MagicMock(name="bus")

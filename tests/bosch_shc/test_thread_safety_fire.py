@@ -105,6 +105,7 @@ class TestMotionSensorThreadSafe:
         sensor = MotionDetectionSensor.__new__(MotionDetectionSensor)
         sensor.hass = _make_hass()
         sensor._cached_device_id = "ha-device-motion-1"
+        sensor._last_fired_latestmotion = None  # replay-guard initial state
         sensor._device = SimpleNamespace(
             id="hdm:motion:1",
             name="Motion Sensor",
@@ -137,6 +138,7 @@ class TestSmokeDetectorSensorThreadSafe:
         sensor = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
         sensor._hass = _make_hass()
         sensor._cached_device_id = "ha-device-smoke-1"
+        sensor._last_fired_alarmstate = None  # replay-guard initial state
         sensor._device = SimpleNamespace(
             id="hdm:smoke:1",
             name="Smoke Detector",
@@ -169,6 +171,7 @@ class TestSmokeDetectionSystemSensorThreadSafe:
         sensor = SmokeDetectionSystemSensor.__new__(SmokeDetectionSystemSensor)
         sensor._hass = _make_hass()
         sensor._cached_device_id = "ha-device-smokedsys-1"
+        sensor._last_fired_alarm = None  # replay-guard initial state
         sensor._device = SimpleNamespace(
             id="hdm:smokedsys:1",
             name="Smoke Detection System",

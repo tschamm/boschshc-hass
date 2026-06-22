@@ -4,6 +4,7 @@ Pattern: Cls.__new__(Cls) bypasses SHCEntity.__init__ (needs hass/registry).
 We only set the attributes the class under test actually reads.
 """
 
+import asyncio
 from types import SimpleNamespace
 
 from custom_components.bosch_shc.button import SHCRelayButton
@@ -99,17 +100,25 @@ def test_unique_id_attr_name_already_lowercase():
 def test_press_calls_trigger_impulse_state():
     btn = _relay_button()
     triggered = []
-    btn._device.trigger_impulse_state = lambda: triggered.append(True)
-    btn.press()
+
+    async def _trig():
+        triggered.append(True)
+
+    btn._device.async_trigger_impulse_state = _trig
+    asyncio.run(btn.async_press())
     assert triggered == [True]
 
 
 def test_press_called_twice_triggers_twice():
     btn = _relay_button()
     count = []
-    btn._device.trigger_impulse_state = lambda: count.append(1)
-    btn.press()
-    btn.press()
+
+    async def _trig():
+        count.append(1)
+
+    btn._device.async_trigger_impulse_state = _trig
+    asyncio.run(btn.async_press())
+    asyncio.run(btn.async_press())
     assert len(count) == 2
 
 
