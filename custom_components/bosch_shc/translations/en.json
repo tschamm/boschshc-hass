@@ -1,4 +1,20 @@
 {
+  "entity": {
+    "climate": {
+      "room_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Auto",
+              "manual": "Manual",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Device is already configured",

@@ -15,6 +15,9 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity
+from . import boschshcpy_patch
+
+boschshcpy_patch.apply()
 
 # Bosch separates two orthogonal axes that HA's single hvac_mode enum cannot
 # express together:
@@ -124,10 +127,15 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def hvac_modes(self):
         """Return available hvac modes."""
-        modes = [HVACMode.HEAT, HVACMode.OFF]
+        modes = [HVACMode.HEAT]
         if self._device.supports_cooling:
             modes.append(HVACMode.COOL)
+        modes.append(HVACMode.OFF)
         return modes
+
+    @property
+    def _supports_eco(self) -> bool:
+        return getattr(self._device, "supports_eco", True)
 
     @property
     def hvac_action(self):
@@ -152,7 +160,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         if self._device.supports_boost_mode and self._device.boost_mode:
             return PRESET_BOOST
 
-        if self._device.low:
+        if self._supports_eco and self._device.low:
             return PRESET_ECO
 
         if (
@@ -166,9 +174,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def preset_modes(self):
         """Return available preset modes."""
-        presets = [PRESET_AUTO, PRESET_MANUAL, PRESET_ECO]
+        presets = [PRESET_AUTO, PRESET_MANUAL]
+        if self._supports_eco:
+            presets.append(PRESET_ECO)
         if self._device.supports_boost_mode:
-            presets += [PRESET_BOOST]
+            presets.append(PRESET_BOOST)
         return presets
 
     @property

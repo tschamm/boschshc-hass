@@ -1,37 +1,53 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "El dispositiu ja est\u00e0 configurat",
-            "reauth_successful": "Re-autenticaci\u00f3 realitzada correctament"
-        },
-        "error": {
-            "cannot_connect": "Ha fallat la connexi\u00f3",
-            "invalid_auth": "Autenticaci\u00f3 inv\u00e0lida",
-            "pairing_failed": "La vinculaci\u00f3 ha fallat; comprova que el controlador Bosch Smart Home est\u00e0 en mode vinculaci\u00f3 (LED parpellejant) i que la contrasenya \u00e9s correcta.",
-            "session_error": "Error de sessi\u00f3: l'API ha retornat No OK.",
-            "unknown": "Error inesperat"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "Prem el bot\u00f3 de la part frontal/lateral del controlador Bosh Smart Home fins que el LED parpellegi.\nPreparat per continuar la configuraci\u00f3 de {model} @ {host} amb Home Assistant?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Contrasenya de Smart Home Controller"
-                }
-            },
-            "reauth_confirm": {
-                "description": "La integraci\u00f3 bosch_shc ha de tornar a autenticar el teu compte",
-                "title": "Reautenticaci\u00f3 de la integraci\u00f3"
-            },
-            "user": {
-                "data": {
-                    "host": "Amfitri\u00f3"
-                },
-                "description": "Configura Bosch Smart Controller per poder controlar i monitoritzar-lo des de Home Assistant.",
-                "title": "Par\u00e0metres d'autenticaci\u00f3 SHC"
+  "entity": {
+    "climate": {
+      "room_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automàtic",
+              "manual": "Manual",
+              "eco": "Eco",
+              "boost": "Boost"
             }
+          }
         }
+      }
     }
+  },
+  "config": {
+    "abort": {
+      "already_configured": "El dispositiu ja està configurat",
+      "reauth_successful": "Re-autenticació realitzada correctament"
+    },
+    "error": {
+      "cannot_connect": "Ha fallat la connexió",
+      "invalid_auth": "Autenticació invàlida",
+      "pairing_failed": "La vinculació ha fallat; comprova que el controlador Bosch Smart Home està en mode vinculació (LED parpellejant) i que la contrasenya és correcta.",
+      "session_error": "Error de sessió: l'API ha retornat No OK.",
+      "unknown": "Error inesperat"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Prem el botó de la part frontal/lateral del controlador Bosh Smart Home fins que el LED parpellegi.\nPreparat per continuar la configuració de {model} @ {host} amb Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "password": "Contrasenya de Smart Home Controller"
+        }
+      },
+      "reauth_confirm": {
+        "description": "La integració bosch_shc ha de tornar a autenticar el teu compte",
+        "title": "Reautenticació de la integració"
+      },
+      "user": {
+        "data": {
+          "host": "Amfitrió"
+        },
+        "description": "Configura Bosch Smart Controller per poder controlar i monitoritzar-lo des de Home Assistant.",
+        "title": "Paràmetres d'autenticació SHC"
+      }
+    }
+  }
 }

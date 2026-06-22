@@ -1,7 +1,23 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Ier\u012bce jau pievienota Home Assistant."
+  "entity": {
+    "climate": {
+      "room_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automātisks",
+              "manual": "Manuāls",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
         }
+      }
     }
+  },
+  "config": {
+    "abort": {
+      "already_configured": "Ierīce jau pievienota Home Assistant."
+    }
+  }
 }

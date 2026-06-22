@@ -5,8 +5,8 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "mdi:calendar-clock",
-              "manual": "mdi:hand-back-right",
+              "auto": "mdi:clock-outline",
+              "manual": "mdi:hand-pointing-up",
               "eco": "mdi:leaf",
               "boost": "mdi:rocket-launch"
             }

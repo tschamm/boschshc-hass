@@ -1,11 +1,27 @@
 {
-    "config": {
-        "step": {
-            "credentials": {
-                "data": {
-                    "password": "\u041f\u0430\u0440\u043e\u043b\u044c Smart Home Controller"
-                }
+  "entity": {
+    "climate": {
+      "room_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Автоматичний",
+              "manual": "Ручний",
+              "eco": "Еко",
+              "boost": "Буст"
             }
+          }
         }
+      }
     }
+  },
+  "config": {
+    "step": {
+      "credentials": {
+        "data": {
+          "password": "Пароль Smart Home Controller"
+        }
+      }
+    }
+  }
 }

@@ -1,7 +1,23 @@
 {
-    "config": {
-        "error": {
-            "unknown": "Uventet feil"
+  "entity": {
+    "climate": {
+      "room_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatisk",
+              "manual": "Manuell",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
         }
+      }
     }
+  },
+  "config": {
+    "error": {
+      "unknown": "Uventet feil"
+    }
+  }
 }
