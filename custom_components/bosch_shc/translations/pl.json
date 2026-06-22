@@ -197,5 +197,22 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Sterowanie klimatem pokoju",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatyczny",
+              "manual": "Ręczny",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
   }
 }

@@ -327,6 +327,24 @@ async def async_setup_entry(
                     entry_id=config_entry.entry_id,
                 )
             )
+        # DetectionTest state sensor: the local-API counterpart of WalkTest.
+        if getattr(sensor, "supports_detection_test", False):
+            entities.append(
+                DetectionStateSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        # Installation profile (e.g. GENERIC / OUTDOOR) — read-only: the
+        # write path is an undocumented device-level call, so only the
+        # current selection is surfaced for now.
+        if getattr(sensor, "supported_profiles", None):
+            entities.append(
+                InstallationProfileSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
         if diagnostic_enabled:
             await async_migrate_to_new_unique_id(
                 hass,
@@ -950,3 +968,73 @@ class WalkStateSensor(SHCEntity, SensorEntity):
             return val.name
         except (AttributeError, ValueError):
             return None
+
+
+class DetectionStateSensor(SHCEntity, SensorEntity):
+    """Sensor for the Motion Detector II detection-test state.
+
+    Reports the DetectionTest detectionState enum name (DETECTION_TEST_STARTED
+    / STOPPED / UNKNOWN). The DetectionTest service is the local-API equivalent
+    of the APK WalkTest service; created only when the device carries it.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = [
+        "DETECTION_TEST_STARTED",
+        "DETECTION_TEST_STOPPED",
+        "DETECTION_TEST_UNKNOWN",
+    ]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the detection-state sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Detection Test State"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_detection_state"
+        )
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the current detection-test state as its enum name."""
+        try:
+            val = self._device.detection_state
+            if val is None:
+                return None
+            return val.name
+        except (AttributeError, ValueError):
+            return None
+
+
+class InstallationProfileSensor(SHCEntity, SensorEntity):
+    """Read-only sensor for the device installation profile.
+
+    Reports the currently selected installation environment (e.g. GENERIC /
+    OUTDOOR). Read-only: the Bosch app can change this, but the local-API
+    write path is undocumented, so only the current value is exposed.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the installation-profile sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Installation Profile"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_installation_profile"
+        )
+        # Options come from the device's advertised supportedProfiles.
+        self._attr_options = list(getattr(device, "supported_profiles", []) or [])
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the current installation profile.
+
+        Guarded: a profile not advertised in supported_profiles (e.g. after a
+        firmware vocabulary change) would otherwise trip HA's ENUM "invalid
+        value" validation on every update — return None (unknown) instead.
+        """
+        val = getattr(self._device, "profile", None)
+        if val is None or val not in (self._attr_options or []):
+            return None
+        return val

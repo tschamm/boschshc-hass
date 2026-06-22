@@ -1,89 +1,106 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "\u88dd\u7f6e\u5df2\u7d93\u8a2d\u5b9a\u5b8c\u6210",
-            "reauth_successful": "\u91cd\u65b0\u8a8d\u8b49\u6210\u529f"
-        },
-        "error": {
-            "cannot_connect": "\u9023\u7dda\u5931\u6557",
-            "invalid_auth": "\u9a57\u8b49\u78bc\u7121\u6548",
-            "pairing_failed": "\u914d\u5c0d\u5931\u6557\uff1a\u8acb\u78ba\u8a8d Bosch Smart Home Controller \u5df2\u7d93\u8655\u65bc\u914d\u5c0d\u6a21\u5f0f\uff08LED \u9583\u720d\uff09\u3001\u4e26\u4e14\u5bc6\u78bc\u8f38\u5165\u6b63\u78ba\u3002",
-            "session_error": "Session \u932f\u8aa4\uff1aAPI \u56de\u8986\u975e\u6b63\u5e38\u7d50\u679c\u3002",
-            "unknown": "\u672a\u9810\u671f\u932f\u8aa4"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "\u8acb\u6309\u4e0b Bosch Smart Home Controller \u524d\u65b9\u7684\u6309\u9215\u76f4\u5230 LED \u9583\u720d\u3002\n\u662f\u5426\u8981\u7e7c\u7e8c\u8a2d\u5b9a\u4f4d\u65bc {host} \u7684 {model} \u9023\u63a5\u81f3 Home Assistant\uff1f"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Smart Home Controller \u5bc6\u78bc"
-                }
-            },
-            "reauth_confirm": {
-                "description": "bosch_shc \u6574\u5408\u9700\u8981\u91cd\u65b0\u8a8d\u8b49\u60a8\u7684\u5e33\u865f",
-                "title": "\u91cd\u65b0\u8a8d\u8b49\u6574\u5408"
-            },
-            "user": {
-                "data": {
-                    "host": "\u4e3b\u6a5f\u7aef"
-                },
-                "description": "\u8a2d\u5b9a Bosch Smart Home Controller \u4ee5\u5141\u8a31 Home Assistant \u9032\u884c\u76e3\u63a7\u3002",
-                "title": "SHC \u8a8d\u8b49\u53c3\u6578"
-            }
-        }
+  "config": {
+    "abort": {
+      "already_configured": "裝置已經設定完成",
+      "reauth_successful": "重新認證成功"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Bosch SHC — 設定",
-                "description": "設定 Bosch Smart Home Controller 整合所建立和管理的實體及自動化。",
-                "sections": {
-                    "features": {
-                        "name": "功能",
-                        "description": "切換整合所建立的實體類型。",
-                        "data": {
-                            "scenarios_as_buttons": "將情境公開為按鈕實體",
-                            "diagnostic_entities": "建立診斷感測器",
-                            "enable_rawscan_service": "啟用 rawscan 診斷服務"
-                        },
-                        "data_description": {
-                            "scenarios_as_buttons": "開啟時：每個 Bosch SHC 情境也會在 Home Assistant 中顯示為按鈕實體（除了 trigger_scenario 服務之外）。適用於直接觸發情境的儀表板圖塊和自動化。預設：關閉。",
-                            "diagnostic_entities": "開啟時（預設）：為每個支援的裝置建立診斷感測器實體 — 閥門凸輪位置（恆溫器）和通訊品質（智慧插座）。如果不需要這些感測器，請關閉以減少實體數量。",
-                            "enable_rawscan_service": "開啟時：登錄 bosch_shc.trigger_rawscan 服務以進行原始 API 除錯。關閉可隱藏它。預設：開啟。"
-                        }
-                    },
-                    "presence": {
-                        "name": "基於在家狀態的兒童鎖",
-                        "description": "有人在家時自動鎖定所有 SHC 恆溫器和開關，所有人離開後自動解鎖。",
-                        "data": {
-                            "child_lock_enabled": "啟用基於在家狀態的兒童鎖",
-                            "child_lock_presence_entity": "在家偵測實體"
-                        },
-                        "data_description": {
-                            "child_lock_enabled": "主開關。開啟時，所有 SHC 恆溫器和開關裝置的兒童鎖跟隨下方的在家偵測實體——有人在家時鎖定，所有人離開時解鎖。關閉時，整合不會觸碰兒童鎖。",
-                            "child_lock_presence_entity": "決定兒童鎖狀態的人員/裝置。任意一個在家即開啟，所有人都離家才關閉。例如選擇家庭成員的 Person 實體。「在家」自動判斷（person/device_tracker/zone/group 為 home，binary_sensor/input_boolean 為 on）。"
-                        }
-                    },
-                    "advanced": {
-                        "name": "進階",
-                        "description": "低層連線參數。更改這些設定很少有幫助 — 修改前請參閱說明文件。",
-                        "data": {
-                            "ssl_verify_hostname": "驗證 SHC 憑證主機名稱",
-                            "long_poll_timeout": "長輪詢逾時（秒）",
-                            "excluded_devices": "排除的裝置",
-                            "excluded_rooms": "排除的房間"
-                        },
-                        "data_description": {
-                            "ssl_verify_hostname": "專家模式：開啟時會驗證 SHC 的 TLS 憑證主機名稱。Bosch SHC 憑證的主機名稱通常與其 IP 位址不符，因此啟用此設定通常會中斷連線 — 除非確定您的設定相符，否則請保持關閉。預設：關閉。",
-                            "long_poll_timeout": "每次長輪詢請求在重新連線前等待事件的時間。預設 10。增加可減少重新連線次數；若網路會斷開閒置連線則降低此值。",
-                            "excluded_devices": "要隱藏的裝置 — 不會為這些裝置建立實體。留空可包含全部。新排除裝置的現有實體在手動移除前會保留。",
-                            "excluded_rooms": "隱藏這些 Bosch 房間中的所有裝置。留空可包含全部。"
-                        }
-                    }
-                }
-            }
+    "error": {
+      "cannot_connect": "連線失敗",
+      "invalid_auth": "驗證碼無效",
+      "pairing_failed": "配對失敗：請確認 Bosch Smart Home Controller 已經處於配對模式（LED 閃爍）、並且密碼輸入正確。",
+      "session_error": "Session 錯誤：API 回覆非正常結果。",
+      "unknown": "未預期錯誤"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "請按下 Bosch Smart Home Controller 前方的按鈕直到 LED 閃爍。\n是否要繼續設定位於 {host} 的 {model} 連接至 Home Assistant？"
+      },
+      "credentials": {
+        "data": {
+          "password": "Smart Home Controller 密碼"
         }
+      },
+      "reauth_confirm": {
+        "description": "bosch_shc 整合需要重新認證您的帳號",
+        "title": "重新認證整合"
+      },
+      "user": {
+        "data": {
+          "host": "主機端"
+        },
+        "description": "設定 Bosch Smart Home Controller 以允許 Home Assistant 進行監控。",
+        "title": "SHC 認證參數"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — 設定",
+        "description": "設定 Bosch Smart Home Controller 整合所建立和管理的實體及自動化。",
+        "sections": {
+          "features": {
+            "name": "功能",
+            "description": "切換整合所建立的實體類型。",
+            "data": {
+              "scenarios_as_buttons": "將情境公開為按鈕實體",
+              "diagnostic_entities": "建立診斷感測器",
+              "enable_rawscan_service": "啟用 rawscan 診斷服務"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "開啟時：每個 Bosch SHC 情境也會在 Home Assistant 中顯示為按鈕實體（除了 trigger_scenario 服務之外）。適用於直接觸發情境的儀表板圖塊和自動化。預設：關閉。",
+              "diagnostic_entities": "開啟時（預設）：為每個支援的裝置建立診斷感測器實體 — 閥門凸輪位置（恆溫器）和通訊品質（智慧插座）。如果不需要這些感測器，請關閉以減少實體數量。",
+              "enable_rawscan_service": "開啟時：登錄 bosch_shc.trigger_rawscan 服務以進行原始 API 除錯。關閉可隱藏它。預設：開啟。"
+            }
+          },
+          "presence": {
+            "name": "基於在家狀態的兒童鎖",
+            "description": "有人在家時自動鎖定所有 SHC 恆溫器和開關，所有人離開後自動解鎖。",
+            "data": {
+              "child_lock_enabled": "啟用基於在家狀態的兒童鎖",
+              "child_lock_presence_entity": "在家偵測實體"
+            },
+            "data_description": {
+              "child_lock_enabled": "主開關。開啟時，所有 SHC 恆溫器和開關裝置的兒童鎖跟隨下方的在家偵測實體——有人在家時鎖定，所有人離開時解鎖。關閉時，整合不會觸碰兒童鎖。",
+              "child_lock_presence_entity": "決定兒童鎖狀態的人員/裝置。任意一個在家即開啟，所有人都離家才關閉。例如選擇家庭成員的 Person 實體。「在家」自動判斷（person/device_tracker/zone/group 為 home，binary_sensor/input_boolean 為 on）。"
+            }
+          },
+          "advanced": {
+            "name": "進階",
+            "description": "低層連線參數。更改這些設定很少有幫助 — 修改前請參閱說明文件。",
+            "data": {
+              "ssl_verify_hostname": "驗證 SHC 憑證主機名稱",
+              "long_poll_timeout": "長輪詢逾時（秒）",
+              "excluded_devices": "排除的裝置",
+              "excluded_rooms": "排除的房間"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "專家模式：開啟時會驗證 SHC 的 TLS 憑證主機名稱。Bosch SHC 憑證的主機名稱通常與其 IP 位址不符，因此啟用此設定通常會中斷連線 — 除非確定您的設定相符，否則請保持關閉。預設：關閉。",
+              "long_poll_timeout": "每次長輪詢請求在重新連線前等待事件的時間。預設 10。增加可減少重新連線次數；若網路會斷開閒置連線則降低此值。",
+              "excluded_devices": "要隱藏的裝置 — 不會為這些裝置建立實體。留空可包含全部。新排除裝置的現有實體在手動移除前會保留。",
+              "excluded_rooms": "隱藏這些 Bosch 房間中的所有裝置。留空可包含全部。"
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "房間氣候控制",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "自動",
+              "manual": "手動",
+              "eco": "節能",
+              "boost": "加速"
+            }
+          }
+        }
+      }
+    }
+  }
 }

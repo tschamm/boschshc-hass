@@ -1,73 +1,90 @@
 {
-    "config": {
-        "step": {
-            "confirm_discovery": {
-                "description": "Presione el botón frontal del Controlador de Hogar Inteligente de Bosch hasta que el LED comience a parpadear.\n¿Listo para continuar configurando {model} @ {host} con Home Assistant?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Contraseña del controlador Smart Home"
-                }
-            },
-            "reauth_confirm": {
-                "description": "La integración bosch_shc necesita volver a autenticar su cuenta"
-            },
-            "user": {
-                "description": "Configure su controlador de hogar inteligente de Bosch para permitir la supervisión y el control con Home Assistant.",
-                "title": "Parámetros de autenticación SHC"
-            }
+  "config": {
+    "step": {
+      "confirm_discovery": {
+        "description": "Presione el botón frontal del Controlador de Hogar Inteligente de Bosch hasta que el LED comience a parpadear.\n¿Listo para continuar configurando {model} @ {host} con Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "password": "Contraseña del controlador Smart Home"
         }
-    },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Bosch SHC — Configuración",
-                "description": "Configure qué entidades y automatizaciones crea y gestiona la integración del Bosch Smart Home Controller.",
-                "sections": {
-                    "features": {
-                        "name": "Funciones",
-                        "description": "Activa o desactiva los tipos de entidades que crea la integración.",
-                        "data": {
-                            "scenarios_as_buttons": "Exponer escenarios como entidades de botón",
-                            "diagnostic_entities": "Crear sensores de diagnóstico",
-                            "enable_rawscan_service": "Habilitar el servicio de diagnóstico rawscan"
-                        },
-                        "data_description": {
-                            "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario de Bosch SHC también aparece como una entidad de botón en Home Assistant (además del servicio trigger_scenario). Útil para paneles y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
-                            "diagnostic_entities": "Cuando está ACTIVADO (predeterminado): se crean entidades de sensor de diagnóstico para cada dispositivo compatible — posición del tapón de válvula (termostatos) y calidad de comunicación (enchufes inteligentes). Desactive para reducir el número de entidades si no necesita estos sensores.",
-                            "enable_rawscan_service": "Cuando está ACTIVADO: registra el servicio bosch_shc.trigger_rawscan para la depuración de la API sin procesar. Desactive para ocultarlo. Predeterminado: activado."
-                        }
-                    },
-                    "presence": {
-                        "name": "Bloqueo infantil basado en presencia",
-                        "description": "Bloquea automáticamente todos los termostatos y dispositivos de interruptor SHC cuando alguien está en casa, y los desbloquea cuando todos se van.",
-                        "data": {
-                            "child_lock_enabled": "Activar bloqueo infantil basado en presencia",
-                            "child_lock_presence_entity": "Entidades de presencia"
-                        },
-                        "data_description": {
-                            "child_lock_enabled": "Interruptor principal. Cuando está ACTIVADO, el bloqueo infantil en todos los termostatos y dispositivos de interruptor SHC sigue las entidades de presencia que aparecen abajo — bloqueado cuando alguien está en casa, desbloqueado cuando todos están fuera. Cuando está DESACTIVADO, la integración nunca toca el bloqueo infantil.",
-                            "child_lock_presence_entity": "Las personas/dispositivos que deciden el bloqueo infantil. Se activa en cuanto CUALQUIERA de ellos está en casa, y se desactiva solo cuando TODOS están fuera. Selecciona por ejemplo las entidades Person de tu hogar. 'En casa' se detecta automáticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean)."
-                        }
-                    },
-                    "advanced": {
-                        "name": "Avanzado",
-                        "description": "Parámetros de conexión de bajo nivel. Cambiarlos raramente ayuda — consulte la documentación antes de modificarlos.",
-                        "data": {
-                            "ssl_verify_hostname": "Verificar nombre de host del certificado SHC",
-                            "long_poll_timeout": "Tiempo de espera de sondeo largo (segundos)",
-                            "excluded_devices": "Dispositivos excluidos",
-                            "excluded_rooms": "Habitaciones excluidas"
-                        },
-                        "data_description": {
-                            "ssl_verify_hostname": "Experto: cuando está ACTIVADO, se verifica el nombre de host del certificado TLS del SHC. El nombre de host del certificado Bosch SHC normalmente NO coincide con su IP, por lo que habilitarlo suele romper la conexión — deje DESACTIVADO a menos que sepa que su configuración coincide. Predeterminado: desactivado.",
-                            "long_poll_timeout": "Cuánto tiempo espera cada solicitud de sondeo largo por eventos antes de reconectarse. Predeterminado: 10. Aumente para reducir reconexiones, disminuya si su red corta conexiones inactivas.",
-                            "excluded_devices": "Dispositivos a ocultar — no se crean entidades para ellos. Deje vacío para incluir todos. Las entidades existentes de dispositivos recién excluidos permanecen hasta que se eliminen manualmente.",
-                            "excluded_rooms": "Oculta todos los dispositivos en estas habitaciones de Bosch. Deje vacío para incluir todas."
-                        }
-                    }
-                }
-            }
-        }
+      },
+      "reauth_confirm": {
+        "description": "La integración bosch_shc necesita volver a autenticar su cuenta"
+      },
+      "user": {
+        "description": "Configure su controlador de hogar inteligente de Bosch para permitir la supervisión y el control con Home Assistant.",
+        "title": "Parámetros de autenticación SHC"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Configuración",
+        "description": "Configure qué entidades y automatizaciones crea y gestiona la integración del Bosch Smart Home Controller.",
+        "sections": {
+          "features": {
+            "name": "Funciones",
+            "description": "Activa o desactiva los tipos de entidades que crea la integración.",
+            "data": {
+              "scenarios_as_buttons": "Exponer escenarios como entidades de botón",
+              "diagnostic_entities": "Crear sensores de diagnóstico",
+              "enable_rawscan_service": "Habilitar el servicio de diagnóstico rawscan"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario de Bosch SHC también aparece como una entidad de botón en Home Assistant (además del servicio trigger_scenario). Útil para paneles y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
+              "diagnostic_entities": "Cuando está ACTIVADO (predeterminado): se crean entidades de sensor de diagnóstico para cada dispositivo compatible — posición del tapón de válvula (termostatos) y calidad de comunicación (enchufes inteligentes). Desactive para reducir el número de entidades si no necesita estos sensores.",
+              "enable_rawscan_service": "Cuando está ACTIVADO: registra el servicio bosch_shc.trigger_rawscan para la depuración de la API sin procesar. Desactive para ocultarlo. Predeterminado: activado."
+            }
+          },
+          "presence": {
+            "name": "Bloqueo infantil basado en presencia",
+            "description": "Bloquea automáticamente todos los termostatos y dispositivos de interruptor SHC cuando alguien está en casa, y los desbloquea cuando todos se van.",
+            "data": {
+              "child_lock_enabled": "Activar bloqueo infantil basado en presencia",
+              "child_lock_presence_entity": "Entidades de presencia"
+            },
+            "data_description": {
+              "child_lock_enabled": "Interruptor principal. Cuando está ACTIVADO, el bloqueo infantil en todos los termostatos y dispositivos de interruptor SHC sigue las entidades de presencia que aparecen abajo — bloqueado cuando alguien está en casa, desbloqueado cuando todos están fuera. Cuando está DESACTIVADO, la integración nunca toca el bloqueo infantil.",
+              "child_lock_presence_entity": "Las personas/dispositivos que deciden el bloqueo infantil. Se activa en cuanto CUALQUIERA de ellos está en casa, y se desactiva solo cuando TODOS están fuera. Selecciona por ejemplo las entidades Person de tu hogar. 'En casa' se detecta automáticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Avanzado",
+            "description": "Parámetros de conexión de bajo nivel. Cambiarlos raramente ayuda — consulte la documentación antes de modificarlos.",
+            "data": {
+              "ssl_verify_hostname": "Verificar nombre de host del certificado SHC",
+              "long_poll_timeout": "Tiempo de espera de sondeo largo (segundos)",
+              "excluded_devices": "Dispositivos excluidos",
+              "excluded_rooms": "Habitaciones excluidas"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Experto: cuando está ACTIVADO, se verifica el nombre de host del certificado TLS del SHC. El nombre de host del certificado Bosch SHC normalmente NO coincide con su IP, por lo que habilitarlo suele romper la conexión — deje DESACTIVADO a menos que sepa que su configuración coincide. Predeterminado: desactivado.",
+              "long_poll_timeout": "Cuánto tiempo espera cada solicitud de sondeo largo por eventos antes de reconectarse. Predeterminado: 10. Aumente para reducir reconexiones, disminuya si su red corta conexiones inactivas.",
+              "excluded_devices": "Dispositivos a ocultar — no se crean entidades para ellos. Deje vacío para incluir todos. Las entidades existentes de dispositivos recién excluidos permanecen hasta que se eliminen manualmente.",
+              "excluded_rooms": "Oculta todos los dispositivos en estas habitaciones de Bosch. Deje vacío para incluir todas."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Control de clima de habitación",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automático",
+              "manual": "Manual",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
+  }
 }

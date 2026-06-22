@@ -4,7 +4,7 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
 )
-from boschshcpy.services_impl import WalkTestService
+from boschshcpy.services_impl import DetectionTestService, WalkTestService
 
 from homeassistant.components.button import (
     ButtonEntity,
@@ -87,6 +87,35 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+
+    # DetectionTest start/stop + tamper reset for Motion Detector II.
+    # The local API exposes the walk test through the DetectionTest service
+    # (vs the APK-derived WalkTest service above); a given MD2 carries one or
+    # the other, so both are wired and each is guarded by its own service.
+    for button in getattr(session.device_helper, "motion_detectors2", []):
+        if device_excluded(button, config_entry.options):
+            continue
+        if getattr(button, "supports_detection_test", False):
+            entities.append(
+                SHCDetectionTestButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+            entities.append(
+                SHCDetectionTestStopButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        # resetTamperedState — LatestTamper is a standard MD2 service.
+        if hasattr(button, "reset_tampered_state"):
+            entities.append(
+                SHCTamperResetButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     if config_entry.options.get(OPT_SCENARIOS_AS_BUTTONS, False):
         entry_unique_id = config_entry.unique_id
@@ -236,3 +265,61 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):
         await self._device.async_set_walk_state_request(
             WalkTestService.WalkStateRequest.WALK_STATE_STOP
         )
+
+
+class SHCDetectionTestButton(SHCEntity, ButtonEntity):
+    """Button that starts a detection (walk) test via the DetectionTest service.
+
+    The local Bosch API exposes the walk test through DetectionTest; only
+    created when the device carries that service (supports_detection_test).
+    """
+
+    _attr_icon = "mdi:walk"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the detection-test start button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Detection Test"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_test"
+
+    async def async_press(self) -> None:
+        """Send DETECTION_STATE_START to the DetectionTest service."""
+        await self._device.async_set_detection_state_request(
+            DetectionTestService.DetectionStateRequest.DETECTION_STATE_START
+        )
+
+
+class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):
+    """Button that stops an in-progress detection (walk) test."""
+
+    _attr_icon = "mdi:stop"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the detection-test stop button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Detection Test Stop"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_detection_test_stop"
+        )
+
+    async def async_press(self) -> None:
+        """Send DETECTION_STATE_STOP to the DetectionTest service."""
+        await self._device.async_set_detection_state_request(
+            DetectionTestService.DetectionStateRequest.DETECTION_STATE_STOP
+        )
+
+
+class SHCTamperResetButton(SHCEntity, ButtonEntity):
+    """Button that resets an active tamper condition (LatestTamper service)."""
+
+    _attr_icon = "mdi:restart-alert"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the tamper-reset button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Reset Tamper"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_reset_tamper"
+
+    async def async_press(self) -> None:
+        """POST resetTamperedState to confirm the device is back in place."""
+        await self._device.async_reset_tampered_state()

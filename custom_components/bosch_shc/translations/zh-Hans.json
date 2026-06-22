@@ -197,5 +197,22 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "房间气候控制",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "自动",
+              "manual": "手动",
+              "eco": "节能",
+              "boost": "加速"
+            }
+          }
+        }
+      }
+    }
   }
 }

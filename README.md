@@ -31,6 +31,23 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 - 🌍 **30 languages** for the configuration UI.
 - 🏅 **Home Assistant Bronze** quality scale.
 
+### New in 0.7
+
+- **Motion Detector II [+M] — full configuration parity with the Bosch app:**
+  - **Detection (Walk) Test** — start/stop buttons + a state sensor, for verifying
+    mounting/coverage. Works whether your device exposes the `DetectionTest` *or* the
+    `WalkTest` service (the local API and the app use different names for the same feature).
+  - **Tamper protection** — a switch to enable/disable it, a **Reset Tamper** button to
+    clear an active tamper condition, and the existing tamper state sensor.
+  - **Orientation-light response time** — a select (Long = lower battery use / Short =
+    more responsive), backed by the `PollControl` service.
+  - **Installation profile** — a read-only sensor showing the active environment
+    (e.g. `GENERIC` / `OUTDOOR`).
+- **Climate display polish** — preset icons (`auto`/`manual`/`eco`/`boost`) and a proper
+  `translation_key`, plus `hvac_modes` ordered `[HEAT, (COOL), OFF]` so cards that hide
+  modes after `OFF` (e.g. Mushroom thermostat) show the COOL button. *(thanks @jumlu)*
+- Fully **async** integration (event-loop native; no executor round-trips for writes).
+
 ### New in 0.5
 
 - **Presence-based child lock** with a simple on/off switch: pick the people who matter — child
@@ -53,14 +70,15 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 |---|---|
 | `alarm_control_panel` | Intrusion Detection System |
 | `binary_sensor` | Shutter Contact (Gen 1 + Gen 2), Motion Detector (Gen 1 + Gen 2 [+M]), Smoke Detector (Gen 1 + Gen 2), Smoke Detection System, Water Leakage Sensor, Shutter Contact 2 Plus (vibration), Twinguard smoke alarm, Battery state (all battery devices) |
-| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional) |
+| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper |
 | `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
 | `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
 | `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
 | `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II light |
 | `number` | Thermostat temperature offset |
-| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), EMMA grid power, Battery level (diagnostic, optional) |
-| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity (Motion Detector), Silent Mode (thermostat), Vibration detection, User-Defined States |
+| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
+| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state & installation profile, EMMA grid power, Battery level (diagnostic, optional) |
+| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States |
 | `valve` | Thermostat radiator valve (position, diagnostic) |
 
 ## Services / actions

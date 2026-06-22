@@ -291,6 +291,15 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
         icon="mdi:tune",
     ),
+    "tamper_protection_enabled": SHCSwitchEntityDescription(
+        key="tamper_protection_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="tamper_protection_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:shield-lock",
+    ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
@@ -740,6 +749,15 @@ async def async_setup_entry(
                     entry_id=config_entry.entry_id,
                     description=SWITCH_TYPES["smart_sensitivity_enabled"],
                     attr_name="SmartSensitivity",
+                )
+            )
+        if hasattr(switch, "tamper_protection_enabled"):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["tamper_protection_enabled"],
+                    attr_name="TamperProtection",
                 )
             )
 

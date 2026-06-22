@@ -197,5 +197,22 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Управление климатом комнаты",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Автоматический",
+              "manual": "Ручной",
+              "eco": "Эко",
+              "boost": "Буст"
+            }
+          }
+        }
+      }
+    }
   }
 }

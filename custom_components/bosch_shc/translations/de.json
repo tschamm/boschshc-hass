@@ -145,6 +145,7 @@
   "entity": {
     "climate": {
       "room_climate_control": {
+        "name": "Raumklima",
         "state_attributes": {
           "preset_mode": {
             "state": {
@@ -166,6 +167,15 @@
       },
       "walk_test_stop": {
         "name": "Begehungstest stoppen"
+      },
+      "detection_test": {
+        "name": "Erkennungstest starten"
+      },
+      "detection_test_stop": {
+        "name": "Erkennungstest stoppen"
+      },
+      "reset_tamper": {
+        "name": "Sabotage zurücksetzen"
       }
     },
     "number": {
@@ -230,6 +240,9 @@
       },
       "smart_sensitivity_comfort": {
         "name": "Komfort-Empfindlichkeitsstufe"
+      },
+      "orientation_light_response": {
+        "name": "Reaktionszeit Orientierungslicht"
       }
     },
     "sensor": {
@@ -244,6 +257,12 @@
       },
       "air_quality_description": {
         "name": "Luftqualitätsbeschreibung"
+      },
+      "detection_state": {
+        "name": "Erkennungstest-Status"
+      },
+      "installation_profile": {
+        "name": "Installationsprofil"
       }
     }
   },

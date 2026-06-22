@@ -1,27 +1,27 @@
 {
   "config": {
     "abort": {
-      "already_configured": "Zariadenie u\u017e je nakonfigurovan\u00e9",
-      "reauth_successful": "Op\u00e4tovn\u00e9 overenie bolo \u00faspe\u0161n\u00e9",
+      "already_configured": "Zariadenie už je nakonfigurované",
+      "reauth_successful": "Opätovné overenie bolo úspešné",
       "reconfigure_successful": "Rekonfigurácia bola úspešná",
       "wrong_shc": "Zadaný hostiteľ patrí inému ovládaču Bosch SHC. Zadajte pre tento záznam správneho hostiteľa."
     },
     "error": {
-      "cannot_connect": "Nepodarilo sa pripoji\u0165",
-      "invalid_auth": "Neplatn\u00e9 overenie",
-      "pairing_failed": "P\u00e1rovanie zlyhalo; skontrolujte, \u010di je ovl\u00e1da\u010d Bosch Smart Home Controller v re\u017eime p\u00e1rovania (LED blik\u00e1) a \u010di je va\u0161e heslo spr\u00e1vne.",
-      "session_error": "Chyba rel\u00e1cie: API vr\u00e1tilo v\u00fdsledok Non-OK.",
-      "unknown": "Neo\u010dak\u00e1van\u00e1 chyba"
+      "cannot_connect": "Nepodarilo sa pripojiť",
+      "invalid_auth": "Neplatné overenie",
+      "pairing_failed": "Párovanie zlyhalo; skontrolujte, či je ovládač Bosch Smart Home Controller v režime párovania (LED bliká) a či je vaše heslo správne.",
+      "session_error": "Chyba relácie: API vrátilo výsledok Non-OK.",
+      "unknown": "Neočakávaná chyba"
     },
     "flow_title": "Bosch SHC: {name}",
     "step": {
       "confirm_discovery": {
-        "description": "Stla\u010dte tla\u010didlo na prednej strane ovl\u00e1da\u010da Bosch Smart Home Controller, k\u00fdm LED neza\u010dne blika\u0165.\n Ste pripraven\u00ed pokra\u010dova\u0165 v nastavovan\u00ed {model} @ {host} pomocou Home Assistant?"
+        "description": "Stlačte tlačidlo na prednej strane ovládača Bosch Smart Home Controller, kým LED nezačne blikať.\n Ste pripravení pokračovať v nastavovaní {model} @ {host} pomocou Home Assistant?"
       },
       "credentials": {
         "data": {
           "name": "Meno klienta pre certifikát",
-          "password": "Heslo ovl\u00e1da\u010da Smart Home Controller"
+          "password": "Heslo ovládača Smart Home Controller"
         },
         "data_description": {
           "name": "Názov zobrazený v aplikácii SHC v časti Pripojení klienti.",
@@ -29,8 +29,8 @@
         }
       },
       "reauth_confirm": {
-        "description": "Integr\u00e1cia bosch_shc mus\u00ed znova overi\u0165 v\u00e1\u0161 \u00fa\u010det",
-        "title": "Znova overi\u0165 integr\u00e1ciu",
+        "description": "Integrácia bosch_shc musí znova overiť váš účet",
+        "title": "Znova overiť integráciu",
         "data": {
           "host": "Host"
         },
@@ -72,13 +72,13 @@
       },
       "user": {
         "data": {
-          "host": "Hostite\u013e"
+          "host": "Hostiteľ"
         },
         "data_description": {
           "host": "IP adresa alebo názov hostiteľa ovládača SHC (napr. 192.168.x.y)."
         },
-        "description": "Nastavte svoj ovl\u00e1da\u010d Bosch Smart Home Controller tak, aby umo\u017e\u0148oval monitorovanie a ovl\u00e1danie pomocou Home Assistant.",
-        "title": "Parametre autentifik\u00e1cie SHC"
+        "description": "Nastavte svoj ovládač Bosch Smart Home Controller tak, aby umožňoval monitorovanie a ovládanie pomocou Home Assistant.",
+        "title": "Parametre autentifikácie SHC"
       }
     }
   },
@@ -216,6 +216,23 @@
         "command": {
           "name": "Vlastný príkaz",
           "description": "Príkazový reťazec na odoslanie do detektora dymu."
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Regulácia klímy miestnosti",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automaticky",
+              "manual": "Ručne",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
         }
       }
     }

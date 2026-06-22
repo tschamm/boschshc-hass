@@ -1,89 +1,106 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Seade on juba häälestatud",
-            "reauth_successful": "Taastuvastamine õnnestus"
-        },
-        "error": {
-            "cannot_connect": "Ühendamine nurjus",
-            "invalid_auth": "Tuvastamise viga",
-            "pairing_failed": "Sidumine nurjus; palun kontrolli kas Bosch Smart Home Controller on sidumisrežiimis (LED vilgub) ning kas salasõna on õige.",
-            "session_error": "Seansi viga: API tagastas veateate.",
-            "unknown": "Tundmatu viga"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "Vajuta palun Bosch Smart Home Controlleri esiküljenuppu kuni LED hakkab vilkuma.\n Kas oled valmis jätkama {model} @ {host} seadistamist Home Assistanti abil?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Smart Home kontrolleri salasõna"
-                }
-            },
-            "reauth_confirm": {
-                "description": "Bosch_shc sidumine peab konto uuesti autentima.",
-                "title": "Taastuvastamine"
-            },
-            "user": {
-                "data": {
-                    "host": "Host"
-                },
-                "description": "Seadista oma Bosch Smart Home Controller, et võimaldada jälgimist ja juhtimist Home Assistantiga.",
-                "title": "SHC autentimisparameetrid"
-            }
-        }
+  "config": {
+    "abort": {
+      "already_configured": "Seade on juba häälestatud",
+      "reauth_successful": "Taastuvastamine õnnestus"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Bosch SHC — Seaded",
-                "description": "Seadista, milliseid olemeid ja automaatikat Bosch Smart Home Controlleri integratsioon loob ja haldab.",
-                "sections": {
-                    "features": {
-                        "name": "Funktsioonid",
-                        "description": "Lülita sisse või välja olemite tüübid, mida integratsioon loob.",
-                        "data": {
-                            "scenarios_as_buttons": "Näita stsenaariume nupuolemitena",
-                            "diagnostic_entities": "Loo diagnostilised andurid",
-                            "enable_rawscan_service": "Luba rawscani diagnostikateenust"
-                        },
-                        "data_description": {
-                            "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
-                            "diagnostic_entities": "Kui SEES (vaikimisi): iga toetatud seadme jaoks luuakse diagnostilised anduriolemid — ventiili asend (termostaadid) ja side kvaliteet (nutipistikud). Lülita välja, et vähendada olemite arvu, kui neid andureid ei vaja.",
-                            "enable_rawscan_service": "Kui SEES: registreerib teenuse bosch_shc.trigger_rawscan toorest API silumiseks. Lülita välja peitmiseks. Vaikimisi: sees."
-                        }
-                    },
-                    "presence": {
-                        "name": "Kohalolekupõhine lapselukk",
-                        "description": "Lukustab automaatselt kõik SHC termostaadid ja lülitid, kui keegi on kodus, ja avab need, kui kõik on lahkunud.",
-                        "data": {
-                            "child_lock_enabled": "Luba kohalolekupõhine lapselukk",
-                            "child_lock_presence_entity": "Kohaloleku olemid"
-                        },
-                        "data_description": {
-                            "child_lock_enabled": "Peamine lüliti. Kui on SEES, järgib lapselukk kõigil SHC termostaatidel ja lülitusseadmetel allpool olevaid kohaloleku olemeid — lukus, kui keegi on kodus, avatud, kui kõik on lahkunud. Kui on VÄLJAS, ei puutu integratsioon lapselukku kunagi.",
-                            "child_lock_presence_entity": "Inimesed/seadmed, kes otsustavad lapseluku üle. Lülitub SISSE kohe, kui MÕNI neist on kodus, ja VÄLJA alles siis, kui KÕIK on eemal. Vali näiteks oma leibkonna Person olemid. 'Kodus' tuvastatakse automaatselt (home person/device_tracker/zone/group jaoks, on binary_sensor/input_boolean jaoks)."
-                        }
-                    },
-                    "advanced": {
-                        "name": "Täpsemad seaded",
-                        "description": "Madalataseme ühenduse parameetrid. Nende muutmine harva aitab — tutvu dokumentatsiooniga enne muutmist.",
-                        "data": {
-                            "ssl_verify_hostname": "Kontrolli SHC sertifikaadi hostinimi",
-                            "long_poll_timeout": "Pika küsitluse ajalimit (sekundit)",
-                            "excluded_devices": "Välistatud seadmed",
-                            "excluded_rooms": "Välistatud ruumid"
-                        },
-                        "data_description": {
-                            "ssl_verify_hostname": "Ekspert: kui SEES, kontrollitakse SHC TLS-sertifikaadi hostinimi. Bosch SHC sertifikaadi hostinimi ei vasta tavaliselt selle IP-le, seega selle lubamine katkestab tavaliselt ühenduse — jäta VÄLJA, kui sa ei tea, et sinu seadistus sobib. Vaikimisi: väljas.",
-                            "long_poll_timeout": "Kui kaua iga pika küsitluse päring ootab sündmusi enne taasühendamist. Vaikimisi: 10. Suurenda taasühenduste vähendamiseks, vähenda, kui võrk katkestab passiivsed ühendused.",
-                            "excluded_devices": "Peidetavad seadmed — nende jaoks ei looda ühtegi olemit. Jäta tühjaks kõigi kaasamiseks. Äsja välistatud seadmete olemasolevad olemid jäävad kuni käsitsi eemaldamiseni.",
-                            "excluded_rooms": "Peida kõik seadmed nendes Boschi ruumides. Jäta tühjaks kõigi kaasamiseks."
-                        }
-                    }
-                }
-            }
+    "error": {
+      "cannot_connect": "Ühendamine nurjus",
+      "invalid_auth": "Tuvastamise viga",
+      "pairing_failed": "Sidumine nurjus; palun kontrolli kas Bosch Smart Home Controller on sidumisrežiimis (LED vilgub) ning kas salasõna on õige.",
+      "session_error": "Seansi viga: API tagastas veateate.",
+      "unknown": "Tundmatu viga"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Vajuta palun Bosch Smart Home Controlleri esiküljenuppu kuni LED hakkab vilkuma.\n Kas oled valmis jätkama {model} @ {host} seadistamist Home Assistanti abil?"
+      },
+      "credentials": {
+        "data": {
+          "password": "Smart Home kontrolleri salasõna"
         }
+      },
+      "reauth_confirm": {
+        "description": "Bosch_shc sidumine peab konto uuesti autentima.",
+        "title": "Taastuvastamine"
+      },
+      "user": {
+        "data": {
+          "host": "Host"
+        },
+        "description": "Seadista oma Bosch Smart Home Controller, et võimaldada jälgimist ja juhtimist Home Assistantiga.",
+        "title": "SHC autentimisparameetrid"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Seaded",
+        "description": "Seadista, milliseid olemeid ja automaatikat Bosch Smart Home Controlleri integratsioon loob ja haldab.",
+        "sections": {
+          "features": {
+            "name": "Funktsioonid",
+            "description": "Lülita sisse või välja olemite tüübid, mida integratsioon loob.",
+            "data": {
+              "scenarios_as_buttons": "Näita stsenaariume nupuolemitena",
+              "diagnostic_entities": "Loo diagnostilised andurid",
+              "enable_rawscan_service": "Luba rawscani diagnostikateenust"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
+              "diagnostic_entities": "Kui SEES (vaikimisi): iga toetatud seadme jaoks luuakse diagnostilised anduriolemid — ventiili asend (termostaadid) ja side kvaliteet (nutipistikud). Lülita välja, et vähendada olemite arvu, kui neid andureid ei vaja.",
+              "enable_rawscan_service": "Kui SEES: registreerib teenuse bosch_shc.trigger_rawscan toorest API silumiseks. Lülita välja peitmiseks. Vaikimisi: sees."
+            }
+          },
+          "presence": {
+            "name": "Kohalolekupõhine lapselukk",
+            "description": "Lukustab automaatselt kõik SHC termostaadid ja lülitid, kui keegi on kodus, ja avab need, kui kõik on lahkunud.",
+            "data": {
+              "child_lock_enabled": "Luba kohalolekupõhine lapselukk",
+              "child_lock_presence_entity": "Kohaloleku olemid"
+            },
+            "data_description": {
+              "child_lock_enabled": "Peamine lüliti. Kui on SEES, järgib lapselukk kõigil SHC termostaatidel ja lülitusseadmetel allpool olevaid kohaloleku olemeid — lukus, kui keegi on kodus, avatud, kui kõik on lahkunud. Kui on VÄLJAS, ei puutu integratsioon lapselukku kunagi.",
+              "child_lock_presence_entity": "Inimesed/seadmed, kes otsustavad lapseluku üle. Lülitub SISSE kohe, kui MÕNI neist on kodus, ja VÄLJA alles siis, kui KÕIK on eemal. Vali näiteks oma leibkonna Person olemid. 'Kodus' tuvastatakse automaatselt (home person/device_tracker/zone/group jaoks, on binary_sensor/input_boolean jaoks)."
+            }
+          },
+          "advanced": {
+            "name": "Täpsemad seaded",
+            "description": "Madalataseme ühenduse parameetrid. Nende muutmine harva aitab — tutvu dokumentatsiooniga enne muutmist.",
+            "data": {
+              "ssl_verify_hostname": "Kontrolli SHC sertifikaadi hostinimi",
+              "long_poll_timeout": "Pika küsitluse ajalimit (sekundit)",
+              "excluded_devices": "Välistatud seadmed",
+              "excluded_rooms": "Välistatud ruumid"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Ekspert: kui SEES, kontrollitakse SHC TLS-sertifikaadi hostinimi. Bosch SHC sertifikaadi hostinimi ei vasta tavaliselt selle IP-le, seega selle lubamine katkestab tavaliselt ühenduse — jäta VÄLJA, kui sa ei tea, et sinu seadistus sobib. Vaikimisi: väljas.",
+              "long_poll_timeout": "Kui kaua iga pika küsitluse päring ootab sündmusi enne taasühendamist. Vaikimisi: 10. Suurenda taasühenduste vähendamiseks, vähenda, kui võrk katkestab passiivsed ühendused.",
+              "excluded_devices": "Peidetavad seadmed — nende jaoks ei looda ühtegi olemit. Jäta tühjaks kõigi kaasamiseks. Äsja välistatud seadmete olemasolevad olemid jäävad kuni käsitsi eemaldamiseni.",
+              "excluded_rooms": "Peida kõik seadmed nendes Boschi ruumides. Jäta tühjaks kõigi kaasamiseks."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Ruumi kliimajuhtimine",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automaatne",
+              "manual": "Käsitsi",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
+  }
 }

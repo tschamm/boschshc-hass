@@ -197,5 +197,22 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Kamerklimaat regeling",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatisch",
+              "manual": "Handmatig",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
   }
 }

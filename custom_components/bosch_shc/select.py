@@ -12,6 +12,7 @@ from boschshcpy.services_impl import (
     DisplayDirection,
     DisplayedTemperatureConfiguration,
     PirSensorConfigurationService,
+    PollControlService,
     PowerSwitchConfigurationService,
     SmartSensitivityControlService,
     SmokeSensitivityService,
@@ -49,6 +50,14 @@ _VIBRATION_SENSITIVITY_OPTIONS = [
     VibrationSensorService.SensitivityState.MEDIUM.name,
     VibrationSensorService.SensitivityState.LOW.name,
     VibrationSensorService.SensitivityState.VERY_LOW.name,
+]
+
+# Orientation-light response time (PollControl longPollInterval): LONG = lower
+# battery use / slower, SHORT = more responsive / higher battery use. Exclude
+# UNKNOWN from user-visible options.
+_POLL_CONTROL_OPTIONS = [
+    PollControlService.PollControlState.LONG.name,
+    PollControlService.PollControlState.SHORT.name,
 ]
 
 # State after power outage: OFF / ON / LAST_STATE (exclude UNKNOWN).
@@ -330,6 +339,19 @@ async def async_setup_entry(
             )
         )
 
+    # Orientation-light response time (PollControl) for Motion Detector II.
+    for device in getattr(session.device_helper, "motion_detectors2", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        if getattr(device, "long_poll_interval", None) is None:
+            continue
+        entities.append(
+            OrientationLightResponseSelect(
+                device=device,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -363,6 +385,45 @@ class MotionSensitivitySelect(SHCEntity, SelectEntity):
         """Set the motion sensitivity."""
         MotionSensitivity = PirSensorConfigurationService.MotionSensitivity
         await self._device.async_set_motion_sensitivity(MotionSensitivity[option])
+
+
+class OrientationLightResponseSelect(SHCEntity, SelectEntity):
+    """Select for the Motion Detector II orientation-light response time.
+
+    Backed by the PollControl service (longPollInterval): LONG = lower battery
+    consumption / slower response, SHORT = faster response / higher battery use.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:timer-cog-outline"
+    _attr_options = _POLL_CONTROL_OPTIONS
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the orientation-light response-time select entity."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Orientation Light Response Time"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_orientation_light_response"
+        )
+
+    @property
+    def current_option(self) -> str | None:
+        """Return the current poll-interval option."""
+        try:
+            val = self._device.long_poll_interval
+            if val is None or val.name not in self._attr_options:
+                return None
+            return val.name
+        except (AttributeError, ValueError) as err:
+            LOGGER.warning(
+                "Unknown long_poll_interval for %s: %s", self._device.name, err
+            )
+            return None
+
+    async def async_select_option(self, option: str) -> None:
+        """Set the orientation-light response time (poll interval)."""
+        state = PollControlService.PollControlState[option]
+        await self._device.async_set_long_poll_interval(state)
 
 
 class VibrationSensitivitySelect(SHCEntity, SelectEntity):
