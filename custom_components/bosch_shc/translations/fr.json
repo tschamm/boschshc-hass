@@ -197,5 +197,22 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Régulation climatique de la pièce",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatique",
+              "manual": "Manuel",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
   }
 }

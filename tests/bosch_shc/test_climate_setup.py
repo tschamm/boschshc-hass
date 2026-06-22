@@ -171,13 +171,13 @@ class TestAsyncSetupEntry:
         assert isinstance(entities[0], ClimateControl)
 
     def test_climate_control_name_uses_room_name(self):
-        """Device name = 'Room Climate <room.name>'; entity is the primary
-        entity (own name None) so the friendly name is just the device name."""
+        """Device name = room name only; entity name comes from translation_key
+        so the friendly name is '<room> Room climate control' without doubling."""
         dev = _make_cc_device(room_id="r2")
         rooms = {"r2": _make_room("Bedroom")}
         added = self._setup([dev], [], rooms)
         entity = added[0][0]
-        assert entity.device_name == "Room Climate Bedroom"
+        assert entity.device_name == "Bedroom"
         assert entity._attr_name is None
 
     def test_one_heating_circuit_added(self):

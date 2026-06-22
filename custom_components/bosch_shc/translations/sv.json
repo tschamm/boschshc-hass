@@ -1,89 +1,106 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Enheten \u00e4r redan konfigurerad",
-            "reauth_successful": "\u00c5terautentisering lyckades"
-        },
-        "error": {
-            "cannot_connect": "Det gick inte att ansluta.",
-            "invalid_auth": "Ogiltig autentisering",
-            "pairing_failed": "Kopplingen misslyckades; kontrollera att Bosch Smart Home Controller \u00e4r i kopplingsl\u00e4ge (lysdioden blinkar) och att ditt l\u00f6senord \u00e4r korrekt.",
-            "session_error": "Sessionsfel: API returnerar resultat som inte \u00e4r OK.",
-            "unknown": "Ov\u00e4ntat fel"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "Tryck p\u00e5 knappen p\u00e5 framsidan av Bosch Smart Home Controller tills lysdioden b\u00f6rjar blinka.\nRedo att forts\u00e4tta att st\u00e4lla in {modell} @ {host} med Home Assistant?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "L\u00f6senord f\u00f6r Smart Home Controller"
-                }
-            },
-            "reauth_confirm": {
-                "description": "Bosch_shc-integrationen m\u00e5ste autentisera ditt konto igen",
-                "title": "\u00c5terautenticera integration"
-            },
-            "user": {
-                "data": {
-                    "host": "V\u00e4rd"
-                },
-                "description": "St\u00e4ll in din Bosch Smart Home Controller f\u00f6r att till\u00e5ta \u00f6vervakning och kontroll med Home Assistant.",
-                "title": "SHC-autentiseringsparametrar"
-            }
-        }
+  "config": {
+    "abort": {
+      "already_configured": "Enheten är redan konfigurerad",
+      "reauth_successful": "Återautentisering lyckades"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Bosch SHC — Inställningar",
-                "description": "Konfigurera vilka enheter och automatiseringar Bosch Smart Home Controller-integrationen skapar och hanterar.",
-                "sections": {
-                    "features": {
-                        "name": "Funktioner",
-                        "description": "Slå av och på enhetstyper som integrationen skapar.",
-                        "data": {
-                            "scenarios_as_buttons": "Visa scenarier som knappenheter",
-                            "diagnostic_entities": "Skapa diagnostiksensorer",
-                            "enable_rawscan_service": "Aktivera rawscan-diagnostiktjänst"
-                        },
-                        "data_description": {
-                            "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
-                            "diagnostic_entities": "När PÅ (standard): diagnostiksensorenheter skapas för varje enhet som stöds — ventillyftarposition (termostater) och kommunikationskvalitet (smarta uttag). Stäng AV för att minska antalet enheter om du inte behöver dessa sensorer.",
-                            "enable_rawscan_service": "När PÅ: registrerar bosch_shc.trigger_rawscan-tjänsten för råa API-felsökning. Stäng AV för att dölja den. Standard: på."
-                        }
-                    },
-                    "presence": {
-                        "name": "Närvaro-baserat barnlås",
-                        "description": "Lås automatiskt alla SHC-termostater och strömbrytare när någon är hemma, och lås upp dem när alla lämnar.",
-                        "data": {
-                            "child_lock_enabled": "Aktivera närvaro-baserat barnlås",
-                            "child_lock_presence_entity": "Närvaro-entiteter"
-                        },
-                        "data_description": {
-                            "child_lock_enabled": "Huvudbrytare. När PÅ följer barnlåset på alla SHC-termostater och strömbrytarenheter närvaro-entiteterna nedan — låst när någon är hemma, upplåst när alla är borta. När AV ändrar integrationen aldrig barnlåset.",
-                            "child_lock_presence_entity": "Personerna/enheterna som avgör barnlåset. Slås PÅ så snart NÅGON av dem är hemma, och AV först när ALLA är borta. Välj t.ex. Person-entiteterna för ditt hushåll. 'Hemma' detekteras automatiskt (home för person/device_tracker/zone/group, on för binary_sensor/input_boolean)."
-                        }
-                    },
-                    "advanced": {
-                        "name": "Avancerat",
-                        "description": "Lågnivå anslutningsparametrar. Att ändra dessa hjälper sällan — konsultera dokumentationen innan du ändrar dem.",
-                        "data": {
-                            "ssl_verify_hostname": "Verifiera SHC-certifikatets värdnamn",
-                            "long_poll_timeout": "Lång polling-timeout (sekunder)",
-                            "excluded_devices": "Exkluderade enheter",
-                            "excluded_rooms": "Exkluderade rum"
-                        },
-                        "data_description": {
-                            "ssl_verify_hostname": "Expert: när PÅ verifieras SHC:s TLS-certifikatets värdnamn. Bosch SHC-certifikatets värdnamn matchar normalt INTE dess IP, så att aktivera detta bryter vanligtvis anslutningen — lämna AV om du inte är säker på att din konfiguration matchar. Standard: av.",
-                            "long_poll_timeout": "Hur länge varje lång polling-begäran väntar på händelser innan återanslutning. Standard 10. Öka för att minska återanslutningar, minska om ditt nätverk kopplar bort inaktiva anslutningar.",
-                            "excluded_devices": "Enheter att dölja — inga enheter skapas för dem. Lämna tomt för att inkludera alla. Befintliga enheter för nyligen exkluderade enheter kvarstår tills de tas bort manuellt.",
-                            "excluded_rooms": "Dölj alla enheter i dessa Bosch-rum. Lämna tomt för att inkludera alla."
-                        }
-                    }
-                }
-            }
+    "error": {
+      "cannot_connect": "Det gick inte att ansluta.",
+      "invalid_auth": "Ogiltig autentisering",
+      "pairing_failed": "Kopplingen misslyckades; kontrollera att Bosch Smart Home Controller är i kopplingsläge (lysdioden blinkar) och att ditt lösenord är korrekt.",
+      "session_error": "Sessionsfel: API returnerar resultat som inte är OK.",
+      "unknown": "Oväntat fel"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Tryck på knappen på framsidan av Bosch Smart Home Controller tills lysdioden börjar blinka.\nRedo att fortsätta att ställa in {modell} @ {host} med Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "password": "Lösenord för Smart Home Controller"
         }
+      },
+      "reauth_confirm": {
+        "description": "Bosch_shc-integrationen måste autentisera ditt konto igen",
+        "title": "Återautenticera integration"
+      },
+      "user": {
+        "data": {
+          "host": "Värd"
+        },
+        "description": "Ställ in din Bosch Smart Home Controller för att tillåta övervakning och kontroll med Home Assistant.",
+        "title": "SHC-autentiseringsparametrar"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Inställningar",
+        "description": "Konfigurera vilka enheter och automatiseringar Bosch Smart Home Controller-integrationen skapar och hanterar.",
+        "sections": {
+          "features": {
+            "name": "Funktioner",
+            "description": "Slå av och på enhetstyper som integrationen skapar.",
+            "data": {
+              "scenarios_as_buttons": "Visa scenarier som knappenheter",
+              "diagnostic_entities": "Skapa diagnostiksensorer",
+              "enable_rawscan_service": "Aktivera rawscan-diagnostiktjänst"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
+              "diagnostic_entities": "När PÅ (standard): diagnostiksensorenheter skapas för varje enhet som stöds — ventillyftarposition (termostater) och kommunikationskvalitet (smarta uttag). Stäng AV för att minska antalet enheter om du inte behöver dessa sensorer.",
+              "enable_rawscan_service": "När PÅ: registrerar bosch_shc.trigger_rawscan-tjänsten för råa API-felsökning. Stäng AV för att dölja den. Standard: på."
+            }
+          },
+          "presence": {
+            "name": "Närvaro-baserat barnlås",
+            "description": "Lås automatiskt alla SHC-termostater och strömbrytare när någon är hemma, och lås upp dem när alla lämnar.",
+            "data": {
+              "child_lock_enabled": "Aktivera närvaro-baserat barnlås",
+              "child_lock_presence_entity": "Närvaro-entiteter"
+            },
+            "data_description": {
+              "child_lock_enabled": "Huvudbrytare. När PÅ följer barnlåset på alla SHC-termostater och strömbrytarenheter närvaro-entiteterna nedan — låst när någon är hemma, upplåst när alla är borta. När AV ändrar integrationen aldrig barnlåset.",
+              "child_lock_presence_entity": "Personerna/enheterna som avgör barnlåset. Slås PÅ så snart NÅGON av dem är hemma, och AV först när ALLA är borta. Välj t.ex. Person-entiteterna för ditt hushåll. 'Hemma' detekteras automatiskt (home för person/device_tracker/zone/group, on för binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Avancerat",
+            "description": "Lågnivå anslutningsparametrar. Att ändra dessa hjälper sällan — konsultera dokumentationen innan du ändrar dem.",
+            "data": {
+              "ssl_verify_hostname": "Verifiera SHC-certifikatets värdnamn",
+              "long_poll_timeout": "Lång polling-timeout (sekunder)",
+              "excluded_devices": "Exkluderade enheter",
+              "excluded_rooms": "Exkluderade rum"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Expert: när PÅ verifieras SHC:s TLS-certifikatets värdnamn. Bosch SHC-certifikatets värdnamn matchar normalt INTE dess IP, så att aktivera detta bryter vanligtvis anslutningen — lämna AV om du inte är säker på att din konfiguration matchar. Standard: av.",
+              "long_poll_timeout": "Hur länge varje lång polling-begäran väntar på händelser innan återanslutning. Standard 10. Öka för att minska återanslutningar, minska om ditt nätverk kopplar bort inaktiva anslutningar.",
+              "excluded_devices": "Enheter att dölja — inga enheter skapas för dem. Lämna tomt för att inkludera alla. Befintliga enheter för nyligen exkluderade enheter kvarstår tills de tas bort manuellt.",
+              "excluded_rooms": "Dölj alla enheter i dessa Bosch-rum. Lämna tomt för att inkludera alla."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Rumsklimatstyrning",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatisk",
+              "manual": "Manuell",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
+  }
 }

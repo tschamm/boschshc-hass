@@ -145,6 +145,7 @@
   "entity": {
     "climate": {
       "room_climate_control": {
+        "name": "Raumklima",
         "state_attributes": {
           "preset_mode": {
             "state": {

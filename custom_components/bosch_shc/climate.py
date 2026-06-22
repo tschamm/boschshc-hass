@@ -39,7 +39,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             ClimateControl(
                 device=climate,
                 entry_id=config_entry.entry_id,
-                name=f"Room Climate {session.room(room_id).name}",
+                name=session.room(room_id).name,
             )
         )
 
@@ -76,6 +76,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
     _attr_target_temperature_step = 0.5
     _enable_turn_on_off_backwards_compatibility = False
+    _attr_translation_key = "room_climate_control"
 
     def __init__(
         self,
@@ -85,10 +86,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
     ):
         """Initialize the SHC device."""
         super().__init__(device=device, entry_id=entry_id)
-        # The RoomClimateControl is a per-room virtual device. We name the
-        # DEVICE "Room Climate <room>" and make this the device's primary entity
-        # (_attr_name = None) so the friendly name is just the device name — not
-        # the device name repeated twice (has_entity_name prepends it). #live
+        # Device name = room name (e.g. "Arbeitszimmer").
+        # Entity name comes from translation_key "room_climate_control" in strings.json
+        # (e.g. "Raumklima" / "Room climate control"), so the friendly name is
+        # "<room> Raumklima" — no doubling. _attr_name = None lets HA resolve
+        # the name from the translation_key.
         self._room_label = name
         self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
@@ -149,9 +151,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
     @property
     def hvac_modes(self):
         """Return available hvac modes."""
-        modes = [HVACMode.HEAT, HVACMode.OFF]
+        modes = [HVACMode.HEAT]
         if self._device.supports_cooling:
             modes.append(HVACMode.COOL)
+        modes.append(HVACMode.OFF)
         return modes
 
     @property

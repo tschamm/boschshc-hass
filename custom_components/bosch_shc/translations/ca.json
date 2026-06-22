@@ -1,89 +1,106 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "El dispositiu ja està configurat",
-            "reauth_successful": "Re-autenticació realitzada correctament"
-        },
-        "error": {
-            "cannot_connect": "Ha fallat la connexió",
-            "invalid_auth": "Autenticació invàlida",
-            "pairing_failed": "La vinculació ha fallat; comprova que el controlador Bosch Smart Home està en mode vinculació (LED parpellejant) i que la contrasenya és correcta.",
-            "session_error": "Error de sessió: l'API ha retornat No OK.",
-            "unknown": "Error inesperat"
-        },
-        "flow_title": "Bosch SHC: {name}",
-        "step": {
-            "confirm_discovery": {
-                "description": "Prem el botó de la part frontal/lateral del controlador Bosh Smart Home fins que el LED parpellegi.\nPreparat per continuar la configuració de {model} @ {host} amb Home Assistant?"
-            },
-            "credentials": {
-                "data": {
-                    "password": "Contrasenya de Smart Home Controller"
-                }
-            },
-            "reauth_confirm": {
-                "description": "La integració bosch_shc ha de tornar a autenticar el teu compte",
-                "title": "Reautenticació de la integració"
-            },
-            "user": {
-                "data": {
-                    "host": "Amfitrió"
-                },
-                "description": "Configura Bosch Smart Controller per poder controlar i monitoritzar-lo des de Home Assistant.",
-                "title": "Paràmetres d'autenticació SHC"
-            }
-        }
+  "config": {
+    "abort": {
+      "already_configured": "El dispositiu ja està configurat",
+      "reauth_successful": "Re-autenticació realitzada correctament"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Bosch SHC — Configuració",
-                "description": "Configura quines entitats i automatitzacions crea i gestiona la integració del Bosch Smart Home Controller.",
-                "sections": {
-                    "features": {
-                        "name": "Funcionalitats",
-                        "description": "Activa o desactiva els tipus d'entitats que crea la integració.",
-                        "data": {
-                            "scenarios_as_buttons": "Exposar escenaris com a entitats de botó",
-                            "diagnostic_entities": "Crear sensors de diagnòstic",
-                            "enable_rawscan_service": "Activar el servei de diagnòstic rawscan"
-                        },
-                        "data_description": {
-                            "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
-                            "diagnostic_entities": "Quan ACTIVAT (per defecte): es creen entitats de sensor de diagnòstic per a cada dispositiu compatible — posició de la vàlvula (termòstats) i qualitat de comunicació (endolls intel·ligents). Desactiva per reduir el nombre d'entitats si no necessites aquests sensors.",
-                            "enable_rawscan_service": "Quan ACTIVAT: registra el servei bosch_shc.trigger_rawscan per a la depuració d'API en brut. Desactiva per ocultar-lo. Per defecte: activat."
-                        }
-                    },
-                    "presence": {
-                        "name": "Bloqueig infantil basat en la presència",
-                        "description": "Bloqueja automàticament tots els termòstats i interruptors SHC quan algú és a casa, i desbloqueja'ls quan tothom se'n va.",
-                        "data": {
-                            "child_lock_enabled": "Activa el bloqueig infantil basat en la presència",
-                            "child_lock_presence_entity": "Entitats de presència"
-                        },
-                        "data_description": {
-                            "child_lock_enabled": "Interruptor principal. Quan està ACTIVAT, el bloqueig infantil de tots els termòstats i dispositius de commutació SHC segueix les entitats de presència que hi ha a continuació — bloquejat quan algú és a casa, desbloquejat quan tothom és fora. Quan està DESACTIVAT, la integració no toca mai el bloqueig infantil.",
-                            "child_lock_presence_entity": "Les persones/dispositius que decideixen el bloqueig infantil. S'activa tan aviat com QUALSEVOL d'ells és a casa, i s'apaga només quan TOTS estan fora. Tria, per exemple, les entitats Person de la teva llar. 'A casa' es detecta automàticament (home per a person/device_tracker/zone/group, on per a binary_sensor/input_boolean)."
-                        }
-                    },
-                    "advanced": {
-                        "name": "Avançat",
-                        "description": "Paràmetres de connexió de baix nivell. Canviar-los rarament ajuda — consulta la documentació abans de tocar-los.",
-                        "data": {
-                            "ssl_verify_hostname": "Verificar el nom d'amfitrió del certificat SHC",
-                            "long_poll_timeout": "Temps d'espera del sondeig llarg (segons)",
-                            "excluded_devices": "Dispositius exclosos",
-                            "excluded_rooms": "Habitacions excloses"
-                        },
-                        "data_description": {
-                            "ssl_verify_hostname": "Expert: quan ACTIVAT, es verifica el nom d'amfitrió del certificat TLS del SHC. El nom d'amfitrió del certificat Bosch SHC normalment NO coincideix amb la seva IP, per la qual cosa activar-ho sol trencar la connexió — deixa DESACTIVAT tret que sàpigues que la teva configuració coincideix. Per defecte: desactivat.",
-                            "long_poll_timeout": "Quant de temps espera cada sol·licitud de sondeig llarg per a events abans de reconnectar-se. Per defecte: 10. Augmenta per reduir reconnexions, disminueix si la xarxa talla connexions inactives.",
-                            "excluded_devices": "Dispositius a ocultar — no es creen entitats per a ells. Deixa buit per incloure tots. Les entitats existents per a dispositius recentment exclosos romanen fins que s'eliminin manualment.",
-                            "excluded_rooms": "Amaga tots els dispositius d'aquestes habitacions de Bosch. Deixa buit per incloure totes."
-                        }
-                    }
-                }
-            }
+    "error": {
+      "cannot_connect": "Ha fallat la connexió",
+      "invalid_auth": "Autenticació invàlida",
+      "pairing_failed": "La vinculació ha fallat; comprova que el controlador Bosch Smart Home està en mode vinculació (LED parpellejant) i que la contrasenya és correcta.",
+      "session_error": "Error de sessió: l'API ha retornat No OK.",
+      "unknown": "Error inesperat"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Prem el botó de la part frontal/lateral del controlador Bosh Smart Home fins que el LED parpellegi.\nPreparat per continuar la configuració de {model} @ {host} amb Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "password": "Contrasenya de Smart Home Controller"
         }
+      },
+      "reauth_confirm": {
+        "description": "La integració bosch_shc ha de tornar a autenticar el teu compte",
+        "title": "Reautenticació de la integració"
+      },
+      "user": {
+        "data": {
+          "host": "Amfitrió"
+        },
+        "description": "Configura Bosch Smart Controller per poder controlar i monitoritzar-lo des de Home Assistant.",
+        "title": "Paràmetres d'autenticació SHC"
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Configuració",
+        "description": "Configura quines entitats i automatitzacions crea i gestiona la integració del Bosch Smart Home Controller.",
+        "sections": {
+          "features": {
+            "name": "Funcionalitats",
+            "description": "Activa o desactiva els tipus d'entitats que crea la integració.",
+            "data": {
+              "scenarios_as_buttons": "Exposar escenaris com a entitats de botó",
+              "diagnostic_entities": "Crear sensors de diagnòstic",
+              "enable_rawscan_service": "Activar el servei de diagnòstic rawscan"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
+              "diagnostic_entities": "Quan ACTIVAT (per defecte): es creen entitats de sensor de diagnòstic per a cada dispositiu compatible — posició de la vàlvula (termòstats) i qualitat de comunicació (endolls intel·ligents). Desactiva per reduir el nombre d'entitats si no necessites aquests sensors.",
+              "enable_rawscan_service": "Quan ACTIVAT: registra el servei bosch_shc.trigger_rawscan per a la depuració d'API en brut. Desactiva per ocultar-lo. Per defecte: activat."
+            }
+          },
+          "presence": {
+            "name": "Bloqueig infantil basat en la presència",
+            "description": "Bloqueja automàticament tots els termòstats i interruptors SHC quan algú és a casa, i desbloqueja'ls quan tothom se'n va.",
+            "data": {
+              "child_lock_enabled": "Activa el bloqueig infantil basat en la presència",
+              "child_lock_presence_entity": "Entitats de presència"
+            },
+            "data_description": {
+              "child_lock_enabled": "Interruptor principal. Quan està ACTIVAT, el bloqueig infantil de tots els termòstats i dispositius de commutació SHC segueix les entitats de presència que hi ha a continuació — bloquejat quan algú és a casa, desbloquejat quan tothom és fora. Quan està DESACTIVAT, la integració no toca mai el bloqueig infantil.",
+              "child_lock_presence_entity": "Les persones/dispositius que decideixen el bloqueig infantil. S'activa tan aviat com QUALSEVOL d'ells és a casa, i s'apaga només quan TOTS estan fora. Tria, per exemple, les entitats Person de la teva llar. 'A casa' es detecta automàticament (home per a person/device_tracker/zone/group, on per a binary_sensor/input_boolean)."
+            }
+          },
+          "advanced": {
+            "name": "Avançat",
+            "description": "Paràmetres de connexió de baix nivell. Canviar-los rarament ajuda — consulta la documentació abans de tocar-los.",
+            "data": {
+              "ssl_verify_hostname": "Verificar el nom d'amfitrió del certificat SHC",
+              "long_poll_timeout": "Temps d'espera del sondeig llarg (segons)",
+              "excluded_devices": "Dispositius exclosos",
+              "excluded_rooms": "Habitacions excloses"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Expert: quan ACTIVAT, es verifica el nom d'amfitrió del certificat TLS del SHC. El nom d'amfitrió del certificat Bosch SHC normalment NO coincideix amb la seva IP, per la qual cosa activar-ho sol trencar la connexió — deixa DESACTIVAT tret que sàpigues que la teva configuració coincideix. Per defecte: desactivat.",
+              "long_poll_timeout": "Quant de temps espera cada sol·licitud de sondeig llarg per a events abans de reconnectar-se. Per defecte: 10. Augmenta per reduir reconnexions, disminueix si la xarxa talla connexions inactives.",
+              "excluded_devices": "Dispositius a ocultar — no es creen entitats per a ells. Deixa buit per incloure tots. Les entitats existents per a dispositius recentment exclosos romanen fins que s'eliminin manualment.",
+              "excluded_rooms": "Amaga tots els dispositius d'aquestes habitacions de Bosch. Deixa buit per incloure totes."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Control de clima de l'habitació",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automàtic",
+              "manual": "Manual",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
+  }
 }

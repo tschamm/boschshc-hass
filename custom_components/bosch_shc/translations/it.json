@@ -197,5 +197,22 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Controllo clima stanza",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "auto": "Automatico",
+              "manual": "Manuale",
+              "eco": "Eco",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    }
   }
 }
