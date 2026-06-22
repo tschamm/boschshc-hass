@@ -935,9 +935,18 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         """Switch needs polling."""
         return self.entity_description.should_poll
 
-    def update(self) -> None:
-        """Trigger an update of the device."""
-        self._device.update()
+    async def async_update(self) -> None:
+        """Trigger an on-demand refresh of the device (async session).
+
+        The integration runs SHCSessionAsync, so the device's sync update() would
+        leave an un-awaited coroutine in the service state (TypeError on the next
+        read, #335). Use the async refresh; fall back to the executor + sync
+        update() only if the installed lib predates async_update.
+        """
+        if hasattr(self._device, "async_update"):
+            await self._device.async_update()
+        else:
+            await self.hass.async_add_executor_job(self._device.update)
 
 
 class SHCUserDefinedStateSwitch(SwitchEntity):
@@ -1034,9 +1043,16 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         """Switch needs polling."""
         return self.entity_description.should_poll
 
-    def update(self) -> None:
-        """Trigger an update of the device."""
-        self._device.update()
+    async def async_update(self) -> None:
+        """Trigger an on-demand refresh of the device (async session).
+
+        The sync device.update() leaves an un-awaited coroutine in the service
+        state under SHCSessionAsync (TypeError, #335) — use the async refresh.
+        """
+        if hasattr(self._device, "async_update"):
+            await self._device.async_update()
+        else:
+            await self.hass.async_add_executor_job(self._device.update)
 
     @property
     def device_name(self):

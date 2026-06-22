@@ -741,34 +741,26 @@ class TestSHCSwitchInit:
 
 
 class TestSHCSwitchUpdate:
-    """SHCSwitch.update() must call self._device.update()."""
+    """SHCSwitch.async_update() must call self._device.async_update() (#335)."""
 
     def test_update_calls_device_update(self):
-        called = []
-
-        class _Dev:
-            def update(self_):
-                called.append(True)
-
+        import asyncio
+        from unittest.mock import AsyncMock
         sw = SHCSwitch.__new__(SHCSwitch)
-        sw._device = _Dev()
+        sw._device = SimpleNamespace(async_update=AsyncMock())
         sw.entity_description = SWITCH_TYPES["smartplug"]
-        sw.update()
-        assert called == [True]
+        asyncio.run(sw.async_update())
+        sw._device.async_update.assert_awaited_once()
 
     def test_update_camera_polling_type(self):
-        """update() works for polling switches (cameras) too."""
-        called = []
-
-        class _CamDev:
-            def update(self_):
-                called.append("camera")
-
+        """async_update() works for polling switches (cameras) too."""
+        import asyncio
+        from unittest.mock import AsyncMock
         sw = SHCSwitch.__new__(SHCSwitch)
-        sw._device = _CamDev()
+        sw._device = SimpleNamespace(async_update=AsyncMock())
         sw.entity_description = SWITCH_TYPES["cameraeyes"]
-        sw.update()
-        assert called == ["camera"]
+        asyncio.run(sw.async_update())
+        sw._device.async_update.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------
@@ -938,8 +930,9 @@ class TestSHCUserDefinedStateSwitch:
         assert sw._attr_name == "My State"
 
     def test_uds_update_calls_device_update(self):
-        """SHCUserDefinedStateSwitch.update() must call device.update()."""
-        called = []
+        """SHCUserDefinedStateSwitch.async_update() must call device.async_update() (#335)."""
+        import asyncio
+        from unittest.mock import AsyncMock
 
         class _Dev:
             name = "MyState"
@@ -947,9 +940,7 @@ class TestSHCUserDefinedStateSwitch:
             root_device_id = "mac1"
             deleted = False
             state = False
-
-            def update(self_):
-                called.append(True)
+            async_update = AsyncMock()
 
         from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
         shc_entry = SimpleNamespace(
@@ -968,8 +959,8 @@ class TestSHCUserDefinedStateSwitch:
             entry_id="entry1",
             description=SWITCH_TYPES["user_defined_state"],
         )
-        sw.update()
-        assert called == [True]
+        asyncio.run(sw.async_update())
+        sw._device.async_update.assert_awaited_once()
 
     def test_entity_id_umlaut_slug(self):
         """Device names with umlauts must produce a valid entity_id slug."""

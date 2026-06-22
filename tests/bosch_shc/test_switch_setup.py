@@ -820,19 +820,15 @@ def test_shcswitch_unique_id_for_camera_notification():
 
 
 def test_shcswitch_update_calls_device_update():
-    """SHCSwitch.update() must call device.update()."""
-    called = []
-
-    class _Dev:
-        def update(self):
-            called.append(True)
-
+    """SHCSwitch.async_update() must call device.async_update() (#335)."""
+    import asyncio
+    from unittest.mock import AsyncMock
     sw = SHCSwitch.__new__(SHCSwitch)
-    sw._device = _Dev()
+    sw._device = SimpleNamespace(async_update=AsyncMock())
     sw.entity_description = SWITCH_TYPES["cameraeyes"]
     sw.entity_id = "switch.test"
-    sw.update()
-    assert called == [True]
+    asyncio.run(sw.async_update())
+    sw._device.async_update.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------
@@ -841,17 +837,16 @@ def test_shcswitch_update_calls_device_update():
 
 
 def test_uds_switch_update_calls_device_update():
-    """SHCUserDefinedStateSwitch.update() must call device.update()."""
-    called = []
+    """SHCUserDefinedStateSwitch.async_update() must call device.async_update() (#335)."""
+    import asyncio
+    from unittest.mock import AsyncMock
 
     class _FakeUDS:
         name = "U"
         id = "u1"
         root_device_id = "mac1"
         state = True
-
-        def update(self):
-            called.append(True)
+        async_update = AsyncMock()
 
     shc_dev = SimpleNamespace(
         name="SHC",
@@ -868,8 +863,8 @@ def test_uds_switch_update_calls_device_update():
         entry_id="E1",
         description=SWITCH_TYPES["user_defined_state"],
     )
-    sw.update()
-    assert called == [True]
+    asyncio.run(sw.async_update())
+    sw._device.async_update.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------
