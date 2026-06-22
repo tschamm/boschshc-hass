@@ -190,125 +190,46 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Bewegungsempfindlichkeit",
-        "state": {
-          "HIGH": "Hoch",
-          "MIDDLE": "Mittel",
-          "LOW": "Niedrig"
-        }
+        "name": "Bewegungsempfindlichkeit"
       },
       "vibration_sensitivity": {
-        "name": "Vibrationsempfindlichkeit",
-        "state": {
-          "VERY_HIGH": "Sehr hoch",
-          "HIGH": "Hoch",
-          "MEDIUM": "Mittel",
-          "LOW": "Niedrig",
-          "VERY_LOW": "Sehr niedrig"
-        }
+        "name": "Vibrationsempfindlichkeit"
       },
       "state_after_power_outage": {
-        "name": "Zustand nach Stromausfall",
-        "state": {
-          "OFF": "Aus",
-          "ON": "Ein",
-          "LAST_STATE": "Letzter Zustand"
-        }
+        "name": "Zustand nach Stromausfall"
       },
       "smoke_sensitivity": {
-        "name": "Rauchempfindlichkeit",
-        "state": {
-          "HIGH": "Hoch",
-          "MIDDLE": "Mittel",
-          "LOW": "Niedrig"
-        }
+        "name": "Rauchempfindlichkeit"
       },
       "display_direction": {
-        "name": "Anzeigeausrichtung",
-        "state": {
-          "NORMAL": "Normal",
-          "REVERSED": "Gedreht"
-        }
+        "name": "Anzeigeausrichtung"
       },
       "displayed_temperature": {
-        "name": "Angezeigte Temperatur",
-        "state": {
-          "SETPOINT": "Sollwert",
-          "MEASURED": "Gemessen"
-        }
+        "name": "Angezeigte Temperatur"
       },
       "terminal_type": {
-        "name": "Anschlusstyp",
-        "state": {
-          "NOT_CONNECTED": "Nicht angeschlossen",
-          "FLOOR_SENSOR_CONNECTED": "Bodensensor angeschlossen",
-          "FLOOR_SENSOR_USED_FOR_REGULATION": "Bodensensor zur Regelung",
-          "FLOOR_SENSOR_DISPLAYED": "Bodensensor Anzeige",
-          "FLOOR_SENSOR_DISPLAYED_AND_USED_FOR_REGULATION": "Bodensensor Anzeige und Regelung",
-          "VOLT_FREE_SENSOR_CONNECTED": "Potentialfreier Sensor angeschlossen",
-          "VOLT_FREE_SENSOR_CONNECTED_AND_USED_FOR_OPERATION": "Potentialfreier Sensor für Betrieb",
-          "OUTDOOR_SENSOR_CONNECTED": "Außensensor angeschlossen"
-        }
+        "name": "Anschlusstyp"
       },
       "valve_type": {
-        "name": "Ventiltyp",
-        "state": {
-          "NORMALLY_CLOSE": "Normalerweise geschlossen",
-          "NORMALLY_OPEN": "Normalerweise offen"
-        }
+        "name": "Ventiltyp"
       },
       "heater_type": {
-        "name": "Heizungstyp",
-        "state": {
-          "FLOOR_HEATING": "Fußbodenheizung",
-          "FLOOR_HEATING_LOW_ENERGY": "Fußbodenheizung (Niedrigenergie)",
-          "RADIATOR": "Heizkörper",
-          "CONVECTOR_PASSIVE": "Konvektor (passiv)",
-          "CONVECTOR_ACTIVE": "Konvektor (aktiv)"
-        }
+        "name": "Heizungstyp"
       },
       "switch_type": {
-        "name": "Schaltertyp",
-        "state": {
-          "NONE": "Kein",
-          "PUSHBUTTON": "Taster",
-          "SWITCH": "Schalter",
-          "NO_SWITCH": "Kein Schalter"
-        }
+        "name": "Schaltertyp"
       },
       "actuator_type": {
-        "name": "Aktor-Typ",
-        "state": {
-          "NORMALLY_CLOSED": "Normalerweise geschlossen",
-          "NORMALLY_OPEN": "Normalerweise offen",
-          "UNSUPPORTED": "Nicht unterstützt"
-        }
+        "name": "Aktor-Typ"
       },
       "output_mode": {
-        "name": "Ausgabemodus",
-        "state": {
-          "ATTACHED": "Gekoppelt",
-          "DETACHED": "Entkoppelt",
-          "DETACHED_SHORT_PRESS": "Entkoppelt (Kurzdruck)",
-          "DETACHED_LONG_PRESS": "Entkoppelt (Langdruck)",
-          "UNSUPPORTED": "Nicht unterstützt"
-        }
+        "name": "Ausgabemodus"
       },
       "smart_sensitivity_security": {
-        "name": "Sicherheits-Empfindlichkeitsstufe",
-        "state": {
-          "HIGH": "Hoch",
-          "MIDDLE": "Mittel",
-          "LOW": "Niedrig"
-        }
+        "name": "Sicherheits-Empfindlichkeitsstufe"
       },
       "smart_sensitivity_comfort": {
-        "name": "Komfort-Empfindlichkeitsstufe",
-        "state": {
-          "HIGH": "Hoch",
-          "MIDDLE": "Mittel",
-          "LOW": "Niedrig"
-        }
+        "name": "Komfort-Empfindlichkeitsstufe"
       }
     },
     "sensor": {

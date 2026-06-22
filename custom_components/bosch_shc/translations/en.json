@@ -190,125 +190,46 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Motion Sensitivity",
-        "state": {
-          "HIGH": "High",
-          "MIDDLE": "Medium",
-          "LOW": "Low"
-        }
+        "name": "Motion Sensitivity"
       },
       "vibration_sensitivity": {
-        "name": "Vibration Sensitivity",
-        "state": {
-          "VERY_HIGH": "Very High",
-          "HIGH": "High",
-          "MEDIUM": "Medium",
-          "LOW": "Low",
-          "VERY_LOW": "Very Low"
-        }
+        "name": "Vibration Sensitivity"
       },
       "state_after_power_outage": {
-        "name": "State After Power Outage",
-        "state": {
-          "OFF": "Off",
-          "ON": "On",
-          "LAST_STATE": "Last State"
-        }
+        "name": "State After Power Outage"
       },
       "smoke_sensitivity": {
-        "name": "Smoke Sensitivity",
-        "state": {
-          "HIGH": "High",
-          "MIDDLE": "Medium",
-          "LOW": "Low"
-        }
+        "name": "Smoke Sensitivity"
       },
       "display_direction": {
-        "name": "Display Direction",
-        "state": {
-          "NORMAL": "Normal",
-          "REVERSED": "Reversed"
-        }
+        "name": "Display Direction"
       },
       "displayed_temperature": {
-        "name": "Displayed Temperature",
-        "state": {
-          "SETPOINT": "Setpoint",
-          "MEASURED": "Measured"
-        }
+        "name": "Displayed Temperature"
       },
       "terminal_type": {
-        "name": "Terminal Type",
-        "state": {
-          "NOT_CONNECTED": "Not Connected",
-          "FLOOR_SENSOR_CONNECTED": "Floor Sensor Connected",
-          "FLOOR_SENSOR_USED_FOR_REGULATION": "Floor Sensor Used for Regulation",
-          "FLOOR_SENSOR_DISPLAYED": "Floor Sensor Displayed",
-          "FLOOR_SENSOR_DISPLAYED_AND_USED_FOR_REGULATION": "Floor Sensor Displayed and Used for Regulation",
-          "VOLT_FREE_SENSOR_CONNECTED": "Volt-Free Sensor Connected",
-          "VOLT_FREE_SENSOR_CONNECTED_AND_USED_FOR_OPERATION": "Volt-Free Sensor Connected and Used for Operation",
-          "OUTDOOR_SENSOR_CONNECTED": "Outdoor Sensor Connected"
-        }
+        "name": "Terminal Type"
       },
       "valve_type": {
-        "name": "Valve Type",
-        "state": {
-          "NORMALLY_CLOSE": "Normally Closed",
-          "NORMALLY_OPEN": "Normally Open"
-        }
+        "name": "Valve Type"
       },
       "heater_type": {
-        "name": "Heater Type",
-        "state": {
-          "FLOOR_HEATING": "Floor Heating",
-          "FLOOR_HEATING_LOW_ENERGY": "Floor Heating (Low Energy)",
-          "RADIATOR": "Radiator",
-          "CONVECTOR_PASSIVE": "Convector (Passive)",
-          "CONVECTOR_ACTIVE": "Convector (Active)"
-        }
+        "name": "Heater Type"
       },
       "switch_type": {
-        "name": "Switch Type",
-        "state": {
-          "NONE": "None",
-          "PUSHBUTTON": "Push Button",
-          "SWITCH": "Switch",
-          "NO_SWITCH": "No Switch"
-        }
+        "name": "Switch Type"
       },
       "actuator_type": {
-        "name": "Actuator Type",
-        "state": {
-          "NORMALLY_CLOSED": "Normally Closed",
-          "NORMALLY_OPEN": "Normally Open",
-          "UNSUPPORTED": "Unsupported"
-        }
+        "name": "Actuator Type"
       },
       "output_mode": {
-        "name": "Output Mode",
-        "state": {
-          "ATTACHED": "Attached",
-          "DETACHED": "Detached",
-          "DETACHED_SHORT_PRESS": "Detached (Short Press)",
-          "DETACHED_LONG_PRESS": "Detached (Long Press)",
-          "UNSUPPORTED": "Unsupported"
-        }
+        "name": "Output Mode"
       },
       "smart_sensitivity_security": {
-        "name": "Security Sensitivity Level",
-        "state": {
-          "HIGH": "High",
-          "MIDDLE": "Medium",
-          "LOW": "Low"
-        }
+        "name": "Security Sensitivity Level"
       },
       "smart_sensitivity_comfort": {
-        "name": "Comfort Sensitivity Level",
-        "state": {
-          "HIGH": "High",
-          "MIDDLE": "Medium",
-          "LOW": "Low"
-        }
+        "name": "Comfort Sensitivity Level"
       }
     },
     "sensor": {
