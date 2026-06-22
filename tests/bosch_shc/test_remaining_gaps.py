@@ -106,16 +106,19 @@ class TestEntityIsPresentZoneDomain:
             captured_fn.append(fn)
             return MagicMock()
 
-        from boschshcpy import SHCSession as _SHCSession
-        fake_session = MagicMock(spec=_SHCSession)
+        from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+        fake_session = MagicMock(spec=_SHCSessionAsync)
+        fake_session.async_init = AsyncMock()
+        fake_session.start_polling = AsyncMock()
+        fake_session.stop_polling = AsyncMock()
         fake_session.information = SimpleNamespace(
             updateState=SimpleNamespace(name="NO_UPDATE_AVAILABLE"),
             unique_id="aa:bb:cc:dd:ee:ff",
             version="9.0.0",
             name="SHC",
         )
-        fake_session.start_polling = MagicMock()
         fake_session.subscribe_scenario_callback = MagicMock()
+        fake_session.unsubscribe_scenario_callback = MagicMock()
         fake_session.device_helper = MagicMock()
         fake_session.device_helper.universal_switches = []
 
@@ -134,9 +137,7 @@ class TestEntityIsPresentZoneDomain:
         )
 
         with (
-            patch("custom_components.bosch_shc.SHCSession", return_value=fake_session),
-            patch("custom_components.bosch_shc.async_get_instance",
-                  new=AsyncMock(return_value=MagicMock())),
+            patch("custom_components.bosch_shc.SHCSessionAsync", return_value=fake_session),
             patch("custom_components.bosch_shc.dr.async_get",
                   return_value=dr_fake),
             patch("custom_components.bosch_shc.parse_certificate", return_value=None),
@@ -233,9 +234,9 @@ class TestUnloadPresenceUnsub:
         from custom_components.bosch_shc.data import SHCData
         from custom_components.bosch_shc.const import DOMAIN
 
-        from boschshcpy import SHCSession as _SHCSession
-        fake_session = MagicMock(spec=_SHCSession)
-        fake_session.stop_polling = MagicMock()
+        from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+        fake_session = MagicMock(spec=_SHCSessionAsync)
+        fake_session.stop_polling = AsyncMock()
         fake_session.unsubscribe_scenario_callback = MagicMock()
 
         fake_dev = SimpleNamespace(id="dr-001")
@@ -348,16 +349,16 @@ class TestExtractTriggerIdsNonSmokeAlarm:
         """Messages with messageCode.name != 'SMOKE_ALARM' are skipped (line 795)."""
         tracker = self._make_tracker()
 
-        class _FakeAPI:
-            def get_messages(self):
-                return [
+        tracker._session = SimpleNamespace(
+            api=SimpleNamespace(
+                get_messages=AsyncMock(return_value=[
                     {"messageCode": {"name": "OTHER_EVENT"}, "sourceId": "sds-001"},
                     {"messageCode": {"name": "SMOKE_ALARM"}, "sourceId": "other-id"},
-                ]
+                ])
+            )
+        )
 
-        tracker._session = SimpleNamespace(api=_FakeAPI())
-
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         assert isinstance(result, set)
         assert len(result) == 0
 
@@ -365,9 +366,9 @@ class TestExtractTriggerIdsNonSmokeAlarm:
         """SMOKE_ALARM with correct sourceId and triggerId is returned."""
         tracker = self._make_tracker(sds_id="sds-001")
 
-        class _FakeAPI:
-            def get_messages(self):
-                return [
+        tracker._session = SimpleNamespace(
+            api=SimpleNamespace(
+                get_messages=AsyncMock(return_value=[
                     {
                         "messageCode": {"name": "SMOKE_ALARM"},
                         "sourceId": "sds-001",
@@ -375,11 +376,11 @@ class TestExtractTriggerIdsNonSmokeAlarm:
                             "surveillanceEvents": [{"triggerId": "tg-dev-001"}]
                         },
                     }
-                ]
+                ])
+            )
+        )
 
-        tracker._session = SimpleNamespace(api=_FakeAPI())
-
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         assert "tg-dev-001" in result
 
 
@@ -522,27 +523,18 @@ class TestImpulseRelayDeviceExcluded:
 # ---------------------------------------------------------------------------
 
 class TestHeatingCircuitSetterAttributeError:
-    """set_native_value must log warning on AttributeError/KeyError (lines 246-247)."""
+    """async_set_native_value must log warning on AttributeError/KeyError."""
 
     def test_attribute_error_in_setter_logs_warning(self):
-        """AttributeError during setattr must log a warning and not propagate."""
+        """AttributeError from async setter must log a warning and not propagate."""
         from custom_components.bosch_shc.number import HeatingCircuitSetpointNumber
 
-        class _BadSvc:
-            """Service where the setter raises AttributeError."""
-            @property
-            def setpoint_temperature_eco(self):
-                return 18.0
-
-            @setpoint_temperature_eco.setter
-            def setpoint_temperature_eco(self, value):
-                raise AttributeError("setter blocked")
-
-        svc = _BadSvc()
         s = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         s._device = SimpleNamespace(
             name="HC-BadSetter",
-            _heating_circuit_service=svc,
+            async_set_setpoint_temperature_eco=AsyncMock(
+                side_effect=AttributeError("setter blocked")
+            ),
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
@@ -550,28 +542,20 @@ class TestHeatingCircuitSetterAttributeError:
         s._attr_native_max_value = 30.0
 
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
-            s.set_native_value(20.0)
+            asyncio.run(s.async_set_native_value(20.0))
 
         mock_log.warning.assert_called_once()
 
     def test_key_error_in_setter_logs_warning(self):
-        """KeyError during setattr must also log a warning."""
+        """KeyError from async setter must also log a warning."""
         from custom_components.bosch_shc.number import HeatingCircuitSetpointNumber
 
-        class _KeyErrorSvc:
-            @property
-            def setpoint_temperature_eco(self):
-                return 18.0
-
-            @setpoint_temperature_eco.setter
-            def setpoint_temperature_eco(self, value):
-                raise KeyError("missing key")
-
-        svc = _KeyErrorSvc()
         s = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         s._device = SimpleNamespace(
             name="HC-KeyErr",
-            _heating_circuit_service=svc,
+            async_set_setpoint_temperature_eco=AsyncMock(
+                side_effect=KeyError("missing key")
+            ),
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
@@ -579,7 +563,7 @@ class TestHeatingCircuitSetterAttributeError:
         s._attr_native_max_value = 30.0
 
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
-            s.set_native_value(20.0)
+            asyncio.run(s.async_set_native_value(20.0))
 
         mock_log.warning.assert_called_once()
 

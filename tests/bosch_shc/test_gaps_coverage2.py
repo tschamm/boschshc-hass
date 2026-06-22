@@ -31,7 +31,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 # line 436.  We need a multi-entity setup where at least one entity returns
 # None from hass.states.get while another returns a proper state object.
 
-_PATCH_SESSION = "custom_components.bosch_shc.SHCSession"
+_PATCH_SESSION = "custom_components.bosch_shc.SHCSessionAsync"
 _PATCH_ZEROCONF = "custom_components.bosch_shc.async_get_instance"
 _PATCH_DR = "custom_components.bosch_shc.dr.async_get"
 _PATCH_PARSE_CERT = "custom_components.bosch_shc.parse_certificate"
@@ -40,16 +40,19 @@ _PATCH_TRACK_STATE = "custom_components.bosch_shc.async_track_state_change_event
 
 
 def _make_shc_session():
-    from boschshcpy import SHCSession as _SHCSession
-    session = MagicMock(spec=_SHCSession)
+    from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+    session = MagicMock(spec=_SHCSessionAsync)
+    session.async_init = AsyncMock()
+    session.start_polling = AsyncMock()
+    session.stop_polling = AsyncMock()
     session.information = SimpleNamespace(
         updateState=SimpleNamespace(name="NO_UPDATE_AVAILABLE"),
         unique_id="aa:bb:cc:dd:ee:ff",
         version="9.0.0",
         name="SHC",
     )
-    session.start_polling = MagicMock()
     session.subscribe_scenario_callback = MagicMock()
+    session.unsubscribe_scenario_callback = MagicMock()
     session.device_helper = MagicMock()
     session.device_helper.universal_switches = []
     return session
@@ -114,7 +117,6 @@ def _run_setup_with_presence(presence_entities, hass_states=None):
 
     with (
         patch(_PATCH_SESSION, return_value=fake_session),
-        patch(_PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
         patch(_PATCH_DR, return_value=dr_fake),
         patch(_PATCH_PARSE_CERT, return_value=None),
         patch(_PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -264,7 +266,7 @@ class TestCleanupTrackerActualClosure:
         session = SimpleNamespace()
         session._subscribers = []
         session.subscribe = lambda cb_tuple: session._subscribers.append(cb_tuple)
-        session.api = SimpleNamespace(get_messages=lambda: [])
+        session.api = SimpleNamespace(get_messages=AsyncMock(return_value=[]))
         session.device_helper = SimpleNamespace(
             shutter_contacts=[],
             shutter_contacts2=[],

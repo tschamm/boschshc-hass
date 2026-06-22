@@ -6,7 +6,9 @@ No HA, no tests.common. Run with:
   python3 -m pytest tests/bosch_shc/test_switch_unit.py -q -o addopts= -p no:cacheprovider
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import (
     SHCCamera360,
@@ -50,46 +52,11 @@ def _raising_property(exc_type=AttributeError):
     return _Raiser()
 
 
-class _SetterSpy:
-    """A device attribute that records the last value written to it."""
-
-    def __init__(self, attr: str):
-        self._attr = attr
-        self.written: list = []
-
-    def make_device(self):
-        attr = self._attr
-        spy = self
-
-        class _Dev:
-            pass
-
-        def getter(self_):
-            return None
-
-        def setter(self_, value):
-            spy.written.append(value)
-
-        prop = property(getter, setter)
-        setattr(_Dev, attr, prop)
-        return _Dev()
-
-
-def _spy_device(attr: str):
-    """Return (device, written_list) where device.<attr> setter records calls."""
-    written: list = []
-
-    class _Dev:
-        pass
-
-    def getter(self_):
-        return None
-
-    def setter(self_, value):
-        written.append(value)
-
-    setattr(_Dev, attr, property(getter, setter))
-    return _Dev(), written
+def _async_spy_device(on_key: str):
+    """Return (device, mock) where device.async_set_<on_key> is an AsyncMock."""
+    mock = AsyncMock()
+    device = SimpleNamespace(**{f"async_set_{on_key}": mock})
+    return device, mock
 
 
 # ---------------------------------------------------------------------------
@@ -445,59 +412,61 @@ def test_user_defined_state_false():
 
 
 # ---------------------------------------------------------------------------
-# turn_on / turn_off — setter writes True / False
+# async_turn_on / async_turn_off — AsyncMock called with True / False
 # ---------------------------------------------------------------------------
 
 
 def test_turn_on_sets_attr_true():
-    """turn_on must call setattr(device, on_key, True)."""
-    dev, written = _spy_device("switchstate")
+    """async_turn_on must await device.async_set_switchstate(True)."""
+    dev, mock = _async_spy_device("switchstate")
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = dev
     sw.entity_description = SWITCH_TYPES["smartplug"]
     sw.entity_id = "switch.test"
-    sw.turn_on()
-    assert written == [True]
+    asyncio.run(sw.async_turn_on())
+    mock.assert_awaited_once_with(True)
 
 
 def test_turn_off_sets_attr_false():
-    """turn_off must call setattr(device, on_key, False)."""
-    dev, written = _spy_device("switchstate")
+    """async_turn_off must await device.async_set_switchstate(False)."""
+    dev, mock = _async_spy_device("switchstate")
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = dev
     sw.entity_description = SWITCH_TYPES["smartplug"]
     sw.entity_id = "switch.test"
-    sw.turn_off()
-    assert written == [False]
+    asyncio.run(sw.async_turn_off())
+    mock.assert_awaited_once_with(False)
 
 
 def test_turn_on_presencesimulation_writes_true():
-    dev, written = _spy_device("enabled")
+    dev, mock = _async_spy_device("enabled")
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = dev
     sw.entity_description = SWITCH_TYPES["presencesimulation"]
     sw.entity_id = "switch.test"
-    sw.turn_on()
-    assert written == [True]
+    asyncio.run(sw.async_turn_on())
+    mock.assert_awaited_once_with(True)
 
 
 def test_turn_off_presencesimulation_writes_false():
-    dev, written = _spy_device("enabled")
+    dev, mock = _async_spy_device("enabled")
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = dev
     sw.entity_description = SWITCH_TYPES["presencesimulation"]
     sw.entity_id = "switch.test"
-    sw.turn_off()
-    assert written == [False]
+    asyncio.run(sw.async_turn_off())
+    mock.assert_awaited_once_with(False)
 
 
 # ---------------------------------------------------------------------------
 # AttributeError / None guard — cameraeyes privacymode
+# is_on still uses a raising property; turn_on/off guard the async_set_ attr
 # ---------------------------------------------------------------------------
 
 
 class _CameraEyesNoPrivacy:
     privacymode = _raising_property()
+    # no async_set_privacymode → getattr raises AttributeError (guard catches it)
 
 
 def test_none_guard_cameraeyes_privacymode_is_on():
@@ -512,7 +481,7 @@ def test_none_guard_cameraeyes_privacymode_turn_on():
     sw._device = _CameraEyesNoPrivacy()
     sw.entity_description = SWITCH_TYPES["cameraeyes"]
     sw.entity_id = "switch.test"
-    sw.turn_on()  # must not raise
+    asyncio.run(sw.async_turn_on())  # must not raise
 
 
 def test_none_guard_cameraeyes_privacymode_turn_off():
@@ -520,7 +489,7 @@ def test_none_guard_cameraeyes_privacymode_turn_off():
     sw._device = _CameraEyesNoPrivacy()
     sw.entity_description = SWITCH_TYPES["cameraeyes"]
     sw.entity_id = "switch.test"
-    sw.turn_off()  # must not raise
+    asyncio.run(sw.async_turn_off())  # must not raise
 
 
 # ---------------------------------------------------------------------------
@@ -530,6 +499,7 @@ def test_none_guard_cameraeyes_privacymode_turn_off():
 
 class _CameraEyesNoLight:
     cameralight = _raising_property()
+    # no async_set_cameralight → getattr raises AttributeError (guard catches it)
 
 
 def test_none_guard_cameraeyes_cameralight_is_on():
@@ -544,7 +514,7 @@ def test_none_guard_cameraeyes_cameralight_turn_on():
     sw._device = _CameraEyesNoLight()
     sw.entity_description = SWITCH_TYPES["cameraeyes_cameralight"]
     sw.entity_id = "switch.test"
-    sw.turn_on()  # must not raise
+    asyncio.run(sw.async_turn_on())  # must not raise
 
 
 # ---------------------------------------------------------------------------
@@ -554,6 +524,7 @@ def test_none_guard_cameraeyes_cameralight_turn_on():
 
 class _Gen2NoFrontlight:
     camerafrontlight = _raising_property()
+    # no async_set_camerafrontlight → getattr raises AttributeError (guard catches)
 
 
 def test_none_guard_cameraoutdoorgen2_frontlight_is_on():
@@ -568,7 +539,7 @@ def test_none_guard_cameraoutdoorgen2_frontlight_turn_on():
     sw._device = _Gen2NoFrontlight()
     sw.entity_description = SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"]
     sw.entity_id = "switch.test"
-    sw.turn_on()  # must not raise
+    asyncio.run(sw.async_turn_on())  # must not raise
 
 
 def test_none_guard_cameraoutdoorgen2_frontlight_turn_off():
@@ -576,7 +547,7 @@ def test_none_guard_cameraoutdoorgen2_frontlight_turn_off():
     sw._device = _Gen2NoFrontlight()
     sw.entity_description = SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"]
     sw.entity_id = "switch.test"
-    sw.turn_off()  # must not raise
+    asyncio.run(sw.async_turn_off())  # must not raise
 
 
 # ---------------------------------------------------------------------------

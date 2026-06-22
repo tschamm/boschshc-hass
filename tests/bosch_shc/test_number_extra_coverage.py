@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN, OPT_EXCLUDED_DEVICES
 from custom_components.bosch_shc.number import (
@@ -203,17 +203,18 @@ class TestNumberSetupExcludedHeatingCircuit:
 
 
 # ---------------------------------------------------------------------------
-# 5. HeatingCircuitSetpointNumber.set_native_value — service is None
-#    (lines 246-247: LOGGER.warning branch + early return)
+# 5. HeatingCircuitSetpointNumber.async_set_native_value — async_setter absent
+#    (LOGGER.warning branch + early return when getattr returns None)
 # ---------------------------------------------------------------------------
 
 class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
-    def _sensor_no_service(self):
-        """Build HeatingCircuitSetpointNumber via __new__ with _heating_circuit_service=None."""
+    def _sensor_no_async_setter(self):
+        """Build HeatingCircuitSetpointNumber via __new__ with no async_set_* on device."""
         s = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         s._device = SimpleNamespace(
             name="HC-None",
             _heating_circuit_service=None,
+            # no async_set_setpoint_temperature_eco attribute
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
@@ -222,63 +223,64 @@ class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
         return s
 
     def test_set_native_value_with_none_service_logs_warning(self):
-        """set_native_value with None service must log a warning (line 241)."""
-        s = self._sensor_no_service()
+        """async_set_native_value with no async setter logs a warning."""
+        s = self._sensor_no_async_setter()
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
-            s.set_native_value(20.0)
+            asyncio.run(s.async_set_native_value(20.0))
         mock_log.warning.assert_called_once()
         msg = mock_log.warning.call_args[0][0]
-        assert "HeatingCircuitService unavailable" in msg
+        assert "Async setter" in msg
 
     def test_set_native_value_with_none_service_returns_early(self):
-        """set_native_value with None service must return without writing to svc."""
+        """async_set_native_value with no async setter returns without writing."""
         writes = []
 
         s = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         s._device = SimpleNamespace(
             name="HC-None",
             _heating_circuit_service=None,
+            # no async_set_setpoint_temperature_eco attribute
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
         s._attr_native_min_value = 5.0
         s._attr_native_max_value = 30.0
 
-        # If code doesn't return early it would try setattr on None → AttributeError.
-        # Just verify no exception is raised.
+        # Must not raise; setter is absent so no write occurs.
         with patch("custom_components.bosch_shc.number.LOGGER"):
-            s.set_native_value(22.0)  # must not raise
-        # No writes captured because setattr is never reached
+            asyncio.run(s.async_set_native_value(22.0))
         assert writes == []
 
     def test_set_native_value_with_valid_service_writes_clamped_value(self):
-        """Sanity: when service is present, the setter writes to the service object."""
-        svc = SimpleNamespace(setpoint_temperature_eco=None)
+        """Sanity: when async_set_* is present, it is awaited with clamped value."""
+        mock_setter = AsyncMock()
 
         s = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         s._device = SimpleNamespace(
             name="HC-OK",
-            _heating_circuit_service=svc,
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_eco=None,
+            ),
+            async_set_setpoint_temperature_eco=mock_setter,
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
         s._attr_native_min_value = 5.0
         s._attr_native_max_value = 30.0
 
-        s.set_native_value(20.0)
-
-        assert svc.setpoint_temperature_eco == 20.0
+        asyncio.run(s.async_set_native_value(20.0))
+        mock_setter.assert_awaited_once_with(20.0)
 
     def test_set_native_value_none_service_warning_includes_device_name(self):
         """The warning message must include the device name so it can be traced."""
-        s = self._sensor_no_service()
+        s = self._sensor_no_async_setter()
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
-            s.set_native_value(18.0)
+            asyncio.run(s.async_set_native_value(18.0))
         call_args = mock_log.warning.call_args[0]
-        # First arg is the format string, second is the device name
+        # Format string args include setter_name and device name
         assert "HC-None" in str(call_args)
 
     def test_native_value_with_none_service_returns_none(self):
         """native_value with _heating_circuit_service=None returns None (existing path)."""
-        s = self._sensor_no_service()
+        s = self._sensor_no_async_setter()
         assert s.native_value is None

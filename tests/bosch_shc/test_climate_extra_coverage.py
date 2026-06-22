@@ -9,6 +9,7 @@ Targets:
 
 import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, call
 
 from boschshcpy import SHCClimateControl
 
@@ -224,6 +225,12 @@ class TestClimateSetTemperatureManualSwitch:
             boost_mode=False,
             low=False,
             has_demand=False,
+            async_set_low=AsyncMock(),
+            async_set_summer_mode=AsyncMock(),
+            async_set_cooling_mode=AsyncMock(),
+            async_set_boost_mode=AsyncMock(),
+            async_set_operation_mode=AsyncMock(),
+            async_set_setpoint_temperature=AsyncMock(),
         )
         ent._entry_id = "entry-test"
         ent._attr_name = "Room Climate Test"
@@ -233,97 +240,67 @@ class TestClimateSetTemperatureManualSwitch:
         ent._enable_turn_on_off_backwards_compatibility = False
         return ent
 
-    def _make_fake_hass(self):
-        """Return a fake hass whose async_add_executor_job records calls."""
-        executor_calls = []
-
-        async def _executor_job(fn, *args):
-            executor_calls.append((fn, args))
-            # Actually execute the call so setattr writes go through
-            fn(*args)
-
-        hass = SimpleNamespace(
-            async_add_executor_job=_executor_job,
-        )
-        return hass, executor_calls
-
     def test_set_temperature_auto_mode_switches_to_manual_first(self):
         """Line 233: when operation_mode==AUTOMATIC and no ATTR_HVAC_MODE in kwargs,
-        async_set_temperature must issue a setattr(device, 'operation_mode', MANUAL)
-        executor job BEFORE the setpoint write."""
+        async_set_temperature must call async_set_operation_mode(MANUAL)
+        BEFORE the setpoint write."""
         ent = self._make_entity(operation_mode=_AUTO)
-        hass, executor_calls = self._make_fake_hass()
-        ent.hass = hass
+
+        # Track call order
+        call_order = []
+
+        async def _set_op_mode(val):
+            call_order.append(("operation_mode", val))
+
+        async def _set_setpoint(val):
+            call_order.append(("setpoint_temperature", val))
+
+        ent._device.async_set_operation_mode = _set_op_mode
+        ent._device.async_set_setpoint_temperature = _set_setpoint
 
         asyncio.run(ent.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
 
-        # First executor call must set operation_mode to MANUAL
-        assert len(executor_calls) >= 2, (
-            f"Expected ≥2 executor jobs (mode switch + setpoint), got {executor_calls}"
+        assert ("operation_mode", _MANUAL) in call_order, (
+            f"Expected async_set_operation_mode(MANUAL) to be called, got {call_order}"
         )
-        first_fn, first_args = executor_calls[0]
-        assert first_fn is setattr, "First executor job must be setattr"
-        assert first_args[0] is ent._device, "setattr target must be the device"
-        assert first_args[1] == "operation_mode", (
-            f"Expected 'operation_mode', got '{first_args[1]}'"
-        )
-        assert first_args[2] == _MANUAL, (
-            f"Expected MANUAL operation mode, got {first_args[2]}"
+        keys = [k for k, _ in call_order]
+        assert "operation_mode" in keys
+        assert "setpoint_temperature" in keys
+        op_idx = keys.index("operation_mode")
+        sp_idx = keys.index("setpoint_temperature")
+        assert op_idx < sp_idx, (
+            "async_set_operation_mode(MANUAL) must be called before async_set_setpoint_temperature"
         )
 
     def test_set_temperature_auto_mode_then_writes_setpoint(self):
         """After switching to MANUAL, the setpoint must be written."""
         ent = self._make_entity(operation_mode=_AUTO)
-        hass, executor_calls = self._make_fake_hass()
-        ent.hass = hass
 
         asyncio.run(ent.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
 
-        setpoint_calls = [
-            (fn, args) for fn, args in executor_calls
-            if fn is setattr and len(args) >= 2 and args[1] == "setpoint_temperature"
-        ]
-        assert setpoint_calls, "Expected a setpoint_temperature setattr executor job"
-        _, args = setpoint_calls[0]
-        assert args[2] == 22.0, f"Expected setpoint 22.0, got {args[2]}"
+        ent._device.async_set_setpoint_temperature.assert_awaited_with(22.0)
 
     def test_set_temperature_with_explicit_hvac_mode_skips_manual_switch(self):
         """When ATTR_HVAC_MODE is explicitly provided, the MANUAL switch must NOT happen.
         This ensures line 229's guard (kwargs.get(ATTR_HVAC_MODE) is None) works."""
         from homeassistant.components.climate.const import HVACMode
         ent = self._make_entity(operation_mode=_AUTO)
-        hass, executor_calls = self._make_fake_hass()
-        ent.hass = hass
 
         asyncio.run(ent.async_set_temperature(
             **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.AUTO}
         ))
 
-        mode_switch_calls = [
-            (fn, args) for fn, args in executor_calls
-            if fn is setattr and len(args) >= 2 and args[1] == "operation_mode"
-            and args[2] == _MANUAL
-        ]
-        assert not mode_switch_calls, (
-            "With explicit ATTR_HVAC_MODE, should NOT switch to MANUAL; "
-            f"got: {mode_switch_calls}"
-        )
+        # async_set_operation_mode must NOT have been called with MANUAL
+        for c in ent._device.async_set_operation_mode.await_args_list:
+            assert c != call(_MANUAL), (
+                "With explicit ATTR_HVAC_MODE, should NOT switch to MANUAL"
+            )
 
     def test_set_temperature_manual_mode_skips_manual_switch(self):
-        """When operation_mode is already MANUAL, no extra mode switch executor job."""
-        ent = self._make_entity(
-            operation_mode=_MANUAL,
-        )
-        hass, executor_calls = self._make_fake_hass()
-        ent.hass = hass
+        """When operation_mode is already MANUAL, no extra mode switch call."""
+        ent = self._make_entity(operation_mode=_MANUAL)
 
         asyncio.run(ent.async_set_temperature(**{ATTR_TEMPERATURE: 21.0}))
 
-        mode_switch_calls = [
-            (fn, args) for fn, args in executor_calls
-            if fn is setattr and len(args) >= 2 and args[1] == "operation_mode"
-        ]
-        assert not mode_switch_calls, (
-            "When already MANUAL, should NOT issue an operation_mode switch; "
-            f"got: {mode_switch_calls}"
-        )
+        # async_set_operation_mode must not have been called at all
+        ent._device.async_set_operation_mode.assert_not_awaited()

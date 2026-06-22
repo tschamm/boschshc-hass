@@ -37,17 +37,13 @@ def _run(coro):
 
 
 def _make_smoke_sensor(*, executor_side_effect):
-    """Build a SmokeDetectorSensor via __new__ bypass with a faked hass."""
+    """Build a SmokeDetectorSensor via __new__ bypass with a faked device."""
     s = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
     s._device = SimpleNamespace(
         name="Smoke Detector 1",
-        smoketest_requested=MagicMock(side_effect=executor_side_effect),
+        async_smoketest_requested=AsyncMock(side_effect=executor_side_effect),
     )
     s._attr_name = "Smoke Detector 1"
-
-    hass = MagicMock()
-    hass.async_add_executor_job = AsyncMock(side_effect=executor_side_effect)
-    s._hass = hass
     return s
 
 
@@ -56,12 +52,9 @@ def _make_alarm_sensor(*, executor_side_effect):
     s = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
     s._device = SimpleNamespace(
         name="Smoke Detector 1",
+        async_set_alarmstate=AsyncMock(side_effect=executor_side_effect),
     )
     s._attr_name = "Smoke Detector 1"
-
-    hass = MagicMock()
-    hass.async_add_executor_job = AsyncMock(side_effect=executor_side_effect)
-    s._hass = hass
     return s
 
 
@@ -91,9 +84,9 @@ class TestSmokeDetectorSensorSmoketestError:
             _run(s.async_request_smoketest())
 
     def test_no_error_on_success(self):
-        """When smoketest_requested succeeds, no exception is raised."""
+        """When async_smoketest_requested succeeds, no exception is raised."""
         s = _make_smoke_sensor(executor_side_effect=None)
-        s._hass.async_add_executor_job = AsyncMock(return_value=None)
+        s._device.async_smoketest_requested = AsyncMock(return_value=None)
         _run(s.async_request_smoketest())  # must not raise
 
 
@@ -123,9 +116,9 @@ class TestSmokeDetectorSensorAlarmstateError:
             _run(s.async_request_alarmstate("SOME_CMD"))
 
     def test_no_error_on_success(self):
-        """When set_alarmstate succeeds, no exception is raised."""
+        """When async_set_alarmstate succeeds, no exception is raised."""
         s = _make_alarm_sensor(executor_side_effect=None)
-        s._hass.async_add_executor_job = AsyncMock(return_value=None)
+        s._device.async_set_alarmstate = AsyncMock(return_value=None)
         _run(s.async_request_alarmstate("IDLE_OFF"))  # must not raise
 
 
@@ -162,11 +155,11 @@ class TestScenarioServiceCallTriggerError:
         raise AssertionError("trigger_scenario service was not registered")
 
     def _make_runtime_with_failing_scenario(self, exc):
-        """Build a fake runtime_data whose scenario.trigger raises exc."""
+        """Build a fake runtime_data whose scenario.async_trigger raises exc."""
         class _FailingScenario:
             name = "failing_scene"
 
-            def trigger(self_):
+            async def async_trigger(self_):
                 raise exc
 
         return SimpleNamespace(
@@ -183,11 +176,6 @@ class TestScenarioServiceCallTriggerError:
 
     def _patch_entries(self, hass, entry):
         hass.config_entries.async_entries = MagicMock(return_value=[entry])
-
-        async def _executor_job(fn, *args):
-            return fn(*args)
-
-        hass.async_add_executor_job = _executor_job
 
     def test_shcexception_raises_service_validation_error(self):
         """SHCException from scenario.trigger → ServiceValidationError (lines 126-127)."""
@@ -258,7 +246,7 @@ class TestScenarioServiceCallTriggerError:
         class _OkScenario:
             name = "ok_scene"
 
-            def trigger(self_):
+            async def async_trigger(self_):
                 triggered.append(True)
 
         runtime = SimpleNamespace(
@@ -271,11 +259,6 @@ class TestScenarioServiceCallTriggerError:
             runtime_data=runtime,
         )
         hass.config_entries.async_entries = MagicMock(return_value=[entry])
-
-        async def _executor_job(fn, *args):
-            return fn(*args)
-
-        hass.async_add_executor_job = _executor_job
 
         fake_call = SimpleNamespace(
             data={ATTR_NAME: "ok_scene", ATTR_TITLE: ""},

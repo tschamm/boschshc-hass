@@ -181,8 +181,8 @@ async def async_setup_entry(
                 smoke_detection_system=smoke_detection_system,
                 hass=hass,
             )
-            # Initial refresh on executor so blocking HTTP stays off the event loop.
-            await hass.async_add_executor_job(tracker.refresh)
+            # Initial refresh (async; awaits get_messages on the loop).
+            await tracker.async_refresh()
 
             def _cleanup_tracker():
                 tracker.teardown()
@@ -516,7 +516,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         from boschshcpy.exceptions import SHCException, SHCConnectionError
         LOGGER.debug("Requesting smoke test on entity %s", self.name)
         try:
-            await self._hass.async_add_executor_job(self._device.smoketest_requested)
+            await self._device.async_smoketest_requested()
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
                 f"Smoke test request failed for {self.name}: {err}"
@@ -526,16 +526,11 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         """Request smokedetector alarm state."""
         from boschshcpy.exceptions import SHCException, SHCConnectionError
 
-        def set_alarmstate(device, command):
-            device.alarmstate = command
-
         LOGGER.debug(
             "Requesting custom alarm state %s on entity %s", command, self.name
         )
         try:
-            await self._hass.async_add_executor_job(
-                set_alarmstate, self._device, command
-            )
+            await self._device.async_set_alarmstate(command)
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
                 f"Set alarm state failed for {self.name}: {err}"
@@ -739,8 +734,8 @@ class TwinguardAlarmTracker:
         """Return whether a smoke alarm is active for the given Twinguard device id."""
         return device_id in self._active_trigger_ids
 
-    def refresh(self) -> None:
-        """Refresh active trigger ids from the SHC (blocking HTTP — run on executor).
+    async def async_refresh(self) -> None:
+        """Refresh active trigger ids from the SHC (async; on the event loop).
 
         Safe to call multiple times; skips notification if state did not change.
         """
@@ -753,7 +748,7 @@ class TwinguardAlarmTracker:
         ):
             new_trigger_ids: set[str] = set()
         else:
-            new_trigger_ids = self._extract_trigger_ids_from_messages()
+            new_trigger_ids = await self._extract_trigger_ids_from_messages()
 
         if (
             new_trigger_ids == self._active_trigger_ids
@@ -785,20 +780,18 @@ class TwinguardAlarmTracker:
     # ------------------------------------------------------------------
 
     def _handle_alarm_update(self) -> None:
-        """Handle a SurveillanceAlarm update (called from SHCPollingThread).
+        """Handle a SurveillanceAlarm update (fired on the event loop).
 
-        refresh() does blocking HTTP and must NOT run inline on the poll thread.
-        Dispatch it via the event loop → executor so the poll thread is freed
-        immediately (M1 fix — prevents up-to-30s stall on get_messages()).
+        The async session fires this callback on the loop; schedule the async
+        refresh (it awaits get_messages) as a task so the poll loop isn't
+        blocked on the follow-up HTTP call.
         """
-        self._hass.loop.call_soon_threadsafe(
-            lambda: self._hass.async_add_executor_job(self.refresh)
-        )
+        self._hass.async_create_task(self.async_refresh())
 
-    def _extract_trigger_ids_from_messages(self) -> set[str]:
+    async def _extract_trigger_ids_from_messages(self) -> set[str]:
         """Extract active Twinguard trigger ids from SMOKE_ALARM messages."""
         try:
-            messages = self._session.api.get_messages()
+            messages = await self._session.api.get_messages()
 
             trigger_ids: set[str] = set()
             for message in messages:
@@ -908,7 +901,7 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
     async def async_request_smoketest(self) -> None:
         """Request a Twinguard smoke test."""
         LOGGER.debug("Requesting smoke test on entity %s", self.name)
-        await self.hass.async_add_executor_job(self._device.smoketest_requested)
+        await self._device.async_smoketest_requested()
 
     @property
     def extra_state_attributes(self) -> dict:

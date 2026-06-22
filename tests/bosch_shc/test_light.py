@@ -4,8 +4,9 @@ Tests bypass SHCEntity.__init__ via Cls.__new__(Cls) and set _device directly.
 No HA harness required.
 """
 
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.components.light import ColorMode
 from homeassistant.util import color as color_util
@@ -39,6 +40,10 @@ def _make_device(
         supports_brightness=supports_brightness,
         min_color_temperature=min_color_temperature,
         max_color_temperature=max_color_temperature,
+        async_set_brightness=AsyncMock(),
+        async_set_color=AsyncMock(),
+        async_set_rgb=AsyncMock(),
+        async_set_binarystate=AsyncMock(),
     )
 
 
@@ -46,7 +51,7 @@ def _make_switch(device):
     """Instantiate LightSwitch bypassing SHCEntity.__init__."""
     sw = LightSwitch.__new__(LightSwitch)
     sw._device = device
-    # turn_on() calls schedule_update_ha_state() which needs self.hass; mock it
+    # async_turn_on() calls schedule_update_ha_state() which needs self.hass; mock it
     # so harness-free tests don't fail with AttributeError on self.hass.loop.
     sw.schedule_update_ha_state = MagicMock()
     # Replay the relevant part of __init__ (color-mode detection only)
@@ -97,7 +102,7 @@ def test_is_on_none():
 
 
 # ---------------------------------------------------------------------------
-# brightness  (device 0-100 → HA 0-255, rounded)
+# brightness  (device 0-100 -> HA 0-255, rounded)
 # ---------------------------------------------------------------------------
 
 def test_brightness_full():
@@ -111,13 +116,13 @@ def test_brightness_zero():
 
 
 def test_brightness_half():
-    # 50 * 255 / 100 = 127.5 → rounds to 128
+    # 50 * 255 / 100 = 127.5 -> rounds to 128
     sw = _make_switch(_make_device(brightness=50))
     assert sw.brightness == round(50 * 255 / 100)
 
 
 def test_brightness_one_percent():
-    # 1 * 255 / 100 = 2.55 → rounds to 3
+    # 1 * 255 / 100 = 2.55 -> rounds to 3
     sw = _make_switch(_make_device(brightness=1))
     assert sw.brightness == round(1 * 255 / 100)
 
@@ -134,7 +139,7 @@ def test_brightness_none_guard():
 
 
 # ---------------------------------------------------------------------------
-# color_temp_kelvin  (device in mired → HA kelvin)
+# color_temp_kelvin  (device in mired -> HA kelvin)
 # ---------------------------------------------------------------------------
 
 def test_color_temp_kelvin_200mired():
@@ -162,7 +167,7 @@ def test_color_temp_kelvin_max_mired():
 
 
 # ---------------------------------------------------------------------------
-# hs_color  (device RGB int → HA (h, s))
+# hs_color  (device RGB int -> HA (h, s))
 # ---------------------------------------------------------------------------
 
 def test_hs_color_white():
@@ -201,7 +206,7 @@ def test_hs_color_black():
 
 
 def test_hs_color_arbitrary():
-    # 0x1A2B3C → R=26, G=43, B=60
+    # 0x1A2B3C -> R=26, G=43, B=60
     sw = _make_switch(_make_device(supports_color_hsb=True, rgb=0x1A2B3C))
     hs = sw.hs_color
     expected = color_util.color_RGB_to_hs(0x1A, 0x2B, 0x3C)
@@ -270,106 +275,105 @@ def test_min_max_color_temp_kelvin_set_when_color_temp():
 
 
 # ---------------------------------------------------------------------------
-# turn_on logic (brightness / color_temp / hs_color + binarystate)
+# async_turn_on logic (brightness / color_temp / hs_color + binarystate)
 # ---------------------------------------------------------------------------
 
 def test_turn_on_sets_brightness():
     device = _make_device(binarystate=True, brightness=50, supports_brightness=True)
     sw = _make_switch(device)
-    sw.turn_on(brightness=128)
-    # 128 * 100 / 255 = 50.196... → max(round, 1) = 50
-    assert device.brightness == max(round(128 * 100 / 255), 1)
+    asyncio.run(sw.async_turn_on(brightness=128))
+    # 128 * 100 / 255 = 50.196... -> max(round, 1) = 50
+    device.async_set_brightness.assert_called_once_with(max(round(128 * 100 / 255), 1))
 
 
 def test_turn_on_brightness_minimum_clamps_to_1():
     device = _make_device(binarystate=True, supports_brightness=True)
     sw = _make_switch(device)
-    sw.turn_on(brightness=1)
-    # 1 * 100 / 255 = 0.39 → round = 0 → max(0, 1) = 1
-    assert device.brightness == 1
+    asyncio.run(sw.async_turn_on(brightness=1))
+    # 1 * 100 / 255 = 0.39 -> round = 0 -> max(0, 1) = 1
+    device.async_set_brightness.assert_called_once_with(1)
 
 
 def test_turn_on_brightness_zero_clamps_to_1():
     device = _make_device(binarystate=True, supports_brightness=True)
     sw = _make_switch(device)
-    sw.turn_on(brightness=0)
-    assert device.brightness == 1
+    asyncio.run(sw.async_turn_on(brightness=0))
+    device.async_set_brightness.assert_called_once_with(1)
 
 
 def test_turn_on_sets_color_temp():
     device = _make_device(binarystate=True, supports_color_temp=True, color=200)
     sw = _make_switch(device)
-    sw.turn_on(color_temp_kelvin=4000)
+    asyncio.run(sw.async_turn_on(color_temp_kelvin=4000))
     expected_mired = color_util.color_temperature_kelvin_to_mired(4000)
-    assert device.color == expected_mired
+    device.async_set_color.assert_called_once_with(expected_mired)
 
 
 def test_turn_on_sets_hs_color():
     device = _make_device(binarystate=True, supports_color_hsb=True, rgb=0)
     sw = _make_switch(device)
-    sw.turn_on(hs_color=(120.0, 100.0))  # pure green
+    asyncio.run(sw.async_turn_on(hs_color=(120.0, 100.0)))  # pure green
     rgb = color_util.color_hs_to_RGB(120.0, 100.0)
     expected_raw = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-    assert device.rgb == expected_raw
+    device.async_set_rgb.assert_called_once_with(expected_raw)
 
 
 def test_turn_on_activates_binarystate_when_off():
     device = _make_device(binarystate=False)
     sw = _make_switch(device)
-    sw.turn_on()
-    assert device.binarystate is True
+    asyncio.run(sw.async_turn_on())
+    device.async_set_binarystate.assert_called_once_with(True)
 
 
 def test_turn_on_does_not_double_set_binarystate_when_already_on():
-    """binarystate stays True — no redundant write."""
+    """binarystate stays True -- no redundant write."""
     device = _make_device(binarystate=True)
     sw = _make_switch(device)
-    original = device.binarystate
-    sw.turn_on()
-    assert device.binarystate == original
+    asyncio.run(sw.async_turn_on())
+    device.async_set_binarystate.assert_not_called()
 
 
 def test_turn_on_no_kwargs_does_not_touch_brightness():
     device = _make_device(binarystate=True, brightness=75, supports_brightness=True)
     sw = _make_switch(device)
-    sw.turn_on()
-    assert device.brightness == 75  # unchanged
+    asyncio.run(sw.async_turn_on())
+    device.async_set_brightness.assert_not_called()
 
 
 def test_turn_on_brightness_ignored_when_not_supported():
     device = _make_device(binarystate=True, brightness=50, supports_brightness=False)
     sw = _make_switch(device)
-    sw.turn_on(brightness=200)
-    assert device.brightness == 50  # must not change
+    asyncio.run(sw.async_turn_on(brightness=200))
+    device.async_set_brightness.assert_not_called()
 
 
 def test_turn_on_color_temp_ignored_when_not_supported():
     device = _make_device(binarystate=True, color=200, supports_color_temp=False)
     sw = _make_switch(device)
-    sw.turn_on(color_temp_kelvin=3000)
-    assert device.color == 200  # must not change
+    asyncio.run(sw.async_turn_on(color_temp_kelvin=3000))
+    device.async_set_color.assert_not_called()
 
 
 def test_turn_on_hs_color_ignored_when_not_supported():
     device = _make_device(binarystate=True, rgb=0xFF0000, supports_color_hsb=False)
     sw = _make_switch(device)
-    sw.turn_on(hs_color=(240.0, 100.0))
-    assert device.rgb == 0xFF0000  # must not change
+    asyncio.run(sw.async_turn_on(hs_color=(240.0, 100.0)))
+    device.async_set_rgb.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# turn_off
+# async_turn_off
 # ---------------------------------------------------------------------------
 
 def test_turn_off_sets_binarystate_false():
     device = _make_device(binarystate=True)
     sw = _make_switch(device)
-    sw.turn_off()
-    assert device.binarystate is False
+    asyncio.run(sw.async_turn_off())
+    device.async_set_binarystate.assert_called_once_with(False)
 
 
 def test_turn_off_already_off_stays_off():
     device = _make_device(binarystate=False)
     sw = _make_switch(device)
-    sw.turn_off()
-    assert device.binarystate is False
+    asyncio.run(sw.async_turn_off())
+    device.async_set_binarystate.assert_called_once_with(False)

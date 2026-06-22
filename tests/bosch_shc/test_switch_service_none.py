@@ -9,7 +9,9 @@ Covers:
   crash path exists (silentmode setter already guards for None service).
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import SHCThermostat
 
@@ -67,63 +69,45 @@ def test_relay_no_load_is_on_returns_none():
 
 
 def test_relay_no_load_turn_on_does_not_raise():
-    """turn_on must NOT propagate AttributeError when service is None."""
+    """async_turn_on must NOT propagate AttributeError when service is None."""
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = _RelayNoLoad()
     sw.entity_description = SWITCH_TYPES["micromodule_relay_switch"]
     sw.entity_id = "switch.relay_test"
-    sw.turn_on()  # must not raise
+    asyncio.run(sw.async_turn_on())  # must not raise
 
 
 def test_relay_no_load_turn_off_does_not_raise():
-    """turn_off must NOT propagate AttributeError when service is None."""
+    """async_turn_off must NOT propagate AttributeError when service is None."""
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = _RelayNoLoad()
     sw.entity_description = SWITCH_TYPES["micromodule_relay_switch"]
     sw.entity_id = "switch.relay_test"
-    sw.turn_off()  # must not raise
+    asyncio.run(sw.async_turn_off())  # must not raise
 
 
 def test_relay_with_load_turn_on_calls_setter():
-    """turn_on must write True to switchstate when the service exists."""
-    calls = []
-
-    class _RelayWithLoad:
-        @property
-        def switchstate(self):
-            return "OFF"
-
-        @switchstate.setter
-        def switchstate(self, value):
-            calls.append(value)
-
+    """async_turn_on must await async_set_switchstate(True) when service exists."""
+    mock = AsyncMock()
+    device = SimpleNamespace(async_set_switchstate=mock)
     sw = SHCSwitch.__new__(SHCSwitch)
-    sw._device = _RelayWithLoad()
+    sw._device = device
     sw.entity_description = SWITCH_TYPES["micromodule_relay_switch"]
     sw.entity_id = "switch.relay_loaded"
-    sw.turn_on()
-    assert calls == [True]
+    asyncio.run(sw.async_turn_on())
+    mock.assert_awaited_once_with(True)
 
 
 def test_relay_with_load_turn_off_calls_setter():
-    """turn_off must write False to switchstate when the service exists."""
-    calls = []
-
-    class _RelayWithLoad:
-        @property
-        def switchstate(self):
-            return "ON"
-
-        @switchstate.setter
-        def switchstate(self, value):
-            calls.append(value)
-
+    """async_turn_off must await async_set_switchstate(False) when service exists."""
+    mock = AsyncMock()
+    device = SimpleNamespace(async_set_switchstate=mock)
     sw = SHCSwitch.__new__(SHCSwitch)
-    sw._device = _RelayWithLoad()
+    sw._device = device
     sw.entity_description = SWITCH_TYPES["micromodule_relay_switch"]
     sw.entity_id = "switch.relay_loaded"
-    sw.turn_off()
-    assert calls == [False]
+    asyncio.run(sw.async_turn_off())
+    mock.assert_awaited_once_with(False)
 
 
 # ---------------------------------------------------------------------------
@@ -150,21 +134,21 @@ def test_camera360_no_privacy_service_is_on_returns_none():
 
 
 def test_camera360_no_privacy_service_turn_on_does_not_raise():
-    """turn_on must NOT propagate AttributeError when privacy service is None."""
+    """async_turn_on must NOT propagate AttributeError when privacy service is None."""
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = _Camera360NoPrivacy()
     sw.entity_description = SWITCH_TYPES["camera360"]
     sw.entity_id = "switch.cam360_test"
-    sw.turn_on()  # must not raise
+    asyncio.run(sw.async_turn_on())  # must not raise
 
 
 def test_camera360_no_privacy_service_turn_off_does_not_raise():
-    """turn_off must NOT propagate AttributeError when privacy service is None."""
+    """async_turn_off must NOT propagate AttributeError when privacy service is None."""
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = _Camera360NoPrivacy()
     sw.entity_description = SWITCH_TYPES["camera360"]
     sw.entity_id = "switch.cam360_test"
-    sw.turn_off()  # must not raise
+    asyncio.run(sw.async_turn_off())  # must not raise
 
 
 def test_camera360_notification_none_is_on_returns_none():
@@ -180,16 +164,17 @@ def test_camera360_notification_none_is_on_returns_none():
 
 
 def test_camera360_notification_none_turn_on_does_not_raise():
-    """turn_on for camera360_notification must not raise when service is absent."""
+    """async_turn_on for camera360_notification must not raise when service is absent."""
     sw = SHCSwitch.__new__(SHCSwitch)
 
     class _NoNotification:
         cameranotification = _raising_property()
+        # no async_set_cameranotification → AttributeError caught by guard
 
     sw._device = _NoNotification()
     sw.entity_description = SWITCH_TYPES["camera360_notification"]
     sw.entity_id = "switch.cam360_notif"
-    sw.turn_on()  # must not raise
+    asyncio.run(sw.async_turn_on())  # must not raise
 
 
 # ---------------------------------------------------------------------------

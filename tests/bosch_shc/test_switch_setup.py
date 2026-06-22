@@ -123,7 +123,8 @@ def _make_hass_and_entry(session, shc_device=None):
             }
         }
     )
-    config_entry = SimpleNamespace(options={},
+    config_entry = SimpleNamespace(
+        options={},
         entry_id=entry_id,
         async_on_unload=MagicMock(),
     )
@@ -681,22 +682,12 @@ def test_uds_switch_is_on_false():
 
 
 def test_uds_switch_turn_on_sets_state():
-    """turn_on calls setattr(device, 'state', True)."""
-    written = []
-
-    class _FakeUDS:
-        name = "X"
-        id = "u1"
-        root_device_id = "mac1"
-
-        @property
-        def state(self):
-            return written[-1] if written else False
-
-        @state.setter
-        def state(self, v):
-            written.append(v)
-
+    """async_turn_on awaits device.async_set_state(True)."""
+    mock_set = AsyncMock()
+    device = SimpleNamespace(
+        name="X", id="u1", root_device_id="mac1",
+        state=False, async_set_state=mock_set,
+    )
     shc_dev = SimpleNamespace(
         name="SHC",
         id="shc_dev",
@@ -706,33 +697,23 @@ def test_uds_switch_turn_on_sets_state():
     )
     hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
     sw = SHCUserDefinedStateSwitch(
-        device=_FakeUDS(),
+        device=device,
         hass=hass,
         session=SimpleNamespace(subscribe=MagicMock(), _subscribers=[]),
         entry_id="E1",
         description=SWITCH_TYPES["user_defined_state"],
     )
-    sw.turn_on()
-    assert written == [True]
+    asyncio.run(sw.async_turn_on())
+    mock_set.assert_awaited_once_with(True)
 
 
 def test_uds_switch_turn_off_sets_state():
-    """turn_off calls setattr(device, 'state', False)."""
-    written = []
-
-    class _FakeUDS:
-        name = "Y"
-        id = "u2"
-        root_device_id = "mac2"
-
-        @property
-        def state(self):
-            return written[-1] if written else True
-
-        @state.setter
-        def state(self, v):
-            written.append(v)
-
+    """async_turn_off awaits device.async_set_state(False)."""
+    mock_set = AsyncMock()
+    device = SimpleNamespace(
+        name="Y", id="u2", root_device_id="mac2",
+        state=True, async_set_state=mock_set,
+    )
     shc_dev = SimpleNamespace(
         name="SHC",
         id="shc_dev",
@@ -742,14 +723,14 @@ def test_uds_switch_turn_off_sets_state():
     )
     hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
     sw = SHCUserDefinedStateSwitch(
-        device=_FakeUDS(),
+        device=device,
         hass=hass,
         session=SimpleNamespace(subscribe=MagicMock(), _subscribers=[]),
         entry_id="E1",
         description=SWITCH_TYPES["user_defined_state"],
     )
-    sw.turn_off()
-    assert written == [False]
+    asyncio.run(sw.async_turn_off())
+    mock_set.assert_awaited_once_with(False)
 
 
 def test_uds_switch_should_poll_false():

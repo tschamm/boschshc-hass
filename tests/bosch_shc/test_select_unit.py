@@ -163,46 +163,32 @@ class TestMotionSensitivitySelectCurrentOption:
 # ---------------------------------------------------------------------------
 
 class TestMotionSensitivitySelectSetOption:
-    def test_set_sensitivity_writes_enum_to_device(self):
-        """_set_sensitivity must assign the MotionSensitivity enum to device."""
-        written = []
-
-        class _Dev:
-            """Proper class with settable property (not enum-based)."""
-            name = "MD2"
-            _sensitivity = PirSensorConfigurationService.MotionSensitivity.HIGH
-
-            @property
-            def motion_sensitivity(self_):
-                return self_._sensitivity
-
-            @motion_sensitivity.setter
-            def motion_sensitivity(self_, val):
-                written.append(val)
-                self_._sensitivity = val
-
-        dev = _Dev()
-        sel = MotionSensitivitySelect.__new__(MotionSensitivitySelect)
-        sel._device = dev
-        sel._set_sensitivity(PirSensorConfigurationService.MotionSensitivity.LOW)
-        assert written == [PirSensorConfigurationService.MotionSensitivity.LOW]
-
-    def test_async_select_option_calls_executor(self):
-        """async_select_option must delegate to async_add_executor_job."""
+    def test_async_select_option_awaits_device_method(self):
+        """async_select_option must await device.async_set_motion_sensitivity."""
+        from unittest.mock import AsyncMock
         sel = _make_motion_select("HIGH")
-
-        executor_calls = []
-
-        async def fake_executor(fn, *args):
-            executor_calls.append((fn, args))
-
-        sel.hass = SimpleNamespace(async_add_executor_job=fake_executor)
-
+        sel._device = SimpleNamespace(
+            name="MD2",
+            motion_sensitivity=PirSensorConfigurationService.MotionSensitivity.HIGH,
+            async_set_motion_sensitivity=AsyncMock(),
+        )
         asyncio.run(sel.async_select_option("LOW"))
-        assert len(executor_calls) == 1
-        fn, args = executor_calls[0]
-        assert fn == sel._set_sensitivity
-        assert args[0] == PirSensorConfigurationService.MotionSensitivity.LOW
+        sel._device.async_set_motion_sensitivity.assert_awaited_once_with(
+            PirSensorConfigurationService.MotionSensitivity.LOW
+        )
+
+    def test_async_select_option_passes_correct_enum_value(self):
+        """async_select_option converts option string to enum before passing."""
+        from unittest.mock import AsyncMock
+        sel = _make_motion_select("HIGH")
+        sel._device = SimpleNamespace(
+            name="MD2",
+            motion_sensitivity=PirSensorConfigurationService.MotionSensitivity.HIGH,
+            async_set_motion_sensitivity=AsyncMock(),
+        )
+        asyncio.run(sel.async_select_option("LOW"))
+        called_with = sel._device.async_set_motion_sensitivity.call_args[0][0]
+        assert called_with == PirSensorConfigurationService.MotionSensitivity.LOW
 
 
 # ---------------------------------------------------------------------------
@@ -274,43 +260,32 @@ class TestVibrationSensitivitySelectCurrentOption:
 # ---------------------------------------------------------------------------
 
 class TestVibrationSensitivitySelectSetOption:
-    def test_set_sensitivity_writes_enum_to_device(self):
-        written = []
-
-        class _Dev:
-            """Proper class with settable property."""
-            name = "SC2+"
-            _sens = VibrationSensorService.SensitivityState.HIGH
-
-            @property
-            def sensitivity(self_):
-                return self_._sens
-
-            @sensitivity.setter
-            def sensitivity(self_, val):
-                written.append(val)
-                self_._sens = val
-
-        dev = _Dev()
-        sel = VibrationSensitivitySelect.__new__(VibrationSensitivitySelect)
-        sel._device = dev
-        sel._set_sensitivity(VibrationSensorService.SensitivityState.MEDIUM)
-        assert written == [VibrationSensorService.SensitivityState.MEDIUM]
-
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_awaits_device_method(self):
+        """async_select_option must await device.async_set_sensitivity."""
+        from unittest.mock import AsyncMock
         sel = _make_vibration_select("HIGH")
-        executor_calls = []
-
-        async def fake_executor(fn, *args):
-            executor_calls.append((fn, args))
-
-        sel.hass = SimpleNamespace(async_add_executor_job=fake_executor)
-
+        sel._device = SimpleNamespace(
+            name="SC2+",
+            sensitivity=VibrationSensorService.SensitivityState.HIGH,
+            async_set_sensitivity=AsyncMock(),
+        )
         asyncio.run(sel.async_select_option("VERY_LOW"))
-        assert len(executor_calls) == 1
-        fn, args = executor_calls[0]
-        assert fn == sel._set_sensitivity
-        assert args[0] == VibrationSensorService.SensitivityState.VERY_LOW
+        sel._device.async_set_sensitivity.assert_awaited_once_with(
+            VibrationSensorService.SensitivityState.VERY_LOW
+        )
+
+    def test_async_select_option_passes_correct_enum_value(self):
+        """async_select_option converts option string to enum before passing."""
+        from unittest.mock import AsyncMock
+        sel = _make_vibration_select("HIGH")
+        sel._device = SimpleNamespace(
+            name="SC2+",
+            sensitivity=VibrationSensorService.SensitivityState.HIGH,
+            async_set_sensitivity=AsyncMock(),
+        )
+        asyncio.run(sel.async_select_option("MEDIUM"))
+        called_with = sel._device.async_set_sensitivity.call_args[0][0]
+        assert called_with == VibrationSensorService.SensitivityState.MEDIUM
 
 
 # ---------------------------------------------------------------------------

@@ -88,6 +88,17 @@ async def async_setup_entry(
                     entry_id=config_entry.entry_id,
                 )
             )
+        # #198 / #330: Room Thermostat II 230V with an external floor sensor
+        # wired to its terminal exposes a second temperature via
+        # TerminalConfiguration — surface it as a dedicated sensor. Only when a
+        # sensor is actually connected (terminal_temperature is not None).
+        if getattr(sensor, "terminal_temperature", None) is not None:
+            entities.append(
+                TerminalTemperatureSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in session.device_helper.twinguards:
         if device_excluded(sensor, config_entry.options):
@@ -403,6 +414,33 @@ class TemperatureSensor(SHCEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         return self._device.temperature
+
+
+class TerminalTemperatureSensor(SHCEntity, SensorEntity):
+    """External floor/terminal sensor temperature of a Room Thermostat II 230V.
+
+    #198 / #330: RTH2_230 with a floor sensor wired to its terminal reports a
+    second temperature via TerminalConfiguration (distinct from the room
+    TemperatureLevel). Only created when a sensor is actually connected.
+    """
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the terminal (floor) temperature sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Floor Temperature"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_terminal_temperature"
+        )
+
+    @property
+    def native_value(self):
+        """Return the external floor/terminal sensor temperature."""
+        return self._device.terminal_temperature
 
 
 class HumiditySensor(SHCEntity, SensorEntity):

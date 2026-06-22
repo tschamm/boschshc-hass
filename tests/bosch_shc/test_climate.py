@@ -23,6 +23,7 @@ PR #329 (jumlu) — direction/regulation axis split:
 
 import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -68,6 +69,12 @@ def _make_device(
         cooling_mode=cooling_mode,
         root_device_id="test-root",
         id="test-id",
+        async_set_low=AsyncMock(),
+        async_set_summer_mode=AsyncMock(),
+        async_set_cooling_mode=AsyncMock(),
+        async_set_boost_mode=AsyncMock(),
+        async_set_operation_mode=AsyncMock(),
+        async_set_setpoint_temperature=AsyncMock(),
     )
 
 
@@ -91,14 +98,6 @@ def _run_async(coro):
         loop.close()
 
 
-def _make_hass(executor_func=None):
-    """Build a minimal hass stub with a configurable executor."""
-    if executor_func is None:
-        async def executor_func(func, *args):
-            return func(*args)
-    return SimpleNamespace(async_add_executor_job=executor_func)
-
-
 # ---------------------------------------------------------------------------
 # #273 — BOOST mode: early-return guard (no write at all)
 # ---------------------------------------------------------------------------
@@ -107,42 +106,28 @@ class TestBoostPresetGuard:
     """When preset_mode == PRESET_BOOST, async_set_temperature must return
     early — the setpoint setter must never be called."""
 
-    def _entity_with_write_tracker(self):
-        """Return (entity, written_list). Any setattr call appends to written."""
-        device = _make_device(boost_mode=True, operation_mode_value="AUTOMATIC")
-        entity = _make_entity(device)
-        written = []
-
-        async def _executor(func, *args):
-            # Record the setattr target attribute
-            if func is setattr and len(args) == 3:
-                written.append(args[1])  # attribute name
-            return func(*args)
-
-        entity.hass = _make_hass(_executor)
-        return entity, written
-
     def test_preset_is_boost(self):
         device = _make_device(boost_mode=True)
         entity = _make_entity(device)
         assert entity.preset_mode == PRESET_BOOST
 
     def test_boost_set_temp_does_not_call_executor(self):
-        entity, written = self._entity_with_write_tracker()
+        device = _make_device(boost_mode=True, operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
-        assert "setpoint_temperature" not in written, (
-            "setpoint_temperature must NOT be written while in BOOST"
-        )
+        device.async_set_setpoint_temperature.assert_not_awaited()
 
     def test_boost_set_temp_does_not_raise(self):
-        entity, _ = self._entity_with_write_tracker()
+        device = _make_device(boost_mode=True, operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
         try:
             _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
         except Exception as exc:
             pytest.fail(f"async_set_temperature raised in BOOST: {exc!r}")
 
     def test_boost_set_temp_no_temperature_arg_does_not_raise(self):
-        entity, _ = self._entity_with_write_tracker()
+        device = _make_device(boost_mode=True, operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
         _run_async(entity.async_set_temperature())  # no ATTR_TEMPERATURE
 
 
@@ -156,17 +141,10 @@ class TestBoostJsonRpcErrorSwallowed:
 
     def test_jsonrpc_error_is_swallowed(self):
         device = _make_device(boost_mode=False, low=False, operation_mode_value="MANUAL")
+        device.async_set_setpoint_temperature = AsyncMock(
+            side_effect=JSONRPCError(400, "WRONG_THERMOSTAT_GROUP_MODE")
+        )
         entity = _make_entity(device)
-
-        call_count = [0]
-
-        async def _executor(func, *args):
-            call_count[0] += 1
-            if call_count[0] == 1:
-                raise JSONRPCError(400, "WRONG_THERMOSTAT_GROUP_MODE")
-            return func(*args)
-
-        entity.hass = _make_hass(_executor)
 
         try:
             _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
@@ -175,12 +153,10 @@ class TestBoostJsonRpcErrorSwallowed:
 
     def test_shcexception_is_swallowed(self):
         device = _make_device(boost_mode=False, low=False, operation_mode_value="MANUAL")
+        device.async_set_setpoint_temperature = AsyncMock(
+            side_effect=SHCException("generic SHC error")
+        )
         entity = _make_entity(device)
-
-        async def _executor(func, *args):
-            raise SHCException("generic SHC error")
-
-        entity.hass = _make_hass(_executor)
 
         try:
             _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 21.0}))
@@ -217,24 +193,13 @@ class TestEcoPreset:
         """P2-B: ECO no longer blocks setpoint writes — setpoint IS written. #196"""
         device = _make_device(low=True, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            return func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
         # Setpoint must be written even from ECO state (guard removed)
-        assert written.get("setpoint_temperature") == 19.0, (
-            "setpoint_temperature must be written in ECO mode after P2-B fix"
-        )
+        device.async_set_setpoint_temperature.assert_awaited_with(19.0)
 
     def test_eco_does_not_raise(self):
         device = _make_device(low=True, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        entity.hass = _make_hass()
         try:
             _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
         except Exception as exc:
@@ -246,42 +211,33 @@ class TestEcoPreset:
 # ---------------------------------------------------------------------------
 
 class TestNormalHeatSetTemp:
-    def _entity_capturing_writes(self):
+    def _entity(self):
         device = _make_device(
             boost_mode=False, low=False, summer_mode=False,
             operation_mode_value="MANUAL",
         )
         entity = _make_entity(device)
-        written = []
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written.append(args[2])  # value written
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
-        return entity, written
+        return entity
 
     def test_heat_mode_sets_setpoint(self):
-        entity, written = self._entity_capturing_writes()
+        entity = self._entity()
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 21.5}))
-        assert written == [21.5], f"Expected [21.5], got {written}"
+        entity._device.async_set_setpoint_temperature.assert_awaited_with(21.5)
 
     def test_temperature_rounded_to_half_degree(self):
-        entity, written = self._entity_capturing_writes()
+        entity = self._entity()
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 21.3}))
-        assert written == [21.5], f"Expected [21.5] (rounded), got {written}"
+        entity._device.async_set_setpoint_temperature.assert_awaited_with(21.5)
 
     def test_temperature_below_min_not_written(self):
-        entity, written = self._entity_capturing_writes()
+        entity = self._entity()
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 4.0}))
-        assert written == [], "Value below min_temp must not be written"
+        entity._device.async_set_setpoint_temperature.assert_not_awaited()
 
     def test_temperature_above_max_not_written(self):
-        entity, written = self._entity_capturing_writes()
+        entity = self._entity()
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 31.0}))
-        assert written == [], "Value above max_temp must not be written"
+        entity._device.async_set_setpoint_temperature.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------
@@ -310,6 +266,12 @@ def _make_device_cooling(
         operation_mode=op,
         root_device_id="test-root",
         id="test-id",
+        async_set_low=AsyncMock(),
+        async_set_summer_mode=AsyncMock(),
+        async_set_cooling_mode=AsyncMock(),
+        async_set_boost_mode=AsyncMock(),
+        async_set_operation_mode=AsyncMock(),
+        async_set_setpoint_temperature=AsyncMock(),
     )
 
 
@@ -347,18 +309,9 @@ class TestCoolingHvacMode:
         from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True, cooling_mode=False)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
-        assert written.get("cooling_mode") is True
-        assert written.get("summer_mode") is False
+        device.async_set_cooling_mode.assert_awaited_with(True)
+        device.async_set_summer_mode.assert_awaited_with(False)
 
     def test_hvac_modes_does_not_include_auto(self):
         # PR #329: AUTO is no longer an hvac_mode; it is the "auto" preset
@@ -372,34 +325,16 @@ class TestCoolingHvacMode:
         device = _make_device_cooling(supports_cooling=True, cooling_mode=True,
                                       operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
-        assert written.get("cooling_mode") is False
+        device.async_set_cooling_mode.assert_awaited_with(False)
 
     def test_set_hvac_mode_off_clears_cooling_mode(self):
         from homeassistant.components.climate.const import HVACMode
         device = _make_device_cooling(supports_cooling=True, cooling_mode=True)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
-        assert written.get("cooling_mode") is False
-        assert written.get("summer_mode") is True
+        device.async_set_cooling_mode.assert_awaited_with(False)
+        device.async_set_summer_mode.assert_awaited_with(True)
 
 
 # ---------------------------------------------------------------------------
@@ -519,50 +454,23 @@ class TestSetHvacModeNew:
         from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=True, supports_cooling=False)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
-        assert written.get("summer_mode") is False
+        device.async_set_summer_mode.assert_awaited_with(False)
 
     def test_set_hvac_mode_cool_sets_cooling_true(self):
         from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=False, cooling_mode=False, supports_cooling=True)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
-        assert written.get("cooling_mode") is True
-        assert written.get("summer_mode") is False
+        device.async_set_cooling_mode.assert_awaited_with(True)
+        device.async_set_summer_mode.assert_awaited_with(False)
 
     def test_set_hvac_mode_off_sets_summer_true(self):
         from homeassistant.components.climate.const import HVACMode
         device = _make_device(summer_mode=False, supports_cooling=False)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
-        assert written.get("summer_mode") is True
+        device.async_set_summer_mode.assert_awaited_with(True)
 
     def test_set_hvac_mode_exits_eco_first(self):
         """When device.low=True, set_hvac_mode must clear low before direction change."""
@@ -570,19 +478,24 @@ class TestSetHvacModeNew:
         device = _make_device(low=True, summer_mode=False, supports_cooling=False,
                               operation_mode_value="MANUAL")
         entity = _make_entity(device)
+
+        # Track call order by recording each mock's first invocation
         call_order = []
 
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                call_order.append(args[1])
-            func(*args)  # actually apply so preset_mode re-reads correctly
+        async def _set_low(val):
+            call_order.append(("low", val))
 
-        entity.hass = _make_hass(_executor)
+        async def _set_summer(val):
+            call_order.append(("summer_mode", val))
+
+        device.async_set_low = _set_low
+        device.async_set_summer_mode = _set_summer
+
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
-        # "low" must appear before "summer_mode" in the call order
-        assert "low" in call_order, "low must be cleared when exiting ECO"
-        low_idx = call_order.index("low")
-        summer_idx = call_order.index("summer_mode")
+        assert "low" in [k for k, _ in call_order], "low must be cleared when exiting ECO"
+        keys = [k for k, _ in call_order]
+        low_idx = keys.index("low")
+        summer_idx = keys.index("summer_mode")
         assert low_idx < summer_idx, "low=False must be written before summer_mode=True"
 
 
@@ -592,48 +505,21 @@ class TestSetPresetModeNew:
     def test_set_preset_boost(self):
         device = _make_device(boost_mode=False, supports_boost_mode=True)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode(PRESET_BOOST))
-        assert written.get("boost_mode") is True
+        device.async_set_boost_mode.assert_awaited_with(True)
 
     def test_set_preset_eco(self):
         device = _make_device(low=False, supports_boost_mode=True)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode(PRESET_ECO))
-        assert written.get("low") is True
+        device.async_set_low.assert_awaited_with(True)
 
     def test_set_preset_auto_sets_operation_mode(self):
         from boschshcpy.services_impl import RoomClimateControlService
         device = _make_device(operation_mode_value="MANUAL", boost_mode=False, low=False)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode(PRESET_AUTO))
-        assert written.get("operation_mode") == (
+        device.async_set_operation_mode.assert_awaited_with(
             RoomClimateControlService.OperationMode.AUTOMATIC
         )
 
@@ -641,32 +527,18 @@ class TestSetPresetModeNew:
         from boschshcpy.services_impl import RoomClimateControlService
         device = _make_device(operation_mode_value="AUTOMATIC", boost_mode=False, low=False)
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode(PRESET_MANUAL))
-        assert written.get("operation_mode") == (
+        device.async_set_operation_mode.assert_awaited_with(
             RoomClimateControlService.OperationMode.MANUAL
         )
 
     def test_set_preset_invalid_ignored(self):
         device = _make_device()
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode("nonexistent_preset"))
-        assert written == {}, "Unknown preset must not write anything"
+        device.async_set_boost_mode.assert_not_awaited()
+        device.async_set_low.assert_not_awaited()
+        device.async_set_operation_mode.assert_not_awaited()
 
     def test_set_preset_auto_clears_boost_first(self):
         """PRESET_AUTO with boost active: clears boost_mode before writing AUTOMATIC."""
@@ -674,18 +546,9 @@ class TestSetPresetModeNew:
         device = _make_device(boost_mode=True, low=False,
                               supports_boost_mode=True, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode(PRESET_AUTO))
-        assert written.get("boost_mode") is False
-        assert written.get("operation_mode") == (
+        device.async_set_boost_mode.assert_awaited_with(False)
+        device.async_set_operation_mode.assert_awaited_with(
             RoomClimateControlService.OperationMode.AUTOMATIC
         )
 
@@ -695,18 +558,9 @@ class TestSetPresetModeNew:
         device = _make_device(boost_mode=False, low=True,
                               supports_boost_mode=True, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        written = {}
-
-        async def _executor(func, *args):
-            if func is setattr and len(args) == 3:
-                written[args[1]] = args[2]
-            else:
-                func(*args)
-
-        entity.hass = _make_hass(_executor)
         _run_async(entity.async_set_preset_mode(PRESET_AUTO))
-        assert written.get("low") is False
-        assert written.get("operation_mode") == (
+        device.async_set_low.assert_awaited_with(False)
+        device.async_set_operation_mode.assert_awaited_with(
             RoomClimateControlService.OperationMode.AUTOMATIC
         )
 

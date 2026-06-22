@@ -19,7 +19,9 @@ Run with (from boschshc-hass root):
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import (
     SHCCamera360,
@@ -66,24 +68,13 @@ def _make_switch(description, **device_attrs):
 
 
 def _spy_switch(description, attr: str):
-    """Return (switch, written_list) where device.<attr> setter records values."""
-    written: list = []
-
-    class _Dev:
-        pass
-
-    def getter(self_):
-        return None
-
-    def setter(self_, value):
-        written.append(value)
-
-    setattr(_Dev, attr, property(getter, setter))
+    """Return (switch, mock) where device.async_set_<attr> is an AsyncMock."""
+    mock = AsyncMock()
     sw = SHCSwitch.__new__(SHCSwitch)
-    sw._device = _Dev()
+    sw._device = SimpleNamespace(**{f"async_set_{attr}": mock})
     sw.entity_description = description
     sw.entity_id = "switch.spy"
-    return sw, written
+    return sw, mock
 
 
 class _FakeDevice:
@@ -370,144 +361,144 @@ class TestNoneGuardIsOn:
 
 
 class TestNoneGuardTurnOn:
-    """turn_on must swallow AttributeError when service is None."""
+    """async_turn_on must swallow AttributeError when async_set_<key> is absent."""
 
     def test_child_lock_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoChildLock()
         sw.entity_description = SWITCH_TYPES["child_lock"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_bypass_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoBypass()
         sw.entity_description = SWITCH_TYPES["bypass"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_presencesimulation_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoEnabled()
         sw.entity_description = SWITCH_TYPES["presencesimulation"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_vibration_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoEnabled()
         sw.entity_description = SWITCH_TYPES["vibration_enabled"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_silent_mode_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoSilentMode()
         sw.entity_description = SWITCH_TYPES["silent_mode"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_pet_immunity_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoPetImmunity()
         sw.entity_description = SWITCH_TYPES["pet_immunity_enabled"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_cameraeyes_notification_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoCameraNotification()
         sw.entity_description = SWITCH_TYPES["cameraeyes_notification"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_cameraoutdoorgen2_ambientlight_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoAmbientLight()
         sw.entity_description = SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
     def test_user_defined_state_service_none_turn_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoState()
         sw.entity_description = SWITCH_TYPES["user_defined_state"]
         sw.entity_id = "switch.test"
-        sw.turn_on()  # must not raise
+        asyncio.run(sw.async_turn_on())  # must not raise
 
 
 class TestNoneGuardTurnOff:
-    """turn_off must swallow AttributeError when service is None."""
+    """async_turn_off must swallow AttributeError when async_set_<key> is absent."""
 
     def test_child_lock_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoChildLock()
         sw.entity_description = SWITCH_TYPES["child_lock"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_child_lock_thermostat_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoChildLock()
         sw.entity_description = SWITCH_TYPES["child_lock_thermostat"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_bypass_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoBypass()
         sw.entity_description = SWITCH_TYPES["bypass"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_presencesimulation_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoEnabled()
         sw.entity_description = SWITCH_TYPES["presencesimulation"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_vibration_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoEnabled()
         sw.entity_description = SWITCH_TYPES["vibration_enabled"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_silent_mode_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoSilentMode()
         sw.entity_description = SWITCH_TYPES["silent_mode"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_pet_immunity_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoPetImmunity()
         sw.entity_description = SWITCH_TYPES["pet_immunity_enabled"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_cameraeyes_notification_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoCameraNotification()
         sw.entity_description = SWITCH_TYPES["cameraeyes_notification"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_cameraoutdoorgen2_ambientlight_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoAmbientLight()
         sw.entity_description = SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
     def test_user_defined_state_service_none_turn_off(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoState()
         sw.entity_description = SWITCH_TYPES["user_defined_state"]
         sw.entity_id = "switch.test"
-        sw.turn_off()  # must not raise
+        asyncio.run(sw.async_turn_off())  # must not raise
 
 
 # ---------------------------------------------------------------------------
@@ -516,144 +507,144 @@ class TestNoneGuardTurnOff:
 
 
 class TestTurnOnOffSetters:
-    """Ensure turn_on/turn_off write the correct bool to additional switch types."""
+    """Ensure async_turn_on/off await async_set_<key>(True/False)."""
 
     def test_child_lock_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["child_lock"], "child_lock")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["child_lock"], "child_lock")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_child_lock_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["child_lock"], "child_lock")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["child_lock"], "child_lock")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_child_lock_thermostat_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["child_lock_thermostat"], "child_lock")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["child_lock_thermostat"], "child_lock")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_child_lock_thermostat_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["child_lock_thermostat"], "child_lock")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["child_lock_thermostat"], "child_lock")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_bypass_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["bypass"], "bypass")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["bypass"], "bypass")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_bypass_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["bypass"], "bypass")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["bypass"], "bypass")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_silent_mode_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["silent_mode"], "silentmode")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["silent_mode"], "silentmode")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_silent_mode_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["silent_mode"], "silentmode")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["silent_mode"], "silentmode")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_vibration_enabled_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["vibration_enabled"], "enabled")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["vibration_enabled"], "enabled")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_vibration_enabled_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["vibration_enabled"], "enabled")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["vibration_enabled"], "enabled")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_cameraeyes_notification_turn_on_writes_true(self):
-        sw, written = _spy_switch(
+        sw, mock = _spy_switch(
             SWITCH_TYPES["cameraeyes_notification"], "cameranotification"
         )
-        sw.turn_on()
-        assert written == [True]
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_cameraeyes_notification_turn_off_writes_false(self):
-        sw, written = _spy_switch(
+        sw, mock = _spy_switch(
             SWITCH_TYPES["cameraeyes_notification"], "cameranotification"
         )
-        sw.turn_off()
-        assert written == [False]
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_camera360_notification_turn_on_writes_true(self):
-        sw, written = _spy_switch(
+        sw, mock = _spy_switch(
             SWITCH_TYPES["camera360_notification"], "cameranotification"
         )
-        sw.turn_on()
-        assert written == [True]
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_camera360_notification_turn_off_writes_false(self):
-        sw, written = _spy_switch(
+        sw, mock = _spy_switch(
             SWITCH_TYPES["camera360_notification"], "cameranotification"
         )
-        sw.turn_off()
-        assert written == [False]
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_cameraoutdoorgen2_ambientlight_turn_on_writes_true(self):
-        sw, written = _spy_switch(
+        sw, mock = _spy_switch(
             SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"], "cameraambientlight"
         )
-        sw.turn_on()
-        assert written == [True]
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_cameraoutdoorgen2_ambientlight_turn_off_writes_false(self):
-        sw, written = _spy_switch(
+        sw, mock = _spy_switch(
             SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"], "cameraambientlight"
         )
-        sw.turn_off()
-        assert written == [False]
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_cameraeyes_privacy_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["cameraeyes"], "privacymode")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["cameraeyes"], "privacymode")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_cameraeyes_privacy_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["cameraeyes"], "privacymode")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["cameraeyes"], "privacymode")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_camera360_privacy_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["camera360"], "privacymode")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["camera360"], "privacymode")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_cameraoutdoorgen2_privacy_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["cameraoutdoorgen2"], "privacymode")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["cameraoutdoorgen2"], "privacymode")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_lightswitch_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["lightswitch"], "switchstate")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["lightswitch"], "switchstate")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_lightswitch_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["lightswitch"], "switchstate")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["lightswitch"], "switchstate")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
     def test_smartplugcompact_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["smartplugcompact"], "switchstate")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["smartplugcompact"], "switchstate")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_smartplug_routing_turn_on_writes_true(self):
-        sw, written = _spy_switch(SWITCH_TYPES["smartplug_routing"], "routing")
-        sw.turn_on()
-        assert written == [True]
+        sw, mock = _spy_switch(SWITCH_TYPES["smartplug_routing"], "routing")
+        asyncio.run(sw.async_turn_on())
+        mock.assert_awaited_once_with(True)
 
     def test_smartplug_routing_turn_off_writes_false(self):
-        sw, written = _spy_switch(SWITCH_TYPES["smartplug_routing"], "routing")
-        sw.turn_off()
-        assert written == [False]
+        sw, mock = _spy_switch(SWITCH_TYPES["smartplug_routing"], "routing")
+        asyncio.run(sw.async_turn_off())
+        mock.assert_awaited_once_with(False)
 
 
 # ---------------------------------------------------------------------------
@@ -836,23 +827,17 @@ class TestSHCUserDefinedStateSwitch:
         assert sw.is_on is False
 
     def test_turn_on_sets_state_true(self):
-        written = []
-
-        class _Dev:
-            name = "My State"
-            id = "uds1"
-            root_device_id = "mac1"
-            deleted = False
-
-            @property
-            def state(self_):
-                return False
-
-            @state.setter
-            def state(self_, value):
-                written.append(value)
+        mock_set = AsyncMock()
 
         from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
+        device = SimpleNamespace(
+            name="My State",
+            id="uds1",
+            root_device_id="mac1",
+            deleted=False,
+            state=False,
+            async_set_state=mock_set,
+        )
         shc_entry = SimpleNamespace(
             name="SHC", id="shcid", identifiers=set(),
             manufacturer="Bosch", model="SHC2",
@@ -863,33 +848,27 @@ class TestSHCUserDefinedStateSwitch:
             unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
         )
         sw = SHCUserDefinedStateSwitch(
-            device=_Dev(),
+            device=device,
             hass=hass,
             session=session,
             entry_id="entry1",
             description=SWITCH_TYPES["user_defined_state"],
         )
-        sw.turn_on()
-        assert written == [True]
+        asyncio.run(sw.async_turn_on())
+        mock_set.assert_awaited_once_with(True)
 
     def test_turn_off_sets_state_false(self):
-        written = []
-
-        class _Dev:
-            name = "My State"
-            id = "uds1"
-            root_device_id = "mac1"
-            deleted = False
-
-            @property
-            def state(self_):
-                return True
-
-            @state.setter
-            def state(self_, value):
-                written.append(value)
+        mock_set = AsyncMock()
 
         from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
+        device = SimpleNamespace(
+            name="My State",
+            id="uds1",
+            root_device_id="mac1",
+            deleted=False,
+            state=True,
+            async_set_state=mock_set,
+        )
         shc_entry = SimpleNamespace(
             name="SHC", id="shcid", identifiers=set(),
             manufacturer="Bosch", model="SHC2",
@@ -900,14 +879,14 @@ class TestSHCUserDefinedStateSwitch:
             unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
         )
         sw = SHCUserDefinedStateSwitch(
-            device=_Dev(),
+            device=device,
             hass=hass,
             session=session,
             entry_id="entry1",
             description=SWITCH_TYPES["user_defined_state"],
         )
-        sw.turn_off()
-        assert written == [False]
+        asyncio.run(sw.async_turn_off())
+        mock_set.assert_awaited_once_with(False)
 
     def test_should_poll_is_false(self):
         sw = _make_uds_switch()

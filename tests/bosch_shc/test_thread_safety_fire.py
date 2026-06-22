@@ -61,41 +61,39 @@ def _make_switch_listener(eventtype_name="PRESS_SHORT", keyname_name="UPPER_BUTT
 # ---------------------------------------------------------------------------
 
 class TestSwitchListenerThreadSafe:
-    def test_supported_event_uses_call_soon_threadsafe(self):
-        """PRESS_SHORT must go via call_soon_threadsafe, not bus.fire directly."""
+    def test_supported_event_uses_async_fire(self):
+        """PRESS_SHORT must call bus.async_fire directly (async session fires on loop)."""
         listener = _make_switch_listener(eventtype_name="PRESS_SHORT")
         listener._input_events_handler()
 
-        # call_soon_threadsafe must have been called
-        assert listener.hass.loop.call_soon_threadsafe.called
-        # hass.bus.fire must NOT have been called directly
-        assert not listener.hass.bus.fire.called
+        # bus.async_fire must have been called
+        assert listener.hass.bus.async_fire.called
+        # call_soon_threadsafe must NOT be used (async session, no marshalling needed)
+        assert not listener.hass.loop.call_soon_threadsafe.called
 
-    def test_call_soon_threadsafe_passes_correct_event_type(self):
-        """call_soon_threadsafe must pass EVENT_BOSCH_SHC as the event name arg."""
+    def test_async_fire_passes_correct_event_type(self):
+        """bus.async_fire must be called with EVENT_BOSCH_SHC as the event name."""
         listener = _make_switch_listener(eventtype_name="PRESS_LONG")
         listener._input_events_handler()
 
-        args = listener.hass.loop.call_soon_threadsafe.call_args[0]
-        assert args[0] is listener.hass.bus.fire
-        assert args[1] == EVENT_BOSCH_SHC
+        assert listener.hass.bus.async_fire.call_args[0][0] == EVENT_BOSCH_SHC
 
     def test_none_eventtype_does_not_fire(self):
-        """None eventtype must short-circuit before any fire/call_soon_threadsafe."""
+        """None eventtype must short-circuit before any async_fire."""
         listener = _make_switch_listener()
         listener._device.eventtype = None
         listener._input_events_handler()
 
         assert not listener.hass.loop.call_soon_threadsafe.called
-        assert not listener.hass.bus.fire.called
+        assert not listener.hass.bus.async_fire.called
 
     def test_unsupported_event_logs_warning_not_fire(self):
-        """Unsupported event types must not call fire or call_soon_threadsafe."""
+        """Unsupported event types must not call async_fire."""
         listener = _make_switch_listener(eventtype_name="SWITCH_ON")
         listener._input_events_handler()
 
         assert not listener.hass.loop.call_soon_threadsafe.called
-        assert not listener.hass.bus.fire.called
+        assert not listener.hass.bus.async_fire.called
 
 
 # ---------------------------------------------------------------------------

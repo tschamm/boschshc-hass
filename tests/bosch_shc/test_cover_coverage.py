@@ -22,7 +22,7 @@ Covers branches and paths not reached by the three existing cover unit-test file
 - _update_attr: CALIBRATING / OPENING / CLOSING states (neither if fires)
 - _update_attr: _attr_current_cover_position is set from current_cover_position
 - current_cover_position: MICROMODULE_SHUTTER MOVING with _target_position set
-- BlindsControlCover._update_attr: MOVING → _attr_current_cover_position uses blinds_level
+- BlindsControlCover._update_attr: MOVING → _attr_current_cover_position uses level
 
 Pattern: __new__ bypass + SimpleNamespace device mocks. No HA harness.
 
@@ -32,7 +32,9 @@ Run:
 """
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -57,8 +59,6 @@ PRESS_SHORT = SHCMicromoduleShutterControl.KeypadService.KeyEvent.PRESS_SHORT
 
 def _make_cover(device_model, level, operation_state, eventtype=None, keycode=None):
     """Build a ShutterControlCover via __new__, bypassing SHCEntity.__init__."""
-    stop_calls = []
-
     cover = ShutterControlCover.__new__(ShutterControlCover)
     cover._device = SimpleNamespace(
         device_model=device_model,
@@ -67,9 +67,9 @@ def _make_cover(device_model, level, operation_state, eventtype=None, keycode=No
         eventtype=eventtype,
         keycode=keycode,
         name="test-cover",
-        stop=lambda: stop_calls.append(1),
+        async_stop=AsyncMock(),
+        async_set_level=AsyncMock(),
     )
-    cover._stop_calls = stop_calls
     cover._current_operation_state = None
     cover._target_position = None
     cover._last_position = None
@@ -634,35 +634,35 @@ class TestRoundingEdgeCases:
 
 
 # ---------------------------------------------------------------------------
-# set_cover_position — non-MICROMODULE_SHUTTER (BBL): no keypad_switch_off call,
-# no _last_position save (covers the else-path of the device_model check).
+# async_set_cover_position — non-MICROMODULE_SHUTTER (BBL): no keypad_switch_off
+# call, no _last_position save (covers the else-path of the device_model check).
 # ---------------------------------------------------------------------------
 
 class TestSetCoverPositionBBLBranch:
     def test_bbl_set_cover_position_does_not_save_last_position(self):
-        """BBL set_cover_position skips the MICROMODULE_SHUTTER last-position block."""
+        """BBL async_set_cover_position skips the MICROMODULE_SHUTTER last-position block."""
         cover = _make_cover(device_model="BBL", level=0.5, operation_state=STOPPED)
         cover._last_position = 99  # should stay untouched
-        cover.set_cover_position(**{ATTR_POSITION: 70})
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 70}))
         # BBL path does NOT call _micromodule_keypad_switch_off or save last_position
         assert cover._last_position == 99
         assert cover._target_position == 70
-        assert cover._device.level == pytest.approx(0.70)
+        cover._device.async_set_level.assert_awaited_once_with(pytest.approx(0.70))
         assert cover._skip_update is True
         assert cover._app_command is True
 
     def test_bbl_set_cover_position_boundary_zero(self):
-        """set_cover_position(0) → level=0.0."""
+        """async_set_cover_position(0) → async_set_level(0.0)."""
         cover = _make_cover(device_model="BBL", level=0.5, operation_state=STOPPED)
-        cover.set_cover_position(**{ATTR_POSITION: 0})
-        assert cover._device.level == pytest.approx(0.0)
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 0}))
+        cover._device.async_set_level.assert_awaited_once_with(pytest.approx(0.0))
         assert cover._target_position == 0
 
     def test_bbl_set_cover_position_boundary_100(self):
-        """set_cover_position(100) → level=1.0."""
+        """async_set_cover_position(100) → async_set_level(1.0)."""
         cover = _make_cover(device_model="BBL", level=0.0, operation_state=STOPPED)
-        cover.set_cover_position(**{ATTR_POSITION: 100})
-        assert cover._device.level == pytest.approx(1.0)
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 100}))
+        cover._device.async_set_level.assert_awaited_once_with(pytest.approx(1.0))
         assert cover._target_position == 100
 
 

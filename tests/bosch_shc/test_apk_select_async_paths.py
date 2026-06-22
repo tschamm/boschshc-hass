@@ -1,7 +1,7 @@
 """Coverage for async_select_option methods and error-log paths in new select entities.
 
 Each select entity has:
-  - async_select_option() that calls hass.async_add_executor_job
+  - async_select_option() that calls await self._device.async_set_<x>(value)
   - current_option() that logs warnings on AttributeError/ValueError
 
 This file covers those paths.
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.bosch_shc.select import (
     StateAfterPowerOutageSelect,
@@ -30,23 +30,8 @@ from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
 
 # ---------------------------------------------------------------------------
-# Helper to build an entity with a mock hass
+# Helper
 # ---------------------------------------------------------------------------
-
-
-def _make_hass():
-    """Minimal hass mock that records async_add_executor_job calls."""
-    called = []
-
-    async def _executor_job(fn, *args):
-        called.append((fn, args))
-        return fn(*args)
-
-    hass = SimpleNamespace(
-        async_add_executor_job=_executor_job,
-        _calls=called,
-    )
-    return hass
 
 
 def _device_raising(**kwargs):
@@ -73,24 +58,28 @@ class TestStateAfterPowerOutageSelectAsync:
         val = PowerSwitchConfigurationService.StateAfterPowerOutage[
             state_after_power_outage_name
         ]
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              state_after_power_outage=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            state_after_power_outage=val,
+            async_set_state_after_power_outage=AsyncMock(),
+        )
         e = StateAfterPowerOutageSelect.__new__(StateAfterPowerOutageSelect)
         e._device = dev
         e._attr_unique_id = "r_d_state_after_power_outage"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("ON"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_state_after_power_outage.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import PowerSwitchConfigurationService
         e = self._make()
         asyncio.run(e.async_select_option("LAST_STATE"))
-        assert e._device.state_after_power_outage == PowerSwitchConfigurationService.StateAfterPowerOutage.LAST_STATE
+        e._device.async_set_state_after_power_outage.assert_awaited_once_with(
+            PowerSwitchConfigurationService.StateAfterPowerOutage.LAST_STATE
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(state_after_power_outage="raises")
@@ -108,24 +97,28 @@ class TestSmokeSensitivitySelectAsync:
     def _make(self):
         from boschshcpy.services_impl import SmokeSensitivityService
         val = SmokeSensitivityService.SmokeSensitivityLevel.HIGH
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              smoke_sensitivity=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            smoke_sensitivity=val,
+            async_set_smoke_sensitivity=AsyncMock(),
+        )
         e = SmokeSensitivitySelect.__new__(SmokeSensitivitySelect)
         e._device = dev
         e._attr_unique_id = "r_d_smoke_sensitivity"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("MIDDLE"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_smoke_sensitivity.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import SmokeSensitivityService
         e = self._make()
         asyncio.run(e.async_select_option("LOW"))
-        assert e._device.smoke_sensitivity == SmokeSensitivityService.SmokeSensitivityLevel.LOW
+        e._device.async_set_smoke_sensitivity.assert_awaited_once_with(
+            SmokeSensitivityService.SmokeSensitivityLevel.LOW
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(smoke_sensitivity="raises")
@@ -143,24 +136,28 @@ class TestDisplayDirectionSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import DisplayDirection
         val = DisplayDirection.Direction.NORMAL
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              display_direction=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            display_direction=val,
+            async_set_display_direction=AsyncMock(),
+        )
         e = DisplayDirectionSelect.__new__(DisplayDirectionSelect)
         e._device = dev
         e._attr_unique_id = "r_d_display_direction"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("REVERSED"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_display_direction.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import DisplayDirection
         e = self._make()
         asyncio.run(e.async_select_option("REVERSED"))
-        assert e._device.display_direction == DisplayDirection.Direction.REVERSED
+        e._device.async_set_display_direction.assert_awaited_once_with(
+            DisplayDirection.Direction.REVERSED
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(display_direction="raises")
@@ -178,24 +175,28 @@ class TestDisplayedTemperatureSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import DisplayedTemperatureConfiguration
         val = DisplayedTemperatureConfiguration.DisplayedTemperature.SETPOINT
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              displayed_temperature=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            displayed_temperature=val,
+            async_set_displayed_temperature=AsyncMock(),
+        )
         e = DisplayedTemperatureSelect.__new__(DisplayedTemperatureSelect)
         e._device = dev
         e._attr_unique_id = "r_d_displayed_temperature"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("MEASURED"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_displayed_temperature.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import DisplayedTemperatureConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("MEASURED"))
-        assert e._device.displayed_temperature == DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED
+        e._device.async_set_displayed_temperature.assert_awaited_once_with(
+            DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(displayed_temperature="raises")
@@ -213,24 +214,28 @@ class TestTerminalTypeSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import TerminalConfiguration
         val = TerminalConfiguration.Type.NOT_CONNECTED
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              terminal_type=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            terminal_type=val,
+            async_set_terminal_type=AsyncMock(),
+        )
         e = TerminalTypeSelect.__new__(TerminalTypeSelect)
         e._device = dev
         e._attr_unique_id = "r_d_terminal_type"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("FLOOR_SENSOR_CONNECTED"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_terminal_type.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import TerminalConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("FLOOR_SENSOR_CONNECTED"))
-        assert e._device.terminal_type == TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED
+        e._device.async_set_terminal_type.assert_awaited_once_with(
+            TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(terminal_type="raises")
@@ -248,24 +253,28 @@ class TestValveTypeSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
         val = WallThermostatConfiguration.ValveType.NORMALLY_CLOSE
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              valve_type=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            valve_type=val,
+            async_set_valve_type=AsyncMock(),
+        )
         e = ValveTypeSelect.__new__(ValveTypeSelect)
         e._device = dev
         e._attr_unique_id = "r_d_valve_type"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("NORMALLY_OPEN"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_valve_type.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("NORMALLY_OPEN"))
-        assert e._device.valve_type == WallThermostatConfiguration.ValveType.NORMALLY_OPEN
+        e._device.async_set_valve_type.assert_awaited_once_with(
+            WallThermostatConfiguration.ValveType.NORMALLY_OPEN
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(valve_type="raises")
@@ -283,24 +292,28 @@ class TestHeaterTypeSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
         val = WallThermostatConfiguration.HeaterType.RADIATOR
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              heater_type=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            heater_type=val,
+            async_set_heater_type=AsyncMock(),
+        )
         e = HeaterTypeSelect.__new__(HeaterTypeSelect)
         e._device = dev
         e._attr_unique_id = "r_d_heater_type"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("FLOOR_HEATING"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_heater_type.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("FLOOR_HEATING"))
-        assert e._device.heater_type == WallThermostatConfiguration.HeaterType.FLOOR_HEATING
+        e._device.async_set_heater_type.assert_awaited_once_with(
+            WallThermostatConfiguration.HeaterType.FLOOR_HEATING
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(heater_type="raises")
@@ -318,24 +331,28 @@ class TestSwitchTypeSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import SwitchConfiguration
         val = SwitchConfiguration.SwitchType.PUSHBUTTON
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              switch_type=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            switch_type=val,
+            async_set_switch_type=AsyncMock(),
+        )
         e = SwitchTypeSelect.__new__(SwitchTypeSelect)
         e._device = dev
         e._attr_unique_id = "r_d_switch_type"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("SWITCH"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_switch_type.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import SwitchConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("NONE"))
-        assert e._device.switch_type == SwitchConfiguration.SwitchType.NONE
+        e._device.async_set_switch_type.assert_awaited_once_with(
+            SwitchConfiguration.SwitchType.NONE
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(switch_type="raises")
@@ -353,24 +370,28 @@ class TestActuatorTypeSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import SwitchConfiguration
         val = SwitchConfiguration.ActuatorType.NORMALLY_OPEN
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              actuator_type=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            actuator_type=val,
+            async_set_actuator_type=AsyncMock(),
+        )
         e = ActuatorTypeSelect.__new__(ActuatorTypeSelect)
         e._device = dev
         e._attr_unique_id = "r_d_actuator_type"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("NORMALLY_CLOSED"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_actuator_type.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import SwitchConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("NORMALLY_CLOSED"))
-        assert e._device.actuator_type == SwitchConfiguration.ActuatorType.NORMALLY_CLOSED
+        e._device.async_set_actuator_type.assert_awaited_once_with(
+            SwitchConfiguration.ActuatorType.NORMALLY_CLOSED
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(actuator_type="raises")
@@ -388,24 +409,28 @@ class TestOutputModeSelectAsync:
     def _make(self):
         from boschshcpy.services_impl import SwitchConfiguration
         val = SwitchConfiguration.OutputMode.ATTACHED
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              output_mode=val)
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            output_mode=val,
+            async_set_output_mode=AsyncMock(),
+        )
         e = OutputModeSelect.__new__(OutputModeSelect)
         e._device = dev
         e._attr_unique_id = "r_d_output_mode"
-        e.hass = _make_hass()
         return e
 
-    def test_async_select_option_calls_executor(self):
+    def test_async_select_option_calls_device_method(self):
         e = self._make()
         asyncio.run(e.async_select_option("DETACHED"))
-        assert len(e.hass._calls) == 1
+        e._device.async_set_output_mode.assert_awaited_once()
 
     def test_async_select_option_sets_value(self):
         from boschshcpy.services_impl import SwitchConfiguration
         e = self._make()
         asyncio.run(e.async_select_option("DETACHED_SHORT_PRESS"))
-        assert e._device.output_mode == SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS
+        e._device.async_set_output_mode.assert_awaited_once_with(
+            SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS
+        )
 
     def test_current_option_attribute_error_returns_none(self):
         dev = _device_raising(output_mode="raises")

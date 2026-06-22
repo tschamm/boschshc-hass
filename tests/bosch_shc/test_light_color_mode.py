@@ -1,17 +1,18 @@
 """Unit tests for light.py color_mode update and ZeroDivisionError guard.
 
 Covers:
-- LightSwitch.turn_on: _attr_color_mode updated on color_temp/hs_color kwargs
+- LightSwitch.async_turn_on: _attr_color_mode updated on color_temp/hs_color kwargs
 - LightSwitch.color_temp_kelvin: returns None when device.color is 0 or None
 - LightSwitch.__init__: min/max color temp not set when min_color_temperature is 0
 
-Pattern: LightSwitch.__new__ bypass + SimpleNamespace device.
+Pattern: LightSwitch.__new__ bypass + SimpleNamespace device + AsyncMock setters.
 No HA harness.
 """
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.bosch_shc.light import LightSwitch
 from homeassistant.components.light import ATTR_COLOR_TEMP_KELVIN, ATTR_HS_COLOR, ColorMode
@@ -46,6 +47,10 @@ def _make_light(
         binarystate=binarystate,
         min_color_temperature=min_color_temperature,
         max_color_temperature=max_color_temperature,
+        async_set_brightness=AsyncMock(),
+        async_set_color=AsyncMock(),
+        async_set_rgb=AsyncMock(),
+        async_set_binarystate=AsyncMock(),
     )
     light._attr_color_mode = ColorMode.HS if supports_color_hsb else ColorMode.COLOR_TEMP
     light._attr_supported_color_modes = set()
@@ -54,7 +59,7 @@ def _make_light(
 
 
 # ---------------------------------------------------------------------------
-# color_temp_kelvin — ZeroDivisionError guard
+# color_temp_kelvin -- ZeroDivisionError guard
 # ---------------------------------------------------------------------------
 
 class TestColorTempKelvinGuard:
@@ -78,7 +83,7 @@ class TestColorTempKelvinGuard:
 
 
 # ---------------------------------------------------------------------------
-# turn_on — _attr_color_mode update
+# async_turn_on -- _attr_color_mode update
 # ---------------------------------------------------------------------------
 
 class TestTurnOnColorModeUpdate:
@@ -88,7 +93,7 @@ class TestTurnOnColorModeUpdate:
         # Start in HS mode
         light._attr_color_mode = ColorMode.HS
 
-        light.turn_on(**{ATTR_COLOR_TEMP_KELVIN: 4000})
+        asyncio.run(light.async_turn_on(**{ATTR_COLOR_TEMP_KELVIN: 4000}))
         assert light._attr_color_mode == ColorMode.COLOR_TEMP
 
     def test_hs_color_kwarg_sets_hs_mode(self):
@@ -96,33 +101,33 @@ class TestTurnOnColorModeUpdate:
         light = _make_light()
         light._attr_color_mode = ColorMode.COLOR_TEMP
 
-        light.turn_on(**{ATTR_HS_COLOR: (120, 100)})
+        asyncio.run(light.async_turn_on(**{ATTR_HS_COLOR: (120, 100)}))
         assert light._attr_color_mode == ColorMode.HS
 
     def test_schedule_update_ha_state_called_after_turn_on(self):
-        """schedule_update_ha_state must be called after every turn_on."""
+        """schedule_update_ha_state must be called after every async_turn_on."""
         light = _make_light()
-        light.turn_on()
+        asyncio.run(light.async_turn_on())
         assert light.schedule_update_ha_state.called
 
     def test_color_temp_without_support_does_not_set_color(self):
         """color_temp kwarg on a device without supports_color_temp must be ignored."""
         light = _make_light(supports_color_temp=False, supports_color_hsb=True)
         light._attr_color_mode = ColorMode.HS
-        light.turn_on(**{ATTR_COLOR_TEMP_KELVIN: 4000})
+        asyncio.run(light.async_turn_on(**{ATTR_COLOR_TEMP_KELVIN: 4000}))
         # color_mode must NOT change to COLOR_TEMP since device doesn't support it
         assert light._attr_color_mode == ColorMode.HS
 
     def test_no_color_kwargs_preserves_current_color_mode(self):
-        """turn_on with no color kwargs must leave _attr_color_mode unchanged."""
+        """async_turn_on with no color kwargs must leave _attr_color_mode unchanged."""
         light = _make_light()
         light._attr_color_mode = ColorMode.HS
-        light.turn_on()
+        asyncio.run(light.async_turn_on())
         assert light._attr_color_mode == ColorMode.HS
 
 
 # ---------------------------------------------------------------------------
-# __init__ — min/max color temp guard
+# __init__ -- min/max color temp guard
 # ---------------------------------------------------------------------------
 
 class TestLightInitColorTempBounds:

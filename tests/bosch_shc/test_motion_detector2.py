@@ -14,7 +14,9 @@ Run with:
   python3 -m pytest tests/bosch_shc/test_motion_detector2.py -q -o addopts=
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from homeassistant.components.light import ColorMode
 
@@ -166,126 +168,68 @@ class TestMotionDetectorLight:
         assert light.brightness == 0
 
     def test_turn_on_sets_binaryswitch(self):
-        """turn_on without kwargs must set binaryswitch=True when off."""
-        calls = []
-
-        class _Dev:
-            binaryswitch = False
-            multi_level_switch = 50
-
-        dev = _Dev()
-
-        def binaryswitch_setter(self_, val):
-            calls.append(("binaryswitch", val))
-            self_._binaryswitch = val
-
-        _Dev.binaryswitch = property(lambda s: s._binaryswitch, binaryswitch_setter)
+        """async_turn_on without kwargs must call async_set_binaryswitch(True)."""
+        dev = _make_md2_device(binaryswitch=False, multi_level_switch=50)
+        dev.async_set_binaryswitch = AsyncMock()
+        dev.async_set_multi_level_switch = AsyncMock()
 
         light = MotionDetectorLight.__new__(MotionDetectorLight)
-        dev._binaryswitch = False
         light._device = dev
         light._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         light._attr_color_mode = ColorMode.BRIGHTNESS
 
-        light.turn_on()
-        assert ("binaryswitch", True) in calls
+        asyncio.run(light.async_turn_on())
+        dev.async_set_binaryswitch.assert_called_once_with(True)
 
     def test_turn_on_with_brightness_sets_level(self):
-        """turn_on(ATTR_BRIGHTNESS=128) must write multi_level_switch=50."""
+        """async_turn_on(ATTR_BRIGHTNESS=128) must call async_set_multi_level_switch."""
         from homeassistant.components.light import ATTR_BRIGHTNESS
 
-        level_written = []
-        switch_written = []
+        dev = _make_md2_device(binaryswitch=False, multi_level_switch=50)
+        dev.async_set_binaryswitch = AsyncMock()
+        dev.async_set_multi_level_switch = AsyncMock()
 
-        class _Dev:
-            _level = 50
-            _on = False
-
-            @property
-            def multi_level_switch(self_):
-                return self_._level
-
-            @multi_level_switch.setter
-            def multi_level_switch(self_, v):
-                level_written.append(v)
-                self_._level = v
-
-            @property
-            def binaryswitch(self_):
-                return self_._on
-
-            @binaryswitch.setter
-            def binaryswitch(self_, v):
-                switch_written.append(v)
-                self_._on = v
-
-        dev = _Dev()
         light = MotionDetectorLight.__new__(MotionDetectorLight)
         light._device = dev
         light._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         light._attr_color_mode = ColorMode.BRIGHTNESS
 
         ha_brightness = 128  # ~50 in device scale
-        light.turn_on(**{ATTR_BRIGHTNESS: ha_brightness})
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: ha_brightness}))
 
-        assert len(level_written) == 1
         expected_level = max(round(ha_brightness * 100 / 255), 1)
-        assert level_written[0] == expected_level
-        # light was off → binaryswitch must also be set
-        assert True in switch_written
+        dev.async_set_multi_level_switch.assert_called_once_with(expected_level)
+        dev.async_set_binaryswitch.assert_called_once_with(True)
 
     def test_turn_on_brightness_clamps_to_minimum_1(self):
-        """Near-zero HA brightness must not send level=0 to device."""
+        """Near-zero HA brightness must call async_set_multi_level_switch with level >= 1."""
         from homeassistant.components.light import ATTR_BRIGHTNESS
 
-        level_written = []
+        dev = _make_md2_device(binaryswitch=True, multi_level_switch=0)
+        dev.async_set_multi_level_switch = AsyncMock()
+        dev.async_set_binaryswitch = AsyncMock()
 
-        class _Dev:
-            _level = 0
-            binaryswitch = True  # already on
-
-            @property
-            def multi_level_switch(self_):
-                return self_._level
-
-            @multi_level_switch.setter
-            def multi_level_switch(self_, v):
-                level_written.append(v)
-                self_._level = v
-
-        dev = _Dev()
         light = MotionDetectorLight.__new__(MotionDetectorLight)
         light._device = dev
         light._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         light._attr_color_mode = ColorMode.BRIGHTNESS
 
-        light.turn_on(**{ATTR_BRIGHTNESS: 1})
-        assert level_written[0] >= 1
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 1}))
+        level_arg = dev.async_set_multi_level_switch.call_args[0][0]
+        assert level_arg >= 1
 
     def test_turn_off_sets_binaryswitch_false(self):
-        """turn_off must set binaryswitch=False."""
-        written = []
+        """async_turn_off must call async_set_binaryswitch(False)."""
+        dev = _make_md2_device(binaryswitch=True)
+        dev.async_set_binaryswitch = AsyncMock()
 
-        class _Dev:
-            _on = True
-
-            @property
-            def binaryswitch(self_):
-                return self_._on
-
-            @binaryswitch.setter
-            def binaryswitch(self_, v):
-                written.append(v)
-                self_._on = v
-
-        dev = _Dev()
         light = MotionDetectorLight.__new__(MotionDetectorLight)
         light._device = dev
         light._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         light._attr_color_mode = ColorMode.BRIGHTNESS
 
-        light.turn_off()
-        assert written == [False]
+        asyncio.run(light.async_turn_off())
+        dev.async_set_binaryswitch.assert_called_once_with(False)
 
     def test_unique_id_format(self):
         dev = _make_md2_device(root_device_id="root1", id="dev1")
@@ -329,52 +273,30 @@ class TestPetImmunitySwitch:
         assert sw.is_on is False
 
     def test_turn_on_sets_true(self):
-        """turn_on() must call setattr(device, 'pet_immunity_enabled', True)."""
-        written = []
-
-        class _Dev:
-            _pet = False
-
-            @property
-            def pet_immunity_enabled(self_):
-                return self_._pet
-
-            @pet_immunity_enabled.setter
-            def pet_immunity_enabled(self_, v):
-                written.append(v)
-                self_._pet = v
-
-        dev = _Dev()
+        """async_turn_on() must call async_set_pet_immunity_enabled(True)."""
+        dev = SimpleNamespace(
+            pet_immunity_enabled=False,
+            async_set_pet_immunity_enabled=AsyncMock(),
+        )
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = dev
         sw.entity_description = SWITCH_TYPES["pet_immunity_enabled"]
         sw.entity_id = "switch.pet_test"
-        sw.turn_on()
-        assert written == [True]
+        asyncio.run(sw.async_turn_on())
+        dev.async_set_pet_immunity_enabled.assert_called_once_with(True)
 
     def test_turn_off_sets_false(self):
-        """turn_off() must call setattr(device, 'pet_immunity_enabled', False)."""
-        written = []
-
-        class _Dev:
-            _pet = True
-
-            @property
-            def pet_immunity_enabled(self_):
-                return self_._pet
-
-            @pet_immunity_enabled.setter
-            def pet_immunity_enabled(self_, v):
-                written.append(v)
-                self_._pet = v
-
-        dev = _Dev()
+        """async_turn_off() must call async_set_pet_immunity_enabled(False)."""
+        dev = SimpleNamespace(
+            pet_immunity_enabled=True,
+            async_set_pet_immunity_enabled=AsyncMock(),
+        )
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = dev
         sw.entity_description = SWITCH_TYPES["pet_immunity_enabled"]
         sw.entity_id = "switch.pet_test"
-        sw.turn_off()
-        assert written == [False]
+        asyncio.run(sw.async_turn_off())
+        dev.async_set_pet_immunity_enabled.assert_called_once_with(False)
 
     def test_attr_name_with_pet_immunity_suffix(self):
         """unique_id uses lowercased attr_name suffix 'petimmunity'."""

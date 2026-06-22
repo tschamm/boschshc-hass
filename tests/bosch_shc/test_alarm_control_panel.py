@@ -5,7 +5,9 @@ All pure-logic properties are exercised without a HA harness.
 PIN_EVERY_MODE: one test per discrete enum value + None/garbage fallback.
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import SHCIntrusionSystem
 from homeassistant.components.alarm_control_panel.const import (
@@ -266,43 +268,38 @@ def test_unique_id_composed_from_root_and_device_id():
 # ---------------------------------------------------------------------------
 
 def test_alarm_disarm_calls_device_disarm():
-    calls = []
     panel = _panel()
-    panel._device.disarm = lambda: calls.append("disarm")
-    panel.alarm_disarm()
-    assert calls == ["disarm"]
+    panel._device.async_disarm = AsyncMock()
+    asyncio.run(panel.async_alarm_disarm())
+    panel._device.async_disarm.assert_called_once_with()
 
 
 def test_alarm_arm_away_calls_arm_full_protection():
-    calls = []
     panel = _panel()
-    panel._device.arm_full_protection = lambda: calls.append("arm_full_protection")
-    panel.alarm_arm_away()
-    assert calls == ["arm_full_protection"]
+    panel._device.async_arm_full_protection = AsyncMock()
+    asyncio.run(panel.async_alarm_arm_away())
+    panel._device.async_arm_full_protection.assert_called_once_with()
 
 
 def test_alarm_arm_home_calls_arm_partial_protection():
-    calls = []
     panel = _panel()
-    panel._device.arm_partial_protection = lambda: calls.append("arm_partial_protection")
-    panel.alarm_arm_home()
-    assert calls == ["arm_partial_protection"]
+    panel._device.async_arm_partial_protection = AsyncMock()
+    asyncio.run(panel.async_alarm_arm_home())
+    panel._device.async_arm_partial_protection.assert_called_once_with()
 
 
 def test_alarm_arm_custom_bypass_calls_arm_individual_protection():
-    calls = []
     panel = _panel()
-    panel._device.arm_individual_protection = lambda: calls.append("arm_individual_protection")
-    panel.alarm_arm_custom_bypass()
-    assert calls == ["arm_individual_protection"]
+    panel._device.async_arm_individual_protection = AsyncMock()
+    asyncio.run(panel.async_alarm_arm_custom_bypass())
+    panel._device.async_arm_individual_protection.assert_called_once_with()
 
 
 def test_alarm_mute_calls_device_mute():
-    calls = []
     panel = _panel()
-    panel._device.mute = lambda: calls.append("mute")
-    panel.alarm_mute()
-    assert calls == ["mute"]
+    panel._device.async_mute = AsyncMock()
+    asyncio.run(panel.async_alarm_mute())
+    panel._device.async_mute.assert_called_once_with()
 
 
 # ---------------------------------------------------------------------------

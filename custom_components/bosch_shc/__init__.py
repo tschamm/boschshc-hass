@@ -1,11 +1,12 @@
 """The Bosch Smart Home Controller integration."""
 
-import inspect
 from datetime import timedelta, time as dt_time
 
 import voluptuous as vol
-import functools as ft
-from boschshcpy import SHCSession, SHCUniversalSwitch
+import inspect
+
+from boschshcpy import SHCSessionAsync, SHCUniversalSwitch
+from boschshcpy.api_async import build_ssl_context
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
@@ -16,7 +17,6 @@ from .data import SHCData
 from homeassistant.components.persistent_notification import (
     async_create as pn_async_create,
 )
-from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     ATTR_DEVICE_ID,
@@ -70,7 +70,6 @@ from .const import (
     OPT_LONG_POLL_TIMEOUT,
     OPT_CHILD_LOCK_ENABLED,
     OPT_PRESENCE_ENTITY,
-    OPT_SSL_VERIFY_HOSTNAME,
     OPT_SSL_SKIP_VERIFY,
     OPT_SILENT_MODE_ENABLED,
     OPT_SILENT_MODE_START,
@@ -128,7 +127,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 for scenario in runtime.session.scenarios:
                     if scenario.name == name:
                         try:
-                            await hass.async_add_executor_job(scenario.trigger)
+                            await scenario.async_trigger()
                         except (SHCException, SHCConnectionError) as err:
                             raise ServiceValidationError(
                                 f"Failed to trigger scenario '{name}': {err}"
@@ -167,21 +166,33 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                 continue
             runtime: SHCData = config_entry.runtime_data
             if title in ("", runtime.title):
-                session = runtime.session
-                # Runtime validation: confirm the command is valid for this session
-                if command not in session.rawscan_commands:
+                api = runtime.session.api
+                device_id = call.data[ATTR_DEVICE_ID]
+                service_id = call.data[ATTR_SERVICE_ID]
+                # SHCSessionAsync has no rawscan(); dispatch directly over the
+                # async API (mirrors SHCSession.rawscan_commands).
+                commands = {
+                    "devices": api.get_devices,
+                    "device": lambda: api.get_device(device_id),
+                    "services": api.get_services,
+                    "device_services": lambda: api.get_device_services(device_id),
+                    "device_service": lambda: api.get_device_service(
+                        device_id, service_id
+                    ),
+                    "rooms": api.get_rooms,
+                    "scenarios": api.get_scenarios,
+                    "messages": api.get_messages,
+                    "info": api.get_information,
+                    "information": api.get_information,
+                    "public_information": api.get_public_information,
+                    "intrusion_detection": api.get_domain_intrusion_detection,
+                }
+                if command not in commands:
                     raise ServiceValidationError(
                         f"Unknown rawscan command '{command}'. "
-                        f"Valid commands: {sorted(session.rawscan_commands)}"
+                        f"Valid commands: {sorted(commands)}"
                     )
-                rawscan = await hass.async_add_executor_job(
-                    ft.partial(
-                        session.rawscan,
-                        command=command,
-                        device_id=call.data[ATTR_DEVICE_ID],
-                        service_id=call.data[ATTR_SERVICE_ID],
-                    )
-                )
+                rawscan = await commands[command]()
                 return {command: rawscan}
 
     hass.services.async_register(
@@ -236,38 +247,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 notification_id=DOMAIN_NOTIFICATION_ID,
             )
 
-    zeroconf = await async_get_instance(hass)
     # NumberSelector yields a float; the SHC long-poll RPC expects an integer
     # number of seconds, so coerce it.
     long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
-    verify_hostname = entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False)
-    # #264: opt-in skip of server-cert verification (default off = verify on).
-    ssl_skip_verify = entry.options.get(OPT_SSL_SKIP_VERIFY, False)
-    # Only forward the long_poll_timeout / verify_hostname / ssl_verify kwargs
-    # if the installed boschshcpy actually supports them. This keeps the
-    # integration working against an older pinned lib (the advanced options are
-    # simply inert until the lib is updated) instead of crashing with a
-    # TypeError.
-    _session_params = inspect.signature(SHCSession.__init__).parameters
-    _session_kwargs = {}
-    if "long_poll_timeout" in _session_params:
-        _session_kwargs["long_poll_timeout"] = long_poll_timeout
-    if "verify_hostname" in _session_params:
-        _session_kwargs["verify_hostname"] = verify_hostname
-    if "ssl_verify" in _session_params:
-        _session_kwargs["ssl_verify"] = not ssl_skip_verify
-    try:
-        session: SHCSession = await hass.async_add_executor_job(
-            ft.partial(
-                SHCSession,
-                data[CONF_HOST],
-                data[CONF_SSL_CERTIFICATE],
-                data[CONF_SSL_KEY],
-                False,
-                zeroconf,
-                **_session_kwargs,
-            )
+    # Async migration (phase 3b): the integration runs SHCSessionAsync — aiohttp
+    # I/O + an asyncio.Task long-poll, no thread, no executor. Construction does
+    # NO network I/O; async_init() enumerates the device model on the loop.
+    # TODO(async parity): SHCAPIAsync does not yet honor verify_hostname /
+    # ssl_verify (#264 skip-SSL is sync-only) — port those into SHCAPIAsync.
+    if entry.options.get(OPT_SSL_SKIP_VERIFY, False):
+        LOGGER.warning(
+            "ssl_skip_verify is set but is not yet honored on the async path; "
+            "the bundled Bosch CA is still used. Tracked for async parity."
         )
+    # Build the mTLS SSLContext off the event loop — it reads the cert/key/CA
+    # PEM files (blocking I/O) — then hand it to the session so construction on
+    # the loop stays non-blocking. Guard for older libs lacking the kwarg.
+    _session_kwargs = {"long_poll_timeout": long_poll_timeout}
+    if "ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters:
+        _session_kwargs["ssl_context"] = await hass.async_add_executor_job(
+            build_ssl_context,
+            data[CONF_SSL_CERTIFICATE],
+            data[CONF_SSL_KEY],
+        )
+    session = SHCSessionAsync(
+        data[CONF_HOST],
+        data[CONF_SSL_CERTIFICATE],
+        data[CONF_SSL_KEY],
+        **_session_kwargs,
+    )
+    try:
+        await session.async_init()
     except SHCAuthenticationError as err:
         raise ConfigEntryAuthFailed from err
     except SHCConnectionError as err:
@@ -277,7 +287,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady from err
 
     shc_info = session.information
-    if shc_info.updateState.name == "UPDATE_AVAILABLE":
+    # The async information object (_AsyncSHCInformation) does not expose
+    # updateState; guard so the optional update-available hint never blocks setup.
+    _update_state = getattr(shc_info, "updateState", None)
+    if _update_state is not None and _update_state.name == "UPDATE_AVAILABLE":
         LOGGER.warning("Please check for software updates in the Bosch Smart Home App")
 
     device_registry = dr.async_get(hass)
@@ -398,38 +411,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             return thermostats, bool_devices
 
-        def _apply_child_lock(lock_state: bool):
-            """Set child lock on all SHC devices (blocking; run in executor)."""
-            import requests.exceptions
+        async def _apply_child_lock(lock_state: bool):
+            """Set child lock on all SHC devices (async; on the event loop)."""
+            import asyncio
+            import aiohttp
             from boschshcpy.exceptions import SHCException, SHCConnectionError
             from boschshcpy.api import JSONRPCError
             thermostats, bool_devices = _child_lock_devices(session)
-            for device in thermostats:
+            for device in thermostats + bool_devices:
                 try:
-                    device.child_lock = lock_state
+                    await device.async_set_child_lock(lock_state)
                 except (
                     JSONRPCError,
                     SHCException,
                     SHCConnectionError,
                     AttributeError,
-                    requests.exceptions.RequestException,
+                    aiohttp.ClientError,
+                    asyncio.TimeoutError,
                 ) as err:
                     LOGGER.warning(
-                        "Failed to set child_lock=%s on thermostat %s: %s",
-                        lock_state, device.id, err,
-                    )
-            for device in bool_devices:
-                try:
-                    device.child_lock = lock_state
-                except (
-                    JSONRPCError,
-                    SHCException,
-                    SHCConnectionError,
-                    AttributeError,
-                    requests.exceptions.RequestException,
-                ) as err:
-                    LOGGER.warning(
-                        "Failed to set child_lock=%s on device %s: %s",
+                        "Failed to set child_lock=%s on %s: %s",
                         lock_state, device.id, err,
                     )
 
@@ -463,9 +464,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if lock_on == _last_lock_state[0]:
                 return
             _last_lock_state[0] = lock_on
-            hass.async_create_task(
-                hass.async_add_executor_job(_apply_child_lock, lock_on)
-            )
+            hass.async_create_task(_apply_child_lock(lock_on))
 
         entry.runtime_data.presence_unsub = async_track_state_change_event(
             hass, presence_entities, _presence_state_changed
@@ -521,9 +520,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         _last_silent_state: list[bool | None] = [None]
 
-        def _apply_silent(silent_on: bool):
-            """Set silent mode on all capable SHC devices (blocking; executor)."""
-            import requests.exceptions
+        async def _apply_silent(silent_on: bool):
+            """Set silent mode on all capable SHC devices (async; on the loop)."""
+            import asyncio
+            import aiohttp
             from boschshcpy.exceptions import SHCException, SHCConnectionError
             from boschshcpy.api import JSONRPCError
             dh = session.device_helper
@@ -534,13 +534,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             ]
             for device in devices:
                 try:
-                    device.silentmode = silent_on
+                    await device.async_set_silentmode(silent_on)
                 except (
                     JSONRPCError,
                     SHCException,
                     SHCConnectionError,
                     AttributeError,
-                    requests.exceptions.RequestException,
+                    aiohttp.ClientError,
+                    asyncio.TimeoutError,
                 ) as err:
                     LOGGER.warning(
                         "Failed to set silent_mode=%s on %s: %s",
@@ -557,9 +558,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if silent_on == _last_silent_state[0]:
                 return
             _last_silent_state[0] = silent_on
-            hass.async_create_task(
-                hass.async_add_executor_job(_apply_silent, silent_on)
-            )
+            hass.async_create_task(_apply_silent(silent_on))
 
         # Re-evaluate on presence change and at the two window boundaries.
         entry.runtime_data.silent_mode_unsubs.append(
@@ -593,12 +592,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         LOGGER.debug(
             "Bosch SHC '%s': stopping long-poll session (HA shutdown).", entry.title
         )
-        await hass.async_add_executor_job(session.stop_polling)
+        await session.stop_polling()
 
     LOGGER.debug(
         "Bosch SHC '%s': starting long-poll session (local_push).", entry.title
     )
-    await hass.async_add_executor_job(session.start_polling)
+    # Async long-poll: start_polling() creates an asyncio.Task on the loop
+    # (no thread, no executor). Callbacks fire on the event loop directly.
+    await session.start_polling()
     LOGGER.info("Bosch SHC '%s' connected and polling.", entry.title)
     entry.runtime_data.polling_handler = hass.bus.async_listen_once(
         EVENT_HOMEASSISTANT_STOP, stop_polling
@@ -607,9 +608,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.runtime_data.polling_handler
     )
 
+    @callback
     def _scenario_trigger(event_data):
-        hass.loop.call_soon_threadsafe(
-            hass.bus.fire,
+        # Fired from the async poll loop — already on the event loop, so fire
+        # directly (no call_soon_threadsafe marshalling).
+        hass.bus.async_fire(
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: device_id,
@@ -652,7 +655,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for _unsub in runtime.silent_mode_unsubs:
         _unsub()
     runtime.silent_mode_unsubs.clear()
-    await hass.async_add_executor_job(runtime.session.stop_polling)
+    await runtime.session.stop_polling()
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
@@ -696,14 +699,15 @@ class SwitchDeviceEventListener:
         )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (fired on the event loop by the async session)."""
         if self._device.eventtype is None:
             return
         event_type = self._device.eventtype.name
 
         if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
-            self.hass.loop.call_soon_threadsafe(
-                self.hass.bus.fire,
+            # The async session fires callbacks on the event loop, so fire the
+            # bus event directly (no call_soon_threadsafe marshalling).
+            self.hass.bus.async_fire(
                 EVENT_BOSCH_SHC,
                 {
                     ATTR_DEVICE_ID: self.device_id,

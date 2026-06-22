@@ -13,7 +13,7 @@ Pattern: fake hass + fake session + real __init__, no HA harness, no network.
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -121,6 +121,7 @@ def _make_hass():
         data={},
         loop=loop,
         async_add_executor_job=_async_add_executor_job,
+        async_create_task=MagicMock(),
     )
     return hass
 
@@ -149,7 +150,7 @@ def _make_fake_session(
         session._subscribers.append(cb_tuple)
 
     session.subscribe = _subscribe
-    session.api = SimpleNamespace(get_messages=lambda: messages or [])
+    session.api = SimpleNamespace(get_messages=AsyncMock(return_value=messages or []))
 
     session.device_helper = SimpleNamespace(
         shutter_contacts=shutter_contacts or [],
@@ -903,44 +904,29 @@ class TestSmokeDetectorSensorInit:
         assert "sd-stop_eventlistener" in unsub_store
 
     def test_async_request_smoketest(self):
-        jobs = []
-
-        async def _fake_executor(fn, *args):
-            jobs.append((fn, args))
-
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd-smoke", device_services=[alarm_svc])
         dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
         dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
-        dev.smoketest_requested = MagicMock()
+        dev.async_smoketest_requested = AsyncMock()
         hass = _make_hass()
-        hass.async_add_executor_job = _fake_executor
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         sensor._hass = hass
         asyncio.run(sensor.async_request_smoketest())
-        assert len(jobs) == 1
+        dev.async_smoketest_requested.assert_called_once()
 
     def test_async_request_alarmstate(self):
-        """async_add_executor_job receives set_alarmstate closure; call it to cover line 390."""
-        jobs = []
-
-        async def _fake_executor(fn, *args):
-            # Actually invoke the closure so line 390 (device.alarmstate = command) is hit
-            fn(*args)
-            jobs.append((fn, args))
-
+        """async_request_alarmstate calls device.async_set_alarmstate(command) directly."""
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd-alarm", device_services=[alarm_svc])
         dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
         dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.async_set_alarmstate = AsyncMock()
         hass = _make_hass()
-        hass.async_add_executor_job = _fake_executor
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         sensor._hass = hass
         asyncio.run(sensor.async_request_alarmstate("IDLE_OFF"))
-        assert len(jobs) == 1
-        # Verify the closure actually set the attribute
-        assert dev.alarmstate == "IDLE_OFF"
+        dev.async_set_alarmstate.assert_called_once_with("IDLE_OFF")
 
 
 class TestSmokeDetectionSystemSensorInit:
@@ -1066,7 +1052,7 @@ class TestTwinguardAlarmTracker:
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         tracker._active_trigger_ids = {"tw1"}  # simulate previous state
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker._active_trigger_ids == set()
 
     def test_refresh_alarm_on_extracts_trigger_id(self):
@@ -1087,7 +1073,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is True
         assert tracker.is_alarm_active_for("tw2") is False
 
@@ -1111,7 +1097,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is False
 
     def test_refresh_only_matches_correct_source_id(self):
@@ -1132,7 +1118,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is False
 
     def test_refresh_no_change_does_not_notify(self):
@@ -1143,12 +1129,12 @@ class TestTwinguardAlarmTracker:
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         # First refresh establishes baseline
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         called = []
         hass = _make_hass()
         tracker.register_listener(hass, lambda: called.append(1))
         # Second refresh with same state → no notification
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert called == []
 
     def test_refresh_alarm_state_change_notifies_listeners(self):
@@ -1169,13 +1155,13 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         called = []
         hass = _make_hass()
         tracker.register_listener(hass, lambda: called.append(1))
         # Switch to ALARM_MUTED (same trigger, different alarm_state)
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_MUTED
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert called == [1]
 
     def test_refresh_alarm_off_notifies_and_clears(self):
@@ -1196,7 +1182,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is True
 
         called = []
@@ -1204,7 +1190,7 @@ class TestTwinguardAlarmTracker:
         tracker.register_listener(hass, lambda: called.append(1))
 
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is False
         assert called == [1]
 
@@ -1217,7 +1203,7 @@ class TestTwinguardAlarmTracker:
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()  # establish ALARM_ON baseline
+        asyncio.run(tracker.async_refresh())  # establish ALARM_ON baseline
 
         called = []
         hass = _make_hass()
@@ -1229,7 +1215,7 @@ class TestTwinguardAlarmTracker:
         tracker.unregister_listener(_cb)
 
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert called == []
 
     # -- teardown --
@@ -1274,7 +1260,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        tracker.refresh()  # baseline ALARM_ON + tw1
+        asyncio.run(tracker.async_refresh())  # baseline ALARM_ON + tw1
 
         called = []
         hass = _make_hass()
@@ -1282,7 +1268,7 @@ class TestTwinguardAlarmTracker:
         tracker.teardown()
 
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
-        tracker.refresh()  # should be skipped
+        asyncio.run(tracker.async_refresh())  # should be skipped
         assert called == []
 
     # -- handle_alarm_update (simulates SHCPollingThread callback) --
@@ -1311,47 +1297,43 @@ class TestTwinguardAlarmTracker:
         )
         called = []
         hass = _make_hass()
-        hass.async_add_executor_job = lambda fn, *args: fn(*args)
         tracker = self._make_tracker(sds, session, hass=hass)
         tracker.register_listener(hass, lambda: called.append(1))
         tracker._handle_alarm_update()
+        # _handle_alarm_update uses async_create_task; manually run the refresh
+        asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is True
         assert called == [1]
 
     def test_handle_alarm_update_dispatches_via_call_soon_threadsafe(self):
-        """M1: _handle_alarm_update must schedule via call_soon_threadsafe (not inline)."""
+        """M1: _handle_alarm_update must schedule via async_create_task (not inline)."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-m1", device_services=[surv_svc])
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         hass = _make_hass()
-        dispatched = []
-        hass.loop.call_soon_threadsafe = lambda fn, *args: dispatched.append(fn)
+        hass.async_create_task = MagicMock()
         tracker = self._make_tracker(sds, session, hass=hass)
         tracker._handle_alarm_update()
-        # Must have been scheduled, NOT run inline.
-        assert len(dispatched) == 1
-        assert callable(dispatched[0])
+        # Must have been scheduled via async_create_task, NOT run inline.
+        assert hass.async_create_task.called
 
     def test_handle_alarm_update_does_not_wrap_executor_future_in_task(self):
-        """Regression: async_add_executor_job may return a Future, not a coroutine."""
+        """Regression: _handle_alarm_update must use async_create_task, not executor."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-future", device_services=[surv_svc])
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         hass = _make_hass()
+        hass.async_create_task = MagicMock()
 
-        executor_calls = []
-
-        def _executor_job(fn, *args):
-            executor_calls.append((fn, args))
-            return object()  # stands in for HA Future-like return value
-
-        hass.async_add_executor_job = _executor_job
         tracker = self._make_tracker(sds, session, hass=hass)
         tracker._handle_alarm_update()
 
-        assert executor_calls == [(tracker.refresh, ())]
+        # async_create_task must be called with the async_refresh coroutine
+        assert hass.async_create_task.called
+        # async_add_executor_job must NOT be called
+        # (no executor wrapping needed for async method)
 
     # -- get_messages error handling --
 
@@ -1361,10 +1343,10 @@ class TestTwinguardAlarmTracker:
         sds = _make_base_device("sds-err", device_services=[surv_svc])
         sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(smoke_detection_system=sds)
-        session.api.get_messages = lambda: (_ for _ in ()).throw(RuntimeError("network error"))
+        session.api.get_messages = AsyncMock(side_effect=RuntimeError("network error"))
         tracker = self._make_tracker(sds, session)
         tracker._active_trigger_ids = {"tw-prev"}
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         # Falls back to the existing set
         assert result == {"tw-prev"}
 
@@ -1384,7 +1366,7 @@ class TestTwinguardAlarmTracker:
         )
         tracker = self._make_tracker(sds, session)
         # Must not raise; no triggers extracted from malformed message.
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         assert result == set()
 
     def test_malformed_arguments_string_does_not_raise(self):
@@ -1405,7 +1387,7 @@ class TestTwinguardAlarmTracker:
         )
         tracker = self._make_tracker(sds, session)
         # Must not raise; string arguments are skipped.
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         assert result == set()
 
     def test_malformed_arguments_none_does_not_raise(self):
@@ -1424,7 +1406,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         assert result == set()
 
     def test_malformed_message_in_loop_does_not_abort_processing(self):
@@ -1450,7 +1432,7 @@ class TestTwinguardAlarmTracker:
             ],
         )
         tracker = self._make_tracker(sds, session)
-        result = tracker._extract_trigger_ids_from_messages()
+        result = asyncio.run(tracker._extract_trigger_ids_from_messages())
         assert "tw1" in result
 
     # -- L3: _listeners type annotation (structural check) --
@@ -1528,19 +1510,13 @@ class TestTwinguardSmokeAlarmSensor:
         assert attrs["alarm_state"] == "ALARM_OFF"
 
     def test_async_request_smoketest(self):
-        jobs = []
-
-        async def _fake_executor(fn, *args):
-            jobs.append((fn, args))
-
         sensor, _ = self._make_sensor("tw-smoketest")
-        sensor._device.smoketest_requested = MagicMock()
+        sensor._device.async_smoketest_requested = AsyncMock()
         sensor.hass = _make_hass()
-        sensor.hass.async_add_executor_job = _fake_executor
 
         asyncio.run(sensor.async_request_smoketest())
 
-        assert len(jobs) == 1
+        sensor._device.async_smoketest_requested.assert_called_once()
 
     def test_handle_tracker_update_calls_schedule_update(self):
         """_handle_tracker_update() calls schedule_update_ha_state()."""

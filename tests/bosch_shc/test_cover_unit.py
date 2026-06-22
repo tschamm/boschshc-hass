@@ -6,18 +6,20 @@ Covers lines not reached by test_cover.py or test_cover_position.py:
 - BBL MOVING closing direction (133-135)
 - Unknown device model MOVING (178-180)
 - device_class MICROMODULE_AWNING (184)
-- stop_cover (206-211)
+- async_stop_cover (206-211)
 - is_closed True/False (216)
-- open_cover (224-229)
-- close_cover (233-238)
-- set_cover_position — MICROMODULE_SHUTTER branch (242-249)
+- async_open_cover (224-229)
+- async_close_cover (233-238)
+- async_set_cover_position — MICROMODULE_SHUTTER branch (242-249)
 - extra_state_attributes (254)
-- BlindsControlCover open/close/set_cover_position/stop_cover_tilt/
-  current_cover_tilt_position/open_cover_tilt/close_cover_tilt/
-  set_cover_tilt_position (276-315)
+- BlindsControlCover async_open_cover/async_close_cover/async_set_cover_position/
+  async_stop_cover/async_stop_cover_tilt/current_cover_tilt_position/
+  async_open_cover_tilt/async_close_cover_tilt/async_set_cover_tilt_position
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import SHCShutterControl, SHCMicromoduleShutterControl
 
@@ -34,14 +36,8 @@ SWITCH_OFF = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_cover(device_model, level, operation_state, eventtype=None, keycode=None,
-                stop=None):
+def _make_cover(device_model, level, operation_state, eventtype=None, keycode=None):
     """Build a ShutterControlCover bypassing SHCEntity.__init__."""
-    stop_calls = []
-
-    def _stop():
-        stop_calls.append(1)
-
     cover = ShutterControlCover.__new__(ShutterControlCover)
     cover._device = SimpleNamespace(
         device_model=device_model,
@@ -50,12 +46,12 @@ def _make_cover(device_model, level, operation_state, eventtype=None, keycode=No
         eventtype=eventtype,
         keycode=keycode,
         name="test-cover",
-        stop=stop if stop is not None else _stop,
+        async_stop=AsyncMock(),
+        async_set_level=AsyncMock(),
         # Present Keypad service so _micromodule_keypad_switch_off runs its
         # eventtype write (the #318 guard skips it only when this is None).
         _keypad_service=SimpleNamespace(),
     )
-    cover._stop_calls = stop_calls
     cover._current_operation_state = None
     cover._target_position = None
     cover._last_position = None
@@ -68,7 +64,7 @@ def _make_cover(device_model, level, operation_state, eventtype=None, keycode=No
 
 
 class _TrackingDevice:
-    """SimpleNamespace-like device that tracks method calls and attribute sets for BlindsControlCover."""
+    """Device double for BlindsControlCover — async method mocks."""
 
     def __init__(self, device_model="MICROMODULE_BLINDS", level=0.5, blinds_level=0.5,
                  operation_state=STOPPED, current_angle=0.5):
@@ -78,11 +74,10 @@ class _TrackingDevice:
         self.operation_state = operation_state
         self.current_angle = current_angle
         self.name = "test-blinds"
-        self._stop_blinds_calls = []
         self.target_angle = None
-
-    def stop_blinds(self):
-        self._stop_blinds_calls.append(1)
+        self.async_set_level = AsyncMock()
+        self.async_stop_blinds = AsyncMock()
+        self.async_set_target_angle = AsyncMock()
 
 
 def _make_blinds(device_model="MICROMODULE_BLINDS", level=0.5, blinds_level=0.5,
@@ -244,18 +239,18 @@ class TestDeviceClass:
 
 
 # ---------------------------------------------------------------------------
-# Lines 206-211: stop_cover
+# Lines 206-211: async_stop_cover
 # ---------------------------------------------------------------------------
 
 class TestStopCover:
-    def test_stop_cover_calls_device_stop(self):
+    def test_stop_cover_calls_device_async_stop(self):
         cover = _make_cover(
             device_model="BBL",
             level=0.5,
             operation_state=MOVING,
         )
-        cover.stop_cover()
-        assert len(cover._stop_calls) == 1
+        asyncio.run(cover.async_stop_cover())
+        cover._device.async_stop.assert_awaited_once()
 
     def test_stop_cover_sets_flags_and_state(self):
         cover = _make_cover(
@@ -265,21 +260,21 @@ class TestStopCover:
         )
         cover._attr_is_opening = True
         cover._attr_is_closing = False
-        cover.stop_cover()
+        asyncio.run(cover.async_stop_cover())
         assert cover._attr_is_opening is False
         assert cover._attr_is_closing is False
         assert cover._skip_update is True
         assert cover._app_command is True
 
     def test_stop_cover_micromodule_shutter_sets_switch_off(self):
-        """stop_cover on MICROMODULE_SHUTTER must call _micromodule_keypad_switch_off."""
+        """async_stop_cover on MICROMODULE_SHUTTER must call _micromodule_keypad_switch_off."""
         cover = _make_cover(
             device_model="MICROMODULE_SHUTTER",
             level=0.5,
             operation_state=MOVING,
             eventtype=SWITCH_ON,
         )
-        cover.stop_cover()
+        asyncio.run(cover.async_stop_cover())
         assert cover._device.eventtype == SWITCH_OFF
 
 
@@ -314,7 +309,7 @@ class TestIsClosed:
 
 
 # ---------------------------------------------------------------------------
-# Lines 224-229: open_cover
+# Lines 224-229: async_open_cover
 # ---------------------------------------------------------------------------
 
 class TestOpenCover:
@@ -324,8 +319,8 @@ class TestOpenCover:
             level=0.0,
             operation_state=STOPPED,
         )
-        cover.open_cover()
-        assert cover._device.level == 1.0
+        asyncio.run(cover.async_open_cover())
+        cover._device.async_set_level.assert_awaited_once_with(1.0)
         assert cover._attr_is_opening is True
         assert cover._target_position == 100
         assert cover._skip_update is True
@@ -338,13 +333,13 @@ class TestOpenCover:
             operation_state=STOPPED,
             eventtype=SWITCH_ON,
         )
-        cover.open_cover()
+        asyncio.run(cover.async_open_cover())
         assert cover._device.eventtype == SWITCH_OFF
-        assert cover._device.level == 1.0
+        cover._device.async_set_level.assert_awaited_once_with(1.0)
 
 
 # ---------------------------------------------------------------------------
-# Lines 233-238: close_cover
+# Lines 233-238: async_close_cover
 # ---------------------------------------------------------------------------
 
 class TestCloseCover:
@@ -354,8 +349,8 @@ class TestCloseCover:
             level=1.0,
             operation_state=STOPPED,
         )
-        cover.close_cover()
-        assert cover._device.level == 0.0
+        asyncio.run(cover.async_close_cover())
+        cover._device.async_set_level.assert_awaited_once_with(0.0)
         assert cover._attr_is_closing is True
         assert cover._target_position == 0
         assert cover._skip_update is True
@@ -368,13 +363,13 @@ class TestCloseCover:
             operation_state=STOPPED,
             eventtype=SWITCH_ON,
         )
-        cover.close_cover()
+        asyncio.run(cover.async_close_cover())
         assert cover._device.eventtype == SWITCH_OFF
-        assert cover._device.level == 0.0
+        cover._device.async_set_level.assert_awaited_once_with(0.0)
 
 
 # ---------------------------------------------------------------------------
-# Lines 242-249: set_cover_position
+# Lines 242-249: async_set_cover_position
 # ---------------------------------------------------------------------------
 
 class TestSetCoverPosition:
@@ -384,8 +379,8 @@ class TestSetCoverPosition:
             level=0.0,
             operation_state=STOPPED,
         )
-        cover.set_cover_position(**{ATTR_POSITION: 70})
-        assert cover._device.level == pytest_approx(0.70)
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 70}))
+        cover._device.async_set_level.assert_awaited_once_with(pytest_approx(0.70))
         assert cover._target_position == 70
         assert cover._skip_update is True
         assert cover._app_command is True
@@ -399,10 +394,10 @@ class TestSetCoverPosition:
             eventtype=SWITCH_ON,
         )
         # current_cover_position for MICROMODULE_SHUTTER STOPPED = round(0.5 * 100) = 50
-        cover.set_cover_position(**{ATTR_POSITION: 80})
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 80}))
         assert cover._device.eventtype == SWITCH_OFF
         assert cover._last_position == 50  # saved before setting new level
-        assert cover._device.level == pytest_approx(0.80)
+        cover._device.async_set_level.assert_awaited_once_with(pytest_approx(0.80))
         assert cover._target_position == 80
         assert cover._skip_update is True
         assert cover._app_command is True
@@ -430,47 +425,47 @@ class TestExtraStateAttributes:
 
 
 # ---------------------------------------------------------------------------
-# Lines 276-284: BlindsControlCover.open_cover / close_cover
+# BlindsControlCover.async_open_cover / async_close_cover
 # ---------------------------------------------------------------------------
 
 class TestBlindsOpenCloseCover:
     def test_open_cover_sets_level_and_flags(self):
         # #100: lift uses ShutterControl.level, not blinds_level
         cover = _make_blinds(level=0.0)
-        cover.open_cover()
-        assert cover._device.level == 1.0
+        asyncio.run(cover.async_open_cover())
+        cover._device.async_set_level.assert_awaited_once_with(1.0)
         assert cover._attr_is_opening is True
         assert cover._attr_is_closing is False
 
     def test_close_cover_sets_level_and_flags(self):
         cover = _make_blinds(level=1.0)
-        cover.close_cover()
-        assert cover._device.level == 0.0
+        asyncio.run(cover.async_close_cover())
+        cover._device.async_set_level.assert_awaited_once_with(0.0)
         assert cover._attr_is_closing is True
         assert cover._attr_is_opening is False
 
 
 # ---------------------------------------------------------------------------
-# Lines 288-289: BlindsControlCover.set_cover_position
+# BlindsControlCover.async_set_cover_position
 # ---------------------------------------------------------------------------
 
 class TestBlindsSetCoverPosition:
     def test_set_cover_position_uses_level(self):
         # #100: lift uses ShutterControl.level, not blinds_level
-        cover = _make_blinds(level=0.0)
-        cover.set_cover_position(**{ATTR_POSITION: 65})
         import pytest
-        assert cover._device.level == pytest.approx(0.65)
+        cover = _make_blinds(level=0.0)
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 65}))
+        cover._device.async_set_level.assert_awaited_once_with(pytest.approx(0.65))
 
     def test_set_cover_position_fully_open(self):
         cover = _make_blinds(level=0.0)
-        cover.set_cover_position(**{ATTR_POSITION: 100})
-        assert cover._device.level == 1.0
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 100}))
+        cover._device.async_set_level.assert_awaited_once_with(1.0)
 
     def test_set_cover_position_fully_closed(self):
         cover = _make_blinds(level=1.0)
-        cover.set_cover_position(**{ATTR_POSITION: 0})
-        assert cover._device.level == 0.0
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 0}))
+        cover._device.async_set_level.assert_awaited_once_with(0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -539,46 +534,45 @@ class TestBlindsCurrentCoverPositionIssue100:
 
 
 # ---------------------------------------------------------------------------
-# Regression: BlindsControlCover.stop_cover must call stop_blinds(), NOT stop()
+# Regression: BlindsControlCover.async_stop_cover must call async_stop_blinds()
 # ---------------------------------------------------------------------------
 
 class TestBlindsStopCover:
-    def test_stop_cover_calls_stop_blinds_not_stop(self):
-        """BlindsControlCover.stop_cover() must call stop_blinds() (blind endpoint),
-        not the inherited stop() (ShutterControl endpoint)."""
+    def test_stop_cover_calls_async_stop_blinds(self):
+        """BlindsControlCover.async_stop_cover() must call async_stop_blinds()
+        (blind endpoint), not the inherited async_stop() (ShutterControl endpoint)."""
         cover = _make_blinds()
-        # Ensure there is no `stop` method on the tracking device — if the
-        # inherited ShutterControlCover.stop_cover() were called it would raise.
+        # Ensure there is no sync `stop` method — proves we use the async variant
         assert not hasattr(cover._device, "stop"), (
             "Test setup error: _TrackingDevice must not have a stop() method"
         )
-        cover.stop_cover()
-        assert len(cover._device._stop_blinds_calls) == 1
+        asyncio.run(cover.async_stop_cover())
+        cover._device.async_stop_blinds.assert_awaited_once()
 
     def test_stop_cover_clears_opening_closing_flags(self):
         cover = _make_blinds()
         cover._attr_is_opening = True
         cover._attr_is_closing = True
-        cover.stop_cover()
+        asyncio.run(cover.async_stop_cover())
         assert cover._attr_is_opening is False
         assert cover._attr_is_closing is False
 
     def test_stop_cover_sets_skip_update_and_app_command(self):
         cover = _make_blinds()
-        cover.stop_cover()
+        asyncio.run(cover.async_stop_cover())
         assert cover._skip_update is True
         assert cover._app_command is True
 
 
 # ---------------------------------------------------------------------------
-# Line 297: BlindsControlCover.stop_cover_tilt
+# BlindsControlCover.async_stop_cover_tilt
 # ---------------------------------------------------------------------------
 
 class TestBlindsStopCoverTilt:
-    def test_stop_cover_tilt_calls_stop_blinds(self):
+    def test_stop_cover_tilt_calls_async_stop_blinds(self):
         cover = _make_blinds()
-        cover.stop_cover_tilt()
-        assert len(cover._device._stop_blinds_calls) == 1
+        asyncio.run(cover.async_stop_cover_tilt())
+        cover._device.async_stop_blinds.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------
@@ -602,52 +596,56 @@ class TestBlindsCurrentCoverTiltPosition:
 
 
 # ---------------------------------------------------------------------------
-# Line 306: BlindsControlCover.open_cover_tilt
+# BlindsControlCover.async_open_cover_tilt
 # ---------------------------------------------------------------------------
 
 class TestBlindsOpenCoverTilt:
     def test_open_cover_tilt_sets_target_angle_zero(self):
-        """open_cover_tilt → _device.target_angle = 1.0 - 1.0 = 0.0."""
+        """async_open_cover_tilt → async_set_target_angle(0.0) (1.0 - 1.0)."""
+        import pytest
         cover = _make_blinds()
-        cover.open_cover_tilt()
-        assert cover._device.target_angle == 0.0
+        asyncio.run(cover.async_open_cover_tilt())
+        cover._device.async_set_target_angle.assert_awaited_once_with(pytest.approx(0.0))
 
 
 # ---------------------------------------------------------------------------
-# Line 310: BlindsControlCover.close_cover_tilt
+# BlindsControlCover.async_close_cover_tilt
 # ---------------------------------------------------------------------------
 
 class TestBlindsCloseCoverTilt:
     def test_close_cover_tilt_sets_target_angle_one(self):
-        """close_cover_tilt → _device.target_angle = 1.0 - 0.0 = 1.0."""
+        """async_close_cover_tilt → async_set_target_angle(1.0) (1.0 - 0.0)."""
+        import pytest
         cover = _make_blinds()
-        cover.close_cover_tilt()
-        assert cover._device.target_angle == 1.0
+        asyncio.run(cover.async_close_cover_tilt())
+        cover._device.async_set_target_angle.assert_awaited_once_with(pytest.approx(1.0))
 
 
 # ---------------------------------------------------------------------------
-# Lines 314-315: BlindsControlCover.set_cover_tilt_position
+# BlindsControlCover.async_set_cover_tilt_position
 # ---------------------------------------------------------------------------
 
 class TestBlindsSetCoverTiltPosition:
     def test_set_tilt_position_calculation(self):
-        """set_cover_tilt_position(40) → target_angle = 1.0 - 0.40 = 0.60."""
-        cover = _make_blinds()
-        cover.set_cover_tilt_position(**{ATTR_TILT_POSITION: 40})
+        """async_set_cover_tilt_position(40) → async_set_target_angle(0.60)."""
         import pytest
-        assert cover._device.target_angle == pytest.approx(0.60)
+        cover = _make_blinds()
+        asyncio.run(cover.async_set_cover_tilt_position(**{ATTR_TILT_POSITION: 40}))
+        cover._device.async_set_target_angle.assert_awaited_once_with(pytest.approx(0.60))
 
     def test_set_tilt_position_fully_open(self):
-        """tilt_position=100 → target_angle = 0.0."""
+        """tilt_position=100 → async_set_target_angle(0.0)."""
+        import pytest
         cover = _make_blinds()
-        cover.set_cover_tilt_position(**{ATTR_TILT_POSITION: 100})
-        assert cover._device.target_angle == 0.0
+        asyncio.run(cover.async_set_cover_tilt_position(**{ATTR_TILT_POSITION: 100}))
+        cover._device.async_set_target_angle.assert_awaited_once_with(pytest.approx(0.0))
 
     def test_set_tilt_position_fully_closed(self):
-        """tilt_position=0 → target_angle = 1.0."""
+        """tilt_position=0 → async_set_target_angle(1.0)."""
+        import pytest
         cover = _make_blinds()
-        cover.set_cover_tilt_position(**{ATTR_TILT_POSITION: 0})
-        assert cover._device.target_angle == 1.0
+        asyncio.run(cover.async_set_cover_tilt_position(**{ATTR_TILT_POSITION: 0}))
+        cover._device.async_set_target_angle.assert_awaited_once_with(pytest.approx(1.0))
 
 
 # ---------------------------------------------------------------------------

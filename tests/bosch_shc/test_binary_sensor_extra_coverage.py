@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from boschshcpy import (
     SHCBatteryDevice,
@@ -359,7 +359,7 @@ class TestTwinguardAlarmTrackerAlarmStateValueError:
         )
         hass = _make_hass()
         session = SimpleNamespace(
-            api=SimpleNamespace(get_messages=lambda: []),
+            api=SimpleNamespace(get_messages=AsyncMock(return_value=[])),
         )
         return TwinguardAlarmTracker(
             session=session, smoke_detection_system=sds, hass=hass
@@ -413,7 +413,7 @@ class TestTwinguardAlarmTrackerRefreshNoChange:
         )
         hass = _make_hass()
         session = SimpleNamespace(
-            api=SimpleNamespace(get_messages=lambda: []),
+            api=SimpleNamespace(get_messages=AsyncMock(return_value=[])),
         )
         return TwinguardAlarmTracker(
             session=session, smoke_detection_system=sds, hass=hass
@@ -423,18 +423,18 @@ class TestTwinguardAlarmTrackerRefreshNoChange:
         """Two consecutive refreshes with same state: listener NOT called on 2nd."""
         tracker = self._make_tracker_alarm_off()
         # First refresh: sets baseline
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         called = []
         tracker.register_listener(_make_hass(), lambda: called.append(1))
         # Second refresh with same state: no-change early return → listener not called
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert called == []
 
     def test_refresh_no_change_trigger_ids_unchanged(self):
         """After two ALARM_OFF refreshes, trigger_ids remain empty."""
         tracker = self._make_tracker_alarm_off()
-        tracker.refresh()
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
+        asyncio.run(tracker.async_refresh())
         assert tracker._active_trigger_ids == set()
 
     def test_refresh_first_call_notifies_because_state_changed(self):
@@ -442,15 +442,15 @@ class TestTwinguardAlarmTrackerRefreshNoChange:
         tracker = self._make_tracker_alarm_off()
         called = []
         tracker.register_listener(_make_hass(), lambda: called.append(1))
-        tracker.refresh()  # first call: _last_alarm_state was None → change detected
+        asyncio.run(tracker.async_refresh())  # first call: _last_alarm_state was None → change detected
         assert called == [1]
 
     def test_refresh_no_change_last_alarm_state_preserved(self):
         """_last_alarm_state is set and preserved across a no-change refresh."""
         tracker = self._make_tracker_alarm_off()
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         before = tracker._last_alarm_state
-        tracker.refresh()
+        asyncio.run(tracker.async_refresh())
         assert tracker._last_alarm_state == before
         assert tracker._last_alarm_state == "ALARM_OFF"
 

@@ -221,24 +221,22 @@ class TestSHCWalkTestButton:
 
     def test_async_press_calls_async_set_walk_state_request(self):
         from boschshcpy.services_impl import WalkTestService
-        calls = []
-        dev = _fake_md2(set_walk_state_request=lambda v: calls.append(v))
+        dev = _fake_md2(async_set_walk_state_request=AsyncMock())
         b = SHCWalkTestButton.__new__(SHCWalkTestButton)
         b._device = dev
-        b.hass = _executor_hass()
         asyncio.run(b.async_press())
-        assert calls == [WalkTestService.WalkStateRequest.WALK_STATE_START]
+        dev.async_set_walk_state_request.assert_called_once_with(
+            WalkTestService.WalkStateRequest.WALK_STATE_START
+        )
 
     def test_async_press_with_real_enum_value(self):
         from boschshcpy.services_impl import WalkTestService
-        received = []
-        dev = _fake_md2(set_walk_state_request=lambda v: received.append(v))
+        dev = _fake_md2(async_set_walk_state_request=AsyncMock())
         b = SHCWalkTestButton.__new__(SHCWalkTestButton)
         b._device = dev
-        b.hass = _executor_hass()
         asyncio.run(b.async_press())
-        assert len(received) == 1
-        assert received[0] == WalkTestService.WalkStateRequest.WALK_STATE_START
+        call_arg = dev.async_set_walk_state_request.call_args[0][0]
+        assert call_arg == WalkTestService.WalkStateRequest.WALK_STATE_START
 
     def test_icon(self):
         b = self._make()
@@ -265,25 +263,23 @@ class TestSHCWalkTestStopButton:
 
     def test_async_press_calls_async_set_walk_state_request_stop(self):
         from boschshcpy.services_impl import WalkTestService
-        calls = []
-        dev = _fake_md2(set_walk_state_request=lambda v: calls.append(v))
+        dev = _fake_md2(async_set_walk_state_request=AsyncMock())
         b = SHCWalkTestStopButton.__new__(SHCWalkTestStopButton)
         b._device = dev
-        b.hass = _executor_hass()
         asyncio.run(b.async_press())
-        assert calls == [WalkTestService.WalkStateRequest.WALK_STATE_STOP]
+        dev.async_set_walk_state_request.assert_called_once_with(
+            WalkTestService.WalkStateRequest.WALK_STATE_STOP
+        )
 
     def test_async_press_uses_walk_state_stop_not_start(self):
         from boschshcpy.services_impl import WalkTestService
-        received = []
-        dev = _fake_md2(set_walk_state_request=lambda v: received.append(v))
+        dev = _fake_md2(async_set_walk_state_request=AsyncMock())
         b = SHCWalkTestStopButton.__new__(SHCWalkTestStopButton)
         b._device = dev
-        b.hass = _executor_hass()
         asyncio.run(b.async_press())
-        assert len(received) == 1
-        assert received[0] == WalkTestService.WalkStateRequest.WALK_STATE_STOP
-        assert received[0] != WalkTestService.WalkStateRequest.WALK_STATE_START
+        call_arg = dev.async_set_walk_state_request.call_args[0][0]
+        assert call_arg == WalkTestService.WalkStateRequest.WALK_STATE_STOP
+        assert call_arg != WalkTestService.WalkStateRequest.WALK_STATE_START
 
     def test_icon(self):
         b = self._make()
@@ -491,21 +487,19 @@ class TestSmartSensitivitySecurityLevelSelect:
 
     def test_async_select_option_calls_device_setter(self):
         from boschshcpy.services_impl import SmartSensitivityControlService
-        calls = []
         ctx = SmartSensitivityControlService.SmartSensitivityContext.SECURITY
         dev = _fake_md2(
             get_smart_sensitivity=lambda c: {"manualLevel": "HIGH"},
-            set_smart_sensitivity_manual_level=lambda c, v: calls.append((c, v)),
+            async_set_smart_sensitivity_manual_level=AsyncMock(),
         )
         e = SmartSensitivitySecurityLevelSelect.__new__(
             SmartSensitivitySecurityLevelSelect
         )
         e._device = dev
-        e.hass = _executor_hass()
         asyncio.run(e.async_select_option("MIDDLE"))
-        assert len(calls) == 1
-        assert calls[0][0] == ctx
-        assert calls[0][1] == SmartSensitivityControlService.MotionSensitivity.MIDDLE
+        dev.async_set_smart_sensitivity_manual_level.assert_called_once_with(
+            ctx, SmartSensitivityControlService.MotionSensitivity.MIDDLE
+        )
 
     def test_created_when_get_smart_sensitivity_present(self):
         md2 = _fake_md2(get_smart_sensitivity=lambda c: {"manualLevel": "HIGH"}, supports_smart_sensitivity=True)
@@ -632,21 +626,19 @@ class TestSmartSensitivityComfortLevelSelect:
 
     def test_async_select_option_calls_device_setter(self):
         from boschshcpy.services_impl import SmartSensitivityControlService
-        calls = []
         ctx = SmartSensitivityControlService.SmartSensitivityContext.COMFORT
         dev = _fake_md2(
             get_smart_sensitivity=lambda c: {"manualLevel": "MIDDLE"},
-            set_smart_sensitivity_manual_level=lambda c, v: calls.append((c, v)),
+            async_set_smart_sensitivity_manual_level=AsyncMock(),
         )
         e = SmartSensitivityComfortLevelSelect.__new__(
             SmartSensitivityComfortLevelSelect
         )
         e._device = dev
-        e.hass = _executor_hass()
         asyncio.run(e.async_select_option("HIGH"))
-        assert len(calls) == 1
-        assert calls[0][0] == ctx
-        assert calls[0][1] == SmartSensitivityControlService.MotionSensitivity.HIGH
+        dev.async_set_smart_sensitivity_manual_level.assert_called_once_with(
+            ctx, SmartSensitivityControlService.MotionSensitivity.HIGH
+        )
 
     def test_created_when_guard_present(self):
         md2 = _fake_md2(

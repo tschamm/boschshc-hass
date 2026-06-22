@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.bosch_shc.number import (
     PowerThresholdNumber,
@@ -106,66 +106,34 @@ class TestPowerThresholdNumber:
         assert n.native_value is None
 
     def test_set_native_value_writes_to_device(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-            _pt = 0.0
-
-            @property
-            def power_threshold(self_):
-                return self_._pt
-
-            @power_threshold.setter
-            def power_threshold(self_, v):
-                written.append(v)
-                self_._pt = v
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              power_threshold=0.0,
+                              async_set_power_threshold=mock_setter)
         n = PowerThresholdNumber.__new__(PowerThresholdNumber)
-        n._device = _Dev()
-        n.set_native_value(200.0)
-        assert written == [200.0]
+        n._device = dev
+        asyncio.run(n.async_set_native_value(200.0))
+        mock_setter.assert_awaited_once_with(200.0)
 
     def test_set_native_value_clamped_to_max(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-
-            @property
-            def power_threshold(self_):
-                return 0
-
-            @power_threshold.setter
-            def power_threshold(self_, v):
-                written.append(v)
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              power_threshold=0.0,
+                              async_set_power_threshold=mock_setter)
         n = PowerThresholdNumber.__new__(PowerThresholdNumber)
-        n._device = _Dev()
-        n.set_native_value(9999.0)
-        assert written[0] <= 3680.0
+        n._device = dev
+        asyncio.run(n.async_set_native_value(9999.0))
+        assert mock_setter.call_args[0][0] <= 3680.0
 
     def test_set_native_value_clamped_to_min(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-
-            @property
-            def power_threshold(self_):
-                return 0
-
-            @power_threshold.setter
-            def power_threshold(self_, v):
-                written.append(v)
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              power_threshold=0.0,
+                              async_set_power_threshold=mock_setter)
         n = PowerThresholdNumber.__new__(PowerThresholdNumber)
-        n._device = _Dev()
-        n.set_native_value(-50.0)
-        assert written[0] >= 0.0
+        n._device = dev
+        asyncio.run(n.async_set_native_value(-50.0))
+        assert mock_setter.call_args[0][0] >= 0.0
 
     def test_unique_id_format(self):
         n = self._make(root_device_id="root1", dev_id="d1",
@@ -229,26 +197,14 @@ class TestEnterDurationNumber:
         assert n.native_value is None
 
     def test_set_native_value_converts_to_int(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-            _dur = 0
-
-            @property
-            def enter_duration_seconds(self_):
-                return self_._dur
-
-            @enter_duration_seconds.setter
-            def enter_duration_seconds(self_, v):
-                written.append(v)
-                self_._dur = v
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              enter_duration_seconds=0,
+                              async_set_enter_duration_seconds=mock_setter)
         n = EnterDurationNumber.__new__(EnterDurationNumber)
-        n._device = _Dev()
-        n.set_native_value(120.7)
-        assert written == [120]  # int(clamped)
+        n._device = dev
+        asyncio.run(n.async_set_native_value(120.7))
+        mock_setter.assert_awaited_once_with(120)  # int(clamped)
 
     def test_unique_id_format(self):
         n = self._make()
@@ -327,25 +283,15 @@ class TestLedBrightnessNumber:
         assert n.native_step == 1.0
 
     def test_set_native_value_writes_to_device(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-            _led_brightness_configuration_service = None
-
-            @property
-            def led_brightness(self_):
-                return 50
-
-            @led_brightness.setter
-            def led_brightness(self_, v):
-                written.append(v)
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              led_brightness=50,
+                              _led_brightness_configuration_service=None,
+                              async_set_led_brightness=mock_setter)
         n = LedBrightnessNumber.__new__(LedBrightnessNumber)
-        n._device = _Dev()
-        n.set_native_value(80)
-        assert written == [80]
+        n._device = dev
+        asyncio.run(n.async_set_native_value(80))
+        mock_setter.assert_awaited_once_with(80)
 
     def test_unique_id_format(self):
         n = self._make()
@@ -431,25 +377,15 @@ class TestDisplayBrightnessNumber:
         assert n.native_step == 1.0
 
     def test_set_native_value_writes_to_device(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-            _display_config_service = None
-
-            @property
-            def display_brightness(self_):
-                return 50
-
-            @display_brightness.setter
-            def display_brightness(self_, v):
-                written.append(v)
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              display_brightness=50,
+                              _display_config_service=None,
+                              async_set_display_brightness=mock_setter)
         n = DisplayBrightnessNumber.__new__(DisplayBrightnessNumber)
-        n._device = _Dev()
-        n.set_native_value(70)
-        assert written == [70]
+        n._device = dev
+        asyncio.run(n.async_set_native_value(70))
+        mock_setter.assert_awaited_once_with(70)
 
     def test_unique_id_format(self):
         n = self._make()
@@ -544,25 +480,15 @@ class TestDisplayOnTimeNumber:
         assert n.native_step == 1.0
 
     def test_set_native_value_writes_to_device(self):
-        written = []
-
-        class _Dev:
-            root_device_id = "r"
-            id = "d"
-            _display_config_service = None
-
-            @property
-            def display_on_time(self_):
-                return 60
-
-            @display_on_time.setter
-            def display_on_time(self_, v):
-                written.append(v)
-
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(root_device_id="r", id="d",
+                              display_on_time=60,
+                              _display_config_service=None,
+                              async_set_display_on_time=mock_setter)
         n = DisplayOnTimeNumber.__new__(DisplayOnTimeNumber)
-        n._device = _Dev()
-        n.set_native_value(300)
-        assert written == [300]
+        n._device = dev
+        asyncio.run(n.async_set_native_value(300))
+        mock_setter.assert_awaited_once_with(300)
 
     def test_unique_id_format(self):
         n = self._make()

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 
 def _run(coro):
@@ -80,7 +80,7 @@ class TestBinarySensorCleanupTrackerBody:
 
         tracker_mock = MagicMock()
         tracker_mock.teardown = MagicMock()
-        tracker_mock.refresh = MagicMock()
+        tracker_mock.async_refresh = AsyncMock()
 
         sds = self._fake_device("sds-001", name="SDS")
         # SDS needs a SurveillanceAlarm alarm attribute (read by SmokeDetectionSystemSensor)
@@ -93,7 +93,7 @@ class TestBinarySensorCleanupTrackerBody:
         session = SimpleNamespace(
             _subscribers=[],
             subscribe=lambda cb: None,
-            api=SimpleNamespace(get_messages=lambda: []),
+            api=SimpleNamespace(get_messages=AsyncMock(return_value=[])),
             device_helper=SimpleNamespace(
                 shutter_contacts=[],
                 shutter_contacts2=[],

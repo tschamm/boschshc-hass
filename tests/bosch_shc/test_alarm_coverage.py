@@ -8,8 +8,9 @@ No HA harness.
 """
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from boschshcpy import SHCIntrusionSystem
 from homeassistant.components.alarm_control_panel.const import (
@@ -52,11 +53,11 @@ def _make_panel(
         arming_state=arming_state,
         active_configuration_profile=profile,
         system_availability=system_availability,
-        disarm=MagicMock(),
-        arm_full_protection=MagicMock(),
-        arm_partial_protection=MagicMock(),
-        arm_individual_protection=MagicMock(),
-        mute=MagicMock(),
+        async_disarm=AsyncMock(),
+        async_arm_full_protection=AsyncMock(),
+        async_arm_partial_protection=AsyncMock(),
+        async_arm_individual_protection=AsyncMock(),
+        async_mute=AsyncMock(),
     )
     panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
     panel._device = device
@@ -167,33 +168,33 @@ class TestAlarmStateAlarmOffFallthrough:
 class TestAlarmActions:
     def test_alarm_disarm_calls_device_disarm(self):
         p = _make_panel()
-        p.alarm_disarm()
-        p._device.disarm.assert_called_once_with()
+        asyncio.run(p.async_alarm_disarm())
+        p._device.async_disarm.assert_called_once_with()
 
     def test_alarm_disarm_with_code(self):
         p = _make_panel()
-        p.alarm_disarm(code="1234")
-        p._device.disarm.assert_called_once_with()
+        asyncio.run(p.async_alarm_disarm(code="1234"))
+        p._device.async_disarm.assert_called_once_with()
 
     def test_alarm_arm_away_calls_arm_full_protection(self):
         p = _make_panel()
-        p.alarm_arm_away()
-        p._device.arm_full_protection.assert_called_once_with()
+        asyncio.run(p.async_alarm_arm_away())
+        p._device.async_arm_full_protection.assert_called_once_with()
 
     def test_alarm_arm_home_calls_arm_partial_protection(self):
         p = _make_panel()
-        p.alarm_arm_home()
-        p._device.arm_partial_protection.assert_called_once_with()
+        asyncio.run(p.async_alarm_arm_home())
+        p._device.async_arm_partial_protection.assert_called_once_with()
 
     def test_alarm_arm_custom_bypass_calls_arm_individual_protection(self):
         p = _make_panel()
-        p.alarm_arm_custom_bypass()
-        p._device.arm_individual_protection.assert_called_once_with()
+        asyncio.run(p.async_alarm_arm_custom_bypass())
+        p._device.async_arm_individual_protection.assert_called_once_with()
 
     def test_alarm_mute_calls_mute(self):
         p = _make_panel()
-        p.alarm_mute()
-        p._device.mute.assert_called_once_with()
+        asyncio.run(p.async_alarm_mute())
+        p._device.async_mute.assert_called_once_with()
 
 
 # ---------------------------------------------------------------------------

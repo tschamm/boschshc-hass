@@ -211,12 +211,8 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Send WALK_STATE_START request to the WalkTest service."""
-        # The integration runs the synchronous SHCSession, so the device's
-        # async_* setter would await a sync API call. Use the sync setter in an
-        # executor instead (async path arrives with session_async, phase 3b).
-        await self.hass.async_add_executor_job(
-            self._device.set_walk_state_request,
-            WalkTestService.WalkStateRequest.WALK_STATE_START,
+        await self._device.async_set_walk_state_request(
+            WalkTestService.WalkStateRequest.WALK_STATE_START
         )
 
 
@@ -237,7 +233,6 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Send WALK_STATE_STOP request to the WalkTest service."""
-        await self.hass.async_add_executor_job(
-            self._device.set_walk_state_request,
-            WalkTestService.WalkStateRequest.WALK_STATE_STOP,
+        await self._device.async_set_walk_state_request(
+            WalkTestService.WalkStateRequest.WALK_STATE_STOP
         )

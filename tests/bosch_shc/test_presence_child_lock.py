@@ -11,7 +11,7 @@ Covers:
 - Redundant-write suppression (same aggregate -> no second API call)
 - No-op on unavailable/unknown/new_state=None
 - Unsub callback is cleaned up in async_unload_entry
-- Errors from device setters are caught and logged (no crash)
+- Errors from device async setters are caught and logged (no crash)
 """
 
 import asyncio
@@ -28,8 +28,7 @@ from custom_components.bosch_shc.const import (
 # Patch targets
 # ---------------------------------------------------------------------------
 
-PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSession"
-PATCH_ZEROCONF = "custom_components.bosch_shc.__init__.async_get_instance"
+PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSessionAsync"
 PATCH_DR_GET = "custom_components.bosch_shc.__init__.dr.async_get"
 PATCH_PARSE_CERT = "custom_components.bosch_shc.__init__.parse_certificate"
 PATCH_TRACK_INTERVAL = "custom_components.bosch_shc.__init__.async_track_time_interval"
@@ -69,6 +68,7 @@ def _make_fake_hass(states=None):
     hass.config_entries.async_reload = AsyncMock()
     hass.bus = MagicMock()
     hass.bus.async_listen_once = MagicMock(return_value=MagicMock(return_value=None))
+    hass.bus.async_fire = MagicMock()
     hass.bus.fire = MagicMock()
     hass.services = MagicMock()
     hass.services.async_register = MagicMock()
@@ -96,16 +96,26 @@ def _make_fake_entry(entry_id="test_entry_id", title="Test SHC",
 
 
 def _make_device(device_id="dev-001"):
+    """Make a fake SHC device with async_set_child_lock as an AsyncMock."""
     dev = MagicMock()
     dev.id = device_id
-    dev.child_lock = False
+    dev.async_set_child_lock = AsyncMock()
+    # child_lock attribute tracks the last value written via the AsyncMock
+    # We simulate the setter storing the value by side_effect
+    _state = [False]
+
+    async def _set_child_lock(value):
+        _state[0] = value
+
+    dev.async_set_child_lock.side_effect = _set_child_lock
+    dev._child_lock_state = _state
     return dev
 
 
 def _make_fake_session(thermostats=None, roomthermostats=None,
                        wallthermostats=None, bool_devices=None):
-    from boschshcpy import SHCSession as _SHCSession
-    session = MagicMock(spec=_SHCSession)
+    from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+    session = MagicMock(spec=_SHCSessionAsync)
     shc_info = SimpleNamespace(
         updateState=SimpleNamespace(name="NO_UPDATE_AVAILABLE"),
         unique_id="aa:bb:cc:dd:ee:ff",
@@ -114,9 +124,9 @@ def _make_fake_session(thermostats=None, roomthermostats=None,
     )
     session.information = shc_info
     session.scenarios = []
-    session.rawscan_commands = ["devices"]
-    session.start_polling = MagicMock()
-    session.stop_polling = MagicMock()
+    session.async_init = AsyncMock()
+    session.start_polling = AsyncMock()
+    session.stop_polling = AsyncMock()
     session.subscribe_scenario_callback = MagicMock()
     session.unsubscribe_scenario_callback = MagicMock()
 
@@ -177,7 +187,6 @@ def _do_setup(session, options, *, capture_state_cb=False, hass_states=None):
 
     patches = [
         patch(PATCH_SESSION, return_value=session),
-        patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
         patch(PATCH_DR_GET, return_value=dr_mock),
         patch(PATCH_PARSE_CERT, return_value=None),
         patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
@@ -185,9 +194,9 @@ def _do_setup(session, options, *, capture_state_cb=False, hass_states=None):
     if capture_state_cb:
         patches.append(patch(PATCH_TRACK_STATE, side_effect=_capture_track_state))
 
-    with patches[0], patches[1], patches[2], patches[3], patches[4]:
+    with patches[0], patches[1], patches[2], patches[3]:
         if capture_state_cb:
-            with patches[5]:
+            with patches[4]:
                 _run(async_setup_entry(hass, entry))
         else:
             _run(async_setup_entry(hass, entry))
@@ -273,7 +282,6 @@ class TestBackwardCompatStr:
                 entry = _make_fake_entry(options=opts)
                 with (
                     patch(PATCH_SESSION, return_value=session),
-                    patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
                     patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
                     patch(PATCH_PARSE_CERT, return_value=None),
                     patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -301,12 +309,11 @@ class TestBackwardCompatStr:
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is True
+        therm.async_set_child_lock.assert_awaited_once_with(True)
 
     def test_single_str_lock_off_when_entity_leaves(self):
         """Backward compat str: leaving present_state unlocks devices."""
         therm = _make_device("therm-1")
-        therm.child_lock = True
         session = _make_fake_session(thermostats=[therm])
         opts = {OPT_PRESENCE_ENTITY: "person.felix"}
         # Simulate entity now away
@@ -317,7 +324,7 @@ class TestBackwardCompatStr:
         state_cb(_state_event("not_home", "home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is False
+        therm.async_set_child_lock.assert_awaited_once_with(False)
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +346,6 @@ class TestPresenceEnabled:
                 entry = _make_fake_entry(options=opts)
                 with (
                     patch(PATCH_SESSION, return_value=session),
-                    patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
                     patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
                     patch(PATCH_PARSE_CERT, return_value=None),
                     patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -395,7 +401,7 @@ class TestChildLockOn:
         hass.async_create_task.assert_called_once()
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is True
+        therm.async_set_child_lock.assert_awaited_once_with(True)
 
     def test_entering_present_state_sets_child_lock_true_on_bool_device(self):
         hass, state_cb, therm, booldev = self._setup_with_devices(
@@ -404,7 +410,7 @@ class TestChildLockOn:
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert booldev.child_lock is True
+        booldev.async_set_child_lock.assert_awaited_once_with(True)
 
     def test_custom_present_state_triggers_lock(self):
         therm = _make_device("therm-1")
@@ -420,7 +426,7 @@ class TestChildLockOn:
         state_cb(_state_event("on", "off"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is True
+        therm.async_set_child_lock.assert_awaited_once_with(True)
 
 
 # ---------------------------------------------------------------------------
@@ -430,7 +436,6 @@ class TestChildLockOn:
 class TestChildLockOff:
     def _setup_with_therm(self):
         therm = _make_device("therm-1")
-        therm.child_lock = True  # initially locked
         session = _make_fake_session(thermostats=[therm])
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
@@ -447,7 +452,7 @@ class TestChildLockOff:
         state_cb(_state_event("not_home", "home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is False
+        therm.async_set_child_lock.assert_awaited_once_with(False)
 
 
 # ---------------------------------------------------------------------------
@@ -477,18 +482,17 @@ class TestMultiEntityAnyHome:
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is True
+        therm.async_set_child_lock.assert_awaited_once_with(True)
 
     def test_all_away_turns_lock_off(self):
         """alice=not_home, bob=not_home -> lock OFF when last one leaves."""
         hass, state_cb, therm = self._setup_multi(
             {"person.alice": "not_home", "person.bob": "not_home"}
         )
-        therm.child_lock = True
         state_cb(_state_event("not_home", "home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
-        assert therm.child_lock is False
+        therm.async_set_child_lock.assert_awaited_once_with(False)
 
     def test_one_away_other_still_home_lock_stays_on(self):
         """alice=home, bob leaves -> aggregate still ANY-home -> NO API call."""
@@ -500,9 +504,10 @@ class TestMultiEntityAnyHome:
         state_cb(_state_event("home", "not_home"))  # alice arrives
         first_task = hass.async_create_task.call_args[0][0]
         _run(first_task)
-        assert therm.child_lock is True
+        therm.async_set_child_lock.assert_awaited_once_with(True)
 
         hass.async_create_task.reset_mock()
+        therm.async_set_child_lock.reset_mock()
 
         # Now bob leaves — but alice is still home. Aggregate stays True.
         state_cb(_state_event("not_home", "home"))  # bob leaves
@@ -524,7 +529,6 @@ class TestMultiEntityAnyHome:
                 entry = _make_fake_entry(options=opts)
                 with (
                     patch(PATCH_SESSION, return_value=session),
-                    patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
                     patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
                     patch(PATCH_PARSE_CERT, return_value=None),
                     patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -550,6 +554,7 @@ class TestMultiEntityAnyHome:
 
         # Second arrival while first is still home -> aggregate stays True
         hass.async_create_task.reset_mock()
+        therm.async_set_child_lock.reset_mock()
         state_cb(_state_event("home", "not_home"))
         hass.async_create_task.assert_not_called()
 
@@ -601,16 +606,18 @@ class TestNoOp:
         # First ensure _last_lock_state is primed to False by an initial away event:
         state_cb(_state_event("not_home", "home"))  # leaves -> aggregate False
         first_count = hass.async_create_task.call_count
-        _run(hass.async_create_task.call_args[0][0]) if first_count else None
+        if first_count:
+            _run(hass.async_create_task.call_args[0][0])
 
         hass.async_create_task.reset_mock()
+        therm.async_set_child_lock.reset_mock()
         # Another away->away transition: no change in aggregate
         state_cb(_state_event("away", "not_home"))
         hass.async_create_task.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# Tests: error handling — device setter raises, no crash
+# Tests: error handling — device async setter raises, no crash
 # ---------------------------------------------------------------------------
 
 class TestErrorHandling:
@@ -619,9 +626,8 @@ class TestErrorHandling:
 
         therm = MagicMock()
         therm.id = "therm-broken"
-        type(therm).child_lock = property(
-            lambda self: False,
-            lambda self, v: (_ for _ in ()).throw(JSONRPCError(-1, "network error")),
+        therm.async_set_child_lock = AsyncMock(
+            side_effect=JSONRPCError(-1, "network error")
         )
 
         session = _make_fake_session(thermostats=[therm])
@@ -643,9 +649,8 @@ class TestErrorHandling:
 
         booldev = MagicMock()
         booldev.id = "bool-broken"
-        type(booldev).child_lock = property(
-            lambda self: False,
-            lambda self, v: (_ for _ in ()).throw(SHCException("timeout")),
+        booldev.async_set_child_lock = AsyncMock(
+            side_effect=SHCException("timeout")
         )
 
         session = _make_fake_session(bool_devices=[booldev])
@@ -681,7 +686,6 @@ class TestUnloadCleansUp:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -703,7 +707,6 @@ class TestUnloadCleansUp:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),

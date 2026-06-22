@@ -33,7 +33,7 @@ def _run(coro):
 class TestPresenceStateNoneEntity:
     """When hass.states.get(eid) returns None the loop must continue without crash."""
 
-    PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSession"
+    PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSessionAsync"
     PATCH_ZEROCONF = "custom_components.bosch_shc.__init__.async_get_instance"
     PATCH_DR_GET = "custom_components.bosch_shc.__init__.dr.async_get"
     PATCH_PARSE_CERT = "custom_components.bosch_shc.__init__.parse_certificate"
@@ -41,8 +41,11 @@ class TestPresenceStateNoneEntity:
     PATCH_TRACK_STATE = "custom_components.bosch_shc.__init__.async_track_state_change_event"
 
     def _make_session(self):
-        from boschshcpy import SHCSession as _SHCSession
-        session = MagicMock(spec=_SHCSession)
+        from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+        session = MagicMock(spec=_SHCSessionAsync)
+        session.async_init = AsyncMock()
+        session.start_polling = AsyncMock()
+        session.stop_polling = AsyncMock()
         session.information = SimpleNamespace(
             updateState=SimpleNamespace(name="NO_UPDATE_AVAILABLE"),
             unique_id="aa:bb:cc:dd:ee:ff",
@@ -51,8 +54,6 @@ class TestPresenceStateNoneEntity:
         )
         session.scenarios = []
         session.rawscan_commands = ["devices"]
-        session.start_polling = MagicMock()
-        session.stop_polling = MagicMock()
         session.subscribe_scenario_callback = MagicMock()
         session.unsubscribe_scenario_callback = MagicMock()
         dh = MagicMock()
@@ -139,7 +140,6 @@ class TestPresenceStateNoneEntity:
 
         with (
             patch(self.PATCH_SESSION, return_value=session),
-            patch(self.PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(self.PATCH_DR_GET, return_value=dr_mock),
             patch(self.PATCH_PARSE_CERT, return_value=None),
             patch(self.PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -225,7 +225,7 @@ class TestCleanupTrackerBody:
         """
         tracker = MagicMock()
         tracker.teardown = MagicMock()
-        tracker.refresh = MagicMock()
+        tracker.async_refresh = AsyncMock()
 
         session = MagicMock()
         # All device lists empty except smoke_detection_system + twinguards

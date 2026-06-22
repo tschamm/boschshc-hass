@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -143,76 +143,47 @@ class TestImpulseLengthNativeValue:
 
 
 # ---------------------------------------------------------------------------
-# ImpulseLengthNumber — set_native_value
+# ImpulseLengthNumber — async_set_native_value
 # ---------------------------------------------------------------------------
 
 class TestImpulseLengthSetNativeValue:
     def test_set_value_converts_seconds_to_tenths(self):
-        """set_native_value(5.0) → device.impulse_length = 50."""
-        written = []
-
-        class _Dev:
-            name = "relay"
-            id = "r1"
-            root_device_id = "root1"
-            _len = 100
-
-            @property
-            def impulse_length(self_):
-                return self_._len
-
-            @impulse_length.setter
-            def impulse_length(self_, v):
-                written.append(v)
-                self_._len = v
-
-        dev = _Dev()
+        """async_set_native_value(5.0) → async_set_impulse_length(50)."""
+        dev = SimpleNamespace(
+            name="relay",
+            id="r1",
+            root_device_id="root1",
+            impulse_length=100,
+            async_set_impulse_length=AsyncMock(),
+        )
         num = ImpulseLengthNumber.__new__(ImpulseLengthNumber)
         num._device = dev
-        num.set_native_value(5.0)
-        assert written == [50]
+        asyncio.run(num.async_set_native_value(5.0))
+        dev.async_set_impulse_length.assert_awaited_once_with(50)
 
     def test_set_value_clamps_to_max(self):
         """Values above 60 s are clamped to 60 s = 600 tenths."""
-        written = []
-
-        class _Dev:
-            name = "relay"
-
-            @property
-            def impulse_length(self_):
-                return 100
-
-            @impulse_length.setter
-            def impulse_length(self_, v):
-                written.append(v)
-
-        dev = _Dev()
+        dev = SimpleNamespace(
+            name="relay",
+            impulse_length=100,
+            async_set_impulse_length=AsyncMock(),
+        )
         num = ImpulseLengthNumber.__new__(ImpulseLengthNumber)
         num._device = dev
-        num.set_native_value(999.0)
-        assert written == [600]
+        asyncio.run(num.async_set_native_value(999.0))
+        dev.async_set_impulse_length.assert_awaited_once_with(600)
 
     def test_set_value_clamps_to_min(self):
         """Values below 0.1 s are clamped to 0.1 s = 1 tenth."""
-        written = []
-
-        class _Dev:
-            name = "relay"
-
-            @property
-            def impulse_length(self_):
-                return 100
-
-            @impulse_length.setter
-            def impulse_length(self_, v):
-                written.append(v)
-
-        dev = _Dev()
+        dev = SimpleNamespace(
+            name="relay",
+            impulse_length=100,
+            async_set_impulse_length=AsyncMock(),
+        )
         num = ImpulseLengthNumber.__new__(ImpulseLengthNumber)
         num._device = dev
-        num.set_native_value(0.0)
-        assert written == [1]
+        asyncio.run(num.async_set_native_value(0.0))
+        dev.async_set_impulse_length.assert_awaited_once_with(1)
 
 
 # ---------------------------------------------------------------------------
@@ -268,68 +239,72 @@ class TestHeatingCircuitSetpointNativeValue:
 
 
 # ---------------------------------------------------------------------------
-# HeatingCircuitSetpointNumber — set_native_value
+# HeatingCircuitSetpointNumber — async_set_native_value
 # ---------------------------------------------------------------------------
 
 class TestHeatingCircuitSetpointSetValue:
     def test_eco_set_value_writes_to_service(self):
-        class _Svc:
-            setpoint_temperature_eco = 18.0
-
-        svc = _Svc()
+        """async_set_native_value calls async_set_setpoint_temperature_eco on device."""
+        mock_setter = AsyncMock()
         dev = SimpleNamespace(
             name="HC", id="hc1", root_device_id="root1",
-            _heating_circuit_service=svc,
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_eco=18.0,
+            ),
+            async_set_setpoint_temperature_eco=mock_setter,
         )
         num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         num._device = dev
         num._getter_name = "setpoint_temperature_eco"
         num._setter_name = "setpoint_temperature_eco"
 
-        num.set_native_value(19.0)
-        assert svc.setpoint_temperature_eco == pytest.approx(19.0)
+        asyncio.run(num.async_set_native_value(19.0))
+        mock_setter.assert_awaited_once_with(pytest.approx(19.0))
 
     def test_set_value_clamps_to_min(self):
         """Values below 5 °C → clamped to 5 °C."""
-        class _Svc:
-            setpoint_temperature_eco = 18.0
-
-        svc = _Svc()
+        mock_setter = AsyncMock()
         dev = SimpleNamespace(
             name="HC", id="hc1", root_device_id="root1",
-            _heating_circuit_service=svc,
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_eco=18.0,
+            ),
+            async_set_setpoint_temperature_eco=mock_setter,
         )
         num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         num._device = dev
         num._getter_name = "setpoint_temperature_eco"
         num._setter_name = "setpoint_temperature_eco"
 
-        num.set_native_value(1.0)
-        assert svc.setpoint_temperature_eco == pytest.approx(5.0)
+        asyncio.run(num.async_set_native_value(1.0))
+        mock_setter.assert_awaited_once_with(pytest.approx(5.0))
 
     def test_set_value_clamps_to_max(self):
         """Values above 30 °C → clamped to 30 °C."""
-        class _Svc:
-            setpoint_temperature_comfort = 21.0
-
-        svc = _Svc()
+        mock_setter = AsyncMock()
         dev = SimpleNamespace(
             name="HC", id="hc1", root_device_id="root1",
-            _heating_circuit_service=svc,
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_comfort=21.0,
+            ),
+            async_set_setpoint_temperature_comfort=mock_setter,
         )
         num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         num._device = dev
         num._getter_name = "setpoint_temperature_comfort"
         num._setter_name = "setpoint_temperature_comfort"
 
-        num.set_native_value(100.0)
-        assert svc.setpoint_temperature_comfort == pytest.approx(30.0)
+        asyncio.run(num.async_set_native_value(100.0))
+        mock_setter.assert_awaited_once_with(pytest.approx(30.0))
 
-    def test_set_value_with_no_service_logs_warning(self):
-        """When service is None, log a warning and do nothing."""
+    def test_set_value_with_no_async_setter_logs_warning(self):
+        """When async_set_* is absent on device, log a warning and do nothing."""
         dev = SimpleNamespace(
             name="HC", id="hc1", root_device_id="root1",
-            _heating_circuit_service=None,
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_eco=18.0,
+            ),
+            # no async_set_setpoint_temperature_eco attribute
         )
         num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
         num._device = dev
@@ -337,7 +312,7 @@ class TestHeatingCircuitSetpointSetValue:
         num._setter_name = "setpoint_temperature_eco"
 
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
-            num.set_native_value(20.0)  # must not raise
+            asyncio.run(num.async_set_native_value(20.0))  # must not raise
         mock_log.warning.assert_called_once()
 
 

@@ -1,18 +1,17 @@
 """Tests for custom_components/bosch_shc/__init__.py.
 
 Strategy: aggressive mocking — no real certs/network/HA harness.
-- SHCSession patched at import site (custom_components.bosch_shc.__init__.SHCSession)
-- async_get_instance patched to return a plain mock
+- SHCSessionAsync patched at import site
+- async_init/start_polling/stop_polling are AsyncMocks
 - dr.async_get patched to return a mock DeviceRegistry
 - hass is a hand-rolled SimpleNamespace / AsyncMock object
 - asyncio.run() drives all async code
 """
 
 import asyncio
-import types
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.bosch_shc.const import (
@@ -20,7 +19,6 @@ from custom_components.bosch_shc.const import (
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
     DATA_CERT_CHECK_UNSUB,
-    DATA_POLLING_HANDLER,
     DATA_SESSION,
     DATA_SHC,
     DATA_TITLE,
@@ -80,6 +78,7 @@ def _make_fake_hass(*, domain_data=None):
     # bus mock — async_listen_once returns a plain (non-async) cancel callable
     hass.bus = MagicMock()
     hass.bus.async_listen_once = MagicMock(return_value=MagicMock(return_value=None))
+    hass.bus.async_fire = MagicMock()
     hass.bus.fire = MagicMock()
 
     # services mock
@@ -113,25 +112,34 @@ def _make_fake_entry(entry_id="test_entry_id", title="Test SHC",
 
 
 def _make_fake_session(*, scenarios=None, universal_switches=None,
-                       rawscan_commands=None, shc_info=None):
-    """Build a fake SHCSession.
-
-    Uses spec=SHCSession so isinstance(session, SHCSession) returns True in
-    the service handler isinstance checks.
-    """
-    from boschshcpy import SHCSession as _SHCSession
-    session = MagicMock(spec=_SHCSession)
+                       shc_info=None):
+    """Build a fake SHCSessionAsync with AsyncMocks for async methods."""
+    from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+    session = MagicMock(spec=_SHCSessionAsync)
     session.information = shc_info or _make_shc_info()
     session.scenarios = scenarios or []
-    session.rawscan_commands = rawscan_commands or ["devices", "services"]
-    session.start_polling = MagicMock()
-    session.stop_polling = MagicMock()
+    session.async_init = AsyncMock()
+    session.start_polling = AsyncMock()
+    session.stop_polling = AsyncMock()
     session.subscribe_scenario_callback = MagicMock()
     session.unsubscribe_scenario_callback = MagicMock()
-    session.rawscan = MagicMock(return_value={"key": "value"})
     dh = MagicMock()
     dh.universal_switches = universal_switches or []
     session.device_helper = dh
+    # async API object for rawscan dispatch
+    api = MagicMock()
+    api.get_devices = AsyncMock(return_value=[])
+    api.get_services = AsyncMock(return_value=[])
+    api.get_rooms = AsyncMock(return_value=[])
+    api.get_scenarios = AsyncMock(return_value=[])
+    api.get_messages = AsyncMock(return_value=[])
+    api.get_information = AsyncMock(return_value={})
+    api.get_public_information = AsyncMock(return_value={})
+    api.get_domain_intrusion_detection = AsyncMock(return_value={})
+    api.get_device = AsyncMock(return_value={})
+    api.get_device_services = AsyncMock(return_value=[])
+    api.get_device_service = AsyncMock(return_value={})
+    session.api = api
     return session
 
 
@@ -147,8 +155,7 @@ def _make_fake_device_registry():
 # Patch context: patch all external boundaries before importing __init__ funcs
 # ---------------------------------------------------------------------------
 
-PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSession"
-PATCH_ZEROCONF = "custom_components.bosch_shc.__init__.async_get_instance"
+PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSessionAsync"
 PATCH_DR_GET = "custom_components.bosch_shc.__init__.dr.async_get"
 PATCH_PARSE_CERT = "custom_components.bosch_shc.__init__.parse_certificate"
 PATCH_TRACK_INTERVAL = "custom_components.bosch_shc.__init__.async_track_time_interval"
@@ -173,12 +180,10 @@ class TestAsyncSetupEntryHappyPath:
         hass = _make_fake_hass()
         entry = _make_fake_entry()
         dr_mock = _make_fake_device_registry()
-        zeroconf_mock = MagicMock()
         track_unsub = MagicMock()
 
         with (
             patch(PATCH_SESSION, return_value=fake_session) as session_cls,
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=zeroconf_mock)),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
@@ -224,7 +229,7 @@ class TestAsyncSetupEntryHappyPath:
     def test_start_polling_called(self):
         session = _make_fake_session()
         _, _, _, _ = self._do_setup(session)
-        session.start_polling.assert_called_once()
+        session.start_polling.assert_awaited_once()
 
     def test_stop_listener_registered(self):
         """bus.async_listen_once called with EVENT_HOMEASSISTANT_STOP."""
@@ -246,6 +251,12 @@ class TestAsyncSetupEntryHappyPath:
         _, hass, entry, _ = self._do_setup(session)
         assert DATA_CERT_CHECK_UNSUB in hass.data[DOMAIN][entry.entry_id]
 
+    def test_async_init_awaited(self):
+        """async_init() must be awaited during setup (replaces executor SHCSession)."""
+        session = _make_fake_session()
+        _, _, _, _ = self._do_setup(session)
+        session.async_init.assert_awaited_once()
+
 
 # ---------------------------------------------------------------------------
 # Tests: async_setup_entry — update_state branch
@@ -264,7 +275,6 @@ class TestSetupUpdateAvailable:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -290,7 +300,6 @@ class TestSetupCertBranches:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=cert_info_obj),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -335,7 +344,6 @@ class TestSetupCertBranches:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
             patch(PATCH_PARSE_CERT, return_value=cert_info),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -354,7 +362,6 @@ class TestSetupCertBranches:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, side_effect=ValueError("bad pem")),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -370,14 +377,17 @@ class TestSetupCertBranches:
 
 class TestSetupConnectionErrors:
     def _setup_raising(self, exc_class):
+        """Setup where async_init raises the given exception."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
+        session = _make_fake_session()
+        # Make async_init raise the exception
+        session.async_init = AsyncMock(side_effect=exc_class)
         hass = _make_fake_hass()
         entry = _make_fake_entry()
 
         with (
-            patch(PATCH_SESSION, side_effect=exc_class),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+            patch(PATCH_SESSION, return_value=session),
             patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -417,7 +427,6 @@ class TestScenarioSubscription:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -443,7 +452,6 @@ class TestScenarioSubscription:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -464,7 +472,6 @@ class TestScenarioSubscription:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -474,7 +481,7 @@ class TestScenarioSubscription:
         session.subscribe_scenario_callback.assert_called_once_with("shc", ANY_callable)
 
     def test_scenario_fire_event(self):
-        """_scenario_trigger callback fires a bosch_shc event on the bus."""
+        """_scenario_trigger callback fires a bosch_shc event on the bus via async_fire."""
         fake_scenario = SimpleNamespace(name="Away", id="sc1")
         session = _make_fake_session(scenarios=[fake_scenario])
 
@@ -493,7 +500,6 @@ class TestScenarioSubscription:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -503,14 +509,11 @@ class TestScenarioSubscription:
         assert len(captured_callbacks) == 1
         cb = captured_callbacks[0]
         cb({"id": "sc1", "lastTimeTriggered": 1234567, "name": "Away"})
-        # _scenario_trigger uses hass.loop.call_soon_threadsafe(hass.bus.fire, ...)
-        # The fake hass.loop is a MagicMock that records but doesn't execute calls.
-        # Assert on call_soon_threadsafe to verify correct thread-safe dispatch.
-        hass.loop.call_soon_threadsafe.assert_called_once()
-        args = hass.loop.call_soon_threadsafe.call_args.args
-        assert args[0] is hass.bus.fire
-        assert args[1] == EVENT_BOSCH_SHC
-        fired_data = args[2]
+        # _scenario_trigger fires via hass.bus.async_fire (async session fires on the loop)
+        hass.bus.async_fire.assert_called_once()
+        args = hass.bus.async_fire.call_args.args
+        assert args[0] == EVENT_BOSCH_SHC
+        fired_data = args[1]
         assert fired_data[ATTR_EVENT_TYPE] == "SCENARIO"
         assert fired_data[ATTR_EVENT_SUBTYPE] == "Away"
 
@@ -519,8 +522,10 @@ class TestScenarioSubscription:
 class _AnyCallable:
     def __eq__(self, other):
         return callable(other)
+
     def __repr__(self):
         return "<any callable>"
+
 
 ANY_callable = _AnyCallable()
 
@@ -544,7 +549,6 @@ class TestAsyncUnloadEntry:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
@@ -565,7 +569,7 @@ class TestAsyncUnloadEntry:
     def test_unload_calls_stop_polling(self):
         _, _, _, session, _ = self._setup_and_unload()
         # stop_polling called at least once (once during unload)
-        assert session.stop_polling.call_count >= 1
+        assert session.stop_polling.await_count >= 1
 
     def test_unload_calls_cert_check_unsub(self):
         _, _, _, _, track_unsub = self._setup_and_unload()
@@ -611,7 +615,6 @@ class TestB2NoUpdateListener:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -637,7 +640,6 @@ class TestServiceHandlers:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -666,26 +668,20 @@ class TestServiceHandlers:
     def test_scenario_service_triggers_matching_scenario(self):
         fake_scenario = MagicMock()
         fake_scenario.name = "Night Mode"
-        fake_scenario.trigger = MagicMock()
-        from boschshcpy import SHCSession
+        fake_scenario.async_trigger = AsyncMock()
         session = _make_fake_session(scenarios=[fake_scenario])
-
-        # Make session an actual instance check pass (isinstance check in handler)
-        with patch("custom_components.bosch_shc.__init__.SHCSession", SHCSession):
-            # We need isinstance to work — wrap session specially
-            pass
 
         handlers, hass, entry, session_obj = self._setup_with_session(session)
         handler = handlers[SERVICE_TRIGGER_SCENARIO]
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": ""})
         _run(handler(call_obj))
-        fake_scenario.trigger.assert_called_once()
+        fake_scenario.async_trigger.assert_awaited_once()
 
     def test_scenario_service_skips_nonmatching_name(self):
         fake_scenario = MagicMock()
         fake_scenario.name = "Away"
-        fake_scenario.trigger = MagicMock()
+        fake_scenario.async_trigger = AsyncMock()
         session = _make_fake_session(scenarios=[fake_scenario])
 
         handlers, hass, entry, _ = self._setup_with_session(session)
@@ -693,13 +689,13 @@ class TestServiceHandlers:
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": ""})
         _run(handler(call_obj))
-        fake_scenario.trigger.assert_not_called()
+        fake_scenario.async_trigger.assert_not_called()
 
     def test_scenario_service_filters_by_title(self):
         """When title doesn't match DATA_TITLE, skip that controller."""
         fake_scenario = MagicMock()
         fake_scenario.name = "Night Mode"
-        fake_scenario.trigger = MagicMock()
+        fake_scenario.async_trigger = AsyncMock()
         session = _make_fake_session(scenarios=[fake_scenario])
 
         handlers, hass, entry, _ = self._setup_with_session(session)
@@ -707,13 +703,13 @@ class TestServiceHandlers:
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": "OtherSHC"})
         _run(handler(call_obj))
-        fake_scenario.trigger.assert_not_called()
+        fake_scenario.async_trigger.assert_not_called()
 
     def test_scenario_service_empty_title_matches_all(self):
         """Empty title string matches any controller (default)."""
         fake_scenario = MagicMock()
         fake_scenario.name = "Night Mode"
-        fake_scenario.trigger = MagicMock()
+        fake_scenario.async_trigger = AsyncMock()
         session = _make_fake_session(scenarios=[fake_scenario])
 
         handlers, hass, entry, _ = self._setup_with_session(session)
@@ -721,13 +717,14 @@ class TestServiceHandlers:
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": ""})
         _run(handler(call_obj))
-        fake_scenario.trigger.assert_called_once()
+        fake_scenario.async_trigger.assert_awaited_once()
 
     # -- rawscan service --
 
-    def test_rawscan_service_calls_session_rawscan(self):
-        session = _make_fake_session(rawscan_commands=["devices", "services"])
-        session.rawscan = MagicMock(return_value={"result": "ok"})
+    def test_rawscan_service_calls_api_get_devices(self):
+        """'devices' command dispatches to api.get_devices()."""
+        session = _make_fake_session()
+        session.api.get_devices = AsyncMock(return_value={"devices": "ok"})
 
         handlers, hass, entry, session_obj = self._setup_with_session(session)
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
@@ -739,32 +736,30 @@ class TestServiceHandlers:
             "service_id": "",
         })
         result = _run(handler(call_obj))
-        session_obj.rawscan.assert_called_once()
-        assert result == {"devices": {"result": "ok"}}
+        session_obj.api.get_devices.assert_awaited_once()
+        assert result == {"devices": {"devices": "ok"}}
 
-    def test_rawscan_service_passes_device_and_service_id(self):
-        session = _make_fake_session(rawscan_commands=["devices", "services"])
-        session.rawscan = MagicMock(return_value={"data": []})
+    def test_rawscan_service_calls_api_get_information(self):
+        """'info' command dispatches to api.get_information()."""
+        session = _make_fake_session()
+        session.api.get_information = AsyncMock(return_value={"version": "9.0"})
 
         handlers, hass, entry, session_obj = self._setup_with_session(session)
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
 
         call_obj = self._make_service_call(**{
             "title": "",
-            ATTR_COMMAND: "services",
-            ATTR_DEVICE_ID: "dev1",
-            "service_id": "svc1",
+            ATTR_COMMAND: "info",
+            ATTR_DEVICE_ID: "",
+            "service_id": "",
         })
-        _run(handler(call_obj))
-        call_kwargs = session_obj.rawscan.call_args.kwargs
-        assert call_kwargs.get("command") == "services"
-        assert call_kwargs.get("device_id") == "dev1"
-        assert call_kwargs.get("service_id") == "svc1"
+        result = _run(handler(call_obj))
+        session_obj.api.get_information.assert_awaited_once()
+        assert result == {"info": {"version": "9.0"}}
 
     def test_rawscan_service_filters_by_title(self):
-        """Title mismatch → rawscan not called."""
-        session = _make_fake_session(rawscan_commands=["devices"])
-        session.rawscan = MagicMock(return_value={})
+        """Title mismatch → api methods not called."""
+        session = _make_fake_session()
 
         handlers, hass, entry, session_obj = self._setup_with_session(session)
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
@@ -776,8 +771,25 @@ class TestServiceHandlers:
             "service_id": "",
         })
         result = _run(handler(call_obj))
-        session_obj.rawscan.assert_not_called()
+        session_obj.api.get_devices.assert_not_awaited()
         assert result is None
+
+    def test_rawscan_service_unknown_command_raises(self):
+        """Unknown rawscan command raises ServiceValidationError."""
+        from homeassistant.exceptions import ServiceValidationError
+        session = _make_fake_session()
+
+        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handler = handlers[SERVICE_TRIGGER_RAWSCAN]
+
+        call_obj = self._make_service_call(**{
+            "title": "",
+            ATTR_COMMAND: "nonexistent_cmd",
+            ATTR_DEVICE_ID: "",
+            "service_id": "",
+        })
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
 
 
 # ---------------------------------------------------------------------------
@@ -795,7 +807,6 @@ class TestSwitchDeviceEventListener:
         return ks
 
     def _make_switch_device(self, keypad_service=None, supported_event=True):
-        from custom_components.bosch_shc.const import SUPPORTED_INPUTS_EVENTS_TYPES
         dev = MagicMock()
         dev.id = "switch-001"
         dev.name = "Test Switch"
@@ -864,6 +875,7 @@ class TestSwitchDeviceEventListener:
         assert EVENT_HOMEASSISTANT_STOP in listen_args
 
     def test_input_events_handler_fires_bus_event(self):
+        """_input_events_handler fires via hass.bus.async_fire (async session)."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
         hass = _make_fake_hass()
@@ -875,14 +887,11 @@ class TestSwitchDeviceEventListener:
         listener.device_id = "hass-device-id-123"
         listener._input_events_handler()
 
-        # _input_events_handler uses hass.loop.call_soon_threadsafe(hass.bus.fire, ...)
-        # for thread-safe dispatch from the SHCPollingThread.
-        # The fake hass.loop is a MagicMock that records but doesn't execute calls.
-        hass.loop.call_soon_threadsafe.assert_called_once()
-        args = hass.loop.call_soon_threadsafe.call_args.args
-        assert args[0] is hass.bus.fire
-        assert args[1] == EVENT_BOSCH_SHC
-        event_data = args[2]
+        # Async session fires callbacks on the loop — async_fire used directly
+        hass.bus.async_fire.assert_called_once()
+        args = hass.bus.async_fire.call_args.args
+        assert args[0] == EVENT_BOSCH_SHC
+        event_data = args[1]
         assert event_data[ATTR_EVENT_TYPE] == "PRESS_SHORT"
         assert event_data[ATTR_EVENT_SUBTYPE] == "UPPER_BUTTON"
         assert event_data[ATTR_ID] == dev.id
@@ -902,7 +911,7 @@ class TestSwitchDeviceEventListener:
         listener.device_id = "dev-id"
         listener._input_events_handler()
 
-        hass.bus.fire.assert_not_called()
+        hass.bus.async_fire.assert_not_called()
 
     def test_shutdown_unsubscribes_keypad(self):
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
@@ -988,7 +997,6 @@ class TestSetupUniversalSwitches:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=fake_dr),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -1047,7 +1055,6 @@ class TestScheduledCertCheck:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, side_effect=_parse),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_track),
@@ -1117,7 +1124,6 @@ class TestStopPollingListener:
 
         with (
             patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
@@ -1128,5 +1134,5 @@ class TestStopPollingListener:
         assert stop_polling_fn is not None
         # Call it (simulating HA stop)
         _run(stop_polling_fn(MagicMock()))
-        # stop_polling should now have been called (start + stop)
-        assert session.stop_polling.call_count >= 1
+        # stop_polling should now have been awaited (start + stop)
+        assert session.stop_polling.await_count >= 1

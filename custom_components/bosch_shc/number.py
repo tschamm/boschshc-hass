@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+
+import aiohttp
 
 from boschshcpy import SHCThermostat, SHCSession
 from boschshcpy.device import SHCDevice
@@ -178,10 +181,15 @@ class SHCNumber(SHCEntity, NumberEntity):
         )
         self._device: SHCThermostat = device
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Update the current value, clamped to [native_min_value, native_max_value]."""
         clamped = max(self.native_min_value, min(self.native_max_value, value))
-        self._device.offset = clamped
+        try:
+            await self._device.async_set_offset(clamped)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set offset for %s: %s", self._device.name, err
+            )
 
     @property
     def native_value(self) -> float:
@@ -236,12 +244,17 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):
         # lib stores in tenths of seconds → divide by 10
         return raw / 10.0
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Set the impulse length; convert seconds → tenths of seconds (int)."""
         clamped = max(
             self._attr_native_min_value, min(self._attr_native_max_value, value)
         )
-        self._device.impulse_length = round(clamped * 10)
+        try:
+            await self._device.async_set_impulse_length(round(clamped * 10))
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set impulse length for %s: %s", self._device.name, err
+            )
 
 
 class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
@@ -295,20 +308,24 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
             )
             return None
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Write the setpoint temperature, clamped to valid range."""
         clamped = max(
             self._attr_native_min_value, min(self._attr_native_max_value, value)
         )
+        async_setter = getattr(
+            self._device, f"async_set_{self._setter_name}", None
+        )
+        if async_setter is None:
+            LOGGER.warning(
+                "Async setter async_set_%s unavailable for %s",
+                self._setter_name,
+                self._device.name,
+            )
+            return
         try:
-            svc = getattr(self._device, "_heating_circuit_service", None)
-            if svc is None:
-                LOGGER.warning(
-                    "HeatingCircuitService unavailable for %s", self._device.name
-                )
-                return
-            setattr(svc, self._setter_name, clamped)
-        except (AttributeError, KeyError) as err:
+            await async_setter(clamped)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
             LOGGER.warning(
                 "Unable to write %s for %s: %s",
                 self._setter_name,
@@ -345,12 +362,17 @@ class PowerThresholdNumber(SHCEntity, NumberEntity):
         """Return the power threshold in watts."""
         return getattr(self._device, "power_threshold", None)
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Set the power threshold, clamped to valid range."""
         clamped = max(
             self._attr_native_min_value, min(self._attr_native_max_value, value)
         )
-        self._device.power_threshold = clamped
+        try:
+            await self._device.async_set_power_threshold(clamped)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set power threshold for %s: %s", self._device.name, err
+            )
 
 
 class EnterDurationNumber(SHCEntity, NumberEntity):
@@ -383,12 +405,17 @@ class EnterDurationNumber(SHCEntity, NumberEntity):
             return None
         return float(val)
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Set the enter duration, clamped to valid range."""
         clamped = max(
             self._attr_native_min_value, min(self._attr_native_max_value, value)
         )
-        self._device.enter_duration_seconds = int(clamped)
+        try:
+            await self._device.async_set_enter_duration_seconds(int(clamped))
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set enter duration for %s: %s", self._device.name, err
+            )
 
 
 class LedBrightnessNumber(SHCEntity, NumberEntity):
@@ -444,9 +471,14 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):
         """Return current LED brightness."""
         return getattr(self._device, "led_brightness", None)
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Set the LED brightness."""
-        self._device.led_brightness = value
+        try:
+            await self._device.async_set_led_brightness(value)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set LED brightness for %s: %s", self._device.name, err
+            )
 
 
 class DisplayBrightnessNumber(SHCEntity, NumberEntity):
@@ -498,9 +530,14 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):
         """Return current display brightness."""
         return getattr(self._device, "display_brightness", None)
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Set the display brightness."""
-        self._device.display_brightness = value
+        try:
+            await self._device.async_set_display_brightness(value)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set display brightness for %s: %s", self._device.name, err
+            )
 
 
 class DisplayOnTimeNumber(SHCEntity, NumberEntity):
@@ -559,6 +596,11 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):
             return None
         return float(val)
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Set the display on-time."""
-        self._device.display_on_time = value
+        try:
+            await self._device.async_set_display_on_time(value)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set display on-time for %s: %s", self._device.name, err
+            )

@@ -272,17 +272,11 @@ class ClimateControl(SHCEntity, ClimateEntity):
                     and self._device.operation_mode
                     == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
                 ):
-                    await self.hass.async_add_executor_job(
-                        setattr,
-                        self._device,
-                        "operation_mode",
-                        SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
+                    await self._device.async_set_operation_mode(
+                        SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
                     )
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "setpoint_temperature",
-                    float(round(temperature * 2.0) / 2.0),
+                await self._device.async_set_setpoint_temperature(
+                    float(round(temperature * 2.0) / 2.0)
                 )
             except (JSONRPCError, SHCException) as err:
                 LOGGER.warning(
@@ -306,33 +300,19 @@ class ClimateControl(SHCEntity, ClimateEntity):
             # Exit ECO (low) before applying any HVAC mode change so that
             # turn_off / mode changes are never silently no-oped. #196
             if self.preset_mode == PRESET_ECO:
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "low", False
-                )
+                await self._device.async_set_low(False)
 
             if hvac_mode == HVACMode.HEAT:
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "summer_mode", False
-                )
+                await self._device.async_set_summer_mode(False)
                 if self._device.supports_cooling:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "cooling_mode", False
-                    )
+                    await self._device.async_set_cooling_mode(False)
             elif hvac_mode == HVACMode.COOL:
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "summer_mode", False
-                )
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "cooling_mode", True
-                )
+                await self._device.async_set_summer_mode(False)
+                await self._device.async_set_cooling_mode(True)
             elif hvac_mode == HVACMode.OFF:
                 if self._device.supports_cooling:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "cooling_mode", False
-                    )
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "summer_mode", True
-                )
+                    await self._device.async_set_cooling_mode(False)
+                await self._device.async_set_summer_mode(True)
         except (JSONRPCError, SHCException) as err:
             LOGGER.warning(
                 "Failed to set HVAC mode on device %s: %s",
@@ -353,53 +333,33 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
         try:
             if preset_mode == PRESET_BOOST:
-                await self.hass.async_add_executor_job(
-                    setattr, self._device, "boost_mode", True
-                )
+                await self._device.async_set_boost_mode(True)
 
             elif preset_mode == PRESET_ECO:
                 if hasattr(self._device, "low"):
                     # Clear boost first so states don't stack
                     if self._device.supports_boost_mode and self._device.boost_mode:
-                        await self.hass.async_add_executor_job(
-                            setattr, self._device, "boost_mode", False
-                        )
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "low", True
-                    )
+                        await self._device.async_set_boost_mode(False)
+                    await self._device.async_set_low(True)
 
             elif preset_mode == PRESET_AUTO:
                 # Clear overrides then set schedule mode
                 if self._device.supports_boost_mode and self._device.boost_mode:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "boost_mode", False
-                    )
+                    await self._device.async_set_boost_mode(False)
                 if hasattr(self._device, "low") and self._device.low:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "low", False
-                    )
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "operation_mode",
-                    SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC,
+                    await self._device.async_set_low(False)
+                await self._device.async_set_operation_mode(
+                    SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
                 )
 
             elif preset_mode == PRESET_MANUAL:
                 # Clear overrides then set manual mode
                 if self._device.supports_boost_mode and self._device.boost_mode:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "boost_mode", False
-                    )
+                    await self._device.async_set_boost_mode(False)
                 if hasattr(self._device, "low") and self._device.low:
-                    await self.hass.async_add_executor_job(
-                        setattr, self._device, "low", False
-                    )
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "operation_mode",
-                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL,
+                    await self._device.async_set_low(False)
+                await self._device.async_set_operation_mode(
+                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
                 )
         except (JSONRPCError, SHCException) as err:
             LOGGER.warning(
@@ -479,11 +439,8 @@ class HeatingCircuit(SHCEntity, ClimateEntity):
             return
         if self.min_temp <= temperature <= self.max_temp:
             try:
-                await self.hass.async_add_executor_job(
-                    setattr,
-                    self._device,
-                    "setpoint_temperature",
-                    float(round(temperature * 2.0) / 2.0),
+                await self._device.async_set_setpoint_temperature(
+                    float(round(temperature * 2.0) / 2.0)
                 )
             except (JSONRPCError, SHCException) as err:
                 LOGGER.warning(
@@ -502,9 +459,7 @@ class HeatingCircuit(SHCEntity, ClimateEntity):
             else SHCHeatingCircuit.HeatingCircuitService.OperationMode.MANUAL
         )
         try:
-            await self.hass.async_add_executor_job(
-                setattr, self._device, "operation_mode", mode
-            )
+            await self._device.async_set_operation_mode(mode)
         except (JSONRPCError, SHCException) as err:
             LOGGER.warning(
                 "Failed to set HVAC mode on HeatingCircuit %s: %s",

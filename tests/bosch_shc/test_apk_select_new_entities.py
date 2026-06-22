@@ -144,20 +144,20 @@ class TestStateAfterPowerOutageSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_state_writes_to_device(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import PowerSwitchConfigurationService
-        written = []
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              state_after_power_outage=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            state_after_power_outage=None,
+            async_set_state_after_power_outage=AsyncMock(),
+        )
         e = StateAfterPowerOutageSelect.__new__(StateAfterPowerOutageSelect)
         e._device = dev
-
-        def setter(v):
-            written.append(v)
-
-        dev.state_after_power_outage = None
-        e._set_state(PowerSwitchConfigurationService.StateAfterPowerOutage.ON)
-        assert dev.state_after_power_outage == PowerSwitchConfigurationService.StateAfterPowerOutage.ON
+        asyncio.run(e.async_select_option("ON"))
+        dev.async_set_state_after_power_outage.assert_awaited_once_with(
+            PowerSwitchConfigurationService.StateAfterPowerOutage.ON
+        )
 
     def test_created_when_attr_present(self):
         plug = _fake_device(state_after_power_outage=True, supports_power_switch_configuration=True)
@@ -228,14 +228,20 @@ class TestSmokeSensitivitySelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_level_writes_to_device(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import SmokeSensitivityService
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              smoke_sensitivity=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            smoke_sensitivity=None,
+            async_set_smoke_sensitivity=AsyncMock(),
+        )
         e = SmokeSensitivitySelect.__new__(SmokeSensitivitySelect)
         e._device = dev
-        e._set_level(SmokeSensitivityService.SmokeSensitivityLevel.MIDDLE)
-        assert dev.smoke_sensitivity == SmokeSensitivityService.SmokeSensitivityLevel.MIDDLE
+        asyncio.run(e.async_select_option("MIDDLE"))
+        dev.async_set_smoke_sensitivity.assert_awaited_once_with(
+            SmokeSensitivityService.SmokeSensitivityLevel.MIDDLE
+        )
 
     def test_created_for_smoke_detector_when_attr_present(self):
         sd = _fake_device(smoke_sensitivity=True, supports_smoke_sensitivity=True)
@@ -330,14 +336,20 @@ class TestDisplayDirectionSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_direction_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import DisplayDirection
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              display_direction=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            display_direction=None,
+            async_set_display_direction=AsyncMock(),
+        )
         e = DisplayDirectionSelect.__new__(DisplayDirectionSelect)
         e._device = dev
-        e._set_direction(DisplayDirection.Direction.REVERSED)
-        assert dev.display_direction == DisplayDirection.Direction.REVERSED
+        asyncio.run(e.async_select_option("REVERSED"))
+        dev.async_set_display_direction.assert_awaited_once_with(
+            DisplayDirection.Direction.REVERSED
+        )
 
     def test_created_for_thermostat(self):
         dev = _fake_device(display_direction=True, supports_display_direction=True)
@@ -404,14 +416,20 @@ class TestDisplayedTemperatureSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_displayed_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import DisplayedTemperatureConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              displayed_temperature=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            displayed_temperature=None,
+            async_set_displayed_temperature=AsyncMock(),
+        )
         e = DisplayedTemperatureSelect.__new__(DisplayedTemperatureSelect)
         e._device = dev
-        e._set_displayed(DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED)
-        assert dev.displayed_temperature == DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED
+        asyncio.run(e.async_select_option("MEASURED"))
+        dev.async_set_displayed_temperature.assert_awaited_once_with(
+            DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED
+        )
 
     def test_created_for_thermostat(self):
         dev = _fake_device(displayed_temperature=True, supports_displayed_temperature=True)
@@ -478,14 +496,20 @@ class TestTerminalTypeSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_type_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import TerminalConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              terminal_type=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            terminal_type=None,
+            async_set_terminal_type=AsyncMock(),
+        )
         e = TerminalTypeSelect.__new__(TerminalTypeSelect)
         e._device = dev
-        e._set_type(TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED)
-        assert dev.terminal_type == TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED
+        asyncio.run(e.async_select_option("FLOOR_SENSOR_CONNECTED"))
+        dev.async_set_terminal_type.assert_awaited_once_with(
+            TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED
+        )
 
     def test_created_when_attr_present(self):
         dev = _fake_device(terminal_type=True, supports_terminal_configuration=True)
@@ -552,14 +576,20 @@ class TestValveTypeSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_valve_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              valve_type=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            valve_type=None,
+            async_set_valve_type=AsyncMock(),
+        )
         e = ValveTypeSelect.__new__(ValveTypeSelect)
         e._device = dev
-        e._set_valve(WallThermostatConfiguration.ValveType.NORMALLY_OPEN)
-        assert dev.valve_type == WallThermostatConfiguration.ValveType.NORMALLY_OPEN
+        asyncio.run(e.async_select_option("NORMALLY_OPEN"))
+        dev.async_set_valve_type.assert_awaited_once_with(
+            WallThermostatConfiguration.ValveType.NORMALLY_OPEN
+        )
 
     def test_created_when_attr_present(self):
         dev = _fake_device(valve_type=True, supports_wall_thermostat_configuration=True)
@@ -626,14 +656,20 @@ class TestHeaterTypeSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_heater_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              heater_type=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            heater_type=None,
+            async_set_heater_type=AsyncMock(),
+        )
         e = HeaterTypeSelect.__new__(HeaterTypeSelect)
         e._device = dev
-        e._set_heater(WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE)
-        assert dev.heater_type == WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE
+        asyncio.run(e.async_select_option("CONVECTOR_PASSIVE"))
+        dev.async_set_heater_type.assert_awaited_once_with(
+            WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE
+        )
 
     def test_created_when_attr_present(self):
         dev = _fake_device(heater_type=True, supports_wall_thermostat_configuration=True)
@@ -693,14 +729,20 @@ class TestSwitchTypeSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_switch_type_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import SwitchConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              switch_type=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            switch_type=None,
+            async_set_switch_type=AsyncMock(),
+        )
         e = SwitchTypeSelect.__new__(SwitchTypeSelect)
         e._device = dev
-        e._set_switch_type(SwitchConfiguration.SwitchType.NONE)
-        assert dev.switch_type == SwitchConfiguration.SwitchType.NONE
+        asyncio.run(e.async_select_option("NONE"))
+        dev.async_set_switch_type.assert_awaited_once_with(
+            SwitchConfiguration.SwitchType.NONE
+        )
 
     def test_created_for_relay_when_attr_present(self):
         relay = _fake_device(switch_type=True, supports_switch_configuration=True)
@@ -767,14 +809,20 @@ class TestActuatorTypeSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_actuator_type_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import SwitchConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              actuator_type=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            actuator_type=None,
+            async_set_actuator_type=AsyncMock(),
+        )
         e = ActuatorTypeSelect.__new__(ActuatorTypeSelect)
         e._device = dev
-        e._set_actuator_type(SwitchConfiguration.ActuatorType.NORMALLY_CLOSED)
-        assert dev.actuator_type == SwitchConfiguration.ActuatorType.NORMALLY_CLOSED
+        asyncio.run(e.async_select_option("NORMALLY_CLOSED"))
+        dev.async_set_actuator_type.assert_awaited_once_with(
+            SwitchConfiguration.ActuatorType.NORMALLY_CLOSED
+        )
 
     def test_created_for_relay(self):
         relay = _fake_device(actuator_type=True, supports_switch_configuration=True)
@@ -841,14 +889,20 @@ class TestOutputModeSelect:
         e._device = dev
         assert e.current_option is None
 
-    def test_set_output_mode_writes(self):
+    def test_async_select_option_calls_device_method(self):
         from boschshcpy.services_impl import SwitchConfiguration
-        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              output_mode=None)
+        from unittest.mock import AsyncMock
+        dev = SimpleNamespace(
+            root_device_id="r", id="d", name="X",
+            output_mode=None,
+            async_set_output_mode=AsyncMock(),
+        )
         e = OutputModeSelect.__new__(OutputModeSelect)
         e._device = dev
-        e._set_output_mode(SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS)
-        assert dev.output_mode == SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS
+        asyncio.run(e.async_select_option("DETACHED_SHORT_PRESS"))
+        dev.async_set_output_mode.assert_awaited_once_with(
+            SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS
+        )
 
     def test_created_for_relay(self):
         relay = _fake_device(output_mode=True, supports_switch_configuration=True)

@@ -7,7 +7,9 @@ PIN_EVERY_MODE: one test class per entity characteristic (value, bounds, step,
 metadata) with boundary / default / None cases.
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from custom_components.bosch_shc.number import SHCNumber
 from homeassistant.components.number import NumberDeviceClass
@@ -29,6 +31,7 @@ def _make_number(
         min_offset=min_offset,
         max_offset=max_offset,
         step_size=step_size,
+        async_set_offset=AsyncMock(),
     )
     return entity
 
@@ -144,38 +147,38 @@ def test_entity_category_is_diagnostic():
 
 
 # ---------------------------------------------------------------------------
-# set_native_value round-trip (write-through to _device.offset)
+# async_set_native_value round-trip (awaits async_set_offset on _device)
 # ---------------------------------------------------------------------------
 
 
 def test_set_native_value_positive():
     entity = _make_number(offset=0.0)
-    entity.set_native_value(3.5)
-    assert entity._device.offset == 3.5
+    asyncio.run(entity.async_set_native_value(3.5))
+    entity._device.async_set_offset.assert_awaited_once_with(3.5)
 
 
 def test_set_native_value_negative():
     entity = _make_number(offset=0.0)
-    entity.set_native_value(-2.0)
-    assert entity._device.offset == -2.0
+    asyncio.run(entity.async_set_native_value(-2.0))
+    entity._device.async_set_offset.assert_awaited_once_with(-2.0)
 
 
 def test_set_native_value_zero():
     entity = _make_number(offset=5.0)
-    entity.set_native_value(0.0)
-    assert entity._device.offset == 0.0
+    asyncio.run(entity.async_set_native_value(0.0))
+    entity._device.async_set_offset.assert_awaited_once_with(0.0)
 
 
 def test_set_native_value_at_boundary_max():
     entity = _make_number(max_offset=5.0)
-    entity.set_native_value(5.0)
-    assert entity._device.offset == 5.0
+    asyncio.run(entity.async_set_native_value(5.0))
+    entity._device.async_set_offset.assert_awaited_once_with(5.0)
 
 
 def test_set_native_value_at_boundary_min():
     entity = _make_number(min_offset=-5.0)
-    entity.set_native_value(-5.0)
-    assert entity._device.offset == -5.0
+    asyncio.run(entity.async_set_native_value(-5.0))
+    entity._device.async_set_offset.assert_awaited_once_with(-5.0)
 
 
 # ---------------------------------------------------------------------------
@@ -195,40 +198,40 @@ def test_bounds_consistency_at_extremes():
 
 
 # ---------------------------------------------------------------------------
-# set_native_value clamping (out-of-range values are clamped, not passed through)
+# async_set_native_value clamping (out-of-range values are clamped, not passed through)
 # ---------------------------------------------------------------------------
 
 
 def test_set_native_value_above_max_clamps_to_max():
     """Value above native_max_value must be clamped to max, never sent raw."""
     entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
-    entity.set_native_value(10.0)
-    assert entity._device.offset == 5.0
+    asyncio.run(entity.async_set_native_value(10.0))
+    entity._device.async_set_offset.assert_awaited_once_with(5.0)
 
 
 def test_set_native_value_below_min_clamps_to_min():
     """Value below native_min_value must be clamped to min, never sent raw."""
     entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
-    entity.set_native_value(-20.0)
-    assert entity._device.offset == -5.0
+    asyncio.run(entity.async_set_native_value(-20.0))
+    entity._device.async_set_offset.assert_awaited_once_with(-5.0)
 
 
 def test_set_native_value_in_range_passes_through():
-    """In-range value must reach _device.offset unchanged."""
+    """In-range value must reach async_set_offset unchanged."""
     entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
-    entity.set_native_value(2.5)
-    assert entity._device.offset == 2.5
+    asyncio.run(entity.async_set_native_value(2.5))
+    entity._device.async_set_offset.assert_awaited_once_with(2.5)
 
 
 def test_set_native_value_exactly_at_max_passes_through():
     """Boundary-equal max must pass through, not be rejected."""
     entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
-    entity.set_native_value(5.0)
-    assert entity._device.offset == 5.0
+    asyncio.run(entity.async_set_native_value(5.0))
+    entity._device.async_set_offset.assert_awaited_once_with(5.0)
 
 
 def test_set_native_value_exactly_at_min_passes_through():
     """Boundary-equal min must pass through, not be rejected."""
     entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
-    entity.set_native_value(-5.0)
-    assert entity._device.offset == -5.0
+    asyncio.run(entity.async_set_native_value(-5.0))
+    entity._device.async_set_offset.assert_awaited_once_with(-5.0)

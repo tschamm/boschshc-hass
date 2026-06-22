@@ -9,7 +9,9 @@ in _update_attr, setting is_opening/is_closing to None and losing the flags
 that open_cover/close_cover set.
 """
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import SHCShutterControl, SHCMicromoduleShutterControl
 
@@ -327,6 +329,8 @@ class TestMicromoduleShutterNoKeypad:
             device_model = "MICROMODULE_SHUTTER"
             _keypad_service = None  # device exposes no Keypad service
             level = 0.0
+            async_set_level = AsyncMock()
+            async_stop = AsyncMock()
 
             @property
             def eventtype(self):
@@ -338,9 +342,6 @@ class TestMicromoduleShutterNoKeypad:
                 raise AttributeError(
                     "'NoneType' object has no attribute 'eventType'"
                 )
-
-            def stop(self):
-                pass
 
         cover._device = _NoKeypadDevice()
         cover._target_position = None
@@ -354,16 +355,16 @@ class TestMicromoduleShutterNoKeypad:
 
     def test_open_cover_does_not_crash_without_keypad(self):
         cover = self._no_keypad_cover()
-        cover.open_cover()  # must not raise (issue #318)
+        asyncio.run(cover.async_open_cover())  # must not raise (issue #318)
         assert cover._attr_is_opening is True
 
     def test_close_cover_does_not_crash_without_keypad(self):
         cover = self._no_keypad_cover()
-        cover.close_cover()  # must not raise
+        asyncio.run(cover.async_close_cover())  # must not raise
         assert cover._attr_is_closing is True
 
     def test_stop_cover_does_not_crash_without_keypad(self):
         cover = self._no_keypad_cover()
-        cover.stop_cover()  # must not raise
+        asyncio.run(cover.async_stop_cover())  # must not raise
         assert cover._attr_is_opening is False
         assert cover._attr_is_closing is False

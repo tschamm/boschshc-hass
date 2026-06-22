@@ -1,17 +1,16 @@
 """Extra coverage for custom_components/bosch_shc/__init__.py.
 
 Covers missing lines:
-- 118: scenario_service_call — entry without runtime_data skipped (continue)
-- 155: _register_rawscan_service — early-return when already registered
-- 161: rawscan_service_call — command not in rawscan_commands -> ServiceValidationError
-- 239: _session_kwargs["long_poll_timeout"] = ... (body hit when lib has the param)
-- 241: _session_kwargs["verify_hostname"] = ...  (body hit when lib has the param)
-- 296: _scheduled_cert_check — early-return when cert_path is falsy
-- 307-317: _scheduled_cert_check — warning-notification branch (days_remaining <= limit)
-- 507: async_unload_entry — runtime.presence_unsub is not None -> call it
+- scenario_service_call — entry without runtime_data skipped (continue)
+- _register_rawscan_service — early-return when already registered
+- rawscan_service_call — unknown command -> ServiceValidationError
+- session constructed with correct long_poll_timeout kwarg
+- _scheduled_cert_check — early-return when cert_path is falsy
+- _scheduled_cert_check — warning-notification branch (days_remaining <= limit)
+- async_unload_entry — runtime.presence_unsub is not None -> call it
 
 Run:
-  PYTHONPATH="/tmp/hass-cov:/tmp/lib-async" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \\
+  PYTHONPATH="boschshc-hass:boschshcpy" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \\
   python3 -m pytest tests/bosch_shc/test_init_extra_coverage.py -q -o addopts=""
 """
 
@@ -30,7 +29,6 @@ from custom_components.bosch_shc.const import (
     ATTR_TITLE,
     CERT_EXPIRY_WARNING_DAYS,
     OPT_LONG_POLL_TIMEOUT,
-    OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
 )
@@ -47,8 +45,7 @@ from homeassistant.const import ATTR_COMMAND, ATTR_NAME
 # and `dr.async_get_or_create` are automatically intercepted via the mock.
 # ---------------------------------------------------------------------------
 
-PATCH_SESSION = "custom_components.bosch_shc.SHCSession"
-PATCH_ZEROCONF = "custom_components.bosch_shc.async_get_instance"
+PATCH_SESSION = "custom_components.bosch_shc.SHCSessionAsync"
 PATCH_DR = "custom_components.bosch_shc.dr"
 PATCH_PARSE_CERT = "custom_components.bosch_shc.parse_certificate"
 PATCH_TRACK_INTERVAL = "custom_components.bosch_shc.async_track_time_interval"
@@ -87,6 +84,7 @@ def _make_fake_hass(*, services_has_service=False, domain_data=None):
     hass.config_entries.async_reload = AsyncMock()
     hass.bus = MagicMock()
     hass.bus.async_listen_once = MagicMock(return_value=MagicMock(return_value=None))
+    hass.bus.async_fire = MagicMock()
     hass.bus.fire = MagicMock()
     hass.services = MagicMock()
     hass.services.async_register = MagicMock()
@@ -112,19 +110,31 @@ def _make_fake_entry(entry_id="eid1", title="SHC Test",
 
 
 def _make_fake_session():
-    from boschshcpy import SHCSession as _SHCSession
-    session = MagicMock(spec=_SHCSession)
+    from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+    session = MagicMock(spec=_SHCSessionAsync)
     session.information = _make_shc_info()
     session.scenarios = []
-    session.rawscan_commands = ["devices", "services"]
-    session.start_polling = MagicMock()
-    session.stop_polling = MagicMock()
+    session.async_init = AsyncMock()
+    session.start_polling = AsyncMock()
+    session.stop_polling = AsyncMock()
     session.subscribe_scenario_callback = MagicMock()
     session.unsubscribe_scenario_callback = MagicMock()
-    session.rawscan = MagicMock(return_value={"key": "value"})
     dh = MagicMock()
     dh.universal_switches = []
     session.device_helper = dh
+    api = MagicMock()
+    api.get_devices = AsyncMock(return_value=[])
+    api.get_services = AsyncMock(return_value=[])
+    api.get_rooms = AsyncMock(return_value=[])
+    api.get_scenarios = AsyncMock(return_value=[])
+    api.get_messages = AsyncMock(return_value=[])
+    api.get_information = AsyncMock(return_value={})
+    api.get_public_information = AsyncMock(return_value={})
+    api.get_domain_intrusion_detection = AsyncMock(return_value={})
+    api.get_device = AsyncMock(return_value={})
+    api.get_device_services = AsyncMock(return_value=[])
+    api.get_device_service = AsyncMock(return_value={})
+    session.api = api
     return session
 
 
@@ -157,7 +167,6 @@ def _full_setup(*, fake_session=None, hass=None, entry=None, cert_return=None,
 
     with (
         patch(PATCH_SESSION, return_value=fake_session),
-        patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
         patch(PATCH_DR, dr_mock),
         patch(PATCH_PARSE_CERT, return_value=cert_return),
         patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
@@ -169,7 +178,7 @@ def _full_setup(*, fake_session=None, hass=None, entry=None, cert_return=None,
 
 
 # ---------------------------------------------------------------------------
-# 1 — Line 118: scenario_service_call skips entry without runtime_data
+# 1 — scenario_service_call skips entry without runtime_data
 # ---------------------------------------------------------------------------
 
 class TestScenarioServiceCallSkipsNoRuntimeData:
@@ -219,7 +228,7 @@ class TestScenarioServiceCallSkipsNoRuntimeData:
         class _FakeScenario:
             name = "test_scene"
 
-            def trigger(self_):
+            async def async_trigger(self_):
                 triggered.append(True)
 
         fake_runtime = SimpleNamespace(
@@ -256,7 +265,7 @@ class TestScenarioServiceCallSkipsNoRuntimeData:
 
 
 # ---------------------------------------------------------------------------
-# 2 — Line 155: _register_rawscan_service early-return when already registered
+# 2 — _register_rawscan_service early-return when already registered
 # ---------------------------------------------------------------------------
 
 class TestRegisterRawscanServiceIdempotent:
@@ -293,7 +302,7 @@ class TestRegisterRawscanServiceIdempotent:
 
 
 # ---------------------------------------------------------------------------
-# 3 — Line 161: rawscan_service_call raises ServiceValidationError for bad command
+# 3 — rawscan_service_call raises ServiceValidationError for bad command
 # ---------------------------------------------------------------------------
 
 class TestRawscanBadCommand:
@@ -309,9 +318,8 @@ class TestRawscanBadCommand:
         return rawscan_calls[0].args[2]
 
     def test_unknown_command_raises_service_validation_error(self):
-        """Command not in session.rawscan_commands must raise ServiceValidationError."""
+        """Command not in the async API dispatch map raises ServiceValidationError."""
         fake_session = _make_fake_session()
-        fake_session.rawscan_commands = ["devices", "services"]
 
         hass = _make_fake_hass()
         entry = _make_fake_entry()
@@ -346,8 +354,7 @@ class TestRawscanBadCommand:
     def test_valid_command_does_not_raise(self):
         """A valid command must NOT raise ServiceValidationError."""
         fake_session = _make_fake_session()
-        fake_session.rawscan_commands = ["devices"]
-        fake_session.rawscan = MagicMock(return_value={"devices": []})
+        fake_session.api.get_devices = AsyncMock(return_value={"devices": []})
 
         hass = _make_fake_hass()
         entry = _make_fake_entry()
@@ -383,86 +390,73 @@ class TestRawscanBadCommand:
 
 
 # ---------------------------------------------------------------------------
-# 4 — Lines 239, 241: session kwargs set when lib params exist
+# 4 — Session constructed with correct long_poll_timeout kwarg
 # ---------------------------------------------------------------------------
 
 class TestSessionKwargsConditional:
-    """Lines 239 and 241 are only hit when the lib's SHCSession.__init__ has
-    long_poll_timeout / verify_hostname parameters respectively.
+    """SHCSessionAsync is constructed with the long_poll_timeout option value.
 
-    The existing tests patch SHCSession with a MagicMock whose __init__ only
-    has ['args', 'kw'] => those lines are never reached.
-
-    Here we patch SHCSession with a real-ish class whose __init__ accepts both
-    params, so inspect.signature picks them up.
+    The old inspect-based kwargs logic was removed in the async refactor.
+    SHCSessionAsync always accepts long_poll_timeout as a keyword arg directly.
     """
 
-    def _make_shc_session_cls_with_params(self, fake_session):
-        """Build a class with long_poll_timeout + verify_hostname in __init__."""
-
-        class _PatchedCls:
-            def __new__(cls, *args, **kwargs):
-                return fake_session
-
-            def __init__(
-                self, controller_ip, certificate, key, lazy, zeroconf,
-                long_poll_timeout=10, verify_hostname=False
-            ):
-                pass
-
-        return _PatchedCls
-
     def test_long_poll_timeout_kwarg_forwarded(self):
-        """Line 239: _session_kwargs['long_poll_timeout'] is set when param exists."""
-        fake_session = _make_fake_session()
-        patched_cls = self._make_shc_session_cls_with_params(fake_session)
+        """long_poll_timeout option is passed directly to SHCSessionAsync constructor."""
+        from custom_components.bosch_shc import async_setup_entry
 
+        fake_session = _make_fake_session()
+        dr_mock = _make_dr_mock()
         hass = _make_fake_hass()
         entry = _make_fake_entry(options={OPT_LONG_POLL_TIMEOUT: 30})
-        dr_mock = _make_dr_mock()
-        track_unsub = MagicMock()
 
-        from custom_components.bosch_shc import async_setup_entry
+        captured_kwargs = {}
+
+        def _capture_constructor(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return fake_session
 
         with (
-            patch(PATCH_SESSION, new=patched_cls),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+            patch(PATCH_SESSION, side_effect=_capture_constructor),
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
-            patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
             patch(PATCH_PN_CREATE, MagicMock()),
         ):
             result = _run(async_setup_entry(hass, entry))
 
         assert result is True
+        assert captured_kwargs.get("long_poll_timeout") == 30
 
-    def test_verify_hostname_kwarg_forwarded(self):
-        """Line 241: _session_kwargs['verify_hostname'] is set when param exists."""
+    def test_default_long_poll_timeout_when_not_in_options(self):
+        """When OPT_LONG_POLL_TIMEOUT is absent, default 10 is used."""
+        from custom_components.bosch_shc import async_setup_entry
+
         fake_session = _make_fake_session()
-        patched_cls = self._make_shc_session_cls_with_params(fake_session)
-
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(options={OPT_SSL_VERIFY_HOSTNAME: True})
         dr_mock = _make_dr_mock()
-        track_unsub = MagicMock()
+        hass = _make_fake_hass()
+        entry = _make_fake_entry(options={})  # no timeout option
 
-        from custom_components.bosch_shc import async_setup_entry
+        captured_kwargs = {}
+
+        def _capture_constructor(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return fake_session
 
         with (
-            patch(PATCH_SESSION, new=patched_cls),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
+            patch(PATCH_SESSION, side_effect=_capture_constructor),
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
-            patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
             patch(PATCH_PN_CREATE, MagicMock()),
         ):
             result = _run(async_setup_entry(hass, entry))
 
         assert result is True
+        assert captured_kwargs.get("long_poll_timeout") == 10
 
 
 # ---------------------------------------------------------------------------
-# 5 — Line 296: _scheduled_cert_check early-return when cert_path is falsy
+# 5 — _scheduled_cert_check early-return when cert_path is falsy
 # ---------------------------------------------------------------------------
 
 class TestScheduledCertCheckNoCertPath:
@@ -484,7 +478,6 @@ class TestScheduledCertCheckNoCertPath:
 
         with (
             patch(PATCH_SESSION, return_value=fake_session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_interval),
@@ -517,7 +510,7 @@ class TestScheduledCertCheckNoCertPath:
 
 
 # ---------------------------------------------------------------------------
-# 6 — Lines 307-317: _scheduled_cert_check warning-notification branch
+# 6 — _scheduled_cert_check warning-notification branch
 # ---------------------------------------------------------------------------
 
 class TestScheduledCertCheckWarningBranch:
@@ -548,7 +541,6 @@ class TestScheduledCertCheckWarningBranch:
 
         with (
             patch(PATCH_SESSION, return_value=fake_session),
-            patch(PATCH_ZEROCONF, new=AsyncMock(return_value=MagicMock())),
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=cert_return),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_interval),
@@ -649,7 +641,7 @@ class TestScheduledCertCheckWarningBranch:
 
 
 # ---------------------------------------------------------------------------
-# 7 — Line 507: async_unload_entry calls presence_unsub when not None
+# 7 — async_unload_entry calls presence_unsub when not None
 # ---------------------------------------------------------------------------
 
 class TestAsyncUnloadEntryPresenceUnsub:

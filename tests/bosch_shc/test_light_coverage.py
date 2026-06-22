@@ -6,27 +6,28 @@ Complements test_light_unit.py (__init__ paths) and test_light_color_mode.py
 LightSwitch:
   - is_on: binarystate passthrough
   - brightness: raw scaling to 0-255 + None guard
-  - hs_color: rgb→hs conversion
-  - turn_on: brightness clamp to 1 (never 0), binarystate toggled when off
-  - turn_off: binarystate set False
-  - turn_on no-op binarystate when already on
+  - hs_color: rgb->hs conversion
+  - async_turn_on: brightness clamp to 1 (never 0), binarystate toggled when off
+  - async_turn_off: binarystate set False
+  - async_turn_on no-op binarystate when already on
 
 MotionDetectorLight:
   - is_on: binaryswitch passthrough
-  - brightness: level scaling 0-255 + None→0 guard
-  - turn_on without brightness kwarg
-  - turn_on with brightness kwarg (scaling + clamp to 1)
-  - turn_on no-op binaryswitch when already on
-  - turn_off: binaryswitch set False
+  - brightness: level scaling 0-255 + None->0 guard
+  - async_turn_on without brightness kwarg
+  - async_turn_on with brightness kwarg (scaling + clamp to 1)
+  - async_turn_on no-op binaryswitch when already on
+  - async_turn_off: binaryswitch set False
   - class-level color mode attrs
 
-Pattern: __new__ bypass + SimpleNamespace device.
+Pattern: __new__ bypass + SimpleNamespace device + AsyncMock setters.
 No HA harness.
 """
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode
 
@@ -61,6 +62,10 @@ def _make_light_switch(
         supports_color_hsb=supports_color_hsb,
         min_color_temperature=153,
         max_color_temperature=500,
+        async_set_brightness=AsyncMock(),
+        async_set_color=AsyncMock(),
+        async_set_rgb=AsyncMock(),
+        async_set_binarystate=AsyncMock(),
     )
     light._attr_color_mode = ColorMode.HS
     light._attr_supported_color_modes = {ColorMode.HS}
@@ -118,7 +123,7 @@ class TestLightSwitchBrightness:
 
 class TestLightSwitchHsColor:
     def test_hs_color_pure_red(self):
-        """0xFF0000 → (0°, 100%) in HS."""
+        """0xFF0000 -> (0 deg, 100%) in HS."""
         from homeassistant.util.color import color_RGB_to_hs
         light = _make_light_switch(rgb=0xFF0000)
         hs = light.hs_color
@@ -147,84 +152,87 @@ class TestLightSwitchHsColor:
 
 
 # ---------------------------------------------------------------------------
-# LightSwitch.turn_on — brightness clamp
+# LightSwitch.async_turn_on -- brightness clamp
 # ---------------------------------------------------------------------------
 
 class TestLightSwitchTurnOnBrightness:
     def test_turn_on_brightness_clamp_never_zero(self):
         """brightness=1 (0.4% of 255) would round to 0; must be clamped to 1."""
         light = _make_light_switch(binarystate=False)
-        light.turn_on(**{ATTR_BRIGHTNESS: 1})
-        assert light._device.brightness >= 1
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 1}))
+        light._device.async_set_brightness.assert_called_once()
+        assert light._device.async_set_brightness.call_args[0][0] >= 1
 
     def test_turn_on_brightness_full_sets_100(self):
         """brightness=255 must map to 100%."""
         light = _make_light_switch(binarystate=True)
-        light.turn_on(**{ATTR_BRIGHTNESS: 255})
-        assert light._device.brightness == 100
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 255}))
+        light._device.async_set_brightness.assert_called_once_with(100)
 
     def test_turn_on_brightness_half(self):
         """brightness=128 must map to round(128*100/255)."""
         light = _make_light_switch(binarystate=True)
-        light.turn_on(**{ATTR_BRIGHTNESS: 128})
-        assert light._device.brightness == round(128 * 100 / 255)
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 128}))
+        light._device.async_set_brightness.assert_called_once_with(
+            round(128 * 100 / 255)
+        )
 
     def test_turn_on_without_brightness_does_not_set_device_brightness(self):
-        """No ATTR_BRIGHTNESS kwarg must not write to device.brightness."""
+        """No ATTR_BRIGHTNESS kwarg must not call async_set_brightness."""
         light = _make_light_switch(binarystate=True, brightness=50)
-        light.turn_on()
-        assert light._device.brightness == 50  # unchanged
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_brightness.assert_not_called()
 
     def test_turn_on_brightness_ignored_if_device_not_supports(self):
-        """If device doesn't support brightness, don't write device.brightness."""
+        """If device doesn't support brightness, don't call async_set_brightness."""
         light = _make_light_switch(binarystate=True, supports_brightness=False, brightness=50)
-        light.turn_on(**{ATTR_BRIGHTNESS: 200})
-        assert light._device.brightness == 50  # unchanged
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 200}))
+        light._device.async_set_brightness.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# LightSwitch.turn_on — binarystate toggle
+# LightSwitch.async_turn_on -- binarystate toggle
 # ---------------------------------------------------------------------------
 
 class TestLightSwitchTurnOnBinarystate:
     def test_turn_on_sets_binarystate_true_when_off(self):
-        """When light is off, turn_on must set binarystate=True."""
+        """When light is off, async_turn_on must call async_set_binarystate(True)."""
         light = _make_light_switch(binarystate=False)
-        light.turn_on()
-        assert light._device.binarystate is True
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_binarystate.assert_called_once_with(True)
 
     def test_turn_on_binarystate_stays_true_when_already_on(self):
-        """When already on, turn_on must leave binarystate True (no crash, no toggle)."""
+        """When already on, async_turn_on must not call async_set_binarystate."""
         light = _make_light_switch(binarystate=True)
-        light.turn_on()
-        assert light._device.binarystate is True
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_binarystate.assert_not_called()
 
     def test_turn_on_always_calls_schedule_update_ha_state(self):
         light = _make_light_switch(binarystate=True)
-        light.turn_on()
+        asyncio.run(light.async_turn_on())
         light.schedule_update_ha_state.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
-# LightSwitch.turn_off
+# LightSwitch.async_turn_off
 # ---------------------------------------------------------------------------
 
 class TestLightSwitchTurnOff:
     def test_turn_off_sets_binarystate_false(self):
         light = _make_light_switch(binarystate=True)
-        light.turn_off()
-        assert light._device.binarystate is False
+        asyncio.run(light.async_turn_off())
+        light._device.async_set_binarystate.assert_called_once_with(False)
 
-    def test_turn_off_already_off_stays_false(self):
+    def test_turn_off_already_off_still_calls_setter(self):
         light = _make_light_switch(binarystate=False)
-        light.turn_off()
-        assert light._device.binarystate is False
+        asyncio.run(light.async_turn_off())
+        light._device.async_set_binarystate.assert_called_once_with(False)
 
     def test_turn_off_accepts_extra_kwargs(self):
-        """turn_off(**kwargs) must not raise on extra kwargs."""
+        """async_turn_off(**kwargs) must not raise on extra kwargs."""
         light = _make_light_switch(binarystate=True)
-        light.turn_off(some_extra="ignored")
-        assert light._device.binarystate is False
+        asyncio.run(light.async_turn_off(some_extra="ignored"))
+        light._device.async_set_binarystate.assert_called_once_with(False)
 
 
 # ---------------------------------------------------------------------------
@@ -243,6 +251,8 @@ def _make_motion_light(
         root_device_id="root-1",
         binaryswitch=binaryswitch,
         multi_level_switch=multi_level_switch,
+        async_set_binaryswitch=AsyncMock(),
+        async_set_multi_level_switch=AsyncMock(),
     )
     light._attr_name = "Motion Light"
     light._attr_unique_id = "root-1_md-1_motionlight"
@@ -303,66 +313,67 @@ class TestMotionDetectorLightBrightness:
 
 
 # ---------------------------------------------------------------------------
-# MotionDetectorLight.turn_on
+# MotionDetectorLight.async_turn_on
 # ---------------------------------------------------------------------------
 
 class TestMotionDetectorLightTurnOn:
     def test_turn_on_without_brightness_sets_binaryswitch_when_off(self):
         light = _make_motion_light(binaryswitch=False)
-        light.turn_on()
-        assert light._device.binaryswitch is True
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_binaryswitch.assert_called_once_with(True)
 
     def test_turn_on_without_brightness_does_not_touch_multi_level_switch(self):
         light = _make_motion_light(binaryswitch=False, multi_level_switch=50)
-        light.turn_on()
-        assert light._device.multi_level_switch == 50  # unchanged
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_multi_level_switch.assert_not_called()
 
     def test_turn_on_with_brightness_sets_level(self):
-        """ATTR_BRIGHTNESS=255 must set multi_level_switch=100."""
+        """ATTR_BRIGHTNESS=255 must call async_set_multi_level_switch(100)."""
         light = _make_motion_light(binaryswitch=True)
-        light.turn_on(**{ATTR_BRIGHTNESS: 255})
-        assert light._device.multi_level_switch == 100
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 255}))
+        light._device.async_set_multi_level_switch.assert_called_once_with(100)
 
     def test_turn_on_with_brightness_scales_half(self):
         light = _make_motion_light(binaryswitch=True)
-        light.turn_on(**{ATTR_BRIGHTNESS: 128})
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 128}))
         expected = round(128 * 100 / 255)
-        assert light._device.multi_level_switch == expected
+        light._device.async_set_multi_level_switch.assert_called_once_with(expected)
 
     def test_turn_on_brightness_clamp_to_1_not_zero(self):
         """brightness=1 would round to 0; must be clamped to 1."""
         light = _make_motion_light(binaryswitch=True)
-        light.turn_on(**{ATTR_BRIGHTNESS: 1})
-        assert light._device.multi_level_switch >= 1
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 1}))
+        light._device.async_set_multi_level_switch.assert_called_once()
+        assert light._device.async_set_multi_level_switch.call_args[0][0] >= 1
 
     def test_turn_on_does_not_set_binaryswitch_when_already_on(self):
-        """When already on, turn_on must not flip binaryswitch."""
+        """When already on, async_turn_on must not call async_set_binaryswitch."""
         light = _make_motion_light(binaryswitch=True)
-        light.turn_on()
-        assert light._device.binaryswitch is True  # stays True, no double-write
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_binaryswitch.assert_not_called()
 
     def test_turn_on_sets_binaryswitch_to_true_when_was_off(self):
         light = _make_motion_light(binaryswitch=False)
-        light.turn_on(**{ATTR_BRIGHTNESS: 200})
-        assert light._device.binaryswitch is True
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 200}))
+        light._device.async_set_binaryswitch.assert_called_once_with(True)
 
 
 # ---------------------------------------------------------------------------
-# MotionDetectorLight.turn_off
+# MotionDetectorLight.async_turn_off
 # ---------------------------------------------------------------------------
 
 class TestMotionDetectorLightTurnOff:
     def test_turn_off_sets_binaryswitch_false(self):
         light = _make_motion_light(binaryswitch=True)
-        light.turn_off()
-        assert light._device.binaryswitch is False
+        asyncio.run(light.async_turn_off())
+        light._device.async_set_binaryswitch.assert_called_once_with(False)
 
     def test_turn_off_already_off(self):
         light = _make_motion_light(binaryswitch=False)
-        light.turn_off()
-        assert light._device.binaryswitch is False
+        asyncio.run(light.async_turn_off())
+        light._device.async_set_binaryswitch.assert_called_once_with(False)
 
     def test_turn_off_accepts_extra_kwargs(self):
         light = _make_motion_light(binaryswitch=True)
-        light.turn_off(transition=0)
-        assert light._device.binaryswitch is False
+        asyncio.run(light.async_turn_off(transition=0))
+        light._device.async_set_binaryswitch.assert_called_once_with(False)

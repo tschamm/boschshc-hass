@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
+
+import aiohttp
 
 from boschshcpy import (
     SHCCamera360,
@@ -881,7 +884,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         except AttributeError:
             return None
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn the switch on.
 
         Guard against AttributeError: some devices (e.g. MicromoduleRelay with
@@ -891,21 +894,37 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         (camera_360).
         """
         try:
-            setattr(self._device, self.entity_description.on_key, True)
+            await getattr(
+                self._device,
+                f"async_set_{self.entity_description.on_key}",
+            )(True)
         except AttributeError:
             LOGGER.debug(
                 "turn_on skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            LOGGER.debug(
+                "turn_on skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn the switch off.
 
-        Same guard as turn_on — see that docstring.
+        Same guard as async_turn_on — see that docstring.
         """
         try:
-            setattr(self._device, self.entity_description.on_key, False)
+            await getattr(
+                self._device,
+                f"async_set_{self.entity_description.on_key}",
+            )(False)
         except AttributeError:
+            LOGGER.debug(
+                "turn_off skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
+        except (aiohttp.ClientError, asyncio.TimeoutError):
             LOGGER.debug(
                 "turn_off skipped for %s: service not available (no load/service?)",
                 self.entity_id,
@@ -996,13 +1015,19 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             == self.entity_description.on_value
         )
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn the switch on."""
-        setattr(self._device, self.entity_description.on_key, True)
+        await getattr(
+            self._device,
+            f"async_set_{self.entity_description.on_key}",
+        )(True)
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn the switch off."""
-        setattr(self._device, self.entity_description.on_key, False)
+        await getattr(
+            self._device,
+            f"async_set_{self.entity_description.on_key}",
+        )(False)
 
     @property
     def should_poll(self) -> bool:

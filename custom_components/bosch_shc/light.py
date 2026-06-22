@@ -120,7 +120,7 @@ class LightSwitch(SHCEntity, LightEntity):
             return None
         return color_util.color_temperature_mired_to_kelvin(self._device.color)
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the light on."""
         hs_color = kwargs.get(ATTR_HS_COLOR)
         color_temp_kelvin = kwargs.get(ATTR_COLOR_TEMP_KELVIN)
@@ -130,28 +130,30 @@ class LightSwitch(SHCEntity, LightEntity):
             # Bosch API does not accept brightness=0; HA uses brightness=0 to
             # mean "off", which is handled via binarystate. Clamp to 1 so that
             # a near-zero HA value (e.g. 1/255) never silently turns off.
-            self._device.brightness = max(round(brightness * 100 / 255), 1)
+            await self._device.async_set_brightness(
+                max(round(brightness * 100 / 255), 1)
+            )
 
         if color_temp_kelvin is not None and self._device.supports_color_temp:
-            self._device.color = color_util.color_temperature_kelvin_to_mired(
-                color_temp_kelvin
+            await self._device.async_set_color(
+                color_util.color_temperature_kelvin_to_mired(color_temp_kelvin)
             )
             self._attr_color_mode = ColorMode.COLOR_TEMP
 
         if hs_color is not None and self._device.supports_color_hsb:
             rgb = color_util.color_hs_to_RGB(*hs_color)
             raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-            self._device.rgb = raw_rgb
+            await self._device.async_set_rgb(raw_rgb)
             self._attr_color_mode = ColorMode.HS
 
         if not self.is_on:
-            self._device.binarystate = True
+            await self._device.async_set_binarystate(True)
 
         self.schedule_update_ha_state()
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the light off."""
-        self._device.binarystate = False
+        await self._device.async_set_binarystate(False)
 
 
 class MotionDetectorLight(SHCEntity, LightEntity):
@@ -181,16 +183,16 @@ class MotionDetectorLight(SHCEntity, LightEntity):
             return 0
         return round(level * 255 / 100)
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn the light on, optionally setting brightness."""
         brightness = kwargs.get(ATTR_BRIGHTNESS)
         if brightness is not None:
             # Clamp to 1 so near-zero HA values don't silently turn the light off.
             level = max(round(brightness * 100 / 255), 1)
-            self._device.multi_level_switch = level
+            await self._device.async_set_multi_level_switch(level)
         if not self.is_on:
-            self._device.binaryswitch = True
+            await self._device.async_set_binaryswitch(True)
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn the light off."""
-        self._device.binaryswitch = False
+        await self._device.async_set_binaryswitch(False)

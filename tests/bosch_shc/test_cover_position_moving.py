@@ -3,8 +3,8 @@
 Covers:
 - ShutterControlCover.current_cover_position: MICROMODULE_SHUTTER fallback when
   _target_position is None (returns device.level * 100 instead of None)
-- BlindsControlCover.open_cover/close_cover/set_cover_position: _skip_update and
-  _app_command flags set after commanding
+- BlindsControlCover.async_open_cover/async_close_cover/async_set_cover_position:
+  _skip_update and _app_command flags set after commanding
 
 Pattern: __new__ bypass + SimpleNamespace device. No HA harness.
 
@@ -14,7 +14,9 @@ Run with:
 """
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from boschshcpy import SHCShutterControl
 
@@ -35,6 +37,8 @@ def _make_shutter(device_model="MICROMODULE_SHUTTER", level=0.5, operation_state
         level=level,
         operation_state=operation_state,
         name="test-shutter",
+        async_set_level=AsyncMock(),
+        async_stop=AsyncMock(),
     )
     cover._target_position = None
     cover._last_position = None
@@ -55,6 +59,8 @@ def _make_blinds(blinds_level=0.5):
         blinds_level=blinds_level,
         operation_state=STOPPED,
         name="test-blinds",
+        async_set_level=AsyncMock(),
+        async_stop_blinds=AsyncMock(),
     )
     cover._target_position = None
     cover._last_position = None
@@ -99,13 +105,13 @@ class TestShutterCurrentCoverPositionFallback:
 
 
 # ---------------------------------------------------------------------------
-# BlindsControlCover.open_cover/close_cover/set_cover_position
+# BlindsControlCover.async_open_cover/async_close_cover/async_set_cover_position
 # ---------------------------------------------------------------------------
 
 class TestBlindsControlCoverCommandFlags:
     def test_open_cover_sets_target_skip_app(self):
         cover = _make_blinds()
-        cover.open_cover()
+        asyncio.run(cover.async_open_cover())
         assert cover._target_position == 100
         assert cover._skip_update is True
         assert cover._app_command is True
@@ -114,7 +120,7 @@ class TestBlindsControlCoverCommandFlags:
 
     def test_close_cover_sets_target_skip_app(self):
         cover = _make_blinds()
-        cover.close_cover()
+        asyncio.run(cover.async_close_cover())
         assert cover._target_position == 0
         assert cover._skip_update is True
         assert cover._app_command is True
@@ -123,7 +129,7 @@ class TestBlindsControlCoverCommandFlags:
 
     def test_set_cover_position_sets_target_skip_app(self):
         cover = _make_blinds()
-        cover.set_cover_position(position=65)
+        asyncio.run(cover.async_set_cover_position(position=65))
         assert cover._target_position == 65
         assert cover._skip_update is True
         assert cover._app_command is True
@@ -131,15 +137,16 @@ class TestBlindsControlCoverCommandFlags:
     def test_open_cover_sets_level_to_1(self):
         # #100: lift command uses ShutterControl.level, not blinds_level
         cover = _make_blinds()
-        cover.open_cover()
-        assert cover._device.level == 1.0
+        asyncio.run(cover.async_open_cover())
+        cover._device.async_set_level.assert_awaited_once_with(1.0)
 
     def test_close_cover_sets_level_to_0(self):
         cover = _make_blinds()
-        cover.close_cover()
-        assert cover._device.level == 0.0
+        asyncio.run(cover.async_close_cover())
+        cover._device.async_set_level.assert_awaited_once_with(0.0)
 
     def test_set_cover_position_divides_by_100(self):
+        import pytest
         cover = _make_blinds()
-        cover.set_cover_position(position=40)
-        assert abs(cover._device.level - 0.4) < 0.001
+        asyncio.run(cover.async_set_cover_position(position=40))
+        cover._device.async_set_level.assert_awaited_once_with(pytest.approx(0.4))

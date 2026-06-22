@@ -362,14 +362,7 @@ class MotionSensitivitySelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the motion sensitivity."""
         MotionSensitivity = PirSensorConfigurationService.MotionSensitivity
-        await self.hass.async_add_executor_job(
-            self._set_sensitivity, MotionSensitivity[option]
-        )
-
-    def _set_sensitivity(
-        self, value: PirSensorConfigurationService.MotionSensitivity
-    ) -> None:
-        self._device.motion_sensitivity = value
+        await self._device.async_set_motion_sensitivity(MotionSensitivity[option])
 
 
 class VibrationSensitivitySelect(SHCEntity, SelectEntity):
@@ -400,14 +393,7 @@ class VibrationSensitivitySelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the vibration sensitivity."""
         SensitivityState = VibrationSensorService.SensitivityState
-        await self.hass.async_add_executor_job(
-            self._set_sensitivity, SensitivityState[option]
-        )
-
-    def _set_sensitivity(
-        self, value: VibrationSensorService.SensitivityState
-    ) -> None:
-        self._device.sensitivity = value
+        await self._device.async_set_sensitivity(SensitivityState[option])
 
 
 class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):
@@ -444,14 +430,7 @@ class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the state-after-power-outage."""
         StateAfterPowerOutage = PowerSwitchConfigurationService.StateAfterPowerOutage
-        await self.hass.async_add_executor_job(
-            self._set_state, StateAfterPowerOutage[option]
-        )
-
-    def _set_state(
-        self, value: PowerSwitchConfigurationService.StateAfterPowerOutage
-    ) -> None:
-        self._device.state_after_power_outage = value
+        await self._device.async_set_state_after_power_outage(StateAfterPowerOutage[option])
 
 
 class SmokeSensitivitySelect(SHCEntity, SelectEntity):
@@ -488,14 +467,7 @@ class SmokeSensitivitySelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the smoke sensitivity level."""
         SmokeSensitivityLevel = SmokeSensitivityService.SmokeSensitivityLevel
-        await self.hass.async_add_executor_job(
-            self._set_level, SmokeSensitivityLevel[option]
-        )
-
-    def _set_level(
-        self, value: SmokeSensitivityService.SmokeSensitivityLevel
-    ) -> None:
-        self._device.smoke_sensitivity = value
+        await self._device.async_set_smoke_sensitivity(SmokeSensitivityLevel[option])
 
 
 class DisplayDirectionSelect(SHCEntity, SelectEntity):
@@ -532,12 +504,7 @@ class DisplayDirectionSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the display direction."""
         Direction = DisplayDirection.Direction
-        await self.hass.async_add_executor_job(
-            self._set_direction, Direction[option]
-        )
-
-    def _set_direction(self, value: DisplayDirection.Direction) -> None:
-        self._device.display_direction = value
+        await self._device.async_set_display_direction(Direction[option])
 
 
 class DisplayedTemperatureSelect(SHCEntity, SelectEntity):
@@ -574,14 +541,7 @@ class DisplayedTemperatureSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the displayed-temperature type."""
         DisplayedTemperature = DisplayedTemperatureConfiguration.DisplayedTemperature
-        await self.hass.async_add_executor_job(
-            self._set_displayed, DisplayedTemperature[option]
-        )
-
-    def _set_displayed(
-        self, value: DisplayedTemperatureConfiguration.DisplayedTemperature
-    ) -> None:
-        self._device.displayed_temperature = value
+        await self._device.async_set_displayed_temperature(DisplayedTemperature[option])
 
 
 class TerminalTypeSelect(SHCEntity, SelectEntity):
@@ -618,12 +578,7 @@ class TerminalTypeSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the terminal type."""
         Type = TerminalConfiguration.Type
-        await self.hass.async_add_executor_job(
-            self._set_type, Type[option]
-        )
-
-    def _set_type(self, value: TerminalConfiguration.Type) -> None:
-        self._device.terminal_type = value
+        await self._device.async_set_terminal_type(Type[option])
 
 
 class ValveTypeSelect(SHCEntity, SelectEntity):
@@ -660,12 +615,7 @@ class ValveTypeSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the valve type."""
         ValveType = WallThermostatConfiguration.ValveType
-        await self.hass.async_add_executor_job(
-            self._set_valve, ValveType[option]
-        )
-
-    def _set_valve(self, value: WallThermostatConfiguration.ValveType) -> None:
-        self._device.valve_type = value
+        await self._device.async_set_valve_type(ValveType[option])
 
 
 class HeaterTypeSelect(SHCEntity, SelectEntity):
@@ -702,12 +652,7 @@ class HeaterTypeSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the heater type."""
         HeaterType = WallThermostatConfiguration.HeaterType
-        await self.hass.async_add_executor_job(
-            self._set_heater, HeaterType[option]
-        )
-
-    def _set_heater(self, value: WallThermostatConfiguration.HeaterType) -> None:
-        self._device.heater_type = value
+        await self._device.async_set_heater_type(HeaterType[option])
 
 
 class SwitchTypeSelect(SHCEntity, SelectEntity):
@@ -744,12 +689,7 @@ class SwitchTypeSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the switch type."""
         SwitchType = SwitchConfiguration.SwitchType
-        await self.hass.async_add_executor_job(
-            self._set_switch_type, SwitchType[option]
-        )
-
-    def _set_switch_type(self, value: SwitchConfiguration.SwitchType) -> None:
-        self._device.switch_type = value
+        await self._device.async_set_switch_type(SwitchType[option])
 
 
 class ActuatorTypeSelect(SHCEntity, SelectEntity):
@@ -786,12 +726,7 @@ class ActuatorTypeSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the actuator type."""
         ActuatorType = SwitchConfiguration.ActuatorType
-        await self.hass.async_add_executor_job(
-            self._set_actuator_type, ActuatorType[option]
-        )
-
-    def _set_actuator_type(self, value: SwitchConfiguration.ActuatorType) -> None:
-        self._device.actuator_type = value
+        await self._device.async_set_actuator_type(ActuatorType[option])
 
 
 class OutputModeSelect(SHCEntity, SelectEntity):
@@ -828,12 +763,7 @@ class OutputModeSelect(SHCEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Set the output mode."""
         OutputMode = SwitchConfiguration.OutputMode
-        await self.hass.async_add_executor_job(
-            self._set_output_mode, OutputMode[option]
-        )
-
-    def _set_output_mode(self, value: SwitchConfiguration.OutputMode) -> None:
-        self._device.output_mode = value
+        await self._device.async_set_output_mode(OutputMode[option])
 
 
 class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):
@@ -875,10 +805,7 @@ class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):
         """Set the manual level for the SECURITY context."""
         ctx = SmartSensitivityControlService.SmartSensitivityContext.SECURITY
         level = SmartSensitivityControlService.MotionSensitivity[option]
-        # Sync session → use the sync setter in an executor (see phase 3b).
-        await self.hass.async_add_executor_job(
-            self._device.set_smart_sensitivity_manual_level, ctx, level
-        )
+        await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
 
 
 class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):
@@ -915,7 +842,4 @@ class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):
         """Set the manual level for the COMFORT context."""
         ctx = SmartSensitivityControlService.SmartSensitivityContext.COMFORT
         level = SmartSensitivityControlService.MotionSensitivity[option]
-        # Sync session → use the sync setter in an executor (see phase 3b).
-        await self.hass.async_add_executor_job(
-            self._device.set_smart_sensitivity_manual_level, ctx, level
-        )
+        await self._device.async_set_smart_sensitivity_manual_level(ctx, level)

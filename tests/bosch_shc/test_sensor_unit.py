@@ -477,6 +477,30 @@ class TestEnergyYieldSensor:
         )
 
 
+def _terminal_temp_sensor(value):
+    from custom_components.bosch_shc.sensor import TerminalTemperatureSensor
+    s = TerminalTemperatureSensor.__new__(TerminalTemperatureSensor)
+    s._device = SimpleNamespace(terminal_temperature=value)
+    return s
+
+
+class TestTerminalTemperatureSensor:
+    def test_native_value(self):
+        assert _terminal_temp_sensor(20.6).native_value == 20.6
+
+    def test_device_class_temperature(self):
+        assert (
+            _terminal_temp_sensor(20.6).device_class
+            == SensorDeviceClass.TEMPERATURE
+        )
+
+    def test_unit_celsius(self):
+        assert (
+            _terminal_temp_sensor(20.6).native_unit_of_measurement
+            == UnitOfTemperature.CELSIUS
+        )
+
+
 class TestPowerYieldSensor:
     def test_positive_yield_from_negative_consumption(self):
         assert _power_yield_sensor(-800.0).native_value == 800.0
