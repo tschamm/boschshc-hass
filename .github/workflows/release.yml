@@ -1,0 +1,78 @@
+name: Release
+
+# Automated GitHub release on a version tag. Push an annotated tag `vX.Y.Z`
+# (the maintainer's "ready" signal) and CI runs the unit suite first; only if
+# it passes does it publish the GitHub release with auto-generated notes.
+# HACS installs from these releases, so this is the full HA release step —
+# no PyPI/token involved (the integration's lib dependency is on PyPI separately).
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v0.6.1)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest (unit) gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+
+      # Same pure-unit suite as tests.yml (HA-harness tests excluded).
+      - name: Run unit tests
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTHONPATH: ${{ github.workspace }}
+        run: >-
+          pytest tests/bosch_shc -q -o addopts=""
+          --ignore=tests/bosch_shc/test_config_flow.py
+          --ignore=tests/bosch_shc/test_device_trigger.py
+
+  release:
+    name: Publish GitHub release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release (idempotent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — leaving it untouched."
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "${TAG#v}" \
+              --verify-tag \
+              --generate-notes
+          fi
