@@ -107,11 +107,17 @@
             "description": "Automaticky uzamknite všetky termostaty a spínače SHC, keď je niekto doma, a odomknite ich, keď všetci odídu.",
             "data": {
               "child_lock_enabled": "Aktivovať detský zámok na základe prítomnosti",
-              "child_lock_presence_entity": "Entity prítomnosti"
+              "child_lock_presence_entity": "Entity prítomnosti",
+              "silent_mode_enabled": "Povoliť tichý režim prítomnosti + časového okna",
+              "silent_mode_start": "Čas spustenia tichého režimu",
+              "silent_mode_end": "Čas ukončenia tichého režimu"
             },
             "data_description": {
               "child_lock_enabled": "Hlavný prepínač. Keď ZAP, detský zámok na všetkých termostatoch a spínačoch SHC sleduje entity prítomnosti nižšie — uzamknutý, keď je niekto doma, odomknutý, keď sú všetci preč. Keď VYP, integrácia detský zámok nikdy nemení.",
-              "child_lock_presence_entity": "Osoby/zariadenia, ktoré rozhodujú o detskom zámku. Zapne sa hneď, ako je AKÁKOĽVEK z nich doma, a vypne sa až keď sú VŠETKY preč. Vyberte napríklad entity Person vašej domácnosti. 'Doma' sa zistí automaticky (home pre person/device_tracker/zone/group, on pre binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Osoby/zariadenia, ktoré rozhodujú o detskom zámku. Zapne sa hneď, ako je AKÁKOĽVEK z nich doma, a vypne sa až keď sú VŠETKY preč. Vyberte napríklad entity Person vašej domácnosti. 'Doma' sa zistí automaticky (home pre person/device_tracker/zone/group, on pre binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Keď je ZAPNUTÝ, každý termostat SHC s podporou tichého režimu sa prepne do tichého režimu, keď je niekto (podľa vyššie uvedených entít prítomnosti) doma A aktuálny čas je v okne nižšie; inak sa vráti do normálu. Predvolené nastavenie: vypnuté.",
+              "silent_mode_start": "Začiatok denného okna tichého režimu (miestny čas). Okná môžu prekročiť polnoc (napr. 22:00 → 06:00).",
+              "silent_mode_end": "Koniec denného okna tichého režimu (miestny čas)."
             }
           },
           "advanced": {
@@ -121,16 +127,140 @@
               "ssl_verify_hostname": "Overiť názov hostiteľa certifikátu SHC",
               "long_poll_timeout": "Časový limit dlhého prieskumu (sekundy)",
               "excluded_devices": "Vylúčené zariadenia",
-              "excluded_rooms": "Vylúčené miestnosti"
+              "excluded_rooms": "Vylúčené miestnosti",
+              "ssl_skip_verify": "Preskočiť overenie certifikátu SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Odborník: keď ZAP, overuje sa názov hostiteľa TLS certifikátu SHC. Názov hostiteľa certifikátu Bosch SHC zvyčajne NEZODPOVEDÁ jeho IP adrese, takže aktivácia tohto nastavenia zvyčajne preruší pripojenie — nechajte VYP, pokiaľ si nie ste istí, že vaše nastavenie zodpovedá. Predvolené: vyp.",
               "long_poll_timeout": "Ako dlho každá požiadavka dlhého prieskumu čaká na udalosti pred opätovným pripojením. Predvolené 10. Zvýšte, aby ste znížili opätovné pripojenia; znížte, ak vaša sieť preruší nečinné pripojenia.",
               "excluded_devices": "Zariadenia na skrytie — pre ne sa nevytvárajú žiadne entity. Nechajte prázdne, ak chcete zahrnúť všetky. Existujúce entity pre novo vylúčené zariadenia zostanú až do ručného odstránenia.",
-              "excluded_rooms": "Skryť všetky zariadenia v týchto miestnostiach Bosch. Nechajte prázdne, ak chcete zahrnúť všetky."
+              "excluded_rooms": "Skryť všetky zariadenia v týchto miestnostiach Bosch. Nechajte prázdne, ak chcete zahrnúť všetky.",
+              "ssl_skip_verify": "Expertné/iba lokálne siete LAN: keď je ZAPNUTÉ, certifikát servera SHC sa už neoveruje – užitočné, ak certifikát vášho offline ovládača vypršal. Prihlásenie pomocou šifrovaného klientskeho certifikátu zostáva nezmenené. Povoliť iba v dôveryhodnej lokálnej sieti. Predvolené: vypnuté."
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Regulácia klímy miestnosti",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Dymový test"
+      },
+      "walk_test": {
+        "name": "Test chôdze"
+      },
+      "walk_test_stop": {
+        "name": "Zastavenie testu chôdze"
+      },
+      "detection_test": {
+        "name": "Detekčný test"
+      },
+      "detection_test_stop": {
+        "name": "Zastavenie testu detekcie"
+      },
+      "reset_tamper": {
+        "name": "Resetovať sabotáž"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Dĺžka impulzu"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Prahová hodnota úspory energie"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Úspora energie Zadajte trvanie"
+      },
+      "led_brightness": {
+        "name": "Jas LED"
+      },
+      "display_brightness": {
+        "name": "Jas displeja"
+      },
+      "display_on_time": {
+        "name": "Čas zapnutia displeja"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Citlivosť na pohyb"
+      },
+      "vibration_sensitivity": {
+        "name": "Citlivosť na vibrácie"
+      },
+      "state_after_power_outage": {
+        "name": "Stav po výpadku prúdu"
+      },
+      "smoke_sensitivity": {
+        "name": "Citlivosť na dym"
+      },
+      "display_direction": {
+        "name": "Smer zobrazenia"
+      },
+      "displayed_temperature": {
+        "name": "Zobrazená teplota"
+      },
+      "terminal_type": {
+        "name": "Typ terminálu"
+      },
+      "valve_type": {
+        "name": "Typ ventilu"
+      },
+      "heater_type": {
+        "name": "Typ ohrievača"
+      },
+      "switch_type": {
+        "name": "Typ prepínača"
+      },
+      "actuator_type": {
+        "name": "Typ aktuátora"
+      },
+      "output_mode": {
+        "name": "Výstupný režim"
+      },
+      "smart_sensitivity_security": {
+        "name": "Úroveň citlivosti zabezpečenia"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Úroveň citlivosti na pohodlie"
+      },
+      "orientation_light_response": {
+        "name": "Doba odozvy orientačného svetla"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Stav testu chôdze"
+      },
+      "battery_level": {
+        "name": "Úroveň batérie"
+      },
+      "combined_rating": {
+        "name": "Kombinované hodnotenie"
+      },
+      "air_quality_description": {
+        "name": "Popis kvality ovzdušia"
+      },
+      "detection_state": {
+        "name": "Stav testu detekcie"
+      },
+      "installation_profile": {
+        "name": "Profil inštalácie"
       }
     }
   },
@@ -216,23 +346,6 @@
         "command": {
           "name": "Vlastný príkaz",
           "description": "Príkazový reťazec na odoslanie do detektora dymu."
-        }
-      }
-    }
-  },
-  "entity": {
-    "climate": {
-      "room_climate_control": {
-        "name": "Regulácia klímy miestnosti",
-        "state_attributes": {
-          "preset_mode": {
-            "state": {
-              "auto": "Automaticky",
-              "manual": "Ručne",
-              "eco": "Eco",
-              "boost": "Boost"
-            }
-          }
         }
       }
     }
