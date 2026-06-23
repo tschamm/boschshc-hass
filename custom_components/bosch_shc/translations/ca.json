@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "El dispositiu ja està configurat",
-      "reauth_successful": "Re-autenticació realitzada correctament"
+      "reauth_successful": "Re-autenticació realitzada correctament",
+      "reconfigure_successful": "La reconfiguració s'ha completat correctament",
+      "wrong_shc": "L'amfitrió introduït pertany a un controlador Bosch SHC diferent. Introduïu l'amfitrió correcte per a aquesta entrada."
     },
     "error": {
       "cannot_connect": "Ha fallat la connexió",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Nom del client per al certificat",
           "password": "Contrasenya de Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Nom que es mostra a l'aplicació SHC sota els clients connectats.",
+          "password": "La contrasenya configurada a l'aplicació Bosch Smart Home."
         }
       },
       "reauth_confirm": {
         "description": "La integració bosch_shc ha de tornar a autenticar el teu compte",
-        "title": "Reautenticació de la integració"
+        "title": "Reautenticació de la integració",
+        "data": {
+          "host": "Amfitrió"
+        },
+        "data_description": {
+          "host": "Adreça IP o nom d'amfitrió del controlador SHC (p. ex. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigura Bosch SHC",
+        "description": "Trieu què voleu reconfigurar.",
+        "menu_options": {
+          "reconfigure_host": "Canvia només l'amfitrió / l'adreça IP",
+          "repair_credentials": "Torna a aparellar (regenera el certificat del client)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Canvia l'amfitrió / l'adreça IP",
+        "description": "Actualitzeu l'adreça IP o el nom d'amfitrió del vostre Bosch Smart Home Controller. Els certificats i les credencials es conservaran.",
+        "data": {
+          "host": "Amfitrió"
+        },
+        "data_description": {
+          "host": "Nova adreça IP o nom d'amfitrió del controlador SHC (p. ex. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Torna a aparellar — regenera el certificat del client",
+        "description": "Premeu el botó d'aparellament del SHC (SHC I: botó frontal fins que el LED parpellegi; SHC II: botó de funció breument) i després empleneu el formulari a continuació.",
+        "data": {
+          "host": "Amfitrió",
+          "password": "Contrasenya del Smart Home Controller",
+          "name": "Nom del client per al certificat"
+        },
+        "data_description": {
+          "host": "Adreça IP o nom d'amfitrió del controlador SHC (p. ex. 192.168.x.y).",
+          "password": "La contrasenya configurada a l'aplicació Bosch Smart Home.",
+          "name": "Nom que es mostra a l'aplicació SHC sota els clients connectats."
+        }
       },
       "user": {
         "data": {
           "host": "Amfitrió"
+        },
+        "data_description": {
+          "host": "Adreça IP o nom d'amfitrió del controlador SHC (p. ex. 192.168.x.y)."
         },
         "description": "Configura Bosch Smart Controller per poder controlar i monitoritzar-lo des de Home Assistant.",
         "title": "Paràmetres d'autenticació SHC"
@@ -59,11 +107,17 @@
             "description": "Bloqueja automàticament tots els termòstats i interruptors SHC quan algú és a casa, i desbloqueja'ls quan tothom se'n va.",
             "data": {
               "child_lock_enabled": "Activa el bloqueig infantil basat en la presència",
-              "child_lock_presence_entity": "Entitats de presència"
+              "child_lock_presence_entity": "Entitats de presència",
+              "silent_mode_enabled": "Activa el mode silenciós per presència i finestra horària",
+              "silent_mode_start": "Hora d'inici del mode silenciós",
+              "silent_mode_end": "Hora de fi del mode silenciós"
             },
             "data_description": {
               "child_lock_enabled": "Interruptor principal. Quan està ACTIVAT, el bloqueig infantil de tots els termòstats i dispositius de commutació SHC segueix les entitats de presència que hi ha a continuació — bloquejat quan algú és a casa, desbloquejat quan tothom és fora. Quan està DESACTIVAT, la integració no toca mai el bloqueig infantil.",
-              "child_lock_presence_entity": "Les persones/dispositius que decideixen el bloqueig infantil. S'activa tan aviat com QUALSEVOL d'ells és a casa, i s'apaga només quan TOTS estan fora. Tria, per exemple, les entitats Person de la teva llar. 'A casa' es detecta automàticament (home per a person/device_tracker/zone/group, on per a binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Les persones/dispositius que decideixen el bloqueig infantil. S'activa tan aviat com QUALSEVOL d'ells és a casa, i s'apaga només quan TOTS estan fora. Tria, per exemple, les entitats Person de la teva llar. 'A casa' es detecta automàticament (home per a person/device_tracker/zone/group, on per a binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Quan està activat (ON), cada termòstat SHC compatible amb el mode silenciós es commuta a mode silenciós mentre algú (segons les entitats de presència superiors) és a casa I l'hora actual es troba dins de la finestra horària definida a continuació; en cas contrari torna al mode normal. Per defecte: desactivat.",
+              "silent_mode_start": "Inici de la finestra diària del mode silenciós (hora local). La finestra pot creuar la mitjanit (p. ex. 22:00 → 06:00).",
+              "silent_mode_end": "Fi de la finestra diària del mode silenciós (hora local)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "Verificar el nom d'amfitrió del certificat SHC",
               "long_poll_timeout": "Temps d'espera del sondeig llarg (segons)",
               "excluded_devices": "Dispositius exclosos",
-              "excluded_rooms": "Habitacions excloses"
+              "excluded_rooms": "Habitacions excloses",
+              "ssl_skip_verify": "Omet la verificació del certificat SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Expert: quan ACTIVAT, es verifica el nom d'amfitrió del certificat TLS del SHC. El nom d'amfitrió del certificat Bosch SHC normalment NO coincideix amb la seva IP, per la qual cosa activar-ho sol trencar la connexió — deixa DESACTIVAT tret que sàpigues que la teva configuració coincideix. Per defecte: desactivat.",
               "long_poll_timeout": "Quant de temps espera cada sol·licitud de sondeig llarg per a events abans de reconnectar-se. Per defecte: 10. Augmenta per reduir reconnexions, disminueix si la xarxa talla connexions inactives.",
               "excluded_devices": "Dispositius a ocultar — no es creen entitats per a ells. Deixa buit per incloure tots. Les entitats existents per a dispositius recentment exclosos romanen fins que s'eliminin manualment.",
-              "excluded_rooms": "Amaga tots els dispositius d'aquestes habitacions de Bosch. Deixa buit per incloure totes."
+              "excluded_rooms": "Amaga tots els dispositius d'aquestes habitacions de Bosch. Deixa buit per incloure totes.",
+              "ssl_skip_verify": "Expert / xarxes LAN locals: quan està activat (ON), el certificat del servidor SHC ja no es verifica — útil si el certificat del controlador fora de línia ha caducat. L'inici de sessió xifrat amb certificat de client no es veu afectat. Activeu-ho només en una xarxa local de confiança. Per defecte: desactivat."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automàtic",
-              "manual": "Manual",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Prova de fum"
+      },
+      "walk_test": {
+        "name": "Prova de passada"
+      },
+      "walk_test_stop": {
+        "name": "Atura la prova de passada"
+      },
+      "detection_test": {
+        "name": "Prova de detecció"
+      },
+      "detection_test_stop": {
+        "name": "Atura la prova de detecció"
+      },
+      "reset_tamper": {
+        "name": "Restableix la manipulació"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Durada de l'impuls"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Llindar de potència d'estalvi energètic"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Durada d'entrada en estalvi energètic"
+      },
+      "led_brightness": {
+        "name": "Brillantor del LED"
+      },
+      "display_brightness": {
+        "name": "Brillantor de la pantalla"
+      },
+      "display_on_time": {
+        "name": "Temps d'encesa de la pantalla"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Sensibilitat al moviment"
+      },
+      "vibration_sensitivity": {
+        "name": "Sensibilitat a la vibració"
+      },
+      "state_after_power_outage": {
+        "name": "Estat després d'un tall de llum"
+      },
+      "smoke_sensitivity": {
+        "name": "Sensibilitat al fum"
+      },
+      "display_direction": {
+        "name": "Orientació de la pantalla"
+      },
+      "displayed_temperature": {
+        "name": "Temperatura mostrada"
+      },
+      "terminal_type": {
+        "name": "Tipus de terminal"
+      },
+      "valve_type": {
+        "name": "Tipus de vàlvula"
+      },
+      "heater_type": {
+        "name": "Tipus de calefactor"
+      },
+      "switch_type": {
+        "name": "Tipus d'interruptor"
+      },
+      "actuator_type": {
+        "name": "Tipus d'actuador"
+      },
+      "output_mode": {
+        "name": "Mode de sortida"
+      },
+      "smart_sensitivity_security": {
+        "name": "Nivell de sensibilitat de seguretat"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Nivell de sensibilitat de confort"
+      },
+      "orientation_light_response": {
+        "name": "Temps de resposta de la llum d'orientació"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Estat de la prova de passada"
+      },
+      "battery_level": {
+        "name": "Nivell de bateria"
+      },
+      "combined_rating": {
+        "name": "Valoració combinada"
+      },
+      "air_quality_description": {
+        "name": "Descripció de la qualitat de l'aire"
+      },
+      "detection_state": {
+        "name": "Estat de la prova de detecció"
+      },
+      "installation_profile": {
+        "name": "Perfil d'instal·lació"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Botó inferior",
+      "UPPER_BUTTON": "Botó superior",
+      "LOWER_LEFT_BUTTON": "Botó inferior esquerre",
+      "UPPER_LEFT_BUTTON": "Botó superior esquerre",
+      "LOWER_RIGHT_BUTTON": "Botó inferior dret",
+      "UPPER_RIGHT_BUTTON": "Botó superior dret",
+      "IDLE_OFF": "Alarma desactivada",
+      "INTRUSION_ALARM": "Alarma d'intrusió",
+      "SECONDARY_ALARM": "Alarma secundària",
+      "PRIMARY_ALARM": "Alarma primària",
+      "ALARM_OFF": "Alarma desactivada",
+      "ALARM_ON": "Alarma activada",
+      "ALARM_MUTED": "Alarma silenciada"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} premut breument",
+      "PRESS_LONG": "{subtype} premut llargament",
+      "MOTION": "Moviment detectat",
+      "SCENARIO": "Escenari {subtype} activat",
+      "ALARM": "{subtype} activat"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Verificació del detector de fum",
+      "description": "Executa la rutina de prova d'un detector de fum.",
+      "fields": {
+        "entity_id": {
+          "name": "ID d'entitat",
+          "description": "Nom de l'entitat del detector de fum."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Activa l'escenari",
+      "description": "Activa un escenari al Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Nom del SHC",
+          "description": "Títol del SHC"
+        },
+        "name": {
+          "name": "Nom de l'escenari",
+          "description": "Nom de l'escenari que cal activar"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Activa el rawscan",
+      "description": "Activa un rawscan al Bosch SHC per descobrir dispositius. El resultat s'envia al registre d'informació.",
+      "fields": {
+        "title": {
+          "name": "Nom del SHC",
+          "description": "Títol del SHC"
+        },
+        "command": {
+          "name": "Ordre de rawscan",
+          "description": "Ordre de rawscan a activar. Ordres possibles: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID del dispositiu",
+          "description": "ID del dispositiu — obligatori per a les ordres 'device', 'device_services' o 'device_service'"
+        },
+        "service_id": {
+          "name": "ID del servei",
+          "description": "ID del servei — obligatori per a l'ordre 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Estat d'alarma del detector de fum",
+      "description": "Envia una ordre personalitzada a un detector de fum.",
+      "fields": {
+        "entity_id": {
+          "name": "ID d'entitat",
+          "description": "Nom de l'entitat del detector de fum."
+        },
+        "command": {
+          "name": "Ordre personalitzada",
+          "description": "Cadena d'ordre a enviar al detector de fum."
         }
       }
     }

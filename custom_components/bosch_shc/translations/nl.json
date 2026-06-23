@@ -41,11 +41,33 @@
       "reconfigure": {
         "title": "Bosch SHC herconfigureren",
         "description": "Werk het IP-adres of de hostnaam van uw Bosch Smart Home Controller bij. Uw certificaten en inloggegevens blijven bewaard.",
+        "menu_options": {
+          "reconfigure_host": "Alleen host / IP-adres wijzigen",
+          "repair_credentials": "Opnieuw koppelen (clientcertificaat opnieuw genereren)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Host / IP-adres wijzigen",
+        "description": "Werk het IP-adres of de hostnaam van uw Bosch Smart Home Controller bij. Uw certificaten en inloggegevens blijven behouden.",
         "data": {
           "host": "Host"
         },
         "data_description": {
-          "host": "Nieuw IP-adres of hostnaam van de SHC controller (bijv. 192.168.x.y)."
+          "host": "Nieuw IP-adres of hostnaam van de SHC-controller (bijv. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Opnieuw koppelen — clientcertificaat opnieuw genereren",
+        "description": "Druk op de koppelknop op de SHC (SHC I: voorknop ingedrukt houden totdat de LED knippert; SHC II: functieknop kort indrukken) en vul vervolgens het onderstaande formulier in.",
+        "data": {
+          "host": "Host",
+          "password": "Wachtwoord van de Smart Home Controller",
+          "name": "Clientnaam voor certificaat"
+        },
+        "data_description": {
+          "host": "IP-adres of hostnaam van de SHC-controller (bijv. 192.168.x.y).",
+          "password": "Het wachtwoord dat is ingesteld in de Bosch Smart Home-app.",
+          "name": "Naam die wordt weergegeven in de SHC-app onder verbonden clients."
         }
       },
       "user": {
@@ -85,11 +107,17 @@
             "description": "Vergrendel automatisch alle SHC-thermostaten en -schakelaars wanneer iemand thuis is, en ontgrendel ze wanneer iedereen weg is.",
             "data": {
               "child_lock_enabled": "Aanwezigheidsgebaseerde kindvergrendeling inschakelen",
-              "child_lock_presence_entity": "Aanwezigheidsentiteiten"
+              "child_lock_presence_entity": "Aanwezigheidsentiteiten",
+              "silent_mode_enabled": "Aanwezigheids- en tijdvenster stille modus inschakelen",
+              "silent_mode_start": "Begintijd stille modus",
+              "silent_mode_end": "Eindtijd stille modus"
             },
             "data_description": {
               "child_lock_enabled": "Hoofdschakelaar. Wanneer AAN volgt de kindvergrendeling op alle SHC-thermostaten en schakelaarapparaten de aanwezigheidsentiteiten hieronder — vergrendeld wanneer iemand thuis is, ontgrendeld wanneer iedereen weg is. Wanneer UIT raakt de integratie de kindvergrendeling nooit aan.",
-              "child_lock_presence_entity": "De personen/apparaten die de kindvergrendeling bepalen. Deze gaat AAN zodra ENIGE van hen thuis is, en UIT alleen wanneer ALLE weg zijn. Kies bijvoorbeeld de Person-entiteiten van uw huishouden. 'Thuis' wordt automatisch gedetecteerd (home voor person/device_tracker/zone/group, on voor binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "De personen/apparaten die de kindvergrendeling bepalen. Deze gaat AAN zodra ENIGE van hen thuis is, en UIT alleen wanneer ALLE weg zijn. Kies bijvoorbeeld de Person-entiteiten van uw huishouden. 'Thuis' wordt automatisch gedetecteerd (home voor person/device_tracker/zone/group, on voor binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Wanneer AAN wordt elke SHC-thermostaat die stille modus ondersteunt, overgeschakeld naar stille modus zolang iemand thuis is (op basis van de bovenstaande aanwezigheidsentiteiten) EN de huidige tijd binnen het onderstaande venster valt; anders wordt teruggeschakeld naar normaal. Standaard: uit.",
+              "silent_mode_start": "Begintijd van het dagelijkse stille-modusvenster (lokale tijd). Vensters kunnen middernacht overschrijden (bijv. 22:00 → 06:00).",
+              "silent_mode_end": "Eindtijd van het dagelijkse stille-modusvenster (lokale tijd)."
             }
           },
           "advanced": {
@@ -99,16 +127,140 @@
               "ssl_verify_hostname": "SSL-hostnaam verifiëren",
               "long_poll_timeout": "Long-poll timeout (seconden)",
               "excluded_devices": "Uitgesloten apparaten",
-              "excluded_rooms": "Uitgesloten kamers"
+              "excluded_rooms": "Uitgesloten kamers",
+              "ssl_skip_verify": "SHC-certificaatverificatie overslaan"
             },
             "data_description": {
               "ssl_verify_hostname": "Wanneer AAN: de boschshcpy-bibliotheek controleert of de SSL-certificaat hostnaam van de SHC controller overeenkomt met zijn IP/hostnaam. Heeft momenteel geen effect — een toekomstige boschshcpy-update is vereist. Standaard: uit.",
               "long_poll_timeout": "Hoe lang (in seconden) het long-poll-verzoek aan de SHC controller wacht op push-gebeurtenissen voor het opnieuw verbinden. Bereik: 5–300. Standaard: 30. Verhoog bij frequente herverbindingen op een traag netwerk; verlaag als uw router inactieve verbindingen verbreekt. Vereist een toekomstige boschshcpy-update.",
               "excluded_devices": "Apparaten om te verbergen — er worden geen entiteiten voor aangemaakt. Leeg laten om alles op te nemen. Bestaande entiteiten voor nieuw uitgesloten apparaten blijven tot ze handmatig zijn verwijderd.",
-              "excluded_rooms": "Verberg alle apparaten in deze Bosch-kamers. Leeg laten om alles op te nemen."
+              "excluded_rooms": "Verberg alle apparaten in deze Bosch-kamers. Leeg laten om alles op te nemen.",
+              "ssl_skip_verify": "Expert / alleen lokale LAN-netwerken: wanneer AAN wordt het SHC-servercertificaat niet meer geverifieerd — handig als het certificaat van uw offline controller is verlopen. De versleutelde clientcertificaat-aanmelding wordt niet beïnvloed. Schakel dit alleen in op een vertrouwd lokaal netwerk. Standaard: uit."
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Kamerklimaat regeling",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Rooktest"
+      },
+      "walk_test": {
+        "name": "Walk Test"
+      },
+      "walk_test_stop": {
+        "name": "Walk Test stoppen"
+      },
+      "detection_test": {
+        "name": "Detectietest"
+      },
+      "detection_test_stop": {
+        "name": "Detectietest stoppen"
+      },
+      "reset_tamper": {
+        "name": "Sabotage resetten"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulslengte"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Energiebesparingsdrempel vermogen"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Duur activering energiebesparing"
+      },
+      "led_brightness": {
+        "name": "LED-helderheid"
+      },
+      "display_brightness": {
+        "name": "Schermhelderheid"
+      },
+      "display_on_time": {
+        "name": "Scherm aan-tijd"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Bewegingsgevoeligheid"
+      },
+      "vibration_sensitivity": {
+        "name": "Trillingsgevoeligheid"
+      },
+      "state_after_power_outage": {
+        "name": "Toestand na stroomuitval"
+      },
+      "smoke_sensitivity": {
+        "name": "Rookgevoeligheid"
+      },
+      "display_direction": {
+        "name": "Schermrichting"
+      },
+      "displayed_temperature": {
+        "name": "Weergegeven temperatuur"
+      },
+      "terminal_type": {
+        "name": "Aansluitingstype"
+      },
+      "valve_type": {
+        "name": "Kleppetype"
+      },
+      "heater_type": {
+        "name": "Verwarmingstype"
+      },
+      "switch_type": {
+        "name": "Schakelaartype"
+      },
+      "actuator_type": {
+        "name": "Actuatortype"
+      },
+      "output_mode": {
+        "name": "Uitvoermodus"
+      },
+      "smart_sensitivity_security": {
+        "name": "Beveiligingsgevoeligheidsniveau"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Comfortgevoeligheidsniveau"
+      },
+      "orientation_light_response": {
+        "name": "Reactietijd oriëntatielicht"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Walk Test-status"
+      },
+      "battery_level": {
+        "name": "Batterijniveau"
+      },
+      "combined_rating": {
+        "name": "Gecombineerde beoordeling"
+      },
+      "air_quality_description": {
+        "name": "Luchtkwaliteitsbeschrijving"
+      },
+      "detection_state": {
+        "name": "Detectietest-status"
+      },
+      "installation_profile": {
+        "name": "Installatieprofiel"
       }
     }
   },
@@ -194,23 +346,6 @@
         "command": {
           "name": "Aangepaste opdracht",
           "description": "Opdrachtstring te sturen naar de rookmelder."
-        }
-      }
-    }
-  },
-  "entity": {
-    "climate": {
-      "room_climate_control": {
-        "name": "Kamerklimaat regeling",
-        "state_attributes": {
-          "preset_mode": {
-            "state": {
-              "auto": "Automatisch",
-              "manual": "Handmatig",
-              "eco": "Eco",
-              "boost": "Boost"
-            }
-          }
         }
       }
     }

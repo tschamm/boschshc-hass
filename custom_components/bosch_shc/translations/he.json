@@ -2,30 +2,83 @@
   "config": {
     "abort": {
       "already_configured": "תצורת ההתקן כבר נקבעה",
-      "reauth_successful": "האימות מחדש הצליח"
+      "reauth_successful": "האימות מחדש הצליח",
+      "reconfigure_successful": "הגדרה מחדש הושלמה בהצלחה",
+      "wrong_shc": "המארח שהוזן שייך לבקר Bosch SHC אחר. אנא הזן את המארח הנכון עבור ערך זה."
     },
     "error": {
       "cannot_connect": "ההתחברות נכשלה",
       "invalid_auth": "אימות לא חוקי",
       "pairing_failed": "השיוך נכשל; נא בדוק שבקר הבית החכם של Bosch נמצא במצב שיוך (מהבהב LED) כמו גם הסיסמה שלך נכונה.",
+      "session_error": "שגיאת סשן: ה-API החזיר תוצאה שאינה תקינה.",
       "unknown": "שגיאה בלתי צפויה"
     },
+    "flow_title": "Bosch SHC: {name}",
     "step": {
       "confirm_discovery": {
         "description": "לחץ על כפתור הצד הקדמי של בקר הבית החכם של Bosch עד שהנורית תתחיל להבהב.\n מוכן להמשיך ולהגדיר את {model} @ {host} באמצעות Home Assistant?"
       },
       "credentials": {
         "data": {
+          "name": "שם לקוח עבור האישור",
           "password": "סיסמת בקר הבית החכם"
+        },
+        "data_description": {
+          "name": "השם המוצג באפליקציית SHC תחת לקוחות מחוברים.",
+          "password": "הסיסמה שהוגדרה באפליקציית Bosch Smart Home."
         }
       },
       "reauth_confirm": {
-        "title": "אימות מחדש של שילוב"
+        "description": "האינטגרציה של Bosch SHC צריכה לאמת מחדש את חשבונך.",
+        "title": "אימות מחדש של שילוב",
+        "data": {
+          "host": "מארח"
+        },
+        "data_description": {
+          "host": "כתובת IP או שם מארח של בקר SHC (לדוגמה: 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "הגדרה מחדש של Bosch SHC",
+        "description": "בחר מה ברצונך להגדיר מחדש.",
+        "menu_options": {
+          "reconfigure_host": "שינוי מארח / כתובת IP בלבד",
+          "repair_credentials": "שיוך מחדש (יצירת אישור לקוח מחדש)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "שינוי מארח / כתובת IP",
+        "description": "עדכן את כתובת ה-IP או שם המארח של Bosch Smart Home Controller שלך. האישורים ופרטי הגישה שלך יישמרו.",
+        "data": {
+          "host": "מארח"
+        },
+        "data_description": {
+          "host": "כתובת IP או שם מארח חדשים של בקר SHC (לדוגמה: 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "שיוך מחדש — יצירת אישור לקוח מחדש",
+        "description": "לחץ על לחצן השיוך ב-SHC (SHC I: לחצן קדמי עד שה-LED יהבהב; SHC II: לחצן הפונקציה לחיצה קצרה) ולאחר מכן מלא את הטופס שלהלן.",
+        "data": {
+          "host": "מארח",
+          "password": "סיסמת Smart Home Controller",
+          "name": "שם לקוח עבור האישור"
+        },
+        "data_description": {
+          "host": "כתובת IP או שם מארח של בקר SHC (לדוגמה: 192.168.x.y).",
+          "password": "הסיסמה שהוגדרה באפליקציית Bosch Smart Home.",
+          "name": "השם המוצג באפליקציית SHC תחת לקוחות מחוברים."
+        }
       },
       "user": {
         "data": {
           "host": "מארח"
-        }
+        },
+        "data_description": {
+          "host": "כתובת IP או שם מארח של בקר SHC (לדוגמה: 192.168.x.y)."
+        },
+        "description": "הגדר את Bosch Smart Home Controller שלך כדי לאפשר ניטור ושליטה באמצעות Home Assistant.",
+        "title": "פרמטרי אימות SHC"
       }
     }
   },
@@ -54,11 +107,17 @@
             "description": "נועל אוטומטית את כל התרמוסטטים והמתגים של SHC כאשר מישהו בבית, ומשחרר אותם כאשר כולם יוצאים.",
             "data": {
               "child_lock_enabled": "הפעל נעילת ילדים מבוססת נוכחות",
-              "child_lock_presence_entity": "ישויות נוכחות"
+              "child_lock_presence_entity": "ישויות נוכחות",
+              "silent_mode_enabled": "הפעל מצב שקט לפי נוכחות וחלון זמן",
+              "silent_mode_start": "שעת התחלה של מצב שקט",
+              "silent_mode_end": "שעת סיום של מצב שקט"
             },
             "data_description": {
               "child_lock_enabled": "מתג ראשי. כאשר מופעל, נעילת הילדים בכל תרמוסטטי SHC ומכשירי המתג עוקבת אחר ישויות הנוכחות שלהלן — נעול כאשר מישהו בבית, פתוח כאשר כולם בחוץ. כאשר מושבת, השילוב לעולם אינו נוגע בנעילת הילדים.",
-              "child_lock_presence_entity": "האנשים/המכשירים שמחליטים על נעילת הילדים. מופעל ברגע שאחד מהם בבית, ומכובה רק כאשר כולם בחוץ. בחר למשל את ישויות Person של משק הבית. 'בבית' מזוהה אוטומטית (home עבור person/device_tracker/zone/group, on עבור binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "האנשים/המכשירים שמחליטים על נעילת הילדים. מופעל ברגע שאחד מהם בבית, ומכובה רק כאשר כולם בחוץ. בחר למשל את ישויות Person של משק הבית. 'בבית' מזוהה אוטומטית (home עבור person/device_tracker/zone/group, on עבור binary_sensor/input_boolean).",
+              "silent_mode_enabled": "כאשר מופעל (ON), כל תרמוסטט SHC התומך במצב שקט יועבר למצב שקט כל עוד מישהו נמצא בבית (לפי ישויות הנוכחות לעיל) וגם השעה הנוכחית נמצאת בחלון שלהלן; אחרת יחזור לרגיל. ברירת מחדל: כבוי.",
+              "silent_mode_start": "תחילת חלון מצב השקט היומי (שעון מקומי). החלון יכול לחצות חצות (לדוגמה: 22:00 → 06:00).",
+              "silent_mode_end": "סיום חלון מצב השקט היומי (שעון מקומי)."
             }
           },
           "advanced": {
@@ -68,13 +127,15 @@
               "ssl_verify_hostname": "אמת שם מארח של אישור SHC",
               "long_poll_timeout": "פסק זמן long-poll (שניות)",
               "excluded_devices": "מכשירים מוחרגים",
-              "excluded_rooms": "חדרים מוחרגים"
+              "excluded_rooms": "חדרים מוחרגים",
+              "ssl_skip_verify": "דלג על אימות אישור SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "מומחה: כאשר מופעל, מתבצע אימות שם המארח של אישור ה-TLS של ה-SHC. שם המארח של אישור Bosch SHC בדרך כלל לא תואם את ה-IP שלו, לכן הפעלה בדרך כלל שוברת את החיבור — השאר כבוי אלא אם ידוע לך שההגדרה שלך תואמת. ברירת מחדל: כבוי.",
               "long_poll_timeout": "כמה זמן כל בקשת long-poll מחכה לאירועים לפני התחברות מחדש. ברירת מחדל: 10. הגדל כדי להפחית התחברויות מחדש, הקטן אם הרשת שלך מפסיקה חיבורים סרק.",
               "excluded_devices": "מכשירים להסתרה — לא נוצרות ישויות עבורם. השאר ריק לכלול הכול. ישויות קיימות של מכשירים שהוחרגו לאחרונה נשארות עד להסרתן ידנית.",
-              "excluded_rooms": "הסתר כל מכשיר בחדרי Bosch אלה. השאר ריק לכלול הכול."
+              "excluded_rooms": "הסתר כל מכשיר בחדרי Bosch אלה. השאר ריק לכלול הכול.",
+              "ssl_skip_verify": "מומחים / רשתות LAN מקומיות בלבד: כאשר מופעל (ON), אישור השרת של SHC לא יאומת עוד — שימושי אם אישור הבקר הלא מקוון שלך פג תוקפו. כניסת אישור הלקוח המוצפן אינה מושפעת. הפעל רק ברשת מקומית מהימנה. ברירת מחדל: כבוי."
             }
           }
         }
@@ -88,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "אוטומטי",
-              "manual": "ידני",
-              "eco": "אקו",
-              "boost": "בוסט"
+              "boost": "בוסט",
+              "eco": "אקו"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "בדיקת עשן"
+      },
+      "walk_test": {
+        "name": "בדיקת הליכה"
+      },
+      "walk_test_stop": {
+        "name": "עצירת בדיקת הליכה"
+      },
+      "detection_test": {
+        "name": "בדיקת זיהוי"
+      },
+      "detection_test_stop": {
+        "name": "עצירת בדיקת זיהוי"
+      },
+      "reset_tamper": {
+        "name": "איפוס חבלה"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "אורך דופק"
+      },
+      "energy_saving_power_threshold": {
+        "name": "סף צריכת חשמל לחיסכון באנרגיה"
+      },
+      "energy_saving_enter_duration": {
+        "name": "משך כניסה למצב חיסכון באנרגיה"
+      },
+      "led_brightness": {
+        "name": "בהירות LED"
+      },
+      "display_brightness": {
+        "name": "בהירות תצוגה"
+      },
+      "display_on_time": {
+        "name": "זמן הדלקת תצוגה"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "רגישות תנועה"
+      },
+      "vibration_sensitivity": {
+        "name": "רגישות רטט"
+      },
+      "state_after_power_outage": {
+        "name": "מצב לאחר הפסקת חשמל"
+      },
+      "smoke_sensitivity": {
+        "name": "רגישות עשן"
+      },
+      "display_direction": {
+        "name": "כיוון תצוגה"
+      },
+      "displayed_temperature": {
+        "name": "טמפרטורה מוצגת"
+      },
+      "terminal_type": {
+        "name": "סוג מסוף"
+      },
+      "valve_type": {
+        "name": "סוג שסתום"
+      },
+      "heater_type": {
+        "name": "סוג מחמם"
+      },
+      "switch_type": {
+        "name": "סוג מתג"
+      },
+      "actuator_type": {
+        "name": "סוג מפעיל"
+      },
+      "output_mode": {
+        "name": "מצב פלט"
+      },
+      "smart_sensitivity_security": {
+        "name": "רמת רגישות אבטחה"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "רמת רגישות נוחות"
+      },
+      "orientation_light_response": {
+        "name": "זמן תגובת תאורת כיוון"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "מצב בדיקת הליכה"
+      },
+      "battery_level": {
+        "name": "רמת סוללה"
+      },
+      "combined_rating": {
+        "name": "דירוג משולב"
+      },
+      "air_quality_description": {
+        "name": "תיאור איכות אוויר"
+      },
+      "detection_state": {
+        "name": "מצב בדיקת זיהוי"
+      },
+      "installation_profile": {
+        "name": "פרופיל התקנה"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "לחצן תחתון",
+      "UPPER_BUTTON": "לחצן עליון",
+      "LOWER_LEFT_BUTTON": "לחצן שמאל תחתון",
+      "UPPER_LEFT_BUTTON": "לחצן שמאל עליון",
+      "LOWER_RIGHT_BUTTON": "לחצן ימין תחתון",
+      "UPPER_RIGHT_BUTTON": "לחצן ימין עליון",
+      "IDLE_OFF": "אזעקה כבויה",
+      "INTRUSION_ALARM": "אזעקת פריצה",
+      "SECONDARY_ALARM": "אזעקה משנית",
+      "PRIMARY_ALARM": "אזעקה ראשית",
+      "ALARM_OFF": "אזעקה כבויה",
+      "ALARM_ON": "אזעקה פעילה",
+      "ALARM_MUTED": "אזעקה מושתקת"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} נלחץ לחיצה קצרה",
+      "PRESS_LONG": "{subtype} נלחץ לחיצה ארוכה",
+      "MOTION": "זוהתה תנועה",
+      "SCENARIO": "תרחיש {subtype} הופעל",
+      "ALARM": "{subtype} הופעל"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "בדיקת גלאי עשן",
+      "description": "מפעיל את תהליך הבדיקה של גלאי עשן.",
+      "fields": {
+        "entity_id": {
+          "name": "מזהה ישות",
+          "description": "שם ישות גלאי העשן."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "הפעלת תרחיש",
+      "description": "מפעיל תרחיש ב-Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "שם SHC",
+          "description": "כותרת ה-SHC"
+        },
+        "name": {
+          "name": "שם תרחיש",
+          "description": "שם התרחיש להפעלה"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "הפעלת סריקה גולמית",
+      "description": "מפעיל סריקה גולמית ב-Bosch SHC לגילוי התקנים. התוצאה מוזרמת לרישום המידע.",
+      "fields": {
+        "title": {
+          "name": "שם SHC",
+          "description": "כותרת ה-SHC"
+        },
+        "command": {
+          "name": "פקודת סריקה גולמית",
+          "description": "פקודת הסריקה הגולמית להפעלה. פקודות אפשריות: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "מזהה התקן",
+          "description": "מזהה התקן — נדרש עבור הפקודות 'device', 'device_services' או 'device_service'"
+        },
+        "service_id": {
+          "name": "מזהה שירות",
+          "description": "מזהה שירות — נדרש עבור הפקודה 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "מצב אזעקת גלאי עשן",
+      "description": "שליחת פקודה מותאמת אישית לגלאי עשן.",
+      "fields": {
+        "entity_id": {
+          "name": "מזהה ישות",
+          "description": "שם ישות גלאי העשן."
+        },
+        "command": {
+          "name": "פקודה מותאמת אישית",
+          "description": "מחרוזת הפקודה לשליחה לגלאי העשן."
         }
       }
     }

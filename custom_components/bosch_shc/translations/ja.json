@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "デバイスはすでに設定されています",
-      "reauth_successful": "再認証に成功しました"
+      "reauth_successful": "再認証に成功しました",
+      "reconfigure_successful": "再設定が完了しました",
+      "wrong_shc": "入力されたホストは別のBosch SHCコントローラーに属しています。このエントリーに正しいホストを入力してください。"
     },
     "error": {
       "cannot_connect": "接続に失敗しました",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "証明書のクライアント名",
           "password": "Smart Home Controllerのパスワード"
+        },
+        "data_description": {
+          "name": "SHCアプリの接続済みクライアント一覧に表示される名前です。",
+          "password": "Bosch Smart Homeアプリで設定したパスワードです。"
         }
       },
       "reauth_confirm": {
         "description": "Bosch_shc統合では、アカウントを再認証する必要があります",
-        "title": "統合の再認証"
+        "title": "統合の再認証",
+        "data": {
+          "host": "ホスト"
+        },
+        "data_description": {
+          "host": "SHCコントローラーのIPアドレスまたはホスト名（例: 192.168.x.y）。"
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHCの再設定",
+        "description": "再設定する項目を選択してください。",
+        "menu_options": {
+          "reconfigure_host": "ホスト / IPアドレスのみ変更",
+          "repair_credentials": "再ペアリング（クライアント証明書の再生成）"
+        }
+      },
+      "reconfigure_host": {
+        "title": "ホスト / IPアドレスの変更",
+        "description": "Bosch Smart Home ControllerのIPアドレスまたはホスト名を更新します。証明書と認証情報は保持されます。",
+        "data": {
+          "host": "ホスト"
+        },
+        "data_description": {
+          "host": "SHCコントローラーの新しいIPアドレスまたはホスト名（例: 192.168.x.y）。"
+        }
+      },
+      "repair_credentials": {
+        "title": "再ペアリング — クライアント証明書の再生成",
+        "description": "SHCのペアリングボタンを押してから（SHC I: LEDが点滅するまで前面ボタンを長押し、SHC II: ファンクションボタンを短く押す）、以下のフォームに入力してください。",
+        "data": {
+          "host": "ホスト",
+          "password": "Smart Home Controllerのパスワード",
+          "name": "証明書のクライアント名"
+        },
+        "data_description": {
+          "host": "SHCコントローラーのIPアドレスまたはホスト名（例: 192.168.x.y）。",
+          "password": "Bosch Smart Homeアプリで設定したパスワードです。",
+          "name": "SHCアプリの接続済みクライアント一覧に表示される名前です。"
+        }
       },
       "user": {
         "data": {
           "host": "ホスト"
+        },
+        "data_description": {
+          "host": "SHCコントローラーのIPアドレスまたはホスト名（例: 192.168.x.y）。"
         },
         "description": "Bosch Smart Home Controllerをセットアップして、Home Assistantで監視および制御できるようにします。",
         "title": "SHC認証パラメーター"
@@ -59,11 +107,17 @@
             "description": "誰かが在宅中は全SHCサーモスタットとスイッチを自動的にロックし、全員が外出したときにロックを解除します。",
             "data": {
               "child_lock_enabled": "在宅ベースのチャイルドロックを有効にする",
-              "child_lock_presence_entity": "在宅エンティティ"
+              "child_lock_presence_entity": "在宅エンティティ",
+              "silent_mode_enabled": "在宅検知 + 時間帯によるサイレントモードを有効にする",
+              "silent_mode_start": "サイレントモード開始時刻",
+              "silent_mode_end": "サイレントモード終了時刻"
             },
             "data_description": {
               "child_lock_enabled": "マスタースイッチ。オンの場合、全SHCサーモスタットとスイッチデバイスのチャイルドロックは以下の在宅エンティティに従います — 誰かが在宅中はロック、全員が外出するとロック解除。オフの場合、インテグレーションはチャイルドロックに一切触れません。",
-              "child_lock_presence_entity": "チャイルドロックを決定する人物/デバイス。いずれか1つでも在宅になった瞬間にオンになり、全員が外出したときのみオフになります。例えば、世帯員のPersonエンティティを選択してください。「在宅」は自動検出されます（person/device_tracker/zone/groupはhome、binary_sensor/input_booleanはon）。"
+              "child_lock_presence_entity": "チャイルドロックを決定する人物/デバイス。いずれか1つでも在宅になった瞬間にオンになり、全員が外出したときのみオフになります。例えば、世帯員のPersonエンティティを選択してください。「在宅」は自動検出されます（person/device_tracker/zone/groupはhome、binary_sensor/input_booleanはon）。",
+              "silent_mode_enabled": "ONにすると、上記の在宅エンティティで誰かが在宅中かつ現在時刻が以下の時間帯内の場合、サイレントモード対応のSHCサーモスタットがすべてサイレントモードに切り替わります。それ以外は通常モードに戻ります。デフォルト: off。",
+              "silent_mode_start": "毎日のサイレントモード時間帯の開始時刻（現地時間）。時間帯は日をまたいでも構いません（例: 22:00 → 06:00）。",
+              "silent_mode_end": "毎日のサイレントモード時間帯の終了時刻（現地時間）。"
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "SHC証明書のホスト名を検証する",
               "long_poll_timeout": "ロングポールタイムアウト（秒）",
               "excluded_devices": "除外するデバイス",
-              "excluded_rooms": "除外する部屋"
+              "excluded_rooms": "除外する部屋",
+              "ssl_skip_verify": "SHC証明書の検証をスキップする"
             },
             "data_description": {
               "ssl_verify_hostname": "上級者向け：オンの場合、SHCのTLS証明書のホスト名が検証されます。Bosch SHC証明書のホスト名は通常そのIPと一致しないため、有効にすると接続が切断されることがほとんどです — 設定が一致することを確認している場合を除き、オフのままにしてください。デフォルト：オフ。",
               "long_poll_timeout": "各ロングポールリクエストが再接続前にイベントを待つ時間。デフォルト：10。再接続を減らすには増やし、ネットワークがアイドル接続を切断する場合は減らします。",
               "excluded_devices": "非表示にするデバイス — これらに対してエンティティは作成されません。すべてを含めるには空のままにします。新たに除外されたデバイスの既存エンティティは手動で削除するまで残ります。",
-              "excluded_rooms": "これらのBosch部屋にあるすべてのデバイスを非表示にします。すべてを含めるには空のままにします。"
+              "excluded_rooms": "これらのBosch部屋にあるすべてのデバイスを非表示にします。すべてを含めるには空のままにします。",
+              "ssl_skip_verify": "エキスパート / クローズドLAN向け: ONにすると、SHCサーバー証明書の検証が行われなくなります。オフラインコントローラーの証明書が期限切れの場合に有用です。暗号化されたクライアント証明書によるログインには影響しません。信頼できるローカルネットワーク上でのみ有効にしてください。デフォルト: off。"
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "自動",
-              "manual": "手動",
-              "eco": "エコ",
-              "boost": "ブースト"
+              "boost": "ブースト",
+              "eco": "エコ"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "煙感知テスト"
+      },
+      "walk_test": {
+        "name": "ウォークテスト"
+      },
+      "walk_test_stop": {
+        "name": "ウォークテスト停止"
+      },
+      "detection_test": {
+        "name": "検知テスト"
+      },
+      "detection_test_stop": {
+        "name": "検知テスト停止"
+      },
+      "reset_tamper": {
+        "name": "不正開封リセット"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "インパルス長"
+      },
+      "energy_saving_power_threshold": {
+        "name": "省エネ電力しきい値"
+      },
+      "energy_saving_enter_duration": {
+        "name": "省エネモード移行時間"
+      },
+      "led_brightness": {
+        "name": "LED輝度"
+      },
+      "display_brightness": {
+        "name": "ディスプレイ輝度"
+      },
+      "display_on_time": {
+        "name": "ディスプレイ点灯時間"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "モーション感度"
+      },
+      "vibration_sensitivity": {
+        "name": "振動感度"
+      },
+      "state_after_power_outage": {
+        "name": "停電後の状態"
+      },
+      "smoke_sensitivity": {
+        "name": "煙感知感度"
+      },
+      "display_direction": {
+        "name": "ディスプレイ方向"
+      },
+      "displayed_temperature": {
+        "name": "表示温度"
+      },
+      "terminal_type": {
+        "name": "端子タイプ"
+      },
+      "valve_type": {
+        "name": "バルブタイプ"
+      },
+      "heater_type": {
+        "name": "ヒータータイプ"
+      },
+      "switch_type": {
+        "name": "スイッチタイプ"
+      },
+      "actuator_type": {
+        "name": "アクチュエータータイプ"
+      },
+      "output_mode": {
+        "name": "出力モード"
+      },
+      "smart_sensitivity_security": {
+        "name": "セキュリティ感度レベル"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "コンフォート感度レベル"
+      },
+      "orientation_light_response": {
+        "name": "誘導灯応答時間"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "ウォークテスト状態"
+      },
+      "battery_level": {
+        "name": "バッテリーレベル"
+      },
+      "combined_rating": {
+        "name": "総合評価"
+      },
+      "air_quality_description": {
+        "name": "空気品質の説明"
+      },
+      "detection_state": {
+        "name": "検知テスト状態"
+      },
+      "installation_profile": {
+        "name": "設置プロファイル"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "下ボタン",
+      "UPPER_BUTTON": "上ボタン",
+      "LOWER_LEFT_BUTTON": "左下ボタン",
+      "UPPER_LEFT_BUTTON": "左上ボタン",
+      "LOWER_RIGHT_BUTTON": "右下ボタン",
+      "UPPER_RIGHT_BUTTON": "右上ボタン",
+      "IDLE_OFF": "アラームオフ",
+      "INTRUSION_ALARM": "侵入アラーム",
+      "SECONDARY_ALARM": "セカンダリアラーム",
+      "PRIMARY_ALARM": "プライマリアラーム",
+      "ALARM_OFF": "アラームオフ",
+      "ALARM_ON": "アラームオン",
+      "ALARM_MUTED": "アラームミュート"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype}が短押しされた",
+      "PRESS_LONG": "{subtype}が長押しされた",
+      "MOTION": "モーションを検知しました",
+      "SCENARIO": "シナリオ {subtype} が実行されました",
+      "ALARM": "{subtype} が発動しました"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "煙感知器チェック",
+      "description": "煙感知器のテストルーティンを実行します。",
+      "fields": {
+        "entity_id": {
+          "name": "エンティティID",
+          "description": "煙感知器エンティティの名前。"
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "シナリオの実行",
+      "description": "Bosch SHC上のシナリオを実行します。",
+      "fields": {
+        "title": {
+          "name": "SHC名",
+          "description": "SHCのタイトル"
+        },
+        "name": {
+          "name": "シナリオ名",
+          "description": "実行するシナリオの名前"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "ローススキャンの実行",
+      "description": "Bosch SHCでローススキャンを実行してデバイスを検出します。結果はinfoロガーにストリーミングされます。",
+      "fields": {
+        "title": {
+          "name": "SHC名",
+          "description": "SHCのタイトル"
+        },
+        "command": {
+          "name": "ローススキャンコマンド",
+          "description": "実行するローススキャンコマンド。指定可能なコマンド: 'devices'、'device'、'services'、'device_services'、'device_service'、'rooms'、'scenarios'、'info'、'information'、'public_information'、'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "デバイスID",
+          "description": "デバイスID — コマンド 'device'、'device_services'、または 'device_service' に必要です"
+        },
+        "service_id": {
+          "name": "サービスID",
+          "description": "サービスID — コマンド 'device_service' に必要です"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "煙感知器アラーム状態",
+      "description": "煙感知器にカスタムコマンドを送信します。",
+      "fields": {
+        "entity_id": {
+          "name": "エンティティID",
+          "description": "煙感知器エンティティの名前。"
+        },
+        "command": {
+          "name": "カスタムコマンド",
+          "description": "煙感知器に送信するコマンド文字列。"
         }
       }
     }

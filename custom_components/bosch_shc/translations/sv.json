@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Enheten är redan konfigurerad",
-      "reauth_successful": "Återautentisering lyckades"
+      "reauth_successful": "Återautentisering lyckades",
+      "reconfigure_successful": "Omkonfigurationen lyckades",
+      "wrong_shc": "Den angivna värden tillhör en annan Bosch SHC-styrenhet. Ange rätt värd för den här posten."
     },
     "error": {
       "cannot_connect": "Det gick inte att ansluta.",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Klientnamn för certifikat",
           "password": "Lösenord för Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Namn som visas i SHC-appen under anslutna klienter.",
+          "password": "Lösenordet som angetts i Bosch Smart Home-appen."
         }
       },
       "reauth_confirm": {
         "description": "Bosch_shc-integrationen måste autentisera ditt konto igen",
-        "title": "Återautenticera integration"
+        "title": "Återautenticera integration",
+        "data": {
+          "host": "Värd"
+        },
+        "data_description": {
+          "host": "IP-adress eller värdnamn för SHC-styrenheten (t.ex. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Omkonfigurera Bosch SHC",
+        "description": "Välj vad du vill omkonfigurera.",
+        "menu_options": {
+          "reconfigure_host": "Ändra endast värd / IP-adress",
+          "repair_credentials": "Para om (återskapa klientcertifikat)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Ändra värd / IP-adress",
+        "description": "Uppdatera IP-adressen eller värdnamnet för din Bosch Smart Home Controller. Dina certifikat och inloggningsuppgifter bevaras.",
+        "data": {
+          "host": "Värd"
+        },
+        "data_description": {
+          "host": "Ny IP-adress eller värdnamn för SHC-styrenheten (t.ex. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Para om — återskapa klientcertifikat",
+        "description": "Tryck på parningsknappen på SHC (SHC I: frontknappen tills LED blinkar; SHC II: funktionsknappen kort) och fyll sedan i formuläret nedan.",
+        "data": {
+          "host": "Värd",
+          "password": "Lösenord för Smart Home Controller",
+          "name": "Klientnamn för certifikat"
+        },
+        "data_description": {
+          "host": "IP-adress eller värdnamn för SHC-styrenheten (t.ex. 192.168.x.y).",
+          "password": "Lösenordet som angetts i Bosch Smart Home-appen.",
+          "name": "Namn som visas i SHC-appen under anslutna klienter."
+        }
       },
       "user": {
         "data": {
           "host": "Värd"
+        },
+        "data_description": {
+          "host": "IP-adress eller värdnamn för SHC-styrenheten (t.ex. 192.168.x.y)."
         },
         "description": "Ställ in din Bosch Smart Home Controller för att tillåta övervakning och kontroll med Home Assistant.",
         "title": "SHC-autentiseringsparametrar"
@@ -59,11 +107,17 @@
             "description": "Lås automatiskt alla SHC-termostater och strömbrytare när någon är hemma, och lås upp dem när alla lämnar.",
             "data": {
               "child_lock_enabled": "Aktivera närvaro-baserat barnlås",
-              "child_lock_presence_entity": "Närvaro-entiteter"
+              "child_lock_presence_entity": "Närvaro-entiteter",
+              "silent_mode_enabled": "Aktivera tyst läge med närvaro och tidsfönster",
+              "silent_mode_start": "Starttid för tyst läge",
+              "silent_mode_end": "Sluttid för tyst läge"
             },
             "data_description": {
               "child_lock_enabled": "Huvudbrytare. När PÅ följer barnlåset på alla SHC-termostater och strömbrytarenheter närvaro-entiteterna nedan — låst när någon är hemma, upplåst när alla är borta. När AV ändrar integrationen aldrig barnlåset.",
-              "child_lock_presence_entity": "Personerna/enheterna som avgör barnlåset. Slås PÅ så snart NÅGON av dem är hemma, och AV först när ALLA är borta. Välj t.ex. Person-entiteterna för ditt hushåll. 'Hemma' detekteras automatiskt (home för person/device_tracker/zone/group, on för binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Personerna/enheterna som avgör barnlåset. Slås PÅ så snart NÅGON av dem är hemma, och AV först när ALLA är borta. Välj t.ex. Person-entiteterna för ditt hushåll. 'Hemma' detekteras automatiskt (home för person/device_tracker/zone/group, on för binary_sensor/input_boolean).",
+              "silent_mode_enabled": "När ON aktiveras ställs varje SHC-termostat med stöd för tyst läge om till tyst läge så länge någon (enligt närvaroentiteterna ovan) är hemma OCH aktuell tid är inom fönstret nedan; annars återgår den till normalt läge. Standard: av.",
+              "silent_mode_start": "Start för det dagliga tidsfönstret för tyst läge (lokal tid). Fönster kan sträcka sig över midnatt (t.ex. 22:00 → 06:00).",
+              "silent_mode_end": "Slut för det dagliga tidsfönstret för tyst läge (lokal tid)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "Verifiera SHC-certifikatets värdnamn",
               "long_poll_timeout": "Lång polling-timeout (sekunder)",
               "excluded_devices": "Exkluderade enheter",
-              "excluded_rooms": "Exkluderade rum"
+              "excluded_rooms": "Exkluderade rum",
+              "ssl_skip_verify": "Hoppa över verifiering av SHC-certifikat"
             },
             "data_description": {
               "ssl_verify_hostname": "Expert: när PÅ verifieras SHC:s TLS-certifikatets värdnamn. Bosch SHC-certifikatets värdnamn matchar normalt INTE dess IP, så att aktivera detta bryter vanligtvis anslutningen — lämna AV om du inte är säker på att din konfiguration matchar. Standard: av.",
               "long_poll_timeout": "Hur länge varje lång polling-begäran väntar på händelser innan återanslutning. Standard 10. Öka för att minska återanslutningar, minska om ditt nätverk kopplar bort inaktiva anslutningar.",
               "excluded_devices": "Enheter att dölja — inga enheter skapas för dem. Lämna tomt för att inkludera alla. Befintliga enheter för nyligen exkluderade enheter kvarstår tills de tas bort manuellt.",
-              "excluded_rooms": "Dölj alla enheter i dessa Bosch-rum. Lämna tomt för att inkludera alla."
+              "excluded_rooms": "Dölj alla enheter i dessa Bosch-rum. Lämna tomt för att inkludera alla.",
+              "ssl_skip_verify": "Expert / enbart lokala LAN: när ON verifieras inte längre SHC:s servercertifikat — användbart om din offlinestyrenhets certifikat har gått ut. Den krypterade inloggningen med klientcertifikat påverkas inte. Aktivera endast på ett betrott lokalt nätverk. Standard: av."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automatisk",
-              "manual": "Manuell",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Brandvarnarprov"
+      },
+      "walk_test": {
+        "name": "Gångtest"
+      },
+      "walk_test_stop": {
+        "name": "Stoppa gångtest"
+      },
+      "detection_test": {
+        "name": "Detektionstest"
+      },
+      "detection_test_stop": {
+        "name": "Stoppa detektionstest"
+      },
+      "reset_tamper": {
+        "name": "Återställ sabotageindikering"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulslängd"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Effekttröskel för energisparläge"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Aktiveringstid för energisparläge"
+      },
+      "led_brightness": {
+        "name": "LED-ljusstyrka"
+      },
+      "display_brightness": {
+        "name": "Skärmljusstyrka"
+      },
+      "display_on_time": {
+        "name": "Skärmens på-tid"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Rörelsekänslighet"
+      },
+      "vibration_sensitivity": {
+        "name": "Vibrationskänslighet"
+      },
+      "state_after_power_outage": {
+        "name": "Tillstånd efter strömavbrott"
+      },
+      "smoke_sensitivity": {
+        "name": "Rökkänslighet"
+      },
+      "display_direction": {
+        "name": "Skärmorientering"
+      },
+      "displayed_temperature": {
+        "name": "Visad temperatur"
+      },
+      "terminal_type": {
+        "name": "Terminaltyp"
+      },
+      "valve_type": {
+        "name": "Ventiltyp"
+      },
+      "heater_type": {
+        "name": "Värmartyp"
+      },
+      "switch_type": {
+        "name": "Brytartyp"
+      },
+      "actuator_type": {
+        "name": "Aktuatortyp"
+      },
+      "output_mode": {
+        "name": "Utmatningsläge"
+      },
+      "smart_sensitivity_security": {
+        "name": "Säkerhetskänslighetsnivå"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Komfortkänslighetsnivå"
+      },
+      "orientation_light_response": {
+        "name": "Svarstid för orienteringsbelysning"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Gångtestsstatus"
+      },
+      "battery_level": {
+        "name": "Batterinivå"
+      },
+      "combined_rating": {
+        "name": "Samlat omdöme"
+      },
+      "air_quality_description": {
+        "name": "Luftkvalitetsbeskrivning"
+      },
+      "detection_state": {
+        "name": "Status för detektionstest"
+      },
+      "installation_profile": {
+        "name": "Installationsprofil"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Nedre knapp",
+      "UPPER_BUTTON": "Övre knapp",
+      "LOWER_LEFT_BUTTON": "Nedre vänster knapp",
+      "UPPER_LEFT_BUTTON": "Övre vänster knapp",
+      "LOWER_RIGHT_BUTTON": "Nedre höger knapp",
+      "UPPER_RIGHT_BUTTON": "Övre höger knapp",
+      "IDLE_OFF": "Larm av",
+      "INTRUSION_ALARM": "Inbrottslarm",
+      "SECONDARY_ALARM": "Sekundärlarm",
+      "PRIMARY_ALARM": "Primärlarm",
+      "ALARM_OFF": "Larm av",
+      "ALARM_ON": "Larm på",
+      "ALARM_MUTED": "Larm tystat"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} kortklickad",
+      "PRESS_LONG": "{subtype} långklickad",
+      "MOTION": "Rörelse detekterad",
+      "SCENARIO": "Scenario {subtype} utlöst",
+      "ALARM": "{subtype} utlöst"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Brandvarnarkontroll",
+      "description": "Anropar testrutinen för en brandvarnare.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitets-ID",
+          "description": "Namn på brandvarnarytan."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Utlös scenario",
+      "description": "Utlöser ett scenario i Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "SHC-namn",
+          "description": "Titel på SHC"
+        },
+        "name": {
+          "name": "Scenarionamn",
+          "description": "Namn på scenariot som ska utlösas"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Utlös råsökning",
+      "description": "Utlöser en råsökning i Bosch SHC för att identifiera enheter. Resultatet strömmas till informationsloggern.",
+      "fields": {
+        "title": {
+          "name": "SHC-namn",
+          "description": "Titel på SHC"
+        },
+        "command": {
+          "name": "Råsökningskommando",
+          "description": "Råsökningskommando att utlösa. Möjliga kommandon: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Enhets-ID",
+          "description": "Enhets-ID — krävs för kommandona 'device', 'device_services' eller 'device_service'"
+        },
+        "service_id": {
+          "name": "Tjänst-ID",
+          "description": "Tjänst-ID — krävs för kommandot 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Brandvarnares larmtillstånd",
+      "description": "Skicka ett anpassat kommando till en brandvarnare.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitets-ID",
+          "description": "Namn på brandvarnarytan."
+        },
+        "command": {
+          "name": "Anpassat kommando",
+          "description": "Kommandosträng att skicka till brandvarnaren."
         }
       }
     }

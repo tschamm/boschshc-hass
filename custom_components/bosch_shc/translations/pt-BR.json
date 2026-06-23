@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Dispositivo já está configurado",
-      "reauth_successful": "A reautenticação foi bem-sucedida"
+      "reauth_successful": "A reautenticação foi bem-sucedida",
+      "reconfigure_successful": "A reconfiguração foi concluída com sucesso",
+      "wrong_shc": "O host informado pertence a um controlador Bosch SHC diferente. Insira o host correto para esta entrada."
     },
     "error": {
       "cannot_connect": "Falha ao conectar",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Nome do cliente para o certificado",
           "password": "Senha do Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Nome exibido no aplicativo SHC em clientes conectados.",
+          "password": "A senha definida no aplicativo Bosch Smart Home."
         }
       },
       "reauth_confirm": {
         "description": "A integração bosch_shc precisa re-autenticar sua conta",
-        "title": "Reautenticar Integração"
+        "title": "Reautenticar Integração",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "Endereço IP ou nome de host do controlador SHC (ex.: 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar Bosch SHC",
+        "description": "Escolha o que deseja reconfigurar.",
+        "menu_options": {
+          "reconfigure_host": "Alterar apenas o host / endereço IP",
+          "repair_credentials": "Reemparelhar (regenerar certificado do cliente)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Alterar host / endereço IP",
+        "description": "Atualize o endereço IP ou o nome de host do seu Bosch Smart Home Controller. Seus certificados e credenciais serão preservados.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "Novo endereço IP ou nome de host do controlador SHC (ex.: 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Reemparelhar — regenerar certificado do cliente",
+        "description": "Pressione o botão de emparelhamento no SHC (SHC I: botão frontal até o LED piscar; SHC II: botão de função brevemente) e preencha o formulário abaixo.",
+        "data": {
+          "host": "Host",
+          "password": "Senha do Smart Home Controller",
+          "name": "Nome do cliente para o certificado"
+        },
+        "data_description": {
+          "host": "Endereço IP ou nome de host do controlador SHC (ex.: 192.168.x.y).",
+          "password": "A senha definida no aplicativo Bosch Smart Home.",
+          "name": "Nome exibido no aplicativo SHC em clientes conectados."
+        }
       },
       "user": {
         "data": {
           "host": "Nome do host"
+        },
+        "data_description": {
+          "host": "Endereço IP ou nome de host do controlador SHC (ex.: 192.168.x.y)."
         },
         "description": "Configure seu Bosch Smart Home Controller para permitir monitoramento e controle com o Home Assistant.",
         "title": "Parâmetros de autenticação SHC"
@@ -59,11 +107,17 @@
             "description": "Bloqueie automaticamente todos os termostatos e interruptores SHC quando alguém estiver em casa, e desbloqueie quando todos saírem.",
             "data": {
               "child_lock_enabled": "Ativar bloqueio infantil baseado em presença",
-              "child_lock_presence_entity": "Entidades de presença"
+              "child_lock_presence_entity": "Entidades de presença",
+              "silent_mode_enabled": "Ativar modo silencioso por presença + janela de horário",
+              "silent_mode_start": "Hora de início do modo silencioso",
+              "silent_mode_end": "Hora de término do modo silencioso"
             },
             "data_description": {
               "child_lock_enabled": "Chave mestra. Quando ATIVADO, o bloqueio infantil em todos os termostatos e dispositivos de interruptor SHC segue as entidades de presença abaixo — bloqueado quando alguém está em casa, desbloqueado quando todos estão ausentes. Quando DESATIVADO, a integração nunca altera o bloqueio infantil.",
-              "child_lock_presence_entity": "As pessoas/dispositivos que decidem o bloqueio infantil. Ativa quando QUALQUER um deles está em casa, e desativa apenas quando TODOS estão ausentes. Escolha, por exemplo, as entidades Person da sua residência. 'Em casa' é detectado automaticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "As pessoas/dispositivos que decidem o bloqueio infantil. Ativa quando QUALQUER um deles está em casa, e desativa apenas quando TODOS estão ausentes. Escolha, por exemplo, as entidades Person da sua residência. 'Em casa' é detectado automaticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Quando ativado (ON), cada termostato SHC compatível com modo silencioso é alternado para esse modo enquanto alguém (conforme as entidades de presença acima) estiver em casa E o horário atual estiver dentro da janela configurada abaixo; caso contrário, retorna ao modo normal. Padrão: desativado.",
+              "silent_mode_start": "Início da janela diária do modo silencioso (horário local). A janela pode cruzar a meia-noite (ex.: 22:00 → 06:00).",
+              "silent_mode_end": "Fim da janela diária do modo silencioso (horário local)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "Verificar nome do host do certificado SHC",
               "long_poll_timeout": "Tempo limite de long-poll (segundos)",
               "excluded_devices": "Dispositivos excluídos",
-              "excluded_rooms": "Cômodos excluídos"
+              "excluded_rooms": "Cômodos excluídos",
+              "ssl_skip_verify": "Ignorar verificação de certificado do SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Especialista: quando ATIVADO, o nome do host do certificado TLS do SHC é verificado. O nome do host do certificado Bosch SHC normalmente NÃO corresponde ao seu IP, portanto ativar isso geralmente interrompe a conexão — deixe DESATIVADO a menos que tenha certeza de que sua configuração corresponde. Padrão: desativado.",
               "long_poll_timeout": "Por quanto tempo cada solicitação de long-poll aguarda eventos antes de reconectar. Padrão 10. Aumente para reduzir reconexões, diminua se sua rede encerrar conexões ociosas.",
               "excluded_devices": "Dispositivos a ocultar — nenhuma entidade é criada para eles. Deixe vazio para incluir todos. As entidades existentes para dispositivos recém-excluídos permanecem até serem removidas manualmente.",
-              "excluded_rooms": "Ocultar todos os dispositivos nesses cômodos Bosch. Deixe vazio para incluir todos."
+              "excluded_rooms": "Ocultar todos os dispositivos nesses cômodos Bosch. Deixe vazio para incluir todos.",
+              "ssl_skip_verify": "Especialistas / redes LAN somente locais: quando ativado (ON), o certificado do servidor SHC não será mais verificado — útil se o certificado do controlador offline tiver expirado. O login com certificado de cliente criptografado não é afetado. Ative somente em redes locais confiáveis. Padrão: desativado."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automático",
-              "manual": "Manual",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Teste de Fumaça"
+      },
+      "walk_test": {
+        "name": "Teste de Percurso"
+      },
+      "walk_test_stop": {
+        "name": "Parar Teste de Percurso"
+      },
+      "detection_test": {
+        "name": "Teste de Detecção"
+      },
+      "detection_test_stop": {
+        "name": "Parar Teste de Detecção"
+      },
+      "reset_tamper": {
+        "name": "Redefinir Violação"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Duração do Impulso"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Limite de Potência para Economia de Energia"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Duração de Entrada no Modo Economia de Energia"
+      },
+      "led_brightness": {
+        "name": "Brilho do LED"
+      },
+      "display_brightness": {
+        "name": "Brilho do Display"
+      },
+      "display_on_time": {
+        "name": "Tempo de Ativação do Display"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Sensibilidade de Movimento"
+      },
+      "vibration_sensitivity": {
+        "name": "Sensibilidade de Vibração"
+      },
+      "state_after_power_outage": {
+        "name": "Estado Após Queda de Energia"
+      },
+      "smoke_sensitivity": {
+        "name": "Sensibilidade a Fumaça"
+      },
+      "display_direction": {
+        "name": "Orientação do Display"
+      },
+      "displayed_temperature": {
+        "name": "Temperatura Exibida"
+      },
+      "terminal_type": {
+        "name": "Tipo de Terminal"
+      },
+      "valve_type": {
+        "name": "Tipo de Válvula"
+      },
+      "heater_type": {
+        "name": "Tipo de Aquecedor"
+      },
+      "switch_type": {
+        "name": "Tipo de Interruptor"
+      },
+      "actuator_type": {
+        "name": "Tipo de Atuador"
+      },
+      "output_mode": {
+        "name": "Modo de Saída"
+      },
+      "smart_sensitivity_security": {
+        "name": "Nível de Sensibilidade de Segurança"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Nível de Sensibilidade de Conforto"
+      },
+      "orientation_light_response": {
+        "name": "Tempo de Resposta da Luz de Orientação"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Estado do Teste de Percurso"
+      },
+      "battery_level": {
+        "name": "Nível de Bateria"
+      },
+      "combined_rating": {
+        "name": "Avaliação Combinada"
+      },
+      "air_quality_description": {
+        "name": "Descrição da Qualidade do Ar"
+      },
+      "detection_state": {
+        "name": "Estado do Teste de Detecção"
+      },
+      "installation_profile": {
+        "name": "Perfil de Instalação"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Botão inferior",
+      "UPPER_BUTTON": "Botão superior",
+      "LOWER_LEFT_BUTTON": "Botão inferior esquerdo",
+      "UPPER_LEFT_BUTTON": "Botão superior esquerdo",
+      "LOWER_RIGHT_BUTTON": "Botão inferior direito",
+      "UPPER_RIGHT_BUTTON": "Botão superior direito",
+      "IDLE_OFF": "Alarme desativado",
+      "INTRUSION_ALARM": "Alarme de intrusão",
+      "SECONDARY_ALARM": "Alarme secundário",
+      "PRIMARY_ALARM": "Alarme primário",
+      "ALARM_OFF": "Alarme desativado",
+      "ALARM_ON": "Alarme ativado",
+      "ALARM_MUTED": "Alarme silenciado"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} pressionado brevemente",
+      "PRESS_LONG": "{subtype} pressionado longamente",
+      "MOTION": "Movimento detectado",
+      "SCENARIO": "Cenário {subtype} acionado",
+      "ALARM": "{subtype} acionado"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Verificação do Detector de Fumaça",
+      "description": "Executa a rotina de teste de um detector de fumaça.",
+      "fields": {
+        "entity_id": {
+          "name": "ID da entidade",
+          "description": "Nome da entidade do detector de fumaça."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Acionar Cenário",
+      "description": "Aciona um cenário no Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Nome do SHC",
+          "description": "Título do SHC"
+        },
+        "name": {
+          "name": "Nome do cenário",
+          "description": "Nome do cenário a ser acionado"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Acionar Rawscan",
+      "description": "Aciona um rawscan no Bosch SHC para descobrir dispositivos. O resultado é transmitido para o logger de informações.",
+      "fields": {
+        "title": {
+          "name": "Nome do SHC",
+          "description": "Título do SHC"
+        },
+        "command": {
+          "name": "Comando rawscan",
+          "description": "Comando rawscan a ser acionado. Comandos disponíveis: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID do dispositivo",
+          "description": "ID do dispositivo — obrigatório para os comandos 'device', 'device_services' ou 'device_service'"
+        },
+        "service_id": {
+          "name": "ID do serviço",
+          "description": "ID do serviço — obrigatório para o comando 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Estado de Alarme do Detector de Fumaça",
+      "description": "Envia um comando personalizado a um detector de fumaça.",
+      "fields": {
+        "entity_id": {
+          "name": "ID da entidade",
+          "description": "Nome da entidade do detector de fumaça."
+        },
+        "command": {
+          "name": "Comando personalizado",
+          "description": "String de comando a ser enviada ao detector de fumaça."
         }
       }
     }

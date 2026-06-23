@@ -41,11 +41,33 @@
       "reconfigure": {
         "title": "Reconfigurar Bosch SHC",
         "description": "Actualiza la dirección IP o el nombre de host de tu Bosch Smart Home Controller. Los certificados y credenciales se conservarán.",
+        "menu_options": {
+          "reconfigure_host": "Cambiar solo el host / dirección IP",
+          "repair_credentials": "Volver a vincular (regenerar certificado de cliente)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Cambiar host / dirección IP",
+        "description": "Actualice la dirección IP o el nombre de host de su Bosch Smart Home Controller. Sus certificados y credenciales se conservarán.",
         "data": {
           "host": "Host"
         },
         "data_description": {
           "host": "Nueva dirección IP o nombre de host del controlador SHC (p. ej. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Volver a vincular — regenerar certificado de cliente",
+        "description": "Pulse el botón de vinculación del SHC (SHC I: botón frontal hasta que el LED parpadee; SHC II: botón de función brevemente) y rellene el formulario a continuación.",
+        "data": {
+          "host": "Host",
+          "password": "Contraseña del Smart Home Controller",
+          "name": "Nombre de cliente para el certificado"
+        },
+        "data_description": {
+          "host": "Dirección IP o nombre de host del controlador SHC (p. ej. 192.168.x.y).",
+          "password": "La contraseña establecida en la aplicación Bosch Smart Home.",
+          "name": "Nombre que se muestra en la aplicación SHC en clientes conectados."
         }
       },
       "user": {
@@ -85,11 +107,17 @@
             "description": "Bloquea automáticamente todos los termostatos y dispositivos de interruptor SHC cuando alguien está en casa, y los desbloquea cuando todos se van.",
             "data": {
               "child_lock_enabled": "Activar bloqueo infantil por presencia",
-              "child_lock_presence_entity": "Entidades de presencia"
+              "child_lock_presence_entity": "Entidades de presencia",
+              "silent_mode_enabled": "Activar modo silencioso por presencia y franja horaria",
+              "silent_mode_start": "Hora de inicio del modo silencioso",
+              "silent_mode_end": "Hora de fin del modo silencioso"
             },
             "data_description": {
               "child_lock_enabled": "Interruptor principal. Cuando está ACTIVADO, el bloqueo infantil en todos los termostatos y dispositivos de interruptor SHC sigue las entidades de presencia que aparecen abajo — bloqueado cuando alguien está en casa, desbloqueado cuando todos están fuera. Cuando está DESACTIVADO, la integración nunca toca el bloqueo infantil.",
-              "child_lock_presence_entity": "Las personas/dispositivos que deciden el bloqueo infantil. Se activa en cuanto CUALQUIERA de ellas está en casa, y se desactiva solo cuando TODAS están fuera. Selecciona p. ej. las entidades Person de tu hogar. 'En casa' se detecta automáticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Las personas/dispositivos que deciden el bloqueo infantil. Se activa en cuanto CUALQUIERA de ellas está en casa, y se desactiva solo cuando TODAS están fuera. Selecciona p. ej. las entidades Person de tu hogar. 'En casa' se detecta automáticamente (home para person/device_tracker/zone/group, on para binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Cuando está ACTIVADO, todos los termostatos SHC compatibles con el modo silencioso se cambian a dicho modo mientras haya alguien en casa (según las entidades de presencia anteriores) Y la hora actual esté dentro de la franja indicada a continuación; en caso contrario vuelven al modo normal. Valor predeterminado: desactivado.",
+              "silent_mode_start": "Inicio de la franja diaria del modo silencioso (hora local). La franja puede cruzar la medianoche (p. ej. 22:00 → 06:00).",
+              "silent_mode_end": "Fin de la franja diaria del modo silencioso (hora local)."
             }
           },
           "advanced": {
@@ -99,16 +127,140 @@
               "ssl_verify_hostname": "Verificar nombre de host SSL",
               "long_poll_timeout": "Tiempo de espera de sondeo largo (segundos)",
               "excluded_devices": "Dispositivos excluidos",
-              "excluded_rooms": "Habitaciones excluidas"
+              "excluded_rooms": "Habitaciones excluidas",
+              "ssl_skip_verify": "Omitir verificación del certificado SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Cuando está ACTIVADO: la biblioteca boschshcpy verifica que el nombre de host del certificado SSL del controlador SHC coincida con su IP/nombre de host. Actualmente no tiene efecto — se requiere una futura actualización de boschshcpy. Predeterminado: desactivado.",
               "long_poll_timeout": "Tiempo (en segundos) que la solicitud de sondeo largo al controlador SHC espera eventos push antes de reconectarse. Rango: 5–300. Predeterminado: 30. Aumenta si ves reconexiones frecuentes en una red lenta; reduce si el router interrumpe las conexiones inactivas. Requiere una futura actualización de boschshcpy.",
               "excluded_devices": "Dispositivos que ocultar — no se crean entidades para ellos. Deja vacío para incluir todos. Las entidades existentes de dispositivos recién excluidos permanecen hasta que se eliminen manualmente.",
-              "excluded_rooms": "Oculta todos los dispositivos de estas habitaciones Bosch. Deja vacío para incluir todas."
+              "excluded_rooms": "Oculta todos los dispositivos de estas habitaciones Bosch. Deja vacío para incluir todas.",
+              "ssl_skip_verify": "Expertos / redes LAN solo locales: cuando está ACTIVADO, el certificado de servidor del SHC deja de verificarse — útil si el certificado de su controlador sin conexión ha caducado. El inicio de sesión cifrado con certificado de cliente no se ve afectado. Actívelo únicamente en una red local de confianza. Valor predeterminado: desactivado."
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Control de clima de habitación",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Prueba de humo"
+      },
+      "walk_test": {
+        "name": "Prueba de paso"
+      },
+      "walk_test_stop": {
+        "name": "Detener prueba de paso"
+      },
+      "detection_test": {
+        "name": "Prueba de detección"
+      },
+      "detection_test_stop": {
+        "name": "Detener prueba de detección"
+      },
+      "reset_tamper": {
+        "name": "Restablecer manipulación"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Duración del impulso"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Umbral de potencia para ahorro de energía"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Duración de activación del ahorro de energía"
+      },
+      "led_brightness": {
+        "name": "Brillo del LED"
+      },
+      "display_brightness": {
+        "name": "Brillo de la pantalla"
+      },
+      "display_on_time": {
+        "name": "Tiempo de encendido de la pantalla"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Sensibilidad de movimiento"
+      },
+      "vibration_sensitivity": {
+        "name": "Sensibilidad de vibración"
+      },
+      "state_after_power_outage": {
+        "name": "Estado tras un corte de alimentación"
+      },
+      "smoke_sensitivity": {
+        "name": "Sensibilidad al humo"
+      },
+      "display_direction": {
+        "name": "Orientación de la pantalla"
+      },
+      "displayed_temperature": {
+        "name": "Temperatura mostrada"
+      },
+      "terminal_type": {
+        "name": "Tipo de terminal"
+      },
+      "valve_type": {
+        "name": "Tipo de válvula"
+      },
+      "heater_type": {
+        "name": "Tipo de calefactor"
+      },
+      "switch_type": {
+        "name": "Tipo de interruptor"
+      },
+      "actuator_type": {
+        "name": "Tipo de actuador"
+      },
+      "output_mode": {
+        "name": "Modo de salida"
+      },
+      "smart_sensitivity_security": {
+        "name": "Nivel de sensibilidad de seguridad"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Nivel de sensibilidad de confort"
+      },
+      "orientation_light_response": {
+        "name": "Tiempo de respuesta de la luz de orientación"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Estado de la prueba de paso"
+      },
+      "battery_level": {
+        "name": "Nivel de batería"
+      },
+      "combined_rating": {
+        "name": "Valoración combinada"
+      },
+      "air_quality_description": {
+        "name": "Descripción de la calidad del aire"
+      },
+      "detection_state": {
+        "name": "Estado de la prueba de detección"
+      },
+      "installation_profile": {
+        "name": "Perfil de instalación"
       }
     }
   },
@@ -194,23 +346,6 @@
         "command": {
           "name": "Comando personalizado",
           "description": "Cadena de comando para enviar al detector de humo."
-        }
-      }
-    }
-  },
-  "entity": {
-    "climate": {
-      "room_climate_control": {
-        "name": "Control de clima de habitación",
-        "state_attributes": {
-          "preset_mode": {
-            "state": {
-              "auto": "Automático",
-              "manual": "Manual",
-              "eco": "Eco",
-              "boost": "Boost"
-            }
-          }
         }
       }
     }

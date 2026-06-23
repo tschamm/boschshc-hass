@@ -32,10 +32,24 @@ jobs:
           cache: pip
           cache-dependency-path: requirements_test.txt
 
+      # Retry the install: when this release follows a same-session boschshcpy
+      # release, the GitHub runner's PyPI edge may not have mirrored the new
+      # pinned version yet (propagation lags unevenly across CDN edges). Retry
+      # with backoff so the gate self-heals instead of needing a manual
+      # `gh run rerun --failed` once the edge catches up.
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_test.txt
+          for attempt in 1 2 3 4 5; do
+            if pip install -r requirements_test.txt; then
+              echo "Dependencies installed on attempt $attempt."
+              exit 0
+            fi
+            echo "::warning::pip install failed (attempt $attempt) — likely a PyPI edge-lag on a just-released pin; retrying in $((attempt * 30))s."
+            sleep $((attempt * 30))
+          done
+          echo "::error::pip install still failing after 5 attempts."
+          exit 1
 
       # Same pure-unit suite as tests.yml (HA-harness tests excluded).
       - name: Run unit tests

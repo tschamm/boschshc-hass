@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Enheten er allerede konfigurert",
-      "reauth_successful": "Re-autentisering var vellykket"
+      "reauth_successful": "Re-autentisering var vellykket",
+      "reconfigure_successful": "Rekonfigurasjonen var vellykket",
+      "wrong_shc": "Den angitte verten tilhører en annen Bosch SHC-kontroller. Vennligst oppgi riktig vert for denne oppføringen."
     },
     "error": {
       "cannot_connect": "Tilkobling mislyktes",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Klientnavn for sertifikat",
           "password": "Passordet til Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Navn som vises i SHC-appen under tilkoblede klienter.",
+          "password": "Passordet som er angitt i Bosch Smart Home-appen."
         }
       },
       "reauth_confirm": {
         "description": "Bosch_shc-integrasjonen må godkjenne kontoen din på nytt",
-        "title": "Godkjenne integrering på nytt"
+        "title": "Godkjenne integrering på nytt",
+        "data": {
+          "host": "Vert"
+        },
+        "data_description": {
+          "host": "IP-adresse eller vertsnavn for SHC-kontrolleren (f.eks. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Rekonfigurer Bosch SHC",
+        "description": "Velg hva du vil rekonfigurere.",
+        "menu_options": {
+          "reconfigure_host": "Endre kun vert / IP-adresse",
+          "repair_credentials": "Par på nytt (generer klientsertifikat på nytt)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Endre vert / IP-adresse",
+        "description": "Oppdater IP-adressen eller vertsnavnet til din Bosch Smart Home Controller. Sertifikatene og legitimasjonen din bevares.",
+        "data": {
+          "host": "Vert"
+        },
+        "data_description": {
+          "host": "Ny IP-adresse eller vertsnavn for SHC-kontrolleren (f.eks. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Par på nytt — generer klientsertifikat på nytt",
+        "description": "Trykk på paringknappen på SHC (SHC I: frontknappen til LED blinker; SHC II: funksjonsknappen kort) og fyll deretter ut skjemaet nedenfor.",
+        "data": {
+          "host": "Vert",
+          "password": "Passord for Smart Home Controller",
+          "name": "Klientnavn for sertifikat"
+        },
+        "data_description": {
+          "host": "IP-adresse eller vertsnavn for SHC-kontrolleren (f.eks. 192.168.x.y).",
+          "password": "Passordet som er angitt i Bosch Smart Home-appen.",
+          "name": "Navn som vises i SHC-appen under tilkoblede klienter."
+        }
       },
       "user": {
         "data": {
           "host": "Vert"
+        },
+        "data_description": {
+          "host": "IP-adresse eller vertsnavn for SHC-kontrolleren (f.eks. 192.168.x.y)."
         },
         "description": "Sett opp din Bosch Smart Home Controller for å tillate overvåking og kontroll med Home Assistant.",
         "title": "SHC-autentiseringsparametere"
@@ -59,11 +107,17 @@
             "description": "Lås automatisk alle SHC-termostater og -bryterenheter når noen er hjemme, og lås opp når alle drar.",
             "data": {
               "child_lock_enabled": "Aktiver tilstedeværelsesbasert barnesikring",
-              "child_lock_presence_entity": "Tilstedeværelsesenheter"
+              "child_lock_presence_entity": "Tilstedeværelsesenheter",
+              "silent_mode_enabled": "Aktiver stille modus basert på tilstedeværelse og tidsvindu",
+              "silent_mode_start": "Starttid for stille modus",
+              "silent_mode_end": "Sluttid for stille modus"
             },
             "data_description": {
               "child_lock_enabled": "Hovedbryter. Når PÅ følger barnesikringen på alle SHC-termostater og bryterenheter tilstedeværelsesenhetene nedenfor — låst når noen er hjemme, ulåst når alle er borte. Når AV berører integrasjonen aldri barnesikringen.",
-              "child_lock_presence_entity": "Personene/enhetene som bestemmer barnesikringen. Den slås PÅ så snart NOEN av dem er hjemme, og AV kun når ALLE er borte. Velg f.eks. Person-enhetene til husstandsmedlemmene dine. 'Hjemme' oppdages automatisk (home for person/device_tracker/zone/group, on for binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Personene/enhetene som bestemmer barnesikringen. Den slås PÅ så snart NOEN av dem er hjemme, og AV kun når ALLE er borte. Velg f.eks. Person-enhetene til husstandsmedlemmene dine. 'Hjemme' oppdages automatisk (home for person/device_tracker/zone/group, on for binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Når PÅ, settes alle SHC-termostater med støtte for stille modus til stille modus så lenge noen (ifølge tilstedeværelsesenhetene ovenfor) er hjemme OG gjeldende klokkeslett er innenfor vinduet nedenfor; ellers tilbake til normalt. Standard: av.",
+              "silent_mode_start": "Start på det daglige tidsvinduet for stille modus (lokal tid). Vinduer kan gå over midnatt (f.eks. 22:00 → 06:00).",
+              "silent_mode_end": "Slutt på det daglige tidsvinduet for stille modus (lokal tid)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "Verifiser SHC-sertifikatets vertsnavn",
               "long_poll_timeout": "Lang polling-tidsavbrudd (sekunder)",
               "excluded_devices": "Ekskluderte enheter",
-              "excluded_rooms": "Ekskluderte rom"
+              "excluded_rooms": "Ekskluderte rom",
+              "ssl_skip_verify": "Hopp over verifisering av SHC-sertifikat"
             },
             "data_description": {
               "ssl_verify_hostname": "Ekspert: når PÅ, verifiseres SHC-ens TLS-sertifikatets vertsnavn. Bosch SHC-sertifikatets vertsnavn samsvarer normalt IKKE med IP-adressen, så aktivering av dette bryter vanligvis tilkoblingen — la stå AV med mindre du er sikker på at oppsettet ditt samsvarer. Standard: av.",
               "long_poll_timeout": "Hvor lenge hver lang polling-forespørsel venter på hendelser før tilkobling på nytt. Standard 10. Øk for å redusere tilkoblinger på nytt, reduser hvis nettverket ditt dropper inaktive tilkoblinger.",
               "excluded_devices": "Enheter som skal skjules — ingen enheter opprettes for dem. La stå tomt for å inkludere alle. Eksisterende enheter for nylig ekskluderte enheter forblir til de fjernes manuelt.",
-              "excluded_rooms": "Skjul alle enheter i disse Bosch-rommene. La stå tomt for å inkludere alle."
+              "excluded_rooms": "Skjul alle enheter i disse Bosch-rommene. La stå tomt for å inkludere alle.",
+              "ssl_skip_verify": "Ekspert / kun lokalt LAN: når PÅ, verifiseres ikke lenger SHC-serversertifikatet — nyttig hvis den frakoblede kontrollerens sertifikat har utløpt. Den krypterte innloggingen med klientsertifikat påvirkes ikke. Aktiver kun på et betrodd lokalt nettverk. Standard: av."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automatisk",
-              "manual": "Manuell",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Røyktest"
+      },
+      "walk_test": {
+        "name": "Gangtest"
+      },
+      "walk_test_stop": {
+        "name": "Stopp gangtest"
+      },
+      "detection_test": {
+        "name": "Deteksjonstest"
+      },
+      "detection_test_stop": {
+        "name": "Stopp deteksjonstest"
+      },
+      "reset_tamper": {
+        "name": "Tilbakestill sabotasjevarsel"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulslengde"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Effektgrense for energisparing"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Inngangsvarighet for energisparing"
+      },
+      "led_brightness": {
+        "name": "LED-lysstyrke"
+      },
+      "display_brightness": {
+        "name": "Skjermlysstyrke"
+      },
+      "display_on_time": {
+        "name": "Skjerm på-tid"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Bevegelsesfølsomhet"
+      },
+      "vibration_sensitivity": {
+        "name": "Vibrasjonsfølsomhet"
+      },
+      "state_after_power_outage": {
+        "name": "Tilstand etter strømbrudd"
+      },
+      "smoke_sensitivity": {
+        "name": "Røykfølsomhet"
+      },
+      "display_direction": {
+        "name": "Skjermretning"
+      },
+      "displayed_temperature": {
+        "name": "Vist temperatur"
+      },
+      "terminal_type": {
+        "name": "Terminaltype"
+      },
+      "valve_type": {
+        "name": "Ventiltype"
+      },
+      "heater_type": {
+        "name": "Varmertype"
+      },
+      "switch_type": {
+        "name": "Brytertype"
+      },
+      "actuator_type": {
+        "name": "Aktuatortype"
+      },
+      "output_mode": {
+        "name": "Utgangsmodus"
+      },
+      "smart_sensitivity_security": {
+        "name": "Sikkerhetsfølsomhetsnivå"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Komfortfølsomhetsnivå"
+      },
+      "orientation_light_response": {
+        "name": "Responstid for orienteringslys"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Gangtesttilstand"
+      },
+      "battery_level": {
+        "name": "Batterinivå"
+      },
+      "combined_rating": {
+        "name": "Samlet vurdering"
+      },
+      "air_quality_description": {
+        "name": "Beskrivelse av luftkvalitet"
+      },
+      "detection_state": {
+        "name": "Deteksjonstesttilstand"
+      },
+      "installation_profile": {
+        "name": "Installasjonsprofil"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Nedre knapp",
+      "UPPER_BUTTON": "Øvre knapp",
+      "LOWER_LEFT_BUTTON": "Nedre venstre knapp",
+      "UPPER_LEFT_BUTTON": "Øvre venstre knapp",
+      "LOWER_RIGHT_BUTTON": "Nedre høyre knapp",
+      "UPPER_RIGHT_BUTTON": "Øvre høyre knapp",
+      "IDLE_OFF": "Alarm av",
+      "INTRUSION_ALARM": "Innbruddsalarm",
+      "SECONDARY_ALARM": "Sekundæralarm",
+      "PRIMARY_ALARM": "Primæralarm",
+      "ALARM_OFF": "Alarm av",
+      "ALARM_ON": "Alarm på",
+      "ALARM_MUTED": "Alarm dempet"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} kort trykket",
+      "PRESS_LONG": "{subtype} langt trykket",
+      "MOTION": "Bevegelse oppdaget",
+      "SCENARIO": "Scenario {subtype} utløst",
+      "ALARM": "{subtype} utløst"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Røykdetektor-sjekk",
+      "description": "Kaller testroutinen til en røykdetektor.",
+      "fields": {
+        "entity_id": {
+          "name": "Enhets-ID",
+          "description": "Navn på røykdetektor-enheten."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Utløs scenario",
+      "description": "Utløser et scenario på Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "SHC-navn",
+          "description": "Tittel på SHC"
+        },
+        "name": {
+          "name": "Scenarionavn",
+          "description": "Navn på scenariet som skal utløses"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Utløs råskanning",
+      "description": "Utløser en råskanning på Bosch SHC for å oppdage enheter. Resultatet strømmes til info-loggeren.",
+      "fields": {
+        "title": {
+          "name": "SHC-navn",
+          "description": "Tittel på SHC"
+        },
+        "command": {
+          "name": "Råskanningskommando",
+          "description": "Råskanningskommando som skal utløses. Mulige kommandoer: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Enhets-ID",
+          "description": "Enhets-ID — påkrevd for kommandoene 'device', 'device_services' eller 'device_service'"
+        },
+        "service_id": {
+          "name": "Tjeneste-ID",
+          "description": "Tjeneste-ID — påkrevd for kommandoen 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Røykdetektor-alarmtilstand",
+      "description": "Send en egendefinert kommando til en røykdetektor.",
+      "fields": {
+        "entity_id": {
+          "name": "Enhets-ID",
+          "description": "Navn på røykdetektor-enheten."
+        },
+        "command": {
+          "name": "Egendefinert kommando",
+          "description": "Kommandostreng som skal sendes til røykdetektoren."
         }
       }
     }

@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Seade on juba häälestatud",
-      "reauth_successful": "Taastuvastamine õnnestus"
+      "reauth_successful": "Taastuvastamine õnnestus",
+      "reconfigure_successful": "Ümberkonfigureerimine õnnestus",
+      "wrong_shc": "Sisestatud host kuulub teisele Bosch SHC kontrollerile. Palun sisesta selle kirje jaoks õige host."
     },
     "error": {
       "cannot_connect": "Ühendamine nurjus",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Kliendi nimi sertifikaadi jaoks",
           "password": "Smart Home kontrolleri salasõna"
+        },
+        "data_description": {
+          "name": "Nimi, mis kuvatakse SHC rakenduses ühendatud klientide all.",
+          "password": "Bosch Smart Home rakenduses seadistatud parool."
         }
       },
       "reauth_confirm": {
         "description": "Bosch_shc sidumine peab konto uuesti autentima.",
-        "title": "Taastuvastamine"
+        "title": "Taastuvastamine",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "SHC kontrolleri IP-aadress või hostinimi (nt 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHC ümberkonfigureerimine",
+        "description": "Vali, mida soovid ümber konfigureerida.",
+        "menu_options": {
+          "reconfigure_host": "Muuda ainult hosti / IP-aadressi",
+          "repair_credentials": "Uuesti sidumine (genereeri kliendisertifikaat uuesti)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Muuda hosti / IP-aadressi",
+        "description": "Uuenda oma Bosch Smart Home kontrolleri IP-aadressi või hostinime. Sinu sertifikaadid ja mandaadid säilitatakse.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "SHC kontrolleri uus IP-aadress või hostinimi (nt 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Uuesti sidumine — genereeri kliendisertifikaat uuesti",
+        "description": "Vajuta SHC sidumise nuppu (SHC I: esipaneel nupp kuni LED vilgub; SHC II: funktsiooninupp lühidalt), seejärel täida allolev vorm.",
+        "data": {
+          "host": "Host",
+          "password": "Smart Home kontrolleri parool",
+          "name": "Kliendi nimi sertifikaadi jaoks"
+        },
+        "data_description": {
+          "host": "SHC kontrolleri IP-aadress või hostinimi (nt 192.168.x.y).",
+          "password": "Bosch Smart Home rakenduses seadistatud parool.",
+          "name": "Nimi, mis kuvatakse SHC rakenduses ühendatud klientide all."
+        }
       },
       "user": {
         "data": {
           "host": "Host"
+        },
+        "data_description": {
+          "host": "SHC kontrolleri IP-aadress või hostinimi (nt 192.168.x.y)."
         },
         "description": "Seadista oma Bosch Smart Home Controller, et võimaldada jälgimist ja juhtimist Home Assistantiga.",
         "title": "SHC autentimisparameetrid"
@@ -59,11 +107,17 @@
             "description": "Lukustab automaatselt kõik SHC termostaadid ja lülitid, kui keegi on kodus, ja avab need, kui kõik on lahkunud.",
             "data": {
               "child_lock_enabled": "Luba kohalolekupõhine lapselukk",
-              "child_lock_presence_entity": "Kohaloleku olemid"
+              "child_lock_presence_entity": "Kohaloleku olemid",
+              "silent_mode_enabled": "Luba kohalolek + ajavahemiku vaikusrežiim",
+              "silent_mode_start": "Vaikusrežiimi algusaeg",
+              "silent_mode_end": "Vaikusrežiimi lõpuaeg"
             },
             "data_description": {
               "child_lock_enabled": "Peamine lüliti. Kui on SEES, järgib lapselukk kõigil SHC termostaatidel ja lülitusseadmetel allpool olevaid kohaloleku olemeid — lukus, kui keegi on kodus, avatud, kui kõik on lahkunud. Kui on VÄLJAS, ei puutu integratsioon lapselukku kunagi.",
-              "child_lock_presence_entity": "Inimesed/seadmed, kes otsustavad lapseluku üle. Lülitub SISSE kohe, kui MÕNI neist on kodus, ja VÄLJA alles siis, kui KÕIK on eemal. Vali näiteks oma leibkonna Person olemid. 'Kodus' tuvastatakse automaatselt (home person/device_tracker/zone/group jaoks, on binary_sensor/input_boolean jaoks)."
+              "child_lock_presence_entity": "Inimesed/seadmed, kes otsustavad lapseluku üle. Lülitub SISSE kohe, kui MÕNI neist on kodus, ja VÄLJA alles siis, kui KÕIK on eemal. Vali näiteks oma leibkonna Person olemid. 'Kodus' tuvastatakse automaatselt (home person/device_tracker/zone/group jaoks, on binary_sensor/input_boolean jaoks).",
+              "silent_mode_enabled": "Kui ON, lülitatakse kõik vaikusrežiimi toetavad SHC termostaadid vaikusrežiimi, kui keegi (vastavalt ülalolevatele kohaloleku olemitele) on kodus JA praegune kellaaeg jääb allolevasse ajavahemikku; muul juhul naastakse tavapärasele režiimile. Vaikimisi: väljas.",
+              "silent_mode_start": "Igapäevase vaikusrežiimi ajavahemiku algus (kohalik aeg). Ajavahemik võib ületada keskööd (nt 22:00 → 06:00).",
+              "silent_mode_end": "Igapäevase vaikusrežiimi ajavahemiku lõpp (kohalik aeg)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "Kontrolli SHC sertifikaadi hostinimi",
               "long_poll_timeout": "Pika küsitluse ajalimit (sekundit)",
               "excluded_devices": "Välistatud seadmed",
-              "excluded_rooms": "Välistatud ruumid"
+              "excluded_rooms": "Välistatud ruumid",
+              "ssl_skip_verify": "Jäta SHC sertifikaadi kontrollimine vahele"
             },
             "data_description": {
               "ssl_verify_hostname": "Ekspert: kui SEES, kontrollitakse SHC TLS-sertifikaadi hostinimi. Bosch SHC sertifikaadi hostinimi ei vasta tavaliselt selle IP-le, seega selle lubamine katkestab tavaliselt ühenduse — jäta VÄLJA, kui sa ei tea, et sinu seadistus sobib. Vaikimisi: väljas.",
               "long_poll_timeout": "Kui kaua iga pika küsitluse päring ootab sündmusi enne taasühendamist. Vaikimisi: 10. Suurenda taasühenduste vähendamiseks, vähenda, kui võrk katkestab passiivsed ühendused.",
               "excluded_devices": "Peidetavad seadmed — nende jaoks ei looda ühtegi olemit. Jäta tühjaks kõigi kaasamiseks. Äsja välistatud seadmete olemasolevad olemid jäävad kuni käsitsi eemaldamiseni.",
-              "excluded_rooms": "Peida kõik seadmed nendes Boschi ruumides. Jäta tühjaks kõigi kaasamiseks."
+              "excluded_rooms": "Peida kõik seadmed nendes Boschi ruumides. Jäta tühjaks kõigi kaasamiseks.",
+              "ssl_skip_verify": "Ekspert / ainult kohalik LAN: kui ON, ei kontrollita enam SHC serveri sertifikaati — kasulik, kui võrguühenduseta kontrolleri sertifikaat on aegunud. Krüpteeritud kliendisertifikaadiga sisselogimine ei ole mõjutatud. Luba ainult usaldusväärses kohalikus võrgus. Vaikimisi: väljas."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automaatne",
-              "manual": "Käsitsi",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Suitsutest"
+      },
+      "walk_test": {
+        "name": "Kõnnistest"
+      },
+      "walk_test_stop": {
+        "name": "Kõnnistesti lõpetamine"
+      },
+      "detection_test": {
+        "name": "Tuvastamistest"
+      },
+      "detection_test_stop": {
+        "name": "Tuvastamistesti lõpetamine"
+      },
+      "reset_tamper": {
+        "name": "Lähtesta rikkumine"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulsi pikkus"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Energiasäästu võimsuse lävi"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Energiasäästu aktiveerimise kestus"
+      },
+      "led_brightness": {
+        "name": "LED heledus"
+      },
+      "display_brightness": {
+        "name": "Ekraani heledus"
+      },
+      "display_on_time": {
+        "name": "Ekraani olek-aeg"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Liikumistundlikkus"
+      },
+      "vibration_sensitivity": {
+        "name": "Vibratsioonitundlikkus"
+      },
+      "state_after_power_outage": {
+        "name": "Olek pärast toitekatkestust"
+      },
+      "smoke_sensitivity": {
+        "name": "Suitsutundlikkus"
+      },
+      "display_direction": {
+        "name": "Ekraani suund"
+      },
+      "displayed_temperature": {
+        "name": "Kuvatav temperatuur"
+      },
+      "terminal_type": {
+        "name": "Klemmi tüüp"
+      },
+      "valve_type": {
+        "name": "Klapi tüüp"
+      },
+      "heater_type": {
+        "name": "Kütteseadme tüüp"
+      },
+      "switch_type": {
+        "name": "Lüliti tüüp"
+      },
+      "actuator_type": {
+        "name": "Aktuaatori tüüp"
+      },
+      "output_mode": {
+        "name": "Väljundrežiim"
+      },
+      "smart_sensitivity_security": {
+        "name": "Turvalisuse tundlikkuse tase"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Mugavuse tundlikkuse tase"
+      },
+      "orientation_light_response": {
+        "name": "Orienteerumisvalgusti reageerimisaeg"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Kõnnistesti olek"
+      },
+      "battery_level": {
+        "name": "Aku tase"
+      },
+      "combined_rating": {
+        "name": "Kombineeritud hinnang"
+      },
+      "air_quality_description": {
+        "name": "Õhukvaliteedi kirjeldus"
+      },
+      "detection_state": {
+        "name": "Tuvastamistesti olek"
+      },
+      "installation_profile": {
+        "name": "Paigaldusprofiil"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Alumine nupp",
+      "UPPER_BUTTON": "Ülemine nupp",
+      "LOWER_LEFT_BUTTON": "Alumine vasak nupp",
+      "UPPER_LEFT_BUTTON": "Ülemine vasak nupp",
+      "LOWER_RIGHT_BUTTON": "Alumine parem nupp",
+      "UPPER_RIGHT_BUTTON": "Ülemine parem nupp",
+      "IDLE_OFF": "Alarm väljas",
+      "INTRUSION_ALARM": "Sissetungimisalarm",
+      "SECONDARY_ALARM": "Teisene alarm",
+      "PRIMARY_ALARM": "Esmane alarm",
+      "ALARM_OFF": "Alarm väljas",
+      "ALARM_ON": "Alarm sees",
+      "ALARM_MUTED": "Alarm vaigistatud"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} lühike vajutus",
+      "PRESS_LONG": "{subtype} pikk vajutus",
+      "MOTION": "Liikumine tuvastatud",
+      "SCENARIO": "Stsenaarium {subtype} käivitati",
+      "ALARM": "{subtype} käivitati"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Suitsuanduri kontroll",
+      "description": "Käivitab suitsuanduri testprotseduuri.",
+      "fields": {
+        "entity_id": {
+          "name": "Olemi ID",
+          "description": "Suitsuanduri olemi nimi."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Käivita stsenaarium",
+      "description": "Käivitab Bosch SHC stsenaariumi.",
+      "fields": {
+        "title": {
+          "name": "SHC nimi",
+          "description": "SHC pealkiri"
+        },
+        "name": {
+          "name": "Stsenaariumi nimi",
+          "description": "Käivitatava stsenaariumi nimi"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Käivita toorskaneerimine",
+      "description": "Käivitab Bosch SHC toorskaneerimise seadmete avastamiseks. Tulemus edastatakse info logijasse.",
+      "fields": {
+        "title": {
+          "name": "SHC nimi",
+          "description": "SHC pealkiri"
+        },
+        "command": {
+          "name": "Toorskaneerimise käsk",
+          "description": "Käivitatav toorskaneerimise käsk. Võimalikud käsud: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Seadme ID",
+          "description": "Seadme ID — nõutav käskude 'device', 'device_services' või 'device_service' puhul"
+        },
+        "service_id": {
+          "name": "Teenuse ID",
+          "description": "Teenuse ID — nõutav käsu 'device_service' puhul"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Suitsuanduri häireseisund",
+      "description": "Saada kohandatud käsk suitsuandurile.",
+      "fields": {
+        "entity_id": {
+          "name": "Olemi ID",
+          "description": "Suitsuanduri olemi nimi."
+        },
+        "command": {
+          "name": "Kohandatud käsk",
+          "description": "Suitsuandurile saadetav käsustring."
         }
       }
     }

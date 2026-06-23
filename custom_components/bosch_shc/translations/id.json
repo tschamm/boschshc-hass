@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Perangkat sudah dikonfigurasi",
-      "reauth_successful": "Autentikasi ulang berhasil"
+      "reauth_successful": "Autentikasi ulang berhasil",
+      "reconfigure_successful": "Konfigurasi ulang berhasil",
+      "wrong_shc": "Host yang dimasukkan milik pengontrol Bosch SHC yang berbeda. Harap masukkan host yang benar untuk entri ini."
     },
     "error": {
       "cannot_connect": "Gagal terhubung",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Nama klien untuk sertifikat",
           "password": "Kata Sandi dari Smart Home Controller"
+        },
+        "data_description": {
+          "name": "Nama yang ditampilkan di aplikasi SHC di bawah klien yang terhubung.",
+          "password": "Kata sandi yang ditetapkan di aplikasi Bosch Smart Home."
         }
       },
       "reauth_confirm": {
         "description": "Integrasi bosch_shc perlu mengautentikasi ulang akun Anda",
-        "title": "Autentikasi Ulang Integrasi"
+        "title": "Autentikasi Ulang Integrasi",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "Alamat IP atau nama host pengontrol SHC (mis. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Konfigurasi ulang Bosch SHC",
+        "description": "Pilih apa yang ingin Anda konfigurasi ulang.",
+        "menu_options": {
+          "reconfigure_host": "Ubah host / alamat IP saja",
+          "repair_credentials": "Pasang ulang (buat ulang sertifikat klien)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Ubah host / alamat IP",
+        "description": "Perbarui alamat IP atau nama host Bosch Smart Home Controller Anda. Sertifikat dan kredensial Anda akan dipertahankan.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "Alamat IP atau nama host baru pengontrol SHC (mis. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Pasang ulang — buat ulang sertifikat klien",
+        "description": "Tekan tombol pemasangan pada SHC (SHC I: tombol depan hingga LED berkedip; SHC II: tombol fungsi sebentar) lalu isi formulir di bawah ini.",
+        "data": {
+          "host": "Host",
+          "password": "Kata sandi Smart Home Controller",
+          "name": "Nama klien untuk sertifikat"
+        },
+        "data_description": {
+          "host": "Alamat IP atau nama host pengontrol SHC (mis. 192.168.x.y).",
+          "password": "Kata sandi yang ditetapkan di aplikasi Bosch Smart Home.",
+          "name": "Nama yang ditampilkan di aplikasi SHC di bawah klien yang terhubung."
+        }
       },
       "user": {
         "data": {
           "host": "Host"
+        },
+        "data_description": {
+          "host": "Alamat IP atau nama host pengontrol SHC (mis. 192.168.x.y)."
         },
         "description": "Siapkan Bosch Smart Home Controller Anda untuk memungkinkan pemantauan dan kontrol dengan Home Assistant.",
         "title": "Parameter autentikasi SHC"
@@ -59,11 +107,17 @@
             "description": "Kunci semua termostat dan sakelar SHC secara otomatis saat seseorang ada di rumah, dan buka kuncinya saat semua orang pergi.",
             "data": {
               "child_lock_enabled": "Aktifkan kunci anak berbasis kehadiran",
-              "child_lock_presence_entity": "Entitas kehadiran"
+              "child_lock_presence_entity": "Entitas kehadiran",
+              "silent_mode_enabled": "Aktifkan mode senyap berdasarkan kehadiran + jendela waktu",
+              "silent_mode_start": "Waktu mulai mode senyap",
+              "silent_mode_end": "Waktu akhir mode senyap"
             },
             "data_description": {
               "child_lock_enabled": "Sakelar utama. Saat AKTIF, kunci anak pada semua termostat dan perangkat sakelar SHC mengikuti entitas kehadiran di bawah — terkunci saat seseorang ada di rumah, tidak terkunci saat semua orang pergi. Saat NONAKTIF, integrasi tidak pernah menyentuh kunci anak.",
-              "child_lock_presence_entity": "Orang/perangkat yang menentukan kunci anak. Kunci AKTIF segera saat SALAH SATU dari mereka ada di rumah, dan NONAKTIF hanya saat SEMUA pergi. Pilih misalnya entitas Person dari anggota rumah tangga Anda. 'Di rumah' terdeteksi otomatis (home untuk person/device_tracker/zone/group, on untuk binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Orang/perangkat yang menentukan kunci anak. Kunci AKTIF segera saat SALAH SATU dari mereka ada di rumah, dan NONAKTIF hanya saat SEMUA pergi. Pilih misalnya entitas Person dari anggota rumah tangga Anda. 'Di rumah' terdeteksi otomatis (home untuk person/device_tracker/zone/group, on untuk binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Saat ON, setiap termostat SHC yang mendukung mode senyap akan dialihkan ke mode senyap selama seseorang (berdasarkan entitas kehadiran di atas) berada di rumah DAN waktu saat ini berada dalam jendela di bawah ini; jika tidak, kembali ke normal. Default: mati.",
+              "silent_mode_start": "Awal jendela mode senyap harian (waktu lokal). Jendela dapat melewati tengah malam (mis. 22:00 → 06:00).",
+              "silent_mode_end": "Akhir jendela mode senyap harian (waktu lokal)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "Verifikasi nama host sertifikat SHC",
               "long_poll_timeout": "Batas waktu long-poll (detik)",
               "excluded_devices": "Perangkat yang dikecualikan",
-              "excluded_rooms": "Ruangan yang dikecualikan"
+              "excluded_rooms": "Ruangan yang dikecualikan",
+              "ssl_skip_verify": "Lewati verifikasi sertifikat SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Ahli: jika AKTIF, nama host sertifikat TLS SHC diverifikasi. Nama host sertifikat Bosch SHC biasanya TIDAK cocok dengan IP-nya, sehingga mengaktifkan ini biasanya memutus koneksi — biarkan NONAKTIF kecuali Anda tahu bahwa konfigurasi Anda cocok. Default: nonaktif.",
               "long_poll_timeout": "Berapa lama setiap permintaan long-poll menunggu peristiwa sebelum menyambung kembali. Default: 10. Tingkatkan untuk mengurangi penyambungan ulang, kurangi jika jaringan Anda memutus koneksi idle.",
               "excluded_devices": "Perangkat yang disembunyikan — tidak ada entitas yang dibuat untuk mereka. Biarkan kosong untuk menyertakan semua. Entitas yang ada untuk perangkat yang baru dikecualikan tetap ada hingga dihapus secara manual.",
-              "excluded_rooms": "Sembunyikan setiap perangkat di ruangan Bosch ini. Biarkan kosong untuk menyertakan semua."
+              "excluded_rooms": "Sembunyikan setiap perangkat di ruangan Bosch ini. Biarkan kosong untuk menyertakan semua.",
+              "ssl_skip_verify": "Ahli / LAN lokal saja: saat ON, sertifikat server SHC tidak lagi diverifikasi — berguna jika sertifikat pengontrol offline Anda telah kedaluwarsa. Login sertifikat klien terenkripsi tidak terpengaruh. Hanya aktifkan pada jaringan lokal yang terpercaya. Default: mati."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Otomatis",
-              "manual": "Manual",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Uji Asap"
+      },
+      "walk_test": {
+        "name": "Uji Jalan"
+      },
+      "walk_test_stop": {
+        "name": "Hentikan Uji Jalan"
+      },
+      "detection_test": {
+        "name": "Uji Deteksi"
+      },
+      "detection_test_stop": {
+        "name": "Hentikan Uji Deteksi"
+      },
+      "reset_tamper": {
+        "name": "Reset Gangguan"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Panjang Impuls"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Ambang Daya Hemat Energi"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Durasi Masuk Mode Hemat Energi"
+      },
+      "led_brightness": {
+        "name": "Kecerahan LED"
+      },
+      "display_brightness": {
+        "name": "Kecerahan Layar"
+      },
+      "display_on_time": {
+        "name": "Waktu Layar Menyala"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Sensitivitas Gerak"
+      },
+      "vibration_sensitivity": {
+        "name": "Sensitivitas Getaran"
+      },
+      "state_after_power_outage": {
+        "name": "Status Setelah Pemadaman Listrik"
+      },
+      "smoke_sensitivity": {
+        "name": "Sensitivitas Asap"
+      },
+      "display_direction": {
+        "name": "Arah Tampilan"
+      },
+      "displayed_temperature": {
+        "name": "Suhu yang Ditampilkan"
+      },
+      "terminal_type": {
+        "name": "Jenis Terminal"
+      },
+      "valve_type": {
+        "name": "Jenis Katup"
+      },
+      "heater_type": {
+        "name": "Jenis Pemanas"
+      },
+      "switch_type": {
+        "name": "Jenis Sakelar"
+      },
+      "actuator_type": {
+        "name": "Jenis Aktuator"
+      },
+      "output_mode": {
+        "name": "Mode Keluaran"
+      },
+      "smart_sensitivity_security": {
+        "name": "Tingkat Sensitivitas Keamanan"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Tingkat Sensitivitas Kenyamanan"
+      },
+      "orientation_light_response": {
+        "name": "Waktu Respons Lampu Orientasi"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Status Uji Jalan"
+      },
+      "battery_level": {
+        "name": "Level Baterai"
+      },
+      "combined_rating": {
+        "name": "Penilaian Gabungan"
+      },
+      "air_quality_description": {
+        "name": "Deskripsi Kualitas Udara"
+      },
+      "detection_state": {
+        "name": "Status Uji Deteksi"
+      },
+      "installation_profile": {
+        "name": "Profil Pemasangan"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Tombol bawah",
+      "UPPER_BUTTON": "Tombol atas",
+      "LOWER_LEFT_BUTTON": "Tombol kiri bawah",
+      "UPPER_LEFT_BUTTON": "Tombol kiri atas",
+      "LOWER_RIGHT_BUTTON": "Tombol kanan bawah",
+      "UPPER_RIGHT_BUTTON": "Tombol kanan atas",
+      "IDLE_OFF": "Alarm mati",
+      "INTRUSION_ALARM": "Alarm penyusupan",
+      "SECONDARY_ALARM": "Alarm sekunder",
+      "PRIMARY_ALARM": "Alarm utama",
+      "ALARM_OFF": "Alarm mati",
+      "ALARM_ON": "Alarm aktif",
+      "ALARM_MUTED": "Alarm dimatikan sementara"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} diklik singkat",
+      "PRESS_LONG": "{subtype} diklik panjang",
+      "MOTION": "Gerakan terdeteksi",
+      "SCENARIO": "Skenario {subtype} dipicu",
+      "ALARM": "{subtype} dipicu"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Pemeriksaan Detektor Asap",
+      "description": "Memanggil rutinitas uji detektor asap.",
+      "fields": {
+        "entity_id": {
+          "name": "ID Entitas",
+          "description": "Nama entitas detektor asap."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Picu Skenario",
+      "description": "Memicu skenario pada Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Nama SHC",
+          "description": "Judul SHC"
+        },
+        "name": {
+          "name": "Nama skenario",
+          "description": "Nama skenario yang akan dipicu"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Picu Rawscan",
+      "description": "Memicu rawscan pada Bosch SHC untuk menemukan perangkat. Hasilnya dialirkan ke logger info.",
+      "fields": {
+        "title": {
+          "name": "Nama SHC",
+          "description": "Judul SHC"
+        },
+        "command": {
+          "name": "Perintah rawscan",
+          "description": "Perintah rawscan yang akan dipicu. Perintah yang tersedia: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID Perangkat",
+          "description": "ID Perangkat — diperlukan untuk perintah 'device', 'device_services', atau 'device_service'"
+        },
+        "service_id": {
+          "name": "ID Layanan",
+          "description": "ID Layanan — diperlukan untuk perintah 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Status Alarm Detektor Asap",
+      "description": "Kirim perintah kustom ke detektor asap.",
+      "fields": {
+        "entity_id": {
+          "name": "ID Entitas",
+          "description": "Nama entitas detektor asap."
+        },
+        "command": {
+          "name": "Perintah kustom",
+          "description": "String perintah yang akan dikirim ke detektor asap."
         }
       }
     }

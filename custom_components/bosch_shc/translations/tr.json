@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Cihaz zaten yapılandırılmış",
-      "reauth_successful": "Yeniden kimlik doğrulama başarılı oldu"
+      "reauth_successful": "Yeniden kimlik doğrulama başarılı oldu",
+      "reconfigure_successful": "Yeniden yapılandırma başarılı oldu",
+      "wrong_shc": "Girilen ana makine farklı bir Bosch SHC denetleyicisine ait. Lütfen bu giriş için doğru ana makineyi girin."
     },
     "error": {
       "cannot_connect": "Bağlanma hatası",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Sertifika için istemci adı",
           "password": "Akıllı Ev Denetleyicisinin Şifresi"
+        },
+        "data_description": {
+          "name": "SHC uygulamasında bağlı istemciler altında gösterilen ad.",
+          "password": "Bosch Smart Home uygulamasında ayarlanan parola."
         }
       },
       "reauth_confirm": {
         "description": "bosch_shc entegrasyonunun hesabınızı yeniden doğrulaması gerekiyor",
-        "title": "Entegrasyonu Yeniden Doğrula"
+        "title": "Entegrasyonu Yeniden Doğrula",
+        "data": {
+          "host": "Ana makine"
+        },
+        "data_description": {
+          "host": "SHC denetleyicisinin IP adresi veya ana makine adı (örn. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHC'yi Yeniden Yapılandır",
+        "description": "Yeniden yapılandırmak istediğinizi seçin.",
+        "menu_options": {
+          "reconfigure_host": "Yalnızca ana makineyi / IP adresini değiştir",
+          "repair_credentials": "Yeniden eşleştir (istemci sertifikasını yeniden oluştur)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Ana makineyi / IP adresini değiştir",
+        "description": "Bosch Smart Home Controller'ınızın IP adresini veya ana makine adını güncelleyin. Sertifikalarınız ve kimlik bilgileriniz korunacaktır.",
+        "data": {
+          "host": "Ana makine"
+        },
+        "data_description": {
+          "host": "SHC denetleyicisinin yeni IP adresi veya ana makine adı (örn. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Yeniden eşleştir — istemci sertifikasını yeniden oluştur",
+        "description": "SHC üzerindeki eşleştirme düğmesine basın (SHC I: LED yanıp sönene kadar ön düğmeye basın; SHC II: işlev düğmesine kısa süre basın) ve ardından aşağıdaki formu doldurun.",
+        "data": {
+          "host": "Ana makine",
+          "password": "Smart Home Controller parolası",
+          "name": "Sertifika için istemci adı"
+        },
+        "data_description": {
+          "host": "SHC denetleyicisinin IP adresi veya ana makine adı (örn. 192.168.x.y).",
+          "password": "Bosch Smart Home uygulamasında ayarlanan parola.",
+          "name": "SHC uygulamasında bağlı istemciler altında gösterilen ad."
+        }
       },
       "user": {
         "data": {
           "host": "Sunucu"
+        },
+        "data_description": {
+          "host": "SHC denetleyicisinin IP adresi veya ana makine adı (örn. 192.168.x.y)."
         },
         "description": "Ev Asistanı ile izleme ve kontrole izin vermek için Bosch Akıllı Ev Denetleyicinizi kurun.",
         "title": "SHC kimlik doğrulama parametreleri"
@@ -59,11 +107,17 @@
             "description": "Evde biri olduğunda tüm SHC termostatlarını ve anahtarlarını otomatik olarak kilitleyin, herkes ayrıldığında kilidi açın.",
             "data": {
               "child_lock_enabled": "Varlığa dayalı çocuk kilidini etkinleştir",
-              "child_lock_presence_entity": "Varlık entiteleri"
+              "child_lock_presence_entity": "Varlık entiteleri",
+              "silent_mode_enabled": "Varlık + zaman penceresi sessiz modu etkinleştir",
+              "silent_mode_start": "Sessiz mod başlangıç zamanı",
+              "silent_mode_end": "Sessiz mod bitiş zamanı"
             },
             "data_description": {
               "child_lock_enabled": "Ana anahtar. AÇIK olduğunda, tüm SHC termostatları ve anahtar cihazlarındaki çocuk kilidi aşağıdaki varlık entitelerini takip eder — evde biri olduğunda kilitli, herkes dışarıda olduğunda açık. KAPALI olduğunda entegrasyon çocuk kilidine hiç dokunmaz.",
-              "child_lock_presence_entity": "Çocuk kilidine karar veren kişiler/cihazlar. HERHANGİ biri evde olur olmaz AÇILIR ve yalnızca TÜMÜ dışarıda olduğunda KAPANIR. Örneğin hanenizdeki Person entitelerini seçin. 'Evde' otomatik olarak algılanır (person/device_tracker/zone/group için home, binary_sensor/input_boolean için on)."
+              "child_lock_presence_entity": "Çocuk kilidine karar veren kişiler/cihazlar. HERHANGİ biri evde olur olmaz AÇILIR ve yalnızca TÜMÜ dışarıda olduğunda KAPANIR. Örneğin hanenizdeki Person entitelerini seçin. 'Evde' otomatik olarak algılanır (person/device_tracker/zone/group için home, binary_sensor/input_boolean için on).",
+              "silent_mode_enabled": "ON olduğunda, yukarıdaki varlık varlıklarına göre evde biri var ise VE geçerli saat aşağıdaki pencere içindeyse, sessiz moda uyumlu her SHC termostatı sessiz moda geçirilir; aksi takdirde normale döner. Varsayılan: kapalı.",
+              "silent_mode_start": "Günlük sessiz mod penceresinin başlangıcı (yerel saat). Pencereler gece yarısını geçebilir (örn. 22:00 → 06:00).",
+              "silent_mode_end": "Günlük sessiz mod penceresinin sonu (yerel saat)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "SHC sertifikası ana bilgisayar adını doğrula",
               "long_poll_timeout": "Uzun yoklama zaman aşımı (saniye)",
               "excluded_devices": "Hariç tutulan cihazlar",
-              "excluded_rooms": "Hariç tutulan odalar"
+              "excluded_rooms": "Hariç tutulan odalar",
+              "ssl_skip_verify": "SHC sertifika doğrulamasını atla"
             },
             "data_description": {
               "ssl_verify_hostname": "Uzman: AÇIK olduğunda SHC'nin TLS sertifikası ana bilgisayar adı doğrulanır. Bosch SHC sertifikasının ana bilgisayar adı normalde IP adresiyle EŞLEŞMEDİĞİNDEN bunu etkinleştirmek genellikle bağlantıyı keser — kurulumunuzun eşleştiğinden emin değilseniz KAPALI bırakın. Varsayılan: kapalı.",
               "long_poll_timeout": "Her uzun yoklama isteğinin yeniden bağlanmadan önce olayları ne kadar süre beklediği. Varsayılan 10. Yeniden bağlanmaları azaltmak için artırın, ağınız boşta kalan bağlantıları kesiyorsa azaltın.",
               "excluded_devices": "Gizlenecek cihazlar — bunlar için varlık oluşturulmaz. Tümünü dahil etmek için boş bırakın. Yeni hariç tutulan cihazlar için mevcut varlıklar manuel olarak kaldırılana kadar kalır.",
-              "excluded_rooms": "Bu Bosch odalarındaki tüm cihazları gizleyin. Tümünü dahil etmek için boş bırakın."
+              "excluded_rooms": "Bu Bosch odalarındaki tüm cihazları gizleyin. Tümünü dahil etmek için boş bırakın.",
+              "ssl_skip_verify": "Uzman / yalnızca yerel LAN: ON olduğunda SHC sunucu sertifikası artık doğrulanmaz — sertifikası süresi dolmuş çevrimdışı denetleyiciler için kullanışlıdır. Şifreli istemci sertifikası girişi etkilenmez. Yalnızca güvenilen yerel ağda etkinleştirin. Varsayılan: kapalı."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Otomatik",
-              "manual": "Manuel",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Duman Testi"
+      },
+      "walk_test": {
+        "name": "Yürüyüş Testi"
+      },
+      "walk_test_stop": {
+        "name": "Yürüyüş Testini Durdur"
+      },
+      "detection_test": {
+        "name": "Algılama Testi"
+      },
+      "detection_test_stop": {
+        "name": "Algılama Testini Durdur"
+      },
+      "reset_tamper": {
+        "name": "Müdahaleyi Sıfırla"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Darbe Süresi"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Enerji Tasarrufu Güç Eşiği"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Enerji Tasarrufu Giriş Süresi"
+      },
+      "led_brightness": {
+        "name": "LED Parlaklığı"
+      },
+      "display_brightness": {
+        "name": "Ekran Parlaklığı"
+      },
+      "display_on_time": {
+        "name": "Ekran Açık Kalma Süresi"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Hareket Duyarlılığı"
+      },
+      "vibration_sensitivity": {
+        "name": "Titreşim Duyarlılığı"
+      },
+      "state_after_power_outage": {
+        "name": "Güç Kesintisi Sonrası Durum"
+      },
+      "smoke_sensitivity": {
+        "name": "Duman Duyarlılığı"
+      },
+      "display_direction": {
+        "name": "Ekran Yönü"
+      },
+      "displayed_temperature": {
+        "name": "Gösterilen Sıcaklık"
+      },
+      "terminal_type": {
+        "name": "Terminal Türü"
+      },
+      "valve_type": {
+        "name": "Vana Türü"
+      },
+      "heater_type": {
+        "name": "Isıtıcı Türü"
+      },
+      "switch_type": {
+        "name": "Anahtar Türü"
+      },
+      "actuator_type": {
+        "name": "Aktüatör Türü"
+      },
+      "output_mode": {
+        "name": "Çıkış Modu"
+      },
+      "smart_sensitivity_security": {
+        "name": "Güvenlik Duyarlılık Seviyesi"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Konfor Duyarlılık Seviyesi"
+      },
+      "orientation_light_response": {
+        "name": "Yön Işığı Tepki Süresi"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Yürüyüş Testi Durumu"
+      },
+      "battery_level": {
+        "name": "Pil Seviyesi"
+      },
+      "combined_rating": {
+        "name": "Birleşik Değerlendirme"
+      },
+      "air_quality_description": {
+        "name": "Hava Kalitesi Açıklaması"
+      },
+      "detection_state": {
+        "name": "Algılama Testi Durumu"
+      },
+      "installation_profile": {
+        "name": "Kurulum Profili"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Alt düğme",
+      "UPPER_BUTTON": "Üst düğme",
+      "LOWER_LEFT_BUTTON": "Sol alt düğme",
+      "UPPER_LEFT_BUTTON": "Sol üst düğme",
+      "LOWER_RIGHT_BUTTON": "Sağ alt düğme",
+      "UPPER_RIGHT_BUTTON": "Sağ üst düğme",
+      "IDLE_OFF": "Alarm kapalı",
+      "INTRUSION_ALARM": "İzinsiz giriş alarmı",
+      "SECONDARY_ALARM": "İkincil alarm",
+      "PRIMARY_ALARM": "Birincil alarm",
+      "ALARM_OFF": "Alarm kapalı",
+      "ALARM_ON": "Alarm açık",
+      "ALARM_MUTED": "Alarm sessize alındı"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} kısa tıklandı",
+      "PRESS_LONG": "{subtype} uzun tıklandı",
+      "MOTION": "Hareket algılandı",
+      "SCENARIO": "{subtype} senaryosu tetiklendi",
+      "ALARM": "{subtype} tetiklendi"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Duman Dedektörü Kontrolü",
+      "description": "Bir duman dedektörünün test rutinini çağırır.",
+      "fields": {
+        "entity_id": {
+          "name": "Varlık Kimliği",
+          "description": "Duman dedektörü varlığının adı."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Senaryo Tetikle",
+      "description": "Bosch SHC üzerinde bir senaryo tetikler.",
+      "fields": {
+        "title": {
+          "name": "SHC adı",
+          "description": "SHC'nin başlığı"
+        },
+        "name": {
+          "name": "Senaryo adı",
+          "description": "Tetiklenecek senaryonun adı"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Ham Tarama Tetikle",
+      "description": "Cihazları keşfetmek için Bosch SHC üzerinde ham tarama başlatır. Sonuç bilgi günlüğüne akıtılır.",
+      "fields": {
+        "title": {
+          "name": "SHC adı",
+          "description": "SHC'nin başlığı"
+        },
+        "command": {
+          "name": "Ham tarama komutu",
+          "description": "Tetiklenecek ham tarama komutu. Olası komutlar: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Cihaz Kimliği",
+          "description": "Cihaz Kimliği — 'device', 'device_services' veya 'device_service' komutları için gereklidir"
+        },
+        "service_id": {
+          "name": "Hizmet Kimliği",
+          "description": "Hizmet Kimliği — 'device_service' komutu için gereklidir"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Duman Dedektörü Alarm Durumu",
+      "description": "Bir duman dedektörüne özel komut gönderir.",
+      "fields": {
+        "entity_id": {
+          "name": "Varlık Kimliği",
+          "description": "Duman dedektörü varlığının adı."
+        },
+        "command": {
+          "name": "Özel komut",
+          "description": "Duman dedektörüne gönderilecek komut dizesi."
         }
       }
     }

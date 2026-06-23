@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "기기가 이미 구성되었습니다",
-      "reauth_successful": "재인증에 성공했습니다"
+      "reauth_successful": "재인증에 성공했습니다",
+      "reconfigure_successful": "재구성이 완료되었습니다",
+      "wrong_shc": "입력한 호스트는 다른 Bosch SHC 컨트롤러에 속합니다. 이 항목에 맞는 올바른 호스트를 입력하세요."
     },
     "error": {
       "cannot_connect": "연결하지 못했습니다",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "인증서의 클라이언트 이름",
           "password": "Smart Home Controller의 비밀번호"
+        },
+        "data_description": {
+          "name": "SHC 앱의 연결된 클라이언트 목록에 표시되는 이름입니다.",
+          "password": "Bosch Smart Home 앱에서 설정한 비밀번호입니다."
         }
       },
       "reauth_confirm": {
         "description": "bosch_shc 통합구성요소는 계정을 다시 인증해야 합니다.",
-        "title": "통합 구성요소 재인증하기"
+        "title": "통합 구성요소 재인증하기",
+        "data": {
+          "host": "호스트"
+        },
+        "data_description": {
+          "host": "SHC 컨트롤러의 IP 주소 또는 호스트 이름 (예: 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHC 재구성",
+        "description": "재구성할 항목을 선택하세요.",
+        "menu_options": {
+          "reconfigure_host": "호스트 / IP 주소만 변경",
+          "repair_credentials": "재페어링 (클라이언트 인증서 재생성)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "호스트 / IP 주소 변경",
+        "description": "Bosch Smart Home Controller의 IP 주소 또는 호스트 이름을 업데이트합니다. 인증서 및 자격 증명은 유지됩니다.",
+        "data": {
+          "host": "호스트"
+        },
+        "data_description": {
+          "host": "SHC 컨트롤러의 새 IP 주소 또는 호스트 이름 (예: 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "재페어링 — 클라이언트 인증서 재생성",
+        "description": "SHC의 페어링 버튼을 누른 후 (SHC I: LED가 깜박일 때까지 전면 버튼 누름; SHC II: 기능 버튼 짧게 누름) 아래 양식을 작성하세요.",
+        "data": {
+          "host": "호스트",
+          "password": "Smart Home Controller 비밀번호",
+          "name": "인증서의 클라이언트 이름"
+        },
+        "data_description": {
+          "host": "SHC 컨트롤러의 IP 주소 또는 호스트 이름 (예: 192.168.x.y).",
+          "password": "Bosch Smart Home 앱에서 설정한 비밀번호입니다.",
+          "name": "SHC 앱의 연결된 클라이언트 목록에 표시되는 이름입니다."
+        }
       },
       "user": {
         "data": {
           "host": "호스트"
+        },
+        "data_description": {
+          "host": "SHC 컨트롤러의 IP 주소 또는 호스트 이름 (예: 192.168.x.y)."
         },
         "description": "Home Assistant로 모니터링하고 제어할 수 있도록 Bosch Smart Home Controller를 설정하십시오.",
         "title": "SHC 인증 매개변수"
@@ -59,11 +107,17 @@
             "description": "누군가 집에 있는 동안 모든 SHC 온도 조절기와 스위치를 자동으로 잠그고, 모든 사람이 외출하면 잠금을 해제합니다.",
             "data": {
               "child_lock_enabled": "재실 기반 아동 잠금 활성화",
-              "child_lock_presence_entity": "재실 엔티티"
+              "child_lock_presence_entity": "재실 엔티티",
+              "silent_mode_enabled": "재실 + 시간대 기반 무음 모드 활성화",
+              "silent_mode_start": "무음 모드 시작 시간",
+              "silent_mode_end": "무음 모드 종료 시간"
             },
             "data_description": {
               "child_lock_enabled": "마스터 스위치. 켜짐 시 모든 SHC 온도 조절기와 스위치 장치의 아동 잠금이 아래의 재실 엔티티를 따릅니다 — 누군가 집에 있으면 잠금, 모든 사람이 외출하면 잠금 해제. 꺼짐 시 통합이 아동 잠금을 건드리지 않습니다.",
-              "child_lock_presence_entity": "아동 잠금을 결정하는 사람/장치입니다. 이 중 하나라도 집에 있으면 즉시 켜지고, 모두 외출할 때만 꺼집니다. 예를 들어 가구 구성원의 Person 엔티티를 선택하세요. '집에 있음'은 자동으로 감지됩니다(person/device_tracker/zone/group은 home, binary_sensor/input_boolean은 on)."
+              "child_lock_presence_entity": "아동 잠금을 결정하는 사람/장치입니다. 이 중 하나라도 집에 있으면 즉시 켜지고, 모두 외출할 때만 꺼집니다. 예를 들어 가구 구성원의 Person 엔티티를 선택하세요. '집에 있음'은 자동으로 감지됩니다(person/device_tracker/zone/group은 home, binary_sensor/input_boolean은 on).",
+              "silent_mode_enabled": "ON으로 설정하면, 위의 재실 엔티티 기준으로 집에 사람이 있고 현재 시간이 아래 설정된 시간대 내에 있을 때 무음 모드를 지원하는 모든 SHC 온도 조절기가 무음 모드로 전환되며, 그 외에는 일반 모드로 복귀합니다. 기본값: 꺼짐.",
+              "silent_mode_start": "일일 무음 모드 시간대 시작 (현지 시간). 자정을 넘길 수 있습니다 (예: 22:00 → 06:00).",
+              "silent_mode_end": "일일 무음 모드 시간대 종료 (현지 시간)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "SHC 인증서 호스트 이름 확인",
               "long_poll_timeout": "롱 폴 타임아웃(초)",
               "excluded_devices": "제외된 장치",
-              "excluded_rooms": "제외된 방"
+              "excluded_rooms": "제외된 방",
+              "ssl_skip_verify": "SHC 인증서 확인 건너뛰기"
             },
             "data_description": {
               "ssl_verify_hostname": "전문가용: 켜짐일 때 SHC의 TLS 인증서 호스트 이름을 확인합니다. Bosch SHC 인증서의 호스트 이름은 일반적으로 IP와 일치하지 않으므로, 이 옵션을 활성화하면 보통 연결이 끊어집니다 — 설정이 일치한다고 확실한 경우가 아니면 끄세요. 기본값: 꺼짐.",
               "long_poll_timeout": "재연결 전 각 롱 폴 요청이 이벤트를 기다리는 시간입니다. 기본값 10. 재연결을 줄이려면 늘리고, 네트워크가 유휴 연결을 끊으면 줄이세요.",
               "excluded_devices": "숨길 장치 — 이 장치에 대한 엔티티가 생성되지 않습니다. 모두 포함하려면 비워두세요. 새로 제외된 장치의 기존 엔티티는 수동으로 제거할 때까지 유지됩니다.",
-              "excluded_rooms": "이 Bosch 방의 모든 장치를 숨깁니다. 모두 포함하려면 비워두세요."
+              "excluded_rooms": "이 Bosch 방의 모든 장치를 숨깁니다. 모두 포함하려면 비워두세요.",
+              "ssl_skip_verify": "전문가 / 로컬 전용 LAN 환경: ON으로 설정하면 SHC 서버 인증서를 더 이상 확인하지 않습니다. 오프라인 컨트롤러의 인증서가 만료된 경우 유용합니다. 암호화된 클라이언트 인증서 로그인에는 영향이 없습니다. 신뢰할 수 있는 로컬 네트워크에서만 활성화하세요. 기본값: 꺼짐."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "자동",
-              "manual": "수동",
-              "eco": "에코",
-              "boost": "부스트"
+              "boost": "부스트",
+              "eco": "에코"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "연기 테스트"
+      },
+      "walk_test": {
+        "name": "보행 테스트"
+      },
+      "walk_test_stop": {
+        "name": "보행 테스트 중지"
+      },
+      "detection_test": {
+        "name": "감지 테스트"
+      },
+      "detection_test_stop": {
+        "name": "감지 테스트 중지"
+      },
+      "reset_tamper": {
+        "name": "변조 초기화"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "임펄스 길이"
+      },
+      "energy_saving_power_threshold": {
+        "name": "절전 전력 임계값"
+      },
+      "energy_saving_enter_duration": {
+        "name": "절전 진입 지속 시간"
+      },
+      "led_brightness": {
+        "name": "LED 밝기"
+      },
+      "display_brightness": {
+        "name": "디스플레이 밝기"
+      },
+      "display_on_time": {
+        "name": "디스플레이 켜짐 시간"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "동작 감도"
+      },
+      "vibration_sensitivity": {
+        "name": "진동 감도"
+      },
+      "state_after_power_outage": {
+        "name": "정전 후 상태"
+      },
+      "smoke_sensitivity": {
+        "name": "연기 감도"
+      },
+      "display_direction": {
+        "name": "디스플레이 방향"
+      },
+      "displayed_temperature": {
+        "name": "표시 온도"
+      },
+      "terminal_type": {
+        "name": "단자 유형"
+      },
+      "valve_type": {
+        "name": "밸브 유형"
+      },
+      "heater_type": {
+        "name": "히터 유형"
+      },
+      "switch_type": {
+        "name": "스위치 유형"
+      },
+      "actuator_type": {
+        "name": "액추에이터 유형"
+      },
+      "output_mode": {
+        "name": "출력 모드"
+      },
+      "smart_sensitivity_security": {
+        "name": "보안 감도 수준"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "편의 감도 수준"
+      },
+      "orientation_light_response": {
+        "name": "방향 표시등 반응 시간"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "보행 테스트 상태"
+      },
+      "battery_level": {
+        "name": "배터리 수준"
+      },
+      "combined_rating": {
+        "name": "종합 등급"
+      },
+      "air_quality_description": {
+        "name": "공기질 설명"
+      },
+      "detection_state": {
+        "name": "감지 테스트 상태"
+      },
+      "installation_profile": {
+        "name": "설치 프로파일"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "아래쪽 버튼",
+      "UPPER_BUTTON": "위쪽 버튼",
+      "LOWER_LEFT_BUTTON": "왼쪽 아래 버튼",
+      "UPPER_LEFT_BUTTON": "왼쪽 위 버튼",
+      "LOWER_RIGHT_BUTTON": "오른쪽 아래 버튼",
+      "UPPER_RIGHT_BUTTON": "오른쪽 위 버튼",
+      "IDLE_OFF": "알람 꺼짐",
+      "INTRUSION_ALARM": "침입 알람",
+      "SECONDARY_ALARM": "보조 알람",
+      "PRIMARY_ALARM": "주 알람",
+      "ALARM_OFF": "알람 꺼짐",
+      "ALARM_ON": "알람 켜짐",
+      "ALARM_MUTED": "알람 음소거"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} 짧게 누름",
+      "PRESS_LONG": "{subtype} 길게 누름",
+      "MOTION": "동작 감지됨",
+      "SCENARIO": "시나리오 {subtype} 실행됨",
+      "ALARM": "{subtype} 실행됨"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "연기 감지기 점검",
+      "description": "연기 감지기의 테스트 루틴을 실행합니다.",
+      "fields": {
+        "entity_id": {
+          "name": "엔티티 ID",
+          "description": "연기 감지기 엔티티의 이름입니다."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "시나리오 실행",
+      "description": "Bosch SHC에서 시나리오를 실행합니다.",
+      "fields": {
+        "title": {
+          "name": "SHC 이름",
+          "description": "SHC의 타이틀"
+        },
+        "name": {
+          "name": "시나리오 이름",
+          "description": "실행할 시나리오의 이름"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "원시 스캔 실행",
+      "description": "Bosch SHC에서 원시 스캔을 실행하여 장치를 검색합니다. 결과는 정보 로거로 스트리밍됩니다.",
+      "fields": {
+        "title": {
+          "name": "SHC 이름",
+          "description": "SHC의 타이틀"
+        },
+        "command": {
+          "name": "원시 스캔 명령",
+          "description": "실행할 원시 스캔 명령입니다. 가능한 명령: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "장치 ID",
+          "description": "장치 ID — 'device', 'device_services' 또는 'device_service' 명령에 필요합니다"
+        },
+        "service_id": {
+          "name": "서비스 ID",
+          "description": "서비스 ID — 'device_service' 명령에 필요합니다"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "연기 감지기 알람 상태",
+      "description": "연기 감지기에 사용자 지정 명령을 전송합니다.",
+      "fields": {
+        "entity_id": {
+          "name": "엔티티 ID",
+          "description": "연기 감지기 엔티티의 이름입니다."
+        },
+        "command": {
+          "name": "사용자 지정 명령",
+          "description": "연기 감지기에 전송할 명령 문자열입니다."
         }
       }
     }

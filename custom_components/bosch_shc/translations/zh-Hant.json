@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "裝置已經設定完成",
-      "reauth_successful": "重新認證成功"
+      "reauth_successful": "重新認證成功",
+      "reconfigure_successful": "重新設定成功",
+      "wrong_shc": "所輸入的主機屬於不同的 Bosch SHC 控制器。請為此項目輸入正確的主機。"
     },
     "error": {
       "cannot_connect": "連線失敗",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "憑證的用戶端名稱",
           "password": "Smart Home Controller 密碼"
+        },
+        "data_description": {
+          "name": "顯示於 SHC 應用程式已連線用戶端下的名稱。",
+          "password": "在 Bosch Smart Home 應用程式中設定的密碼。"
         }
       },
       "reauth_confirm": {
         "description": "bosch_shc 整合需要重新認證您的帳號",
-        "title": "重新認證整合"
+        "title": "重新認證整合",
+        "data": {
+          "host": "主機"
+        },
+        "data_description": {
+          "host": "SHC 控制器的 IP 位址或主機名稱（例如 192.168.x.y）。"
+        }
+      },
+      "reconfigure": {
+        "title": "重新設定 Bosch SHC",
+        "description": "選擇您要重新設定的項目。",
+        "menu_options": {
+          "reconfigure_host": "僅變更主機 / IP 位址",
+          "repair_credentials": "重新配對（重新產生用戶端憑證）"
+        }
+      },
+      "reconfigure_host": {
+        "title": "變更主機 / IP 位址",
+        "description": "更新您的 Bosch Smart Home Controller 的 IP 位址或主機名稱。您的憑證與認證資料將予以保留。",
+        "data": {
+          "host": "主機"
+        },
+        "data_description": {
+          "host": "SHC 控制器的新 IP 位址或主機名稱（例如 192.168.x.y）。"
+        }
+      },
+      "repair_credentials": {
+        "title": "重新配對 — 重新產生用戶端憑證",
+        "description": "按下 SHC 上的配對按鈕（SHC I：按住前方按鈕直到 LED 閃爍；SHC II：短按功能按鈕），然後填寫下方表單。",
+        "data": {
+          "host": "主機",
+          "password": "Smart Home Controller 的密碼",
+          "name": "憑證的用戶端名稱"
+        },
+        "data_description": {
+          "host": "SHC 控制器的 IP 位址或主機名稱（例如 192.168.x.y）。",
+          "password": "在 Bosch Smart Home 應用程式中設定的密碼。",
+          "name": "顯示於 SHC 應用程式已連線用戶端下的名稱。"
+        }
       },
       "user": {
         "data": {
           "host": "主機端"
+        },
+        "data_description": {
+          "host": "SHC 控制器的 IP 位址或主機名稱（例如 192.168.x.y）。"
         },
         "description": "設定 Bosch Smart Home Controller 以允許 Home Assistant 進行監控。",
         "title": "SHC 認證參數"
@@ -59,11 +107,17 @@
             "description": "有人在家時自動鎖定所有 SHC 恆溫器和開關，所有人離開後自動解鎖。",
             "data": {
               "child_lock_enabled": "啟用基於在家狀態的兒童鎖",
-              "child_lock_presence_entity": "在家偵測實體"
+              "child_lock_presence_entity": "在家偵測實體",
+              "silent_mode_enabled": "啟用在宅偵測 + 時段靜音模式",
+              "silent_mode_start": "靜音模式開始時間",
+              "silent_mode_end": "靜音模式結束時間"
             },
             "data_description": {
               "child_lock_enabled": "主開關。開啟時，所有 SHC 恆溫器和開關裝置的兒童鎖跟隨下方的在家偵測實體——有人在家時鎖定，所有人離開時解鎖。關閉時，整合不會觸碰兒童鎖。",
-              "child_lock_presence_entity": "決定兒童鎖狀態的人員/裝置。任意一個在家即開啟，所有人都離家才關閉。例如選擇家庭成員的 Person 實體。「在家」自動判斷（person/device_tracker/zone/group 為 home，binary_sensor/input_boolean 為 on）。"
+              "child_lock_presence_entity": "決定兒童鎖狀態的人員/裝置。任意一個在家即開啟，所有人都離家才關閉。例如選擇家庭成員的 Person 實體。「在家」自動判斷（person/device_tracker/zone/group 為 home，binary_sensor/input_boolean 為 on）。",
+              "silent_mode_enabled": "開啟時，當有人（依據上方的在宅實體判斷）在家且目前時間落在下方設定的時段內，所有支援靜音模式的 SHC 恆溫器將切換為靜音模式；否則恢復正常模式。預設值：關閉。",
+              "silent_mode_start": "每日靜音模式時段的開始時間（本地時間）。時段可跨越午夜（例如 22:00 → 06:00）。",
+              "silent_mode_end": "每日靜音模式時段的結束時間（本地時間）。"
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "驗證 SHC 憑證主機名稱",
               "long_poll_timeout": "長輪詢逾時（秒）",
               "excluded_devices": "排除的裝置",
-              "excluded_rooms": "排除的房間"
+              "excluded_rooms": "排除的房間",
+              "ssl_skip_verify": "略過 SHC 憑證驗證"
             },
             "data_description": {
               "ssl_verify_hostname": "專家模式：開啟時會驗證 SHC 的 TLS 憑證主機名稱。Bosch SHC 憑證的主機名稱通常與其 IP 位址不符，因此啟用此設定通常會中斷連線 — 除非確定您的設定相符，否則請保持關閉。預設：關閉。",
               "long_poll_timeout": "每次長輪詢請求在重新連線前等待事件的時間。預設 10。增加可減少重新連線次數；若網路會斷開閒置連線則降低此值。",
               "excluded_devices": "要隱藏的裝置 — 不會為這些裝置建立實體。留空可包含全部。新排除裝置的現有實體在手動移除前會保留。",
-              "excluded_rooms": "隱藏這些 Bosch 房間中的所有裝置。留空可包含全部。"
+              "excluded_rooms": "隱藏這些 Bosch 房間中的所有裝置。留空可包含全部。",
+              "ssl_skip_verify": "專家 / 純本地 LAN 環境：開啟時，將不再驗證 SHC 伺服器憑證——適用於離線控制器憑證已過期的情況。加密用戶端憑證登入不受影響。請僅在受信任的本地網路上啟用此選項。預設值：關閉。"
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "自動",
-              "manual": "手動",
-              "eco": "節能",
-              "boost": "加速"
+              "boost": "加速",
+              "eco": "節能"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "煙霧測試"
+      },
+      "walk_test": {
+        "name": "步行測試"
+      },
+      "walk_test_stop": {
+        "name": "停止步行測試"
+      },
+      "detection_test": {
+        "name": "偵測測試"
+      },
+      "detection_test_stop": {
+        "name": "停止偵測測試"
+      },
+      "reset_tamper": {
+        "name": "重設防拆警報"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "脈衝長度"
+      },
+      "energy_saving_power_threshold": {
+        "name": "節能功率閾值"
+      },
+      "energy_saving_enter_duration": {
+        "name": "進入節能模式持續時間"
+      },
+      "led_brightness": {
+        "name": "LED 亮度"
+      },
+      "display_brightness": {
+        "name": "顯示器亮度"
+      },
+      "display_on_time": {
+        "name": "顯示器點亮時間"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "移動靈敏度"
+      },
+      "vibration_sensitivity": {
+        "name": "震動靈敏度"
+      },
+      "state_after_power_outage": {
+        "name": "斷電後恢復狀態"
+      },
+      "smoke_sensitivity": {
+        "name": "煙霧靈敏度"
+      },
+      "display_direction": {
+        "name": "顯示方向"
+      },
+      "displayed_temperature": {
+        "name": "顯示溫度"
+      },
+      "terminal_type": {
+        "name": "接線端子類型"
+      },
+      "valve_type": {
+        "name": "閥門類型"
+      },
+      "heater_type": {
+        "name": "加熱器類型"
+      },
+      "switch_type": {
+        "name": "開關類型"
+      },
+      "actuator_type": {
+        "name": "執行器類型"
+      },
+      "output_mode": {
+        "name": "輸出模式"
+      },
+      "smart_sensitivity_security": {
+        "name": "安全靈敏度等級"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "舒適靈敏度等級"
+      },
+      "orientation_light_response": {
+        "name": "方向燈回應時間"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "步行測試狀態"
+      },
+      "battery_level": {
+        "name": "電池電量"
+      },
+      "combined_rating": {
+        "name": "綜合評級"
+      },
+      "air_quality_description": {
+        "name": "空氣品質描述"
+      },
+      "detection_state": {
+        "name": "偵測測試狀態"
+      },
+      "installation_profile": {
+        "name": "安裝設定檔"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "下方按鈕",
+      "UPPER_BUTTON": "上方按鈕",
+      "LOWER_LEFT_BUTTON": "左下按鈕",
+      "UPPER_LEFT_BUTTON": "左上按鈕",
+      "LOWER_RIGHT_BUTTON": "右下按鈕",
+      "UPPER_RIGHT_BUTTON": "右上按鈕",
+      "IDLE_OFF": "警報關閉",
+      "INTRUSION_ALARM": "入侵警報",
+      "SECONDARY_ALARM": "次要警報",
+      "PRIMARY_ALARM": "主要警報",
+      "ALARM_OFF": "警報關閉",
+      "ALARM_ON": "警報開啟",
+      "ALARM_MUTED": "警報已靜音"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} 短按",
+      "PRESS_LONG": "{subtype} 長按",
+      "MOTION": "偵測到移動",
+      "SCENARIO": "情境 {subtype} 已觸發",
+      "ALARM": "{subtype} 已觸發"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "煙霧偵測器檢測",
+      "description": "呼叫煙霧偵測器的測試程序。",
+      "fields": {
+        "entity_id": {
+          "name": "實體 ID",
+          "description": "煙霧偵測器實體的名稱。"
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "觸發情境",
+      "description": "在 Bosch SHC 上觸發情境。",
+      "fields": {
+        "title": {
+          "name": "SHC 名稱",
+          "description": "SHC 的標題"
+        },
+        "name": {
+          "name": "情境名稱",
+          "description": "要觸發的情境名稱"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "觸發原始掃描",
+      "description": "在 Bosch SHC 上觸發原始掃描以探索裝置。結果會串流輸出至資訊記錄器。",
+      "fields": {
+        "title": {
+          "name": "SHC 名稱",
+          "description": "SHC 的標題"
+        },
+        "command": {
+          "name": "原始掃描指令",
+          "description": "要觸發的原始掃描指令。可用指令：'devices'、'device'、'services'、'device_services'、'device_service'、'rooms'、'scenarios'、'info'、'information'、'public_information'、'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "裝置 ID",
+          "description": "裝置 ID — 指令 'device'、'device_services' 或 'device_service' 必須提供此欄位"
+        },
+        "service_id": {
+          "name": "服務 ID",
+          "description": "服務 ID — 指令 'device_service' 必須提供此欄位"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "煙霧偵測器警報狀態",
+      "description": "向煙霧偵測器傳送自訂指令。",
+      "fields": {
+        "entity_id": {
+          "name": "實體 ID",
+          "description": "煙霧偵測器實體的名稱。"
+        },
+        "command": {
+          "name": "自訂指令",
+          "description": "要傳送至煙霧偵測器的指令字串。"
         }
       }
     }

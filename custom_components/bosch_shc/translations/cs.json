@@ -2,21 +2,83 @@
   "config": {
     "abort": {
       "already_configured": "Zařízení je již nastaveno",
-      "reauth_successful": "Opětovné ověření bylo úspěšné"
+      "reauth_successful": "Opětovné ověření bylo úspěšné",
+      "reconfigure_successful": "Překonfigurování bylo úspěšné",
+      "wrong_shc": "Zadaný hostitel patří jinému Bosch SHC kontroléru. Zadejte prosím správného hostitele pro tuto položku."
     },
     "error": {
       "cannot_connect": "Nepodařilo se připojit",
       "invalid_auth": "Neplatné ověření",
+      "pairing_failed": "Párování selhalo; zkontrolujte, zda je Bosch Smart Home Controller v režimu párování (LED bliká) a zda je vaše heslo správné.",
+      "session_error": "Chyba relace: API vrátilo chybný výsledek.",
       "unknown": "Neočekávaná chyba"
     },
+    "flow_title": "Bosch SHC: {name}",
     "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I: Stiskněte tlačítko na přední straně a držte jej, dokud LED nezačne blikat.\nSmart Home Controller II: Krátce stiskněte funkční tlačítko. Kontrolky cloudu a sítě začnou blikat oranžově.\nZařízení je nyní připraveno k párování.\n\nPokračovat v nastavení zařízení {model} @ {host} v Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Název klienta pro certifikát",
+          "password": "Heslo Smart Home Controlleru"
+        },
+        "data_description": {
+          "name": "Název zobrazený v aplikaci SHC v části připojených klientů.",
+          "password": "Heslo nastavené v aplikaci Bosch Smart Home."
+        }
+      },
       "reauth_confirm": {
-        "title": "Znovu ověřit integraci"
+        "description": "Integrace Bosch SHC vyžaduje opětovné ověření vašeho účtu.",
+        "title": "Znovu ověřit integraci",
+        "data": {
+          "host": "Hostitel"
+        },
+        "data_description": {
+          "host": "IP adresa nebo název hostitele SHC kontroléru (např. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Překonfigurovat Bosch SHC",
+        "description": "Vyberte, co chcete překonfigurovat.",
+        "menu_options": {
+          "reconfigure_host": "Změnit pouze hostitele / IP adresu",
+          "repair_credentials": "Znovu spárovat (obnovit klientský certifikát)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Změnit hostitele / IP adresu",
+        "description": "Aktualizujte IP adresu nebo název hostitele vašeho Bosch Smart Home Controlleru. Vaše certifikáty a přihlašovací údaje budou zachovány.",
+        "data": {
+          "host": "Hostitel"
+        },
+        "data_description": {
+          "host": "Nová IP adresa nebo název hostitele SHC kontroléru (např. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Znovu spárovat — obnovit klientský certifikát",
+        "description": "Stiskněte párovací tlačítko na SHC (SHC I: přední tlačítko, držte, dokud LED nezabliká; SHC II: krátce stiskněte funkční tlačítko) a poté vyplňte níže uvedený formulář.",
+        "data": {
+          "host": "Hostitel",
+          "password": "Heslo Smart Home Controlleru",
+          "name": "Název klienta pro certifikát"
+        },
+        "data_description": {
+          "host": "IP adresa nebo název hostitele SHC kontroléru (např. 192.168.x.y).",
+          "password": "Heslo nastavené v aplikaci Bosch Smart Home.",
+          "name": "Název zobrazený v aplikaci SHC v části připojených klientů."
+        }
       },
       "user": {
         "data": {
           "host": "Hostitel"
-        }
+        },
+        "data_description": {
+          "host": "IP adresa nebo název hostitele SHC kontroléru (např. 192.168.x.y)."
+        },
+        "description": "Nastavte Bosch Smart Home Controller pro sledování a ovládání v Home Assistant.",
+        "title": "Parametry ověření SHC"
       }
     }
   },
@@ -45,11 +107,17 @@
             "description": "Automaticky uzamkne všechny termostaty a spínače SHC, když je někdo doma, a odemkne je, když všichni odejdou.",
             "data": {
               "child_lock_enabled": "Povolit dětskou pojistku na základě přítomnosti",
-              "child_lock_presence_entity": "Entity přítomnosti"
+              "child_lock_presence_entity": "Entity přítomnosti",
+              "silent_mode_enabled": "Povolit tichý režim přítomnosti a časového okna",
+              "silent_mode_start": "Čas začátku tichého režimu",
+              "silent_mode_end": "Čas konce tichého režimu"
             },
             "data_description": {
               "child_lock_enabled": "Hlavní přepínač. Když je ZAPNUTO, dětská pojistka na všech termostatech a spínacích zařízeních SHC sleduje níže uvedené entity přítomnosti — zamčeno, když je někdo doma, odemčeno, když všichni odejdou. Když je VYPNUTO, integrace se dětské pojistky nikdy nedotkne.",
-              "child_lock_presence_entity": "Osoby/zařízení, která rozhodují o dětské pojistce. Zapne se, jakmile je doma JAKÁKOLIV z nich, a vypne se teprve, když jsou VŠECHNY pryč. Vyberte např. entity Person vaší domácnosti. 'Doma' je detekováno automaticky (home pro person/device_tracker/zone/group, on pro binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Osoby/zařízení, která rozhodují o dětské pojistce. Zapne se, jakmile je doma JAKÁKOLIV z nich, a vypne se teprve, když jsou VŠECHNY pryč. Vyberte např. entity Person vaší domácnosti. 'Doma' je detekováno automaticky (home pro person/device_tracker/zone/group, on pro binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Pokud je ZAPNUTO, každý termostat SHC podporující tichý režim se přepne do tichého režimu, pokud je někdo doma (dle výše uvedených entit přítomnosti) A aktuální čas je v níže definovaném časovém okně; jinak se přepne zpět do normálního režimu. Výchozí: vypnuto.",
+              "silent_mode_start": "Začátek denního okna tichého režimu (místní čas). Okno může přesahovat půlnoc (např. 22:00 → 06:00).",
+              "silent_mode_end": "Konec denního okna tichého režimu (místní čas)."
             }
           },
           "advanced": {
@@ -59,13 +127,15 @@
               "ssl_verify_hostname": "Ověřit název hostitele certifikátu SHC",
               "long_poll_timeout": "Časový limit long-poll (sekundy)",
               "excluded_devices": "Vyloučená zařízení",
-              "excluded_rooms": "Vyloučené místnosti"
+              "excluded_rooms": "Vyloučené místnosti",
+              "ssl_skip_verify": "Přeskočit ověření certifikátu SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Expert: pokud ZAPNUTO, ověřuje se název hostitele TLS certifikátu SHC. Název hostitele certifikátu Bosch SHC obvykle NEODPOVÍDÁ jeho IP adrese, takže povolení obvykle přeruší připojení — nechte VYPNUTO, pokud si nejste jisti. Výchozí: vypnuto.",
               "long_poll_timeout": "Jak dlouho každý long-poll požadavek čeká na události před opětovným připojením. Výchozí: 10. Zvyšte pro snížení opětovných připojení, snižte pokud vaše síť ukončuje nečinná připojení.",
               "excluded_devices": "Zařízení ke skrytí — pro ně nejsou vytvářeny žádné entity. Nechte prázdné pro zahrnutí všech. Stávající entity nově vyloučených zařízení zůstávají, dokud nejsou ručně odstraněny.",
-              "excluded_rooms": "Skryje všechna zařízení v těchto místnostech Bosch. Nechte prázdné pro zahrnutí všech."
+              "excluded_rooms": "Skryje všechna zařízení v těchto místnostech Bosch. Nechte prázdné pro zahrnutí všech.",
+              "ssl_skip_verify": "Expert / pouze pro lokální LAN sítě: pokud je ZAPNUTO, serverový certifikát SHC se již neověřuje — užitečné, pokud vypršela platnost certifikátu vašeho offline kontroléru. Přihlášení pomocí šifrovaného klientského certifikátu není ovlivněno. Povolte pouze v důvěryhodné lokální síti. Výchozí: vypnuto."
             }
           }
         }
@@ -79,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automaticky",
-              "manual": "Ručně",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Test kouřového čidla"
+      },
+      "walk_test": {
+        "name": "Walk Test"
+      },
+      "walk_test_stop": {
+        "name": "Zastavit Walk Test"
+      },
+      "detection_test": {
+        "name": "Test detekce"
+      },
+      "detection_test_stop": {
+        "name": "Zastavit test detekce"
+      },
+      "reset_tamper": {
+        "name": "Resetovat sabotáž"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Délka impulzu"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Práh výkonu pro úsporu energie"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Doba aktivace úspory energie"
+      },
+      "led_brightness": {
+        "name": "Jas LED"
+      },
+      "display_brightness": {
+        "name": "Jas displeje"
+      },
+      "display_on_time": {
+        "name": "Doba svícení displeje"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Citlivost pohybu"
+      },
+      "vibration_sensitivity": {
+        "name": "Citlivost vibrací"
+      },
+      "state_after_power_outage": {
+        "name": "Stav po výpadku napájení"
+      },
+      "smoke_sensitivity": {
+        "name": "Citlivost kouřového čidla"
+      },
+      "display_direction": {
+        "name": "Orientace displeje"
+      },
+      "displayed_temperature": {
+        "name": "Zobrazovaná teplota"
+      },
+      "terminal_type": {
+        "name": "Typ svorky"
+      },
+      "valve_type": {
+        "name": "Typ ventilu"
+      },
+      "heater_type": {
+        "name": "Typ topení"
+      },
+      "switch_type": {
+        "name": "Typ spínače"
+      },
+      "actuator_type": {
+        "name": "Typ aktuátoru"
+      },
+      "output_mode": {
+        "name": "Režim výstupu"
+      },
+      "smart_sensitivity_security": {
+        "name": "Úroveň citlivosti zabezpečení"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Úroveň citlivosti komfortu"
+      },
+      "orientation_light_response": {
+        "name": "Doba odezvy orientačního světla"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Stav Walk Testu"
+      },
+      "battery_level": {
+        "name": "Úroveň baterie"
+      },
+      "combined_rating": {
+        "name": "Celkové hodnocení"
+      },
+      "air_quality_description": {
+        "name": "Popis kvality vzduchu"
+      },
+      "detection_state": {
+        "name": "Stav testu detekce"
+      },
+      "installation_profile": {
+        "name": "Instalační profil"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Spodní tlačítko",
+      "UPPER_BUTTON": "Horní tlačítko",
+      "LOWER_LEFT_BUTTON": "Spodní levé tlačítko",
+      "UPPER_LEFT_BUTTON": "Horní levé tlačítko",
+      "LOWER_RIGHT_BUTTON": "Spodní pravé tlačítko",
+      "UPPER_RIGHT_BUTTON": "Horní pravé tlačítko",
+      "IDLE_OFF": "Alarm vypnut",
+      "INTRUSION_ALARM": "Alarm narušení",
+      "SECONDARY_ALARM": "Sekundární alarm",
+      "PRIMARY_ALARM": "Primární alarm",
+      "ALARM_OFF": "Alarm vypnut",
+      "ALARM_ON": "Alarm zapnut",
+      "ALARM_MUTED": "Alarm ztlumen"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} krátce stisknuto",
+      "PRESS_LONG": "{subtype} dlouze stisknuto",
+      "MOTION": "Detekován pohyb",
+      "SCENARIO": "Scénář {subtype} spuštěn",
+      "ALARM": "{subtype} spuštěn"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Kontrola kouřového detektoru",
+      "description": "Spustí testovací rutinu kouřového detektoru.",
+      "fields": {
+        "entity_id": {
+          "name": "ID entity",
+          "description": "Název entity kouřového detektoru."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Spustit scénář",
+      "description": "Spustí scénář na Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Název SHC",
+          "description": "Název SHC"
+        },
+        "name": {
+          "name": "Název scénáře",
+          "description": "Název scénáře, který má být spuštěn"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Spustit rawscan",
+      "description": "Spustí rawscan na Bosch SHC pro zjištění zařízení. Výsledek je streamován do informačního loggeru.",
+      "fields": {
+        "title": {
+          "name": "Název SHC",
+          "description": "Název SHC"
+        },
+        "command": {
+          "name": "Příkaz rawscan",
+          "description": "Příkaz rawscan ke spuštění. Možné příkazy: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID zařízení",
+          "description": "ID zařízení — povinné pro příkazy 'device', 'device_services' nebo 'device_service'"
+        },
+        "service_id": {
+          "name": "ID služby",
+          "description": "ID služby — povinné pro příkaz 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Stav alarmu kouřového detektoru",
+      "description": "Odešle vlastní příkaz kouřovému detektoru.",
+      "fields": {
+        "entity_id": {
+          "name": "ID entity",
+          "description": "Název entity kouřového detektoru."
+        },
+        "command": {
+          "name": "Vlastní příkaz",
+          "description": "Řetězec příkazu, který má být odeslán kouřovému detektoru."
         }
       }
     }

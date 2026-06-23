@@ -41,11 +41,33 @@
       "reconfigure": {
         "title": "Reconfigurer Bosch SHC",
         "description": "Mettez à jour l'adresse IP ou le nom d'hôte de votre Bosch Smart Home Controller. Vos certificats et identifiants seront conservés.",
+        "menu_options": {
+          "reconfigure_host": "Modifier uniquement l'hôte / l'adresse IP",
+          "repair_credentials": "Ré-appairage (regénérer le certificat client)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Modifier l'hôte / l'adresse IP",
+        "description": "Mettez à jour l'adresse IP ou le nom d'hôte de votre Bosch Smart Home Controller. Vos certificats et identifiants seront conservés.",
         "data": {
           "host": "Hôte"
         },
         "data_description": {
-          "host": "Nouvelle adresse IP ou nom d'hôte du contrôleur SHC (ex. 192.168.x.y)."
+          "host": "Nouvelle adresse IP ou nom d'hôte du contrôleur SHC (ex. : 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Ré-appairage — regénérer le certificat client",
+        "description": "Appuyez sur le bouton d'appairage du SHC (SHC I : bouton frontal jusqu'au clignotement de la LED ; SHC II : bouton de fonction brièvement), puis remplissez le formulaire ci-dessous.",
+        "data": {
+          "host": "Hôte",
+          "password": "Mot de passe du Smart Home Controller",
+          "name": "Nom du client pour le certificat"
+        },
+        "data_description": {
+          "host": "Adresse IP ou nom d'hôte du contrôleur SHC (ex. : 192.168.x.y).",
+          "password": "Le mot de passe défini dans l'application Bosch Smart Home.",
+          "name": "Nom affiché dans l'application SHC sous les clients connectés."
         }
       },
       "user": {
@@ -85,11 +107,17 @@
             "description": "Verrouille automatiquement tous les thermostats et interrupteurs SHC quand quelqu'un est à la maison, et les déverrouille quand tout le monde part.",
             "data": {
               "child_lock_enabled": "Activer le verrouillage enfant par présence",
-              "child_lock_presence_entity": "Entités de présence"
+              "child_lock_presence_entity": "Entités de présence",
+              "silent_mode_enabled": "Activer le mode silencieux (présence + plage horaire)",
+              "silent_mode_start": "Heure de début du mode silencieux",
+              "silent_mode_end": "Heure de fin du mode silencieux"
             },
             "data_description": {
               "child_lock_enabled": "Interrupteur principal. Quand ACTIVÉ, le verrouillage enfant de tous les thermostats et appareils de commutation SHC suit les entités de présence ci-dessous — verrouillé quand quelqu'un est à la maison, déverrouillé quand tout le monde est absent. Quand DÉSACTIVÉ, l'intégration ne touche jamais au verrouillage enfant.",
-              "child_lock_presence_entity": "Les personnes/appareils qui décident du verrouillage enfant. Il s'active dès que N'IMPORTE LAQUELLE est à la maison, et s'éteint seulement quand TOUTES sont absentes. Choisissez par exemple les entités Person de votre foyer. 'À la maison' est détecté automatiquement (home pour person/device_tracker/zone/group, on pour binary_sensor/input_boolean)."
+              "child_lock_presence_entity": "Les personnes/appareils qui décident du verrouillage enfant. Il s'active dès que N'IMPORTE LAQUELLE est à la maison, et s'éteint seulement quand TOUTES sont absentes. Choisissez par exemple les entités Person de votre foyer. 'À la maison' est détecté automatiquement (home pour person/device_tracker/zone/group, on pour binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Lorsqu'il est activé (ON), chaque thermostat SHC compatible avec le mode silencieux est basculé en mode silencieux tant qu'une personne (selon les entités de présence ci-dessus) est à la maison ET que l'heure actuelle se situe dans la plage définie ci-dessous ; sinon, il revient en mode normal. Par défaut : désactivé.",
+              "silent_mode_start": "Début de la plage quotidienne du mode silencieux (heure locale). La plage peut s'étendre sur minuit (ex. : 22:00 → 06:00).",
+              "silent_mode_end": "Fin de la plage quotidienne du mode silencieux (heure locale)."
             }
           },
           "advanced": {
@@ -99,16 +127,140 @@
               "ssl_verify_hostname": "Vérifier le nom d'hôte SSL",
               "long_poll_timeout": "Délai d'attente du sondage long (secondes)",
               "excluded_devices": "Appareils exclus",
-              "excluded_rooms": "Pièces exclues"
+              "excluded_rooms": "Pièces exclues",
+              "ssl_skip_verify": "Ignorer la vérification du certificat SHC"
             },
             "data_description": {
               "ssl_verify_hostname": "Quand ACTIVÉ : la bibliothèque boschshcpy vérifie que le nom d'hôte du certificat SSL du contrôleur SHC correspond à son IP/nom d'hôte. Actuellement sans effet — une future mise à jour de boschshcpy est requise. Par défaut : désactivé.",
               "long_poll_timeout": "Durée (en secondes) pendant laquelle la requête de sondage long au contrôleur SHC attend des événements push avant de se reconnecter. Plage : 5–300. Par défaut : 30. Augmentez en cas de reconnexions fréquentes sur un réseau lent ; diminuez si votre routeur coupe les connexions inactives. Nécessite une future mise à jour de boschshcpy.",
               "excluded_devices": "Appareils à masquer — aucune entité n'est créée pour eux. Laissez vide pour tout inclure. Les entités existantes des appareils nouvellement exclus restent jusqu'à suppression manuelle.",
-              "excluded_rooms": "Masquer tous les appareils de ces pièces Bosch. Laissez vide pour tout inclure."
+              "excluded_rooms": "Masquer tous les appareils de ces pièces Bosch. Laissez vide pour tout inclure.",
+              "ssl_skip_verify": "Expert / réseaux LAN locaux uniquement : lorsqu'il est activé (ON), le certificat serveur du SHC n'est plus vérifié — utile si le certificat de votre contrôleur hors ligne a expiré. La connexion par certificat client chiffré (TLS) n'est pas affectée. N'activez cette option que sur un réseau local de confiance. Par défaut : désactivé."
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Régulation climatique de la pièce",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Test de fumée"
+      },
+      "walk_test": {
+        "name": "Test de déambulation"
+      },
+      "walk_test_stop": {
+        "name": "Arrêt du test de déambulation"
+      },
+      "detection_test": {
+        "name": "Test de détection"
+      },
+      "detection_test_stop": {
+        "name": "Arrêt du test de détection"
+      },
+      "reset_tamper": {
+        "name": "Réinitialiser l'anti-sabotage"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Durée d'impulsion"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Seuil de puissance pour les économies d'énergie"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Délai d'entrée en mode économie d'énergie"
+      },
+      "led_brightness": {
+        "name": "Luminosité de la LED"
+      },
+      "display_brightness": {
+        "name": "Luminosité de l'écran"
+      },
+      "display_on_time": {
+        "name": "Durée d'activation de l'écran"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Sensibilité au mouvement"
+      },
+      "vibration_sensitivity": {
+        "name": "Sensibilité aux vibrations"
+      },
+      "state_after_power_outage": {
+        "name": "État après coupure de courant"
+      },
+      "smoke_sensitivity": {
+        "name": "Sensibilité à la fumée"
+      },
+      "display_direction": {
+        "name": "Orientation de l'affichage"
+      },
+      "displayed_temperature": {
+        "name": "Température affichée"
+      },
+      "terminal_type": {
+        "name": "Type de borne"
+      },
+      "valve_type": {
+        "name": "Type de vanne"
+      },
+      "heater_type": {
+        "name": "Type de chauffage"
+      },
+      "switch_type": {
+        "name": "Type de commutateur"
+      },
+      "actuator_type": {
+        "name": "Type d'actionneur"
+      },
+      "output_mode": {
+        "name": "Mode de sortie"
+      },
+      "smart_sensitivity_security": {
+        "name": "Niveau de sensibilité sécurité"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Niveau de sensibilité confort"
+      },
+      "orientation_light_response": {
+        "name": "Temps de réponse de la lumière d'orientation"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "État du test de déambulation"
+      },
+      "battery_level": {
+        "name": "Niveau de batterie"
+      },
+      "combined_rating": {
+        "name": "Évaluation combinée"
+      },
+      "air_quality_description": {
+        "name": "Description de la qualité de l'air"
+      },
+      "detection_state": {
+        "name": "État du test de détection"
+      },
+      "installation_profile": {
+        "name": "Profil d'installation"
       }
     }
   },
@@ -194,23 +346,6 @@
         "command": {
           "name": "Commande personnalisée",
           "description": "Chaîne de commande à envoyer au détecteur de fumée."
-        }
-      }
-    }
-  },
-  "entity": {
-    "climate": {
-      "room_climate_control": {
-        "name": "Régulation climatique de la pièce",
-        "state_attributes": {
-          "preset_mode": {
-            "state": {
-              "auto": "Automatique",
-              "manual": "Manuel",
-              "eco": "Eco",
-              "boost": "Boost"
-            }
-          }
         }
       }
     }

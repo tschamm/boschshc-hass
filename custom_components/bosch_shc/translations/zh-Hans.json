@@ -41,11 +41,33 @@
       "reconfigure": {
         "title": "重新配置 Bosch SHC",
         "description": "更新博世智能家居控制器的 IP 地址或主机名，证书和凭据将保留。",
+        "menu_options": {
+          "reconfigure_host": "仅更改主机 / IP 地址",
+          "repair_credentials": "重新配对（重新生成客户端证书）"
+        }
+      },
+      "reconfigure_host": {
+        "title": "更改主机 / IP 地址",
+        "description": "更新 Bosch Smart Home Controller 的 IP 地址或主机名。您的证书和凭据将被保留。",
         "data": {
           "host": "主机"
         },
         "data_description": {
           "host": "SHC 控制器的新 IP 地址或主机名（例如 192.168.x.y）。"
+        }
+      },
+      "repair_credentials": {
+        "title": "重新配对 — 重新生成客户端证书",
+        "description": "按下 SHC 上的配对按钮（SHC I：按住前面板按钮直到 LED 闪烁；SHC II：短按功能按钮），然后填写以下表单。",
+        "data": {
+          "host": "主机",
+          "password": "Smart Home Controller 密码",
+          "name": "证书客户端名称"
+        },
+        "data_description": {
+          "host": "SHC 控制器的 IP 地址或主机名（例如 192.168.x.y）。",
+          "password": "在 Bosch Smart Home 应用中设置的密码。",
+          "name": "在 SHC 应用已连接客户端列表中显示的名称。"
         }
       },
       "user": {
@@ -85,11 +107,17 @@
             "description": "有人在家时自动锁定所有 SHC 温控器和开关，所有人离家后自动解锁。",
             "data": {
               "child_lock_enabled": "启用基于在家状态的童锁",
-              "child_lock_presence_entity": "在家检测实体"
+              "child_lock_presence_entity": "在家检测实体",
+              "silent_mode_enabled": "启用在场检测 + 时间窗口静音模式",
+              "silent_mode_start": "静音模式开始时间",
+              "silent_mode_end": "静音模式结束时间"
             },
             "data_description": {
               "child_lock_enabled": "主开关。开启时，所有 SHC 温控器和开关设备的童锁跟随下方的在家检测实体——有人在家时锁定，所有人离家时解锁。关闭时，集成不会触碰童锁。",
-              "child_lock_presence_entity": "决定童锁状态的人员/设备。任意一个在家即开启，所有人都离家才关闭。例如选择家庭成员的 Person 实体。「在家」自动判断（person/device_tracker/zone/group 为 home，binary_sensor/input_boolean 为 on）。"
+              "child_lock_presence_entity": "决定童锁状态的人员/设备。任意一个在家即开启，所有人都离家才关闭。例如选择家庭成员的 Person 实体。「在家」自动判断（person/device_tracker/zone/group 为 home，binary_sensor/input_boolean 为 on）。",
+              "silent_mode_enabled": "开启后，当有人（根据上方的在场实体判断）在家且当前时间处于下方设定的时间窗口内时，所有支持静音模式的 SHC 温控器将切换到静音模式；否则恢复正常模式。默认：关闭。",
+              "silent_mode_start": "每日静音模式时间窗口的开始时间（本地时间）。时间窗口可跨越午夜（例如 22:00 → 06:00）。",
+              "silent_mode_end": "每日静音模式时间窗口的结束时间（本地时间）。"
             }
           },
           "advanced": {
@@ -99,16 +127,140 @@
               "ssl_verify_hostname": "验证 SSL 主机名",
               "long_poll_timeout": "长轮询超时（秒）",
               "excluded_devices": "排除的设备",
-              "excluded_rooms": "排除的房间"
+              "excluded_rooms": "排除的房间",
+              "ssl_skip_verify": "跳过 SHC 证书验证"
             },
             "data_description": {
               "ssl_verify_hostname": "开启时：boschshcpy 库验证 SHC 控制器 SSL 证书的主机名与其 IP/主机名是否匹配。目前无效——需要未来的 boschshcpy 更新才能生效。默认：关闭。",
               "long_poll_timeout": "向 SHC 控制器发送长轮询请求后等待推送事件的时间（秒），超时后重新连接。范围：5–300。默认：30。网络较慢时若出现频繁重连可增大此值；若路由器断开空闲连接可减小此值。需要未来的 boschshcpy 更新才能生效。",
               "excluded_devices": "要隐藏的设备——不为其创建任何实体。留空则包含所有设备。新排除设备的现有实体将保留，直到手动删除。",
-              "excluded_rooms": "隐藏这些 Bosch 房间中的所有设备。留空则包含所有房间。"
+              "excluded_rooms": "隐藏这些 Bosch 房间中的所有设备。留空则包含所有房间。",
+              "ssl_skip_verify": "专家 / 仅限本地 LAN：开启后，将不再验证 SHC 服务器证书——适用于离线控制器证书已过期的情况。加密的客户端证书登录不受影响。请仅在可信本地网络上启用此选项。默认：关闭。"
             }
           }
         }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "房间气候控制",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "加速",
+              "eco": "节能"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "烟雾测试"
+      },
+      "walk_test": {
+        "name": "步行测试"
+      },
+      "walk_test_stop": {
+        "name": "停止步行测试"
+      },
+      "detection_test": {
+        "name": "探测测试"
+      },
+      "detection_test_stop": {
+        "name": "停止探测测试"
+      },
+      "reset_tamper": {
+        "name": "重置防拆报警"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "脉冲时长"
+      },
+      "energy_saving_power_threshold": {
+        "name": "节能功率阈值"
+      },
+      "energy_saving_enter_duration": {
+        "name": "进入节能模式所需持续时间"
+      },
+      "led_brightness": {
+        "name": "LED 亮度"
+      },
+      "display_brightness": {
+        "name": "显示屏亮度"
+      },
+      "display_on_time": {
+        "name": "显示屏点亮时长"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "运动灵敏度"
+      },
+      "vibration_sensitivity": {
+        "name": "震动灵敏度"
+      },
+      "state_after_power_outage": {
+        "name": "断电后恢复状态"
+      },
+      "smoke_sensitivity": {
+        "name": "烟雾灵敏度"
+      },
+      "display_direction": {
+        "name": "显示方向"
+      },
+      "displayed_temperature": {
+        "name": "显示温度"
+      },
+      "terminal_type": {
+        "name": "接线端子类型"
+      },
+      "valve_type": {
+        "name": "阀门类型"
+      },
+      "heater_type": {
+        "name": "加热器类型"
+      },
+      "switch_type": {
+        "name": "开关类型"
+      },
+      "actuator_type": {
+        "name": "执行器类型"
+      },
+      "output_mode": {
+        "name": "输出模式"
+      },
+      "smart_sensitivity_security": {
+        "name": "安防灵敏度级别"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "舒适灵敏度级别"
+      },
+      "orientation_light_response": {
+        "name": "方向指示灯响应时间"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "步行测试状态"
+      },
+      "battery_level": {
+        "name": "电池电量"
+      },
+      "combined_rating": {
+        "name": "综合评级"
+      },
+      "air_quality_description": {
+        "name": "空气质量描述"
+      },
+      "detection_state": {
+        "name": "探测测试状态"
+      },
+      "installation_profile": {
+        "name": "安装配置文件"
       }
     }
   },
@@ -194,23 +346,6 @@
         "command": {
           "name": "自定义命令",
           "description": "发送到烟雾探测器的命令字符串。"
-        }
-      }
-    }
-  },
-  "entity": {
-    "climate": {
-      "room_climate_control": {
-        "name": "房间气候控制",
-        "state_attributes": {
-          "preset_mode": {
-            "state": {
-              "auto": "自动",
-              "manual": "手动",
-              "eco": "节能",
-              "boost": "加速"
-            }
-          }
         }
       }
     }

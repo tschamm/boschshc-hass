@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Az eszköz már konfigurálva van",
-      "reauth_successful": "Az újrahitelesítés sikeres volt."
+      "reauth_successful": "Az újrahitelesítés sikeres volt.",
+      "reconfigure_successful": "Az újrakonfigurálás sikerült",
+      "wrong_shc": "A megadott gazdagép egy másik Bosch SHC vezérlőhöz tartozik. Kérjük, adja meg a helyes gazdagépet ehhez a bejegyzéshez."
     },
     "error": {
       "cannot_connect": "Sikertelen csatlakozás",
@@ -18,16 +20,62 @@
       },
       "credentials": {
         "data": {
+          "name": "Ügyfélazonosító neve a tanúsítványhoz",
           "password": "A Smart Home Controller jelszava"
+        },
+        "data_description": {
+          "name": "Az SHC alkalmazásban a csatlakoztatott kliensek között megjelenő név.",
+          "password": "A Bosch Smart Home alkalmazásban beállított jelszó."
         }
       },
       "reauth_confirm": {
         "description": "A bosch_shc integrációnak újra hitelesítenie kell a fiókját",
-        "title": "Integráció újrahitelesítése"
+        "title": "Integráció újrahitelesítése",
+        "data": {
+          "host": "Gazdagép"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő IP-címe vagy hosztneve (pl. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHC újrakonfigurálása",
+        "description": "Válassza ki, mit szeretne újrakonfigurálni.",
+        "menu_options": {
+          "reconfigure_host": "Csak a gazdagép / IP-cím módosítása",
+          "repair_credentials": "Újrapárosítás (klienstanúsítvány újragenerálása)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Gazdagép / IP-cím módosítása",
+        "description": "Frissítse a Bosch Smart Home vezérlő IP-címét vagy hosztnevét. A tanúsítványok és hitelesítő adatok megmaradnak.",
+        "data": {
+          "host": "Gazdagép"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő új IP-címe vagy hosztneve (pl. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Újrapárosítás — klienstanúsítvány újragenerálása",
+        "description": "Nyomja meg a párosítás gombot az SHC-n (SHC I: elülső gomb, amíg a LED villog; SHC II: funkcióbillentyű röviden), majd töltse ki az alábbi űrlapot.",
+        "data": {
+          "host": "Gazdagép",
+          "password": "A Smart Home vezérlő jelszava",
+          "name": "Ügyfélazonosító neve a tanúsítványhoz"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő IP-címe vagy hosztneve (pl. 192.168.x.y).",
+          "password": "A Bosch Smart Home alkalmazásban beállított jelszó.",
+          "name": "Az SHC alkalmazásban a csatlakoztatott kliensek között megjelenő név."
+        }
       },
       "user": {
         "data": {
           "host": "Cím"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő IP-címe vagy hosztneve (pl. 192.168.x.y)."
         },
         "description": "Állítsa be a Bosch intelligens otthoni vezérlőt, hogy lehetővé tegye a felügyeletet és a vezérlést Home Assistant segítségével.",
         "title": "SHC hitelesítési paraméterek"
@@ -59,11 +107,17 @@
             "description": "Automatikusan zárolja az összes SHC termosztátot és kapcsolót, amikor valaki otthon van, és feloldja őket, amikor mindenki elmegy.",
             "data": {
               "child_lock_enabled": "Jelenlét alapú gyermekzár engedélyezése",
-              "child_lock_presence_entity": "Jelenléti entitások"
+              "child_lock_presence_entity": "Jelenléti entitások",
+              "silent_mode_enabled": "Jelenlét + időablak alapú csendes üzemmód engedélyezése",
+              "silent_mode_start": "Csendes üzemmód kezdési ideje",
+              "silent_mode_end": "Csendes üzemmód befejezési ideje"
             },
             "data_description": {
               "child_lock_enabled": "Főkapcsoló. Amikor BE van kapcsolva, az összes SHC termosztát és kapcsolóeszköz gyermekzára az alábbi jelenléti entitásokat követi — zárolva, ha valaki otthon van, feloldva, ha mindenki távol van. Amikor KI van kapcsolva, az integráció soha nem nyúl a gyermekzárhoz.",
-              "child_lock_presence_entity": "A gyermekzárat meghatározó személyek/eszközök. Bekapcsol, amint BÁRMELY közülük otthon van, és csak akkor kapcsol ki, ha MINDEGYIK távol van. Válassza ki például a háztartás Person entitásait. Az 'otthon' automatikusan kerül felismerésre (home a person/device_tracker/zone/group esetén, on a binary_sensor/input_boolean esetén)."
+              "child_lock_presence_entity": "A gyermekzárat meghatározó személyek/eszközök. Bekapcsol, amint BÁRMELY közülük otthon van, és csak akkor kapcsol ki, ha MINDEGYIK távol van. Válassza ki például a háztartás Person entitásait. Az 'otthon' automatikusan kerül felismerésre (home a person/device_tracker/zone/group esetén, on a binary_sensor/input_boolean esetén).",
+              "silent_mode_enabled": "Ha BE van kapcsolva, minden csendes üzemmódot támogató SHC termosztát csendes módra vált, amíg valaki (a fenti jelenlétentitások szerint) otthon van ÉS az aktuális idő a lenti időablakon belül van; egyébként visszavált normál módra. Alapértelmezett: ki.",
+              "silent_mode_start": "A napi csendes üzemmód időablakának kezdete (helyi idő). Az időablak átnyúlhat éjfélen (pl. 22:00 → 06:00).",
+              "silent_mode_end": "A napi csendes üzemmód időablakának vége (helyi idő)."
             }
           },
           "advanced": {
@@ -73,13 +127,15 @@
               "ssl_verify_hostname": "SHC tanúsítvány hosztnév ellenőrzése",
               "long_poll_timeout": "Hosszú lekérdezés időtúllépése (másodperc)",
               "excluded_devices": "Kizárt eszközök",
-              "excluded_rooms": "Kizárt szobák"
+              "excluded_rooms": "Kizárt szobák",
+              "ssl_skip_verify": "SHC tanúsítványellenőrzés kihagyása"
             },
             "data_description": {
               "ssl_verify_hostname": "Szakértő: ha BE van kapcsolva, az SHC TLS-tanúsítványának hosztneve ellenőrzésre kerül. A Bosch SHC tanúsítványának hosztneve általában NEM egyezik az IP-jével, ezért az engedélyezés általában megszakítja a kapcsolatot — hagyja KI, hacsak nem biztos benne, hogy a beállítása megfelel. Alapértelmezett: ki.",
               "long_poll_timeout": "Mennyi ideig vár minden hosszú lekérdezési kérés eseményekre az újracsatlakozás előtt. Alapértelmezett: 10. Növelje az újracsatlakozások csökkentéséhez, csökkentse, ha a hálózata bontja az inaktív kapcsolatokat.",
               "excluded_devices": "Elrejtendő eszközök — nem jönnek létre entitások számukra. Hagyja üresen az összes bevételéhez. Az újonnan kizárt eszközök meglévő entitásai megmaradnak, amíg manuálisan el nem távolítja őket.",
-              "excluded_rooms": "Elrejti az összes eszközt ezekben a Bosch szobákban. Hagyja üresen az összes bevételéhez."
+              "excluded_rooms": "Elrejti az összes eszközt ezekben a Bosch szobákban. Hagyja üresen az összes bevételéhez.",
+              "ssl_skip_verify": "Szakértői / csak helyi LAN hálózathoz: ha BE van kapcsolva, az SHC szerver tanúsítványa nem kerül ellenőrzésre — hasznos, ha a offline vezérlő tanúsítványa lejárt. A titkosított klienstanúsítvány-alapú bejelentkezés nem érintett. Csak megbízható helyi hálózaton engedélyezze. Alapértelmezett: ki."
             }
           }
         }
@@ -93,12 +149,203 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "Automatikus",
-              "manual": "Kézi",
-              "eco": "Eco",
-              "boost": "Boost"
+              "boost": "Boost",
+              "eco": "Eco"
             }
           }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Füstérzékelő teszt"
+      },
+      "walk_test": {
+        "name": "Mozgásteszt"
+      },
+      "walk_test_stop": {
+        "name": "Mozgásteszt leállítása"
+      },
+      "detection_test": {
+        "name": "Érzékelési teszt"
+      },
+      "detection_test_stop": {
+        "name": "Érzékelési teszt leállítása"
+      },
+      "reset_tamper": {
+        "name": "Illetéktelen hozzáférés jelzés visszaállítása"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulzushossz"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Energiatakarékos teljesítményküszöb"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Energiatakarékos mód belépési ideje"
+      },
+      "led_brightness": {
+        "name": "LED fényereje"
+      },
+      "display_brightness": {
+        "name": "Kijelző fényereje"
+      },
+      "display_on_time": {
+        "name": "Kijelző bekapcsolási ideje"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Mozgásérzékenység"
+      },
+      "vibration_sensitivity": {
+        "name": "Rezgésérzékenység"
+      },
+      "state_after_power_outage": {
+        "name": "Állapot áramszünet után"
+      },
+      "smoke_sensitivity": {
+        "name": "Füstérzékenység"
+      },
+      "display_direction": {
+        "name": "Kijelző iránya"
+      },
+      "displayed_temperature": {
+        "name": "Megjelenített hőmérséklet"
+      },
+      "terminal_type": {
+        "name": "Csatlakozó típusa"
+      },
+      "valve_type": {
+        "name": "Szelep típusa"
+      },
+      "heater_type": {
+        "name": "Fűtőberendezés típusa"
+      },
+      "switch_type": {
+        "name": "Kapcsoló típusa"
+      },
+      "actuator_type": {
+        "name": "Aktuátor típusa"
+      },
+      "output_mode": {
+        "name": "Kimeneti mód"
+      },
+      "smart_sensitivity_security": {
+        "name": "Biztonsági érzékenységi szint"
+      },
+      "smart_sensitivity_comfort": {
+        "name": "Kényelmi érzékenységi szint"
+      },
+      "orientation_light_response": {
+        "name": "Tájékozódási fény reakcióideje"
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Mozgásteszt állapota"
+      },
+      "battery_level": {
+        "name": "Akkumulátorszint"
+      },
+      "combined_rating": {
+        "name": "Összesített értékelés"
+      },
+      "air_quality_description": {
+        "name": "Levegőminőség leírása"
+      },
+      "detection_state": {
+        "name": "Érzékelési teszt állapota"
+      },
+      "installation_profile": {
+        "name": "Telepítési profil"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Alsó gomb",
+      "UPPER_BUTTON": "Felső gomb",
+      "LOWER_LEFT_BUTTON": "Bal alsó gomb",
+      "UPPER_LEFT_BUTTON": "Bal felső gomb",
+      "LOWER_RIGHT_BUTTON": "Jobb alsó gomb",
+      "UPPER_RIGHT_BUTTON": "Jobb felső gomb",
+      "IDLE_OFF": "Riasztás kikapcsolva",
+      "INTRUSION_ALARM": "Behatolási riasztás",
+      "SECONDARY_ALARM": "Másodlagos riasztás",
+      "PRIMARY_ALARM": "Elsődleges riasztás",
+      "ALARM_OFF": "Riasztás kikapcsolva",
+      "ALARM_ON": "Riasztás bekapcsolva",
+      "ALARM_MUTED": "Riasztás elnémítva"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} röviden megnyomva",
+      "PRESS_LONG": "{subtype} hosszan megnyomva",
+      "MOTION": "Mozgás észlelve",
+      "SCENARIO": "{subtype} forgatókönyv aktiválva",
+      "ALARM": "{subtype} aktiválva"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Füstérzékelő ellenőrzés",
+      "description": "Meghívja a füstérzékelő tesztelési rutinját.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitásazonosító",
+          "description": "A füstérzékelő entitás neve."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Forgatókönyv indítása",
+      "description": "Forgatókönyvet indít el a Bosch SHC-n.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC megnevezése"
+        },
+        "name": {
+          "name": "Forgatókönyv neve",
+          "description": "Az indítandó forgatókönyv neve"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Nyers beolvasás indítása",
+      "description": "Nyers beolvasást indít a Bosch SHC-n az eszközök felderítéséhez. Az eredmény az info naplóba kerül.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC megnevezése"
+        },
+        "command": {
+          "name": "Nyers beolvasási parancs",
+          "description": "Az indítandó nyers beolvasási parancs. Lehetséges parancsok: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Eszközazonosító",
+          "description": "Eszközazonosító — szükséges a 'device', 'device_services' vagy 'device_service' parancsokhoz"
+        },
+        "service_id": {
+          "name": "Szolgáltatásazonosító",
+          "description": "Szolgáltatásazonosító — szükséges a 'device_service' parancshoz"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Füstérzékelő riasztási állapota",
+      "description": "Egyéni parancsot küld egy füstérzékelőnek.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitásazonosító",
+          "description": "A füstérzékelő entitás neve."
+        },
+        "command": {
+          "name": "Egyéni parancs",
+          "description": "A füstérzékelőnek küldendő parancsszöveg."
         }
       }
     }

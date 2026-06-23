@@ -23,10 +23,22 @@ jobs:
           cache: pip
           cache-dependency-path: requirements_test.txt
 
+      # Retry on PyPI edge-lag: a just-released pinned boschshcpy may not have
+      # propagated to this runner's PyPI edge yet. Retry with backoff so the
+      # suite self-heals instead of failing on transient unavailability.
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_test.txt
+          for attempt in 1 2 3 4 5; do
+            if pip install -r requirements_test.txt; then
+              echo "Dependencies installed on attempt $attempt."
+              exit 0
+            fi
+            echo "::warning::pip install failed (attempt $attempt) — likely a PyPI edge-lag on a just-released pin; retrying in $((attempt * 30))s."
+            sleep $((attempt * 30))
+          done
+          echo "::error::pip install still failing after 5 attempts."
+          exit 1
 
       # Mirrors scripts/local-ci.sh (hass leg): the pure-unit suite runs with
       # the pytest-homeassistant autoload DISABLED. test_config_flow.py and
