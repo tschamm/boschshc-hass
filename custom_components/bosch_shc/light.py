@@ -98,12 +98,20 @@ class LightSwitch(SHCEntity, LightEntity):
         if self._device.supports_color_hsb or self._device.supports_color_temp:
             min_ct = self._device.min_color_temperature
             max_ct = self._device.max_color_temperature
-            if min_ct and max_ct:
+            # Need a real, non-degenerate range: 0 would ZeroDivide in
+            # mired_to_kelvin, and min == max gives equal kelvin bounds which
+            # HA's LightEntity rejects (a single-temperature bulb edge case).
+            if min_ct and max_ct and min_ct != max_ct:
+                # #340: Bosch reports the range in MIREDS (minCt/maxCt). Mireds
+                # are inverse to kelvin (kelvin = 1e6 / mired), so the SMALLEST
+                # mired is the LARGEST kelvin. HA wants kelvin bounds, so cross
+                # them: max mired -> min kelvin, min mired -> max kelvin.
+                # (Previously assigned straight, which swapped HA's min/max.)
                 self._attr_min_color_temp_kelvin = (
-                    color_util.color_temperature_mired_to_kelvin(min_ct)
+                    color_util.color_temperature_mired_to_kelvin(max_ct)
                 )
                 self._attr_max_color_temp_kelvin = (
-                    color_util.color_temperature_mired_to_kelvin(max_ct)
+                    color_util.color_temperature_mired_to_kelvin(min_ct)
                 )
         if self._device.supports_brightness:
             if (

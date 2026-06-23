@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Installationsprofil"
+      },
+      "communication_quality": {
+        "name": "Kommunikationskvalitet",
+        "state": {
+          "good": "Bra",
+          "normal": "Normal",
+          "medium": "Medel",
+          "bad": "Dålig",
+          "unknown": "Okänd",
+          "fetching": "Hämtar"
+        }
       }
     }
   },

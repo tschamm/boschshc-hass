@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Profil inštalácie"
+      },
+      "communication_quality": {
+        "name": "Kvalita komunikácie",
+        "state": {
+          "good": "Dobrá",
+          "normal": "Normálna",
+          "medium": "Stredná",
+          "bad": "Zlá",
+          "unknown": "Neznáma",
+          "fetching": "Načítavanie"
+        }
       }
     }
   },

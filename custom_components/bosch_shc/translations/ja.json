@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "設置プロファイル"
+      },
+      "communication_quality": {
+        "name": "通信品質",
+        "state": {
+          "good": "良好",
+          "normal": "普通",
+          "medium": "中程度",
+          "bad": "不良",
+          "unknown": "不明",
+          "fetching": "取得中"
+        }
       }
     }
   },

@@ -458,9 +458,12 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_communicationquality"
 
     def test_communication_quality_sensor_name(self):
+        # #339: name now comes from translation_key (not a hard-coded _attr_name)
+        # so the displayed label localizes; _attr_name is therefore None.
         d = self._dev(name="SPC 1")
         s = CommunicationQualitySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Communication Quality"
+        assert s._attr_name is None
+        assert s.translation_key == "communication_quality"
 
     def test_valve_tappet_sensor_unique_id(self):
         d = self._dev()

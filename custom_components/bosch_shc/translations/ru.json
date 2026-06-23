@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Профиль установки"
+      },
+      "communication_quality": {
+        "name": "Качество связи",
+        "state": {
+          "good": "Хорошее",
+          "normal": "Нормальное",
+          "medium": "Среднее",
+          "bad": "Плохое",
+          "unknown": "Неизвестно",
+          "fetching": "Получение"
+        }
       }
     }
   },

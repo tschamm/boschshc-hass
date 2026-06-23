@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Profil Pemasangan"
+      },
+      "communication_quality": {
+        "name": "Kualitas Komunikasi",
+        "state": {
+          "good": "Baik",
+          "normal": "Normal",
+          "medium": "Sedang",
+          "bad": "Buruk",
+          "unknown": "Tidak Diketahui",
+          "fetching": "Mengambil"
+        }
       }
     }
   },

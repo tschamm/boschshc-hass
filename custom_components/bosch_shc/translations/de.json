@@ -250,7 +250,7 @@
         "name": "Begehungstest-Status"
       },
       "battery_level": {
-        "name": "Akkustand"
+        "name": "Batteriestand"
       },
       "combined_rating": {
         "name": "Gesamtbewertung"
@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Installationsprofil"
+      },
+      "communication_quality": {
+        "name": "Kommunikationsqualität",
+        "state": {
+          "good": "Gut",
+          "normal": "Normal",
+          "medium": "Mittel",
+          "bad": "Schlecht",
+          "unknown": "Unbekannt",
+          "fetching": "Wird abgerufen"
+        }
       }
     }
   },

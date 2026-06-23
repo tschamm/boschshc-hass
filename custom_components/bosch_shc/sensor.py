@@ -569,23 +569,30 @@ class TemperatureRatingSensor(SHCEntity, SensorEntity):
 
 
 class CommunicationQualitySensor(SHCEntity, SensorEntity):
-    """Representation of an SHC communication quality reporting sensor."""
+    """Representation of an SHC communication quality reporting sensor.
+
+    #339: a pure diagnostic (Diagnostics category) ENUM sensor; state values are
+    lowercase slugs so HA can translate them (no more raw ALL-CAPS "GOOD"/"BAD").
+    """
 
     _attr_icon = "mdi:wifi"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_translation_key = "communication_quality"
+    _attr_options = ["good", "normal", "medium", "bad", "unknown", "fetching"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC communication quality reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Communication Quality"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_communicationquality"
         )
 
     @property
     def native_value(self):
-        """Return the state of the sensor."""
+        """Return the quality as a lowercase slug (translated for display)."""
         try:
-            return self._device.communicationquality.name
+            return self._device.communicationquality.name.lower()
         except (ValueError, AttributeError) as err:
             LOGGER.warning(
                 "Unknown communication quality for %s: %s", self._device.name, err
@@ -851,10 +858,14 @@ class BatteryLevelSensor(SHCEntity, SensorEntity):
     Complements the binary BatterySensor (binary_sensor.py) which only signals
     OK vs. not-OK.  This sensor exposes the raw enum value so automations can
     distinguish LOW_BATTERY from CRITICALLY_LOW_BATTERY.
+
+    #339: this duplicates the binary "Battery" sensor for most users, so it is
+    disabled by default (power users can enable it per-entity).
     """
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
     _attr_options = [
         "OK",
         "LOW_BATTERY",

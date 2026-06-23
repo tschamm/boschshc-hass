@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Telepítési profil"
+      },
+      "communication_quality": {
+        "name": "Kommunikáció minősége",
+        "state": {
+          "good": "Jó",
+          "normal": "Normál",
+          "medium": "Közepes",
+          "bad": "Rossz",
+          "unknown": "Ismeretlen",
+          "fetching": "Lekérés"
+        }
       }
     }
   },

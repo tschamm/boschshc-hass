@@ -320,29 +320,30 @@ def _comm_quality_sensor(state):
 
 
 class TestCommunicationQualitySensor:
+    # #339: native_value is now a lowercase, translatable slug.
     def test_native_value_good(self):
         state = SHCSmartPlugCompact.CommunicationQualityService.State.GOOD
-        assert _comm_quality_sensor(state).native_value == "GOOD"
+        assert _comm_quality_sensor(state).native_value == "good"
 
     def test_native_value_medium(self):
         state = SHCSmartPlugCompact.CommunicationQualityService.State.MEDIUM
-        assert _comm_quality_sensor(state).native_value == "MEDIUM"
+        assert _comm_quality_sensor(state).native_value == "medium"
 
     def test_native_value_bad(self):
         state = SHCSmartPlugCompact.CommunicationQualityService.State.BAD
-        assert _comm_quality_sensor(state).native_value == "BAD"
+        assert _comm_quality_sensor(state).native_value == "bad"
 
     def test_native_value_unknown(self):
         state = SHCSmartPlugCompact.CommunicationQualityService.State.UNKNOWN
-        assert _comm_quality_sensor(state).native_value == "UNKNOWN"
+        assert _comm_quality_sensor(state).native_value == "unknown"
 
     def test_native_value_fetching(self):
         state = SHCSmartPlugCompact.CommunicationQualityService.State.FETCHING
-        assert _comm_quality_sensor(state).native_value == "FETCHING"
+        assert _comm_quality_sensor(state).native_value == "fetching"
 
     def test_native_value_normal(self):
         state = SHCSmartPlugCompact.CommunicationQualityService.State.NORMAL
-        assert _comm_quality_sensor(state).native_value == "NORMAL"
+        assert _comm_quality_sensor(state).native_value == "normal"
 
 
 # ---------------------------------------------------------------------------

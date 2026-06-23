@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Kurulum Profili"
+      },
+      "communication_quality": {
+        "name": "İletişim Kalitesi",
+        "state": {
+          "good": "İyi",
+          "normal": "Normal",
+          "medium": "Orta",
+          "bad": "Kötü",
+          "unknown": "Bilinmiyor",
+          "fetching": "Alınıyor"
+        }
       }
     }
   },

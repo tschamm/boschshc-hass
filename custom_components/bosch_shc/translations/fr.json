@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Profil d'installation"
+      },
+      "communication_quality": {
+        "name": "Qualité de communication",
+        "state": {
+          "good": "Bonne",
+          "normal": "Normale",
+          "medium": "Moyenne",
+          "bad": "Mauvaise",
+          "unknown": "Inconnue",
+          "fetching": "Récupération"
+        }
       }
     }
   },

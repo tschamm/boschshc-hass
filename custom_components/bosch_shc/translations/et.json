@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Paigaldusprofiil"
+      },
+      "communication_quality": {
+        "name": "Sideühenduse kvaliteet",
+        "state": {
+          "good": "Hea",
+          "normal": "Normaalne",
+          "medium": "Keskmine",
+          "bad": "Halb",
+          "unknown": "Teadmata",
+          "fetching": "Pärimine"
+        }
       }
     }
   },

@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Профіль встановлення"
+      },
+      "communication_quality": {
+        "name": "Якість зв'язку",
+        "state": {
+          "good": "Хороша",
+          "normal": "Нормальна",
+          "medium": "Середня",
+          "bad": "Погана",
+          "unknown": "Невідома",
+          "fetching": "Отримання"
+        }
       }
     }
   },

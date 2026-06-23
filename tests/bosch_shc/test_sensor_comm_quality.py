@@ -22,7 +22,6 @@ def _make_sensor(quality_obj):
         communicationquality=quality_obj,
     )
     sensor._attr_unique_id = "root-1_dev-1_communicationquality"
-    sensor._attr_name = "Communication Quality"
     return sensor
 
 
@@ -48,9 +47,10 @@ class _NoneQuality:
 
 
 class TestCommunicationQualitySensor:
-    def test_valid_quality_returns_name(self):
+    def test_valid_quality_returns_slug(self):
+        # #339: native_value is now a lowercase slug (translated for display).
         sensor = _make_sensor(_GoodQuality())
-        assert sensor.native_value == "GOOD"
+        assert sensor.native_value == "good"
 
     def test_value_error_returns_none_and_logs(self):
         sensor = _make_sensor(_BadQuality())

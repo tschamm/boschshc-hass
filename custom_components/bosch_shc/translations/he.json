@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "פרופיל התקנה"
+      },
+      "communication_quality": {
+        "name": "איכות תקשורת",
+        "state": {
+          "good": "טובה",
+          "normal": "רגילה",
+          "medium": "בינונית",
+          "bad": "גרועה",
+          "unknown": "לא ידוע",
+          "fetching": "מאחזר"
+        }
       }
     }
   },

@@ -135,8 +135,9 @@ def test_init_kelvin_range_set_when_hsb():
         min_color_temperature=150,
         max_color_temperature=500,
     ), entry_id="test")
-    assert sw._attr_min_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(150)
-    assert sw._attr_max_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(500)
+    # #340: mired<->kelvin inverse → bounds crossed (max mired -> min kelvin).
+    assert sw._attr_min_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(500)
+    assert sw._attr_max_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(150)
 
 
 # ---------------------------------------------------------------------------
@@ -151,8 +152,9 @@ def test_init_kelvin_range_set_when_color_temp():
         min_color_temperature=153,
         max_color_temperature=454,
     ), entry_id="test")
-    assert sw._attr_min_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(153)
-    assert sw._attr_max_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(454)
+    # #340: mired<->kelvin inverse → bounds crossed (max mired -> min kelvin).
+    assert sw._attr_min_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(454)
+    assert sw._attr_max_color_temp_kelvin == color_util.color_temperature_mired_to_kelvin(153)
 
 
 # ---------------------------------------------------------------------------
@@ -191,3 +193,26 @@ def test_init_base_fields_set():
     assert sw._attr_name is None
     assert sw._attr_unique_id == "root-X_dev-Y"
     assert sw._entry_id == "entry-42"
+
+
+# ---------------------------------------------------------------------------
+# #340: mired<->kelvin is inverse, so HA's min/max kelvin bounds must be
+# crossed (smallest mired = largest kelvin). Regression guard against the
+# straight (swapped) assignment.
+# ---------------------------------------------------------------------------
+
+def test_color_temp_kelvin_bounds_not_swapped():
+    sw = LightSwitch(device=_make_device(
+        supports_color_temp=True,
+        supports_color_hsb=False,
+        supports_brightness=False,
+        min_color_temperature=153,   # mireds (smallest mired -> warmest? no: highest kelvin)
+        max_color_temperature=500,   # mireds (largest mired -> lowest kelvin)
+    ), entry_id="test")
+    m2k = color_util.color_temperature_mired_to_kelvin
+    # smallest mired (153) -> largest kelvin -> the MAX bound
+    assert sw._attr_max_color_temp_kelvin == m2k(153)
+    # largest mired (500) -> smallest kelvin -> the MIN bound
+    assert sw._attr_min_color_temp_kelvin == m2k(500)
+    # and the ordering must be sane (min < max), which was violated before #340
+    assert sw._attr_min_color_temp_kelvin < sw._attr_max_color_temp_kelvin

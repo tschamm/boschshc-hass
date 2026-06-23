@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "安装配置文件"
+      },
+      "communication_quality": {
+        "name": "通信质量",
+        "state": {
+          "good": "良好",
+          "normal": "正常",
+          "medium": "中等",
+          "bad": "较差",
+          "unknown": "未知",
+          "fetching": "获取中"
+        }
       }
     }
   },

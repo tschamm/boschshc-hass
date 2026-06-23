@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Προφίλ εγκατάστασης"
+      },
+      "communication_quality": {
+        "name": "Ποιότητα επικοινωνίας",
+        "state": {
+          "good": "Καλή",
+          "normal": "Κανονική",
+          "medium": "Μέτρια",
+          "bad": "Κακή",
+          "unknown": "Άγνωστη",
+          "fetching": "Λήψη"
+        }
       }
     }
   },

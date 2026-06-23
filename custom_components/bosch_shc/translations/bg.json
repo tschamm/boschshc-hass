@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Профил на инсталацията"
+      },
+      "communication_quality": {
+        "name": "Качество на комуникацията",
+        "state": {
+          "good": "Добро",
+          "normal": "Нормално",
+          "medium": "Средно",
+          "bad": "Лошо",
+          "unknown": "Неизвестно",
+          "fetching": "Извличане"
+        }
       }
     }
   },

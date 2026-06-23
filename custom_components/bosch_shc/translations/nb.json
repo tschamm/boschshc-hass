@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Installasjonsprofil"
+      },
+      "communication_quality": {
+        "name": "Kommunikasjonskvalitet",
+        "state": {
+          "good": "God",
+          "normal": "Normal",
+          "medium": "Middels",
+          "bad": "Dårlig",
+          "unknown": "Ukjent",
+          "fetching": "Henter"
+        }
       }
     }
   },

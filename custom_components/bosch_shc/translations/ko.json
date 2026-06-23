@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "설치 프로파일"
+      },
+      "communication_quality": {
+        "name": "통신 품질",
+        "state": {
+          "good": "좋음",
+          "normal": "보통",
+          "medium": "중간",
+          "bad": "나쁨",
+          "unknown": "알 수 없음",
+          "fetching": "가져오는 중"
+        }
       }
     }
   },

@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Perfil d'instal·lació"
+      },
+      "communication_quality": {
+        "name": "Qualitat de comunicació",
+        "state": {
+          "good": "Bona",
+          "normal": "Normal",
+          "medium": "Mitjana",
+          "bad": "Dolenta",
+          "unknown": "Desconeguda",
+          "fetching": "Obtenint"
+        }
       }
     }
   },

@@ -576,7 +576,9 @@ class TestDiagnosticEntitiesOption:
 
         entity_names = [getattr(e, "_attr_name", None) for e in added]
         assert "Valve Tappet" in entity_names
-        assert "Communication Quality" in entity_names
+        # #339: CommunicationQuality now uses translation_key instead of _attr_name.
+        entity_tkeys = [getattr(e, "_attr_translation_key", None) for e in added]
+        assert "communication_quality" in entity_tkeys
 
     def test_diagnostic_entities_false_excludes_valvetappet(self):
         """When diagnostic_entities=False, ValveTappetSensor is NOT created."""

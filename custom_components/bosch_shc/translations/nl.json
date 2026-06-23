@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Installatieprofiel"
+      },
+      "communication_quality": {
+        "name": "Communicatiekwaliteit",
+        "state": {
+          "good": "Goed",
+          "normal": "Normaal",
+          "medium": "Gemiddeld",
+          "bad": "Slecht",
+          "unknown": "Onbekend",
+          "fetching": "Ophalen"
+        }
       }
     }
   },

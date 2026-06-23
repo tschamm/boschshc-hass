@@ -263,6 +263,17 @@
       },
       "installation_profile": {
         "name": "Uzstādīšanas profils"
+      },
+      "communication_quality": {
+        "name": "Komunikācijas kvalitāte",
+        "state": {
+          "good": "Laba",
+          "normal": "Normāla",
+          "medium": "Vidēja",
+          "bad": "Slikta",
+          "unknown": "Nezināma",
+          "fetching": "Ielādē"
+        }
       }
     }
   },
