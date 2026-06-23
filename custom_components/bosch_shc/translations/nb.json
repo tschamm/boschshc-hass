@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "Vis scenarier som knappenheter",
               "diagnostic_entities": "Opprett diagnostikksensorer",
-              "enable_rawscan_service": "Aktiver rawscan-diagnosetjeneste"
+              "enable_rawscan_service": "Aktiver rawscan-diagnosetjeneste",
+              "light_switches_as_light": "Vis Light/Shutter Control II som lys"
             },
             "data_description": {
               "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
               "diagnostic_entities": "Når PÅ (standard): diagnostikksensorenheter opprettes for hver støttet enhet — ventilstøtterposisjon (termostater) og kommunikasjonskvalitet (smarte stikkontakter). Slå AV for å redusere antall enheter hvis du ikke trenger disse sensorene.",
-              "enable_rawscan_service": "Når PÅ: registrerer bosch_shc.trigger_rawscan-tjenesten for rå API-feilsøking. Slå AV for å skjule den. Standard: på."
+              "enable_rawscan_service": "Når PÅ: registrerer bosch_shc.trigger_rawscan-tjenesten for rå API-feilsøking. Slå AV for å skjule den. Standard: på.",
+              "light_switches_as_light": "Velg Light Control II / innebygd lysbryter-enheter som skal vises som `light`-enheter i stedet for `switch`-enheter. Bryteren til hver valgt enhet erstattes av et på/av-lys. La stå tom (standard) for å beholde dem som switches. Å endre dette bytter enhetsdomenet (`switch.*` ↔ `light.*`), så oppdater eventuelle automasjoner eller instrumentbord som refererer til den gamle enheten."
             }
           },
           "presence": {

@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "시나리오를 버튼 엔티티로 노출",
               "diagnostic_entities": "진단 센서 생성",
-              "enable_rawscan_service": "rawscan 진단 서비스 활성화"
+              "enable_rawscan_service": "rawscan 진단 서비스 활성화",
+              "light_switches_as_light": "Light/Shutter Control II를 조명으로 노출"
             },
             "data_description": {
               "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
               "diagnostic_entities": "켜짐(기본값): 지원되는 각 장치에 대해 진단 센서 엔티티가 생성됩니다 — 밸브 태핏 위치(온도 조절기) 및 통신 품질(스마트 플러그). 이 센서가 필요 없으면 끄기로 엔티티 수를 줄이세요.",
-              "enable_rawscan_service": "켜짐: 원시 API 디버깅을 위해 bosch_shc.trigger_rawscan 서비스를 등록합니다. 숨기려면 끄세요. 기본값: 켜짐."
+              "enable_rawscan_service": "켜짐: 원시 API 디버깅을 위해 bosch_shc.trigger_rawscan 서비스를 등록합니다. 숨기려면 끄세요. 기본값: 켜짐.",
+              "light_switches_as_light": "`switch` 엔티티 대신 `light` 엔티티로 표시할 Light Control II / 벽면 매립형 조명 스위치 장치를 선택하세요. 선택된 각 장치의 스위치는 켜기/끄기 조명으로 대체됩니다. 스위치로 유지하려면 비워 두세요(기본값). 이 설정을 변경하면 엔티티 도메인이 교체됩니다(`switch.*` ↔ `light.*`). 이전 엔티티를 참조하는 자동화나 대시보드를 업데이트하세요."
             }
           },
           "presence": {

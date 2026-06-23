@@ -40,7 +40,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DOMAIN, DATA_SHC
-from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
+from .entity import (
+    SHCEntity,
+    async_migrate_to_new_unique_id,
+    device_excluded,
+    light_switch_as_light,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -391,6 +396,12 @@ async def async_setup_entry(
         + session.device_helper.micromodule_light_attached
     ):
         if device_excluded(switch, config_entry.options):
+            continue
+        # #338: when this light relay is opted in to be a HA `light`, the light
+        # platform creates the on/off entity instead — skip the switch here so
+        # the device is not exposed twice.  (Child-lock / swap config switches
+        # below stay regardless, they are independent CONFIG entities.)
+        if light_switch_as_light(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch

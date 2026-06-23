@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "Esponi gli scenari come entità pulsante",
               "diagnostic_entities": "Crea sensori diagnostici",
-              "enable_rawscan_service": "Abilita il servizio di diagnostica rawscan"
+              "enable_rawscan_service": "Abilita il servizio di diagnostica rawscan",
+              "light_switches_as_light": "Esponi Light/Shutter Control II come luci"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATTIVO: ogni scenario Bosch SHC appare anche come entità pulsante in Home Assistant (oltre al servizio `trigger_scenario`). Utile per riquadri dashboard e automazioni che attivano scenari direttamente. Predefinito: disattivato.",
               "diagnostic_entities": "Quando ATTIVO (predefinito): vengono create entità sensore diagnostico per ogni dispositivo compatibile — posizione del tassello valvola (termostati) e qualità della comunicazione (smart plug). Disattiva per ridurre il numero di entità se non hai bisogno di questi sensori.",
-              "enable_rawscan_service": "Quando ATTIVO: registra il servizio bosch_shc.trigger_rawscan per il debug grezzo dell'API. Disattiva per nasconderlo. Predefinito: attivato."
+              "enable_rawscan_service": "Quando ATTIVO: registra il servizio bosch_shc.trigger_rawscan per il debug grezzo dell'API. Disattiva per nasconderlo. Predefinito: attivato.",
+              "light_switches_as_light": "Seleziona i dispositivi Light Control II / interruttore luce a incasso che devono apparire come entità `light` invece di entità `switch`. L'interruttore di ogni dispositivo selezionato viene sostituito da una luce acceso/spento. Lascia vuoto (impostazione predefinita) per mantenerli come switches. Modificando questa impostazione si scambia il dominio dell'entità (`switch.*` ↔ `light.*`), quindi aggiorna eventuali automazioni o dashboard che fanno riferimento alla vecchia entità."
             }
           },
           "presence": {

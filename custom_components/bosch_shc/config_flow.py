@@ -46,6 +46,7 @@ from .const import (
     OPT_ENABLE_RAWSCAN,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
+    OPT_LIGHTS_AS_LIGHT,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_SCENARIOS_AS_BUTTONS,
@@ -55,6 +56,7 @@ from .const import (
     OPT_SILENT_MODE_START,
     OPT_SILENT_MODE_END,
 )
+from .entity import light_switch_devices
 
 # ── Section layout (single source of truth) ──────────────────────────────────
 # Maps each section key to the flat OPT_* keys it contains.
@@ -65,6 +67,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_SCENARIOS_AS_BUTTONS,
         OPT_DIAGNOSTIC_ENTITIES,
         OPT_ENABLE_RAWSCAN,
+        OPT_LIGHTS_AS_LIGHT,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -461,13 +464,25 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
+        current = self.config_entry.options
+
         if user_input is not None:
             # HA's section() nests fields; flatten back to the flat OPT_* shape
             # that sensor.py, __init__.py, etc. read.
             flat = _flatten_sections(user_input)
+            # async_create_entry REPLACES the stored options wholesale.  Some
+            # device-list fields are only shown when the live session yields
+            # candidates (eligible light relays / devices / rooms); when hidden
+            # they are absent from the submit dict, so carry over the stored
+            # value instead of silently wiping the user's selection.
+            for key in (
+                OPT_LIGHTS_AS_LIGHT,
+                OPT_EXCLUDED_DEVICES,
+                OPT_EXCLUDED_ROOMS,
+            ):
+                if key not in flat and key in current:
+                    flat[key] = current[key]
             return self.async_create_entry(title="", data=flat)
-
-        current = self.config_entry.options
 
         # The presence entity option became multi-select; existing entries may
         # still hold a single entity id as a plain string. Coerce to a list so
@@ -480,6 +495,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
         # Build device/room option lists from the live session.
         device_options = []
         room_options = []
+        light_switch_options = []
         try:
             data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
             if data:
@@ -495,30 +511,57 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                     {"value": rid, "label": name}
                     for rid, name in rooms.items()
                 ]
+                # #338: only the on/off light-relay devices are eligible to be
+                # presented as a `light`.  Include the model in the label so a
+                # BSM relay controlling a non-light load is distinguishable from
+                # a Light Control II channel.
+                for dev in light_switch_devices(session):
+                    room_name = rooms.get(getattr(dev, "room_id", None), "")
+                    model = getattr(dev, "device_model", "") or ""
+                    base = f"{dev.name} ({room_name})" if room_name else dev.name
+                    label = f"{base} [{model}]" if model else base
+                    light_switch_options.append({"value": dev.id, "label": label})
         except Exception:  # never break the options flow if session is unavailable
             LOGGER.debug(
                 "Could not build device/room filter options", exc_info=True
             )
 
+        features_fields = {
+            vol.Optional(
+                OPT_SCENARIOS_AS_BUTTONS,
+                default=current.get(OPT_SCENARIOS_AS_BUTTONS, False),
+            ): BooleanSelector(),
+            vol.Optional(
+                OPT_DIAGNOSTIC_ENTITIES,
+                default=current.get(OPT_DIAGNOSTIC_ENTITIES, True),
+            ): BooleanSelector(),
+            vol.Optional(
+                OPT_ENABLE_RAWSCAN,
+                default=current.get(OPT_ENABLE_RAWSCAN, True),
+            ): BooleanSelector(),
+        }
+        # #338: only offer the "expose as light" picker when the controller
+        # actually has light-relay devices that can switch domain.
+        if light_switch_options:
+            features_fields[
+                vol.Optional(
+                    OPT_LIGHTS_AS_LIGHT,
+                    default=current.get(OPT_LIGHTS_AS_LIGHT, []),
+                )
+            ] = SelectSelector(
+                SelectSelectorConfig(
+                    options=light_switch_options,
+                    multiple=True,
+                    mode=SelectSelectorMode.DROPDOWN,
+                    custom_value=False,
+                    sort=True,
+                )
+            )
+
         schema = vol.Schema(
             {
                 vol.Required("features"): section(
-                    vol.Schema(
-                        {
-                            vol.Optional(
-                                OPT_SCENARIOS_AS_BUTTONS,
-                                default=current.get(OPT_SCENARIOS_AS_BUTTONS, False),
-                            ): BooleanSelector(),
-                            vol.Optional(
-                                OPT_DIAGNOSTIC_ENTITIES,
-                                default=current.get(OPT_DIAGNOSTIC_ENTITIES, True),
-                            ): BooleanSelector(),
-                            vol.Optional(
-                                OPT_ENABLE_RAWSCAN,
-                                default=current.get(OPT_ENABLE_RAWSCAN, True),
-                            ): BooleanSelector(),
-                        }
-                    ),
+                    vol.Schema(features_fields),
                     {"collapsed": False},
                 ),
                 vol.Required("presence"): section(

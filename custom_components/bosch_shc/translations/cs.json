@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "Zobrazit scénáře jako tlačítkové entity",
               "diagnostic_entities": "Vytvořit diagnostické senzory",
-              "enable_rawscan_service": "Povolit diagnostickou službu rawscan"
+              "enable_rawscan_service": "Povolit diagnostickou službu rawscan",
+              "light_switches_as_light": "Zobrazit Light/Shutter Control II jako světla"
             },
             "data_description": {
               "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
               "diagnostic_entities": "Pokud ZAPNUTO (výchozí): pro každé podporované zařízení jsou vytvořeny diagnostické senzorové entity — poloha ventilu (termostaty) a kvalita komunikace (chytré zásuvky). Vypnutím snížíte počet entit, pokud tyto senzory nepotřebujete.",
-              "enable_rawscan_service": "Pokud ZAPNUTO: zaregistruje službu bosch_shc.trigger_rawscan pro ladění surového API. Vypnutím ji skryjete. Výchozí: zapnuto."
+              "enable_rawscan_service": "Pokud ZAPNUTO: zaregistruje službu bosch_shc.trigger_rawscan pro ladění surového API. Vypnutím ji skryjete. Výchozí: zapnuto.",
+              "light_switches_as_light": "Vyberte zařízení Light Control II / nástěnný vypínač světla, která by se měla zobrazovat jako entity `light` místo entit `switch`. Přepínač každého vybraného zařízení je nahrazen světlem se zapnutím/vypnutím. Ponechte prázdné (výchozí), aby zůstaly jako switches. Změna přepne doménu entity (`switch.*` ↔ `light.*`), proto aktualizujte všechny automatizace nebo přehledy, které odkazují na starou entitu."
             }
           },
           "presence": {

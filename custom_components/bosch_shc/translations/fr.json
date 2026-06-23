@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "Exposer les scénarios comme entités bouton",
               "diagnostic_entities": "Créer des capteurs de diagnostic",
-              "enable_rawscan_service": "Activer le service de diagnostic rawscan"
+              "enable_rawscan_service": "Activer le service de diagnostic rawscan",
+              "light_switches_as_light": "Exposer le Light/Shutter Control II comme lumières"
             },
             "data_description": {
               "scenarios_as_buttons": "Quand ACTIVÉ : chaque scénario Bosch SHC apparaît également comme entité bouton dans Home Assistant (en plus du service `trigger_scenario`). Utile pour les tuiles de tableau de bord et les automatisations qui déclenchent des scénarios directement. Par défaut : désactivé.",
               "diagnostic_entities": "Quand ACTIVÉ (par défaut) : des entités capteurs de diagnostic sont créées pour chaque appareil compatible — position du taquets de vanne (thermostats) et qualité de communication (prises intelligentes). Désactivez pour réduire le nombre d'entités si vous n'avez pas besoin de ces capteurs.",
-              "enable_rawscan_service": "Quand ACTIVÉ : enregistre le service bosch_shc.trigger_rawscan pour le débogage brut de l'API. Désactivez pour le masquer. Par défaut : activé."
+              "enable_rawscan_service": "Quand ACTIVÉ : enregistre le service bosch_shc.trigger_rawscan pour le débogage brut de l'API. Désactivez pour le masquer. Par défaut : activé.",
+              "light_switches_as_light": "Sélectionnez les appareils Light Control II / interrupteur de lumière encastré qui doivent apparaître comme des entités `light` plutôt que des entités `switch`. L'interrupteur de chaque appareil sélectionné est remplacé par une lumière marche/arrêt. Laissez vide (par défaut) pour les conserver comme switches. Ce changement permute le domaine de l'entité (`switch.*` ↔ `light.*`), pensez donc à mettre à jour vos automatisations ou tableaux de bord qui référencent l'ancienne entité."
             }
           },
           "presence": {

@@ -6,7 +6,33 @@ from homeassistant.helpers import entity_registry
 from homeassistant.helpers.device_registry import DeviceInfo, async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN, LOGGER, OPT_EXCLUDED_DEVICES, OPT_EXCLUDED_ROOMS
+from .const import (
+    DOMAIN,
+    LOGGER,
+    OPT_EXCLUDED_DEVICES,
+    OPT_EXCLUDED_ROOMS,
+    OPT_LIGHTS_AS_LIGHT,
+)
+
+
+def light_switch_devices(session) -> list:
+    """Return the on/off light-relay devices that can be a switch OR a light.
+
+    These are the Light/Shutter Control II light channels
+    (MICROMODULE_LIGHT_ATTACHED) and the in-wall BSM light switches — both wrap a
+    plain PowerSwitch relay and are exposed as a HA `switch` by default, or as a
+    `light` when opted in per device (#338).  Buckets are read with getattr so an
+    older pinned lib that lacks one of them does not raise.
+    """
+    return list(getattr(session.device_helper, "light_switches_bsm", [])) + list(
+        getattr(session.device_helper, "micromodule_light_attached", [])
+    )
+
+
+def light_switch_as_light(device, options) -> bool:
+    """True if this light-relay device is opted in to be a `light` (#338)."""
+    opted_in = options.get(OPT_LIGHTS_AS_LIGHT) or []
+    return getattr(device, "id", None) in opted_in
 
 
 def device_excluded(device, options) -> bool:

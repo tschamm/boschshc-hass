@@ -46,6 +46,10 @@ OPT_PRESENCE_ENTITY = "child_lock_presence_entity"
 OPT_PRESENCE_STATE = "child_lock_present_state"
 OPT_EXCLUDED_DEVICES = "excluded_devices"
 OPT_EXCLUDED_ROOMS = "excluded_rooms"
+# #338: per-device opt-in to expose a Light/Shutter Control II (or BSM) light
+# relay as a HA `light` entity instead of the default `switch`. Holds a list of
+# device ids; default [] keeps the historical `switch` behaviour (non-breaking).
+OPT_LIGHTS_AS_LIGHT = "light_switches_as_light"
 # #264: opt-in skip of SHC server-certificate verification (expired cert on an
 # offline local-only controller). mTLS client-cert auth is unaffected.
 OPT_SSL_SKIP_VERIFY = "ssl_skip_verify"

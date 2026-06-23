@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "Scenario's blootstellen als knopentiteiten",
               "diagnostic_entities": "Diagnostische sensoren aanmaken",
-              "enable_rawscan_service": "Diagnostische rawscan-service inschakelen"
+              "enable_rawscan_service": "Diagnostische rawscan-service inschakelen",
+              "light_switches_as_light": "Light/Shutter Control II weergeven als lampen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
               "diagnostic_entities": "Wanneer AAN (standaard): diagnostische sensorentiteiten worden aangemaakt voor elk ondersteund apparaat — kleppenpositie (thermostaten) en communicatiekwaliteit (slimme stekkers). Zet UIT om het aantal entiteiten te verminderen als u deze sensoren niet nodig heeft.",
-              "enable_rawscan_service": "Wanneer AAN: registreert de bosch_shc.trigger_rawscan service voor ruwe API-foutopsporing. Zet UIT om deze te verbergen. Standaard: aan."
+              "enable_rawscan_service": "Wanneer AAN: registreert de bosch_shc.trigger_rawscan service voor ruwe API-foutopsporing. Zet UIT om deze te verbergen. Standaard: aan.",
+              "light_switches_as_light": "Selecteer de Light Control II / inbouw lichtschakelaar-apparaten die als `light`-entiteiten moeten verschijnen in plaats van `switch`-entiteiten. De schakelaar van elk geselecteerd apparaat wordt vervangen door een aan/uit-lamp. Laat leeg (standaard) om ze als switches te houden. Dit wijzigen verwisselt het entiteitsdomein (`switch.*` ↔ `light.*`), werk dus eventuele automatiseringen of dashboards bij die naar de oude entiteit verwijzen."
             }
           },
           "presence": {

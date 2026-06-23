@@ -94,12 +94,14 @@
             "data": {
               "scenarios_as_buttons": "Senaryoları düğme varlıkları olarak göster",
               "diagnostic_entities": "Tanılama sensörleri oluştur",
-              "enable_rawscan_service": "rawscan tanılama hizmetini etkinleştir"
+              "enable_rawscan_service": "rawscan tanılama hizmetini etkinleştir",
+              "light_switches_as_light": "Light/Shutter Control II'yi ışık olarak göster"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
               "diagnostic_entities": "AÇIK olduğunda (varsayılan): desteklenen her cihaz için tanılama sensör varlıkları oluşturulur — valf tırnağı konumu (termostatlar) ve iletişim kalitesi (akıllı prizler). Bu sensörlere ihtiyaç duymuyorsanız KAPALI yaparak varlık sayısını azaltın.",
-              "enable_rawscan_service": "AÇIK olduğunda: ham API hata ayıklaması için bosch_shc.trigger_rawscan hizmetini kaydeder. Gizlemek için KAPALI yapın. Varsayılan: açık."
+              "enable_rawscan_service": "AÇIK olduğunda: ham API hata ayıklaması için bosch_shc.trigger_rawscan hizmetini kaydeder. Gizlemek için KAPALI yapın. Varsayılan: açık.",
+              "light_switches_as_light": "`switch` varlıkları yerine `light` varlıkları olarak görünmesi gereken Light Control II / gömme ışık anahtarı cihazlarını seçin. Seçilen her cihazın anahtarı, açık/kapalı bir ışıkla değiştirilir. Bunları switch olarak tutmak için boş bırakın (varsayılan). Bunu değiştirmek varlık etki alanını değiştirir (`switch.*` ↔ `light.*`), bu nedenle eski varlığa başvuran otomasyonları veya pano öğelerini güncelleyin."
             }
           },
           "presence": {
