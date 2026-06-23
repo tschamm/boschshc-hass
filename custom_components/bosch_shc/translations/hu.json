@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Forgatókönyvek megjelenítése gombentitásokként",
               "diagnostic_entities": "Diagnosztikai érzékelők létrehozása",
               "enable_rawscan_service": "Rawscan diagnosztikai szolgáltatás engedélyezése",
+              "all_light_switches_as_light": "AZ ÖSSZES Light/Shutter Control II megjelenítése fényként",
               "light_switches_as_light": "Light/Shutter Control II megjelenítése lámpákként"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
               "diagnostic_entities": "Ha BE van kapcsolva (alapértelmezett): minden támogatott eszközhöz diagnosztikai érzékelőentitások jönnek létre — szelepbetét helyzete (termosztátok) és kommunikációs minőség (okos dugók). Kapcsolja ki az entitásszám csökkentéséhez, ha nincs szüksége ezekre az érzékelőkre.",
               "enable_rawscan_service": "Ha BE van kapcsolva: regisztrálja a bosch_shc.trigger_rawscan szolgáltatást a nyers API hibakereséshez. Kapcsolja ki az elrejtéséhez. Alapértelmezett: be.",
+              "all_light_switches_as_light": "Kapcsolja be, hogy minden Light Control II / beépített fénykapcsoló eszközt egyszerre `light` entitásként jelenítsen meg — felülírja az alábbi eszközönkénti kiválasztást. Kikapcsolva (alapértelmezett) az eszközönkénti választás megmarad. Ugyanaz a figyelmeztetés: ez felcseréli az entitás tartományát (`switch.*` ↔ `light.*`), ezért frissítse a régi entitásokra hivatkozó automatizálásokat és irányítópultokat.",
               "light_switches_as_light": "Válassza ki azokat a Light Control II / falon belüli fénykapcsoló eszközöket, amelyeknek `light` entitásként kell megjelenniük a `switch` entitások helyett. Minden kiválasztott eszköz kapcsolója egy be/ki lámpával helyettesítődik. Hagyja üresen (alapértelmezett), hogy kapcsolókként maradjanak. A módosítás felcseréli az entitás doménjét (`switch.*` ↔ `light.*`), ezért frissítse a régi entitásra hivatkozó automatizálásokat vagy irányítópultokat."
             }
           },

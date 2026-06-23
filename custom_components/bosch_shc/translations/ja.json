@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "シナリオをボタンエンティティとして公開する",
               "diagnostic_entities": "診断センサーを作成する",
               "enable_rawscan_service": "rawscan診断サービスを有効にする",
+              "all_light_switches_as_light": "すべての Light/Shutter Control II をライトとして公開する",
               "light_switches_as_light": "Light/Shutter Control II をライトとして公開する"
             },
             "data_description": {
               "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
               "diagnostic_entities": "オンの場合（デフォルト）：サポートされている各デバイスに対して診断センサーエンティティが作成されます — バルブタペット位置（サーモスタット）および通信品質（スマートプラグ）。これらのセンサーが不要な場合はオフにしてエンティティ数を削減できます。",
               "enable_rawscan_service": "オンの場合：生のAPIデバッグ用にbosch_shc.trigger_rawscanサービスを登録します。非表示にするにはオフにします。デフォルト：オン。",
+              "all_light_switches_as_light": "オンにすると、すべての Light Control II / 壁面ライトスイッチデバイスを一括で `light` エンティティとして表示します — 下の個別デバイス選択より優先されます。オフ（デフォルト）の場合はデバイスごとの選択が維持されます。同じ注意事項: これによりエンティティドメインが切り替わります（`switch.*` ↔ `light.*`）。古いエンティティを参照している自動化やダッシュボードを更新してください。",
               "light_switches_as_light": "`switch` エンティティではなく `light` エンティティとして表示する Light Control II / 埋め込み式ライトスイッチデバイスを選択します。選択された各デバイスのスイッチはオン/オフライトに置き換えられます。スイッチのままにする場合は空のままにしてください（デフォルト）。これを変更するとエンティティのドメインが切り替わります（`switch.*` ↔ `light.*`）。古いエンティティを参照しているオートメーションやダッシュボードを更新してください。"
             }
           },

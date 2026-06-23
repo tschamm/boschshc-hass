@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Exponer escenarios como entidades de botón",
               "diagnostic_entities": "Crear sensores de diagnóstico",
               "enable_rawscan_service": "Habilitar el servicio de diagnóstico rawscan",
+              "all_light_switches_as_light": "Exponer TODOS los Light/Shutter Control II como luces",
               "light_switches_as_light": "Exponer Light/Shutter Control II como luces"
             },
             "data_description": {
               "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario de Bosch SHC también aparece como una entidad de botón en Home Assistant (además del servicio trigger_scenario). Útil para paneles y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
               "diagnostic_entities": "Cuando está ACTIVADO (predeterminado): se crean entidades de sensor de diagnóstico para cada dispositivo compatible — posición del tapón de válvula (termostatos) y calidad de comunicación (enchufes inteligentes). Desactive para reducir el número de entidades si no necesita estos sensores.",
               "enable_rawscan_service": "Cuando está ACTIVADO: registra el servicio bosch_shc.trigger_rawscan para la depuración de la API sin procesar. Desactive para ocultarlo. Predeterminado: activado.",
+              "all_light_switches_as_light": "Active esta opción para presentar todos los dispositivos Light Control II / interruptores de luz empotrados como entidad `light` de una vez — anula la selección por dispositivo que se muestra abajo. Desactivado (predeterminado) mantiene la elección por dispositivo. La misma advertencia: esto cambia el dominio de la entidad (`switch.*` ↔ `light.*`), por lo que actualice las automatizaciones y los paneles que hagan referencia a las entidades anteriores.",
               "light_switches_as_light": "Selecciona los dispositivos Light Control II / interruptor de luz empotrado que deben aparecer como entidades `light` en lugar de entidades `switch`. El interruptor de cada dispositivo seleccionado se reemplaza por una luz de encendido/apagado. Déjalo vacío (predeterminado) para mantenerlos como switches. Cambiar esto intercambia el dominio de la entidad (`switch.*` ↔ `light.*`), así que actualiza cualquier automatización o panel que haga referencia a la entidad anterior."
             }
           },

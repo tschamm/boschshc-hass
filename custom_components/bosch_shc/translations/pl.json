@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Udostępnij scenariusze jako encje przycisków",
               "diagnostic_entities": "Utwórz czujniki diagnostyczne",
               "enable_rawscan_service": "Włącz diagnostyczną usługę rawscan",
+              "all_light_switches_as_light": "Udostępnij WSZYSTKIE Light/Shutter Control II jako światła",
               "light_switches_as_light": "Eksponuj Light/Shutter Control II jako światła"
             },
             "data_description": {
               "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
               "diagnostic_entities": "Gdy WŁĄCZONE (domyślnie): encje czujników diagnostycznych są tworzone dla każdego obsługiwanego urządzenia — pozycja zaworu (termostaty) i jakość komunikacji (inteligentne wtyczki). Wyłącz, aby zmniejszyć liczbę encji, jeśli nie potrzebujesz tych czujników.",
               "enable_rawscan_service": "Gdy WŁĄCZONE: rejestruje usługę bosch_shc.trigger_rawscan do debugowania surowego API. Wyłącz, aby ją ukryć. Domyślnie: włączone.",
+              "all_light_switches_as_light": "Włącz, aby wszystkie urządzenia Light Control II / podtynkowe przełączniki światła były jednocześnie przedstawiane jako encja `light` — zastępuje wybór dla poszczególnych urządzeń poniżej. Wyłączone (domyślnie) zachowuje wybór dla każdego urządzenia z osobna. Ta sama uwaga: powoduje to zmianę domeny encji (`switch.*` ↔ `light.*`), dlatego zaktualizuj automatyzacje i pulpity nawigacyjne odwołujące się do starych encji.",
               "light_switches_as_light": "Wybierz urządzenia Light Control II / podtynkowy włącznik światła, które mają być wyświetlane jako encje `light` zamiast encji `switch`. Przełącznik każdego wybranego urządzenia zostaje zastąpiony światłem włącz/wyłącz. Pozostaw puste (domyślnie), aby zachować je jako switches. Zmiana ta zamienia domenę encji (`switch.*` ↔ `light.*`), dlatego zaktualizuj wszelkie automatyzacje lub panele sterowania odwołujące się do starej encji."
             }
           },

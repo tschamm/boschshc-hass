@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Rādīt scenārijus kā pogu entītijas",
               "diagnostic_entities": "Izveidot diagnostikas sensorus",
               "enable_rawscan_service": "Iespējot rawscan diagnostikas pakalpojumu",
+              "all_light_switches_as_light": "Rādīt VISAS Light/Shutter Control II ierīces kā gaismas",
               "light_switches_as_light": "Rādīt Light/Shutter Control II kā gaismas"
             },
             "data_description": {
               "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
               "diagnostic_entities": "Ieslēgts (noklusējums): katrai atbalstītajai ierīcei tiek izveidotas diagnostikas sensoru entītijas — vārsta kloķa pozīcija (termostati) un komunikācijas kvalitāte (viedās kontaktligzdas). Izslēdziet, lai samazinātu entītiju skaitu, ja šie sensori nav nepieciešami.",
               "enable_rawscan_service": "Ieslēgts: reģistrē bosch_shc.trigger_rawscan pakalpojumu neapstrādātas API atkļūdošanai. Izslēdziet, lai to paslēptu. Noklusējums: ieslēgts.",
+              "all_light_switches_as_light": "Ieslēdziet, lai visas Light Control II / iebūvēto gaismas slēdžu ierīces vienlaikus attēlotu kā `light` entitāti — tas ignorē zemāk esošo katras ierīces izvēli. Izslēgts (noklusējums) saglabā katras ierīces individuālo izvēli. Tā pati piezīme: ar to tiek mainīts entitātes domēns (`switch.*` ↔ `light.*`), tādēļ atjauniniet automatizācijas un informācijas paneļus, kas atsaucas uz vecajām entitātēm.",
               "light_switches_as_light": "Atlasiet Light Control II / iebūvētā gaismas slēdža ierīces, kurām jāparādās kā `light` entītijām, nevis `switch` entītijām. Katras atlasītās ierīces slēdzis tiek aizstāts ar ieslēgšanas/izslēgšanas gaismu. Atstājiet tukšu (noklusējums), lai tās saglabātu kā switches. Mainot šo iestatījumu, tiek nomainīts entītijas domēns (`switch.*` ↔ `light.*`), tāpēc atjauniniet visas automatizācijas vai informācijas paneļus, kas atsaucas uz veco entītiju."
             }
           },

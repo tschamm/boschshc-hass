@@ -9,10 +9,25 @@ from homeassistant.helpers.entity import Entity
 from .const import (
     DOMAIN,
     LOGGER,
+    OPT_ALL_LIGHTS_AS_LIGHT,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
     OPT_LIGHTS_AS_LIGHT,
 )
+
+# #338: friendlier display names for the light-relay models, so the options
+# picker shows "Light/Shutter Control II" instead of the raw "MICROMODULE_*".
+_LIGHT_RELAY_FRIENDLY_MODEL = {
+    "MICROMODULE_LIGHT_ATTACHED": "Light/Shutter Control II",
+    "MICROMODULE_LIGHT_CONTROL": "Light/Shutter Control II",
+    "BSM": "In-wall light switch",
+}
+
+
+def light_relay_friendly_model(device) -> str:
+    """Friendly model label for a light-relay device (falls back to the model)."""
+    model = getattr(device, "device_model", "") or ""
+    return _LIGHT_RELAY_FRIENDLY_MODEL.get(model, model)
 
 
 def light_switch_devices(session) -> list:
@@ -30,7 +45,12 @@ def light_switch_devices(session) -> list:
 
 
 def light_switch_as_light(device, options) -> bool:
-    """True if this light-relay device is opted in to be a `light` (#338)."""
+    """True if this light-relay device should be a `light` (#338).
+
+    The global "all" toggle wins; otherwise fall back to the per-device list.
+    """
+    if options.get(OPT_ALL_LIGHTS_AS_LIGHT, False):
+        return True
     opted_in = options.get(OPT_LIGHTS_AS_LIGHT) or []
     return getattr(device, "id", None) in opted_in
 

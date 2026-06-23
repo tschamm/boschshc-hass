@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "將情境公開為按鈕實體",
               "diagnostic_entities": "建立診斷感測器",
               "enable_rawscan_service": "啟用 rawscan 診斷服務",
+              "all_light_switches_as_light": "將所有 Light/Shutter Control II 公開為燈光",
               "light_switches_as_light": "將 Light/Shutter Control II 公開為燈光"
             },
             "data_description": {
               "scenarios_as_buttons": "開啟時：每個 Bosch SHC 情境也會在 Home Assistant 中顯示為按鈕實體（除了 trigger_scenario 服務之外）。適用於直接觸發情境的儀表板圖塊和自動化。預設：關閉。",
               "diagnostic_entities": "開啟時（預設）：為每個支援的裝置建立診斷感測器實體 — 閥門凸輪位置（恆溫器）和通訊品質（智慧插座）。如果不需要這些感測器，請關閉以減少實體數量。",
               "enable_rawscan_service": "開啟時：登錄 bosch_shc.trigger_rawscan 服務以進行原始 API 除錯。關閉可隱藏它。預設：開啟。",
+              "all_light_switches_as_light": "開啟後，所有 Light Control II / 嵌入式燈光開關裝置將同時以 `light` 實體呈現——覆蓋下方的個別裝置選擇。關閉（預設）則保留每個裝置的個別選擇。同樣的注意事項：這會切換實體網域（`switch.*` ↔ `light.*`），請更新參照舊實體的自動化與儀表板。",
               "light_switches_as_light": "選取應顯示為 `light` 實體而非 `switch` 實體的 Light Control II / 牆內燈光開關裝置。每個所選裝置的開關將被替換為一個開/關燈光。留空（預設）以將其保留為 switches。變更此設定會切換實體網域（`switch.*` ↔ `light.*`），請更新參照舊實體的所有自動化或儀表板。"
             }
           },

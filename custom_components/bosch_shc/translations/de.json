@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Szenarien als Button-Entitäten anzeigen",
               "diagnostic_entities": "Diagnose-Sensoren erstellen",
               "enable_rawscan_service": "Rawscan-Diagnosedienst aktivieren",
+              "all_light_switches_as_light": "ALLE Licht-/Rollladensteuerung II als Lampen darstellen",
               "light_switches_as_light": "Licht-/Rollladensteuerung II als Lampen darstellen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
               "diagnostic_entities": "Wenn EIN (Standard): Diagnose-Sensor-Entitäten werden für jedes unterstützte Gerät angelegt — Ventilteller-Position (Thermostate) und Kommunikationsqualität (Smart Plugs). AUS um die Entitätsanzahl zu reduzieren, wenn diese Sensoren nicht benötigt werden.",
               "enable_rawscan_service": "Wenn EIN: registriert den Dienst `bosch_shc.trigger_rawscan` für Roh-API-Debugging. AUS zum Ausblenden. Standard: ein.",
+              "all_light_switches_as_light": "Einschalten, um alle Geräte vom Typ Lichtsteuerung II / Unterputz-Lichtschalter auf einmal als `light`-Entität darzustellen — überschreibt die gerätebezogene Auswahl unten. Aus (Standard) behält die gerätebezogene Auswahl. Gleicher Hinweis: Dies wechselt die Entitäts-Domain (`switch.*` ↔ `light.*`) — passe Automationen/Dashboards an, die die alten Entitäten verwenden.",
               "light_switches_as_light": "Wähle die Geräte vom Typ Lichtsteuerung II / Unterputz-Lichtschalter, die als `light`-Entitäten statt als `switch`-Entitäten erscheinen sollen. Bei jedem ausgewählten Gerät wird der Schalter durch eine Ein/Aus-Lampe ersetzt. Leer lassen (Standard), um sie als Schalter zu behalten. Diese Änderung wechselt die Entitäts-Domain (`switch.*` ↔ `light.*`) — passe Automationen oder Dashboards an, die die alte Entität verwenden."
             }
           },

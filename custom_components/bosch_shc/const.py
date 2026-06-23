@@ -50,6 +50,9 @@ OPT_EXCLUDED_ROOMS = "excluded_rooms"
 # relay as a HA `light` entity instead of the default `switch`. Holds a list of
 # device ids; default [] keeps the historical `switch` behaviour (non-breaking).
 OPT_LIGHTS_AS_LIGHT = "light_switches_as_light"
+# #338 follow-up: a single toggle to expose ALL eligible light relays as lights
+# at once (overrides the per-device list above). Default False = unchanged.
+OPT_ALL_LIGHTS_AS_LIGHT = "all_light_switches_as_light"
 # #264: opt-in skip of SHC server-certificate verification (expired cert on an
 # offline local-only controller). mTLS client-cert auth is unaffected.
 OPT_SSL_SKIP_VERIFY = "ssl_skip_verify"

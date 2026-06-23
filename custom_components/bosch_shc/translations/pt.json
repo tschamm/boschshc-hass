@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Expor cenários como entidades de botão",
               "diagnostic_entities": "Criar sensores de diagnóstico",
               "enable_rawscan_service": "Ativar o serviço de diagnóstico rawscan",
+              "all_light_switches_as_light": "Expor TODOS os Light/Shutter Control II como luzes",
               "light_switches_as_light": "Expor Light/Shutter Control II como luzes"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC aparece também como entidade de botão no Home Assistant (além do serviço `trigger_scenario`). Útil para mosaicos do painel e automatizações que ativam cenários diretamente. Predefinição: desativado.",
               "diagnostic_entities": "Quando ATIVADO (predefinição): entidades de sensor de diagnóstico são criadas para cada dispositivo compatível — posição do taquet da válvula (termostatos) e qualidade de comunicação (tomadas inteligentes). Desative para reduzir o número de entidades se não precisar destes sensores.",
               "enable_rawscan_service": "Quando ATIVADO: regista o serviço bosch_shc.trigger_rawscan para depuração bruta da API. Desative para o ocultar. Predefinição: ativado.",
+              "all_light_switches_as_light": "Ative para apresentar cada dispositivo Light Control II / interruptor de luz embutido como entidade `light` de uma só vez — substitui a seleção por dispositivo abaixo. Desativado (predefinição) mantém a escolha por dispositivo. Mesmo aviso: isto altera o domínio da entidade (`switch.*` ↔ `light.*`), pelo que deve atualizar as automatizações e os painéis que referenciam as entidades antigas.",
               "light_switches_as_light": "Selecione os dispositivos Light Control II / interruptor de luz embutido que devem aparecer como entidades `light` em vez de entidades `switch`. O interruptor de cada dispositivo selecionado é substituído por uma luz liga/desliga. Deixe vazio (predefinição) para os manter como switches. Alterar isto troca o domínio da entidade (`switch.*` ↔ `light.*`), pelo que atualize quaisquer automatizações ou painéis que referenciem a entidade antiga."
             }
           },

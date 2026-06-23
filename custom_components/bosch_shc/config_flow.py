@@ -44,6 +44,7 @@ from .const import (
     OPT_CHILD_LOCK_ENABLED,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_ENABLE_RAWSCAN,
+    OPT_ALL_LIGHTS_AS_LIGHT,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
     OPT_LIGHTS_AS_LIGHT,
@@ -56,7 +57,7 @@ from .const import (
     OPT_SILENT_MODE_START,
     OPT_SILENT_MODE_END,
 )
-from .entity import light_switch_devices
+from .entity import light_relay_friendly_model, light_switch_devices
 
 # ── Section layout (single source of truth) ──────────────────────────────────
 # Maps each section key to the flat OPT_* keys it contains.
@@ -67,6 +68,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_SCENARIOS_AS_BUTTONS,
         OPT_DIAGNOSTIC_ENTITIES,
         OPT_ENABLE_RAWSCAN,
+        OPT_ALL_LIGHTS_AS_LIGHT,
         OPT_LIGHTS_AS_LIGHT,
     ],
     "presence": [
@@ -477,6 +479,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
             # value instead of silently wiping the user's selection.
             for key in (
                 OPT_LIGHTS_AS_LIGHT,
+                OPT_ALL_LIGHTS_AS_LIGHT,
                 OPT_EXCLUDED_DEVICES,
                 OPT_EXCLUDED_ROOMS,
             ):
@@ -512,14 +515,14 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                     for rid, name in rooms.items()
                 ]
                 # #338: only the on/off light-relay devices are eligible to be
-                # presented as a `light`.  Include the model in the label so a
-                # BSM relay controlling a non-light load is distinguishable from
-                # a Light Control II channel.
+                # presented as a `light`.  Append a friendly model name so a BSM
+                # relay is distinguishable from a Light Control II channel,
+                # without the confusing raw "MICROMODULE_*" string.
                 for dev in light_switch_devices(session):
                     room_name = rooms.get(getattr(dev, "room_id", None), "")
-                    model = getattr(dev, "device_model", "") or ""
+                    friendly = light_relay_friendly_model(dev)
                     base = f"{dev.name} ({room_name})" if room_name else dev.name
-                    label = f"{base} [{model}]" if model else base
+                    label = f"{base} – {friendly}" if friendly else base
                     light_switch_options.append({"value": dev.id, "label": label})
         except Exception:  # never break the options flow if session is unavailable
             LOGGER.debug(
@@ -540,9 +543,17 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 default=current.get(OPT_ENABLE_RAWSCAN, True),
             ): BooleanSelector(),
         }
-        # #338: only offer the "expose as light" picker when the controller
+        # #338: only offer the "expose as light" controls when the controller
         # actually has light-relay devices that can switch domain.
         if light_switch_options:
+            # A single toggle to convert ALL of them at once (overrides the
+            # per-device picker below).
+            features_fields[
+                vol.Optional(
+                    OPT_ALL_LIGHTS_AS_LIGHT,
+                    default=current.get(OPT_ALL_LIGHTS_AS_LIGHT, False),
+                )
+            ] = BooleanSelector()
             features_fields[
                 vol.Optional(
                     OPT_LIGHTS_AS_LIGHT,

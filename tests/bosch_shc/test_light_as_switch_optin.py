@@ -112,3 +112,32 @@ def test_relaylight_turn_on_off_invoke_async_setter():
     asyncio.run(lt.async_turn_on())
     asyncio.run(lt.async_turn_off())
     assert calls == [True, False]
+
+
+# ── #338 refinements: global toggle + friendly model label ───────────────────
+
+def test_global_toggle_overrides_per_device():
+    from custom_components.bosch_shc.const import OPT_ALL_LIGHTS_AS_LIGHT
+    dev = _make_device(id="not-listed")
+    # global ON → light regardless of the per-device list
+    assert light_switch_as_light(dev, {OPT_ALL_LIGHTS_AS_LIGHT: True}) is True
+    assert light_switch_as_light(
+        dev, {OPT_ALL_LIGHTS_AS_LIGHT: True, OPT_LIGHTS_AS_LIGHT: []}
+    ) is True
+    # global OFF → falls back to the per-device list
+    assert light_switch_as_light(
+        dev, {OPT_ALL_LIGHTS_AS_LIGHT: False, OPT_LIGHTS_AS_LIGHT: ["not-listed"]}
+    ) is True
+    assert light_switch_as_light(dev, {OPT_ALL_LIGHTS_AS_LIGHT: False}) is False
+
+
+def test_friendly_model_label():
+    from custom_components.bosch_shc.entity import light_relay_friendly_model
+    assert light_relay_friendly_model(
+        _make_device(device_model="MICROMODULE_LIGHT_ATTACHED")
+    ) == "Light/Shutter Control II"
+    assert light_relay_friendly_model(_make_device(device_model="BSM")) == \
+        "In-wall light switch"
+    # unknown model falls back to the raw model string (never crashes/blank)
+    assert light_relay_friendly_model(_make_device(device_model="WHATEVER")) == \
+        "WHATEVER"

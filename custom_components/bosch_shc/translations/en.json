@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Expose scenarios as button entities",
               "diagnostic_entities": "Create diagnostic sensors",
               "enable_rawscan_service": "Enable rawscan diagnostic service",
+              "all_light_switches_as_light": "Expose ALL Light/Shutter Control II as lights",
               "light_switches_as_light": "Expose Light/Shutter Control II as lights"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
               "diagnostic_entities": "When ON (default): diagnostic sensor entities are created for each supported device — valve tappet position (thermostats) and communication quality (smart plugs). Turn OFF to reduce entity count if you do not need these sensors.",
               "enable_rawscan_service": "When ON: registers the `bosch_shc.trigger_rawscan` service for raw API debugging. Turn OFF to hide it. Default: on.",
+              "all_light_switches_as_light": "Turn ON to present every Light Control II / in-wall light-switch device as a `light` entity at once — overrides the per-device selection below. Off (default) keeps the per-device choice. Same caveat: this swaps the entity domain (`switch.*` ↔ `light.*`), so update automations/dashboards that reference the old entities.",
               "light_switches_as_light": "Select the Light Control II / in-wall light-switch devices that should appear as `light` entities instead of `switch` entities. Each selected device's switch is replaced by an on/off light. Leave empty (default) to keep them as switches. Changing this swaps the entity domain (`switch.*` ↔ `light.*`), so update any automations or dashboards that reference the old entity."
             }
           },

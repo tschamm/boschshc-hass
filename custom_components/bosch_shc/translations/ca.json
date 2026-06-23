@@ -95,12 +95,14 @@
               "scenarios_as_buttons": "Exposar escenaris com a entitats de botó",
               "diagnostic_entities": "Crear sensors de diagnòstic",
               "enable_rawscan_service": "Activar el servei de diagnòstic rawscan",
+              "all_light_switches_as_light": "Exposar TOTS els Light/Shutter Control II com a llums",
               "light_switches_as_light": "Exposa el Light/Shutter Control II com a llums"
             },
             "data_description": {
               "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
               "diagnostic_entities": "Quan ACTIVAT (per defecte): es creen entitats de sensor de diagnòstic per a cada dispositiu compatible — posició de la vàlvula (termòstats) i qualitat de comunicació (endolls intel·ligents). Desactiva per reduir el nombre d'entitats si no necessites aquests sensors.",
               "enable_rawscan_service": "Quan ACTIVAT: registra el servei bosch_shc.trigger_rawscan per a la depuració d'API en brut. Desactiva per ocultar-lo. Per defecte: activat.",
+              "all_light_switches_as_light": "Activeu-ho per presentar tots els dispositius Light Control II / interruptors de llum encastats com a entitat `light` alhora — substitueix la selecció per dispositiu que hi ha a continuació. Desactivat (per defecte) manté l'elecció per dispositiu. Mateixa advertència: això intercanvia el domini de l'entitat (`switch.*` ↔ `light.*`), per tant actualitzeu les automatitzacions i els taulers que fan referència a les entitats anteriors.",
               "light_switches_as_light": "Seleccioneu els dispositius Light Control II / interruptor de llum encastat que han d'aparèixer com a entitats `light` en lloc d'entitats `switch`. El commutador de cada dispositiu seleccionat es substitueix per un llum d'encesa/apagada. Deixeu-ho buit (per defecte) per mantenir-los com a switches. Canviar això intercanvia el domini de l'entitat (`switch.*` ↔ `light.*`), de manera que actualitzeu qualsevol automatització o tauler que faci referència a l'antiga entitat."
             }
           },
