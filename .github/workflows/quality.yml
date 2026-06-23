@@ -39,4 +39,15 @@ jobs:
       - name: pip-audit (our manifest deps)
         run: |
           python3 -c "import json;print(chr(10).join(json.load(open('custom_components/bosch_shc/manifest.json'))['requirements']))" > /tmp/our_reqs.txt
-          pip-audit -r /tmp/our_reqs.txt
+          # Retry: just after a same-session boschshcpy release the pinned
+          # version can be missing from the GitHub-runner PyPI edge for a few
+          # minutes ("No matching distribution"), even though it resolves on
+          # other edges. Retry with backoff so the audit self-heals instead of
+          # going red on transient mirror lag (mirrors tests.yml/release.yml).
+          for i in 1 2 3 4 5; do
+            pip-audit -r /tmp/our_reqs.txt && exit 0
+            echo "pip-audit attempt $i failed; retrying in $((i*20))s (PyPI edge lag?)"
+            sleep $((i*20))
+          done
+          echo "pip-audit still failing after retries" >&2
+          exit 1
