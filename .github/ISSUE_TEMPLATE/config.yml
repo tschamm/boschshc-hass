@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Q&A / Questions
+    url: https://github.com/tschamm/boschshc-hass/discussions/categories/q-a
+    about: Ask how-to questions and get help from the community.
+  - name: Bosch SHC Local API Docs
+    url: https://github.com/BoschSmartHome/bosch-shc-api-docs
+    about: Official Bosch Smart Home Controller local REST API documentation.

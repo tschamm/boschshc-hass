@@ -1,0 +1,60 @@
+name: Feature Request
+description: Request support for a new device or feature
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request support for a new Bosch SHC device or a new feature.
+        Check [existing issues](https://github.com/tschamm/boschshc-hass/issues) and [Discussions](https://github.com/tschamm/boschshc-hass/discussions) for duplicates first.
+
+  - type: input
+    id: device_or_feature
+    attributes:
+      label: Device or feature
+      description: Name the Bosch device model or the feature you want.
+      placeholder: "e.g. Bosch Smart Plug Compact (BSM 81XX), or: expose valve tappet as HA sensor"
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What would you do with it? What problem does it solve?
+    validations:
+      required: true
+
+  - type: input
+    id: bosch_service
+    attributes:
+      label: Bosch API service / rawscan (if known)
+      description: |
+        If you know the relevant Bosch SHC API service name (from the
+        [API docs](https://github.com/BoschSmartHome/bosch-shc-api-docs)), paste it here.
+        You can also attach a rawscan (Developer Tools → Services → `bosch_shc.trigger_rawscan`)
+        that includes the device.
+      placeholder: "e.g. PowerMeterService, SmokeSensationService"
+    validations:
+      required: false
+
+  - type: textarea
+    id: rawscan
+    attributes:
+      label: Rawscan excerpt (optional)
+      description: |
+        Paste the relevant device section from a rawscan if available.
+        Redact serial numbers and credentials before posting.
+      render: json
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and discussions for duplicates
+          required: true
+        - label: This request contains no real serial numbers or credentials
+          required: true

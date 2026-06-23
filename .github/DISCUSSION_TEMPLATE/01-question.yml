@@ -1,0 +1,59 @@
+title: "[Q&A] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for posting! Fill in the fields below so we can help efficiently.
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version (boschshc-hass)
+      description: "Found in HACS under the integration entry."
+      placeholder: "e.g. 0.4.108"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      description: "Found under Settings → About."
+      placeholder: "e.g. 2026.5.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: shc_generation
+    attributes:
+      label: SHC generation
+      options:
+        - SHC 1
+        - SHC 2
+        - Unknown / not relevant
+    validations:
+      required: false
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: "What do you want to know? Describe what you tried and what happened."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: HA logs (if relevant)
+      description: |
+        Paste relevant log lines — Bosch-related lines only, not the full log.
+        Enable debug logging first: Developer Tools → Services → logger.set_level.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have read the [README](https://github.com/tschamm/boschshc-hass#readme) and checked existing discussions
+          required: true
+        - label: This is not a bug report (bugs go to GitHub Issues)
+          required: true
