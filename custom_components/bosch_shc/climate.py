@@ -178,7 +178,9 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Return available hvac modes.
 
         AUTO is always present (RoomClimateControl always supports AUTOMATIC).
-        COOL only when supports_cooling (field-presence of roomControlMode).
+        COOL only when supports_cooling — gated on the room's
+        ThermostatSupportedControlMode capability (#334), with the
+        roomControlMode field-presence heuristic as the firmware fallback.
         """
         modes = [HVACMode.AUTO, HVACMode.HEAT]
         if self._device.supports_cooling:
