@@ -35,7 +35,9 @@ class _JRPC(JSONRPCError):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_climate_control(*, summer_mode=False, low=False, boost_mode=False):
+def _make_climate_control(
+    *, summer_mode=False, low=False, boost_mode=False, supports_eco=True
+):
     """Build a ClimateControl bypassing SHCEntity.__init__."""
     entity = ClimateControl.__new__(ClimateControl)
     entity._device = SimpleNamespace(
@@ -45,6 +47,7 @@ def _make_climate_control(*, summer_mode=False, low=False, boost_mode=False):
         summer_mode=summer_mode,
         supports_cooling=False,
         supports_boost_mode=True,
+        supports_eco=supports_eco,
         cooling_mode=False,
         operation_mode=None,
         boost_mode=boost_mode,

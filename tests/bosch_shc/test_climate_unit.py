@@ -41,6 +41,7 @@ def _make_cc_device(
     low=False,
     summer_mode=False,
     supports_boost_mode=True,
+    supports_eco=True,
     setpoint_temperature=20.0,
     temperature=19.0,
     operation_mode_value="AUTOMATIC",
@@ -53,6 +54,7 @@ def _make_cc_device(
         low=low,
         summer_mode=summer_mode,
         supports_boost_mode=supports_boost_mode,
+        supports_eco=supports_eco,
         setpoint_temperature=setpoint_temperature,
         temperature=temperature,
         operation_mode=OM_CC(operation_mode_value),
@@ -643,3 +645,24 @@ class TestCoolSetsDirectionAxis:
         device.async_set_low.assert_awaited_with(False)
         device.async_set_cooling_mode.assert_awaited_with(True)
         device.async_set_summer_mode.assert_awaited_with(False)
+
+
+class TestEcoGatedOnSupportsEco:
+    """#334 / jumlu #68 regression: eco gates on supports_eco, NOT supports_low.
+
+    SHC-II floor-heating rooms carry low=False/True without an eco model, so a
+    supports_low-based gate wrongly offered Eco there. Eco must only appear when
+    supports_eco (the eco-setpoint field) is present.
+    """
+
+    def test_eco_not_offered_when_supports_eco_false_even_with_low(self):
+        device = _make_cc_device(low=True, supports_eco=False, supports_boost_mode=False)
+        entity = _make_cc(device)
+        assert entity.preset_modes is None
+        assert entity.preset_mode is None
+
+    def test_eco_offered_when_supports_eco_true(self):
+        device = _make_cc_device(low=True, supports_eco=True, supports_boost_mode=False)
+        entity = _make_cc(device)
+        assert entity.preset_modes == [PRESET_ECO]
+        assert entity.preset_mode == PRESET_ECO

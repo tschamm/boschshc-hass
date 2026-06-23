@@ -209,18 +209,20 @@ class ClimateControl(SHCEntity, ClimateEntity):
         """Return the current preset mode (transient overrides only).
 
         boost_mode=True  → "boost"  (only if device supports boost)
-        low=True         → "eco"    (only if device has low / supports_low)
+        low=True         → "eco"    (only if supports_eco)
         otherwise        → None
         """
         if self._device.supports_boost_mode and self._device.boost_mode:
             return PRESET_BOOST
 
-        # supports_low: field-presence check added in boschshcpy 0.3.x
-        # Fall back to hasattr for older libs.
-        _supports_low = getattr(self._device, "supports_low", None)
-        if _supports_low is None:
-            _supports_low = hasattr(self._device, "low")
-        if _supports_low and getattr(self._device, "low", False):
+        # #334 / jumlu #68: gate eco on supports_eco (presence of the eco
+        # SETPOINT field), NOT supports_low. SHC-II floor-heating rooms carry
+        # low=False without an eco model, so supports_low wrongly reports eco
+        # there; supports_eco keys off setpointTemperatureForLevelEco — the only
+        # reliable signal the ECO/COMFORT level model is implemented.
+        if getattr(self._device, "supports_eco", False) and getattr(
+            self._device, "low", False
+        ):
             return PRESET_ECO
 
         return None
@@ -236,12 +238,9 @@ class ClimateControl(SHCEntity, ClimateEntity):
         presets = []
         if self._device.supports_boost_mode:
             presets.append(PRESET_BOOST)
-        # Gate eco on supports_low (field-presence check)
-        _supports_low = getattr(self._device, "supports_low", None)
-        if _supports_low is None:
-            # Older lib: fall back to hasattr
-            _supports_low = hasattr(self._device, "low")
-        if _supports_low:
+        # #334 / jumlu #68: eco only when the eco-setpoint model exists
+        # (supports_eco), not merely when the "low" field is present.
+        if getattr(self._device, "supports_eco", False):
             presets.append(PRESET_ECO)
         return presets if presets else None
 
