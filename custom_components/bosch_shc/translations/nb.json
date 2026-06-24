@@ -321,6 +321,9 @@
           "good": "God",
           "unknown": "Ukjent"
         }
+      },
+      "keypad_trigger": {
+        "name": "Knappetilordning"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Programvareoppdatering"
+      },
+      "device_firmware": {
+        "name": "Fastvare"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Alarmforbikobling"
       }
     }
   },

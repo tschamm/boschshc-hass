@@ -321,6 +321,9 @@
           "good": "טוב",
           "unknown": "לא ידוע"
         }
+      },
+      "keypad_trigger": {
+        "name": "מיפוי לחצנים"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "עדכון תוכנה"
+      },
+      "device_firmware": {
+        "name": "קושחה"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "עקיפת אזעקה"
       }
     }
   },

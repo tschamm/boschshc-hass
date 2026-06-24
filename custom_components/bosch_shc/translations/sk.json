@@ -321,6 +321,9 @@
           "good": "Dobrý",
           "unknown": "Neznáme"
         }
+      },
+      "keypad_trigger": {
+        "name": "Priradenie tlačidiel"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Aktualizácia softvéru"
+      },
+      "device_firmware": {
+        "name": "Firmvér"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Premostenie alarmu"
       }
     }
   },

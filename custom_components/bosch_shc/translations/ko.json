@@ -321,6 +321,9 @@
           "good": "양호",
           "unknown": "알 수 없음"
         }
+      },
+      "keypad_trigger": {
+        "name": "버튼 매핑"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "소프트웨어 업데이트"
+      },
+      "device_firmware": {
+        "name": "펌웨어"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "알람 바이패스"
       }
     }
   },

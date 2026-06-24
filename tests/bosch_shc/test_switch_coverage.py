@@ -178,9 +178,10 @@ class TestSwitchTypeMetadata:
     def test_presencesimulation_device_class(self):
         assert SWITCH_TYPES["presencesimulation"].device_class == SwitchDeviceClass.SWITCH
 
-    def test_bypass_no_icon(self):
-        """bypass has no icon configured."""
-        assert SWITCH_TYPES["bypass"].icon is None
+    def test_bypass_icon_and_translation_key(self):
+        """#342: bypass is clearly named (translation_key) with a shield icon."""
+        assert SWITCH_TYPES["bypass"].icon == "mdi:shield-off-outline"
+        assert SWITCH_TYPES["bypass"].translation_key == "bypass"
 
     def test_user_defined_state_entity_category_config(self):
         assert (

@@ -321,6 +321,9 @@
           "good": "Jó",
           "unknown": "Ismeretlen"
         }
+      },
+      "keypad_trigger": {
+        "name": "Gombhozzárendelés"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Szoftverfrissítés"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Riasztás kihagyása"
       }
     }
   },

@@ -321,6 +321,9 @@
           "good": "Bom",
           "unknown": "Desconhecido"
         }
+      },
+      "keypad_trigger": {
+        "name": "Mapeamento de botões"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Atualização de software"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Bypass de alarme"
       }
     }
   },

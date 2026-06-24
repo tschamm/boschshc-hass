@@ -321,6 +321,9 @@
           "good": "良好",
           "unknown": "未知"
         }
+      },
+      "keypad_trigger": {
+        "name": "按鈕對應"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "軟體更新"
+      },
+      "device_firmware": {
+        "name": "韌體"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "警報旁路"
       }
     }
   },

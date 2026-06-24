@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from boschshcpy import SHCSession
+from boschshcpy.device import SHCDevice
 
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.config_entries import ConfigEntry
@@ -20,6 +21,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN
+from .entity import SHCEntity, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -36,14 +38,27 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the SHC controller update entity."""
+    """Set up the SHC controller + per-device update entities."""
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    entities: list[UpdateEntity] = []
+
     information = session.information
-    if information is None or information.unique_id is None:
-        return
-    async_add_entities(
-        [ControllerUpdate(information, config_entry.title, config_entry.entry_id)]
-    )
+    if information is not None and information.unique_id is not None:
+        entities.append(
+            ControllerUpdate(information, config_entry.title, config_entry.entry_id)
+        )
+
+    # Per-device firmware update entities — only for devices that actually
+    # expose a SoftwareUpdate service (spec-grounded, getattr-guarded; most
+    # devices do not carry it, so this loop is usually inert).
+    device: SHCDevice
+    for device in session.devices:
+        if device_excluded(device, config_entry.options):
+            continue
+        if getattr(device, "supports_software_update", False):
+            entities.append(DeviceUpdate(device, config_entry.entry_id))
+
+    async_add_entities(entities)
 
 
 class ControllerUpdate(UpdateEntity):
@@ -93,3 +108,63 @@ class ControllerUpdate(UpdateEntity):
         refresh = getattr(self._information, "async_refresh", None)
         if refresh is not None:
             await refresh()
+
+
+class DeviceUpdate(SHCEntity, UpdateEntity):
+    """Read-only per-device firmware-update indicator (spec-grounded).
+
+    Surfaces a device's installed/available firmware from its SoftwareUpdate
+    service. Like the controller entity (#186) the local API exposes no install
+    action, so there is no INSTALL feature. State changes arrive via the normal
+    long-poll callbacks (SHCEntity), so no polling is needed. Created only for
+    devices that actually expose the service, so it stays inert otherwise.
+    """
+
+    _attr_translation_key = "device_firmware"
+    _attr_supported_features = UpdateEntityFeature(0)
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_software_update"
+        # SHCEntity forces _attr_name=None, which shadows the translation_key in
+        # HA's name resolver — drop it so this entity is named "Firmware".
+        del self._attr_name
+
+    @property
+    def installed_version(self) -> str | None:
+        service = self._device.software_update
+        return service.sw_installed_version if service is not None else None
+
+    @property
+    def latest_version(self) -> str | None:
+        service = self._device.software_update
+        if service is None:
+            return None
+        # Surface the available version whenever an update is offered OR an
+        # install is running, so the badge stays consistent with in_progress
+        # (HA shows a contradictory "installing + up to date" if latest_version
+        # drops back to installed mid-install). Otherwise echo the installed
+        # version so HA shows "up to date".
+        offered_or_running = {
+            service.SwUpdateState.UPDATE_AVAILABLE,
+            service.SwUpdateState.DOWNLOADING,
+            service.SwUpdateState.INSTALLING,
+            service.SwUpdateState.UPDATE_IN_PROGRESS,
+        }
+        if (
+            service.sw_update_state in offered_or_running
+            and service.sw_update_available_version
+        ):
+            return service.sw_update_available_version
+        return service.sw_installed_version
+
+    @property
+    def in_progress(self) -> bool:
+        service = self._device.software_update
+        if service is None:
+            return False
+        return service.sw_update_state in (
+            service.SwUpdateState.DOWNLOADING,
+            service.SwUpdateState.INSTALLING,
+            service.SwUpdateState.UPDATE_IN_PROGRESS,
+        )

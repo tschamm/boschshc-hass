@@ -321,6 +321,9 @@
           "good": "Bonne",
           "unknown": "Inconnue"
         }
+      },
+      "keypad_trigger": {
+        "name": "Affectation des boutons"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Mise à jour logicielle"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Contournement d'alarme"
       }
     }
   },

@@ -321,6 +321,9 @@
           "good": "Καλή",
           "unknown": "Άγνωστο"
         }
+      },
+      "keypad_trigger": {
+        "name": "Αντιστοίχιση κουμπιών"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Ενημέρωση λογισμικού"
+      },
+      "device_firmware": {
+        "name": "Υλικολογισμικό"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Παράκαμψη συναγερμού"
       }
     }
   },

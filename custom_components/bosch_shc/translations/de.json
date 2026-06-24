@@ -321,6 +321,9 @@
           "good": "Gut",
           "unknown": "Unbekannt"
         }
+      },
+      "keypad_trigger": {
+        "name": "Tastenzuordnung"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Software-Aktualisierung"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Alarm-Bypass"
       }
     }
   },

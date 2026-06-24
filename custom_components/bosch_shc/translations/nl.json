@@ -321,6 +321,9 @@
           "good": "Goed",
           "unknown": "Onbekend"
         }
+      },
+      "keypad_trigger": {
+        "name": "Knoptoewijzing"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Software-update"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Alarm overbruggen"
       }
     }
   },

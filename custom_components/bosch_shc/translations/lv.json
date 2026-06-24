@@ -321,6 +321,9 @@
           "good": "Labs",
           "unknown": "Nezināms"
         }
+      },
+      "keypad_trigger": {
+        "name": "Pogu piešķire"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Programmatūras atjauninājums"
+      },
+      "device_firmware": {
+        "name": "Aparātprogrammatūra"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Signalizācijas apiešana"
       }
     }
   },

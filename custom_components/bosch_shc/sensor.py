@@ -419,6 +419,20 @@ async def async_setup_entry(
             entities.append(SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id))
             entities.append(SirenSolarChargingSensor(device=siren, entry_id=config_entry.entry_id))
 
+    # KeypadTrigger mapping (Universal Switch II button->scenario): diagnostic,
+    # only created when the device actually exposes the service (spec-grounded).
+    if diagnostic_enabled:
+        for sensor in session.device_helper.universal_switches:
+            if device_excluded(sensor, config_entry.options):
+                continue
+            if getattr(sensor, "supports_keypadtrigger", False):
+                entities.append(
+                    KeypadTriggerSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
+
     if entities:
         async_add_entities(entities)
 
@@ -607,6 +621,42 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):
                 "Unknown communication quality for %s: %s", self._device.name, err
             )
             return None
+
+
+class KeypadTriggerSensor(SHCEntity, SensorEntity):
+    """Diagnostic: Universal Switch II button->scenario mapping (spec-grounded).
+
+    Reports the switchType; the scenario associations are exposed as state
+    attributes. Informational only — the actual press events arrive via the
+    Keypad service / device triggers, not this sensor.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "keypad_trigger"
+    _attr_icon = "mdi:gesture-tap-button"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a SHC keypad-trigger mapping sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_keypadtrigger"
+        # SHCEntity forces _attr_name=None, which shadows the translation_key in
+        # HA's name resolver — drop it so this entity is named "Button mapping".
+        del self._attr_name
+
+    @property
+    def native_value(self):
+        service = self._device.keypadtrigger
+        return service.switch_type if service is not None else None
+
+    @property
+    def extra_state_attributes(self):
+        service = self._device.keypadtrigger
+        if service is None:
+            return None
+        return {
+            "scenario_id_associations": service.scenario_id_associations,
+            "ids_to_trigger": service.ids_to_trigger,
+        }
 
 
 class HumidityRatingSensor(SHCEntity, SensorEntity):

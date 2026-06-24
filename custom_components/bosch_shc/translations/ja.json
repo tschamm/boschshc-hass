@@ -321,6 +321,9 @@
           "good": "良好",
           "unknown": "不明"
         }
+      },
+      "keypad_trigger": {
+        "name": "ボタン割り当て"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "ソフトウェアアップデート"
+      },
+      "device_firmware": {
+        "name": "ファームウェア"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "アラームバイパス"
       }
     }
   },

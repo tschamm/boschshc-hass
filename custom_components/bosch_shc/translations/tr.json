@@ -321,6 +321,9 @@
           "good": "İyi",
           "unknown": "Bilinmiyor"
         }
+      },
+      "keypad_trigger": {
+        "name": "Düğme eşlemesi"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Yazılım Güncellemesi"
+      },
+      "device_firmware": {
+        "name": "Bellenim"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Alarm atlama"
       }
     }
   },

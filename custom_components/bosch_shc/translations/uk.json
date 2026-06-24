@@ -321,6 +321,9 @@
           "good": "Хороше",
           "unknown": "Невідомо"
         }
+      },
+      "keypad_trigger": {
+        "name": "Призначення кнопок"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Оновлення програмного забезпечення"
+      },
+      "device_firmware": {
+        "name": "Прошивка"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Обхід тривоги"
       }
     }
   },

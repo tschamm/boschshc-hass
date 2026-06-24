@@ -321,6 +321,9 @@
           "good": "Bra",
           "unknown": "Okänd"
         }
+      },
+      "keypad_trigger": {
+        "name": "Knapptilldelning"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Programvaruuppdatering"
+      },
+      "device_firmware": {
+        "name": "Fast programvara"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Förbikoppling av larm"
       }
     }
   },

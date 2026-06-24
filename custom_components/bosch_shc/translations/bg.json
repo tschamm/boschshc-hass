@@ -321,6 +321,9 @@
           "good": "Добро",
           "unknown": "Неизвестно"
         }
+      },
+      "keypad_trigger": {
+        "name": "Съответствие на бутоните"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Актуализация на софтуера"
+      },
+      "device_firmware": {
+        "name": "Фърмуер"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Заобикаляне на алармата"
       }
     }
   },

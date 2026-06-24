@@ -189,6 +189,11 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "bypass": SHCSwitchEntityDescription(
         key="bypass",
+        # #342: name it clearly ("Alarm bypass") instead of inheriting the bare
+        # device name, so users understand it excludes the contact from the
+        # intrusion alarm (open/close while armed without triggering it).
+        translation_key="bypass",
+        icon="mdi:shield-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
         on_value=SHCShutterContact2.BypassService.State.BYPASS_ACTIVE,
@@ -914,6 +919,13 @@ class SHCSwitch(SHCEntity, SwitchEntity):
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
+        # #342: a description translation_key (e.g. bypass -> "Alarm bypass")
+        # should drive a translated entity name. SHCEntity.__init__ forces
+        # _attr_name=None, and HA's name resolver returns that before ever
+        # consulting the translation_key — so drop it here for the primary
+        # entity to let the translation through, keeping unique_id unchanged.
+        if attr_name is None and description.translation_key:
+            del self._attr_name
 
     @property
     def is_on(self) -> bool | None:

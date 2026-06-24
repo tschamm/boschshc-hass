@@ -321,6 +321,9 @@
           "good": "Baik",
           "unknown": "Tidak Diketahui"
         }
+      },
+      "keypad_trigger": {
+        "name": "Pemetaan tombol"
       }
     },
     "binary_sensor": {
@@ -337,6 +340,14 @@
     "update": {
       "controller_update": {
         "name": "Pembaruan Perangkat Lunak"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Lewati alarm"
       }
     }
   },
