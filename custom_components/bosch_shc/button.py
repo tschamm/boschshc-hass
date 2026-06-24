@@ -9,6 +9,7 @@ from boschshcpy.services_impl import DetectionTestService, WalkTestService
 from homeassistant.components.button import (
     ButtonEntity,
 )
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -142,6 +143,14 @@ async def async_setup_entry(
         entities.append(
             SHCSirenTestAlarmButton(device=siren, entry_id=config_entry.entry_id)
         )
+
+    # DimmerConfiguration preview buttons: flash at max/min for calibration (#123).
+    for device in getattr(session.device_helper, "micromodule_dimmers", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        if getattr(device, "supports_dimmer_configuration", False):
+            entities.append(DimmerPreviewMaxButton(device=device, entry_id=config_entry.entry_id))
+            entities.append(DimmerPreviewMinButton(device=device, entry_id=config_entry.entry_id))
 
     if entities:
         async_add_entities(entities)
@@ -347,3 +356,37 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):
     async def async_press(self) -> None:
         """POST resetTamperedState to confirm the device is back in place."""
         await self._device.async_reset_tampered_state()
+
+
+class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):
+    """Button that flashes the dimmer at max brightness for load calibration (#123)."""
+
+    _attr_icon = "mdi:brightness-7"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_name = "Preview Max Brightness"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_preview_max"
+
+    async def async_press(self) -> None:
+        svc = getattr(self._device, "dimmer_configuration", None)
+        if svc is not None:
+            await svc.async_preview_max_brightness()
+
+
+class DimmerPreviewMinButton(SHCEntity, ButtonEntity):
+    """Button that flashes the dimmer at min brightness for load calibration (#123)."""
+
+    _attr_icon = "mdi:brightness-2"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_name = "Preview Min Brightness"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_preview_min"
+
+    async def async_press(self) -> None:
+        svc = getattr(self._device, "dimmer_configuration", None)
+        if svc is not None:
+            await svc.async_preview_min_brightness()

@@ -361,6 +361,17 @@ async def async_setup_entry(
             SirenSoundLevelSelect(device=siren, entry_id=config_entry.entry_id)
         )
 
+    # DimmerConfiguration phase-control mode (micromodule dimmer, #123).
+    for device in getattr(session.device_helper, "micromodule_dimmers", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        if getattr(device, "supports_dimmer_configuration", False):
+            entities.append(
+                DimmerPhaseControlSelect(
+                    device=device, entry_id=config_entry.entry_id
+                )
+            )
+
     if entities:
         async_add_entities(entities)
 
@@ -944,3 +955,44 @@ class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):
         ctx = SmartSensitivityControlService.SmartSensitivityContext.COMFORT
         level = SmartSensitivityControlService.MotionSensitivity[option]
         await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
+
+
+class DimmerPhaseControlSelect(SHCEntity, SelectEntity):
+    """Select entity for micromodule dimmer phase-control mode (#123)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:sine-wave"
+    _attr_options = ["TRAILING", "LEADING"]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the dimmer phase-control select."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Dimmer Phase Control"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_dimmer_phase_control"
+        )
+
+    @property
+    def current_option(self) -> str | None:
+        """Return the current phase-control mode name, None if unknown."""
+        service = self._device.dimmer_configuration
+        if service is None:
+            return None
+        try:
+            name = service.edge_phase_control_mode.name
+            return name if name in self._attr_options else None
+        except (AttributeError, ValueError):
+            return None
+
+    async def async_select_option(self, option: str) -> None:
+        """Set the phase-control mode (TRAILING/LEADING)."""
+        from boschshcpy.services_impl import DimmerConfigurationService
+
+        service = self._device.dimmer_configuration
+        if service is None:
+            return
+        try:
+            mode = DimmerConfigurationService.EdgePhaseControlMode[option]
+        except KeyError:
+            return
+        await service.async_set_edge_phase_control_mode(mode)

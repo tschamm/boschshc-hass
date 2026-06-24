@@ -164,6 +164,15 @@ async def async_setup_entry(
         entities.append(SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_ALARM_DELAY))
         entities.append(SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_FLASH_DELAY))
 
+    # DimmerConfiguration calibration numbers (micromodule dimmer, #123).
+    for device in getattr(session.device_helper, "micromodule_dimmers", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        if getattr(device, "supports_dimmer_configuration", False):
+            entities.append(DimmerConfigNumber(device, config_entry.entry_id, "min", 0, 100))
+            entities.append(DimmerConfigNumber(device, config_entry.entry_id, "max", 0, 100))
+            entities.append(DimmerConfigNumber(device, config_entry.entry_id, "speed", 1, 10))
+
     if entities:
         async_add_entities(entities)
 
@@ -658,4 +667,63 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):
         except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
             LOGGER.warning(
                 "Unable to set display on-time for %s: %s", self._device.name, err
+            )
+
+
+class DimmerConfigNumber(SHCEntity, NumberEntity):
+    """NumberEntity for DimmerConfiguration calibration values (#123).
+
+    field="min": calibrated minimum brightness (0-100).
+    field="max": calibrated maximum brightness (0-100).
+    field="speed": dimming speed 1 (fastest) to 10 (slowest).
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_step = 1.0
+
+    _NAMES = {
+        "min": "Dimmer Min Brightness",
+        "max": "Dimmer Max Brightness",
+        "speed": "Dimming Speed",
+    }
+
+    def __init__(
+        self, device: SHCDevice, entry_id: str, field: str, lo: float, hi: float
+    ) -> None:
+        super().__init__(device, entry_id)
+        self._field = field
+        self._attr_name = self._NAMES[field]
+        self._attr_native_min_value = float(lo)
+        self._attr_native_max_value = float(hi)
+        self._attr_mode = NumberMode.BOX if field == "speed" else NumberMode.SLIDER
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_{field}"
+
+    @property
+    def native_value(self) -> float | None:
+        svc = getattr(self._device, "dimmer_configuration", None)
+        if svc is None:
+            return None
+        if self._field == "min":
+            return float(svc.min_brightness)
+        if self._field == "max":
+            return float(svc.max_brightness)
+        return float(svc.dimming_speed)
+
+    async def async_set_native_value(self, value: float) -> None:
+        svc = getattr(self._device, "dimmer_configuration", None)
+        if svc is None:
+            return
+        clamped = int(
+            max(self._attr_native_min_value, min(self._attr_native_max_value, value))
+        )
+        try:
+            if self._field == "min":
+                await svc.async_set_brightness_range(min_brightness=clamped)
+            elif self._field == "max":
+                await svc.async_set_brightness_range(max_brightness=clamped)
+            else:
+                await svc.async_set_dimming_speed(clamped)
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set dimmer %s for %s: %s", self._field, self._device.name, err
             )
