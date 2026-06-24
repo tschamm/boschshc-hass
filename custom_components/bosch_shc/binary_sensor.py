@@ -243,6 +243,7 @@ async def async_setup_entry(
         + session.device_helper.wallthermostats
         + session.device_helper.roomthermostats
         + session.device_helper.water_leakage_detectors
+        + list(getattr(session.device_helper, "outdoor_sirens", []))
     ):
         if device_excluded(binary_sensor, config_entry.options):
             continue
@@ -268,6 +269,13 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+
+    for siren in getattr(session.device_helper, "outdoor_sirens", []):
+        if device_excluded(siren, config_entry.options):
+            continue
+        entities.append(SirenAcousticAlarmSensor(device=siren, entry_id=config_entry.entry_id))
+        entities.append(SirenVisualAlarmSensor(device=siren, entry_id=config_entry.entry_id))
+        entities.append(SirenTamperSensor(device=siren, entry_id=config_entry.entry_id))
 
     platform = entity_platform.current_platform.get()
 
@@ -308,6 +316,52 @@ class CallForHeatSensor(SHCEntity, BinarySensorEntity):
     def is_on(self):
         """Return True when the room climate control is calling for heat."""
         return bool(getattr(self._device, "has_demand", False))
+
+
+class SirenAcousticAlarmSensor(SHCEntity, BinarySensorEntity):
+    """Outdoor Siren: acoustic alarm active (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.SOUND
+    _attr_translation_key = "siren_acoustic_alarm"
+
+    def __init__(self, device, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_acoustic_alarm"
+
+    @property
+    def is_on(self):
+        return bool(getattr(self._device.siren, "acoustic_alarm_on", False))
+
+
+class SirenVisualAlarmSensor(SHCEntity, BinarySensorEntity):
+    """Outdoor Siren: visual (flash) alarm active (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.LIGHT
+    _attr_translation_key = "siren_visual_alarm"
+
+    def __init__(self, device, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_visual_alarm"
+
+    @property
+    def is_on(self):
+        return bool(getattr(self._device.siren, "visual_alarm_on", False))
+
+
+class SirenTamperSensor(SHCEntity, BinarySensorEntity):
+    """Outdoor Siren: tamper detected (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.TAMPER
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_tamper"
+
+    def __init__(self, device, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_tamper"
+
+    @property
+    def is_on(self):
+        return bool(getattr(self._device.siren, "tamper_activated", False))
 
 
 class ShutterContactSensor(SHCEntity, BinarySensorEntity):

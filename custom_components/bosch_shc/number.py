@@ -154,8 +154,63 @@ async def async_setup_entry(
                 )
             )
 
+    for siren in getattr(session.device_helper, "outdoor_sirens", []):
+        if device_excluded(siren, config_entry.options):
+            continue
+        if getattr(siren, "siren", None) is None:
+            continue
+        entities.append(SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_ALARM_DURATION))
+        entities.append(SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_FLASH_DURATION))
+        entities.append(SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_ALARM_DELAY))
+        entities.append(SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_FLASH_DELAY))
+
     if entities:
         async_add_entities(entities)
+
+
+# (field, translation_key, unit, min, max) — siren config numbers (#120).
+# alarmDuration/flashDuration are minutes; alarmDelay/flashDelay are seconds 0-180.
+_SIREN_ALARM_DURATION = ("alarm_duration", "siren_alarm_duration", UnitOfTime.MINUTES, 0, 60)
+_SIREN_FLASH_DURATION = ("flash_duration", "siren_flash_duration", UnitOfTime.MINUTES, 0, 60)
+_SIREN_ALARM_DELAY = ("alarm_delay", "siren_alarm_delay", UnitOfTime.SECONDS, 0, 180)
+_SIREN_FLASH_DELAY = ("flash_delay", "siren_flash_delay", UnitOfTime.SECONDS, 0, 180)
+
+
+class SirenConfigNumber(SHCEntity, NumberEntity):
+    """Configurable Outdoor Siren duration/delay (#120).
+
+    Each field maps to one key of outdoorSirenConfiguration; the lib re-sends the
+    full config block on write (Bosch requires all 5 fields together).
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_step = 1.0
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, device, entry_id, field, translation_key, unit, lo, hi) -> None:
+        super().__init__(device, entry_id)
+        self._field = field
+        self._attr_translation_key = translation_key
+        self._attr_native_unit_of_measurement = unit
+        self._attr_native_min_value = float(lo)
+        self._attr_native_max_value = float(hi)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_{field}"
+
+    @property
+    def native_value(self) -> float | None:
+        val = getattr(self._device.siren, self._field, None)
+        return None if val is None else float(val)
+
+    async def async_set_native_value(self, value: float) -> None:
+        clamped = int(
+            max(self._attr_native_min_value, min(self._attr_native_max_value, value))
+        )
+        try:
+            await self._device.siren.async_set_configuration(**{self._field: clamped})
+        except (AttributeError, KeyError, aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.warning(
+                "Unable to set %s for %s: %s", self._field, self._device.name, err
+            )
 
 
 class SHCNumber(SHCEntity, NumberEntity):

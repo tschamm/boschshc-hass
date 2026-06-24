@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Sabotage resetten"
+      },
+      "siren_test_alarm": {
+        "name": "Testalarm"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Scherm aan-tijd"
+      },
+      "siren_alarm_duration": {
+        "name": "Alarmduur"
+      },
+      "siren_flash_duration": {
+        "name": "Flitsduur"
+      },
+      "siren_alarm_delay": {
+        "name": "Alarmvertraging"
+      },
+      "siren_flash_delay": {
+        "name": "Flitsvertraging"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Reactietijd oriëntatielicht"
+      },
+      "siren_sound_level": {
+        "name": "Geluidsniveau",
+        "state": {
+          "low": "Laag",
+          "medium": "Gemiddeld",
+          "high": "Hoog"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Onbekend",
           "fetching": "Ophalen"
         }
+      },
+      "siren_battery": {
+        "name": "Batterij"
+      },
+      "siren_main_power": {
+        "name": "Stroombron",
+        "state": {
+          "battery": "Batterij",
+          "solar": "Zonne-energie",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Onbekend"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Zonneladen",
+        "state": {
+          "bad": "Slecht",
+          "medium": "Gemiddeld",
+          "good": "Goed",
+          "unknown": "Onbekend"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akoestisch alarm"
+      },
+      "siren_visual_alarm": {
+        "name": "Visueel alarm"
+      },
+      "siren_tamper": {
+        "name": "Sabotage"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Software-update"
       }
     }
   },

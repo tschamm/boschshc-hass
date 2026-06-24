@@ -136,6 +136,13 @@ async def async_setup_entry(
                 # button platform — skip just that scenario.
                 LOGGER.warning("Skipping scenario button (bad payload): %s", err)
 
+    for siren in getattr(session.device_helper, "outdoor_sirens", []):
+        if device_excluded(siren, config_entry.options):
+            continue
+        entities.append(
+            SHCSirenTestAlarmButton(device=siren, entry_id=config_entry.entry_id)
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -177,6 +184,23 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Trigger the device self-test (awaited — the session is async; #336)."""
         await self._device.async_smoketest_requested()
+
+
+class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):
+    """Button that fires a short Outdoor Siren test alarm (#120)."""
+
+    _attr_icon = "mdi:bullhorn"
+    _attr_translation_key = "siren_test_alarm"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_test_alarm"
+        )
+
+    async def async_press(self) -> None:
+        """Trigger a short test alarm at the configured sound level."""
+        await self._device.async_trigger_test_alarm()
 
 
 class SHCScenarioButton(ButtonEntity):

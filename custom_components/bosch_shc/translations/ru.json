@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Сбросить защиту от вскрытия"
+      },
+      "siren_test_alarm": {
+        "name": "Тестовая тревога"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Время работы дисплея"
+      },
+      "siren_alarm_duration": {
+        "name": "Длительность сигнала тревоги"
+      },
+      "siren_flash_duration": {
+        "name": "Длительность вспышки"
+      },
+      "siren_alarm_delay": {
+        "name": "Задержка сигнала тревоги"
+      },
+      "siren_flash_delay": {
+        "name": "Задержка вспышки"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Время отклика ориентационного освещения"
+      },
+      "siren_sound_level": {
+        "name": "Уровень звука",
+        "state": {
+          "low": "Низкий",
+          "medium": "Средний",
+          "high": "Высокий"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Неизвестно",
           "fetching": "Получение"
         }
+      },
+      "siren_battery": {
+        "name": "Батарея"
+      },
+      "siren_main_power": {
+        "name": "Источник питания",
+        "state": {
+          "battery": "Батарея",
+          "solar": "Солнечная батарея",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Неизвестно"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Солнечная зарядка",
+        "state": {
+          "bad": "Плохой",
+          "medium": "Средний",
+          "good": "Хороший",
+          "unknown": "Неизвестно"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Звуковая сирена"
+      },
+      "siren_visual_alarm": {
+        "name": "Световая сирена"
+      },
+      "siren_tamper": {
+        "name": "Вскрытие"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Обновление программного обеспечения"
       }
     }
   },

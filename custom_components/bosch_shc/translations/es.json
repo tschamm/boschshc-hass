@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Restablecer manipulación"
+      },
+      "siren_test_alarm": {
+        "name": "Probar alarma"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Tiempo de encendido de la pantalla"
+      },
+      "siren_alarm_duration": {
+        "name": "Duración de alarma"
+      },
+      "siren_flash_duration": {
+        "name": "Duración del destello"
+      },
+      "siren_alarm_delay": {
+        "name": "Retraso de alarma"
+      },
+      "siren_flash_delay": {
+        "name": "Retraso del destello"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Tiempo de respuesta de la luz de orientación"
+      },
+      "siren_sound_level": {
+        "name": "Nivel de sonido",
+        "state": {
+          "low": "Bajo",
+          "medium": "Medio",
+          "high": "Alto"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Desconocida",
           "fetching": "Obteniendo"
         }
+      },
+      "siren_battery": {
+        "name": "Batería"
+      },
+      "siren_main_power": {
+        "name": "Fuente de alimentación",
+        "state": {
+          "battery": "Batería",
+          "solar": "Solar",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Desconocido"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Carga solar",
+        "state": {
+          "bad": "Mala",
+          "medium": "Media",
+          "good": "Buena",
+          "unknown": "Desconocida"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Alarma acústica"
+      },
+      "siren_visual_alarm": {
+        "name": "Alarma visual"
+      },
+      "siren_tamper": {
+        "name": "Manipulación"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Actualización de software"
       }
     }
   },

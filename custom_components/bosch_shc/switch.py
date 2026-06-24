@@ -330,6 +330,14 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
     ),
+    "intrusion_alarm": SHCSwitchEntityDescription(
+        key="intrusion_alarm",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="intrusion_alarm",
+        on_value=True,
+        should_poll=False,
+        icon="mdi:alarm-light",
+    ),
 }
 
 
@@ -813,6 +821,18 @@ async def async_setup_entry(
                     entry_id=config_entry.entry_id,
                     description=SWITCH_TYPES["pre_alarm_enabled"],
                     attr_name="PreAlarm",
+                )
+            )
+        # Smoke Detector II can sound its own intrusion alarm (#174) — expose it
+        # as an on/off switch (writes INTRUSION_ALARM_ON_REQUESTED). Gen-1 SD is
+        # skipped via supports_intrusion_alarm.
+        if getattr(switch, "supports_intrusion_alarm", False):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["intrusion_alarm"],
+                    attr_name="IntrusionAlarm",
                 )
             )
 

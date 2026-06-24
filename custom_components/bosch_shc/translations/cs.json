@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Resetovat sabotáž"
+      },
+      "siren_test_alarm": {
+        "name": "Testovací alarm"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Doba svícení displeje"
+      },
+      "siren_alarm_duration": {
+        "name": "Doba trvání alarmu"
+      },
+      "siren_flash_duration": {
+        "name": "Doba trvání blikání"
+      },
+      "siren_alarm_delay": {
+        "name": "Zpoždění alarmu"
+      },
+      "siren_flash_delay": {
+        "name": "Zpoždění blikání"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Doba odezvy orientačního světla"
+      },
+      "siren_sound_level": {
+        "name": "Hlasitost",
+        "state": {
+          "low": "Nízká",
+          "medium": "Střední",
+          "high": "Vysoká"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Neznámá",
           "fetching": "Načítání"
         }
+      },
+      "siren_battery": {
+        "name": "Baterie"
+      },
+      "siren_main_power": {
+        "name": "Zdroj napájení",
+        "state": {
+          "battery": "Baterie",
+          "solar": "Solární",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Neznámý"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Solární nabíjení",
+        "state": {
+          "bad": "Špatné",
+          "medium": "Střední",
+          "good": "Dobré",
+          "unknown": "Neznámé"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akustický alarm"
+      },
+      "siren_visual_alarm": {
+        "name": "Vizuální alarm"
+      },
+      "siren_tamper": {
+        "name": "Sabotáž"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Aktualizace softwaru"
       }
     }
   },

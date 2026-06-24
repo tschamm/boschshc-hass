@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "איפוס חבלה"
+      },
+      "siren_test_alarm": {
+        "name": "בדיקת אזעקה"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "זמן הדלקת תצוגה"
+      },
+      "siren_alarm_duration": {
+        "name": "משך האזעקה"
+      },
+      "siren_flash_duration": {
+        "name": "משך ההבזק"
+      },
+      "siren_alarm_delay": {
+        "name": "עיכוב האזעקה"
+      },
+      "siren_flash_delay": {
+        "name": "עיכוב ההבזק"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "זמן תגובת תאורת כיוון"
+      },
+      "siren_sound_level": {
+        "name": "עוצמת הצליל",
+        "state": {
+          "low": "נמוכה",
+          "medium": "בינונית",
+          "high": "גבוהה"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "לא ידוע",
           "fetching": "מאחזר"
         }
+      },
+      "siren_battery": {
+        "name": "סוללה"
+      },
+      "siren_main_power": {
+        "name": "מקור חשמל",
+        "state": {
+          "battery": "סוללה",
+          "solar": "סולארי",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "לא ידוע"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "טעינה סולארית",
+        "state": {
+          "bad": "גרוע",
+          "medium": "בינוני",
+          "good": "טוב",
+          "unknown": "לא ידוע"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "אזעקה אקוסטית"
+      },
+      "siren_visual_alarm": {
+        "name": "אזעקה חזותית"
+      },
+      "siren_tamper": {
+        "name": "חבלה"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "עדכון תוכנה"
       }
     }
   },

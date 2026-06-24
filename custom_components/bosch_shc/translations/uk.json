@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Скинути захист від несанкціонованого доступу"
+      },
+      "siren_test_alarm": {
+        "name": "Тестова тривога"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Час увімкнення дисплея"
+      },
+      "siren_alarm_duration": {
+        "name": "Тривалість тривоги"
+      },
+      "siren_flash_duration": {
+        "name": "Тривалість спалаху"
+      },
+      "siren_alarm_delay": {
+        "name": "Затримка тривоги"
+      },
+      "siren_flash_delay": {
+        "name": "Затримка спалаху"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Час відгуку орієнтаційного підсвічування"
+      },
+      "siren_sound_level": {
+        "name": "Рівень гучності",
+        "state": {
+          "low": "Низький",
+          "medium": "Середній",
+          "high": "Високий"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Невідома",
           "fetching": "Отримання"
         }
+      },
+      "siren_battery": {
+        "name": "Акумулятор"
+      },
+      "siren_main_power": {
+        "name": "Джерело живлення",
+        "state": {
+          "battery": "Акумулятор",
+          "solar": "Сонячна батарея",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Невідомо"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Сонячне заряджання",
+        "state": {
+          "bad": "Погане",
+          "medium": "Середнє",
+          "good": "Хороше",
+          "unknown": "Невідомо"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Звуковий сигнал тривоги"
+      },
+      "siren_visual_alarm": {
+        "name": "Візуальний сигнал тривоги"
+      },
+      "siren_tamper": {
+        "name": "Втручання"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Оновлення програмного забезпечення"
       }
     }
   },

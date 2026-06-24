@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Tilbakestill sabotasjevarsel"
+      },
+      "siren_test_alarm": {
+        "name": "Testalarm"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Skjermens på-tid"
+      },
+      "siren_alarm_duration": {
+        "name": "Alarmvarighet"
+      },
+      "siren_flash_duration": {
+        "name": "Blitsvarighet"
+      },
+      "siren_alarm_delay": {
+        "name": "Alarmforsinkelse"
+      },
+      "siren_flash_delay": {
+        "name": "Blitsforsinkelse"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Responstid for orienteringslys"
+      },
+      "siren_sound_level": {
+        "name": "Lydnivå",
+        "state": {
+          "low": "Lav",
+          "medium": "Middels",
+          "high": "Høy"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Ukjent",
           "fetching": "Henter"
         }
+      },
+      "siren_battery": {
+        "name": "Batteri"
+      },
+      "siren_main_power": {
+        "name": "Strømkilde",
+        "state": {
+          "battery": "Batteri",
+          "solar": "Solenergi",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Ukjent"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Solcellelading",
+        "state": {
+          "bad": "Dårlig",
+          "medium": "Middels",
+          "good": "God",
+          "unknown": "Ukjent"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akustisk alarm"
+      },
+      "siren_visual_alarm": {
+        "name": "Visuell alarm"
+      },
+      "siren_tamper": {
+        "name": "Sabotasje"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Programvareoppdatering"
       }
     }
   },

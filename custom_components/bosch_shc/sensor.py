@@ -399,6 +399,7 @@ async def async_setup_entry(
             + session.device_helper.wallthermostats
             + session.device_helper.roomthermostats
             + session.device_helper.water_leakage_detectors
+            + list(getattr(session.device_helper, "outdoor_sirens", []))
         ):
             if device_excluded(sensor, config_entry.options):
                 continue
@@ -409,6 +410,14 @@ async def async_setup_entry(
                         entry_id=config_entry.entry_id,
                     )
                 )
+
+    for siren in getattr(session.device_helper, "outdoor_sirens", []):
+        if device_excluded(siren, config_entry.options):
+            continue
+        if getattr(siren, "supports_power_supply", False):
+            entities.append(SirenBatterySensor(device=siren, entry_id=config_entry.entry_id))
+            entities.append(SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id))
+            entities.append(SirenSolarChargingSensor(device=siren, entry_id=config_entry.entry_id))
 
     if entities:
         async_add_entities(entities)
@@ -1049,3 +1058,64 @@ class InstallationProfileSensor(SHCEntity, SensorEntity):
         if val is None or val not in (self._attr_options or []):
             return None
         return val
+
+
+class SirenBatterySensor(SHCEntity, SensorEntity):
+    """Outdoor Siren battery charge (#120)."""
+
+    _attr_device_class = SensorDeviceClass.BATTERY
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_battery"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_battery"
+
+    @property
+    def native_value(self):
+        return getattr(self._device.power_supply, "battery_percentage_remaining", None)
+
+
+class SirenMainPowerSensor(SHCEntity, SensorEntity):
+    """Outdoor Siren active power source (#120)."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_main_power"
+    _attr_options = ["battery", "solar", "v12", "v230", "unknown"]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_main_power"
+
+    @property
+    def native_value(self):
+        try:
+            return self._device.power_supply.main_power_supply.name.lower()
+        except AttributeError:
+            return None
+
+
+class SirenSolarChargingSensor(SHCEntity, SensorEntity):
+    """Outdoor Siren solar-charging quality (#120)."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:solar-power"
+    _attr_translation_key = "siren_solar_charging"
+    _attr_options = ["bad", "medium", "good", "unknown"]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_siren_solar_charging"
+        )
+
+    @property
+    def native_value(self):
+        try:
+            return self._device.power_supply.solar_charging_score.name.lower()
+        except AttributeError:
+            return None

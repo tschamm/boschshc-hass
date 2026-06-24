@@ -91,6 +91,7 @@ PLATFORMS = [
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
+    Platform.UPDATE,
 ]
 if hasattr(Platform, "VALVE"):
     PLATFORMS.append(Platform.VALVE)

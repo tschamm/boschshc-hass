@@ -719,6 +719,7 @@ def test_switch_types_all_keys_present():
         "pre_alarm_enabled",
         "smart_sensitivity_enabled",
         "tamper_protection_enabled",
+        "intrusion_alarm",
     }
     assert expected == set(SWITCH_TYPES.keys())
 

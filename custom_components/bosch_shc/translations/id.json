@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Reset Gangguan"
+      },
+      "siren_test_alarm": {
+        "name": "Uji Alarm"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Waktu Layar Menyala"
+      },
+      "siren_alarm_duration": {
+        "name": "Durasi Alarm"
+      },
+      "siren_flash_duration": {
+        "name": "Durasi Lampu Kilat"
+      },
+      "siren_alarm_delay": {
+        "name": "Penundaan Alarm"
+      },
+      "siren_flash_delay": {
+        "name": "Penundaan Lampu Kilat"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Waktu Respons Lampu Orientasi"
+      },
+      "siren_sound_level": {
+        "name": "Tingkat Suara",
+        "state": {
+          "low": "Rendah",
+          "medium": "Sedang",
+          "high": "Tinggi"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Tidak Diketahui",
           "fetching": "Mengambil"
         }
+      },
+      "siren_battery": {
+        "name": "Baterai"
+      },
+      "siren_main_power": {
+        "name": "Sumber Daya",
+        "state": {
+          "battery": "Baterai",
+          "solar": "Surya",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Tidak Diketahui"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Pengisian Surya",
+        "state": {
+          "bad": "Buruk",
+          "medium": "Sedang",
+          "good": "Baik",
+          "unknown": "Tidak Diketahui"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Alarm Akustik"
+      },
+      "siren_visual_alarm": {
+        "name": "Alarm Visual"
+      },
+      "siren_tamper": {
+        "name": "Gangguan Fisik"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Pembaruan Perangkat Lunak"
       }
     }
   },

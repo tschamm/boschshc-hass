@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Återställ sabotageindikering"
+      },
+      "siren_test_alarm": {
+        "name": "Testlarm"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Skärmens på-tid"
+      },
+      "siren_alarm_duration": {
+        "name": "Larmduration"
+      },
+      "siren_flash_duration": {
+        "name": "Blixttid"
+      },
+      "siren_alarm_delay": {
+        "name": "Larmfördröjning"
+      },
+      "siren_flash_delay": {
+        "name": "Blixtfördröjning"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Svarstid för orienteringsbelysning"
+      },
+      "siren_sound_level": {
+        "name": "Ljudnivå",
+        "state": {
+          "low": "Låg",
+          "medium": "Medel",
+          "high": "Hög"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Okänd",
           "fetching": "Hämtar"
         }
+      },
+      "siren_battery": {
+        "name": "Batteri"
+      },
+      "siren_main_power": {
+        "name": "Strömkälla",
+        "state": {
+          "battery": "Batteri",
+          "solar": "Sol",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Okänd"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Soladdning",
+        "state": {
+          "bad": "Dålig",
+          "medium": "Medel",
+          "good": "Bra",
+          "unknown": "Okänd"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akustiskt larm"
+      },
+      "siren_visual_alarm": {
+        "name": "Visuellt larm"
+      },
+      "siren_tamper": {
+        "name": "Sabotage"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Programvaruuppdatering"
       }
     }
   },

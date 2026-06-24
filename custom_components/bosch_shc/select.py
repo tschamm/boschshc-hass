@@ -352,8 +352,48 @@ async def async_setup_entry(
             )
         )
 
+    for siren in getattr(session.device_helper, "outdoor_sirens", []):
+        if device_excluded(siren, config_entry.options):
+            continue
+        if getattr(siren, "siren", None) is None:
+            continue
+        entities.append(
+            SirenSoundLevelSelect(device=siren, entry_id=config_entry.entry_id)
+        )
+
     if entities:
         async_add_entities(entities)
+
+
+_SIREN_SOUND_LEVEL_OPTIONS = ["low", "medium", "high"]
+
+
+class SirenSoundLevelSelect(SHCEntity, SelectEntity):
+    """Select entity for the Outdoor Siren sound level (#120)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "siren_sound_level"
+    _attr_options = _SIREN_SOUND_LEVEL_OPTIONS
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_sound_level"
+
+    @property
+    def current_option(self) -> str | None:
+        try:
+            return self._device.siren.sound_level.name.lower()
+        except (AttributeError, ValueError):
+            return None
+
+    async def async_select_option(self, option: str) -> None:
+        from boschshcpy.services_impl import OutdoorSirenService
+
+        try:
+            level = OutdoorSirenService.SoundLevel[option.upper()]
+        except KeyError:
+            return
+        await self._device.siren.async_set_configuration(sound_level=level)
 
 
 class MotionSensitivitySelect(SHCEntity, SelectEntity):

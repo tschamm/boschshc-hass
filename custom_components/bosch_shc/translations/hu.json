@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Illetéktelen hozzáférés jelzés visszaállítása"
+      },
+      "siren_test_alarm": {
+        "name": "Tesztriasztás"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Kijelző bekapcsolási ideje"
+      },
+      "siren_alarm_duration": {
+        "name": "Riasztás időtartama"
+      },
+      "siren_flash_duration": {
+        "name": "Villogás időtartama"
+      },
+      "siren_alarm_delay": {
+        "name": "Riasztás késleltetése"
+      },
+      "siren_flash_delay": {
+        "name": "Villogás késleltetése"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Tájékozódási fény reakcióideje"
+      },
+      "siren_sound_level": {
+        "name": "Hangerő",
+        "state": {
+          "low": "Alacsony",
+          "medium": "Közepes",
+          "high": "Magas"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Ismeretlen",
           "fetching": "Lekérés"
         }
+      },
+      "siren_battery": {
+        "name": "Akkumulátor"
+      },
+      "siren_main_power": {
+        "name": "Tápforrás",
+        "state": {
+          "battery": "Akkumulátor",
+          "solar": "Napelem",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Ismeretlen"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Napelemes töltés",
+        "state": {
+          "bad": "Gyenge",
+          "medium": "Közepes",
+          "good": "Jó",
+          "unknown": "Ismeretlen"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akusztikus riasztás"
+      },
+      "siren_visual_alarm": {
+        "name": "Vizuális riasztás"
+      },
+      "siren_tamper": {
+        "name": "Illetéktelen beavatkozás"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Szoftverfrissítés"
       }
     }
   },

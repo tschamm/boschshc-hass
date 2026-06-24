@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Müdahaleyi Sıfırla"
+      },
+      "siren_test_alarm": {
+        "name": "Test Alarmı"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Ekran Açık Kalma Süresi"
+      },
+      "siren_alarm_duration": {
+        "name": "Alarm Süresi"
+      },
+      "siren_flash_duration": {
+        "name": "Flaş Süresi"
+      },
+      "siren_alarm_delay": {
+        "name": "Alarm Gecikmesi"
+      },
+      "siren_flash_delay": {
+        "name": "Flaş Gecikmesi"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Yön Işığı Tepki Süresi"
+      },
+      "siren_sound_level": {
+        "name": "Ses Seviyesi",
+        "state": {
+          "low": "Düşük",
+          "medium": "Orta",
+          "high": "Yüksek"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Bilinmiyor",
           "fetching": "Alınıyor"
         }
+      },
+      "siren_battery": {
+        "name": "Pil"
+      },
+      "siren_main_power": {
+        "name": "Güç Kaynağı",
+        "state": {
+          "battery": "Pil",
+          "solar": "Güneş",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Bilinmiyor"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Güneş Şarjı",
+        "state": {
+          "bad": "Kötü",
+          "medium": "Orta",
+          "good": "İyi",
+          "unknown": "Bilinmiyor"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akustik Alarm"
+      },
+      "siren_visual_alarm": {
+        "name": "Görsel Alarm"
+      },
+      "siren_tamper": {
+        "name": "Kurcalama"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Yazılım Güncellemesi"
       }
     }
   },

@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Atiestatīt manipulācijas brīdinājumu"
+      },
+      "siren_test_alarm": {
+        "name": "Pārbaudes signāls"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Displeja ieslēgšanas laiks"
+      },
+      "siren_alarm_duration": {
+        "name": "Signāla ilgums"
+      },
+      "siren_flash_duration": {
+        "name": "Mirgošanas ilgums"
+      },
+      "siren_alarm_delay": {
+        "name": "Signāla aizkave"
+      },
+      "siren_flash_delay": {
+        "name": "Mirgošanas aizkave"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Orientācijas gaismas reakcijas laiks"
+      },
+      "siren_sound_level": {
+        "name": "Skaņas līmenis",
+        "state": {
+          "low": "Zems",
+          "medium": "Vidējs",
+          "high": "Augsts"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Nezināma",
           "fetching": "Ielādē"
         }
+      },
+      "siren_battery": {
+        "name": "Akumulators"
+      },
+      "siren_main_power": {
+        "name": "Barošanas avots",
+        "state": {
+          "battery": "Akumulators",
+          "solar": "Saules enerģija",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Nezināms"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Saules uzlāde",
+        "state": {
+          "bad": "Slikts",
+          "medium": "Vidējs",
+          "good": "Labs",
+          "unknown": "Nezināms"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akustiskais signāls"
+      },
+      "siren_visual_alarm": {
+        "name": "Vizuālais signāls"
+      },
+      "siren_tamper": {
+        "name": "Bojājums"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Programmatūras atjauninājums"
       }
     }
   },

@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Нулиране на сигнала за намеса"
+      },
+      "siren_test_alarm": {
+        "name": "Тестова аларма"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Време на включен дисплей"
+      },
+      "siren_alarm_duration": {
+        "name": "Продължителност на алармата"
+      },
+      "siren_flash_duration": {
+        "name": "Продължителност на мигането"
+      },
+      "siren_alarm_delay": {
+        "name": "Закъснение на алармата"
+      },
+      "siren_flash_delay": {
+        "name": "Закъснение на мигането"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Време за реакция на ориентационната светлина"
+      },
+      "siren_sound_level": {
+        "name": "Ниво на звука",
+        "state": {
+          "low": "Ниско",
+          "medium": "Средно",
+          "high": "Високо"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Неизвестно",
           "fetching": "Извличане"
         }
+      },
+      "siren_battery": {
+        "name": "Батерия"
+      },
+      "siren_main_power": {
+        "name": "Захранване",
+        "state": {
+          "battery": "Батерия",
+          "solar": "Слънчева енергия",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Неизвестно"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Слънчево зареждане",
+        "state": {
+          "bad": "Лошо",
+          "medium": "Средно",
+          "good": "Добро",
+          "unknown": "Неизвестно"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Акустична аларма"
+      },
+      "siren_visual_alarm": {
+        "name": "Визуална аларма"
+      },
+      "siren_tamper": {
+        "name": "Подправяне"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Актуализация на софтуера"
       }
     }
   },

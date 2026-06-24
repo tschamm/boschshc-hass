@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Resetuj sabotaż"
+      },
+      "siren_test_alarm": {
+        "name": "Alarm testowy"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Czas włączenia wyświetlacza"
+      },
+      "siren_alarm_duration": {
+        "name": "Czas trwania alarmu"
+      },
+      "siren_flash_duration": {
+        "name": "Czas trwania błysku"
+      },
+      "siren_alarm_delay": {
+        "name": "Opóźnienie alarmu"
+      },
+      "siren_flash_delay": {
+        "name": "Opóźnienie błysku"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Czas reakcji światła orientacyjnego"
+      },
+      "siren_sound_level": {
+        "name": "Poziom dźwięku",
+        "state": {
+          "low": "Niski",
+          "medium": "Średni",
+          "high": "Wysoki"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Nieznana",
           "fetching": "Pobieranie"
         }
+      },
+      "siren_battery": {
+        "name": "Bateria"
+      },
+      "siren_main_power": {
+        "name": "Źródło zasilania",
+        "state": {
+          "battery": "Bateria",
+          "solar": "Słoneczne",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Nieznane"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Ładowanie solarne",
+        "state": {
+          "bad": "Słabe",
+          "medium": "Średnie",
+          "good": "Dobre",
+          "unknown": "Nieznane"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Alarm akustyczny"
+      },
+      "siren_visual_alarm": {
+        "name": "Alarm wizualny"
+      },
+      "siren_tamper": {
+        "name": "Ingerencja"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Aktualizacja oprogramowania"
       }
     }
   },

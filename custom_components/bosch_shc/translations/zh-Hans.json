@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "重置防拆报警"
+      },
+      "siren_test_alarm": {
+        "name": "测试报警"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "显示屏点亮时长"
+      },
+      "siren_alarm_duration": {
+        "name": "报警持续时间"
+      },
+      "siren_flash_duration": {
+        "name": "闪光持续时间"
+      },
+      "siren_alarm_delay": {
+        "name": "报警延迟"
+      },
+      "siren_flash_delay": {
+        "name": "闪光延迟"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "方向指示灯响应时间"
+      },
+      "siren_sound_level": {
+        "name": "音量级别",
+        "state": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "未知",
           "fetching": "获取中"
         }
+      },
+      "siren_battery": {
+        "name": "电池"
+      },
+      "siren_main_power": {
+        "name": "电源",
+        "state": {
+          "battery": "电池",
+          "solar": "太阳能",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "未知"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "太阳能充电",
+        "state": {
+          "bad": "差",
+          "medium": "一般",
+          "good": "良好",
+          "unknown": "未知"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "声音报警"
+      },
+      "siren_visual_alarm": {
+        "name": "视觉报警"
+      },
+      "siren_tamper": {
+        "name": "防拆报警"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "软件更新"
       }
     }
   },

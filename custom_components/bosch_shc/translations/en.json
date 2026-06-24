@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Reset Tamper"
+      },
+      "siren_test_alarm": {
+        "name": "Test Alarm"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Display On Time"
+      },
+      "siren_alarm_duration": {
+        "name": "Alarm Duration"
+      },
+      "siren_flash_duration": {
+        "name": "Flash Duration"
+      },
+      "siren_alarm_delay": {
+        "name": "Alarm Delay"
+      },
+      "siren_flash_delay": {
+        "name": "Flash Delay"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Orientation Light Response Time"
+      },
+      "siren_sound_level": {
+        "name": "Sound Level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Unknown",
           "fetching": "Fetching"
         }
+      },
+      "siren_battery": {
+        "name": "Battery"
+      },
+      "siren_main_power": {
+        "name": "Power Source",
+        "state": {
+          "battery": "Battery",
+          "solar": "Solar",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Unknown"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Solar Charging",
+        "state": {
+          "bad": "Bad",
+          "medium": "Medium",
+          "good": "Good",
+          "unknown": "Unknown"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Acoustic Alarm"
+      },
+      "siren_visual_alarm": {
+        "name": "Visual Alarm"
+      },
+      "siren_tamper": {
+        "name": "Tamper"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Software Update"
       }
     }
   },

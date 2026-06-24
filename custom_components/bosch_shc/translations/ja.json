@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "不正開封リセット"
+      },
+      "siren_test_alarm": {
+        "name": "テストアラーム"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "ディスプレイ点灯時間"
+      },
+      "siren_alarm_duration": {
+        "name": "アラーム持続時間"
+      },
+      "siren_flash_duration": {
+        "name": "フラッシュ持続時間"
+      },
+      "siren_alarm_delay": {
+        "name": "アラーム遅延"
+      },
+      "siren_flash_delay": {
+        "name": "フラッシュ遅延"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "誘導灯応答時間"
+      },
+      "siren_sound_level": {
+        "name": "音量レベル",
+        "state": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "不明",
           "fetching": "取得中"
         }
+      },
+      "siren_battery": {
+        "name": "バッテリー"
+      },
+      "siren_main_power": {
+        "name": "電源",
+        "state": {
+          "battery": "バッテリー",
+          "solar": "ソーラー",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "不明"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "ソーラー充電",
+        "state": {
+          "bad": "不良",
+          "medium": "普通",
+          "good": "良好",
+          "unknown": "不明"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "音響アラーム"
+      },
+      "siren_visual_alarm": {
+        "name": "視覚アラーム"
+      },
+      "siren_tamper": {
+        "name": "不正開封"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "ソフトウェアアップデート"
       }
     }
   },

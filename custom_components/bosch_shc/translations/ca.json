@@ -178,6 +178,9 @@
       },
       "reset_tamper": {
         "name": "Restableix la manipulació"
+      },
+      "siren_test_alarm": {
+        "name": "Alarma de prova"
       }
     },
     "number": {
@@ -198,6 +201,18 @@
       },
       "display_on_time": {
         "name": "Temps d'encesa de la pantalla"
+      },
+      "siren_alarm_duration": {
+        "name": "Durada de l'alarma"
+      },
+      "siren_flash_duration": {
+        "name": "Durada del flaix"
+      },
+      "siren_alarm_delay": {
+        "name": "Retard de l'alarma"
+      },
+      "siren_flash_delay": {
+        "name": "Retard del flaix"
       }
     },
     "select": {
@@ -245,6 +260,14 @@
       },
       "orientation_light_response": {
         "name": "Temps de resposta de la llum d'orientació"
+      },
+      "siren_sound_level": {
+        "name": "Nivell de so",
+        "state": {
+          "low": "Baix",
+          "medium": "Mitjà",
+          "high": "Alt"
+        }
       }
     },
     "sensor": {
@@ -276,6 +299,44 @@
           "unknown": "Desconeguda",
           "fetching": "Obtenint"
         }
+      },
+      "siren_battery": {
+        "name": "Bateria"
+      },
+      "siren_main_power": {
+        "name": "Font d'alimentació",
+        "state": {
+          "battery": "Bateria",
+          "solar": "Solar",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Desconegut"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Càrrega solar",
+        "state": {
+          "bad": "Dolenta",
+          "medium": "Mitjana",
+          "good": "Bona",
+          "unknown": "Desconeguda"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Alarma acústica"
+      },
+      "siren_visual_alarm": {
+        "name": "Alarma visual"
+      },
+      "siren_tamper": {
+        "name": "Manipulació"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Actualització de programari"
       }
     }
   },

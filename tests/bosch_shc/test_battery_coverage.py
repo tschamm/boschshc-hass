@@ -43,6 +43,7 @@ KNOWN_BATTERY_DEVICE_CLASSES = {
     "SHCUniversalSwitch",      # universal_switches
     "SHCUniversalSwitch2",     # universal_switches
     "SHCWaterLeakageSensor",   # water_leakage_detectors
+    "SHCOutdoorSiren",         # outdoor_sirens (generic battery loop + SirenBatterySensor)
 }
 
 # device_helper accessors the battery loops iterate. Each must appear in BOTH
