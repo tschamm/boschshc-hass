@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
 
-from boschshcpy import SHCSession
+from boschshcpy import SHCSessionAsync
 from homeassistant.helpers.device_registry import DeviceEntry
 
 
@@ -13,7 +13,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 class SHCData:
     """Runtime data stored on the config entry."""
 
-    session: SHCSession
+    session: SHCSessionAsync
     shc_device: DeviceEntry
     title: str
     polling_handler: Callable[[], None] | None = field(default=None)

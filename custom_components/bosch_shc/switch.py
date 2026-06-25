@@ -933,6 +933,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         # entity to let the translation through, keeping unique_id unchanged.
         if attr_name is None and description.translation_key:
             del self._attr_name
+        self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
     @property
     def is_on(self) -> bool | None:
@@ -1011,7 +1012,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         read, #335). Use the async refresh; fall back to the executor + sync
         update() only if the installed lib predates async_update.
         """
-        if hasattr(self._device, "async_update"):
+        if self._has_async_update:  # [S3] cached at init
             await self._device.async_update()
         else:
             await self.hass.async_add_executor_job(self._device.update)
@@ -1052,6 +1053,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
         self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
+        self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""
@@ -1117,7 +1119,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         The sync device.update() leaves an un-awaited coroutine in the service
         state under SHCSessionAsync (TypeError, #335) — use the async refresh.
         """
-        if hasattr(self._device, "async_update"):
+        if self._has_async_update:  # [S3] cached at init
             await self._device.async_update()
         else:
             await self.hass.async_add_executor_job(self._device.update)

@@ -205,19 +205,19 @@ class TestWriteTlsAsset:
         hass = _make_hass()
         m = mock_open()
         with patch("custom_components.bosch_shc.config_flow.makedirs") as mk, \
-                patch("builtins.open", m):
+                patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
+                patch("custom_components.bosch_shc.config_flow.os.fdopen", m):
             write_tls_asset(hass, "test-cert.pem", b"CERT_CONTENT")
 
         mk.assert_called_once()
-        m.assert_called_once_with(
-            hass.config.path(DOMAIN, "test-cert.pem"), "w", encoding="utf8"
-        )
+        m.assert_called_once_with(5, "w", encoding="utf8")
         m().write.assert_called_once_with("CERT_CONTENT")
 
     def test_makedirs_called_with_exist_ok(self):
         hass = _make_hass()
         with patch("custom_components.bosch_shc.config_flow.makedirs") as mk, \
-                patch("builtins.open", mock_open()):
+                patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
+                patch("custom_components.bosch_shc.config_flow.os.fdopen", mock_open()):
             write_tls_asset(hass, "key.pem", b"KEY")
 
         mk.assert_called_once_with(hass.config.path(DOMAIN), exist_ok=True)
@@ -225,10 +225,11 @@ class TestWriteTlsAsset:
     def test_uses_hass_config_path_for_domain(self):
         hass = _make_hass("/myconfig")
         with patch("custom_components.bosch_shc.config_flow.makedirs"), \
-                patch("builtins.open", mock_open()) as m:
+                patch("custom_components.bosch_shc.config_flow.os.open", return_value=5) as m_open, \
+                patch("custom_components.bosch_shc.config_flow.os.fdopen", mock_open()):
             write_tls_asset(hass, "somefile.pem", b"DATA")
 
-        path_arg = m.call_args[0][0]
+        path_arg = m_open.call_args[0][0]
         assert DOMAIN in path_arg
         assert "somefile.pem" in path_arg
 

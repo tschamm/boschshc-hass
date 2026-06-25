@@ -196,15 +196,14 @@ class TestWriteTlsAsset:
         asset = b"PEM certificate content"
         m = mock_open()
         with patch("custom_components.bosch_shc.config_flow.makedirs") as mock_makedirs, \
-             patch("builtins.open", m):
+             patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
+             patch("custom_components.bosch_shc.config_flow.os.fdopen", m):
             write_tls_asset(hass, "test_cert.pem", asset)
 
         mock_makedirs.assert_called_once_with(
             hass.config.path(DOMAIN), exist_ok=True
         )
-        m.assert_called_once_with(
-            hass.config.path(DOMAIN, "test_cert.pem"), "w", encoding="utf8"
-        )
+        m.assert_called_once_with(5, "w", encoding="utf8")
         m().write.assert_called_once_with("PEM certificate content")
 
     def test_write_tls_asset_decodes_bytes_to_string(self):
@@ -217,7 +216,8 @@ class TestWriteTlsAsset:
         m = mock_open()
         m.return_value.__enter__.return_value.write = lambda s: written.append(s)
         with patch("custom_components.bosch_shc.config_flow.makedirs"), \
-             patch("builtins.open", m):
+             patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
+             patch("custom_components.bosch_shc.config_flow.os.fdopen", m):
             write_tls_asset(hass, "key.pem", asset)
 
         assert written == ["certificate data"]

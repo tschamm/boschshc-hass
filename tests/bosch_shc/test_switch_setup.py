@@ -825,6 +825,7 @@ def test_shcswitch_update_calls_device_update():
     from unittest.mock import AsyncMock
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = SimpleNamespace(async_update=AsyncMock())
+    sw._has_async_update = True
     sw.entity_description = SWITCH_TYPES["cameraeyes"]
     sw.entity_id = "switch.test"
     asyncio.run(sw.async_update())

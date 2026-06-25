@@ -1,5 +1,6 @@
 """Config flow for Bosch Smart Home Controller integration."""
 
+import os
 from os import makedirs
 from typing import Any
 
@@ -137,9 +138,11 @@ HOST_SCHEMA = vol.Schema(
 
 
 def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes) -> None:
-    """Write the tls assets to disk."""
+    """Write the tls assets to disk with owner-only permissions (0o600)."""
     makedirs(hass.config.path(DOMAIN), exist_ok=True)
-    with open(hass.config.path(DOMAIN, filename), "w", encoding="utf8") as file_handle:
+    path = hass.config.path(DOMAIN, filename)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf8") as file_handle:
         file_handle.write(asset.decode("utf-8"))
 
 

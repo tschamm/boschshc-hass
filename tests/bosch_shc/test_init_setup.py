@@ -139,6 +139,7 @@ def _make_fake_session(*, scenarios=None, universal_switches=None,
     api.get_device = AsyncMock(return_value={})
     api.get_device_services = AsyncMock(return_value=[])
     api.get_device_service = AsyncMock(return_value={})
+    api.close = AsyncMock()
     session.api = api
     return session
 

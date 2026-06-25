@@ -41,10 +41,6 @@ OPT_SSL_VERIFY_HOSTNAME = "ssl_verify_hostname"
 OPT_LONG_POLL_TIMEOUT = "long_poll_timeout"
 OPT_CHILD_LOCK_ENABLED = "child_lock_enabled"
 OPT_PRESENCE_ENTITY = "child_lock_presence_entity"
-# Deprecated: the explicit "present state" is now auto-inferred per entity
-# domain (home for person/device_tracker/zone/group, on for binary_sensor/
-# input_boolean). Kept for backward-compat reads of older stored options.
-OPT_PRESENCE_STATE = "child_lock_present_state"
 OPT_EXCLUDED_DEVICES = "excluded_devices"
 OPT_EXCLUDED_ROOMS = "excluded_rooms"
 # #338: per-device opt-in to expose a Light/Shutter Control II (or BSM) light

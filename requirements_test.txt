@@ -1,12 +1,12 @@
 # Test + runtime deps for the bosch_shc integration test suite.
-# homeassistant is the library under test; >=2024.8.0 required for UnitOfRatio
-# (matches the manifest.json "homeassistant": "2024.8.0" minimum).
+# homeassistant>=2025.2.0 required: helpers.service_info.zeroconf.ZeroconfServiceInfo
+# was relocated there in HA 2025.2 (PR #135653; old components.zeroconf path removed 2026.2).
 # Tests run with PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 so no HA test fixtures are
 # needed — bare homeassistant as a library is sufficient.
 pytest
 pytest-timeout
-homeassistant>=2024.8.0
+homeassistant>=2025.2.0
 # Runtime dependency of the integration — pinned to the manifest version so the
 # unit gate tests against the exact released lib (an unpinned spec let CI install
 # a stale cached wheel and miss new lib APIs).
-boschshcpy==0.3.12
+boschshcpy==0.3.15

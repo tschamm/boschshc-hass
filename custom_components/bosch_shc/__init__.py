@@ -285,11 +285,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     try:
         await session.async_init()
     except SHCAuthenticationError as err:
+        await session.api.close()
         raise ConfigEntryAuthFailed from err
     except SHCConnectionError as err:
         LOGGER.warning(
             "Bosch SHC at %s is unavailable, will retry: %s", data.get(CONF_HOST), err
         )
+        await session.api.close()
         raise ConfigEntryNotReady from err
 
     shc_info = session.information
@@ -756,7 +758,8 @@ class SwitchDeviceEventListener:
         if self._ha_stop_unsub is not None:
             self._ha_stop_unsub()
             self._ha_stop_unsub = None
-        self._keypad_service.unsubscribe_callback(self._device.id)
+        if self._keypad_service is not None:
+            self._keypad_service.unsubscribe_callback(self._device.id)
 
     @callback
     def _handle_ha_stop(self, _):

@@ -749,6 +749,7 @@ class TestSHCSwitchUpdate:
         from unittest.mock import AsyncMock
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = SimpleNamespace(async_update=AsyncMock())
+        sw._has_async_update = True
         sw.entity_description = SWITCH_TYPES["smartplug"]
         asyncio.run(sw.async_update())
         sw._device.async_update.assert_awaited_once()
@@ -759,6 +760,7 @@ class TestSHCSwitchUpdate:
         from unittest.mock import AsyncMock
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = SimpleNamespace(async_update=AsyncMock())
+        sw._has_async_update = True
         sw.entity_description = SWITCH_TYPES["cameraeyes"]
         asyncio.run(sw.async_update())
         sw._device.async_update.assert_awaited_once()
