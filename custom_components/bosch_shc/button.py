@@ -5,16 +5,14 @@ from boschshcpy import (
     SHCSession,
 )
 from boschshcpy.services_impl import DetectionTestService, WalkTestService
-
 from homeassistant.components.button import (
     ButtonEntity,
 )
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
 
 from .const import (
     DATA_SESSION,
@@ -122,20 +120,27 @@ async def async_setup_entry(
         entry_unique_id = config_entry.unique_id
         entry_id = config_entry.entry_id
         shc_device: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
-        for scenario in session.scenarios:
+
+        def _make_scenario_button(scenario):
+            """Build a SHCScenarioButton, returning None on malformed payload."""
             try:
-                entities.append(
-                    SHCScenarioButton(
-                        scenario=scenario,
-                        entry_unique_id=entry_unique_id,
-                        entry_id=entry_id,
-                        shc_device=shc_device,
-                    )
+                return SHCScenarioButton(
+                    scenario=scenario,
+                    entry_unique_id=entry_unique_id,
+                    entry_id=entry_id,
+                    shc_device=shc_device,
                 )
             except (KeyError, AttributeError) as err:
                 # A malformed scenario payload must not take out the whole
                 # button platform — skip just that scenario.
                 LOGGER.warning("Skipping scenario button (bad payload): %s", err)
+                return None
+
+        entities.extend(
+            btn
+            for scenario in session.scenarios
+            if (btn := _make_scenario_button(scenario)) is not None
+        )
 
     for siren in getattr(session.device_helper, "outdoor_sirens", []):
         if device_excluded(siren, config_entry.options):
@@ -149,8 +154,12 @@ async def async_setup_entry(
         if device_excluded(device, config_entry.options):
             continue
         if getattr(device, "supports_dimmer_configuration", False):
-            entities.append(DimmerPreviewMaxButton(device=device, entry_id=config_entry.entry_id))
-            entities.append(DimmerPreviewMinButton(device=device, entry_id=config_entry.entry_id))
+            entities.append(
+                DimmerPreviewMaxButton(device=device, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                DimmerPreviewMinButton(device=device, entry_id=config_entry.entry_id)
+            )
 
     if entities:
         async_add_entities(entities)
@@ -202,10 +211,9 @@ class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):
     _attr_translation_key = "siren_test_alarm"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the siren test-alarm button."""
         super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_test_alarm"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_test_alarm"
 
     async def async_press(self) -> None:
         """Trigger a short test alarm at the configured sound level."""
@@ -234,7 +242,7 @@ class SHCScenarioButton(ButtonEntity):
         """Initialize a scenario button."""
         self._scenario = scenario
         self._shc_device = shc_device
-        prefix = entry_unique_id if entry_unique_id else entry_id
+        prefix = entry_unique_id or entry_id
         self._attr_unique_id = f"{prefix}_scenario_{scenario.id}"
         self._attr_name = scenario.name
 
@@ -365,11 +373,13 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):
     _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the dimmer preview-max brightness button."""
         super().__init__(device, entry_id)
         self._attr_name = "Preview Max Brightness"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_preview_max"
 
     async def async_press(self) -> None:
+        """Flash the dimmer at maximum brightness for load calibration."""
         svc = getattr(self._device, "dimmer_configuration", None)
         if svc is not None:
             await svc.async_preview_max_brightness()
@@ -382,11 +392,13 @@ class DimmerPreviewMinButton(SHCEntity, ButtonEntity):
     _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the dimmer preview-min brightness button."""
         super().__init__(device, entry_id)
         self._attr_name = "Preview Min Brightness"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_preview_min"
 
     async def async_press(self) -> None:
+        """Flash the dimmer at minimum brightness for load calibration."""
         svc = getattr(self._device, "dimmer_configuration", None)
         if svc is not None:
             await svc.async_preview_min_brightness()

@@ -3,27 +3,26 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from dataclasses import dataclass
 
 import aiohttp
-
 from boschshcpy import (
     SHCCamera360,
     SHCCameraEyes,
     SHCCameraOutdoorGen2,
     SHCLightSwitch,
-    SHCSession,
-    SHCSmartPlug,
     SHCMicromoduleRelay,
-    SHCSmartPlugCompact,
+    SHCSession,
     SHCShutterContact2,
     SHCShutterContact2Plus,
+    SHCSmartPlug,
+    SHCSmartPlugCompact,
     SHCThermostat,
     SHCUserDefinedState,
 )
 from boschshcpy.device import SHCDevice
-
 from homeassistant.components.switch import (
     ENTITY_ID_FORMAT,
     SwitchDeviceClass,
@@ -31,15 +30,15 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.util import slugify
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.util import slugify
 
-from .const import DATA_SESSION, DOMAIN, DATA_SHC
+from .const import DATA_SESSION, DATA_SHC, DOMAIN
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -346,7 +345,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
 }
 
 
-async def async_setup_entry(
+async def async_setup_entry(  # noqa: C901
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
@@ -616,11 +615,16 @@ async def async_setup_entry(
         # Frontlight uid; async_migrate skips if the target already exists, so
         # already-upgraded users are unaffected.
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
-            attr_name="Frontlight", old_unique_id=f"{switch.serial}_light",
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+            attr_name="Frontlight",
+            old_unique_id=f"{switch.serial}_light",
         )
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
             attr_name="Frontlight",
             old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
@@ -636,11 +640,16 @@ async def async_setup_entry(
         # claimed by Frontlight above, so these no-op for upgraders but cover a
         # registry where only AmbientLight's id survived.
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
-            attr_name="AmbientLight", old_unique_id=f"{switch.serial}_light",
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+            attr_name="AmbientLight",
+            old_unique_id=f"{switch.serial}_light",
         )
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
             attr_name="AmbientLight",
             old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
@@ -890,10 +899,8 @@ async def async_setup_entry(
     session.subscribe(_uds_subscriber)
 
     def _unsubscribe_uds():
-        try:
-            session._subscribers.remove(_uds_subscriber)
-        except ValueError:
-            pass
+        with contextlib.suppress(ValueError):
+            session._subscribers.remove(_uds_subscriber)  # noqa: SLF001
 
     config_entry.async_on_unload(_unsubscribe_uds)
 

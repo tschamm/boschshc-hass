@@ -83,6 +83,7 @@ class LightSwitch(SHCEntity, LightEntity):
     """Representation of a SHC controlled light."""
 
     def __init__(self, device, entry_id) -> None:
+        """Initialize the SHC light switch entity."""
         super().__init__(device=device, entry_id=entry_id)
         self._attr_supported_color_modes: set[ColorMode] = set()
 
@@ -119,12 +120,11 @@ class LightSwitch(SHCEntity, LightEntity):
             ):  # BRIGHTNESS must be the only supported mode
                 self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
                 self._attr_color_mode = ColorMode.BRIGHTNESS
-        else:
-            if (
-                len(self._attr_supported_color_modes) == 0
-            ):  # ONOFF must be the only supported mode
-                self._attr_supported_color_modes.add(ColorMode.ONOFF)
-                self._attr_color_mode = ColorMode.ONOFF
+        elif (
+            len(self._attr_supported_color_modes) == 0
+        ):  # ONOFF must be the only supported mode
+            self._attr_supported_color_modes.add(ColorMode.ONOFF)
+            self._attr_color_mode = ColorMode.ONOFF
 
     @property
     def is_on(self):
@@ -199,9 +199,7 @@ class MotionDetectorLight(SHCEntity, LightEntity):
         """Initialize the Motion Detector II light entity."""
         super().__init__(device=device, entry_id=entry_id)
         self._attr_name = "Motion Light"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_motionlight"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_motionlight"
 
     @property
     def is_on(self) -> bool:
@@ -254,8 +252,7 @@ class RelayLight(SHCEntity, LightEntity):
         """
         try:
             return (
-                self._device.switchstate
-                == SHCLightSwitch.PowerSwitchService.State.ON
+                self._device.switchstate == SHCLightSwitch.PowerSwitchService.State.ON
             )
         except AttributeError:
             return None

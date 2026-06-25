@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   python-quality:
-    name: flake8 · codespell · pip-audit
+    name: ruff · codespell · pip-audit · pylint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -20,15 +20,16 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: requirements_test.txt
+
       - name: Install tooling
-        # flake8 only (E/W/F) — matches the repo .flake8 and the upstream
-        # convention (no pydocstyle/mypy/black enforcement).
-        run: pip install flake8 codespell pip-audit
-      - name: flake8
-        # Uses the repo .flake8 (max-line-length=88, ignore E501/W503).
-        # Scoped to production code; tests/ is not maintained flake8-clean
-        # upstream.
-        run: flake8 custom_components
+        run: pip install ruff codespell pip-audit pylint -r requirements_test.txt
+
+      - name: ruff check (lint)
+        run: ruff check custom_components
+
+      - name: ruff format (format check)
+        run: ruff format --check custom_components
+
       - name: codespell
         # Skip translations/ (legit foreign-language strings flagged as typos);
         # "hass" is the HA idiom, "unparseable" a valid variant.
@@ -36,6 +37,7 @@ jobs:
           codespell custom_components
           --skip="*/translations/*"
           --ignore-words-list=hass,nd,childs,unparseable
+
       - name: pip-audit (our manifest deps)
         run: |
           python3 -c "import json;print(chr(10).join(json.load(open('custom_components/bosch_shc/manifest.json'))['requirements']))" > /tmp/our_reqs.txt
@@ -51,3 +53,10 @@ jobs:
           done
           echo "pip-audit still failing after retries" >&2
           exit 1
+
+      - name: pylint
+        run: >-
+          pylint
+          --ignore-missing-annotations=y
+          --rcfile=pyproject.toml
+          custom_components/bosch_shc

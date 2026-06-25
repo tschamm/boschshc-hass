@@ -41,21 +41,21 @@ from .const import (
     DATA_SESSION,
     DOMAIN,
     LOGGER,
+    OPT_ALL_LIGHTS_AS_LIGHT,
     OPT_CHILD_LOCK_ENABLED,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_ENABLE_RAWSCAN,
-    OPT_ALL_LIGHTS_AS_LIGHT,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
     OPT_LIGHTS_AS_LIGHT,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_SCENARIOS_AS_BUTTONS,
-    OPT_SSL_VERIFY_HOSTNAME,
-    OPT_SSL_SKIP_VERIFY,
     OPT_SILENT_MODE_ENABLED,
-    OPT_SILENT_MODE_START,
     OPT_SILENT_MODE_END,
+    OPT_SILENT_MODE_START,
+    OPT_SSL_SKIP_VERIFY,
+    OPT_SSL_VERIFY_HOSTNAME,
 )
 from .entity import light_relay_friendly_model, light_switch_devices
 
@@ -102,7 +102,7 @@ def _flatten_sections(user_input: dict[str, Any]) -> dict[str, Any]:
     flat: dict[str, Any] = {}
     seen_section_keys: set[str] = set()
 
-    for section_key, _fields in OPTIONS_SECTIONS.items():
+    for section_key in OPTIONS_SECTIONS:
         seen_section_keys.add(section_key)
         sec_payload = user_input.get(section_key)
         if sec_payload is None or not isinstance(sec_payload, dict):
@@ -223,7 +223,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 info = await self._get_info(new_host)
             except SHCConnectionError:
                 errors["base"] = "cannot_connect"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
                 LOGGER.exception("Unexpected exception during reconfigure_host")
                 errors["base"] = "unknown"
             else:
@@ -240,9 +240,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(
                         CONF_HOST, default=entry.data.get(CONF_HOST, "")
-                    ): TextSelector(
-                        TextSelectorConfig(type=TextSelectorType.TEXT)
-                    ),
+                    ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
                 }
             ),
             errors=errors,
@@ -273,7 +271,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except SHCRegistrationError as err:
                 LOGGER.warning("Registration error: %s", err.message)
                 errors["base"] = "pairing_failed"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
                 LOGGER.exception("Unexpected exception during repair_credentials")
                 errors["base"] = "unknown"
             else:
@@ -297,17 +295,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         current_host = entry.data.get(CONF_HOST, "")
         schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_HOST, default=current_host
-                ): TextSelector(
+                vol.Required(CONF_HOST, default=current_host): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.TEXT)
                 ),
                 vol.Required(CONF_PASSWORD): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.PASSWORD)
                 ),
-                vol.Optional(
-                    CONF_NAME, default="HomeAssistant"
-                ): TextSelector(
+                vol.Optional(CONF_NAME, default="HomeAssistant"): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.TEXT)
                 ),
             }
@@ -328,7 +322,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.info = info = await self._get_info(host)
             except SHCConnectionError:
                 errors["base"] = "cannot_connect"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
@@ -364,7 +358,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except SHCRegistrationError as err:
                 LOGGER.warning("Registration error: %s", err.message)
                 errors["base"] = "pairing_failed"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
@@ -398,14 +392,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     CONF_PASSWORD, default=user_input.get(CONF_PASSWORD, "")
-                ): TextSelector(
-                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                ),
+                ): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
                 vol.Optional(
                     CONF_NAME, default=user_input.get(CONF_NAME, "HomeAssistant")
-                ): TextSelector(
-                    TextSelectorConfig(type=TextSelectorType.TEXT)
-                ),
+                ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
             }
         )
 
@@ -506,13 +496,10 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 rooms = {r.id: r.name for r in session.rooms}
                 for dev in session.devices:
                     room_name = rooms.get(getattr(dev, "room_id", None), "")
-                    label = (
-                        f"{dev.name} ({room_name})" if room_name else dev.name
-                    )
+                    label = f"{dev.name} ({room_name})" if room_name else dev.name
                     device_options.append({"value": dev.id, "label": label})
                 room_options = [
-                    {"value": rid, "label": name}
-                    for rid, name in rooms.items()
+                    {"value": rid, "label": name} for rid, name in rooms.items()
                 ]
                 # #338: only the on/off light-relay devices are eligible to be
                 # presented as a `light`.  Append a friendly model name so a BSM
@@ -524,10 +511,10 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                     base = f"{dev.name} ({room_name})" if room_name else dev.name
                     label = f"{base} – {friendly}" if friendly else base
                     light_switch_options.append({"value": dev.id, "label": label})
-        except Exception:  # never break the options flow if session is unavailable
-            LOGGER.debug(
-                "Could not build device/room filter options", exc_info=True
-            )
+        except (
+            Exception  # noqa: BLE001 — never break options flow on session error
+        ):
+            LOGGER.debug("Could not build device/room filter options", exc_info=True)
 
         features_fields = {
             vol.Optional(
@@ -602,21 +589,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                             ),
                             vol.Optional(
                                 OPT_SILENT_MODE_ENABLED,
-                                default=current.get(
-                                    OPT_SILENT_MODE_ENABLED, False
-                                ),
+                                default=current.get(OPT_SILENT_MODE_ENABLED, False),
                             ): BooleanSelector(),
                             vol.Optional(
                                 OPT_SILENT_MODE_START,
-                                default=current.get(
-                                    OPT_SILENT_MODE_START, "22:00:00"
-                                ),
+                                default=current.get(OPT_SILENT_MODE_START, "22:00:00"),
                             ): TimeSelector(),
                             vol.Optional(
                                 OPT_SILENT_MODE_END,
-                                default=current.get(
-                                    OPT_SILENT_MODE_END, "06:00:00"
-                                ),
+                                default=current.get(OPT_SILENT_MODE_END, "06:00:00"),
                             ): TimeSelector(),
                         }
                     ),

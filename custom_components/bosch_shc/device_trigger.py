@@ -4,7 +4,6 @@ from typing import List, Tuple
 
 import voluptuous as vol
 from boschshcpy import SHCDevice, SHCSession
-from homeassistant.helpers.trigger import TriggerActionType
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (
     InvalidDeviceAutomationConfig,
@@ -20,6 +19,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.trigger import TriggerActionType
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -31,8 +31,8 @@ from .const import (
     DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
-    INPUTS_EVENTS_SUBTYPES_WRC2,
     INPUTS_EVENTS_SUBTYPES_SWITCH2,
+    INPUTS_EVENTS_SUBTYPES_WRC2,
     LOGGER,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
@@ -84,17 +84,21 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
     if not device:
         raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
 
-    if dev_type == "WRC2" or dev_type == "SWITCH2":
+    if dev_type in {"WRC2", "SWITCH2"}:
         input_triggers = []
         for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
             if trigger in ("PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"):
                 match dev_type:
                     case "WRC2":
-                        for subtype in INPUTS_EVENTS_SUBTYPES_WRC2:
-                            input_triggers.append((trigger, subtype))
+                        input_triggers.extend(
+                            (trigger, subtype)
+                            for subtype in INPUTS_EVENTS_SUBTYPES_WRC2
+                        )
                     case "SWITCH2":
-                        for subtype in INPUTS_EVENTS_SUBTYPES_SWITCH2:
-                            input_triggers.append((trigger, subtype))
+                        input_triggers.extend(
+                            (trigger, subtype)
+                            for subtype in INPUTS_EVENTS_SUBTYPES_SWITCH2
+                        )
                     case _:  # pragma: no cover — unreachable: outer guard checks WRC2/SWITCH2
                         LOGGER.debug(
                             "Device type %s unknown, no triggers added.", dev_type
@@ -123,40 +127,40 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
         )
 
     if dev_type == "SD":
-        for subtype in ALARM_EVENTS_SUBTYPES_SD:
-            triggers.append(
-                {
-                    CONF_PLATFORM: "device",
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_TYPE: "ALARM",
-                    CONF_SUBTYPE: subtype,
-                }
-            )
+        triggers.extend(
+            {
+                CONF_PLATFORM: "device",
+                CONF_DEVICE_ID: device_id,
+                CONF_DOMAIN: DOMAIN,
+                CONF_TYPE: "ALARM",
+                CONF_SUBTYPE: subtype,
+            }
+            for subtype in ALARM_EVENTS_SUBTYPES_SD
+        )
 
     if dev_type == "SMOKE_DETECTION_SYSTEM":
-        for subtype in ALARM_EVENTS_SUBTYPES_SDS:
-            triggers.append(
-                {
-                    CONF_PLATFORM: "device",
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_TYPE: "ALARM",
-                    CONF_SUBTYPE: subtype,
-                }
-            )
+        triggers.extend(
+            {
+                CONF_PLATFORM: "device",
+                CONF_DEVICE_ID: device_id,
+                CONF_DOMAIN: DOMAIN,
+                CONF_TYPE: "ALARM",
+                CONF_SUBTYPE: subtype,
+            }
+            for subtype in ALARM_EVENTS_SUBTYPES_SDS
+        )
 
     if dev_type == "SHC":
-        for subtype in device.scenario_names:
-            triggers.append(
-                {
-                    CONF_PLATFORM: "device",
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_TYPE: "SCENARIO",
-                    CONF_SUBTYPE: subtype,
-                }
-            )
+        triggers.extend(
+            {
+                CONF_PLATFORM: "device",
+                CONF_DEVICE_ID: device_id,
+                CONF_DOMAIN: DOMAIN,
+                CONF_TYPE: "SCENARIO",
+                CONF_SUBTYPE: subtype,
+            }
+            for subtype in device.scenario_names
+        )
 
     return triggers
 

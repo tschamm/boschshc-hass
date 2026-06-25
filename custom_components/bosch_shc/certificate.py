@@ -9,8 +9,8 @@ from typing import NamedTuple
 from homeassistant.exceptions import HomeAssistantError
 
 try:
-    from cryptography import x509  # type: ignore
-    from cryptography.hazmat.backends import default_backend  # type: ignore
+    from cryptography import x509  # type: ignore[import]
+    from cryptography.hazmat.backends import default_backend  # type: ignore[import]
 except Exception as exc:  # pragma: no cover - cryptography should exist in HA
     raise HomeAssistantError("cryptography library not available") from exc
 

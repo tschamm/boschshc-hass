@@ -3,7 +3,8 @@
 from boschshcpy.device import SHCDevice
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
-from homeassistant.helpers.device_registry import DeviceInfo, async_get as get_dev_reg
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
 
 from .const import (

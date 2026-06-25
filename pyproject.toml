@@ -1,0 +1,115 @@
+[tool.ruff]
+required-version = ">=0.15.17"
+
+[tool.ruff.lint]
+select = [
+  "A001",
+  "ASYNC",
+  "B",
+  "BLE",
+  "C",
+  "COM818",
+  "D",
+  "DTZ003",
+  "DTZ004",
+  "DTZ011",
+  "E",
+  "F",
+  "F541",
+  "FLY",
+  "FURB",
+  "G",
+  "I",
+  "INP",
+  "ISC",
+  "ICN001",
+  "LOG",
+  "N804",
+  "N805",
+  "N806",
+  "N815",
+  "PERF",
+  "PGH",
+  "PIE",
+  "PL",
+  "PT",
+  "PTH",
+  "PYI",
+  "RET",
+  "RSE",
+  "RUF",
+  "SIM",
+  "SLF",
+]
+ignore = [
+  "ASYNC109",
+  "ASYNC110",
+  "ASYNC240",
+  "B008",
+  "B019",
+  "D202",
+  "D203",
+  "D213",
+  "D406",
+  "D407",
+  "D417",
+  "E501",
+  "PLC1901",
+  "PLR0911",
+  "PLR0912",
+  "PLR0913",
+  "PLR0915",
+  "PLR2004",
+  "PLW0108",
+  "PLW1641",
+  "PLW2901",
+  "PT011",
+  "PT018",
+  "RUF001",
+  "RUF012",
+  "RUF015",
+  "RUF043",
+  "SIM102",
+  "SIM103",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# PTH ignored for component code (matches Core behaviour for homeassistant/**)
+"custom_components/**" = ["PTH"]
+"tests/**" = ["PTH"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pylint.MASTER]
+persistent = false
+
+[tool.pylint.BASIC]
+class-const-naming-style = "any"
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+  "format",
+  "abstract-method",
+  "cyclic-import",
+  "duplicate-code",
+  "inconsistent-return-statements",
+  "locally-disabled",
+  "not-context-manager",
+  "too-few-public-methods",
+  "too-many-ancestors",
+  "too-many-arguments",
+  "too-many-instance-attributes",
+  "too-many-lines",
+  "too-many-locals",
+  "too-many-public-methods",
+  "too-many-boolean-expressions",
+  "too-many-positional-arguments",
+  "wrong-import-order",
+  "consider-using-namedtuple-or-dataclass",
+  "consider-using-assignment-expr",
+  "possibly-used-before-assignment",
+]

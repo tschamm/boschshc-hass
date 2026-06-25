@@ -13,7 +13,6 @@ from datetime import timedelta
 
 from boschshcpy import SHCSession
 from boschshcpy.device import SHCDevice
-
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -70,6 +69,7 @@ class ControllerUpdate(UpdateEntity):
     _attr_should_poll = True
 
     def __init__(self, information, title: str, entry_id: str) -> None:
+        """Initialize the controller update entity."""
         self._information = information
         self._entry_id = entry_id
         self._attr_unique_id = f"{information.unique_id}_software_update"
@@ -82,10 +82,12 @@ class ControllerUpdate(UpdateEntity):
 
     @property
     def installed_version(self) -> str | None:
+        """Return the currently installed firmware version."""
         return self._information.version
 
     @property
     def latest_version(self) -> str | None:
+        """Return the latest available firmware version."""
         # available_version is only meaningful when an update is offered;
         # otherwise report the installed version so HA shows "up to date".
         available = getattr(self._information, "available_version", None)
@@ -95,6 +97,7 @@ class ControllerUpdate(UpdateEntity):
 
     @property
     def in_progress(self) -> bool:
+        """Return True if a firmware update is currently in progress."""
         state = getattr(self._information, "update_state", None)
         return state in _IN_PROGRESS_STATES
 
@@ -124,6 +127,7 @@ class DeviceUpdate(SHCEntity, UpdateEntity):
     _attr_supported_features = UpdateEntityFeature(0)
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the per-device firmware update entity."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_software_update"
         # SHCEntity forces _attr_name=None, which shadows the translation_key in
@@ -132,11 +136,13 @@ class DeviceUpdate(SHCEntity, UpdateEntity):
 
     @property
     def installed_version(self) -> str | None:
+        """Return the currently installed firmware version."""
         service = self._device.software_update
         return service.sw_installed_version if service is not None else None
 
     @property
     def latest_version(self) -> str | None:
+        """Return the latest available firmware version."""
         service = self._device.software_update
         if service is None:
             return None
@@ -160,6 +166,7 @@ class DeviceUpdate(SHCEntity, UpdateEntity):
 
     @property
     def in_progress(self) -> bool:
+        """Return True if a firmware update is currently in progress."""
         service = self._device.software_update
         if service is None:
             return False
