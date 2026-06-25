@@ -38,7 +38,6 @@ from homeassistant.core import (
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
-    HomeAssistantError,
     ServiceValidationError,
 )
 from homeassistant.helpers import config_validation as cv
@@ -223,9 +222,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             if cert_path
             else None
         )
-    except (
-        HomeAssistantError
-    ) as err:  # parsing issues shouldn't fully block reauth paths
+    except Exception as err:  # noqa: BLE001  # parsing issues shouldn't block setup
         LOGGER.warning("Unable to parse Bosch SHC certificate (%s): %s", cert_path, err)
         cert_info = None
 
@@ -338,7 +335,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             return  # no cert configured — nothing to check (mirrors startup guard)
         try:
             info = await hass.async_add_executor_job(parse_certificate, cert_path)
-        except HomeAssistantError:  # silently ignore parsing issues
+        except Exception:  # noqa: BLE001  # silently ignore parsing issues
             return
         if info.days_remaining < 0:
             LOGGER.error(
