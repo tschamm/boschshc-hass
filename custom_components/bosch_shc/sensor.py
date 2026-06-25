@@ -11,11 +11,12 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    CONCENTRATION_PARTS_PER_MILLION,
     LIGHT_LUX,
+    PERCENTAGE,
     Platform,
     UnitOfEnergy,
     UnitOfPower,
-    UnitOfRatio,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
@@ -495,7 +496,7 @@ class HumiditySensor(SHCEntity, SensorEntity):
     """Representation of an SHC humidity reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.HUMIDITY
-    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
+    _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
 
@@ -519,7 +520,7 @@ class PuritySensor(SHCEntity, SensorEntity):
     # SensorDeviceClass.CO2 mis-classified the reading (and pulled in HA's CO2
     # safety thresholds / statistics handling). #204
     _attr_icon = "mdi:air-filter"
-    _attr_native_unit_of_measurement = UnitOfRatio.PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
 
@@ -841,7 +842,7 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     """Representation of an SHC valve tappet reporting sensor."""
 
     _attr_icon = "mdi:gauge"
-    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
+    _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_suggested_display_precision = 0
@@ -1099,7 +1100,7 @@ class SirenBatterySensor(SHCEntity, SensorEntity):
     """Outdoor Siren battery charge (#120)."""
 
     _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
+    _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_battery"
