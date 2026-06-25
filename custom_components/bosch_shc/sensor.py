@@ -15,9 +15,22 @@ from homeassistant.const import (
     Platform,
     UnitOfEnergy,
     UnitOfPower,
-    UnitOfRatio,
     UnitOfTemperature,
 )
+
+try:
+    from homeassistant.const import UnitOfRatio
+except ImportError:
+    # HA < 2024.8.0: define a local shim with the same string values.
+    from enum import StrEnum
+
+    class UnitOfRatio(StrEnum):  # type: ignore[no-redef]
+        """Ratio units (local shim for HA < 2024.8.0)."""
+
+        PARTS_PER_MILLION = "ppm"
+        PERCENTAGE = "%"
+
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback

@@ -55,8 +55,4 @@ jobs:
           exit 1
 
       - name: pylint
-        run: >-
-          pylint
-          --ignore-missing-annotations=y
-          --rcfile=pyproject.toml
-          custom_components/bosch_shc
+        run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
