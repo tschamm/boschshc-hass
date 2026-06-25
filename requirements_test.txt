@@ -1,8 +1,11 @@
 # Test + runtime deps for the bosch_shc integration test suite.
-# pytest-homeassistant-custom-component pulls in homeassistant + pytest fixtures.
+# homeassistant is the library under test; >=2024.8.0 required for UnitOfRatio
+# (matches the manifest.json "homeassistant": "2024.8.0" minimum).
+# Tests run with PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 so no HA test fixtures are
+# needed — bare homeassistant as a library is sufficient.
 pytest
 pytest-timeout
-pytest-homeassistant-custom-component
+homeassistant>=2024.8.0
 # Runtime dependency of the integration — pinned to the manifest version so the
 # unit gate tests against the exact released lib (an unpinned spec let CI install
 # a stale cached wheel and miss new lib APIs).
