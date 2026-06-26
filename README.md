@@ -26,12 +26,43 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 - 🔒 **Local & private** — mutual-TLS to the SHC, real-time push updates, nothing leaves your network.
 - 🧩 **Broad device coverage** — thermostats, shutters/blinds (with tilt), micromodules, plugs,
   lights, cameras, Twinguard, smoke & intrusion, motion, contacts, water-leak, EMMA, and more.
-- ⚙️ **Rich options flow** — expose scenarios as buttons, presence-based child lock, a device/room
-  filter, and connection tuning — all with safe defaults (existing setups are never changed).
+- ⚙️ **Rich options flow** — suppress unwanted sensors/switches, expose scenarios as buttons,
+  presence-based child lock and thermostat silent mode, device/room filter, and connection tuning —
+  all with safe defaults (existing setups are never changed).
 - 🌍 **30 languages** for the configuration UI.
 - 🏅 **Home Assistant Bronze** quality scale.
 
-### New in 0.7
+### What's new in 0.7
+
+**0.7.18 — Suppress & filter options**
+
+Six new opt-in suppression toggles keep your entity list tidy. All default to **off** so nothing
+changes for existing setups:
+
+- **Suppress power sensors** — hides the watt + kWh sensors on plugs (Smart Plug, Compact, EMMA).
+- **Suppress camera switches** — hides the privacy / light / notification switches for
+  Camera Eyes, 360, and Outdoor Gen2 (useful when the
+  [Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant) is installed).
+- **Suppress Hue lights** — hides lights paired through the SHC Hue bridge
+  *(shown only when Hue devices are connected)*.
+- **Suppress LEDVANCE lights** — hides LEDVANCE lights paired to the SHC
+  *(shown only when LEDVANCE devices are connected)*.
+- **Suppress MD2 indicator light** — hides the orientation LED entity on Motion Detector II
+  *(shown only when MD2 devices are connected)*.
+- **Scenario filter** — a multi-select allow-list; only the chosen scenarios become button entities
+  (stale IDs are auto-cleared on reload) *(shown only when scenarios exist)*.
+- **Expose light relay as `light`** — per-device picker (and a "flip all" toggle) to expose
+  BSM / Light Control II channels as `light` entities instead of `switch`
+  *(shown only when compatible light-relay devices are connected)*.
+
+CI now enforces translation completeness for all 30 languages.
+
+**0.7.15 — Fully async**
+
+The integration is now event-loop-native — no executor round-trips for writes. This was the final
+phase of a multi-release async migration.
+
+**0.7 — Motion Detector II, climate polish**
 
 - **Motion Detector II [+M] — full configuration parity with the Bosch app:**
   - **Detection (Walk) Test** — start/stop buttons + a state sensor, for verifying
@@ -46,21 +77,6 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 - **Climate display polish** — preset icons (`auto`/`manual`/`eco`/`boost`) and a proper
   `translation_key`, plus `hvac_modes` ordered `[HEAT, (COOL), OFF]` so cards that hide
   modes after `OFF` (e.g. Mushroom thermostat) show the COOL button. *(thanks @jumlu)*
-- Fully **async** integration (event-loop native; no executor round-trips for writes).
-
-### New in 0.5
-
-- **Presence-based child lock** with a simple on/off switch: pick the people who matter — child
-  lock turns **on** when anyone is home and **off** when everyone leaves. "Home" is detected
-  automatically, no extra knob.
-- **Device / room exclusion filter** — hide individual Bosch devices or whole rooms from HA.
-- **Scenarios as button entities** and an **opt-out toggle for the rawscan** diagnostic service.
-- **Granular battery-level** diagnostic sensor, **Twinguard smoke-alarm** binary sensors,
-  **Motion Detector II [+M]** support.
-- **Reconfigure flow** — change the SHC host/IP or re-pair the certificate without deleting the
-  integration.
-- Many fixes: shutter/blinds direction on physical-switch & app operation, micromodules without a
-  wall switch, climate `turn_off`/ECO/cooling, thread-safety, and entity-id hardening.
 
 ---
 
@@ -74,7 +90,7 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 | `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
 | `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
 | `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
-| `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II light |
+| `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options) |
 | `number` | Thermostat temperature offset |
 | `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
 | `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state & installation profile, EMMA grid power, Battery level (diagnostic, optional) |
@@ -151,19 +167,46 @@ Bosch SHC**.
 
 ### Options
 
-**Settings → Devices & Services → Bosch SHC → Configure** — grouped into collapsible sections.
+**Settings → Devices & Services → Bosch SHC → Configure** — grouped into three collapsible sections.
 **Every option defaults to the previous behaviour, so existing setups are never changed.**
 
-| Section | Option | What it does |
+Options marked with ★ are shown only when the relevant devices are connected to your SHC.
+
+#### Features
+
+| Option | Default | What it does |
 |---|---|---|
-| **Features** | Scenarios as buttons | Expose each SHC scenario as a `button` entity (default off) |
-| | Diagnostic entities | Create diagnostic sensors — battery level, valve-tappet, comm-quality (default on) |
-| | Rawscan diagnostic service | Register `bosch_shc.trigger_rawscan`; turn off to hide it (default on) |
-| **Presence-based child lock** | Enable | Master on/off switch |
-| | Presence entities | Child lock turns **on** when **any** chosen entity is home, **off** when **all** are away. "Home" is auto-detected (`home` for person/device_tracker/zone/group, `on` for binary_sensor/input_boolean) |
-| **Advanced** | Excluded devices / rooms | Hide specific Bosch devices or whole rooms — no entities are created for them |
-| | Long-poll timeout | Seconds each long-poll waits before reconnecting (default 10) |
-| | Verify SHC certificate hostname | Expert — the SHC cert hostname rarely matches its IP, so leave **off** |
+| Scenarios as buttons | off | Expose each SHC scenario as a `button` entity |
+| Scenario filter ★ | (all) | Allow-list — only the selected scenarios become buttons; stale IDs are auto-cleared |
+| Diagnostic entities | on | Create battery-level, valve-tappet and comm-quality diagnostic sensors |
+| Rawscan service | on | Register the `bosch_shc.trigger_rawscan` action; turn off to hide it |
+| Suppress power sensors | off | Hide the watt + kWh sensors on Smart Plugs, Compact Plugs, and EMMA |
+| Suppress camera switches ★ | off | Hide the privacy / light / notification switches for Camera Eyes, 360, and Outdoor Gen2 |
+| Suppress Hue lights ★ | off | Hide lights paired through the SHC Hue bridge |
+| Suppress LEDVANCE lights ★ | off | Hide LEDVANCE lights paired to the SHC |
+| Suppress MD2 indicator light ★ | off | Hide the orientation-LED entity on Motion Detector II |
+| Expose light relays as `light` ★ | off | Flip all BSM / Light Control II channels from `switch` to `light` domain |
+| Expose selected relays as `light` ★ | (none) | Per-device picker — choose individual channels to expose as `light` |
+
+#### Presence & silent mode
+
+| Option | Default | What it does |
+|---|---|---|
+| Child lock | off | Master toggle — child lock tracks presence below |
+| Presence entities | (none) | Child lock turns **on** when **any** chosen entity is home, **off** when **all** are away. Supports `person`, `device_tracker`, `binary_sensor`, `input_boolean`, `zone`, `group` |
+| Silent mode | off | Automatically put thermostat valves into silent (no-tick) mode during the configured window |
+| Silent mode start | 22:00 | Start of the silent window |
+| Silent mode end | 06:00 | End of the silent window |
+
+#### Advanced
+
+| Option | Default | What it does |
+|---|---|---|
+| Excluded devices | (none) | Hide specific SHC devices — no entities are created for them |
+| Excluded rooms | (none) | Hide all devices in a room |
+| Long-poll timeout | 10 s | How long each long-poll request waits before reconnecting (5–60 s) |
+| Verify SHC certificate hostname | off | The SHC certificate hostname rarely matches its LAN IP — leave off unless you know why |
+| Skip SSL verification | off | Disable TLS certificate verification entirely — only for unusual network setups |
 
 ### Translations
 
@@ -181,9 +224,11 @@ All assessed Silver rules complete; remaining Silver rules tracked in `quality_s
 - `local_push` IoT class — no cloud, no polling (camera-type devices update on poll only).
 - Config flow with zeroconf discovery, re-auth, reconfigure and options flow.
 - Unique config-entry enforcement, test-before-configure validation.
+- Fully async — event-loop native, no executor round-trips for writes.
 - `runtime_data`, `has_entity_name = True`, `PARALLEL_UPDATES` on every platform.
 - Domain actions (`trigger_scenario`, `trigger_rawscan`) available even if an entry fails to load.
-- CI: hassfest + HACS validation, unit tests, flake8/codespell/pip-audit, CodeQL, secret scan.
+- CI: hassfest + HACS validation, unit tests, flake8/codespell/pip-audit, CodeQL, secret scan,
+  translation-completeness gate.
 
 ---
 
@@ -256,7 +301,6 @@ logger:
 ## Known limitations
 
 - Encrypted SSL private keys are not supported (a `requests` limitation).
-- Not yet fully async (migration in progress).
 - New devices on the SHC require reloading the integration before they appear in HA.
 - The alarm control panel does not support a PIN code for arming/disarming.
 - Client-certificate renewal is manual — a warning (log + notification) appears 30 days before
