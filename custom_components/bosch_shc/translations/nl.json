@@ -96,14 +96,16 @@
               "diagnostic_entities": "Diagnostische sensoren aanmaken",
               "enable_rawscan_service": "Diagnostische rawscan-service inschakelen",
               "all_light_switches_as_light": "ALLE Light/Shutter Control II als lichten weergeven",
-              "light_switches_as_light": "Light/Shutter Control II weergeven als lampen"
+              "light_switches_as_light": "Light/Shutter Control II weergeven als lampen",
+              "suppress_hue_lights": "Hue-lampen van Bosch SHC onderdrukken"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
               "diagnostic_entities": "Wanneer AAN (standaard): diagnostische sensorentiteiten worden aangemaakt voor elk ondersteund apparaat — kleppenpositie (thermostaten) en communicatiekwaliteit (slimme stekkers). Zet UIT om het aantal entiteiten te verminderen als u deze sensoren niet nodig heeft.",
               "enable_rawscan_service": "Wanneer AAN: registreert de bosch_shc.trigger_rawscan service voor ruwe API-foutopsporing. Zet UIT om deze te verbergen. Standaard: aan.",
               "all_light_switches_as_light": "Schakel in om elk Light Control II / inbouw-lichtschakelaar-apparaat tegelijk als `light`-entiteit te presenteren — vervangt de apparaatspecifieke selectie hieronder. Uit (standaard) behoudt de keuze per apparaat. Dezelfde kanttekening: dit wisselt het entiteitsdomein om (`switch.*` ↔ `light.*`), dus werk automatiseringen en dashboards bij die naar de oude entiteiten verwijzen.",
-              "light_switches_as_light": "Selecteer de Light Control II / inbouw lichtschakelaar-apparaten die als `light`-entiteiten moeten verschijnen in plaats van `switch`-entiteiten. De schakelaar van elk geselecteerd apparaat wordt vervangen door een aan/uit-lamp. Laat leeg (standaard) om ze als switches te houden. Dit wijzigen verwisselt het entiteitsdomein (`switch.*` ↔ `light.*`), werk dus eventuele automatiseringen of dashboards bij die naar de oude entiteit verwijzen."
+              "light_switches_as_light": "Selecteer de Light Control II / inbouw lichtschakelaar-apparaten die als `light`-entiteiten moeten verschijnen in plaats van `switch`-entiteiten. De schakelaar van elk geselecteerd apparaat wordt vervangen door een aan/uit-lamp. Laat leeg (standaard) om ze als switches te houden. Dit wijzigen verwisselt het entiteitsdomein (`switch.*` ↔ `light.*`), werk dus eventuele automatiseringen of dashboards bij die naar de oude entiteit verwijzen.",
+              "suppress_hue_lights": "Wanneer AAN: Hue-lampen gekoppeld aan de SHC worden niet meer als entiteiten beschikbaar gesteld door deze integratie. Gebruik dit om duplicaten te vermijden wanneer de Hue-integratie ook actief is. Standaard: uit (Hue-lampen worden getoond)."
             }
           },
           "presence": {

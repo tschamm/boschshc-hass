@@ -96,14 +96,16 @@
               "diagnostic_entities": "Vytvořit diagnostické senzory",
               "enable_rawscan_service": "Povolit diagnostickou službu rawscan",
               "all_light_switches_as_light": "Zobrazit VŠECHNY Light/Shutter Control II jako světla",
-              "light_switches_as_light": "Zobrazit Light/Shutter Control II jako světla"
+              "light_switches_as_light": "Zobrazit Light/Shutter Control II jako světla",
+              "suppress_hue_lights": "Skrýt světla Hue z Bosch SHC"
             },
             "data_description": {
               "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
               "diagnostic_entities": "Pokud ZAPNUTO (výchozí): pro každé podporované zařízení jsou vytvořeny diagnostické senzorové entity — poloha ventilu (termostaty) a kvalita komunikace (chytré zásuvky). Vypnutím snížíte počet entit, pokud tyto senzory nepotřebujete.",
               "enable_rawscan_service": "Pokud ZAPNUTO: zaregistruje službu bosch_shc.trigger_rawscan pro ladění surového API. Vypnutím ji skryjete. Výchozí: zapnuto.",
               "all_light_switches_as_light": "Zapněte, chcete-li zobrazit každé zařízení Light Control II / nástěnný světelný přepínač jako entitu `light` najednou — přepíše individuální výběr níže. Vypnuto (výchozí) zachovává volbu pro každé zařízení zvlášť. Stejné upozornění: tím se změní doména entity (`switch.*` ↔ `light.*`), takže aktualizujte automatizace a řídicí panely odkazující na staré entity.",
-              "light_switches_as_light": "Vyberte zařízení Light Control II / nástěnný vypínač světla, která by se měla zobrazovat jako entity `light` místo entit `switch`. Přepínač každého vybraného zařízení je nahrazen světlem se zapnutím/vypnutím. Ponechte prázdné (výchozí), aby zůstaly jako switches. Změna přepne doménu entity (`switch.*` ↔ `light.*`), proto aktualizujte všechny automatizace nebo přehledy, které odkazují na starou entitu."
+              "light_switches_as_light": "Vyberte zařízení Light Control II / nástěnný vypínač světla, která by se měla zobrazovat jako entity `light` místo entit `switch`. Přepínač každého vybraného zařízení je nahrazen světlem se zapnutím/vypnutím. Ponechte prázdné (výchozí), aby zůstaly jako switches. Změna přepne doménu entity (`switch.*` ↔ `light.*`), proto aktualizujte všechny automatizace nebo přehledy, které odkazují na starou entitu.",
+              "suppress_hue_lights": "Pokud ZAPNUTO: světla Hue spárovaná se SHC již tato integrace nevytváří jako entity. Použijte toto k předcházení duplicit, pokud je aktivní i integrace Hue. Výchozí: vypnuto (světla Hue jsou zobrazena)."
             }
           },
           "presence": {

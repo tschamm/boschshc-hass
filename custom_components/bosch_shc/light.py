@@ -14,7 +14,7 @@ from homeassistant.components.light import (
 from homeassistant.const import Platform
 from homeassistant.util import color as color_util
 
-from .const import DATA_SESSION, DOMAIN, LOGGER
+from .const import DATA_SESSION, DOMAIN, LOGGER, OPT_SUPPRESS_HUE_LIGHTS
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -31,10 +31,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
+    hue_lights = (
+        []
+        if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False)
+        else session.device_helper.hue_lights
+    )
     for light in (
         session.device_helper.ledvance_lights
         + session.device_helper.micromodule_dimmers
-        + session.device_helper.hue_lights
+        + hue_lights
     ):
         if device_excluded(light, config_entry.options):
             continue

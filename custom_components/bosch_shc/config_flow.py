@@ -59,6 +59,7 @@ from .const import (
     OPT_SILENT_MODE_START,
     OPT_SSL_SKIP_VERIFY,
     OPT_SSL_VERIFY_HOSTNAME,
+    OPT_SUPPRESS_HUE_LIGHTS,
 )
 from .entity import light_relay_friendly_model, light_switch_devices
 
@@ -73,6 +74,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_ENABLE_RAWSCAN,
         OPT_ALL_LIGHTS_AS_LIGHT,
         OPT_LIGHTS_AS_LIGHT,
+        OPT_SUPPRESS_HUE_LIGHTS,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -475,6 +477,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
             for key in (
                 OPT_LIGHTS_AS_LIGHT,
                 OPT_ALL_LIGHTS_AS_LIGHT,
+                OPT_SUPPRESS_HUE_LIGHTS,
                 OPT_EXCLUDED_DEVICES,
                 OPT_EXCLUDED_ROOMS,
             ):
@@ -496,6 +499,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
         light_switch_options = []
         _has_cameras = False
         _camera_tool_installed = False
+        _has_hue_lights = False
         try:
             _camera_tool_installed = bool(
                 self.hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
@@ -516,6 +520,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 room_options = [
                     {"value": rid, "label": name} for rid, name in rooms.items()
                 ]
+                _has_hue_lights = bool(session.device_helper.hue_lights)
                 # #338: only the on/off light-relay devices are eligible to be
                 # presented as a `light`.  Append a friendly model name so a BSM
                 # relay is distinguishable from a Light Control II channel,
@@ -545,6 +550,16 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 default=current.get(OPT_ENABLE_RAWSCAN, True),
             ): BooleanSelector(),
         }
+        # #344: only offer the Hue suppression toggle when the controller has
+        # Hue lights (avoids a confusing option for users without any).
+        if _has_hue_lights:
+            features_fields[
+                vol.Optional(
+                    OPT_SUPPRESS_HUE_LIGHTS,
+                    default=current.get(OPT_SUPPRESS_HUE_LIGHTS, False),
+                )
+            ] = BooleanSelector()
+
         # #338: only offer the "expose as light" controls when the controller
         # actually has light-relay devices that can switch domain.
         if light_switch_options:

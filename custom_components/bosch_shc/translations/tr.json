@@ -96,14 +96,16 @@
               "diagnostic_entities": "Tanılama sensörleri oluştur",
               "enable_rawscan_service": "rawscan tanılama hizmetini etkinleştir",
               "all_light_switches_as_light": "TÜM Light/Shutter Control II'leri ışık olarak göster",
-              "light_switches_as_light": "Light/Shutter Control II'yi ışık olarak göster"
+              "light_switches_as_light": "Light/Shutter Control II'yi ışık olarak göster",
+              "suppress_hue_lights": "Bosch SHC'den Hue ışıklarını gizle"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
               "diagnostic_entities": "AÇIK olduğunda (varsayılan): desteklenen her cihaz için tanılama sensör varlıkları oluşturulur — valf tırnağı konumu (termostatlar) ve iletişim kalitesi (akıllı prizler). Bu sensörlere ihtiyaç duymuyorsanız KAPALI yaparak varlık sayısını azaltın.",
               "enable_rawscan_service": "AÇIK olduğunda: ham API hata ayıklaması için bosch_shc.trigger_rawscan hizmetini kaydeder. Gizlemek için KAPALI yapın. Varsayılan: açık.",
               "all_light_switches_as_light": "Her Light Control II / sıva altı ışık anahtarı cihazını `light` varlığı olarak tek seferde sunmak için açın — aşağıdaki cihaz başına seçimi geçersiz kılar. Kapalı (varsayılan), cihaz başına seçimi korur. Aynı uyarı: bu, varlık etki alanını değiştirir (`switch.*` ↔ `light.*`), bu nedenle eski varlıklara başvuran otomasyon ve panolarınızı güncelleyin.",
-              "light_switches_as_light": "`switch` varlıkları yerine `light` varlıkları olarak görünmesi gereken Light Control II / gömme ışık anahtarı cihazlarını seçin. Seçilen her cihazın anahtarı, açık/kapalı bir ışıkla değiştirilir. Bunları switch olarak tutmak için boş bırakın (varsayılan). Bunu değiştirmek varlık etki alanını değiştirir (`switch.*` ↔ `light.*`), bu nedenle eski varlığa başvuran otomasyonları veya pano öğelerini güncelleyin."
+              "light_switches_as_light": "`switch` varlıkları yerine `light` varlıkları olarak görünmesi gereken Light Control II / gömme ışık anahtarı cihazlarını seçin. Seçilen her cihazın anahtarı, açık/kapalı bir ışıkla değiştirilir. Bunları switch olarak tutmak için boş bırakın (varsayılan). Bunu değiştirmek varlık etki alanını değiştirir (`switch.*` ↔ `light.*`), bu nedenle eski varlığa başvuran otomasyonları veya pano öğelerini güncelleyin.",
+              "suppress_hue_lights": "AÇIK olduğunda: SHC'ye eşleştirilmiş Hue ışıkları artık bu entegrasyon tarafından varlık olarak sunulmaz. Hue entegrasyonu da etkinse yinelenenleri önlemek için bunu kullanın. Varsayılan: kapalı (Hue ışıkları gösterilir)."
             }
           },
           "presence": {

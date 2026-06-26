@@ -96,14 +96,16 @@
               "diagnostic_entities": "Loo diagnostilised andurid",
               "enable_rawscan_service": "Luba rawscani diagnostikateenust",
               "all_light_switches_as_light": "Näita KÕIKI Light/Shutter Control II seadmeid tuledena",
-              "light_switches_as_light": "Kuva Light/Shutter Control II tuledena"
+              "light_switches_as_light": "Kuva Light/Shutter Control II tuledena",
+              "suppress_hue_lights": "Peida Hue-tuled Bosch SHC-st"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
               "diagnostic_entities": "Kui SEES (vaikimisi): iga toetatud seadme jaoks luuakse diagnostilised anduriolemid — ventiili asend (termostaadid) ja side kvaliteet (nutipistikud). Lülita välja, et vähendada olemite arvu, kui neid andureid ei vaja.",
               "enable_rawscan_service": "Kui SEES: registreerib teenuse bosch_shc.trigger_rawscan toorest API silumiseks. Lülita välja peitmiseks. Vaikimisi: sees.",
               "all_light_switches_as_light": "Lülitage sisse, et esitada iga Light Control II / seinasse paigaldatud valguskapslite seade `light` olemina korraga — tühistab alloleva seadmepõhise valiku. Väljas (vaikimisi) säilitab seadmepõhise valiku. Sama märkus: see vahetab olemi domeeni (`switch.*` ↔ `light.*`), seega uuendage automatiseeringuid ja armatuurlaudu, mis viitavad vanadele olemitele.",
-              "light_switches_as_light": "Valige Light Control II / seinasisese valguskapslite seadmed, mis peaksid ilmuma `light` olemitena, mitte `switch` olemitena. Iga valitud seadme lüliti asendatakse sisse/väljalülitusega tulega. Jätke tühjaks (vaikimisi), et säilitada need lülititena. Selle muutmine vahetab olemi domeeni (`switch.*` ↔ `light.*`), seega uuendage kõiki automatiseeringuid või armatuurlaudu, mis viitavad vanale olemile."
+              "light_switches_as_light": "Valige Light Control II / seinasisese valguskapslite seadmed, mis peaksid ilmuma `light` olemitena, mitte `switch` olemitena. Iga valitud seadme lüliti asendatakse sisse/väljalülitusega tulega. Jätke tühjaks (vaikimisi), et säilitada need lülititena. Selle muutmine vahetab olemi domeeni (`switch.*` ↔ `light.*`), seega uuendage kõiki automatiseeringuid või armatuurlaudu, mis viitavad vanale olemile.",
+              "suppress_hue_lights": "Kui SEES: SHC-ga seotud Hue-tuled ei kuvata enam selle integratsiooni poolt olemitena. Kasutage seda duplikaatide vältimiseks, kui Hue-integratsioon on samuti aktiivne. Vaikimisi: väljas (Hue-tuled on nähtavad)."
             }
           },
           "presence": {

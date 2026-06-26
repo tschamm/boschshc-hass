@@ -96,14 +96,16 @@
               "diagnostic_entities": "Skapa diagnostiksensorer",
               "enable_rawscan_service": "Aktivera rawscan-diagnostiktjänst",
               "all_light_switches_as_light": "Exponera ALLA Light/Shutter Control II som ljus",
-              "light_switches_as_light": "Exponera Light/Shutter Control II som lampor"
+              "light_switches_as_light": "Exponera Light/Shutter Control II som lampor",
+              "suppress_hue_lights": "Dölj Hue-lampor från Bosch SHC"
             },
             "data_description": {
               "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
               "diagnostic_entities": "När PÅ (standard): diagnostiksensorenheter skapas för varje enhet som stöds — ventillyftarposition (termostater) och kommunikationskvalitet (smarta uttag). Stäng AV för att minska antalet enheter om du inte behöver dessa sensorer.",
               "enable_rawscan_service": "När PÅ: registrerar bosch_shc.trigger_rawscan-tjänsten för råa API-felsökning. Stäng AV för att dölja den. Standard: på.",
               "all_light_switches_as_light": "Slå på för att presentera varje Light Control II / inbyggd ljusbrytare som `light`-entitet på en gång — åsidosätter urvalet per enhet nedan. Av (standard) behåller valet per enhet. Samma varning: detta byter entitetens domän (`switch.*` ↔ `light.*`), så uppdatera automatiseringar och instrumentpaneler som refererar till de gamla entiteterna.",
-              "light_switches_as_light": "Välj de Light Control II / inbyggd ljusströmbrytare-enheter som ska visas som `light`-entiteter istället för `switch`-entiteter. Brytaren för varje vald enhet ersätts med ett på/av-ljus. Lämna tomt (standard) för att behålla dem som switches. Att ändra detta byter entitetens domän (`switch.*` ↔ `light.*`), så uppdatera eventuella automationer eller instrumentpaneler som refererar till den gamla entiteten."
+              "light_switches_as_light": "Välj de Light Control II / inbyggd ljusströmbrytare-enheter som ska visas som `light`-entiteter istället för `switch`-entiteter. Brytaren för varje vald enhet ersätts med ett på/av-ljus. Lämna tomt (standard) för att behålla dem som switches. Att ändra detta byter entitetens domän (`switch.*` ↔ `light.*`), så uppdatera eventuella automationer eller instrumentpaneler som refererar till den gamla entiteten.",
+              "suppress_hue_lights": "När PÅ: Hue-lampor kopplade till SHC skapas inte längre som entiteter av denna integration. Använd detta för att undvika dubbletter när Hue-integrationen också är aktiv. Standard: av (Hue-lampor visas)."
             }
           },
           "presence": {

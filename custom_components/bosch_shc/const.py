@@ -53,6 +53,9 @@ OPT_ALL_LIGHTS_AS_LIGHT = "all_light_switches_as_light"
 # #264: opt-in skip of SHC server-certificate verification (expired cert on an
 # offline local-only controller). mTLS client-cert auth is unaffected.
 OPT_SSL_SKIP_VERIFY = "ssl_skip_verify"
+# #344: opt-out to suppress Hue lights from SHC (avoids duplicates when Hue
+# integration is also active). Default False = keep existing behaviour.
+OPT_SUPPRESS_HUE_LIGHTS = "suppress_hue_lights"
 # Presence + time-window driven silent mode (mirrors the child-lock feature).
 OPT_SILENT_MODE_ENABLED = "silent_mode_enabled"
 OPT_SILENT_MODE_START = "silent_mode_start"

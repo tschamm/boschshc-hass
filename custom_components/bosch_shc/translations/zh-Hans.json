@@ -96,14 +96,16 @@
               "diagnostic_entities": "创建诊断传感器",
               "enable_rawscan_service": "启用 rawscan 诊断服务",
               "all_light_switches_as_light": "将所有 Light/Shutter Control II 作为灯光公开",
-              "light_switches_as_light": "将 Light/Shutter Control II 作为灯光公开"
+              "light_switches_as_light": "将 Light/Shutter Control II 作为灯光公开",
+              "suppress_hue_lights": "隐藏来自 Bosch SHC 的 Hue 灯"
             },
             "data_description": {
               "scenarios_as_buttons": "开启时：每个 Bosch SHC 场景也会在 Home Assistant 中显示为按钮实体（除 `trigger_scenario` 服务外）。适用于直接触发场景的仪表板磁贴和自动化。默认：关闭。",
               "diagnostic_entities": "开启时（默认）：为每个受支持的设备创建诊断传感器实体——阀门顶针位置（温控器）和通信质量（智能插座）。如不需要这些传感器，可关闭以减少实体数量。",
               "enable_rawscan_service": "开启时：注册 bosch_shc.trigger_rawscan 服务用于原始 API 调试。关闭则隐藏该服务。默认：开启。",
               "all_light_switches_as_light": "开启后，所有 Light Control II / 嵌入式灯光开关设备将同时以 `light` 实体呈现——覆盖下方的单设备选择。关闭（默认）则保留每个设备的单独选择。同样的注意事项：此操作会切换实体域（`switch.*` ↔ `light.*`），请更新引用旧实体的自动化和仪表盘。",
-              "light_switches_as_light": "选择应作为 `light` 实体而非 `switch` 实体显示的 Light Control II / 墙内灯光开关设备。每个所选设备的开关将被替换为一个开/关灯光。留空（默认）以将其保留为 switches。更改此设置会切换实体域（`switch.*` ↔ `light.*`），请相应更新引用旧实体的自动化或仪表板。"
+              "light_switches_as_light": "选择应作为 `light` 实体而非 `switch` 实体显示的 Light Control II / 墙内灯光开关设备。每个所选设备的开关将被替换为一个开/关灯光。留空（默认）以将其保留为 switches。更改此设置会切换实体域（`switch.*` ↔ `light.*`），请相应更新引用旧实体的自动化或仪表板。",
+              "suppress_hue_lights": "开启后：与 SHC 配对的 Hue 灯将不再由此集成作为实体公开。如果 Hue 集成也处于活动状态，请使用此选项以避免重复。默认：关闭（Hue 灯显示）。"
             }
           },
           "presence": {

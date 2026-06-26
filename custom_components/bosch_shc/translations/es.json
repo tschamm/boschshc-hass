@@ -96,14 +96,16 @@
               "diagnostic_entities": "Crear sensores de diagnóstico",
               "enable_rawscan_service": "Habilitar el servicio de diagnóstico rawscan",
               "all_light_switches_as_light": "Exponer TODOS los Light/Shutter Control II como luces",
-              "light_switches_as_light": "Exponer Light/Shutter Control II como luces"
+              "light_switches_as_light": "Exponer Light/Shutter Control II como luces",
+              "suppress_hue_lights": "Suprimir las luces Hue del Bosch SHC"
             },
             "data_description": {
               "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario Bosch SHC aparece también como entidad de botón en Home Assistant (además del servicio `trigger_scenario`). Útil para tarjetas de panel y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
               "diagnostic_entities": "Cuando está ACTIVADO (predeterminado): se crean entidades de sensor de diagnóstico para cada dispositivo compatible — posición del taqué de válvula (termostatos) y calidad de comunicación (enchufes inteligentes). Desactívalo para reducir el número de entidades si no necesitas estos sensores.",
               "enable_rawscan_service": "Cuando está ACTIVADO: registra el servicio bosch_shc.trigger_rawscan para depuración de la API en bruto. Desactívalo para ocultarlo. Predeterminado: activado.",
               "all_light_switches_as_light": "Active esta opción para presentar cada dispositivo Light Control II / interruptor de luz empotrado como entidad `light` de una vez — anula la selección por dispositivo que aparece a continuación. Desactivado (predeterminado) conserva la elección por dispositivo. La misma advertencia: esto cambia el dominio de la entidad (`switch.*` ↔ `light.*`), así que actualice las automatizaciones y los paneles que hagan referencia a las entidades anteriores.",
-              "light_switches_as_light": "Selecciona los dispositivos Light Control II / interruptor de luz empotrado que deben aparecer como entidades `light` en lugar de entidades `switch`. El interruptor de cada dispositivo seleccionado se sustituye por una luz de encendido/apagado. Déjalo vacío (valor predeterminado) para mantenerlos como switches. Cambiar esto intercambia el dominio de la entidad (`switch.*` ↔ `light.*`), por lo que actualiza cualquier automatización o panel que haga referencia a la entidad antigua."
+              "light_switches_as_light": "Selecciona los dispositivos Light Control II / interruptor de luz empotrado que deben aparecer como entidades `light` en lugar de entidades `switch`. El interruptor de cada dispositivo seleccionado se sustituye por una luz de encendido/apagado. Déjalo vacío (valor predeterminado) para mantenerlos como switches. Cambiar esto intercambia el dominio de la entidad (`switch.*` ↔ `light.*`), por lo que actualiza cualquier automatización o panel que haga referencia a la entidad antigua.",
+              "suppress_hue_lights": "Cuando está ACTIVADO: las luces Hue vinculadas al SHC ya no se exponen como entidades por esta integración. Úsalo para evitar duplicados cuando la integración Hue también está activa. Valor predeterminado: desactivado (las luces Hue se muestran)."
             }
           },
           "presence": {
