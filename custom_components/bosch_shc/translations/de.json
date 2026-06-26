@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Einstellungen",
-        "description": "Legt fest, welche Entitäten und Automationen die Bosch SHC Integration erstellt und verwaltet.",
+        "description": "Legt fest, welche Entitäten und Automationen die Bosch SHC Integration erstellt und verwaltet.{camera_tool}",
         "sections": {
           "features": {
             "name": "Features",
@@ -435,6 +435,12 @@
           "description": "Befehl, der an den Rauchmelder gesendet werden soll."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Mehr für deine Bosch-Kameras",
+      "description": "Bosch-Kameras erkannt. Diese Integration deckt die Grundfunktionen ab; das dedizierte **Bosch Smart Home Camera Tool** kann für Kameras deutlich mehr (Snapshots, Bewegungs-/FCM-Push, Licht, Streams). Öffne \"Mehr erfahren\" für das Projekt und blende diesen Hinweis dann aus."
     }
   }
 }

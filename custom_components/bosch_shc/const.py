@@ -58,6 +58,13 @@ OPT_SILENT_MODE_ENABLED = "silent_mode_enabled"
 OPT_SILENT_MODE_START = "silent_mode_start"
 OPT_SILENT_MODE_END = "silent_mode_end"
 
+# Camera Tool companion project
+CAMERA_TOOL_URL = (
+    "https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant"
+)
+CAMERA_TOOL_DOMAIN = "bosch_shc_camera"
+ISSUE_CAMERA_TOOL = "camera_tool_available"
+
 # Certificate handling
 CERT_EXPIRY_WARNING_DAYS = 30
 DOMAIN_NOTIFICATION_ID = "bosch_shc_certificate"

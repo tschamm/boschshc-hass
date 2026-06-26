@@ -42,6 +42,7 @@ from homeassistant.exceptions import (
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
@@ -56,6 +57,8 @@ from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     ATTR_SERVICE_ID,
     ATTR_TITLE,
+    CAMERA_TOOL_DOMAIN,
+    CAMERA_TOOL_URL,
     CERT_EXPIRY_WARNING_DAYS,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
@@ -67,6 +70,7 @@ from .const import (
     DOMAIN,
     DOMAIN_NOTIFICATION_ID,
     EVENT_BOSCH_SHC,
+    ISSUE_CAMERA_TOOL,
     LOGGER,
     OPT_CHILD_LOCK_ENABLED,
     OPT_ENABLE_RAWSCAN,
@@ -647,6 +651,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         _register_rawscan_service(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Surface a dismissible tip when cameras are present and the dedicated
+    # Camera Tool is not already installed; remove it otherwise.
+    has_cameras = bool(
+        session.device_helper.camera_eyes
+        or session.device_helper.camera_360
+        or session.device_helper.camera_outdoor_gen2
+    )
+    camera_tool_installed = bool(
+        hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
+    )
+    if has_cameras and not camera_tool_installed:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            ISSUE_CAMERA_TOOL,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_CAMERA_TOOL,
+            learn_more_url=CAMERA_TOOL_URL,
+        )
+    else:
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_CAMERA_TOOL)
 
     return True
 

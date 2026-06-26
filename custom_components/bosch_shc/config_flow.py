@@ -34,6 +34,8 @@ from homeassistant.helpers.selector import (
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .const import (
+    CAMERA_TOOL_DOMAIN,
+    CAMERA_TOOL_URL,
     CONF_HOSTNAME,
     CONF_SHC_CERT,
     CONF_SHC_KEY,
@@ -492,10 +494,20 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
         device_options = []
         room_options = []
         light_switch_options = []
+        _has_cameras = False
+        _camera_tool_installed = False
         try:
+            _camera_tool_installed = bool(
+                self.hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
+            )
             data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
             if data:
                 session = data[DATA_SESSION]
+                _has_cameras = bool(
+                    session.device_helper.camera_eyes
+                    or session.device_helper.camera_360
+                    or session.device_helper.camera_outdoor_gen2
+                )
                 rooms = {r.id: r.name for r in session.rooms}
                 for dev in session.devices:
                     room_name = rooms.get(getattr(dev, "room_id", None), "")
@@ -667,4 +679,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 ),
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        camera_note = (
+            f"\n\n💡 You have Bosch cameras connected — for advanced camera "
+            f"features beyond this integration, see the dedicated Camera Tool: "
+            f"{CAMERA_TOOL_URL}"
+            if _has_cameras and not _camera_tool_installed
+            else ""
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=schema,
+            description_placeholders={"camera_tool": camera_note},
+        )
