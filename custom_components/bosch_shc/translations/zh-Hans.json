@@ -110,12 +110,12 @@
               "enable_rawscan_service": "开启时：注册 bosch_shc.trigger_rawscan 服务用于原始 API 调试。关闭则隐藏该服务。默认：开启。",
               "all_light_switches_as_light": "开启后，所有 Light Control II / 嵌入式灯光开关设备将同时以 `light` 实体呈现——覆盖下方的单设备选择。关闭（默认）则保留每个设备的单独选择。同样的注意事项：此操作会切换实体域（`switch.*` ↔ `light.*`），请更新引用旧实体的自动化和仪表盘。",
               "light_switches_as_light": "选择应作为 `light` 实体而非 `switch` 实体显示的 Light Control II / 墙内灯光开关设备。每个所选设备的开关将被替换为一个开/关灯光。留空（默认）以将其保留为 switches。更改此设置会切换实体域（`switch.*` ↔ `light.*`），请相应更新引用旧实体的自动化或仪表板。",
-              "suppress_hue_lights": "开启后：与 SHC 配对的 Hue 灯将不再作为实体公开。可防止与 Hue 集成（https://www.home-assistant.io/integrations/hue/）重复。默认：关闭。",
+              "suppress_hue_lights": "开启后：与 SHC 配对的 Hue 灯将不再作为实体公开。可防止与 Hue 集成重复。默认：关闭。",
               "suppress_power_sensors": "开启后：不为智能插座、BSM 开关、微模块及 EMMA 能源管理器创建功率和能耗传感器（W / kWh）。默认：关闭。",
               "scenarios_filter": "留空以为所有场景创建按鈕（默认）。选择一个或多个以限制按鈕范围。仅在“将场景作为按鈕公开”开启时生效。",
               "suppress_ledvance_lights": "开启后：与 SHC 配对的 LEDVANCE 灯将不再作为实体公开。可防止与 LEDVANCE 或 Zigbee 集成重复。默认：关闭。",
               "suppress_motion_indicator_light": "开启后：运动探测器 II 的 LED 指示灯实体将不再创建。默认：关闭。",
-              "suppress_camera_switches": "开启后：Bosch 摄像头（Eyes / 360 / Outdoor Gen2）的隐私模式、灯光和通知开关实体不会被创建。与 Bosch Camera Tool（https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant）一起使用。默认：关闭。"
+              "suppress_camera_switches": "开启后：Bosch 摄像头（Eyes / 360 / Outdoor Gen2）的隐私模式、灯光和通知开关实体不会被创建。与 Bosch Camera Tool一起使用。默认：关闭。"
             }
           },
           "presence": {

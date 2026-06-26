@@ -110,12 +110,12 @@
               "enable_rawscan_service": "כאשר מופעל: רושם את השירות bosch_shc.trigger_rawscan לאיתור שגיאות API גולמי. כבה כדי להסתיר אותו. ברירת מחדל: מופעל.",
               "all_light_switches_as_light": "הפעל כדי להציג כל מכשיר Light Control II / מתג תאורה מוטמע בקיר כישות `light` בבת אחת — עוקף את הבחירה לפי מכשיר שלהלן. כבוי (ברירת מחדל) שומר על הבחירה לפי מכשיר. אותה הערה: פעולה זו מחליפה את תחום הישות (`switch.*` ↔ `light.*`), לכן עדכן אוטומציות ולוחות מחוונים המפנים לישויות הישנות.",
               "light_switches_as_light": "בחר את התקני Light Control II / מתג תאורה בתוך הקיר שיופיעו כישויות `light` במקום ישויות `switch`. המתג של כל התקן שנבחר מוחלף באור הדלקה/כיבוי. השאר ריק (ברירת מחדל) כדי לשמור אותם כ-switches. שינוי זה מחליף את תחום הישות (`switch.*` ↔ `light.*`), לכן עדכן כל אוטומציה או לוח מחוונים המפנים לישות הישנה.",
-              "suppress_hue_lights": "כאשר מופעל: נורות Hue המשויכות ל-SHC לא יוצגו עוד כישויות. מנע כפילויות עם אינטגרציית Hue (https://www.home-assistant.io/integrations/hue/). ברירת מחדל: מכובה.",
+              "suppress_hue_lights": "כאשר מופעל: נורות Hue המשויכות ל-SHC לא יוצגו עוד כישויות. מנע כפילויות עם אינטגרציית Hue. ברירת מחדל: מכובה.",
               "suppress_power_sensors": "כאשר מופעל: חיישני הספק ואנרגיה (W / kWh) לא נוצרים עבור שקעים חכמים, BSM, מיקרומודולים ו-EMMA. ברירת מחדל: מכובה.",
               "scenarios_filter": "השאר ריק ליצירת לחצנים לכל התרחישים (ברירת מחדל). בחר אחד או יותר להגבלה. רלוונטי רק כש 'חשוף תרחישים כלחצנים' מופעל.",
               "suppress_ledvance_lights": "כאשר מופעל: נורות LEDVANCE המשויכות ל-SHC לא יוצגו עוד כישויות. מנע כפילויות עם Zigbee או LEDVANCE. ברירת מחדל: מכובה.",
               "suppress_motion_indicator_light": "כאשר מופעל: ישות נורת ה-LED של חיישן התנועה II לא תיוצר. ברירת מחדל: מכובה.",
-              "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). ברירת מחדל: מכובה."
+              "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool. ברירת מחדל: מכובה."
             }
           },
           "presence": {

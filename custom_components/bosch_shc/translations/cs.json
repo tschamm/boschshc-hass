@@ -110,12 +110,12 @@
               "enable_rawscan_service": "Pokud ZAPNUTO: zaregistruje službu bosch_shc.trigger_rawscan pro ladění surového API. Vypnutím ji skryjete. Výchozí: zapnuto.",
               "all_light_switches_as_light": "Zapněte, chcete-li zobrazit každé zařízení Light Control II / nástěnný světelný přepínač jako entitu `light` najednou — přepíše individuální výběr níže. Vypnuto (výchozí) zachovává volbu pro každé zařízení zvlášť. Stejné upozornění: tím se změní doména entity (`switch.*` ↔ `light.*`), takže aktualizujte automatizace a řídicí panely odkazující na staré entity.",
               "light_switches_as_light": "Vyberte zařízení Light Control II / nástěnný vypínač světla, která by se měla zobrazovat jako entity `light` místo entit `switch`. Přepínač každého vybraného zařízení je nahrazen světlem se zapnutím/vypnutím. Ponechte prázdné (výchozí), aby zůstaly jako switches. Změna přepne doménu entity (`switch.*` ↔ `light.*`), proto aktualizujte všechny automatizace nebo přehledy, které odkazují na starou entitu.",
-              "suppress_hue_lights": "Pokud ZAPNUTO: světla Hue spárovaná se SHC se nevytvoří jako entity. Používejte pro zamezení duplikátů s integrací Hue (https://www.home-assistant.io/integrations/hue/). Výchozí: vypnuto.",
+              "suppress_hue_lights": "Pokud ZAPNUTO: světla Hue spárovaná se SHC se nevytvoří jako entity. Používejte pro zamezení duplikátů s integrací Hue. Výchozí: vypnuto.",
               "suppress_power_sensors": "Pokud ZAPNUTO: senzory výkonu a energie (W / kWh) se nevytvoří pro chytré zásuvky, spínače BSM, mikromoduly a správce EMMA. Výchozí: vypnuto.",
               "scenarios_filter": "Nechte prázdné, chcete-li vytvořit tlačítka pro VŠECHNY scénáře (výchozí). Vyberte jeden nebo více, chcete-li omezit tlačítka. Platí jen když je zapnuté 'Zobrazovat scénáře jako tlačítka'.",
               "suppress_ledvance_lights": "Pokud ZAPNUTO: světla LEDVANCE spárovaná se SHC se nevytvoří jako entity. Používejte pro zamezení duplikátů s integrací LEDVANCE nebo Zigbee. Výchozí: vypnuto.",
               "suppress_motion_indicator_light": "Pokud ZAPNUTO: entita LED indikátoru pohybového čidla II se nevytvoří. Výchozí: vypnuto.",
-              "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Výchozí: vypnuto."
+              "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool. Výchozí: vypnuto."
             }
           },
           "presence": {
