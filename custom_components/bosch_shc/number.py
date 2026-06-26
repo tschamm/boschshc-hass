@@ -37,9 +37,13 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for number in (
-        session.device_helper.thermostats + session.device_helper.roomthermostats
+        session.device_helper.thermostats
+        + session.device_helper.roomthermostats
+        + getattr(session.device_helper, "wallthermostats", [])
     ):
-        if device_excluded(number, config_entry.options):
+        if device_excluded(number, config_entry.options) or not getattr(
+            number, "supports_temperature_offset", True
+        ):
             continue
         entities.append(
             SHCNumber(
@@ -297,7 +301,8 @@ class SHCNumber(SHCEntity, NumberEntity):
     @property
     def native_step(self) -> float:
         """Return the step of the number."""
-        return self._device.step_size
+        step = self._device.step_size
+        return step if step > 0 else 0.5
 
     @property
     def native_min_value(self) -> float:

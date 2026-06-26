@@ -498,7 +498,7 @@ class TestLightSetupEntry:
 # ---------------------------------------------------------------------------
 
 def _make_number_session(
-    thermostats=(), roomthermostats=(),
+    thermostats=(), roomthermostats=(), wallthermostats=(),
     micromodule_impulse_relays=(), heating_circuits=(),
 ):
     """Build a minimal fake session for number.py async_setup_entry."""
@@ -506,6 +506,7 @@ def _make_number_session(
         device_helper=SimpleNamespace(
             thermostats=list(thermostats),
             roomthermostats=list(roomthermostats),
+            wallthermostats=list(wallthermostats),
             micromodule_impulse_relays=list(micromodule_impulse_relays),
             heating_circuits=list(heating_circuits),
         )
@@ -541,14 +542,32 @@ class TestNumberSetupEntry:
         assert len(result) == 1
         assert isinstance(result[0], SHCNumber)
 
+    def test_wallthermostats_produce_shc_number_entities(self) -> None:
+        """session.device_helper.wallthermostats (BWTH/BWTH24) → SHCNumber."""
+        dev = _number_device()
+        session = _make_number_session(wallthermostats=[dev])
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], SHCNumber)
+
+    def test_wallthermostat_without_offset_service_skipped(self) -> None:
+        """THB devices (no TemperatureOffset service) must not create SHCNumber."""
+        import copy
+        dev = copy.copy(_number_device())
+        dev.supports_temperature_offset = False
+        session = _make_number_session(wallthermostats=[dev])
+        result = self._run(session)
+        assert result == []
+
     def test_mixed_thermostats_collected(self) -> None:
-        """thermostat + roomthermostat → 2 SHCNumber entities."""
+        """thermostat + roomthermostat + wallthermostat → 3 SHCNumber entities."""
         session = _make_number_session(
             thermostats=[_number_device()],
             roomthermostats=[_number_device()],
+            wallthermostats=[_number_device()],
         )
         result = self._run(session)
-        assert len(result) == 2
+        assert len(result) == 3
         assert all(isinstance(e, SHCNumber) for e in result)
 
     def test_no_thermostats_adds_nothing(self) -> None:
