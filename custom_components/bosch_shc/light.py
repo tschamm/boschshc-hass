@@ -14,7 +14,14 @@ from homeassistant.components.light import (
 from homeassistant.const import Platform
 from homeassistant.util import color as color_util
 
-from .const import DATA_SESSION, DOMAIN, LOGGER, OPT_SUPPRESS_HUE_LIGHTS
+from .const import (
+    DATA_SESSION,
+    DOMAIN,
+    LOGGER,
+    OPT_SUPPRESS_HUE_LIGHTS,
+    OPT_SUPPRESS_LEDVANCE_LIGHTS,
+    OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
+)
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -36,10 +43,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False)
         else session.device_helper.hue_lights
     )
+    ledvance_lights = (
+        []
+        if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False)
+        else session.device_helper.ledvance_lights
+    )
     for light in (
-        session.device_helper.ledvance_lights
-        + session.device_helper.micromodule_dimmers
-        + hue_lights
+        ledvance_lights + session.device_helper.micromodule_dimmers + hue_lights
     ):
         if device_excluded(light, config_entry.options):
             continue
@@ -51,18 +61,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
-    for light in session.device_helper.motion_detectors2:
-        if device_excluded(light, config_entry.options):
-            continue
-        await async_migrate_to_new_unique_id(
-            hass, Platform.LIGHT, device=light, attr_name="MotionLight"
-        )
-        entities.append(
-            MotionDetectorLight(
-                device=light,
-                entry_id=config_entry.entry_id,
+    if not config_entry.options.get(OPT_SUPPRESS_MOTION_INDICATOR_LIGHT, False):
+        for light in session.device_helper.motion_detectors2:
+            if device_excluded(light, config_entry.options):
+                continue
+            await async_migrate_to_new_unique_id(
+                hass, Platform.LIGHT, device=light, attr_name="MotionLight"
             )
-        )
+            entities.append(
+                MotionDetectorLight(
+                    device=light,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     # #338: Light/Shutter Control II light channels (and BSM light switches) that
     # the user opted in to present as a `light`.  These wrap a plain on/off

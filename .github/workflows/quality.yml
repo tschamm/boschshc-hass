@@ -56,3 +56,33 @@ jobs:
 
       - name: pylint
         run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
+
+      - name: translation completeness
+        # Every translation/*.json must have exactly the same data keys in
+        # options.step.init.sections.features as strings.json.
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys
+          base = "custom_components/bosch_shc"
+          with open(f"{base}/strings.json") as f:
+              ref = set(json.load(f)["options"]["step"]["init"]["sections"]["features"]["data"].keys())
+          errors = []
+          for fname in sorted(os.listdir(f"{base}/translations")):
+              if not fname.endswith(".json"):
+                  continue
+              with open(f"{base}/translations/{fname}") as f:
+                  d = json.load(f)
+              keys = set(d["options"]["step"]["init"]["sections"]["features"]["data"].keys())
+              missing = ref - keys
+              extra = keys - ref
+              if missing:
+                  errors.append(f"  {fname}: missing keys {sorted(missing)}")
+              if extra:
+                  errors.append(f"  {fname}: extra keys {sorted(extra)}")
+          if errors:
+              print("Translation key mismatches found:")
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print(f"All {len(os.listdir(f'{base}/translations'))} translation files match strings.json")
+          PYEOF

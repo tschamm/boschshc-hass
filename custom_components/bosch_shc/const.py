@@ -56,6 +56,17 @@ OPT_SSL_SKIP_VERIFY = "ssl_skip_verify"
 # #344: opt-out to suppress Hue lights from SHC (avoids duplicates when Hue
 # integration is also active). Default False = keep existing behaviour.
 OPT_SUPPRESS_HUE_LIGHTS = "suppress_hue_lights"
+# Mirror of above for LEDVANCE lights.
+OPT_SUPPRESS_LEDVANCE_LIGHTS = "suppress_ledvance_lights"
+# Opt-out to hide power & energy consumption sensors (smart plugs, BSM, EMMA…).
+OPT_SUPPRESS_POWER_SENSORS = "suppress_power_sensors"
+# Opt-out to hide the MD2 indicator-LED brightness/toggle entity.
+OPT_SUPPRESS_MOTION_INDICATOR_LIGHT = "suppress_motion_indicator_light"
+# Scenario allow-list for scenarios_as_buttons. Empty list = all scenarios.
+OPT_SCENARIOS_FILTER = "scenarios_filter"
+# Opt-out to suppress camera switch entities (privacy, light, notification) when
+# the Bosch Camera Tool integration is active and owns those entities instead.
+OPT_SUPPRESS_CAMERA_SWITCHES = "suppress_camera_switches"
 # Presence + time-window driven silent mode (mirrors the child-lock feature).
 OPT_SILENT_MODE_ENABLED = "silent_mode_enabled"
 OPT_SILENT_MODE_START = "silent_mode_start"

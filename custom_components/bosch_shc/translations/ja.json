@@ -97,7 +97,12 @@
               "enable_rawscan_service": "rawscan診断サービスを有効にする",
               "all_light_switches_as_light": "すべての Light/Shutter Control II をライトとして公開する",
               "light_switches_as_light": "Light/Shutter Control II をライトとして公開する",
-              "suppress_hue_lights": "Bosch SHCのHueライトを非表示にする"
+              "suppress_hue_lights": "Bosch SHCのHueライトを非表示にする",
+              "suppress_power_sensors": "電力・エネルギーセンサーを非表示にする",
+              "scenarios_filter": "シナリオボタンフィルター",
+              "suppress_ledvance_lights": "Bosch SHCのLEDVANCEライトを非表示にする",
+              "suppress_motion_indicator_light": "モーションセンサーのインジケーターライトを非表示にする",
+              "suppress_camera_switches": "Boschカメラのスイッチを非表示にする"
             },
             "data_description": {
               "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "オンの場合：生のAPIデバッグ用にbosch_shc.trigger_rawscanサービスを登録します。非表示にするにはオフにします。デフォルト：オン。",
               "all_light_switches_as_light": "オンにすると、すべての Light Control II / 壁面ライトスイッチデバイスを一括で `light` エンティティとして表示します — 下の個別デバイス選択より優先されます。オフ（デフォルト）の場合はデバイスごとの選択が維持されます。同じ注意事項: これによりエンティティドメインが切り替わります（`switch.*` ↔ `light.*`）。古いエンティティを参照している自動化やダッシュボードを更新してください。",
               "light_switches_as_light": "`switch` エンティティではなく `light` エンティティとして表示する Light Control II / 埋め込み式ライトスイッチデバイスを選択します。選択された各デバイスのスイッチはオン/オフライトに置き換えられます。スイッチのままにする場合は空のままにしてください（デフォルト）。これを変更するとエンティティのドメインが切り替わります（`switch.*` ↔ `light.*`）。古いエンティティを参照しているオートメーションやダッシュボードを更新してください。",
-              "suppress_hue_lights": "ONにすると、SHCに登録されているHueライトはこのインテグレーションからエンティティとして作成されなくなります。Hueインテグレーションも有効な場合に重複を避けるために使用してください。デフォルト: オフ（Hueライトは表示されます）。"
+              "suppress_hue_lights": "ONにすると、SHCに登録されているHueライトはエンティティとして作成されなくなります。Hueインテグレーション（https://www.home-assistant.io/integrations/hue/）との重複を防ぎます。デフォルト：オフ。",
+              "suppress_power_sensors": "ONにすると、スマートプラグ、BSMスイッチ、マイクロモジュール、EMMAの電力・エネルギーセンサー（W/kWh）が作成されません。デフォルト：オフ。",
+              "scenarios_filter": "空のままにするとすべてのシナリオにボタンが作成されます（デフォルト）。1つ以上選択するとそのシナリオのみに制限されます。「シナリオをボタンとして表示」がONのときのみ適用されます。",
+              "suppress_ledvance_lights": "ONにすると、SHCに登録されているLEDVANCEライトはエンティティとして作成されなくなります。LEDVANCEまたはZigbeeインテグレーションとの重複を防ぎます。デフォルト：オフ。",
+              "suppress_motion_indicator_light": "ONにすると、モーションセンサーIIのインジケーターLEDエンティティは作成されません。デフォルト：オフ。",
+              "suppress_camera_switches": "ONにすると、Boschカメラ（Eyes/360/Outdoor Gen2）のプライバシー、ライト、通知スイッチエンティティが作成されません。Bosch Camera Tool（https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant）と併用してください。デフォルト：オフ。"
             }
           },
           "presence": {

@@ -97,7 +97,12 @@
               "enable_rawscan_service": "rawscan 진단 서비스 활성화",
               "all_light_switches_as_light": "모든 Light/Shutter Control II를 조명으로 노출",
               "light_switches_as_light": "Light/Shutter Control II를 조명으로 노출",
-              "suppress_hue_lights": "Bosch SHC에서 Hue 조명 숨기기"
+              "suppress_hue_lights": "Bosch SHC에서 Hue 조명 숨기기",
+              "suppress_power_sensors": "전력 및 에너지 센서 숨기기",
+              "scenarios_filter": "시나리오 버튼 필터",
+              "suppress_ledvance_lights": "Bosch SHC에서 LEDVANCE 조명 숨기기",
+              "suppress_motion_indicator_light": "동작 감지기 표시등 숨기기",
+              "suppress_camera_switches": "Bosch 카메라 스위치 숨기기"
             },
             "data_description": {
               "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "켜짐: 원시 API 디버깅을 위해 bosch_shc.trigger_rawscan 서비스를 등록합니다. 숨기려면 끄세요. 기본값: 켜짐.",
               "all_light_switches_as_light": "켜면 모든 Light Control II / 매입형 조명 스위치 장치를 한꺼번에 `light` 엔티티로 표시합니다 — 아래의 장치별 선택을 재정의합니다. 꺼짐(기본값)은 장치별 선택을 유지합니다. 동일한 주의 사항: 이렇게 하면 엔티티 도메인이 변경됩니다(`switch.*` ↔ `light.*`). 이전 엔티티를 참조하는 자동화 및 대시보드를 업데이트하세요.",
               "light_switches_as_light": "`switch` 엔티티 대신 `light` 엔티티로 표시할 Light Control II / 벽면 매립형 조명 스위치 장치를 선택하세요. 선택된 각 장치의 스위치는 켜기/끄기 조명으로 대체됩니다. 스위치로 유지하려면 비워 두세요(기본값). 이 설정을 변경하면 엔티티 도메인이 교체됩니다(`switch.*` ↔ `light.*`). 이전 엔티티를 참조하는 자동화나 대시보드를 업데이트하세요.",
-              "suppress_hue_lights": "켜짐: SHC에 페어링된 Hue 조명이 이 통합에서 더 이상 엔티티로 노출되지 않습니다. Hue 통합이 활성화된 경우 중복을 방지하려면 이 옵션을 사용하세요. 기본값: 꺼짐 (Hue 조명이 표시됨)."
+              "suppress_hue_lights": "켜짐: SHC에 페어링된 Hue 조명이 더 이상 엔티티로 노출되지 않습니다. Hue 통합(https://www.home-assistant.io/integrations/hue/) 시 중복을 방지하려면 사용하세요. 기본값: 꺼짐.",
+              "suppress_power_sensors": "켜짐: 스마트 플러그, BSM 스위치, 마이크로모듈, EMMA에 대한 전력 및 에너지 센서(W / kWh)가 생성되지 않습니다. 기본값: 꺼짐.",
+              "scenarios_filter": "모든 시나리오에 버튼을 만들려면 비워 두세요(기본값). 하나 이상 선택하면 해당 시나리오로만 제한됩니다. '시나리오를 버튼으로 표시'가 켜진 경우에만 적용됩니다.",
+              "suppress_ledvance_lights": "켜짐: SHC에 페어링된 LEDVANCE 조명이 더 이상 엔티티로 노출되지 않습니다. LEDVANCE 또는 Zigbee 통합 시 중복을 방지하려면 사용하세요. 기본값: 꺼짐.",
+              "suppress_motion_indicator_light": "켜짐: 동작 감지기 II의 표시등 LED 엔티티가 생성되지 않습니다. 기본값: 꺼짐.",
+              "suppress_camera_switches": "켜짐: Bosch 카메라(Eyes / 360 / Outdoor Gen2)의 개인 정보 보호, 조명 및 알림 스위치 엔티티가 생성되지 않습니다. Bosch Camera Tool(https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant)과 함께 사용하세요. 기본값: 꺼짐."
             }
           },
           "presence": {

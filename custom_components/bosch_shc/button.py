@@ -20,6 +20,7 @@ from .const import (
     DOMAIN,
     LOGGER,
     OPT_SCENARIOS_AS_BUTTONS,
+    OPT_SCENARIOS_FILTER,
 )
 from .entity import SHCEntity, device_excluded
 
@@ -120,6 +121,7 @@ async def async_setup_entry(
         entry_unique_id = config_entry.unique_id
         entry_id = config_entry.entry_id
         shc_device: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
+        scenario_filter = config_entry.options.get(OPT_SCENARIOS_FILTER) or []
 
         def _make_scenario_button(scenario):
             """Build a SHCScenarioButton, returning None on malformed payload."""
@@ -139,6 +141,7 @@ async def async_setup_entry(
         entities.extend(
             btn
             for scenario in session.scenarios
+            if not scenario_filter or scenario.id in scenario_filter
             if (btn := _make_scenario_button(scenario)) is not None
         )
 

@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Habilitar serviço de diagnóstico rawscan",
               "all_light_switches_as_light": "Expor TODOS os Light/Shutter Control II como luzes",
               "light_switches_as_light": "Expor Light/Shutter Control II como luzes",
-              "suppress_hue_lights": "Suprimir luzes Hue do Bosch SHC"
+              "suppress_hue_lights": "Suprimir luzes Hue do Bosch SHC",
+              "suppress_power_sensors": "Suprimir sensores de potência e energia",
+              "scenarios_filter": "Filtro de botões de cenário",
+              "suppress_ledvance_lights": "Suprimir luzes LEDVANCE do Bosch SHC",
+              "suppress_motion_indicator_light": "Suprimir indicador luminoso do detector de movimento",
+              "suppress_camera_switches": "Suprimir os controles da câmera Bosch"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC também aparece como uma entidade de botão no Home Assistant (além do serviço trigger_scenario). Útil para blocos de painel e automações que acionam cenários diretamente. Padrão: desativado.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Quando ATIVADO: registra o serviço bosch_shc.trigger_rawscan para depuração bruta de API. Desative para ocultá-lo. Padrão: ativado.",
               "all_light_switches_as_light": "Ative para apresentar todos os dispositivos Light Control II / interruptores de luz de embutir como entidade `light` de uma só vez — substitui a seleção por dispositivo abaixo. Desativado (padrão) mantém a escolha por dispositivo. Mesmo aviso: isso altera o domínio da entidade (`switch.*` ↔ `light.*`), portanto atualize as automações e painéis que fazem referência às entidades antigas.",
               "light_switches_as_light": "Selecione os dispositivos Light Control II / interruptor de luz embutido que devem aparecer como entidades `light` em vez de entidades `switch`. O interruptor de cada dispositivo selecionado é substituído por uma luz liga/desliga. Deixe vazio (padrão) para mantê-los como switches. Alterar isso troca o domínio da entidade (`switch.*` ↔ `light.*`), então atualize quaisquer automações ou painéis que referenciem a entidade antiga.",
-              "suppress_hue_lights": "Quando ATIVADO: as luzes Hue emparelhadas ao SHC deixam de ser expostas como entidades por esta integração. Use para evitar duplicatas quando a integração Hue também estiver ativa. Padrão: desativado (as luzes Hue são exibidas)."
+              "suppress_hue_lights": "Quando ATIVADO: as luzes Hue emparelhadas ao SHC deixam de ser expostas como entidades. Use para evitar duplicatas com a integração Hue (https://www.home-assistant.io/integrations/hue/). Padrão: desativado.",
+              "suppress_power_sensors": "Quando ATIVADO: os sensores de potência e energia (watt / kWh) não são criados para tomadas inteligentes, interruptores BSM, micromodulos e o gestor EMMA. Padrão: desativado.",
+              "scenarios_filter": "Deixe vazio para botões para TODOS os cenários (padrão). Selecione um ou mais para limitar os botões. Aplica-se apenas quando 'Expor cenários como botões' está ativado.",
+              "suppress_ledvance_lights": "Quando ATIVADO: as luzes LEDVANCE emparelhadas ao SHC deixam de ser expostas como entidades. Use para evitar duplicatas com a integração LEDVANCE ou Zigbee. Padrão: desativado.",
+              "suppress_motion_indicator_light": "Quando ATIVADO: a entidade do LED indicador dos detectores de movimento II não é criada. Padrão: desativado.",
+              "suppress_camera_switches": "Quando ATIVADO: os controles de privacidade, luz e notificação para as câmeras Bosch (Eyes / 360 / Outdoor Gen2) não são criados. Use com o Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Padrão: desativado."
             }
           },
           "presence": {

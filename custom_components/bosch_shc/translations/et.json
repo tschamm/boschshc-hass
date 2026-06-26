@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Luba rawscani diagnostikateenust",
               "all_light_switches_as_light": "Näita KÕIKI Light/Shutter Control II seadmeid tuledena",
               "light_switches_as_light": "Kuva Light/Shutter Control II tuledena",
-              "suppress_hue_lights": "Peida Hue-tuled Bosch SHC-st"
+              "suppress_hue_lights": "Peida Hue-tuled Bosch SHC-st",
+              "suppress_power_sensors": "Peida võimsuse ja energia andurid",
+              "scenarios_filter": "Stsenaariumide nuppude filter",
+              "suppress_ledvance_lights": "Peida LEDVANCE-tuled Bosch SHC-st",
+              "suppress_motion_indicator_light": "Peida liikumisanduri indikaatortuli",
+              "suppress_camera_switches": "Peida Boschi kaamerakapslid"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Kui SEES: registreerib teenuse bosch_shc.trigger_rawscan toorest API silumiseks. Lülita välja peitmiseks. Vaikimisi: sees.",
               "all_light_switches_as_light": "Lülitage sisse, et esitada iga Light Control II / seinasse paigaldatud valguskapslite seade `light` olemina korraga — tühistab alloleva seadmepõhise valiku. Väljas (vaikimisi) säilitab seadmepõhise valiku. Sama märkus: see vahetab olemi domeeni (`switch.*` ↔ `light.*`), seega uuendage automatiseeringuid ja armatuurlaudu, mis viitavad vanadele olemitele.",
               "light_switches_as_light": "Valige Light Control II / seinasisese valguskapslite seadmed, mis peaksid ilmuma `light` olemitena, mitte `switch` olemitena. Iga valitud seadme lüliti asendatakse sisse/väljalülitusega tulega. Jätke tühjaks (vaikimisi), et säilitada need lülititena. Selle muutmine vahetab olemi domeeni (`switch.*` ↔ `light.*`), seega uuendage kõiki automatiseeringuid või armatuurlaudu, mis viitavad vanale olemile.",
-              "suppress_hue_lights": "Kui SEES: SHC-ga seotud Hue-tuled ei kuvata enam selle integratsiooni poolt olemitena. Kasutage seda duplikaatide vältimiseks, kui Hue-integratsioon on samuti aktiivne. Vaikimisi: väljas (Hue-tuled on nähtavad)."
+              "suppress_hue_lights": "Kui SEES: SHC-ga seotud Hue-tuled ei kuvata enam olemitena. Kasuta duplikaatide vältimiseks Hue integratsiooniga (https://www.home-assistant.io/integrations/hue/). Vaikimisi: väljas.",
+              "suppress_power_sensors": "Kui SEES: võimsuse ja energia andurid (W / kWh) ei looda nutipistikutele, BSM lülititele, mikromodulaatoritele ega EMMA haldurile. Vaikimisi: väljas.",
+              "scenarios_filter": "Jäta tühjaks, et luua nupud KÕIGILE stsenaariumidele (vaikimisi). Vali üks või mitu, et piirata nuppe. Rakendub ainult siis, kui 'Eksponeer stsenaariumid nuppudena' on sees.",
+              "suppress_ledvance_lights": "Kui SEES: SHC-ga seotud LEDVANCE-tuled ei kuvata enam olemitena. Kasuta duplikaatide vältimiseks LEDVANCE või Zigbee integratsiooniga. Vaikimisi: väljas.",
+              "suppress_motion_indicator_light": "Kui SEES: liikumisanduri II indikaatorlehe olemi ei looda. Vaikimisi: väljas.",
+              "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Vaikimisi: väljas."
             }
           },
           "presence": {

@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Povolit diagnostickou službu rawscan",
               "all_light_switches_as_light": "Zobrazit VŠECHNY Light/Shutter Control II jako světla",
               "light_switches_as_light": "Zobrazit Light/Shutter Control II jako světla",
-              "suppress_hue_lights": "Skrýt světla Hue z Bosch SHC"
+              "suppress_hue_lights": "Skrýt světla Hue z Bosch SHC",
+              "suppress_power_sensors": "Skrýt senzory výkonu a energie",
+              "scenarios_filter": "Filtr tlačítek scénářů",
+              "suppress_ledvance_lights": "Skrýt světla LEDVANCE z Bosch SHC",
+              "suppress_motion_indicator_light": "Skrýt indikátor pohybového čidla",
+              "suppress_camera_switches": "Skrýt přepínače fotoaparátu Bosch"
             },
             "data_description": {
               "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Pokud ZAPNUTO: zaregistruje službu bosch_shc.trigger_rawscan pro ladění surového API. Vypnutím ji skryjete. Výchozí: zapnuto.",
               "all_light_switches_as_light": "Zapněte, chcete-li zobrazit každé zařízení Light Control II / nástěnný světelný přepínač jako entitu `light` najednou — přepíše individuální výběr níže. Vypnuto (výchozí) zachovává volbu pro každé zařízení zvlášť. Stejné upozornění: tím se změní doména entity (`switch.*` ↔ `light.*`), takže aktualizujte automatizace a řídicí panely odkazující na staré entity.",
               "light_switches_as_light": "Vyberte zařízení Light Control II / nástěnný vypínač světla, která by se měla zobrazovat jako entity `light` místo entit `switch`. Přepínač každého vybraného zařízení je nahrazen světlem se zapnutím/vypnutím. Ponechte prázdné (výchozí), aby zůstaly jako switches. Změna přepne doménu entity (`switch.*` ↔ `light.*`), proto aktualizujte všechny automatizace nebo přehledy, které odkazují na starou entitu.",
-              "suppress_hue_lights": "Pokud ZAPNUTO: světla Hue spárovaná se SHC již tato integrace nevytváří jako entity. Použijte toto k předcházení duplicit, pokud je aktivní i integrace Hue. Výchozí: vypnuto (světla Hue jsou zobrazena)."
+              "suppress_hue_lights": "Pokud ZAPNUTO: světla Hue spárovaná se SHC se nevytvoří jako entity. Používejte pro zamezení duplikátů s integrací Hue (https://www.home-assistant.io/integrations/hue/). Výchozí: vypnuto.",
+              "suppress_power_sensors": "Pokud ZAPNUTO: senzory výkonu a energie (W / kWh) se nevytvoří pro chytré zásuvky, spínače BSM, mikromoduly a správce EMMA. Výchozí: vypnuto.",
+              "scenarios_filter": "Nechte prázdné, chcete-li vytvořit tlačítka pro VŠECHNY scénáře (výchozí). Vyberte jeden nebo více, chcete-li omezit tlačítka. Platí jen když je zapnuté 'Zobrazovat scénáře jako tlačítka'.",
+              "suppress_ledvance_lights": "Pokud ZAPNUTO: světla LEDVANCE spárovaná se SHC se nevytvoří jako entity. Používejte pro zamezení duplikátů s integrací LEDVANCE nebo Zigbee. Výchozí: vypnuto.",
+              "suppress_motion_indicator_light": "Pokud ZAPNUTO: entita LED indikátoru pohybového čidla II se nevytvoří. Výchozí: vypnuto.",
+              "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Výchozí: vypnuto."
             }
           },
           "presence": {

@@ -54,12 +54,17 @@ from .const import (
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_SCENARIOS_AS_BUTTONS,
+    OPT_SCENARIOS_FILTER,
     OPT_SILENT_MODE_ENABLED,
     OPT_SILENT_MODE_END,
     OPT_SILENT_MODE_START,
     OPT_SSL_SKIP_VERIFY,
     OPT_SSL_VERIFY_HOSTNAME,
+    OPT_SUPPRESS_CAMERA_SWITCHES,
     OPT_SUPPRESS_HUE_LIGHTS,
+    OPT_SUPPRESS_LEDVANCE_LIGHTS,
+    OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
+    OPT_SUPPRESS_POWER_SENSORS,
 )
 from .entity import light_relay_friendly_model, light_switch_devices
 
@@ -75,6 +80,11 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_ALL_LIGHTS_AS_LIGHT,
         OPT_LIGHTS_AS_LIGHT,
         OPT_SUPPRESS_HUE_LIGHTS,
+        OPT_SUPPRESS_LEDVANCE_LIGHTS,
+        OPT_SUPPRESS_POWER_SENSORS,
+        OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
+        OPT_SCENARIOS_FILTER,
+        OPT_SUPPRESS_CAMERA_SWITCHES,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -478,6 +488,10 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 OPT_LIGHTS_AS_LIGHT,
                 OPT_ALL_LIGHTS_AS_LIGHT,
                 OPT_SUPPRESS_HUE_LIGHTS,
+                OPT_SUPPRESS_LEDVANCE_LIGHTS,
+                OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
+                OPT_SUPPRESS_CAMERA_SWITCHES,
+                OPT_SCENARIOS_FILTER,
                 OPT_EXCLUDED_DEVICES,
                 OPT_EXCLUDED_ROOMS,
             ):
@@ -500,6 +514,9 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
         _has_cameras = False
         _camera_tool_installed = False
         _has_hue_lights = False
+        _has_ledvance_lights = False
+        _has_md2 = False
+        _scenario_options = []
         try:
             _camera_tool_installed = bool(
                 self.hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
@@ -521,6 +538,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                     {"value": rid, "label": name} for rid, name in rooms.items()
                 ]
                 _has_hue_lights = bool(session.device_helper.hue_lights)
+                _has_ledvance_lights = bool(
+                    getattr(session.device_helper, "ledvance_lights", [])
+                )
+                _has_md2 = bool(getattr(session.device_helper, "motion_detectors2", []))
+                _scenario_options = [
+                    {"value": s.id, "label": s.name}
+                    for s in session.scenarios
+                    if getattr(s, "id", None) and getattr(s, "name", None)
+                ]
                 # #338: only the on/off light-relay devices are eligible to be
                 # presented as a `light`.  Append a friendly model name so a BSM
                 # relay is distinguishable from a Light Control II channel,
@@ -550,6 +576,37 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                 default=current.get(OPT_ENABLE_RAWSCAN, True),
             ): BooleanSelector(),
         }
+        # Power & energy sensors: always offer (many users want to suppress).
+        features_fields[
+            vol.Optional(
+                OPT_SUPPRESS_POWER_SENSORS,
+                default=current.get(OPT_SUPPRESS_POWER_SENSORS, False),
+            )
+        ] = BooleanSelector()
+
+        # Scenario filter: only when there are scenarios to choose from.
+        if _scenario_options:
+            _valid_scenario_ids = {opt["value"] for opt in _scenario_options}
+            _filter_default = [
+                sid
+                for sid in current.get(OPT_SCENARIOS_FILTER, [])
+                if sid in _valid_scenario_ids
+            ]
+            features_fields[
+                vol.Optional(
+                    OPT_SCENARIOS_FILTER,
+                    default=_filter_default,
+                )
+            ] = SelectSelector(
+                SelectSelectorConfig(
+                    options=_scenario_options,
+                    multiple=True,
+                    mode=SelectSelectorMode.DROPDOWN,
+                    custom_value=False,
+                    sort=True,
+                )
+            )
+
         # #344: only offer the Hue suppression toggle when the controller has
         # Hue lights (avoids a confusing option for users without any).
         if _has_hue_lights:
@@ -585,6 +642,30 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
                     sort=True,
                 )
             )
+
+        if _has_ledvance_lights:
+            features_fields[
+                vol.Optional(
+                    OPT_SUPPRESS_LEDVANCE_LIGHTS,
+                    default=current.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False),
+                )
+            ] = BooleanSelector()
+
+        if _has_md2:
+            features_fields[
+                vol.Optional(
+                    OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
+                    default=current.get(OPT_SUPPRESS_MOTION_INDICATOR_LIGHT, False),
+                )
+            ] = BooleanSelector()
+
+        if _has_cameras:
+            features_fields[
+                vol.Optional(
+                    OPT_SUPPRESS_CAMERA_SWITCHES,
+                    default=current.get(OPT_SUPPRESS_CAMERA_SWITCHES, False),
+                )
+            ] = BooleanSelector()
 
         schema = vol.Schema(
             {

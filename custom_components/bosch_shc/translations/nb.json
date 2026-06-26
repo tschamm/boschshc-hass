@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Aktiver rawscan-diagnosetjeneste",
               "all_light_switches_as_light": "Eksponer ALLE Light/Shutter Control II som lys",
               "light_switches_as_light": "Vis Light/Shutter Control II som lys",
-              "suppress_hue_lights": "Skjul Hue-lys fra Bosch SHC"
+              "suppress_hue_lights": "Skjul Hue-lys fra Bosch SHC",
+              "suppress_power_sensors": "Skjul effekt- og energisensorer",
+              "scenarios_filter": "Scenarioknappefilter",
+              "suppress_ledvance_lights": "Skjul LEDVANCE-lys fra Bosch SHC",
+              "suppress_motion_indicator_light": "Skjul bevegelsesdetektorens statusindikator",
+              "suppress_camera_switches": "Skjul Bosch-kamerabrytere"
             },
             "data_description": {
               "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Når PÅ: registrerer bosch_shc.trigger_rawscan-tjenesten for rå API-feilsøking. Slå AV for å skjule den. Standard: på.",
               "all_light_switches_as_light": "Slå på for å presentere alle Light Control II / innfelte lysbrytere som `light`-entitet på én gang — overstyrer valget per enhet nedenfor. Av (standard) beholder valget per enhet. Samme forbehold: dette bytter entitetsdomenet (`switch.*` ↔ `light.*`), så oppdater automatiseringer og dashbord som refererer til de gamle entitetene.",
               "light_switches_as_light": "Velg Light Control II / innebygd lysbryter-enheter som skal vises som `light`-enheter i stedet for `switch`-enheter. Bryteren til hver valgt enhet erstattes av et på/av-lys. La stå tom (standard) for å beholde dem som switches. Å endre dette bytter enhetsdomenet (`switch.*` ↔ `light.*`), så oppdater eventuelle automasjoner eller instrumentbord som refererer til den gamle enheten.",
-              "suppress_hue_lights": "Når PÅ: Hue-lys paret med SHC vises ikke lenger som entiteter av denne integrasjonen. Bruk dette for å unngå duplikater når Hue-integrasjonen også er aktiv. Standard: av (Hue-lys vises)."
+              "suppress_hue_lights": "Når PÅ: Hue-lys paret med SHC vises ikke lenger som entiteter. Bruk for å unngå duplikater med Hue-integrasjonen (https://www.home-assistant.io/integrations/hue/). Standard: av.",
+              "suppress_power_sensors": "Når PÅ: effekt- og energisensorer (watt / kWh) opprettes ikke for smarte stikkontakter, BSM-brytere, mikromoduler og EMMA energistyring. Standard: av.",
+              "scenarios_filter": "La stå tomt for knapper for ALLE scenarioer (standard). Velg ett eller flere for å begrense knapper. Gjelder kun når 'Vis scenarioer som knapper' er på.",
+              "suppress_ledvance_lights": "Når PÅ: LEDVANCE-lys paret med SHC vises ikke lenger som entiteter. Bruk for å unngå duplikater med LEDVANCE- eller Zigbee-integrasjonen. Standard: av.",
+              "suppress_motion_indicator_light": "Når PÅ: entiteten for bevegelsesdetektor II’s statusindikator opprettes ikke. Standard: av.",
+              "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Standard: av."
             }
           },
           "presence": {

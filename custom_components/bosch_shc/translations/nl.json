@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Diagnostische rawscan-service inschakelen",
               "all_light_switches_as_light": "ALLE Light/Shutter Control II als lichten weergeven",
               "light_switches_as_light": "Light/Shutter Control II weergeven als lampen",
-              "suppress_hue_lights": "Hue-lampen van Bosch SHC onderdrukken"
+              "suppress_hue_lights": "Hue-lampen van Bosch SHC onderdrukken",
+              "suppress_power_sensors": "Vermogen- en energiesensoren onderdrukken",
+              "scenarios_filter": "Scenarioknoppen filter",
+              "suppress_ledvance_lights": "LEDVANCE-lampen van Bosch SHC onderdrukken",
+              "suppress_motion_indicator_light": "Statusindicator bewegingsdetector onderdrukken",
+              "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Wanneer AAN: registreert de bosch_shc.trigger_rawscan service voor ruwe API-foutopsporing. Zet UIT om deze te verbergen. Standaard: aan.",
               "all_light_switches_as_light": "Schakel in om elk Light Control II / inbouw-lichtschakelaar-apparaat tegelijk als `light`-entiteit te presenteren — vervangt de apparaatspecifieke selectie hieronder. Uit (standaard) behoudt de keuze per apparaat. Dezelfde kanttekening: dit wisselt het entiteitsdomein om (`switch.*` ↔ `light.*`), dus werk automatiseringen en dashboards bij die naar de oude entiteiten verwijzen.",
               "light_switches_as_light": "Selecteer de Light Control II / inbouw lichtschakelaar-apparaten die als `light`-entiteiten moeten verschijnen in plaats van `switch`-entiteiten. De schakelaar van elk geselecteerd apparaat wordt vervangen door een aan/uit-lamp. Laat leeg (standaard) om ze als switches te houden. Dit wijzigen verwisselt het entiteitsdomein (`switch.*` ↔ `light.*`), werk dus eventuele automatiseringen of dashboards bij die naar de oude entiteit verwijzen.",
-              "suppress_hue_lights": "Wanneer AAN: Hue-lampen gekoppeld aan de SHC worden niet meer als entiteiten beschikbaar gesteld door deze integratie. Gebruik dit om duplicaten te vermijden wanneer de Hue-integratie ook actief is. Standaard: uit (Hue-lampen worden getoond)."
+              "suppress_hue_lights": "Wanneer AAN: Hue-lampen gekoppeld aan de SHC worden niet meer als entiteiten beschikbaar gesteld. Gebruik dit om duplicaten met de Hue-integratie (https://www.home-assistant.io/integrations/hue/) te vermijden. Standaard: uit.",
+              "suppress_power_sensors": "Wanneer AAN: vermogen- en energiesensoren (watt / kWh) worden niet aangemaakt voor slimme stekkers, BSM-schakelaars, micromodules en de EMMA energiemanager. Standaard: uit.",
+              "scenarios_filter": "Laat leeg om knoppen voor ALLE scenario's te maken (standaard). Selecteer één of meer om knoppen te beperken. Geldt alleen wanneer 'Scenario's als knoppen tonen' is ingeschakeld.",
+              "suppress_ledvance_lights": "Wanneer AAN: LEDVANCE-lampen gekoppeld aan de SHC worden niet meer als entiteiten beschikbaar gesteld. Gebruik dit om duplicaten met de LEDVANCE- of Zigbee-integratie te vermijden. Standaard: uit.",
+              "suppress_motion_indicator_light": "Wanneer AAN: de entiteit voor de statusindicator van bewegingsdetectoren II wordt niet aangemaakt. Standaard: uit.",
+              "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Standaard: uit."
             }
           },
           "presence": {

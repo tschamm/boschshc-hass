@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Włącz diagnostyczną usługę rawscan",
               "all_light_switches_as_light": "Udostępnij WSZYSTKIE Light/Shutter Control II jako światła",
               "light_switches_as_light": "Eksponuj Light/Shutter Control II jako światła",
-              "suppress_hue_lights": "Ukryj lampki Hue z Bosch SHC"
+              "suppress_hue_lights": "Ukryj lampki Hue z Bosch SHC",
+              "suppress_power_sensors": "Ukryj czujniki mocy i energii",
+              "scenarios_filter": "Filtr przycisków scenariuszy",
+              "suppress_ledvance_lights": "Ukryj lampki LEDVANCE z Bosch SHC",
+              "suppress_motion_indicator_light": "Ukryj wskaźnik LED czujnika ruchu",
+              "suppress_camera_switches": "Ukryj przełączniki kamery Bosch"
             },
             "data_description": {
               "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Gdy WŁĄCZONE: rejestruje usługę bosch_shc.trigger_rawscan do debugowania surowego API. Wyłącz, aby ją ukryć. Domyślnie: włączone.",
               "all_light_switches_as_light": "Włącz, aby wszystkie urządzenia Light Control II / podtynkowe przełączniki światła były jednocześnie przedstawiane jako encja `light` — zastępuje wybór dla poszczególnych urządzeń poniżej. Wyłączone (domyślnie) zachowuje wybór dla każdego urządzenia z osobna. Ta sama uwaga: powoduje to zmianę domeny encji (`switch.*` ↔ `light.*`), dlatego zaktualizuj automatyzacje i pulpity nawigacyjne odwołujące się do starych encji.",
               "light_switches_as_light": "Wybierz urządzenia Light Control II / podtynkowy włącznik światła, które mają być wyświetlane jako encje `light` zamiast encji `switch`. Przełącznik każdego wybranego urządzenia zostaje zastąpiony światłem włącz/wyłącz. Pozostaw puste (domyślnie), aby zachować je jako switches. Zmiana ta zamienia domenę encji (`switch.*` ↔ `light.*`), dlatego zaktualizuj wszelkie automatyzacje lub panele sterowania odwołujące się do starej encji.",
-              "suppress_hue_lights": "Gdy WŁĄCZONE: lampki Hue powiązane z SHC nie są już udostępniane jako encje przez tę integrację. Użyj tego, aby uniknąć duplikatów, gdy integracja Hue jest również aktywna. Domyślnie: wyłączone (lampki Hue są widoczne)."
+              "suppress_hue_lights": "Gdy WŁĄCZONE: lampki Hue powiązane z SHC nie są wyświetlane jako encje. Użyj, aby uniknąć duplikatów z integracją Hue (https://www.home-assistant.io/integrations/hue/). Domyślnie: wyłączone.",
+              "suppress_power_sensors": "Gdy WŁĄCZONE: czujniki mocy i energii (W / kWh) nie są tworzone dla inteligentnych wtyczek, przełączników BSM, mikromodulów i menedżera EMMA. Domyślnie: wyłączone.",
+              "scenarios_filter": "Zostaw puste, aby utworzyć przyciski dla WSZYSTKICH scenariuszy (domyślnie). Wybierz jeden lub więcej, aby ograniczyć przyciski. Dotyczy tylko, gdy włączono 'Eksponuj scenariusze jako przyciski'.",
+              "suppress_ledvance_lights": "Gdy WŁĄCZONE: lampki LEDVANCE powiązane z SHC nie są wyświetlane jako encje. Użyj, aby uniknąć duplikatów z integracją LEDVANCE lub Zigbee. Domyślnie: wyłączone.",
+              "suppress_motion_indicator_light": "Gdy WŁĄCZONE: encja jasności diody LED czujnika ruchu II nie jest tworzona. Domyślnie: wyłączone.",
+              "suppress_camera_switches": "Gdy WŁĄCZONE: przełączniki trybu prywatności, świateł i powiadomień dla kamer Bosch (Eyes / 360 / Outdoor Gen2) nie są tworzone. Użyj z Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Domyślnie: wyłączone."
             }
           },
           "presence": {

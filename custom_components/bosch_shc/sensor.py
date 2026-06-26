@@ -23,7 +23,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN, LOGGER, OPT_DIAGNOSTIC_ENTITIES
+from .const import (
+    DATA_SESSION,
+    DOMAIN,
+    LOGGER,
+    OPT_DIAGNOSTIC_ENTITIES,
+    OPT_SUPPRESS_POWER_SENSORS,
+)
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -39,6 +45,9 @@ async def async_setup_entry(  # noqa: C901
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
     sensor: SHCDevice
     diagnostic_enabled = config_entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True)
+    power_sensors_enabled = not config_entry.options.get(
+        OPT_SUPPRESS_POWER_SENSORS, False
+    )
 
     for sensor in session.device_helper.thermostats:
         if device_excluded(sensor, config_entry.options):
@@ -192,86 +201,88 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for sensor in (
-        session.device_helper.smart_plugs
-        + session.device_helper.light_switches_bsm
-        + session.device_helper.micromodule_light_controls
-        + session.device_helper.micromodule_shutter_controls
-        + session.device_helper.micromodule_blinds
-    ):
-        if device_excluded(sensor, config_entry.options):
-            continue
-        await async_migrate_to_new_unique_id(
-            hass,
-            Platform.SENSOR,
-            device=sensor,
-            attr_name="Power",
-            old_unique_id=f"{sensor.serial}_power",
-        )
-        entities.append(
-            PowerSensor(
+    if power_sensors_enabled:
+        for sensor in (
+            session.device_helper.smart_plugs
+            + session.device_helper.light_switches_bsm
+            + session.device_helper.micromodule_light_controls
+            + session.device_helper.micromodule_shutter_controls
+            + session.device_helper.micromodule_blinds
+        ):
+            if device_excluded(sensor, config_entry.options):
+                continue
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
                 device=sensor,
-                entry_id=config_entry.entry_id,
-            )
-        )
-        await async_migrate_to_new_unique_id(
-            hass,
-            Platform.SENSOR,
-            device=sensor,
-            attr_name="Energy",
-            old_unique_id=f"{sensor.serial}_energy",
-        )
-        entities.append(
-            EnergySensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
-            )
-        )
-        # #331: Smart Plug [+M] in Mini-PV mode reports PV yield separately.
-        if getattr(sensor, "supports_energy_yield", False):
-            entities.append(
-                EnergyYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                attr_name="Power",
+                old_unique_id=f"{sensor.serial}_power",
             )
             entities.append(
-                PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                PowerSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
             )
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
+                device=sensor,
+                attr_name="Energy",
+                old_unique_id=f"{sensor.serial}_energy",
+            )
+            entities.append(
+                EnergySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+            # #331: Smart Plug [+M] in Mini-PV mode reports PV yield separately.
+            if getattr(sensor, "supports_energy_yield", False):
+                entities.append(
+                    EnergyYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                )
+                entities.append(
+                    PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                )
 
     for sensor in session.device_helper.smart_plugs_compact:
         if device_excluded(sensor, config_entry.options):
             continue
-        await async_migrate_to_new_unique_id(
-            hass,
-            Platform.SENSOR,
-            device=sensor,
-            attr_name="Power",
-            old_unique_id=f"{sensor.serial}_power",
-        )
-        entities.append(
-            PowerSensor(
+        if power_sensors_enabled:
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
                 device=sensor,
-                entry_id=config_entry.entry_id,
-            )
-        )
-        await async_migrate_to_new_unique_id(
-            hass,
-            Platform.SENSOR,
-            device=sensor,
-            attr_name="Energy",
-            old_unique_id=f"{sensor.serial}_energy",
-        )
-        entities.append(
-            EnergySensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
-            )
-        )
-        if getattr(sensor, "supports_energy_yield", False):
-            entities.append(
-                EnergyYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                attr_name="Power",
+                old_unique_id=f"{sensor.serial}_power",
             )
             entities.append(
-                PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                PowerSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
             )
+            await async_migrate_to_new_unique_id(
+                hass,
+                Platform.SENSOR,
+                device=sensor,
+                attr_name="Energy",
+                old_unique_id=f"{sensor.serial}_energy",
+            )
+            entities.append(
+                EnergySensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+            if getattr(sensor, "supports_energy_yield", False):
+                entities.append(
+                    EnergyYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                )
+                entities.append(
+                    PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
+                )
         if diagnostic_enabled:
             await async_migrate_to_new_unique_id(
                 hass,
@@ -380,13 +391,14 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    sensor = session.emma
-    entities.append(
-        EmmaPowerSensor(
-            device=sensor,
-            entry_id=config_entry.entry_id,
+    if power_sensors_enabled:
+        sensor = session.emma
+        entities.append(
+            EmmaPowerSensor(
+                device=sensor,
+                entry_id=config_entry.entry_id,
+            )
         )
-    )
 
     if diagnostic_enabled:
         for sensor in (

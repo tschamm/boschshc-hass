@@ -38,7 +38,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import slugify
 
-from .const import DATA_SESSION, DATA_SHC, DOMAIN
+from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -530,8 +530,9 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
+    suppress_cameras = config_entry.options.get(OPT_SUPPRESS_CAMERA_SWITCHES, False)
     for switch in session.device_helper.camera_eyes:
-        if device_excluded(switch, config_entry.options):
+        if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
             hass=hass,
@@ -569,7 +570,7 @@ async def async_setup_entry(  # noqa: C901
         )
 
     for switch in session.device_helper.camera_360:
-        if device_excluded(switch, config_entry.options):
+        if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
@@ -594,7 +595,7 @@ async def async_setup_entry(  # noqa: C901
         )
 
     for switch in session.device_helper.camera_outdoor_gen2:
-        if device_excluded(switch, config_entry.options):
+        if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
             hass=hass,

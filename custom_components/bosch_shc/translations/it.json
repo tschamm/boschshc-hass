@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Abilita il servizio di diagnostica rawscan",
               "all_light_switches_as_light": "Esporre TUTTI i Light/Shutter Control II come luci",
               "light_switches_as_light": "Esponi Light/Shutter Control II come luci",
-              "suppress_hue_lights": "Sopprimi le luci Hue dal Bosch SHC"
+              "suppress_hue_lights": "Sopprimi le luci Hue dal Bosch SHC",
+              "suppress_power_sensors": "Sopprimi i sensori di potenza e consumo energetico",
+              "scenarios_filter": "Filtro pulsanti scenario",
+              "suppress_ledvance_lights": "Sopprimi le luci LEDVANCE dal Bosch SHC",
+              "suppress_motion_indicator_light": "Sopprimi la spia del rilevatore di movimento",
+              "suppress_camera_switches": "Sopprimi i controlli della fotocamera Bosch"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATTIVO: ogni scenario Bosch SHC appare anche come entità pulsante in Home Assistant (oltre al servizio `trigger_scenario`). Utile per riquadri dashboard e automazioni che attivano scenari direttamente. Predefinito: disattivato.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Quando ATTIVO: registra il servizio bosch_shc.trigger_rawscan per il debug grezzo dell'API. Disattiva per nasconderlo. Predefinito: attivato.",
               "all_light_switches_as_light": "Attivate questa opzione per presentare ogni dispositivo Light Control II / interruttore luce da incasso come entità `light` in una volta sola — sovrascrive la selezione per dispositivo riportata di seguito. Disattivato (impostazione predefinita) mantiene la scelta per dispositivo. Stessa avvertenza: questo scambia il dominio dell'entità (`switch.*` ↔ `light.*`), quindi aggiornate le automatizzazioni e i pannelli di controllo che fanno riferimento alle vecchie entità.",
               "light_switches_as_light": "Seleziona i dispositivi Light Control II / interruttore luce a incasso che devono apparire come entità `light` invece di entità `switch`. L'interruttore di ogni dispositivo selezionato viene sostituito da una luce acceso/spento. Lascia vuoto (impostazione predefinita) per mantenerli come switches. Modificando questa impostazione si scambia il dominio dell'entità (`switch.*` ↔ `light.*`), quindi aggiorna eventuali automazioni o dashboard che fanno riferimento alla vecchia entità.",
-              "suppress_hue_lights": "Quando ATTIVO: le luci Hue abbinate all'SHC non vengono più esposte come entità da questa integrazione. Utilizzalo per evitare duplicati quando è attiva anche l'integrazione Hue. Predefinito: disattivato (le luci Hue sono visualizzate)."
+              "suppress_hue_lights": "Quando ATTIVO: le luci Hue abbinate all'SHC non vengono più esposte come entità. Utile per evitare duplicati con l'integrazione Hue (https://www.home-assistant.io/integrations/hue/). Predefinito: disattivato.",
+              "suppress_power_sensors": "Quando ATTIVO: i sensori di potenza e consumo energetico (watt / kWh) non vengono creati per prese intelligenti, interruttori BSM, micromoduli e il gestore EMMA. Predefinito: disattivato.",
+              "scenarios_filter": "Lascia vuoto per pulsanti per TUTTI gli scenari (predefinito). Selezionane uno o più per limitare i pulsanti. Si applica solo quando 'Esponi scenari come pulsanti' è attivo.",
+              "suppress_ledvance_lights": "Quando ATTIVO: le luci LEDVANCE abbinate all'SHC non vengono più esposte come entità. Utile per evitare duplicati con l'integrazione LEDVANCE o Zigbee. Predefinito: disattivato.",
+              "suppress_motion_indicator_light": "Quando ATTIVO: l'entità della luminosità del LED del rilevatore di movimento II non viene creata. Predefinito: disattivato.",
+              "suppress_camera_switches": "Quando ATTIVO: i controlli di privacy, luce e notifica per le fotocamere Bosch (Eyes / 360 / Outdoor Gen2) non vengono creati. Usalo con Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Predefinito: disattivato."
             }
           },
           "presence": {

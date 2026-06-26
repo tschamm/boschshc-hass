@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Rawscan diagnosztikai szolgáltatás engedélyezése",
               "all_light_switches_as_light": "AZ ÖSSZES Light/Shutter Control II megjelenítése fényként",
               "light_switches_as_light": "Light/Shutter Control II megjelenítése lámpákként",
-              "suppress_hue_lights": "Hue-lámpák elrejtése a Bosch SHC-ből"
+              "suppress_hue_lights": "Hue-lámpák elrejtése a Bosch SHC-ből",
+              "suppress_power_sensors": "Teljesítmény- és energiaérzékelők elrejtése",
+              "scenarios_filter": "Forgatókönyv-gombok szűrője",
+              "suppress_ledvance_lights": "LEDVANCE-lámpák elrejtése a Bosch SHC-ből",
+              "suppress_motion_indicator_light": "Mozgásérzékelő jelzőfény elrejtése",
+              "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Ha BE van kapcsolva: regisztrálja a bosch_shc.trigger_rawscan szolgáltatást a nyers API hibakereséshez. Kapcsolja ki az elrejtéséhez. Alapértelmezett: be.",
               "all_light_switches_as_light": "Kapcsolja be, hogy minden Light Control II / beépített fénykapcsoló eszközt egyszerre `light` entitásként jelenítsen meg — felülírja az alábbi eszközönkénti kiválasztást. Kikapcsolva (alapértelmezett) az eszközönkénti választás megmarad. Ugyanaz a figyelmeztetés: ez felcseréli az entitás tartományát (`switch.*` ↔ `light.*`), ezért frissítse a régi entitásokra hivatkozó automatizálásokat és irányítópultokat.",
               "light_switches_as_light": "Válassza ki azokat a Light Control II / falon belüli fénykapcsoló eszközöket, amelyeknek `light` entitásként kell megjelenniük a `switch` entitások helyett. Minden kiválasztott eszköz kapcsolója egy be/ki lámpával helyettesítődik. Hagyja üresen (alapértelmezett), hogy kapcsolókként maradjanak. A módosítás felcseréli az entitás doménjét (`switch.*` ↔ `light.*`), ezért frissítse a régi entitásra hivatkozó automatizálásokat vagy irányítópultokat.",
-              "suppress_hue_lights": "Ha BE van kapcsolva: az SHC-hez párosított Hue-lámpák már nem kerülnek entitásként közzétételre ezen integráció által. Használja ezt a duplikációk elkerüléséhez, ha a Hue integráció is aktív. Alapértelmezett: ki (Hue-lámpák láthatók)."
+              "suppress_hue_lights": "Ha BE van kapcsolva: az SHC-hez párosított Hue-lámpák nem kerülnek entitásként közzé. Használja a Hue integráció (https://www.home-assistant.io/integrations/hue/) esetén a duplikációk elkerüléséhez. Alapértelmezett: ki.",
+              "suppress_power_sensors": "Ha BE van kapcsolva: a teljesítmény- és energiaérzékelők (watt / kWh) nem jönnek létre okos dugókhoz, BSM kapcsolókhoz, mikromodulokhoz és az EMMA energiakezelőhöz. Alapértelmezett: ki.",
+              "scenarios_filter": "Hagyd ürösen, ha MINDEN forgatókönyvhez szeretnél gombot (alapértelmezett). Jelölj ki egyet vagy többet a gombok adott forgatókönyvekre való korlátozásához. Csak akkor érvényes, ha a 'Forgatókönyvek megjelenítése gombként' be van kapcsolva.",
+              "suppress_ledvance_lights": "Ha BE van kapcsolva: az SHC-hez párosított LEDVANCE-lámpák nem kerülnek entitásként közzé. Használja a LEDVANCE vagy Zigbee integráció esetén a duplikációk elkerüléséhez. Alapértelmezett: ki.",
+              "suppress_motion_indicator_light": "Ha BE van kapcsolva: a mozgásérzékelő II jelzőfény-entitása nem jön létre. Alapértelmezett: ki.",
+              "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant) mellé. Alapértelmezett: ki."
             }
           },
           "presence": {

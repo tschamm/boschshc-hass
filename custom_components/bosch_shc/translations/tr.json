@@ -97,7 +97,12 @@
               "enable_rawscan_service": "rawscan tanılama hizmetini etkinleştir",
               "all_light_switches_as_light": "TÜM Light/Shutter Control II'leri ışık olarak göster",
               "light_switches_as_light": "Light/Shutter Control II'yi ışık olarak göster",
-              "suppress_hue_lights": "Bosch SHC'den Hue ışıklarını gizle"
+              "suppress_hue_lights": "Bosch SHC'den Hue ışıklarını gizle",
+              "suppress_power_sensors": "Güç ve enerji sensörlerini gizle",
+              "scenarios_filter": "Senaryo düğmesi filtresi",
+              "suppress_ledvance_lights": "Bosch SHC'den LEDVANCE ışıklarını gizle",
+              "suppress_motion_indicator_light": "Hareket dedektörü gösterge ışığını gizle",
+              "suppress_camera_switches": "Bosch kamera anahtarlarını gizle"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "AÇIK olduğunda: ham API hata ayıklaması için bosch_shc.trigger_rawscan hizmetini kaydeder. Gizlemek için KAPALI yapın. Varsayılan: açık.",
               "all_light_switches_as_light": "Her Light Control II / sıva altı ışık anahtarı cihazını `light` varlığı olarak tek seferde sunmak için açın — aşağıdaki cihaz başına seçimi geçersiz kılar. Kapalı (varsayılan), cihaz başına seçimi korur. Aynı uyarı: bu, varlık etki alanını değiştirir (`switch.*` ↔ `light.*`), bu nedenle eski varlıklara başvuran otomasyon ve panolarınızı güncelleyin.",
               "light_switches_as_light": "`switch` varlıkları yerine `light` varlıkları olarak görünmesi gereken Light Control II / gömme ışık anahtarı cihazlarını seçin. Seçilen her cihazın anahtarı, açık/kapalı bir ışıkla değiştirilir. Bunları switch olarak tutmak için boş bırakın (varsayılan). Bunu değiştirmek varlık etki alanını değiştirir (`switch.*` ↔ `light.*`), bu nedenle eski varlığa başvuran otomasyonları veya pano öğelerini güncelleyin.",
-              "suppress_hue_lights": "AÇIK olduğunda: SHC'ye eşleştirilmiş Hue ışıkları artık bu entegrasyon tarafından varlık olarak sunulmaz. Hue entegrasyonu da etkinse yinelenenleri önlemek için bunu kullanın. Varsayılan: kapalı (Hue ışıkları gösterilir)."
+              "suppress_hue_lights": "AÇIK olduğunda: SHC'ye eşleştirilmiş Hue ışıkları artık varlık olarak sunulmaz. Hue entegrasyonu (https://www.home-assistant.io/integrations/hue/) ile yinelenenleri önlemek için kullanın. Varsayılan: kapalı.",
+              "suppress_power_sensors": "AÇIK olduğunda: akıllı prizler, BSM anahtarı, mikromodüller ve EMMA enerji yöneticisi için güç ve enerji sensörleri (watt / kWh) oluşturulmaz. Varsayılan: kapalı.",
+              "scenarios_filter": "TÜM senaryolar için düğme oluşturmak üzere boş bırakın (varsayılan). Düğmeleri sınırlamak için bir veya daha fazlasını seçin. Yalnızca 'Senaryoları düğme olarak göster' açıkken geçerlidir.",
+              "suppress_ledvance_lights": "AÇIK olduğunda: SHC'ye eşleştirilmiş LEDVANCE ışıkları artık varlık olarak sunulmaz. LEDVANCE veya Zigbee entegrasyonu ile yinelenenleri önlemek için kullanın. Varsayılan: kapalı.",
+              "suppress_motion_indicator_light": "AÇIK olduğunda: Hareket Dedektörü II gösterge LED varlığı oluşturulmaz. Varsayılan: kapalı.",
+              "suppress_camera_switches": "AÇIK olduğunda: Bosch kameraları (Eyes / 360 / Outdoor Gen2) için gizlilik, ışık ve bildirim anahtarları oluşturulmaz. Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant) ile birlikte kullanın. Varsayılan: kapalı."
             }
           },
           "presence": {

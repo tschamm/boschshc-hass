@@ -97,7 +97,12 @@
               "enable_rawscan_service": "Aktifkan layanan diagnostik rawscan",
               "all_light_switches_as_light": "Tampilkan SEMUA Light/Shutter Control II sebagai lampu",
               "light_switches_as_light": "Tampilkan Light/Shutter Control II sebagai lampu",
-              "suppress_hue_lights": "Sembunyikan lampu Hue dari Bosch SHC"
+              "suppress_hue_lights": "Sembunyikan lampu Hue dari Bosch SHC",
+              "suppress_power_sensors": "Sembunyikan sensor daya dan energi",
+              "scenarios_filter": "Filter tombol skenario",
+              "suppress_ledvance_lights": "Sembunyikan lampu LEDVANCE dari Bosch SHC",
+              "suppress_motion_indicator_light": "Sembunyikan lampu indikator detektor gerak",
+              "suppress_camera_switches": "Sembunyikan sakelar kamera Bosch"
             },
             "data_description": {
               "scenarios_as_buttons": "Jika AKTIF: setiap skenario Bosch SHC juga muncul sebagai entitas tombol di Home Assistant (selain layanan trigger_scenario). Berguna untuk ubin dasbor dan otomasi yang memicu skenario secara langsung. Default: nonaktif.",
@@ -105,7 +110,12 @@
               "enable_rawscan_service": "Jika AKTIF: mendaftarkan layanan bosch_shc.trigger_rawscan untuk debugging API mentah. Nonaktifkan untuk menyembunyikannya. Default: aktif.",
               "all_light_switches_as_light": "Aktifkan untuk menampilkan setiap perangkat Light Control II / sakelar lampu tanam sebagai entitas `light` sekaligus — menimpa pilihan per perangkat di bawah. Nonaktif (default) mempertahankan pilihan per perangkat. Catatan yang sama: ini menukar domain entitas (`switch.*` ↔ `light.*`), jadi perbarui otomasi dan dasbor yang merujuk entitas lama.",
               "light_switches_as_light": "Pilih perangkat Light Control II / sakelar lampu tanam yang harus muncul sebagai entitas `light` alih-alih entitas `switch`. Sakelar setiap perangkat yang dipilih diganti dengan lampu hidup/mati. Biarkan kosong (default) untuk tetap menjadikannya sebagai switches. Mengubah ini akan mengganti domain entitas (`switch.*` ↔ `light.*`), jadi perbarui otomasi atau dasbor yang mereferensikan entitas lama.",
-              "suppress_hue_lights": "Saat AKTIF: lampu Hue yang dipasangkan ke SHC tidak lagi ditampilkan sebagai entitas oleh integrasi ini. Gunakan ini untuk menghindari duplikat saat integrasi Hue juga aktif. Default: nonaktif (lampu Hue ditampilkan)."
+              "suppress_hue_lights": "Saat AKTIF: lampu Hue yang dipasangkan ke SHC tidak lagi ditampilkan sebagai entitas. Gunakan untuk menghindari duplikat dengan integrasi Hue (https://www.home-assistant.io/integrations/hue/). Default: nonaktif.",
+              "suppress_power_sensors": "Saat AKTIF: sensor daya dan energi (watt / kWh) tidak dibuat untuk colokan pintar, sakelar BSM, mikromodul, dan manajer EMMA. Default: nonaktif.",
+              "scenarios_filter": "Biarkan kosong untuk membuat tombol untuk SEMUA skenario (default). Pilih satu atau lebih untuk membatasi tombol. Berlaku hanya saat 'Tampilkan skenario sebagai tombol' aktif.",
+              "suppress_ledvance_lights": "Saat AKTIF: lampu LEDVANCE yang dipasangkan ke SHC tidak lagi ditampilkan sebagai entitas. Gunakan untuk menghindari duplikat dengan integrasi LEDVANCE atau Zigbee. Default: nonaktif.",
+              "suppress_motion_indicator_light": "Saat AKTIF: entitas LED indikator detektor gerak II tidak dibuat. Default: nonaktif.",
+              "suppress_camera_switches": "Saat AKTIF: sakelar privasi, lampu, dan notifikasi untuk kamera Bosch (Eyes / 360 / Outdoor Gen2) tidak dibuat. Gunakan dengan Bosch Camera Tool (https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant). Default: nonaktif."
             }
           },
           "presence": {
