@@ -659,9 +659,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         or session.device_helper.camera_360
         or session.device_helper.camera_outdoor_gen2
     )
-    camera_tool_installed = bool(
-        hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
-    )
+    camera_tool_installed = bool(hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN))
     if has_cameras and not camera_tool_installed:
         ir.async_create_issue(
             hass,
