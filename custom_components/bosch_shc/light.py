@@ -52,11 +52,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 )
     else:
         hue_lights = session.device_helper.hue_lights
-    ledvance_lights = (
-        []
-        if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False)
-        else session.device_helper.ledvance_lights
-    )
+    if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False):
+        ledvance_lights = []
+        dev_registry = get_dev_reg(hass)
+        for shc_device in session.device_helper.ledvance_lights:
+            dev_entry = dev_registry.async_get_device(
+                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            )
+            if dev_entry is not None:
+                dev_registry.async_update_device(
+                    dev_entry.id, remove_config_entry_id=config_entry.entry_id
+                )
+    else:
+        ledvance_lights = session.device_helper.ledvance_lights
     for light in (
         ledvance_lights + session.device_helper.micromodule_dimmers + hue_lights
     ):

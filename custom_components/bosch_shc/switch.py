@@ -33,6 +33,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -531,6 +532,20 @@ async def async_setup_entry(  # noqa: C901
             )
 
     suppress_cameras = config_entry.options.get(OPT_SUPPRESS_CAMERA_SWITCHES, False)
+    if suppress_cameras:
+        dev_registry = get_dev_reg(hass)
+        for shc_device in (
+            list(session.device_helper.camera_eyes)
+            + list(session.device_helper.camera_360)
+            + list(session.device_helper.camera_outdoor_gen2)
+        ):
+            dev_entry = dev_registry.async_get_device(
+                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            )
+            if dev_entry is not None:
+                dev_registry.async_update_device(
+                    dev_entry.id, remove_config_entry_id=config_entry.entry_id
+                )
     for switch in session.device_helper.camera_eyes:
         if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
