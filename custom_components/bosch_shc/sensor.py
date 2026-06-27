@@ -11,14 +11,30 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONCENTRATION_PARTS_PER_MILLION,
     LIGHT_LUX,
-    PERCENTAGE,
     Platform,
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
 )
+
+try:
+    from homeassistant.const import UnitOfRatio
+except ImportError:
+    from homeassistant.const import (  # type: ignore[assignment]
+        CONCENTRATION_PARTS_PER_MILLION as _ppm,
+    )
+    from homeassistant.const import (
+        PERCENTAGE as _pct,
+    )
+
+    class UnitOfRatio:  # type: ignore[no-redef]
+        """Shim for HA < 2024.x test environments."""
+
+        PERCENTAGE = _pct
+        PARTS_PER_MILLION = _ppm
+
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -508,7 +524,7 @@ class HumiditySensor(SHCEntity, SensorEntity):
     """Representation of an SHC humidity reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.HUMIDITY
-    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
 
@@ -532,7 +548,7 @@ class PuritySensor(SHCEntity, SensorEntity):
     # SensorDeviceClass.CO2 mis-classified the reading (and pulled in HA's CO2
     # safety thresholds / statistics handling). #204
     _attr_icon = "mdi:air-filter"
-    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = UnitOfRatio.PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
 
@@ -854,7 +870,7 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     """Representation of an SHC valve tappet reporting sensor."""
 
     _attr_icon = "mdi:gauge"
-    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_suggested_display_precision = 0
@@ -1112,7 +1128,7 @@ class SirenBatterySensor(SHCEntity, SensorEntity):
     """Outdoor Siren battery charge (#120)."""
 
     _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_battery"
