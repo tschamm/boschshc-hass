@@ -437,7 +437,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
                 self._service = service
                 break
 
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+        self._ha_stop_unsub = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events and cache device_id."""
@@ -450,8 +452,14 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
                 self._device.id + "_eventlistener", self._input_events_handler
             )
 
+    async def async_will_remove_from_hass(self):
+        """Cancel HA-stop listener on entity removal."""
+        if self._ha_stop_unsub is not None:
+            self._ha_stop_unsub()
+            self._ha_stop_unsub = None
+
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread).
+        """Handle device input events.
 
         Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
         re-delivers the last LatestMotion state unchanged.  Only fire when
@@ -466,8 +474,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
             )
             return
         self._last_fired_latestmotion = current_ts
-        self.hass.loop.call_soon_threadsafe(
-            self.hass.bus.fire,
+        self.hass.bus.async_fire(
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self._cached_device_id,
@@ -482,10 +489,12 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
+        self._ha_stop_unsub = None
         LOGGER.debug(
             "Stopping motion detection event listener for %s", self._device.name
         )
-        self._service.unsubscribe_callback(self._device.id + "_eventlistener")
+        if self._service is not None:
+            self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
     def is_on(self):
@@ -543,7 +552,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
                 self._service = service
                 break
 
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+        self._ha_stop_unsub = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events and cache device_id."""
@@ -556,8 +567,14 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
                 self._device.id + "_eventlistener", self._input_events_handler
             )
 
+    async def async_will_remove_from_hass(self):
+        """Cancel HA-stop listener on entity removal."""
+        if self._ha_stop_unsub is not None:
+            self._ha_stop_unsub()
+            self._ha_stop_unsub = None
+
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread).
+        """Handle device input events.
 
         Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
         re-delivers the last Alarm state unchanged.  Only fire when the
@@ -572,8 +589,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             )
             return
         self._last_fired_alarmstate = current_state
-        self._hass.loop.call_soon_threadsafe(
-            self._hass.bus.fire,
+        self._hass.bus.async_fire(
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self._cached_device_id,
@@ -587,8 +603,10 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
+        self._ha_stop_unsub = None
         LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
-        self._service.unsubscribe_callback(self._device.id + "_eventlistener")
+        if self._service is not None:
+            self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
     def is_on(self):
@@ -705,7 +723,9 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
                 self._service = service
                 break
 
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
+        self._ha_stop_unsub = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events and cache device_id."""
@@ -718,8 +738,14 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
                 self._device.id + "_eventlistener", self._input_events_handler
             )
 
+    async def async_will_remove_from_hass(self):
+        """Cancel HA-stop listener on entity removal."""
+        if self._ha_stop_unsub is not None:
+            self._ha_stop_unsub()
+            self._ha_stop_unsub = None
+
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread).
+        """Handle device input events.
 
         Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
         re-delivers the last SurveillanceAlarm state unchanged.  Only fire
@@ -734,8 +760,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
             )
             return
         self._last_fired_alarm = current_alarm
-        self._hass.loop.call_soon_threadsafe(
-            self._hass.bus.fire,
+        self._hass.bus.async_fire(
             EVENT_BOSCH_SHC,
             {
                 ATTR_DEVICE_ID: self._cached_device_id,
@@ -749,8 +774,10 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
     @callback
     def _handle_ha_stop(self, _):
         """Handle Home Assistant stopping."""
+        self._ha_stop_unsub = None
         LOGGER.debug("Stopping alarm event listener for %s", self._device.name)
-        self._service.unsubscribe_callback(self._device.id + "_eventlistener")
+        if self._service is not None:
+            self._service.unsubscribe_callback(self._device.id + "_eventlistener")
 
     @property
     def is_on(self):

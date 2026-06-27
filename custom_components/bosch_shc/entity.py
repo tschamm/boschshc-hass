@@ -159,11 +159,8 @@ class SHCEntity(Entity):
 
         def update_entity_information():
             if self._device.deleted:
-                # Fires from the SHC poll thread → schedule on the loop safely
-                # instead of hass.add_job (#288-cluster).
-                self.hass.loop.call_soon_threadsafe(
-                    self.hass.async_create_task,
-                    async_remove_devices(self.hass, self, self._entry_id),
+                self.hass.async_create_task(
+                    async_remove_devices(self.hass, self, self._entry_id)
                 )
             else:
                 self._update_attr()

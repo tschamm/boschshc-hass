@@ -108,6 +108,7 @@ def _make_hass():
     bus = SimpleNamespace(
         async_listen_once=_async_listen_once,
         fire=lambda *args, **kwargs: None,
+        async_fire=lambda *args, **kwargs: None,
     )
 
     # Synchronous executor: run fn(*args) immediately (no thread).
@@ -818,7 +819,7 @@ class TestMotionDetectionSensorInit:
         dev = _make_base_device("md-ev", device_services=[lm_svc])
         dev.latestmotion = "2026-06-20T08:00:00.000Z"
         hass = _make_hass()
-        hass.bus.fire = lambda event, data: fired.append((event, data))
+        hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = MotionDetectionSensor(hass=hass, device=dev, entry_id="E1")
         sensor._cached_device_id = "ha-device-id"
         sensor._input_events_handler()
@@ -881,7 +882,7 @@ class TestSmokeDetectorSensorInit:
         dev.alarmstate = SHCSmokeDetector.AlarmService.State.PRIMARY_ALARM
         dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
         hass = _make_hass()
-        hass.bus.fire = lambda event, data: fired.append((event, data))
+        hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         sensor._cached_device_id = "ha-device-id"
         sensor._input_events_handler()
@@ -981,7 +982,7 @@ class TestSmokeDetectionSystemSensorInit:
         dev = _make_base_device("sds-ev", device_services=[surv_svc])
         dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
         hass = _make_hass()
-        hass.bus.fire = lambda event, data: fired.append((event, data))
+        hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         sensor._cached_device_id = "ha-device-id"
         sensor._input_events_handler()

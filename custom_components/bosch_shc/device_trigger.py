@@ -1,6 +1,6 @@
 """Provides device triggers for Bosch Smart Home Controller integration."""
 
-from typing import List, Tuple
+from __future__ import annotations
 
 import voluptuous as vol
 from boschshcpy import SHCDevice, SHCSession
@@ -45,7 +45,7 @@ TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
 )
 
 
-async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
+async def get_device_from_id(hass, device_id) -> tuple[SHCDevice, str]:
     """Get the device for the given device id."""
     dev_registry = dr.async_get(hass)
     for config_entry in hass.data[DOMAIN]:
@@ -76,7 +76,7 @@ async def get_device_from_id(hass, device_id) -> Tuple[SHCDevice, str]:
     return None, ""
 
 
-async def async_get_triggers(hass: HomeAssistant, device_id: str) -> List[dict]:
+async def async_get_triggers(hass: HomeAssistant, device_id: str) -> list[dict]:
     """List device triggers for SHC devices."""
     triggers = []
 

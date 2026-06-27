@@ -152,14 +152,14 @@ class TestSHCScenarioEventProperties:
 
 
 # ---------------------------------------------------------------------------
-# SHCScenarioEvent — _event_callback dispatches via call_soon_threadsafe
+# SHCScenarioEvent — _event_callback dispatches directly (no thread marshalling)
 # ---------------------------------------------------------------------------
 
 class TestSHCScenarioEventCallback:
-    """_event_callback must schedule via call_soon_threadsafe, not call directly."""
+    """_event_callback must call _dispatch_event directly, not via call_soon_threadsafe."""
 
-    def _make_entity_capturing(self):
-        """Returns entity with capturing (non-executing) hass."""
+    def _make_entity(self):
+        """Returns entity with capturing hass."""
         scenario = SimpleNamespace(id="sc-cb", name="Abend")
         session = SimpleNamespace(
             information=SimpleNamespace(unique_id="uid-cb"),
@@ -178,33 +178,19 @@ class TestSHCScenarioEventCallback:
         entity.schedule_update_ha_state = MagicMock()
         return entity
 
-    def test_event_callback_uses_call_soon_threadsafe(self):
-        entity = self._make_entity_capturing()
+    def test_event_callback_calls_dispatch_directly(self):
+        entity = self._make_entity()
         event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "2026-06-20"}
         entity._event_callback(event_data)
-        assert entity.hass.loop.call_soon_threadsafe.called
-
-    def test_event_callback_does_not_call_trigger_directly(self):
-        entity = self._make_entity_capturing()
-        event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "2026-06-20"}
-        entity._event_callback(event_data)
-        # With capturing hass (no side_effect), _trigger_event is NOT called directly
-        entity._trigger_event.assert_not_called()
-
-    def test_event_callback_passes_dispatch_event_fn(self):
-        entity = self._make_entity_capturing()
-        event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "t"}
-        entity._event_callback(event_data)
-        args = entity.hass.loop.call_soon_threadsafe.call_args[0]
-        assert callable(args[0])
+        assert not entity.hass.loop.call_soon_threadsafe.called
+        entity._trigger_event.assert_called_once()
 
     def test_event_callback_event_type_is_scenario(self):
-        entity = self._make_entity_capturing()
+        entity = self._make_entity()
         event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "t"}
         entity._event_callback(event_data)
-        args = entity.hass.loop.call_soon_threadsafe.call_args[0]
-        # Second arg is the event_type string
-        assert args[1] == "SCENARIO"
+        call_args = entity._trigger_event.call_args[0]
+        assert call_args[0] == "SCENARIO"
 
 
 # ---------------------------------------------------------------------------

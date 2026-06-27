@@ -1,7 +1,8 @@
-"""Unit tests for thread-safe bus.fire wrapping in __init__.py and binary_sensor.py.
+"""Unit tests for event dispatching in __init__.py and binary_sensor.py.
 
 Verifies that _input_events_handler and _scenario_trigger call
-hass.loop.call_soon_threadsafe instead of hass.bus.fire directly.
+hass.bus.async_fire directly (callbacks fire on the event loop; no
+call_soon_threadsafe marshalling needed).
 
 Pattern: __new__ bypass + SimpleNamespace device + MagicMock hass.
 No HA harness, no async_setup_entry.
@@ -113,19 +114,18 @@ class TestMotionSensorThreadSafe:
         )
         return sensor
 
-    def test_uses_call_soon_threadsafe_not_direct_fire(self):
+    def test_uses_async_fire_not_call_soon_threadsafe(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
 
-        assert sensor.hass.loop.call_soon_threadsafe.called
-        assert not sensor.hass.bus.fire.called
+        assert sensor.hass.bus.async_fire.called
+        assert not sensor.hass.loop.call_soon_threadsafe.called
 
     def test_event_type_is_motion(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
 
-        args = sensor.hass.loop.call_soon_threadsafe.call_args[0]
-        payload = args[2]
+        payload = sensor.hass.bus.async_fire.call_args[0][1]
         assert payload[ATTR_EVENT_TYPE] == "MOTION"
 
 
@@ -146,19 +146,18 @@ class TestSmokeDetectorSensorThreadSafe:
         )
         return sensor
 
-    def test_uses_call_soon_threadsafe_not_direct_fire(self):
+    def test_uses_async_fire_not_call_soon_threadsafe(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
 
-        assert sensor._hass.loop.call_soon_threadsafe.called
-        assert not sensor._hass.bus.fire.called
+        assert sensor._hass.bus.async_fire.called
+        assert not sensor._hass.loop.call_soon_threadsafe.called
 
     def test_event_subtype_is_alarm_state(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
 
-        args = sensor._hass.loop.call_soon_threadsafe.call_args[0]
-        payload = args[2]
+        payload = sensor._hass.bus.async_fire.call_args[0][1]
         assert payload[ATTR_EVENT_SUBTYPE] == "PRIMARY_ALARM"
 
 
@@ -179,17 +178,16 @@ class TestSmokeDetectionSystemSensorThreadSafe:
         )
         return sensor
 
-    def test_uses_call_soon_threadsafe_not_direct_fire(self):
+    def test_uses_async_fire_not_call_soon_threadsafe(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
 
-        assert sensor._hass.loop.call_soon_threadsafe.called
-        assert not sensor._hass.bus.fire.called
+        assert sensor._hass.bus.async_fire.called
+        assert not sensor._hass.loop.call_soon_threadsafe.called
 
     def test_event_subtype_is_alarm_name(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
 
-        args = sensor._hass.loop.call_soon_threadsafe.call_args[0]
-        payload = args[2]
+        payload = sensor._hass.bus.async_fire.call_args[0][1]
         assert payload[ATTR_EVENT_SUBTYPE] == "ALARM_ON"

@@ -1,8 +1,8 @@
-"""Unit tests for event.py _event_callback thread-safety.
+"""Unit tests for event.py _event_callback dispatch behavior.
 
-Verifies that all EventEntity subclasses use call_soon_threadsafe to dispatch
-_trigger_event + schedule_update_ha_state, not calling them directly from the
-polling thread.
+Verifies that all EventEntity subclasses call _dispatch_event directly
+(no call_soon_threadsafe — callbacks fire on the event loop already),
+and that _trigger_event is called through _dispatch_event.
 
 Pattern: __new__ bypass + MagicMock hass. No HA harness.
 """
@@ -48,13 +48,12 @@ class TestUniversalSwitchEventDispatch:
         entity.schedule_update_ha_state = MagicMock()
         return entity
 
-    def test_event_callback_uses_call_soon_threadsafe(self):
+    def test_event_callback_calls_dispatch_directly(self):
         entity = self._make_entity()
         entity._event_callback()
 
-        assert entity.hass.loop.call_soon_threadsafe.called
-        # _trigger_event must NOT be called directly from _event_callback
-        entity._trigger_event.assert_not_called()
+        assert not entity.hass.loop.call_soon_threadsafe.called
+        entity._trigger_event.assert_called_once()
 
     def test_dispatch_event_calls_trigger_event(self):
         entity = self._make_entity()
@@ -99,11 +98,11 @@ class TestMotionDetectorEventDispatch:
         entity.schedule_update_ha_state = MagicMock()
         return entity
 
-    def test_event_callback_uses_call_soon_threadsafe(self):
+    def test_event_callback_calls_dispatch_directly(self):
         entity = self._make_entity()
         entity._event_callback()
-        assert entity.hass.loop.call_soon_threadsafe.called
-        entity._trigger_event.assert_not_called()
+        assert not entity.hass.loop.call_soon_threadsafe.called
+        entity._trigger_event.assert_called_once()
 
     def test_dispatch_calls_trigger_and_schedule(self):
         entity = self._make_entity()
@@ -135,11 +134,11 @@ class TestSmokeDetectionSystemEventDispatch:
         entity.schedule_update_ha_state = MagicMock()
         return entity
 
-    def test_event_callback_uses_call_soon_threadsafe(self):
+    def test_event_callback_calls_dispatch_directly(self):
         entity = self._make_entity()
         entity._event_callback()
-        assert entity.hass.loop.call_soon_threadsafe.called
-        entity._trigger_event.assert_not_called()
+        assert not entity.hass.loop.call_soon_threadsafe.called
+        entity._trigger_event.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -165,8 +164,8 @@ class TestSmokeDetectorEventDispatch:
         entity.schedule_update_ha_state = MagicMock()
         return entity
 
-    def test_event_callback_uses_call_soon_threadsafe(self):
+    def test_event_callback_calls_dispatch_directly(self):
         entity = self._make_entity()
         entity._event_callback()
-        assert entity.hass.loop.call_soon_threadsafe.called
-        entity._trigger_event.assert_not_called()
+        assert not entity.hass.loop.call_soon_threadsafe.called
+        entity._trigger_event.assert_called_once()

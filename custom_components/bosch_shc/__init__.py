@@ -643,6 +643,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     for switch_device in session.device_helper.universal_switches:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
         await event_listener.async_setup()
+        entry.runtime_data.switch_event_listeners.append(event_listener)
 
     # Register rawscan diagnostic service when the option is enabled (default: on).
     # The service is domain-scoped but opt-in: only register when at least one
@@ -690,6 +691,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for _unsub in runtime.silent_mode_unsubs:
         _unsub()
     runtime.silent_mode_unsubs.clear()
+    for listener in runtime.switch_event_listeners:
+        listener.shutdown()
+    runtime.switch_event_listeners.clear()
     await runtime.session.stop_polling()
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

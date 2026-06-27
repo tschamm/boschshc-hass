@@ -299,11 +299,11 @@ class TestOnStateChangedCallback:
         on_state_changed()
         assert ent.schedule_calls >= 1
 
-    def test_update_entity_information_deleted_calls_add_job(self):
+    def test_update_entity_information_deleted_calls_async_create_task(self):
         """When device.deleted is True, update_entity_information should call
-        hass.loop.call_soon_threadsafe (not hass.add_job) to schedule removal."""
+        hass.async_create_task directly (not call_soon_threadsafe)."""
         svc = FakeService()
-        threadsafe_calls = []
+        task_calls = []
         ent = TrackingEntity()
         ent._device = SimpleNamespace(
             name="Dev",
@@ -324,13 +324,13 @@ class TestOnStateChangedCallback:
         ent.update_attr_calls = 0
         ent.schedule_calls = 0
 
-        # Fake hass with loop.call_soon_threadsafe (new path after #288 fix)
+        # Fake hass with async_create_task (direct call path after thread-safety fix)
         fake_loop = SimpleNamespace(
-            call_soon_threadsafe=lambda *a, **kw: threadsafe_calls.append(a)
+            call_soon_threadsafe=lambda *a, **kw: None
         )
         fake_hass = SimpleNamespace(
             loop=fake_loop,
-            async_create_task=lambda coro: coro,
+            async_create_task=lambda coro: task_calls.append(coro),
         )
         ent.hass = fake_hass
 
@@ -351,8 +351,8 @@ class TestOnStateChangedCallback:
         assert dev_callbacks, "No device subscribe_callback registered"
         update_entity_information = dev_callbacks[0]
 
-        # Calling it with deleted=True should call hass.loop.call_soon_threadsafe
+        # Calling it with deleted=True should call hass.async_create_task directly
         update_entity_information()
-        assert len(threadsafe_calls) >= 1, (
-            "Expected hass.loop.call_soon_threadsafe to be called for deleted device"
+        assert len(task_calls) >= 1, (
+            "Expected hass.async_create_task to be called for deleted device"
         )

@@ -42,7 +42,7 @@ from custom_components.bosch_shc.const import (
 # ---------------------------------------------------------------------------
 
 def _make_hass():
-    """Minimal hass mock with a tracked loop.call_soon_threadsafe."""
+    """Minimal hass mock with a tracked bus.async_fire."""
     hass = MagicMock(name="hass")
     hass.loop = MagicMock(name="loop")
     hass.bus = MagicMock(name="bus")
@@ -50,8 +50,8 @@ def _make_hass():
 
 
 def _fire_count(hass):
-    """Number of times call_soon_threadsafe was called on this hass mock."""
-    return hass.loop.call_soon_threadsafe.call_count
+    """Number of times bus.async_fire was called on this hass mock."""
+    return hass.bus.async_fire.call_count
 
 
 # ---------------------------------------------------------------------------
@@ -83,9 +83,7 @@ class TestMotionReplayGuard:
         """Event fired must carry MOTION type."""
         sensor = self._make_sensor("2026-06-20T19:21:00.000Z")
         sensor._input_events_handler()
-        args = sensor.hass.loop.call_soon_threadsafe.call_args[0]
-        # args: (bus.fire, EVENT_BOSCH_SHC, payload_dict)
-        payload = args[2]
+        payload = sensor.hass.bus.async_fire.call_args[0][1]
         assert payload[ATTR_EVENT_TYPE] == "MOTION"
 
     def test_replayed_snapshot_does_not_fire(self):
@@ -161,8 +159,7 @@ class TestSmokeDetectorReplayGuard:
         """Event fired must carry the alarmstate name as ATTR_EVENT_SUBTYPE."""
         sensor = self._make_sensor("PRIMARY_ALARM")
         sensor._input_events_handler()
-        args = sensor._hass.loop.call_soon_threadsafe.call_args[0]
-        payload = args[2]
+        payload = sensor._hass.bus.async_fire.call_args[0][1]
         assert payload[ATTR_EVENT_TYPE] == "ALARM"
         assert payload[ATTR_EVENT_SUBTYPE] == "PRIMARY_ALARM"
 
@@ -235,8 +232,7 @@ class TestSmokeDetectionSystemReplayGuard:
         """Event fired must carry the alarm name as ATTR_EVENT_SUBTYPE."""
         sensor = self._make_sensor("ALARM_ON")
         sensor._input_events_handler()
-        args = sensor._hass.loop.call_soon_threadsafe.call_args[0]
-        payload = args[2]
+        payload = sensor._hass.bus.async_fire.call_args[0][1]
         assert payload[ATTR_EVENT_TYPE] == "ALARM"
         assert payload[ATTR_EVENT_SUBTYPE] == "ALARM_ON"
 

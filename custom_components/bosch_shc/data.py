@@ -20,3 +20,4 @@ class SHCData:
     cert_check_unsub: Callable[[], None] | None = field(default=None)
     presence_unsub: Callable[[], None] | None = field(default=None)
     silent_mode_unsubs: list[Callable[[], None]] = field(default_factory=list)
+    switch_event_listeners: list = field(default_factory=list)

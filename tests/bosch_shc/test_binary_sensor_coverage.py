@@ -222,7 +222,7 @@ class TestBatterySensorLoggingPaths:
 # ---------------------------------------------------------------------------
 
 class TestMotionDetectionSensorInputEventsPayload:
-    """_input_events_handler fires via call_soon_threadsafe with correct payload."""
+    """_input_events_handler fires via bus.async_fire with correct payload."""
 
     def _make_sensor(self, device_id="hdm:md:1", name="Hall Motion",
                      latestmotion="2026-06-20T08:00:00.000Z",
@@ -238,64 +238,52 @@ class TestMotionDetectionSensorInputEventsPayload:
         sensor.hass.bus = MagicMock(name="bus")
         return sensor
 
-    def test_uses_call_soon_threadsafe(self):
-        sensor = self._make_sensor()
-        sensor._input_events_handler()
-        assert sensor.hass.loop.call_soon_threadsafe.called
+    def _payload(self, sensor):
+        """Return the event payload passed to bus.async_fire."""
+        return sensor.hass.bus.async_fire.call_args[0][1]
 
-    def test_does_not_call_bus_fire_directly(self):
+    def test_uses_async_fire(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
-        sensor.hass.bus.fire.assert_not_called()
-
-    def test_call_soon_threadsafe_passes_bus_fire_as_first_arg(self):
-        sensor = self._make_sensor()
-        sensor._input_events_handler()
-        args = sensor.hass.loop.call_soon_threadsafe.call_args[0]
-        assert args[0] is sensor.hass.bus.fire
+        assert sensor.hass.bus.async_fire.called
+        assert not sensor.hass.loop.call_soon_threadsafe.called
 
     def test_event_name_is_bosch_shc_event(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
-        args = sensor.hass.loop.call_soon_threadsafe.call_args[0]
-        assert args[1] == EVENT_BOSCH_SHC
+        event_name = sensor.hass.bus.async_fire.call_args[0][0]
+        assert event_name == EVENT_BOSCH_SHC
 
     def test_payload_event_type_is_motion(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
-        payload = sensor.hass.loop.call_soon_threadsafe.call_args[0][2]
-        assert payload[ATTR_EVENT_TYPE] == "MOTION"
+        assert self._payload(sensor)[ATTR_EVENT_TYPE] == "MOTION"
 
     def test_payload_event_subtype_is_empty_string(self):
         sensor = self._make_sensor()
         sensor._input_events_handler()
-        payload = sensor.hass.loop.call_soon_threadsafe.call_args[0][2]
-        assert payload[ATTR_EVENT_SUBTYPE] == ""
+        assert self._payload(sensor)[ATTR_EVENT_SUBTYPE] == ""
 
     def test_payload_device_id_is_cached_device_id(self):
         sensor = self._make_sensor(cached_device_id="my-ha-device-42")
         sensor._input_events_handler()
-        payload = sensor.hass.loop.call_soon_threadsafe.call_args[0][2]
-        assert payload[ATTR_DEVICE_ID] == "my-ha-device-42"
+        assert self._payload(sensor)[ATTR_DEVICE_ID] == "my-ha-device-42"
 
     def test_payload_id_is_device_id(self):
         sensor = self._make_sensor(device_id="hdm:md:99")
         sensor._input_events_handler()
-        payload = sensor.hass.loop.call_soon_threadsafe.call_args[0][2]
-        assert payload[ATTR_ID] == "hdm:md:99"
+        assert self._payload(sensor)[ATTR_ID] == "hdm:md:99"
 
     def test_payload_name_is_device_name(self):
         sensor = self._make_sensor(name="Garden Motion")
         sensor._input_events_handler()
-        payload = sensor.hass.loop.call_soon_threadsafe.call_args[0][2]
-        assert payload[ATTR_NAME] == "Garden Motion"
+        assert self._payload(sensor)[ATTR_NAME] == "Garden Motion"
 
     def test_payload_last_time_triggered(self):
         ts = "2026-06-01T10:30:00.000Z"
         sensor = self._make_sensor(latestmotion=ts)
         sensor._input_events_handler()
-        payload = sensor.hass.loop.call_soon_threadsafe.call_args[0][2]
-        assert payload[ATTR_LAST_TIME_TRIGGERED] == ts
+        assert self._payload(sensor)[ATTR_LAST_TIME_TRIGGERED] == ts
 
 
 # ---------------------------------------------------------------------------

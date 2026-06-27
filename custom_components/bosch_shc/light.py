@@ -176,6 +176,8 @@ class LightSwitch(SHCEntity, LightEntity):
     def hs_color(self):
         """Return the rgb color of this light."""
         rgb_raw = self._device.rgb
+        if rgb_raw is None:
+            return None
         rgb = ((rgb_raw >> 16) & 0xFF, (rgb_raw >> 8) & 0xFF, rgb_raw & 0xFF)
         return color_util.color_RGB_to_hs(*rgb)
 
