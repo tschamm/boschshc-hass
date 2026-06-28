@@ -342,6 +342,9 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
         """Initialize the Universal Switch device."""
         super().__init__(device, entry_id)
         self._device = device
+        # Dedup guard (#192): phantom events replay the last latestmotion
+        # timestamp on unrelated long-poll updates (e.g. battery level).
+        self._last_fired_timestamp: str = ""
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added to hass."""
@@ -352,13 +355,17 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
                 service.register_event(self._device.id, self._event_callback)
 
     def _event_callback(self) -> None:
+        ts = self._device.latestmotion or ""
+        if ts == self._last_fired_timestamp:
+            return
+        self._last_fired_timestamp = ts
         event_type = "MOTION"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
-            ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+            ATTR_LAST_TIME_TRIGGERED: ts,
         }
         self._dispatch_event(event_type, event_attributes)
 
@@ -392,11 +399,16 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
                 service.register_event(self._device.id, self._event_callback)
 
     def _event_callback(self) -> None:
+        try:
+            subtype = self._device.alarm.name
+        except (ValueError, KeyError):
+            LOGGER.warning("Unexpected alarm value for %s", self._device.name)
+            return
         event_type = "ALARM"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
-            ATTR_EVENT_SUBTYPE: self._device.alarm.name,
+            ATTR_EVENT_SUBTYPE: subtype,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
@@ -432,11 +444,16 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
                 service.register_event(self._device.id, self._event_callback)
 
     def _event_callback(self) -> None:
+        try:
+            subtype = self._device.alarmstate.name
+        except (ValueError, KeyError):
+            LOGGER.warning("Unexpected alarmstate value for %s", self._device.name)
+            return
         event_type = "ALARM"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
-            ATTR_EVENT_SUBTYPE: self._device.alarmstate.name,
+            ATTR_EVENT_SUBTYPE: subtype,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }

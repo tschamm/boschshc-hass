@@ -1097,6 +1097,11 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         self._session.unsubscribe_userdefinedstate_callbacks(self._device.id)
 
     @property
+    def available(self) -> bool:
+        """Return False when the UDS has been deleted from the SHC."""
+        return not self._device.deleted
+
+    @property
     def is_on(self) -> bool:
         """Return the state of the switch."""
         return (

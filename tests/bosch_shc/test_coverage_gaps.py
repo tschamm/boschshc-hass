@@ -678,6 +678,7 @@ class TestAlarmStateWillRemoveUnsub:
         ent = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
         unsub = MagicMock()
         ent._ha_stop_unsub = unsub
+        ent._service = None  # no service → unsubscribe branch skipped
         _run(ent.async_will_remove_from_hass())
         unsub.assert_called_once()
         assert ent._ha_stop_unsub is None
@@ -692,6 +693,7 @@ class TestSurveillanceAlarmWillRemoveUnsub:
         ent = SmokeDetectionSystemSensor.__new__(SmokeDetectionSystemSensor)
         unsub = MagicMock()
         ent._ha_stop_unsub = unsub
+        ent._service = None  # no service → unsubscribe branch skipped
         _run(ent.async_will_remove_from_hass())
         unsub.assert_called_once()
         assert ent._ha_stop_unsub is None

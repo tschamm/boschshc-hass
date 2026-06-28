@@ -568,7 +568,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             )
 
     async def async_will_remove_from_hass(self):
-        """Cancel HA-stop listener on entity removal."""
+        """Unsubscribe service callback and cancel HA-stop listener."""
+        if self._service is not None:
+            self._service.unsubscribe_callback(self._device.id + "_eventlistener")
         if self._ha_stop_unsub is not None:
             self._ha_stop_unsub()
             self._ha_stop_unsub = None
@@ -580,7 +582,11 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         re-delivers the last Alarm state unchanged.  Only fire when the
         alarmstate name has changed since the last fired event.
         """
-        current_state = self._device.alarmstate.name
+        try:
+            current_state = self._device.alarmstate.name
+        except (ValueError, KeyError):
+            LOGGER.warning("Unexpected alarmstate value for %s", self._device.name)
+            return
         if current_state == self._last_fired_alarmstate:
             LOGGER.debug(
                 "Skipping replayed Alarm event for %s (state=%s unchanged)",
@@ -741,7 +747,9 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
             )
 
     async def async_will_remove_from_hass(self):
-        """Cancel HA-stop listener on entity removal."""
+        """Unsubscribe service callback and cancel HA-stop listener."""
+        if self._service is not None:
+            self._service.unsubscribe_callback(self._device.id + "_eventlistener")
         if self._ha_stop_unsub is not None:
             self._ha_stop_unsub()
             self._ha_stop_unsub = None
@@ -753,7 +761,11 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         re-delivers the last SurveillanceAlarm state unchanged.  Only fire
         when the alarm state name has changed since the last fired event.
         """
-        current_alarm = self._device.alarm.name
+        try:
+            current_alarm = self._device.alarm.name
+        except (ValueError, KeyError):
+            LOGGER.warning("Unexpected alarm value for %s", self._device.name)
+            return
         if current_alarm == self._last_fired_alarm:
             LOGGER.debug(
                 "Skipping replayed SurveillanceAlarm event for %s (state=%s unchanged)",
