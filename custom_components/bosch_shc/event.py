@@ -23,6 +23,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,

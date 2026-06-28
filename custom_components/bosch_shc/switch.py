@@ -36,6 +36,7 @@ from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
+
 from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
