@@ -407,12 +407,12 @@ class MotionSensitivitySelect(SHCEntity, SelectEntity):
     """Select entity for Motion Detector II [+M] motion sensitivity."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "motion_sensitivity"
     _attr_options = _MOTION_SENSITIVITY_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the motion sensitivity select entity."""
         super().__init__(device, entry_id)
-        self._attr_name = "Motion Sensitivity"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_motion_sensitivity"
 
     @property
@@ -440,13 +440,13 @@ class OrientationLightResponseSelect(SHCEntity, SelectEntity):
     """
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "orientation_light_response_time"
     _attr_icon = "mdi:timer-cog-outline"
     _attr_options = _POLL_CONTROL_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the orientation-light response-time select entity."""
         super().__init__(device, entry_id)
-        self._attr_name = "Orientation Light Response Time"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_orientation_light_response"
         )
@@ -475,12 +475,12 @@ class VibrationSensitivitySelect(SHCEntity, SelectEntity):
     """Select entity for ShutterContact2Plus vibration sensitivity."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "vibration_sensitivity"
     _attr_options = _VIBRATION_SENSITIVITY_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the vibration sensitivity select entity."""
         super().__init__(device, entry_id)
-        self._attr_name = "Vibration Sensitivity"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_vibration_sensitivity"
         )
@@ -506,12 +506,12 @@ class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):
     """Select entity for smart plug power-loss behaviour."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "state_after_power_outage"
     _attr_options = _STATE_AFTER_POWER_OUTAGE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the state-after-power-outage select."""
         super().__init__(device, entry_id)
-        self._attr_name = "State After Power Outage"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_state_after_power_outage"
         )
@@ -545,12 +545,12 @@ class SmokeSensitivitySelect(SHCEntity, SelectEntity):
     """Select entity for smoke detector / twinguard smoke sensitivity."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "smoke_sensitivity"
     _attr_options = _SMOKE_SENSITIVITY_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the smoke sensitivity select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Smoke Sensitivity"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_sensitivity"
 
     @property
@@ -580,12 +580,12 @@ class DisplayDirectionSelect(SHCEntity, SelectEntity):
     """Select entity for thermostat display orientation."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "display_direction"
     _attr_options = _DISPLAY_DIRECTION_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the display direction select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Display Direction"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_display_direction"
 
     @property
@@ -615,12 +615,12 @@ class DisplayedTemperatureSelect(SHCEntity, SelectEntity):
     """Select entity for which temperature value the thermostat display shows."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "displayed_temperature"
     _attr_options = _DISPLAYED_TEMPERATURE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the displayed-temperature select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Displayed Temperature"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_displayed_temperature"
         )
@@ -654,12 +654,12 @@ class TerminalTypeSelect(SHCEntity, SelectEntity):
     """Select entity for RoomThermostat2 terminal (external sensor) type."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "terminal_type"
     _attr_options = _TERMINAL_TYPE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the terminal type select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Terminal Type"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_terminal_type"
 
     @property
@@ -687,12 +687,12 @@ class ValveTypeSelect(SHCEntity, SelectEntity):
     """Select entity for ThermostatGen2 valve type (normally open/close)."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "valve_type"
     _attr_options = _VALVE_TYPE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the valve type select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Valve Type"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_valve_type"
 
     @property
@@ -720,12 +720,12 @@ class HeaterTypeSelect(SHCEntity, SelectEntity):
     """Select entity for ThermostatGen2 heater type."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "heater_type"
     _attr_options = _HEATER_TYPE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the heater type select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Heater Type"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_heater_type"
 
     @property
@@ -753,12 +753,12 @@ class SwitchTypeSelect(SHCEntity, SelectEntity):
     """Select entity for SwitchConfiguration switch type."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "switch_type"
     _attr_options = _SWITCH_TYPE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the switch type select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Switch Type"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_switch_type"
 
     @property
@@ -786,12 +786,12 @@ class ActuatorTypeSelect(SHCEntity, SelectEntity):
     """Select entity for SwitchConfiguration actuator type."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "actuator_type"
     _attr_options = _ACTUATOR_TYPE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the actuator type select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Actuator Type"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_actuator_type"
 
     @property
@@ -819,12 +819,12 @@ class OutputModeSelect(SHCEntity, SelectEntity):
     """Select entity for SwitchConfiguration output mode."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "output_mode"
     _attr_options = _OUTPUT_MODE_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the output mode select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Output Mode"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_output_mode"
 
     @property
@@ -857,12 +857,12 @@ class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):
     """
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "smart_sensitivity_security_level"
     _attr_options = _SMART_SENSITIVITY_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the security sensitivity level select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Smart Sensitivity Security Level"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_smart_sensitivity_security"
         )
@@ -894,12 +894,12 @@ class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):
     """Select entity for SmartSensitivityControl manual level — COMFORT context."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "smart_sensitivity_comfort_level"
     _attr_options = _SMART_SENSITIVITY_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the comfort sensitivity level select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Smart Sensitivity Comfort Level"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_smart_sensitivity_comfort"
         )
@@ -931,13 +931,13 @@ class DimmerPhaseControlSelect(SHCEntity, SelectEntity):
     """Select entity for micromodule dimmer phase-control mode (#123)."""
 
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "dimmer_phase_control"
     _attr_icon = "mdi:sine-wave"
     _attr_options = ["TRAILING", "LEADING"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the dimmer phase-control select."""
         super().__init__(device, entry_id)
-        self._attr_name = "Dimmer Phase Control"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_dimmer_phase_control"
         )

@@ -45,18 +45,18 @@ def _make_sensor(state):
 
 class TestBatteryLevelSensorNativeValue:
     def test_ok(self):
-        assert _make_sensor(BatteryLevelService.State.OK).native_value == "OK"
+        assert _make_sensor(BatteryLevelService.State.OK).native_value == "ok"
 
     def test_low_battery(self):
         assert (
             _make_sensor(BatteryLevelService.State.LOW_BATTERY).native_value
-            == "LOW_BATTERY"
+            == "low_battery"
         )
 
     def test_critical_low(self):
         assert (
             _make_sensor(BatteryLevelService.State.CRITICAL_LOW).native_value
-            == "CRITICAL_LOW"
+            == "critical_low"
         )
 
     def test_critically_low_battery(self):
@@ -64,13 +64,13 @@ class TestBatteryLevelSensorNativeValue:
             _make_sensor(
                 BatteryLevelService.State.CRITICALLY_LOW_BATTERY
             ).native_value
-            == "CRITICALLY_LOW_BATTERY"
+            == "critically_low_battery"
         )
 
     def test_not_available(self):
         assert (
             _make_sensor(BatteryLevelService.State.NOT_AVAILABLE).native_value
-            == "NOT_AVAILABLE"
+            == "not_available"
         )
 
 
@@ -130,19 +130,18 @@ class TestBatteryLevelSensorMetadata:
 
     def test_options_list(self):
         assert self._sensor().options == [
-            "OK",
-            "LOW_BATTERY",
-            "CRITICAL_LOW",
-            "CRITICALLY_LOW_BATTERY",
-            "NOT_AVAILABLE",
+            "ok",
+            "low_battery",
+            "critical_low",
+            "critically_low_battery",
+            "not_available",
         ]
 
     def test_options_covers_all_enum_members(self):
-        """Every BatteryLevelService.State .value must appear in the declared options."""
-        # Access via instance because SensorEntity shadows _attr_options with a property.
+        """Every BatteryLevelService.State .value (lowercased) must appear in options."""
         opts = set(self._sensor().options)
         for member in BatteryLevelService.State:
-            assert member.value in opts, f"{member.value!r} missing from _attr_options"
+            assert member.value.lower() in opts, f"{member.value!r} missing from _attr_options"
 
     def test_unique_id_suffix(self):
         assert self._sensor()._attr_unique_id == "root-abc_dev-123_battery_level"

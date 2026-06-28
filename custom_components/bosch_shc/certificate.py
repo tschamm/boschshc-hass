@@ -8,11 +8,17 @@ from typing import NamedTuple
 
 from homeassistant.exceptions import HomeAssistantError
 
+from .const import DOMAIN
+
 try:
     from cryptography import x509  # type: ignore[import]
     from cryptography.hazmat.backends import default_backend  # type: ignore[import]
 except Exception as exc:  # pragma: no cover - cryptography should exist in HA
-    raise HomeAssistantError("cryptography library not available") from exc
+    raise HomeAssistantError(
+        "cryptography library not available",
+        translation_domain=DOMAIN,
+        translation_key="cert_cryptography_missing",
+    ) from exc
 
 
 class CertificateInfo(NamedTuple):
@@ -30,13 +36,23 @@ def parse_certificate(cert_path: str) -> CertificateInfo:
     """
     path = Path(cert_path)
     if not path.is_file():
-        raise HomeAssistantError(f"Certificate file missing: {cert_path}")
+        raise HomeAssistantError(
+            f"Certificate file missing: {cert_path}",
+            translation_domain=DOMAIN,
+            translation_key="cert_file_missing",
+            translation_placeholders={"path": cert_path},
+        )
 
     data = path.read_bytes()
     try:
         cert = x509.load_pem_x509_certificate(data, default_backend())
     except Exception as exc:  # pragma: no cover - defensive
-        raise HomeAssistantError(f"Invalid certificate: {cert_path}") from exc
+        raise HomeAssistantError(
+            f"Invalid certificate: {cert_path}",
+            translation_domain=DOMAIN,
+            translation_key="cert_invalid",
+            translation_placeholders={"path": cert_path},
+        ) from exc
 
     now = datetime.now(timezone.utc)
     # Use *_utc properties (cryptography >= 41), fallback to naive + replace for older.

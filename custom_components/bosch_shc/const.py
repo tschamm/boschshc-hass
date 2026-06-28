@@ -78,10 +78,10 @@ CAMERA_TOOL_URL = (
 )
 CAMERA_TOOL_DOMAIN = "bosch_shc_camera"
 ISSUE_CAMERA_TOOL = "camera_tool_available"
+ISSUE_CERT_EXPIRING = "cert_expiring"
 
 # Certificate handling
 CERT_EXPIRY_WARNING_DAYS = 30
-DOMAIN_NOTIFICATION_ID = "bosch_shc_certificate"
 
 SUPPORTED_INPUTS_EVENTS_TYPES = {
     "PRESS_SHORT",

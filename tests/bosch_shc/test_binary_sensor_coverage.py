@@ -304,7 +304,7 @@ class TestOccupancyDetectionSensorRealInit:
         dev = self._make_dev()
         with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
             sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        assert sensor._attr_name == "Occupancy"
+        assert sensor.translation_key == "occupancy"
 
     def test_attr_unique_id_format(self):
         dev = self._make_dev(device_id="devY", root_device_id="rootX")
@@ -357,7 +357,7 @@ class TestShutterContactVibrationSensorInit:
         dev = self._make_dev(name="Any Name")
         with patch.object(ShutterContactVibrationSensor, "_update_attr", lambda self: None):
             sensor = ShutterContactVibrationSensor(device=dev, entry_id="E1")
-        assert sensor._attr_name == "Vibration"
+        assert sensor.translation_key == "vibration"
 
     def test_attr_unique_id_has_vibration_suffix(self):
         dev = self._make_dev(device_id="sc1", root_device_id="root1")

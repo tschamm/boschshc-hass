@@ -366,11 +366,10 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_temperature"
 
     def test_temperature_sensor_name(self):
-        # has_entity_name=True: .name returns just the attr part; device prefix is
-        # applied by the entity registry at display time — not via .name property.
+        # name comes from device_class (SensorDeviceClass.TEMPERATURE); _attr_name is None
         d = self._dev(name="Living Room TRV")
         s = TemperatureSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Temperature"
+        assert s._attr_name is None
 
     def test_humidity_sensor_unique_id(self):
         d = self._dev()
@@ -378,9 +377,10 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_humidity"
 
     def test_humidity_sensor_name(self):
+        # name comes from device_class (SensorDeviceClass.HUMIDITY); _attr_name is None
         d = self._dev(name="Bedroom WT")
         s = HumiditySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Humidity"
+        assert s._attr_name is None
 
     def test_purity_sensor_unique_id(self):
         d = self._dev()
@@ -390,7 +390,7 @@ class TestRealInitUniqueIdAndName:
     def test_purity_sensor_name(self):
         d = self._dev(name="TG Office")
         s = PuritySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Purity"
+        assert s.translation_key == "purity"
 
     def test_air_quality_sensor_unique_id(self):
         d = self._dev()
@@ -400,7 +400,7 @@ class TestRealInitUniqueIdAndName:
     def test_air_quality_sensor_name(self):
         d = self._dev(name="Hall TG")
         s = AirQualitySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Air Quality"
+        assert s.translation_key == "air_quality"
 
     def test_temperature_rating_sensor_unique_id(self):
         d = self._dev()
@@ -410,7 +410,7 @@ class TestRealInitUniqueIdAndName:
     def test_temperature_rating_sensor_name(self):
         d = self._dev(name="Kitchen TG")
         s = TemperatureRatingSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Temperature Rating"
+        assert s.translation_key == "temperature_rating"
 
     def test_humidity_rating_sensor_unique_id(self):
         d = self._dev()
@@ -420,7 +420,7 @@ class TestRealInitUniqueIdAndName:
     def test_humidity_rating_sensor_name(self):
         d = self._dev(name="Bedroom TG")
         s = HumidityRatingSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Humidity Rating"
+        assert s.translation_key == "humidity_rating"
 
     def test_purity_rating_sensor_unique_id(self):
         d = self._dev()
@@ -430,7 +430,7 @@ class TestRealInitUniqueIdAndName:
     def test_purity_rating_sensor_name(self):
         d = self._dev(name="Cellar TG")
         s = PurityRatingSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Purity Rating"
+        assert s.translation_key == "purity_rating"
 
     def test_power_sensor_unique_id(self):
         d = self._dev()
@@ -438,9 +438,10 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_power"
 
     def test_power_sensor_name(self):
+        # name comes from device_class (SensorDeviceClass.POWER); _attr_name is None
         d = self._dev(name="Smart Plug A")
         s = PowerSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Power"
+        assert s._attr_name is None
 
     def test_energy_sensor_unique_id(self):
         d = self._dev()
@@ -448,9 +449,10 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_energy"
 
     def test_energy_sensor_name(self):
+        # name comes from device_class (SensorDeviceClass.ENERGY); _attr_name is None
         d = self._dev(name="Smart Plug B")
         s = EnergySensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Energy"
+        assert s._attr_name is None
 
     def test_communication_quality_sensor_unique_id(self):
         d = self._dev()
@@ -458,11 +460,8 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_communicationquality"
 
     def test_communication_quality_sensor_name(self):
-        # #339: name now comes from translation_key (not a hard-coded _attr_name)
-        # so the displayed label localizes; _attr_name is therefore None.
         d = self._dev(name="SPC 1")
         s = CommunicationQualitySensor(device=d, entry_id=ENTRY_ID)
-        assert s._attr_name is None
         assert s.translation_key == "communication_quality"
 
     def test_valve_tappet_sensor_unique_id(self):
@@ -473,7 +472,7 @@ class TestRealInitUniqueIdAndName:
     def test_valve_tappet_sensor_name(self):
         d = self._dev(name="Bedroom TRV")
         s = ValveTappetSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Valve Tappet"
+        assert s.translation_key == "valve_tappet"
 
     def test_illuminance_sensor_unique_id(self):
         d = self._dev()
@@ -481,9 +480,10 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == f"{d.root_device_id}_{d.id}_illuminance"
 
     def test_illuminance_sensor_name(self):
+        # name comes from device_class (SensorDeviceClass.ILLUMINANCE); _attr_name is None
         d = self._dev(name="Motion Hall")
         s = IlluminanceLevelSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Illuminance"
+        assert s._attr_name is None
 
     def test_emma_power_sensor_unique_id(self):
         d = _fake_device(
@@ -493,11 +493,12 @@ class TestRealInitUniqueIdAndName:
         assert s.unique_id == "shc-mac_com.bosch.tt.emma.applink_power"
 
     def test_emma_power_sensor_name(self):
+        # name comes from device_class (SensorDeviceClass.POWER); _attr_name is None
         d = _fake_device(
             name="EMMA", device_id="com.bosch.tt.emma.applink", root_device_id="shc-mac"
         )
         s = EmmaPowerSensor(device=d, entry_id=ENTRY_ID)
-        assert s.name == "Power"
+        assert s._attr_name is None
 
     def test_entry_id_stored_on_base_entity(self):
         d = self._dev()

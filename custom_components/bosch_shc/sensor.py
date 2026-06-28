@@ -484,7 +484,6 @@ class TemperatureSensor(SHCEntity, SensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Temperature"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_temperature"
 
     @property
@@ -505,11 +504,11 @@ class TerminalTemperatureSensor(SHCEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
+    _attr_translation_key = "floor_temperature"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the terminal (floor) temperature sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Floor Temperature"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_terminal_temperature"
         )
@@ -531,7 +530,6 @@ class HumiditySensor(SHCEntity, SensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC humidity reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Humidity"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_humidity"
 
     @property
@@ -551,11 +549,11 @@ class PuritySensor(SHCEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfRatio.PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
+    _attr_translation_key = "purity"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC purity reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Purity"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_purity"
 
     @property
@@ -567,10 +565,11 @@ class PuritySensor(SHCEntity, SensorEntity):
 class AirQualitySensor(SHCEntity, SensorEntity):
     """Representation of an SHC airquality reporting sensor."""
 
+    _attr_translation_key = "air_quality"
+
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC airquality reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Air Quality"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_airquality"
 
     @property
@@ -609,10 +608,11 @@ class AirQualitySensor(SHCEntity, SensorEntity):
 class TemperatureRatingSensor(SHCEntity, SensorEntity):
     """Representation of an SHC temperature rating sensor."""
 
+    _attr_translation_key = "temperature_rating"
+
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature rating sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Temperature Rating"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_temperaturerating"
 
     @property
@@ -675,9 +675,6 @@ class KeypadTriggerSensor(SHCEntity, SensorEntity):
         """Initialize a SHC keypad-trigger mapping sensor."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_keypadtrigger"
-        # SHCEntity forces _attr_name=None, which shadows the translation_key in
-        # HA's name resolver — drop it so this entity is named "Button mapping".
-        del self._attr_name
 
     @property
     def native_value(self):
@@ -700,10 +697,11 @@ class KeypadTriggerSensor(SHCEntity, SensorEntity):
 class HumidityRatingSensor(SHCEntity, SensorEntity):
     """Representation of an SHC humidity rating sensor."""
 
+    _attr_translation_key = "humidity_rating"
+
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC humidity rating sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Humidity Rating"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_humidityrating"
 
     @property
@@ -719,10 +717,11 @@ class HumidityRatingSensor(SHCEntity, SensorEntity):
 class PurityRatingSensor(SHCEntity, SensorEntity):
     """Representation of an SHC purity rating sensor."""
 
+    _attr_translation_key = "purity_rating"
+
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC purity rating sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Purity Rating"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_purityrating"
 
     @property
@@ -746,7 +745,6 @@ class PowerSensor(SHCEntity, SensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Power"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
 
     @property
@@ -767,7 +765,6 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):
     def __init__(self, device: SHCEmma, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Power"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
 
     async def async_added_to_hass(self):
@@ -808,7 +805,6 @@ class EnergySensor(SHCEntity, SensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC energy reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Energy"
         self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy"
 
     @property
@@ -824,11 +820,11 @@ class EnergyYieldSensor(SHCEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_suggested_display_precision = 2
+    _attr_translation_key = "energy_yield"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the energy yield sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Energy Yield"
         self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy_yield"
 
     @property
@@ -850,11 +846,11 @@ class PowerYieldSensor(SHCEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
+    _attr_translation_key = "power_yield"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the power yield sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Power Yield"
         self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_power_yield"
 
     @property
@@ -874,11 +870,11 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_suggested_display_precision = 0
+    _attr_translation_key = "valve_tappet"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC valve tappet reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Valve Tappet"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_valvetappet"
 
     @property
@@ -925,7 +921,6 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Illuminance"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_illuminance"
 
     @property
@@ -954,24 +949,24 @@ class BatteryLevelSensor(SHCEntity, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_enabled_default = False
     _attr_options = [
-        "OK",
-        "LOW_BATTERY",
-        "CRITICAL_LOW",
-        "CRITICALLY_LOW_BATTERY",
-        "NOT_AVAILABLE",
+        "ok",
+        "low_battery",
+        "critical_low",
+        "critically_low_battery",
+        "not_available",
     ]
+    _attr_translation_key = "battery_level"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize a battery-level sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Battery Level"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery_level"
 
     @property
     def native_value(self):
         """Return the battery level state string, or None on unknown value."""
         try:
-            return self._device.batterylevel.value
+            return self._device.batterylevel.value.lower()
         except (ValueError, AttributeError) as err:
             LOGGER.warning("Unknown battery level for %s: %s", self._device.name, err)
             return None
@@ -988,19 +983,19 @@ class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_options = ["GOOD", "MEDIUM", "BAD"]
+    _attr_options = ["good", "medium", "bad"]
+    _attr_translation_key = "combined_rating"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize a Twinguard combined-rating diagnostic sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Combined Rating"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_combined_rating"
 
     @property
     def native_value(self):
         """Return the combined rating enum name, or None on unknown value."""
         try:
-            return self._device.combined_rating.name
+            return self._device.combined_rating.name.lower()
         except (ValueError, AttributeError) as err:
             LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
             return None
@@ -1014,11 +1009,11 @@ class TwinguardDescriptionSensor(SHCEntity, SensorEntity):
     """
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "air_quality_description"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize a Twinguard air-quality description diagnostic sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Air Quality Description"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_description"
 
     @property
@@ -1036,12 +1031,12 @@ class WalkStateSensor(SHCEntity, SensorEntity):
     """
 
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["WALK_TEST_STARTED", "WALK_TEST_STOPPED", "UNKNOWN"]
+    _attr_options = ["walk_test_started", "walk_test_stopped", "unknown"]
+    _attr_translation_key = "walk_test_state"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the walk-state sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Walk Test State"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_state"
 
     @property
@@ -1051,7 +1046,7 @@ class WalkStateSensor(SHCEntity, SensorEntity):
             val = self._device.walk_state
             if val is None:
                 return None
-            return val.name
+            return val.name.lower()
         except (AttributeError, ValueError):
             return None
 
@@ -1066,15 +1061,15 @@ class DetectionStateSensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
-        "DETECTION_TEST_STARTED",
-        "DETECTION_TEST_STOPPED",
-        "DETECTION_TEST_UNKNOWN",
+        "detection_test_started",
+        "detection_test_stopped",
+        "detection_test_unknown",
     ]
+    _attr_translation_key = "detection_test_state"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the detection-state sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Detection Test State"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_state"
 
     @property
@@ -1084,7 +1079,7 @@ class DetectionStateSensor(SHCEntity, SensorEntity):
             val = self._device.detection_state
             if val is None:
                 return None
-            return val.name
+            return val.name.lower()
         except (AttributeError, ValueError):
             return None
 
@@ -1099,29 +1094,33 @@ class InstallationProfileSensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "installation_profile"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the installation-profile sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Installation Profile"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_installation_profile"
         )
-        # Options come from the device's advertised supportedProfiles.
-        self._attr_options = list(getattr(device, "supported_profiles", []) or [])
+        # Options come from the device's advertised supportedProfiles (lowercased for HA ENUM).
+        self._attr_options = [
+            p.lower() for p in (getattr(device, "supported_profiles", []) or [])
+        ]
 
     @property
     def native_value(self) -> str | None:
-        """Return the current installation profile.
+        """Return the current installation profile (lowercased).
 
-        Guarded: a profile not advertised in supported_profiles (e.g. after a
-        firmware vocabulary change) would otherwise trip HA's ENUM "invalid
-        value" validation on every update — return None (unknown) instead.
+        Guarded: a profile not in supported_profiles (e.g. after a firmware
+        vocabulary change) would trip HA's ENUM validation — return None instead.
         """
         val = getattr(self._device, "profile", None)
-        if val is None or val not in (self._attr_options or []):
+        if val is None:
             return None
-        return val
+        val_lower = val.lower()
+        if val_lower not in (self._attr_options or []):
+            return None
+        return val_lower
 
 
 class SirenBatterySensor(SHCEntity, SensorEntity):

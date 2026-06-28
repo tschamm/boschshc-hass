@@ -130,9 +130,6 @@ class DeviceUpdate(SHCEntity, UpdateEntity):
         """Initialize the per-device firmware update entity."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_software_update"
-        # SHCEntity forces _attr_name=None, which shadows the translation_key in
-        # HA's name resolver — drop it so this entity is named "Firmware".
-        del self._attr_name
 
     @property
     def installed_version(self) -> str | None:

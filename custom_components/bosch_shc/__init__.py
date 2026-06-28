@@ -15,9 +15,6 @@ from boschshcpy.exceptions import (
     SHCConnectionError,
     SHCException,
 )
-from homeassistant.components.persistent_notification import (
-    async_create as pn_async_create,
-)
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     ATTR_COMMAND,
@@ -68,9 +65,9 @@ from .const import (
     DATA_SHC,
     DATA_TITLE,
     DOMAIN,
-    DOMAIN_NOTIFICATION_ID,
     EVENT_BOSCH_SHC,
     ISSUE_CAMERA_TOOL,
+    ISSUE_CERT_EXPIRING,
     LOGGER,
     OPT_CHILD_LOCK_ENABLED,
     OPT_ENABLE_RAWSCAN,
@@ -146,7 +143,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                             await scenario.async_trigger()
                         except (SHCException, SHCConnectionError) as err:
                             raise ServiceValidationError(
-                                f"Failed to trigger scenario '{name}': {err}"
+                                f"Failed to trigger scenario '{name}': {err}",
+                                translation_domain=DOMAIN,
+                                translation_key="scenario_not_found",
                             ) from err
 
     hass.services.async_register(
@@ -199,7 +198,9 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                 if command not in commands:
                     raise ServiceValidationError(
                         f"Unknown rawscan command '{command}'. "
-                        f"Valid commands: {sorted(commands)}"
+                        f"Valid commands: {sorted(commands)}",
+                        translation_domain=DOMAIN,
+                        translation_key="rawscan_type_unknown",
                     )
                 rawscan = await commands[command]()
                 return {command: rawscan}
@@ -247,15 +248,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 cert_info.days_remaining,
                 expiry,
             )
-            pn_async_create(
+            ir.async_create_issue(
                 hass,
-                (
-                    f"Bosch SHC client certificate will expire in {cert_info.days_remaining} days (on {expiry}).\n"
-                    "To renew: Put the controller into pairing mode (press front button until LEDs flash) and start re-authentication from the integration options."
-                ),
-                title="Bosch SHC certificate expiring",
-                notification_id=DOMAIN_NOTIFICATION_ID,
+                DOMAIN,
+                ISSUE_CERT_EXPIRING,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_CERT_EXPIRING,
+                translation_placeholders={
+                    "days": str(cert_info.days_remaining),
+                    "expiry": str(expiry),
+                },
             )
+        else:
+            ir.async_delete_issue(hass, DOMAIN, ISSUE_CERT_EXPIRING)
 
     # NumberSelector yields a float; the SHC long-poll RPC expects an integer
     # number of seconds, so coerce it.
@@ -351,15 +357,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
         elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
             expiry = info.not_after.date()
-            pn_async_create(
+            ir.async_create_issue(
                 hass,
-                (
-                    f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
-                    "To renew: Put the controller into pairing mode and re-authenticate the integration."
-                ),
-                title="Bosch SHC certificate expiring",
-                notification_id=DOMAIN_NOTIFICATION_ID,
+                DOMAIN,
+                ISSUE_CERT_EXPIRING,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_CERT_EXPIRING,
+                translation_placeholders={
+                    "days": str(info.days_remaining),
+                    "expiry": str(expiry),
+                },
             )
+        else:
+            ir.async_delete_issue(hass, DOMAIN, ISSUE_CERT_EXPIRING)
 
     entry.runtime_data.cert_check_unsub = async_track_time_interval(
         hass, _scheduled_cert_check, timedelta(days=1)

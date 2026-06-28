@@ -223,7 +223,7 @@ class TestDetectionStateSensor:
 
     def test_native_value(self):
         assert self._make("DETECTION_TEST_STARTED").native_value == (
-            "DETECTION_TEST_STARTED"
+            "detection_test_started"
         )
 
     def test_native_value_none_when_none(self):
@@ -261,15 +261,15 @@ class TestInstallationProfileSensor:
         dev = _fake_md2(profile="GENERIC", supported_profiles=["OUTDOOR", "GENERIC"])
         s = InstallationProfileSensor.__new__(InstallationProfileSensor)
         s._device = dev
-        s._attr_options = ["OUTDOOR", "GENERIC"]
-        assert s.native_value == "GENERIC"
+        s._attr_options = ["outdoor", "generic"]
+        assert s.native_value == "generic"
 
     def test_native_value_out_of_options_returns_none(self):
         # Profile not advertised in supported_profiles must not trip ENUM validation.
         dev = _fake_md2(profile="SURPRISE", supported_profiles=["OUTDOOR", "GENERIC"])
         s = InstallationProfileSensor.__new__(InstallationProfileSensor)
         s._device = dev
-        s._attr_options = ["OUTDOOR", "GENERIC"]
+        s._attr_options = ["outdoor", "generic"]
         assert s.native_value is None
 
     def test_setup_created_when_profiles_present(self):

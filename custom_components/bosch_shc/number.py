@@ -228,6 +228,9 @@ class SirenConfigNumber(SHCEntity, NumberEntity):
         super().__init__(device, entry_id)
         self._field = field
         self._attr_translation_key = translation_key
+        del (
+            self._attr_name
+        )  # dynamic translation_key; remove None set by SHCEntity.__init__
         self._attr_native_unit_of_measurement = unit
         self._attr_native_min_value = float(lo)
         self._attr_native_max_value = float(hi)
@@ -272,7 +275,7 @@ class SHCNumber(SHCEntity, NumberEntity):
     ) -> None:
         """Initialize a SHC number."""
         super().__init__(device, entry_id)
-        self._attr_name = None if attr_name is None else attr_name
+        self._attr_name = attr_name
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
@@ -329,11 +332,11 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):
     _attr_native_max_value = 60.0
     _attr_native_step = 0.1
     _attr_mode = NumberMode.BOX
+    _attr_translation_key = "impulse_length"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the impulse length number."""
         super().__init__(device, entry_id)
-        self._attr_name = "Impulse Length"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_impulse_length"
 
     @property
@@ -457,11 +460,11 @@ class PowerThresholdNumber(SHCEntity, NumberEntity):
     _attr_native_max_value = 3680.0
     _attr_native_step = 1.0
     _attr_mode = NumberMode.BOX
+    _attr_translation_key = "energy_saving_power_threshold"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the power threshold number."""
         super().__init__(device, entry_id)
-        self._attr_name = "Energy Saving Power Threshold"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power_threshold"
 
     @property
@@ -500,11 +503,11 @@ class EnterDurationNumber(SHCEntity, NumberEntity):
     _attr_native_max_value = 3600.0
     _attr_native_step = 1.0
     _attr_mode = NumberMode.BOX
+    _attr_translation_key = "energy_saving_enter_duration"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the enter duration number."""
         super().__init__(device, entry_id)
-        self._attr_name = "Energy Saving Enter Duration"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_enter_duration_seconds"
         )
@@ -544,11 +547,11 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.SLIDER
+    _attr_translation_key = "led_brightness"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the LED brightness number."""
         super().__init__(device, entry_id)
-        self._attr_name = "LED Brightness"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_led_brightness"
 
     @property
@@ -606,11 +609,11 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.SLIDER
+    _attr_translation_key = "display_brightness"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the display brightness number."""
         super().__init__(device, entry_id)
-        self._attr_name = "Display Brightness"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_display_brightness"
 
     @property
@@ -672,11 +675,11 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):
     _attr_entity_category = EntityCategory.CONFIG
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_mode = NumberMode.BOX
+    _attr_translation_key = "display_on_time"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the display on-time number."""
         super().__init__(device, entry_id)
-        self._attr_name = "Display On Time"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_display_on_time"
 
     @property

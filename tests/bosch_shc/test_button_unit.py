@@ -186,7 +186,7 @@ class TestSHCSmokeTestButton:
 
     def test_attr_name(self):
         btn = self._smoke_button_via_init()
-        assert btn._attr_name == "Smoke Test"
+        assert btn.translation_key == "smoke_test"
 
     def test_unique_id(self):
         btn = self._smoke_button_via_init(

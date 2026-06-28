@@ -577,9 +577,11 @@ class TestBatteryLevelSensorCreation:
                 ).async_setup_entry(hass, entry, lambda e: added.extend(e))
             )
 
-        entity_names = [getattr(e, "_attr_name", None) for e in added]
-        assert "Battery Level" in entity_names, (
-            f"BatteryLevelSensor not created. Got: {entity_names}"
+        # BatteryLevelSensor uses _attr_translation_key (Silver gap); check by type
+        from custom_components.bosch_shc.sensor import BatteryLevelSensor
+        bat_sensors = [e for e in added if isinstance(e, BatteryLevelSensor)]
+        assert bat_sensors, (
+            f"BatteryLevelSensor not created. Got: {[type(e).__name__ for e in added]}"
         )
 
     def test_battery_level_sensor_unique_id(self):
@@ -598,5 +600,5 @@ class TestBatteryLevelSensorCreation:
         # Call __init__ directly
         BatteryLevelSensor.__init__(sensor, device=device, entry_id="eid1")
 
-        assert sensor._attr_name == "Battery Level"
+        assert sensor.translation_key == "battery_level"
         assert sensor._attr_unique_id == "root-456_dev-123_battery_level"

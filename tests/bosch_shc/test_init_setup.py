@@ -160,7 +160,7 @@ PATCH_SESSION = "custom_components.bosch_shc.__init__.SHCSessionAsync"
 PATCH_DR_GET = "custom_components.bosch_shc.__init__.dr.async_get"
 PATCH_PARSE_CERT = "custom_components.bosch_shc.__init__.parse_certificate"
 PATCH_TRACK_INTERVAL = "custom_components.bosch_shc.__init__.async_track_time_interval"
-PATCH_PN_CREATE = "custom_components.bosch_shc.__init__.pn_async_create"
+PATCH_IR_CREATE = "homeassistant.helpers.issue_registry.async_create_issue"
 
 
 def _run(coro):
@@ -304,7 +304,7 @@ class TestSetupCertBranches:
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=cert_info_obj),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
-            patch(PATCH_PN_CREATE, pn_create_mock),
+            patch(PATCH_IR_CREATE, pn_create_mock),
         ):
             result = _run(async_setup_entry(hass, entry))
 
@@ -318,8 +318,7 @@ class TestSetupCertBranches:
         pn_create_mock.assert_not_called()
 
     def test_expiring_cert_triggers_notification(self):
-        """B1: Cert expiring in 10 days: setup succeeds + pn_async_create called
-        (not the deprecated hass.components.persistent_notification.create)."""
+        """Cert expiring in 10 days: setup succeeds + ir.async_create_issue called."""
         cert_info = _make_cert_info(10)
         result, pn_create_mock = self._setup_with_cert_info(cert_info)
         assert result is True
@@ -1059,7 +1058,7 @@ class TestScheduledCertCheck:
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, side_effect=_parse),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_track),
-            patch(PATCH_PN_CREATE, pn_create_mock),
+            patch(PATCH_IR_CREATE, pn_create_mock),
         ):
             asyncio.run(_inner())
 
@@ -1072,11 +1071,9 @@ class TestScheduledCertCheck:
         hass.async_create_task.assert_called_once()
 
     def test_expiring_cert_creates_notification(self):
-        """B1: Daily check with expiring cert calls pn_async_create (not the deprecated
-        hass.components.persistent_notification.create path)."""
+        """Daily check with expiring cert calls ir.async_create_issue."""
         cert_info = _make_cert_info(10)
         _, pn_create_mock = self._run_with_cert_check(cert_info)
-        # initial parse returned None (no cert_path on setup) so only one call here
         assert pn_create_mock.call_count >= 1
 
     def test_parse_exception_in_check_silently_returns(self):

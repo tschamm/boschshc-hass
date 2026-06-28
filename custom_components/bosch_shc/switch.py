@@ -1081,13 +1081,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         def update_entity_information():
             if self._device.deleted:
                 self._attr_available = False
-                # async_will_remove_from_hass must run on the event loop; this
-                # callback fires from the SHC poll thread, so schedule it
-                # thread-safely instead of hass.add_job (#288-cluster).
-                self.hass.loop.call_soon_threadsafe(
-                    self.hass.async_create_task,
-                    self.async_will_remove_from_hass(),
-                )
+                self.hass.async_create_task(self.async_will_remove_from_hass())
             self.schedule_update_ha_state()
 
         self._session.subscribe_userdefinedstate_callback(

@@ -308,15 +308,15 @@ class TestWalkStateSensor:
 
     def test_native_value_unknown(self):
         s = self._make("UNKNOWN")
-        assert s.native_value == "UNKNOWN"
+        assert s.native_value == "unknown"
 
     def test_native_value_walk_test_started(self):
         s = self._make("WALK_TEST_STARTED")
-        assert s.native_value == "WALK_TEST_STARTED"
+        assert s.native_value == "walk_test_started"
 
     def test_native_value_walk_test_stopped(self):
         s = self._make("WALK_TEST_STOPPED")
-        assert s.native_value == "WALK_TEST_STOPPED"
+        assert s.native_value == "walk_test_stopped"
 
     def test_native_value_none_when_walk_state_is_none(self):
         dev = _fake_md2(walk_state=None)
@@ -332,9 +332,9 @@ class TestWalkStateSensor:
 
     def test_options_list(self):
         s = self._make()
-        assert "WALK_TEST_STARTED" in s._attr_options
-        assert "WALK_TEST_STOPPED" in s._attr_options
-        assert "UNKNOWN" in s._attr_options
+        assert "walk_test_started" in s._attr_options
+        assert "walk_test_stopped" in s._attr_options
+        assert "unknown" in s._attr_options
 
 
 # ---------------------------------------------------------------------------

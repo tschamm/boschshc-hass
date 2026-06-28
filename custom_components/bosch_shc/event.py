@@ -219,7 +219,6 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
         # state change can replay the last eventTimestamp (cf. #192).
         self._last_fired_timestamp: int = -1
         self.entity_id = ENTITY_ID_FORMAT.format(f"{slugify(self._device.name)}_button")
-        self._attr_name = "Button"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_button"
 
     async def async_added_to_hass(self) -> None:

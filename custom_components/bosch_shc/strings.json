@@ -194,6 +194,12 @@
       },
       "siren_test_alarm": {
         "name": "Test Alarm"
+      },
+      "preview_max_brightness": {
+        "name": "Preview Max Brightness"
+      },
+      "preview_min_brightness": {
+        "name": "Preview Min Brightness"
       }
     },
     "number": {
@@ -232,6 +238,9 @@
       "motion_sensitivity": {
         "name": "Motion Sensitivity"
       },
+      "orientation_light_response_time": {
+        "name": "Orientation Light Response Time"
+      },
       "vibration_sensitivity": {
         "name": "Vibration Sensitivity"
       },
@@ -265,14 +274,14 @@
       "output_mode": {
         "name": "Output Mode"
       },
-      "smart_sensitivity_security": {
-        "name": "Security Sensitivity Level"
+      "smart_sensitivity_security_level": {
+        "name": "Smart Sensitivity Security Level"
       },
-      "smart_sensitivity_comfort": {
-        "name": "Comfort Sensitivity Level"
+      "smart_sensitivity_comfort_level": {
+        "name": "Smart Sensitivity Comfort Level"
       },
-      "orientation_light_response": {
-        "name": "Orientation Light Response Time"
+      "dimmer_phase_control": {
+        "name": "Dimmer Phase Control"
       },
       "siren_sound_level": {
         "name": "Sound Level",
@@ -284,6 +293,33 @@
       }
     },
     "sensor": {
+      "floor_temperature": {
+        "name": "Floor Temperature"
+      },
+      "purity": {
+        "name": "Purity"
+      },
+      "air_quality": {
+        "name": "Air Quality"
+      },
+      "temperature_rating": {
+        "name": "Temperature Rating"
+      },
+      "humidity_rating": {
+        "name": "Humidity Rating"
+      },
+      "purity_rating": {
+        "name": "Purity Rating"
+      },
+      "energy_yield": {
+        "name": "Energy Yield"
+      },
+      "power_yield": {
+        "name": "Power Yield"
+      },
+      "valve_tappet": {
+        "name": "Valve Tappet"
+      },
       "walk_test_state": {
         "name": "Walk Test State"
       },
@@ -296,7 +332,7 @@
       "air_quality_description": {
         "name": "Air Quality Description"
       },
-      "detection_state": {
+      "detection_test_state": {
         "name": "Detection Test State"
       },
       "installation_profile": {
@@ -340,6 +376,21 @@
       }
     },
     "binary_sensor": {
+      "call_for_heat": {
+        "name": "Call for Heat"
+      },
+      "vibration": {
+        "name": "Vibration"
+      },
+      "smoke": {
+        "name": "Smoke"
+      },
+      "occupancy": {
+        "name": "Occupancy"
+      },
+      "tamper": {
+        "name": "Tamper"
+      },
       "siren_acoustic_alarm": {
         "name": "Acoustic Alarm"
       },
@@ -348,6 +399,11 @@
       },
       "siren_tamper": {
         "name": "Tamper"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Motion Light"
       }
     },
     "update": {
@@ -362,6 +418,29 @@
       "bypass": {
         "name": "Alarm bypass"
       }
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "The cryptography library is not available. Please ensure it is installed."
+    },
+    "cert_file_missing": {
+      "message": "Certificate file missing: {path}"
+    },
+    "cert_invalid": {
+      "message": "Invalid certificate: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan type not found."
+    },
+    "scenario_not_found": {
+      "message": "Scenario not found."
+    },
+    "smoke_test_failed": {
+      "message": "Smoke test failed."
+    },
+    "alarm_state_failed": {
+      "message": "Alarm state change failed."
     }
   },
   "device_automation": {
@@ -454,6 +533,10 @@
     "camera_tool_available": {
       "title": "More for your Bosch cameras",
       "description": "Bosch cameras were detected. This integration covers the basics; the dedicated **Bosch Smart Home Camera Tool** does much more for them (snapshots, motion / FCM push, lights, streams). Open \"Learn more\" for the project, then dismiss this notice."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC client certificate expiring soon",
+      "description": "The Bosch SHC client certificate will expire in {days} day(s) (on {expiry}). To renew it: put the controller into pairing mode (press the front button until the LEDs flash), then go to **Settings → Devices & services → Bosch Smart Home Controller** and select **Reconfigure**."
     }
   }
 }

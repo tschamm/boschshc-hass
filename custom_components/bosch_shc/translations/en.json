@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Test Alarm"
+      },
+      "preview_max_brightness": {
+        "name": "Preview Max Brightness"
+      },
+      "preview_min_brightness": {
+        "name": "Preview Min Brightness"
       }
     },
     "number": {
@@ -264,15 +270,6 @@
       "output_mode": {
         "name": "Output Mode"
       },
-      "smart_sensitivity_security": {
-        "name": "Security Sensitivity Level"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Comfort Sensitivity Level"
-      },
-      "orientation_light_response": {
-        "name": "Orientation Light Response Time"
-      },
       "siren_sound_level": {
         "name": "Sound Level",
         "state": {
@@ -280,6 +277,18 @@
           "medium": "Medium",
           "high": "High"
         }
+      },
+      "orientation_light_response_time": {
+        "name": "Orientation Light Response Time"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Smart Sensitivity Security Level"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Smart Sensitivity Comfort Level"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer Phase Control"
       }
     },
     "sensor": {
@@ -294,9 +303,6 @@
       },
       "air_quality_description": {
         "name": "Air Quality Description"
-      },
-      "detection_state": {
-        "name": "Detection Test State"
       },
       "installation_profile": {
         "name": "Installation Profile"
@@ -336,6 +342,36 @@
       },
       "keypad_trigger": {
         "name": "Button mapping"
+      },
+      "floor_temperature": {
+        "name": "Floor Temperature"
+      },
+      "purity": {
+        "name": "Purity"
+      },
+      "air_quality": {
+        "name": "Air Quality"
+      },
+      "temperature_rating": {
+        "name": "Temperature Rating"
+      },
+      "humidity_rating": {
+        "name": "Humidity Rating"
+      },
+      "purity_rating": {
+        "name": "Purity Rating"
+      },
+      "energy_yield": {
+        "name": "Energy Yield"
+      },
+      "power_yield": {
+        "name": "Power Yield"
+      },
+      "valve_tappet": {
+        "name": "Valve Tappet"
+      },
+      "detection_test_state": {
+        "name": "Detection Test State"
       }
     },
     "binary_sensor": {
@@ -346,6 +382,21 @@
         "name": "Visual Alarm"
       },
       "siren_tamper": {
+        "name": "Tamper"
+      },
+      "call_for_heat": {
+        "name": "Call for Heat"
+      },
+      "vibration": {
+        "name": "Vibration"
+      },
+      "smoke": {
+        "name": "Smoke"
+      },
+      "occupancy": {
+        "name": "Occupancy"
+      },
+      "tamper": {
         "name": "Tamper"
       }
     },
@@ -360,6 +411,11 @@
     "switch": {
       "bypass": {
         "name": "Alarm bypass"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Motion Light"
       }
     }
   },
@@ -453,6 +509,33 @@
     "camera_tool_available": {
       "title": "More for your Bosch cameras",
       "description": "Bosch cameras were detected. This integration covers the basics; the dedicated **Bosch Smart Home Camera Tool** does much more for them (snapshots, motion / FCM push, lights, streams). Open \"Learn more\" for the project, then dismiss this notice."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC client certificate expiring soon",
+      "description": "The Bosch SHC client certificate will expire in {days} day(s) (on {expiry}). To renew it: put the controller into pairing mode (press the front button until the LEDs flash), then go to **Settings → Devices & services → Bosch Smart Home Controller** and select **Reconfigure**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "The cryptography library is not available. Please ensure it is installed."
+    },
+    "cert_file_missing": {
+      "message": "Certificate file missing: {path}"
+    },
+    "cert_invalid": {
+      "message": "Invalid certificate: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan type not found."
+    },
+    "scenario_not_found": {
+      "message": "Scenario not found."
+    },
+    "smoke_test_failed": {
+      "message": "Smoke test failed."
+    },
+    "alarm_state_failed": {
+      "message": "Alarm state change failed."
     }
   }
 }

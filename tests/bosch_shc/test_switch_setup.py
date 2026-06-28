@@ -1005,8 +1005,8 @@ def test_uds_switch_on_state_changed_callback_calls_schedule():
 
 def test_uds_switch_update_entity_information_deleted():
     """update_entity_information callback: deleted device → sets unavailable +
-    schedules removal via hass.loop.call_soon_threadsafe (not hass.add_job)."""
-    threadsafe_calls: list = []
+    schedules removal via hass.async_create_task (not call_soon_threadsafe)."""
+    task_calls: list = []
     scheduled: list = []
 
     session = SimpleNamespace(
@@ -1034,12 +1034,10 @@ def test_uds_switch_update_entity_information_deleted():
         description=SWITCH_TYPES["user_defined_state"],
     )
     sw.schedule_update_ha_state = lambda: scheduled.append(True)
-    fake_loop = SimpleNamespace(
-        call_soon_threadsafe=lambda *a, **kw: threadsafe_calls.append(a)
-    )
+    fake_loop = SimpleNamespace(call_soon_threadsafe=MagicMock())
     mock_hass = SimpleNamespace(
         loop=fake_loop,
-        async_create_task=lambda coro: coro,
+        async_create_task=lambda coro: task_calls.append(coro),
     )
     sw.hass = mock_hass
 
@@ -1056,9 +1054,10 @@ def test_uds_switch_update_entity_information_deleted():
     second_cb = session.subscribe_userdefinedstate_callback.call_args_list[1][0][1]
     second_cb()
 
-    # Entity should be marked unavailable and call_soon_threadsafe called for removal
+    # Entity should be marked unavailable and async_create_task called (not call_soon_threadsafe)
     assert sw._attr_available is False
-    assert len(threadsafe_calls) == 1
+    assert len(task_calls) >= 1
+    assert not fake_loop.call_soon_threadsafe.called
 
 
 def test_setup_wallthermostat_without_child_lock_skipped_old_lib():

@@ -121,7 +121,7 @@ def _run_setup_with_presence(presence_entities, hass_states=None):
         patch(_PATCH_PARSE_CERT, return_value=None),
         patch(_PATCH_TRACK_INTERVAL, return_value=MagicMock()),
         patch(_PATCH_TRACK_STATE, side_effect=_capture_track_state),
-        patch("custom_components.bosch_shc.pn_async_create", MagicMock()),
+        patch("homeassistant.helpers.issue_registry.async_create_issue", MagicMock()),
     ):
         asyncio.run(async_setup_entry(hass, entry))
 
@@ -609,8 +609,8 @@ class TestBatteryLevelSensorCreation:
         bat = [e for e in entities if isinstance(e, BatteryLevelSensor)]
         assert len(bat) == 1
         sensor = bat[0]
-        # Verify __init__ ran: _attr_translation_key and _attr_unique_id must be set
-        assert sensor._attr_name == "Battery Level"
+        # Verify __init__ ran: translation_key and _attr_unique_id must be set
+        assert sensor.translation_key == "battery_level"
         assert "md-has-bat" in sensor._attr_unique_id
         assert "battery_level" in sensor._attr_unique_id
 

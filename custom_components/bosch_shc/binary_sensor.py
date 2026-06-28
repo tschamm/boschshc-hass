@@ -309,11 +309,11 @@ class CallForHeatSensor(SHCEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.RUNNING
     _attr_icon = "mdi:radiator"
+    _attr_translation_key = "call_for_heat"
 
     def __init__(self, device, entry_id: str) -> None:
         """Initialize a call-for-heat binary sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Call for Heat"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_callforheat"
 
     @property
@@ -398,11 +398,11 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC shutter contact vibration sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.VIBRATION
+    _attr_translation_key = "vibration"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Vibration"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
 
     @property
@@ -633,7 +633,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             await self._device.async_smoketest_requested()
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
-                f"Smoke test request failed for {self.name}: {err}"
+                f"Smoke test request failed for {self.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="smoke_test_failed",
             ) from err
 
     async def async_request_alarmstate(self, command: str):
@@ -645,7 +647,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             await self._device.async_set_alarmstate(command)
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
-                f"Set alarm state failed for {self.name}: {err}"
+                f"Set alarm state failed for {self.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_state_failed",
             ) from err
 
     @property
@@ -715,8 +719,6 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         # last SurveillanceAlarm state name we fired on and skip when unchanged.
         self._last_fired_alarm: str | None = None
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-        self._attr_name = None
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
@@ -809,9 +811,9 @@ class TwinguardAlarmTracker:
     ``arguments.surveillanceEvents[].triggerId`` maps back to the individual
     Twinguard device id.
 
-    Thread-safety: subscribe_callback fires from SHCPollingThread.
     ``refresh()`` does blocking HTTP and MUST NOT be called from the event loop.
-    Listeners are always called via ``hass.loop.call_soon_threadsafe``.
+    Callbacks fire from the async polling loop on the event loop; listeners are
+    called directly without call_soon_threadsafe marshalling.
     """
 
     def __init__(
@@ -986,15 +988,16 @@ class TwinguardAlarmTracker:
         return [e for e in parsed if isinstance(e, dict)]
 
     def _notify_listeners(self) -> None:
-        """Notify all registered entity listeners (threadsafe via event loop)."""
-        for hass, listener in list(self._listeners):
-            hass.loop.call_soon_threadsafe(listener)
+        """Notify all registered entity listeners."""
+        for _hass, listener in list(self._listeners):
+            listener()
 
 
 class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
     """Per-Twinguard binary sensor: True when that device is the active smoke alarm source."""
 
     _attr_device_class = BinarySensorDeviceClass.SMOKE
+    _attr_translation_key = "smoke"
 
     def __init__(
         self,
@@ -1004,7 +1007,6 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
     ) -> None:
         """Initialize the Twinguard smoke alarm sensor."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = "Smoke"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke"
         self._tracker = tracker
         self._tracker_listener = self._handle_tracker_update
@@ -1036,8 +1038,14 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
 
     async def async_request_smoketest(self) -> None:
         """Request a Twinguard smoke test."""
-        LOGGER.debug("Requesting smoke test on entity %s", self.name)
-        await self._device.async_smoketest_requested()
+        LOGGER.debug("Requesting smoke test on device %s", self._device.name)
+        try:
+            await self._device.async_smoketest_requested()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="smoke_test_failed",
+            ) from err
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -1055,7 +1063,6 @@ class BatterySensor(SHCEntity, BinarySensorEntity):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC temperature reporting sensor."""
         super().__init__(device, entry_id)
-        self._attr_name = "Battery"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -1091,11 +1098,11 @@ class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):
     """Representation of a SHC Motion Detector II [+M] occupancy sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+    _attr_translation_key = "occupancy"
 
     def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
         """Initialize the occupancy detection sensor."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = "Occupancy"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_occupancy"
 
     @property
@@ -1120,11 +1127,11 @@ class TamperSensor(SHCEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.TAMPER
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "tamper"
 
     def __init__(self, device, entry_id: str) -> None:
         """Initialize the tamper sensor."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = "Tamper"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_tamper"
 
     @property

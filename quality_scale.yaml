@@ -201,7 +201,7 @@ rules:
 
   # ── SILVER TIER ──────────────────────────────────────────────────────────────
   # Silver rules — audited 2026-06-22 against bosch_shc v0.4.108
-  # Rule count (Silver): 17 total  |  DONE: 11  |  TODO: 4  |  EXEMPT: 1  |  (test-coverage → DONE)
+  # Rule count (Silver): 17 total  |  DONE: 15  |  TODO: 0  |  EXEMPT: 1  |  (test-coverage → DONE)
 
   # Silver DONE
 
@@ -282,8 +282,6 @@ rules:
       the SHC pairing-mode step (front-button press).  No platform-specific
       prerequisites beyond a working HA instance.
 
-  # Silver TODO
-
   action-exceptions:
     status: done
     comment: >
@@ -314,41 +312,35 @@ rules:
       also captured by the HA "Enable debug logging" UI button.
 
   entity-translations:
-    status: todo
+    status: done
     comment: >
-      strings.json has no "entity" section with translation keys for entity
-      state or attribute values.  The integration uses _attr_name strings
-      directly (English literals like "Temperature", "Battery", "Smoke Test")
-      rather than translation keys.  To close: add an "entity" section to
-      strings.json with keys for each platform's entity names, and switch
-      _attr_translation_key to the key instead of setting _attr_name.
+      All static _attr_name strings replaced with _attr_translation_key.
+      strings.json entity section has keys for all platforms.  Dynamic names
+      (scenario.name, f-string labels) kept as _attr_name (not translatable).
+      Released 0.7.24.
 
   icon-translations:
-    status: todo
+    status: done
     comment: >
-      No icon translation keys in strings.json.  Entities use hardcoded
-      _attr_icon strings (e.g. "mdi:thermometer", "mdi:smoke-detector-alert").
-      To close: add an "entity" section with icon entries per entity
-      (translation_key: {default: "mdi:…"}) and switch to _attr_translation_key.
+      icons.json created with icon entries tied to _attr_translation_key for
+      all entity classes that use translation keys.  Released 0.7.24.
 
   exception-translations:
-    status: todo
+    status: done
     comment: >
-      HomeAssistantError and ServiceValidationError instances in
-      certificate.py and __init__.py use plain English strings, not
-      translation keys.  To close: add an "exceptions" section to
-      strings.json with message keys and update the raise sites to use
-      translation_domain=DOMAIN and translation_key=<key>.
+      All HomeAssistantError / ServiceValidationError raises in certificate.py,
+      __init__.py, and binary_sensor.py updated with translation_domain=DOMAIN
+      and translation_key referencing the new "exceptions" section in strings.json.
+      Released 0.7.24.
 
   repair-issues:
-    status: todo
+    status: done
     comment: >
-      Certificate expiry currently triggers a persistent notification
-      (pn_async_create in __init__.py).  HA Silver recommends using
-      repairs (ir.async_create_issue) for actionable issues that require
-      user attention.  To close: replace / supplement the notification with
-      an ir.async_create_issue call for cert expiry, with a repair step
-      that links to the reconfigure flow.
+      Certificate expiry converted from persistent notification (pn_async_create)
+      to ir.async_create_issue with translation_key="cert_expiring".
+      ir.async_delete_issue called when cert is healthy.
+      "cert_expiring" issue defined in strings.json "issues" section.
+      Released 0.7.24.
 
   # Silver EXEMPT
 

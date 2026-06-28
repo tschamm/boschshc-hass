@@ -229,11 +229,11 @@ class MotionDetectorLight(SHCEntity, LightEntity):
 
     _attr_supported_color_modes: set[ColorMode] = {ColorMode.BRIGHTNESS}
     _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_translation_key = "motion_light"
 
     def __init__(self, device, entry_id: str) -> None:
         """Initialize the Motion Detector II light entity."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = "Motion Light"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_motionlight"
 
     @property

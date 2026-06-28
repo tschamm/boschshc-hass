@@ -145,7 +145,7 @@ class TestEntityIsPresentZoneDomain:
                   return_value=MagicMock()),
             patch("custom_components.bosch_shc.async_track_state_change_event",
                   side_effect=_fake_track_state_change),
-            patch("custom_components.bosch_shc.pn_async_create", MagicMock()),
+            patch("homeassistant.helpers.issue_registry.async_create_issue", MagicMock()),
         ):
             asyncio.run(async_setup_entry(hass, entry))
 

@@ -195,11 +195,11 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):
     """Button entity that requests a smoke detector self-test."""
 
     _attr_icon = "mdi:smoke-detector-alert"
+    _attr_translation_key = "smoke_test"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the smoke-test button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Smoke Test"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_test"
 
     async def async_press(self) -> None:
@@ -275,11 +275,11 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):
     """
 
     _attr_icon = "mdi:walk"
+    _attr_translation_key = "walk_test"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the walk-test start button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Walk Test"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_test"
 
     async def async_press(self) -> None:
@@ -297,11 +297,11 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):
     """
 
     _attr_icon = "mdi:stop"
+    _attr_translation_key = "walk_test_stop"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the walk-test stop button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Walk Test Stop"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_test_stop"
 
     async def async_press(self) -> None:
@@ -319,11 +319,11 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):
     """
 
     _attr_icon = "mdi:walk"
+    _attr_translation_key = "detection_test"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the detection-test start button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Detection Test"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_test"
 
     async def async_press(self) -> None:
@@ -337,11 +337,11 @@ class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):
     """Button that stops an in-progress detection (walk) test."""
 
     _attr_icon = "mdi:stop"
+    _attr_translation_key = "detection_test_stop"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the detection-test stop button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Detection Test Stop"
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_detection_test_stop"
         )
@@ -357,11 +357,11 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):
     """Button that resets an active tamper condition (LatestTamper service)."""
 
     _attr_icon = "mdi:restart-alert"
+    _attr_translation_key = "reset_tamper"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the tamper-reset button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Reset Tamper"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_reset_tamper"
 
     async def async_press(self) -> None:
@@ -374,11 +374,11 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):
 
     _attr_icon = "mdi:brightness-7"
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "preview_max_brightness"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the dimmer preview-max brightness button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Preview Max Brightness"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_preview_max"
 
     async def async_press(self) -> None:
@@ -393,11 +393,11 @@ class DimmerPreviewMinButton(SHCEntity, ButtonEntity):
 
     _attr_icon = "mdi:brightness-2"
     _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "preview_min_brightness"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the dimmer preview-min brightness button."""
         super().__init__(device, entry_id)
-        self._attr_name = "Preview Min Brightness"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_preview_min"
 
     async def async_press(self) -> None:

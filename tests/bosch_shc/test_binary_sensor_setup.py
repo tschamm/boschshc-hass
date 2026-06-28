@@ -483,7 +483,7 @@ class TestAsyncSetupEntry:
         entities, _ = self._setup(session)
         sensor = next(e for e in entities if isinstance(e, TwinguardSmokeAlarmSensor))
         assert sensor._attr_unique_id == "root-x_tw-x_smoke"
-        assert sensor._attr_name == "Smoke"
+        assert sensor.translation_key == "smoke"
 
     def test_twinguard_tracker_subscribed_to_surveillance_alarm(self):
         """TwinguardAlarmTracker subscribes to SurveillanceAlarm service."""
@@ -751,8 +751,8 @@ class TestShutterContactVibrationSensorInit:
         dev = _make_base_device("sc-vib", name="Fenster", root_device_id="root-vib")
         dev.vibrationsensor = SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
         sensor = ShutterContactVibrationSensor(device=dev, entry_id="E1")
-        # _attr_has_entity_name=True: sub-sensor sets feature name only (no device prefix)
-        assert sensor._attr_name == "Vibration"
+        # name comes from translation_key
+        assert sensor.translation_key == "vibration"
         assert sensor._attr_unique_id == "root-vib_sc-vib_vibration"
         assert sensor._attr_device_class == BinarySensorDeviceClass.VIBRATION
 
@@ -768,8 +768,8 @@ class TestBatterySensorInit:
         dev = _make_base_device("bat-dev", name="Sensor A", root_device_id="root-b")
         dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
         sensor = BatterySensor(device=dev, entry_id="E1")
-        # _attr_has_entity_name=True: sub-sensor sets feature name only (no device prefix)
-        assert sensor._attr_name == "Battery"
+        # name comes from device_class (BinarySensorDeviceClass.BATTERY); _attr_name is None
+        assert sensor._attr_name is None
         assert sensor._attr_unique_id == "root-b_bat-dev_battery"
         assert sensor._attr_entity_category == EntityCategory.DIAGNOSTIC
 
@@ -1494,7 +1494,7 @@ class TestTwinguardSmokeAlarmSensor:
 
     def test_attr_name_is_smoke(self):
         sensor, _ = self._make_sensor()
-        assert sensor._attr_name == "Smoke"
+        assert sensor.translation_key == "smoke"
 
     def test_device_class_is_smoke(self):
         sensor, _ = self._make_sensor()

@@ -49,7 +49,7 @@ PATCH_SESSION = "custom_components.bosch_shc.SHCSessionAsync"
 PATCH_DR = "custom_components.bosch_shc.dr"
 PATCH_PARSE_CERT = "custom_components.bosch_shc.parse_certificate"
 PATCH_TRACK_INTERVAL = "custom_components.bosch_shc.async_track_time_interval"
-PATCH_PN_CREATE = "custom_components.bosch_shc.pn_async_create"
+PATCH_IR_CREATE = "homeassistant.helpers.issue_registry.async_create_issue"
 
 
 def _run(coro):
@@ -170,7 +170,7 @@ def _full_setup(*, fake_session=None, hass=None, entry=None, cert_return=None,
         patch(PATCH_DR, dr_mock),
         patch(PATCH_PARSE_CERT, return_value=cert_return),
         patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
-        patch(PATCH_PN_CREATE, pn_create or MagicMock()),
+        patch(PATCH_IR_CREATE, pn_create or MagicMock()),
     ):
         result = _run(async_setup_entry(hass, entry))
 
@@ -420,7 +420,7 @@ class TestSessionKwargsConditional:
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
-            patch(PATCH_PN_CREATE, MagicMock()),
+            patch(PATCH_IR_CREATE, MagicMock()),
         ):
             result = _run(async_setup_entry(hass, entry))
 
@@ -447,7 +447,7 @@ class TestSessionKwargsConditional:
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
-            patch(PATCH_PN_CREATE, MagicMock()),
+            patch(PATCH_IR_CREATE, MagicMock()),
         ):
             result = _run(async_setup_entry(hass, entry))
 
@@ -481,7 +481,7 @@ class TestScheduledCertCheckNoCertPath:
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_interval),
-            patch(PATCH_PN_CREATE, MagicMock()),
+            patch(PATCH_IR_CREATE, MagicMock()),
         ):
             _run(async_setup_entry(hass, entry))
 
@@ -515,14 +515,10 @@ class TestScheduledCertCheckNoCertPath:
 
 class TestScheduledCertCheckWarningBranch:
     """When days_remaining <= CERT_EXPIRY_WARNING_DAYS (but >= 0),
-    pn_async_create must be called in the daily scheduled check."""
+    ir.async_create_issue must be called in the daily scheduled check."""
 
     def _capture_cert_check_fn_with_cert(self, cert_return):
-        """Run async_setup_entry WITH a cert and capture the scheduled check fn.
-
-        parse_certificate is patched so the fake cert_return is used at setup
-        time without any disk access.  The executor calls the mock directly.
-        """
+        """Run async_setup_entry WITH a cert and capture the scheduled check fn."""
         from custom_components.bosch_shc import async_setup_entry
 
         fake_session = _make_fake_session()
@@ -530,29 +526,26 @@ class TestScheduledCertCheckWarningBranch:
         entry = _make_fake_entry(cert_path="/fake/cert.pem")
         dr_mock = _make_dr_mock()
         captured_fn = []
-        pn_calls = []
+        ir_mock = MagicMock()
 
         def _capture_interval(h, fn, interval):
             captured_fn.append(fn)
             return MagicMock()
-
-        def _fake_pn_create(h, message, title="", notification_id=""):
-            pn_calls.append({"message": message, "title": title})
 
         with (
             patch(PATCH_SESSION, return_value=fake_session),
             patch(PATCH_DR, dr_mock),
             patch(PATCH_PARSE_CERT, return_value=cert_return),
             patch(PATCH_TRACK_INTERVAL, side_effect=_capture_interval),
-            patch(PATCH_PN_CREATE, side_effect=_fake_pn_create),
+            patch(PATCH_IR_CREATE, ir_mock),
         ):
             _run(async_setup_entry(hass, entry))
 
         assert captured_fn, "async_track_time_interval was not called"
-        return captured_fn[0], hass, pn_calls
+        return captured_fn[0], hass, ir_mock
 
     def test_warning_notification_sent_when_cert_expiring_soon(self):
-        """days_remaining == CERT_EXPIRY_WARNING_DAYS triggers pn_async_create."""
+        """days_remaining == CERT_EXPIRY_WARNING_DAYS triggers ir.async_create_issue."""
         days = CERT_EXPIRY_WARNING_DAYS
         not_after = datetime.now(timezone.utc) + timedelta(days=days)
         warn_cert = SimpleNamespace(
@@ -560,33 +553,30 @@ class TestScheduledCertCheckWarningBranch:
             not_after=not_after,
         )
 
-        # days_remaining > 0 so setup does not raise ConfigEntryAuthFailed.
-        # The startup warning branch fires (pn_calls_startup gets a call),
-        # then we test the daily check separately.
-        check_fn, hass, pn_calls_startup = self._capture_cert_check_fn_with_cert(warn_cert)
+        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(warn_cert)
 
-        # Daily check: the scheduled fn calls parse via async_add_executor_job.
-        # Override executor so it returns the expiring cert without disk access.
-        pn_calls_daily = []
-
-        def _fake_pn_create(h, message, title="", notification_id=""):
-            pn_calls_daily.append({"message": message, "title": title})
+        ir_mock_daily = MagicMock()
 
         async def _executor_returning_cert(fn, *args):
             return warn_cert
 
         hass.async_add_executor_job = _executor_returning_cert
 
-        with patch(PATCH_PN_CREATE, side_effect=_fake_pn_create):
+        with patch(PATCH_IR_CREATE, ir_mock_daily):
             _run(check_fn(None))
 
-        assert pn_calls_daily, (
-            "pn_async_create was not called for expiring cert in daily check"
+        assert ir_mock_daily.called, (
+            "ir.async_create_issue was not called for expiring cert in daily check"
         )
-        assert "expir" in pn_calls_daily[0]["message"].lower()
+        # translation_key="cert_expiring" is the third positional arg (index 2) or kwarg
+        call_kwargs = ir_mock_daily.call_args
+        translation_key = call_kwargs.kwargs.get(
+            "translation_key", call_kwargs.args[2] if len(call_kwargs.args) > 2 else ""
+        )
+        assert "expir" in translation_key.lower()
 
     def test_no_notification_when_cert_has_plenty_of_time(self):
-        """days_remaining > CERT_EXPIRY_WARNING_DAYS -> no pn_async_create in daily check."""
+        """days_remaining > CERT_EXPIRY_WARNING_DAYS -> no ir.async_create_issue in daily check."""
         days = CERT_EXPIRY_WARNING_DAYS + 10
         not_after = datetime.now(timezone.utc) + timedelta(days=days)
         ok_cert = SimpleNamespace(
@@ -596,21 +586,18 @@ class TestScheduledCertCheckWarningBranch:
 
         check_fn, hass, _ = self._capture_cert_check_fn_with_cert(ok_cert)
 
-        pn_calls_daily = []
-
-        def _fake_pn_create(h, message, title="", notification_id=""):
-            pn_calls_daily.append(message)
+        ir_mock_daily = MagicMock()
 
         async def _executor_returning_cert(fn, *args):
             return ok_cert
 
         hass.async_add_executor_job = _executor_returning_cert
 
-        with patch(PATCH_PN_CREATE, side_effect=_fake_pn_create):
+        with patch(PATCH_IR_CREATE, ir_mock_daily):
             _run(check_fn(None))
 
-        assert pn_calls_daily == [], (
-            "pn_async_create must NOT be called when cert is not near expiry"
+        assert not ir_mock_daily.called, (
+            "ir.async_create_issue must NOT be called when cert is not near expiry"
         )
 
     def test_reload_triggered_when_cert_expired(self):
@@ -620,7 +607,6 @@ class TestScheduledCertCheckWarningBranch:
             days_remaining=days_startup,
             not_after=datetime.now(timezone.utc) + timedelta(days=days_startup),
         )
-        # Use a healthy cert at startup to avoid ConfigEntryAuthFailed
         check_fn, hass, _ = self._capture_cert_check_fn_with_cert(startup_cert)
 
         days_expired = -1
@@ -634,7 +620,7 @@ class TestScheduledCertCheckWarningBranch:
 
         hass.async_add_executor_job = _executor_returning_expired
 
-        with patch(PATCH_PN_CREATE, MagicMock()):
+        with patch(PATCH_IR_CREATE, MagicMock()):
             _run(check_fn(None))
 
         hass.async_create_task.assert_called()

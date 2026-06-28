@@ -390,19 +390,19 @@ class TestBatteryLevelSensorErrorPaths:
         assert s.native_value is None
 
     def test_happy_path_returns_value(self):
-        """When batterylevel.value is a valid string, it is returned."""
+        """When batterylevel.value is a valid string, it is returned lowercased."""
         class _GoodLevel:
             value = "OK"
 
         s = self._sensor(_GoodLevel())
-        assert s.native_value == "OK"
+        assert s.native_value == "ok"
 
     def test_happy_path_low_battery(self):
         class _LowLevel:
             value = "LOW_BATTERY"
 
         s = self._sensor(_LowLevel())
-        assert s.native_value == "LOW_BATTERY"
+        assert s.native_value == "low_battery"
 
 
 # ---------------------------------------------------------------------------
@@ -441,14 +441,14 @@ class TestTwinguardCombinedRatingSensorErrorPaths:
             name = "GOOD"
 
         s = self._sensor(_Good())
-        assert s.native_value == "GOOD"
+        assert s.native_value == "good"
 
     def test_happy_path_bad(self):
         class _Bad:
             name = "BAD"
 
         s = self._sensor(_Bad())
-        assert s.native_value == "BAD"
+        assert s.native_value == "bad"
 
 
 # ---------------------------------------------------------------------------

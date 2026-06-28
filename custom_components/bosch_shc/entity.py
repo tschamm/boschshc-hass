@@ -139,10 +139,16 @@ class SHCEntity(Entity):
         """Initialize the generic SHC device."""
         self._device = device
         self._entry_id = entry_id
-        # Primary entity: _attr_name = None means HA uses the device name as the
-        # entity name.  Sub-classes that represent a feature set _attr_name to the
-        # feature label (without the device name prefix, since HA prepends it).
+        # Default to primary entity: _attr_name=None → HA uses only the device name.
         self._attr_name = None
+        # Sub-classes with a class-level _attr_translation_key provide a sub-entity
+        # label; remove the instance None so HA's translation lookup is not shadowed.
+        for _cls in type(self).__mro__:
+            if _cls is SHCEntity:
+                break
+            if "_attr_translation_key" in _cls.__dict__:
+                del self._attr_name
+                break
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._update_attr()
 
