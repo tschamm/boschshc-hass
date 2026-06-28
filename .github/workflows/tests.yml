@@ -21,7 +21,9 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: requirements_test.txt
+          cache-dependency-path: |
+            requirements_test.txt
+            custom_components/bosch_shc/manifest.json
 
       # Retry on PyPI edge-lag: a just-released pinned boschshcpy may not have
       # propagated to this runner's PyPI edge yet. Retry with backoff so the

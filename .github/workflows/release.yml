@@ -30,7 +30,9 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: requirements_test.txt
+          cache-dependency-path: |
+            requirements_test.txt
+            custom_components/bosch_shc/manifest.json
 
       # Retry the install: when this release follows a same-session boschshcpy
       # release, the GitHub runner's PyPI edge may not have mirrored the new
@@ -74,13 +76,25 @@ jobs:
 
       - name: Resolve tag
         id: tag
-        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: echo "tag=${INPUT_TAG:-$REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate tag format
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::TAG='$TAG' is not a semver tag (must match vX.Y.Z)"
+            exit 1
+          }
 
       - name: Create release (idempotent)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release $TAG already exists — leaving it untouched."
           else

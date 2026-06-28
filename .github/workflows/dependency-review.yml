@@ -5,6 +5,8 @@ on:
     paths:
       - "requirements*.txt"
       - "custom_components/bosch_shc/manifest.json"
+      - "pyproject.toml"
+      - "setup.py"
 
 permissions:
   contents: read
