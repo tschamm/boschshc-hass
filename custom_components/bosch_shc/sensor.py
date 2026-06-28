@@ -636,6 +636,7 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):
 
     _attr_icon = "mdi:wifi"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_translation_key = "communication_quality"
     _attr_options = ["good", "normal", "medium", "bad", "unknown", "fetching"]
@@ -869,6 +870,7 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
     _attr_suggested_display_precision = 0
     _attr_translation_key = "valve_tappet"
 
@@ -1031,6 +1033,8 @@ class WalkStateSensor(SHCEntity, SensorEntity):
     """
 
     _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
     _attr_options = ["walk_test_started", "walk_test_stopped", "unknown"]
     _attr_translation_key = "walk_test_state"
 
@@ -1060,6 +1064,8 @@ class DetectionStateSensor(SHCEntity, SensorEntity):
     """
 
     _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
     _attr_options = [
         "detection_test_started",
         "detection_test_stopped",
@@ -1094,6 +1100,7 @@ class InstallationProfileSensor(SHCEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
     _attr_translation_key = "installation_profile"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:

@@ -57,6 +57,12 @@ jobs:
       - name: pylint
         run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
 
+      - name: quality scale gate (gold)
+        run: python3 scripts/check-quality-scale.py --tier gold
+
+      - name: quality scale platinum (informational — see inject-websession + strict-typing)
+        run: python3 scripts/check-quality-scale.py --tier platinum || true
+
       - name: translation completeness
         # Every translation/*.json must have exactly the same data keys in
         # options.step.init.sections.features as strings.json.

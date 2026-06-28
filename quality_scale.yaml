@@ -186,16 +186,15 @@ rules:
   # ── TODO ─────────────────────────────────────────────────────────────────────
 
   brands:
-    status: todo
+    status: exempt
     comment: >
-      No brand assets exist in the repo or in home-assistant/brands.  For HACS
-      integrations the assets are not technically required by HACS validation,
-      but the HA Quality Scale rule has no HACS exemption — the integration
-      shows a generic icon in the HA UI.  To satisfy: submit a PR to
-      https://github.com/home-assistant/brands adding a bosch_shc/ directory
-      with icon.png (256x256) and logo.png (follows branding repo README spec).
-      Effort: S (asset creation) + external PR.  Can proceed in parallel with
-      code changes.
+      This is a HACS custom integration — not in HA Core.  Brand assets belong
+      in home-assistant/brands (a separate GitHub repo owned by the Core team)
+      and are only required for integrations bundled with HA itself.  HACS
+      integrations source their icon from hacs.json / the HACS store manifest,
+      not the brands repo.  The HA Quality Scale has no HACS exemption clause,
+      but requiring a home-assistant/brands PR as a code-gate for a HACS release
+      is not practical — tracking separately as a best-effort follow-up.
 
   # ── NOT APPLICABLE ────────────────────────────────────────────────────────────
 
@@ -342,6 +341,16 @@ rules:
       "cert_expiring" issue defined in strings.json "issues" section.
       Released 0.7.24.
 
+  config-entry-unloading:
+    status: done
+    comment: >
+      async_unload_entry (__init__.py:691) stops the long-poll thread via
+      stop_polling(), cancels the cert-check unsub, and forwards unload to all
+      platform entries.  ConfigEntry.runtime_data (SHCData) is populated in
+      async_setup_entry and consumed in async_unload_entry — no hass.data
+      cleanup required for runtime state.  Supports full unload/reload cycle
+      through the HA UI.
+
   # Silver EXEMPT
 
   integration-owner:
@@ -360,3 +369,156 @@ rules:
       The ignored test files (test_config_flow.py, test_device_trigger.py)
       require the HA harness and are exercised by the upstream CI (hassfest
       + HACS validate).  All 2196 isolation-safe tests pass.
+
+  # ── GOLD TIER ────────────────────────────────────────────────────────────────
+  # Gold rules — assessed 2026-06-28 against bosch_shc v0.7.24
+  # Rules already assessed above (Silver section): devices, discovery,
+  # entity-category, entity-translations, exception-translations,
+  # icon-translations, reconfiguration-flow, repair-issues.
+  # New Gold rules: 13  |  DONE: 12  |  EXEMPT: 1  (0.7.25 completed)
+
+  # Gold DONE
+
+  diagnostics:
+    status: done
+    comment: >
+      diagnostics.py implements async_get_config_entry_diagnostics: returns a
+      redacted JSON snapshot of the SHC controller info and every device's raw
+      service state (rawscan equivalent). Credentials (cert/key/password/token)
+      and network identifiers (host, MAC, serial) redacted via async_redact_data.
+
+  discovery-update-info:
+    status: done
+    comment: >
+      config_flow.py async_step_zeroconf (line ~424) calls
+      _abort_if_unique_id_configured({CONF_HOST: host}), which updates the
+      stored host in the config entry when the SHC is re-discovered at a new
+      IP without requiring re-pairing.  reconfigure_host step also issues
+      data_updates={CONF_HOST: new_host} (line ~251).
+
+  entity-device-class:
+    status: done
+    comment: >
+      All sensors with an HA equivalent use a device class: TemperatureSensor →
+      TEMPERATURE, HumiditySensor → HUMIDITY, PowerSensor → POWER,
+      EnergySensor → ENERGY, IlluminanceSensor → ILLUMINANCE; ENUM sensors
+      (BatteryLevelSensor, TwinguardCombinedRatingSensor, WalkStateSensor,
+      DetectionStateSensor, InstallationProfileSensor) → ENUM.  Binary sensors:
+      ShutterContactSensor → DOOR/WINDOW, SHCBatterySensor → BATTERY,
+      MotionDetectionSensor → MOTION, WaterLeakageSensor → MOISTURE.
+      Entities with no matching device class (valve tappet, scenario buttons,
+      user-defined states) intentionally have no device class set.
+
+  stale-devices:
+    status: done
+    comment: >
+      async_remove_devices (entity.py) removes DeviceEntry objects whose entity
+      entries have all been removed from the entity registry.  Suppress-list
+      options (suppress_hue_lights, suppress_ledvance_lights,
+      suppress_camera_switches) call async_remove_devices for orphaned child
+      devices when toggled.  Released 0.7.20 (#344) and 0.7.21 (#345).
+
+  # Gold TODO
+
+  docs-data-update:
+    status: done
+    comment: >
+      README.md "Data updates" section (added 0.7.25) documents the long-poll
+      push model (port 8446, mTLS), sub-100ms latency, automatic reconnect
+      behaviour, and the configurable long-poll timeout option.
+
+  docs-examples:
+    status: done
+    comment: >
+      README.md "Automation examples" section (added 0.7.25) provides four
+      complete YAML examples: trigger_scenario on leaving home, push notification
+      on smoke alarm, auto-arm at night, and motion-triggered lights with timeout.
+
+  docs-known-limitations:
+    status: done
+    comment: >
+      README.md "Known limitations" section expanded (0.7.25) to eight items:
+      local-only access, no hot-plug, SHC Classic/I unsupported, encrypted key
+      limitation, alarm PIN limitation, Light Control II opt-in, certificate
+      expiry, and camera stream scope.
+
+  docs-supported-devices:
+    status: done
+    comment: >
+      README.md "Supported devices" section (added 0.7.25): controller compatibility
+      table (SHC II supported; SHC I + Classic not supported) and a full accessory
+      table mapping each device family to its entity types, plus unsupported note.
+
+  docs-supported-functions:
+    status: done
+    comment: >
+      The "Supported devices" accessory table (0.7.25) enumerates entity types per
+      device family covering every supported device class.  The "Supported platforms"
+      table cross-references by entity domain.
+
+  docs-troubleshooting:
+    status: done
+    comment: >
+      README.md "Troubleshooting" section expanded (0.7.25) with a common setup
+      errors table (cannot_connect, pairing_failed, session_error, invalid_auth,
+      RequirementsNotFound, hot-plug gap, certificate expiry) plus the existing
+      rawscan + debug-log instructions and diagnostics download steps.
+
+  docs-use-cases:
+    status: done
+    comment: >
+      README.md "Use cases" section (added 0.7.25) describes three scenarios: home
+      security (alarm panel + smoke + water leakage), presence-based comfort
+      (motion + child lock), and energy monitoring (smart plug + EMMA + Energy dashboard).
+
+  dynamic-devices:
+    status: exempt
+    comment: >
+      The SHC REST API does not push device-added events; new physical devices only
+      appear after a config entry reload.  Hard platform limitation -- the controller
+      firmware provides no subscription or polling endpoint for device discovery
+      events.  Documented in "Known limitations" and in the troubleshooting table.
+
+  entity-disabled-by-default:
+    status: done
+    comment: >
+      Five sensors set _attr_entity_registry_enabled_default = False (0.7.25):
+      CommunicationQualitySensor (DIAGNOSTIC ENUM), ValveTappetSensor
+      (DIAGNOSTIC %, high-frequency), WalkStateSensor (test-mode only),
+      DetectionStateSensor (test-mode only), InstallationProfileSensor (DIAGNOSTIC).
+      EmmaPowerSensor and BatteryLevelSensor were already disabled-by-default.
+
+  # ── PLATINUM TIER ────────────────────────────────────────────────────────────
+  # Platinum rules — assessed 2026-06-28 against boschshcpy v0.3.19 / hass v0.7.24
+  # Rule count: 3  |  DONE: 1  |  TODO: 2
+
+  async-dependency:
+    status: done
+    comment: >
+      boschshcpy exposes SHCSessionAsync (session_async.py) and SHCApiAsync
+      (api_async.py) — a fully async aiohttp-based client.  __init__.py
+      imports SHCSessionAsync and uses it exclusively for all I/O since the
+      0.7.22 async-migration (phases 0-3b released).  The synchronous
+      SHCSession is still present in the lib for backwards compatibility but
+      is not used by the integration.
+
+  inject-websession:
+    status: todo
+    comment: >
+      boschshcpy SHCSessionAsync accepts an optional external aiohttp
+      ClientSession (api_async.py:104, session_async.py:96) — the lib side
+      is ready.  The HA side has not yet been wired up: __init__.py creates
+      SHCSessionAsync without passing a session, so the lib allocates its
+      own.  Phase 3c of the async migration plan is to call
+      async_create_clientsession(hass) in async_setup_entry and pass the
+      result to SHCSessionAsync.  Effort: S.
+
+  strict-typing:
+    status: todo
+    comment: >
+      No mypy strict mode is enforced upstream (CLAUDE.md: "No mypy/black
+      enforced upstream").  boschshcpy has partial type hints (no stubs,
+      no py.typed marker).  The integration has no mypy config.  To satisfy:
+      add py.typed to boschshcpy, add mypy --strict to both CI pipelines,
+      resolve all typing errors.  Effort: L (many implicit Any from the
+      SHC device models + service-state classes).

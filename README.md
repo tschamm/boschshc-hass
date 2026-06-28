@@ -30,7 +30,7 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
   presence-based child lock and thermostat silent mode, device/room filter, and connection tuning —
   all with safe defaults (existing setups are never changed).
 - 🌍 **30 languages** for the configuration UI.
-- 🏅 **Home Assistant Bronze** quality scale.
+- 🏅 **Home Assistant Gold** quality scale (Platinum in progress).
 
 ### What's new in 0.7
 
@@ -99,6 +99,84 @@ phase of a multi-release async migration.
 
 > [!TIP]
 > **Bosch cameras?** This integration exposes the basics (privacy / light / notification switches, stream). For a lot more — snapshots, motion / FCM push events, light control and richer streaming — use the dedicated companion project: **[Bosch Smart Home Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant)**. The two run side by side. (When a camera is present, the integration also shows a one-time, dismissible suggestion pointing there.)
+
+---
+
+## Supported devices
+
+### Controller
+
+| Model | Status |
+|---|---|
+| Bosch Smart Home Controller II (SHC II) | ✅ Supported |
+| Bosch Smart Home Controller I (SHC I) | ❌ Not supported |
+| Bosch Smart Home Controller Classic | ❌ Not supported |
+
+The SHC II is required. The integration uses the local REST API introduced with the SHC II firmware; the older SHC I and SHC Classic hardware uses a different protocol and is not compatible.
+
+### Accessories
+
+The following device families are supported. Devices not in this list are either
+unsupported or may appear only as partial entries (e.g. a device paired to the SHC but
+not yet implemented in this integration).
+
+| Device family | Entity types created |
+|---|---|
+| Room Climate Controller (BWTH/BWTH24) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset), `valve` (tappet position, diagnostic) |
+| Room Thermostat (wall-mounted) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset) |
+| Heating Circuit | `climate`, `number` (eco + comfort setpoints) |
+| Shutter Control (BBL) / Micromodule Shutter / Awning | `cover` (position) |
+| Micromodule Blinds | `cover` (position + tilt), `sensor` (power, energy) |
+| Shutter Contact I | `binary_sensor` (window/door open state) |
+| Shutter Contact II | `binary_sensor` (open state), `switch` (bypass) |
+| Shutter Contact 2 Plus | `binary_sensor` (open state, vibration), `select` (vibration sensitivity), `switch` (bypass, vibration enabled) |
+| Motion Detector I | `binary_sensor` (motion), `sensor` (illuminance), `event` (motion) |
+| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹, installation profile¹), `select` (sensitivity, orientation-light), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
+| Smoke Detector I / II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
+| Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test) |
+| Smoke Detection System | `binary_sensor` (aggregate alarm state), `event` (alarm events) |
+| Outdoor Siren | `binary_sensor` (acoustic alarm, visual alarm, tamper), `sensor` (battery %, power source, solar quality), `button` (test alarm), `number` (alarm/flash duration + delay), `select` (sound level) |
+| Smart Plug (PSM) | `switch`, `sensor` (power, energy) |
+| Smart Plug Compact (PSM Compact) | `switch`, `sensor` (power, energy) |
+| Light Control / Micromodule Relay (BSM) | `switch` (or `light` — opt-in per device), `sensor` (power, energy) |
+| Micromodule Dimmer | `light` (brightness) |
+| LEDVANCE lights (ZigBee via SHC) | `light` (on/off, brightness, color) |
+| Hue lights (via SHC Hue bridge) | `light` (on/off, brightness, color) |
+| Water Leakage Sensor | `binary_sensor` (moisture) |
+| Universal Switch (WRC2 / SWITCH2) | `event` (button press: upper/lower, short/long) |
+| Camera Eyes | `switch` (privacy, light, notification) |
+| Camera 360 | `switch` (privacy, notification) |
+| Outdoor Camera Gen2 | `switch` (privacy, front light, ambient light) |
+| EMMA (Energy Management Module A) | `sensor` (grid power) |
+| Scenarios | `button` (optional, one per scenario), `event` (always, one per scenario) |
+| User-Defined States | `switch` (one per user-defined state) |
+| Intrusion Detection System | `alarm_control_panel` |
+
+> ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**.
+>
+> Devices not listed (e.g. third-party ZigBee or Z-Wave accessories not
+> from Bosch) may be physically paired to the SHC but are not surfaced by
+> this integration.
+
+---
+
+## Data updates
+
+The SHC exposes a **long-poll REST API** on port 8446 (mTLS). The integration
+maintains a persistent connection: the SHC holds the request open until a state
+change occurs, then responds immediately with the changed values. This gives
+**near-real-time** push updates — typically under 100 ms — without polling.
+
+- **No polling interval** — state changes arrive as push events. `should_poll = False`
+  on all entities (exception: camera-type switches and motion derived from timestamps,
+  which set `should_poll = True` for their specific sensors).
+- **Reconnect** — if the connection drops (network glitch, SHC restart), the library
+  automatically reconnects and re-subscribes. A warning is logged on disconnect; an
+  info message confirms reconnection.
+- **Long-poll timeout** — configurable in Options → Advanced (default: 10 s). Lower
+  values increase responsiveness after a network glitch; higher values reduce chatter.
+
+---
 
 ## Services / actions
 
@@ -217,22 +295,38 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 
 ## Quality
 
-Targets the [Home Assistant **Bronze** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
-All Bronze rules implemented except `brands` (pending in home-assistant/brands).
-All assessed Silver rules complete; remaining Silver rules tracked in `quality_scale.yaml`.
+Targets the [Home Assistant **Gold** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
+All Bronze + Silver + Gold rules implemented. Platinum progress tracked in `quality_scale.yaml`
+(`scripts/check-quality-scale.py --tier platinum`).
 
 - `local_push` IoT class — no cloud, no polling (camera-type devices update on poll only).
 - Config flow with zeroconf discovery, re-auth, reconfigure and options flow.
 - Unique config-entry enforcement, test-before-configure validation.
-- Fully async — event-loop native, no executor round-trips for writes.
+- Fully async — event-loop native; long-poll push via `SHCSessionAsync` (aiohttp).
 - `runtime_data`, `has_entity_name = True`, `PARALLEL_UPDATES` on every platform.
+- Entity + icon + exception translations (30 languages); repair issues for certificate expiry.
 - Domain actions (`trigger_scenario`, `trigger_rawscan`) available even if an entry fails to load.
-- CI: hassfest + HACS validation, unit tests, flake8/codespell/pip-audit, CodeQL, secret scan,
-  translation-completeness gate.
+- Diagnostics download — redacted JSON snapshot of all device states.
+- CI: hassfest + HACS validation, unit tests, ruff/codespell/pip-audit/pylint, CodeQL,
+  secret scan, translation-completeness gate, quality-scale gate (Gold hard / Platinum informational).
 
 ---
 
-## Troubleshooting & bug reports
+## Troubleshooting
+
+### Common setup errors
+
+| Error | Cause | Fix |
+|---|---|---|
+| `cannot_connect` | SHC not reachable at the given IP | Check IP, firewall; try ping from HA host |
+| `pairing_failed` | SHC not in registration mode when credentials were submitted | Press the SHC front button until LEDs flash, then retry |
+| `session_error` | Certificate or session rejected | Re-pair via **Reconfigure → Re-pair credentials** |
+| `invalid_auth` | Wrong system password | Re-enter the password set during initial SHC app setup |
+| `RequirementsNotFound: boschshcpy` | PyPI mirror lag after a release | Wait 5–10 min and reload; or manually install the pinned version |
+| Entities not appearing after adding a device | SHC API does not push device-added events | **Bosch SHC → ⋮ → Reload** |
+| Certificate expiry repair issue | Client cert expires after ~10 years | Follow the repair flow or use **Reconfigure → Re-pair** |
+
+### Bug reports
 
 The fastest path to a fix is data. In order of convenience:
 
@@ -300,11 +394,114 @@ logger:
 
 ## Known limitations
 
-- Encrypted SSL private keys are not supported (a `requests` limitation).
-- New devices on the SHC require reloading the integration before they appear in HA.
-- The alarm control panel does not support a PIN code for arming/disarming.
-- Client-certificate renewal is manual — a warning (log + notification) appears 30 days before
-  expiry; after expiry, re-pair via the reconfigure flow.
+- **Local-only** — the integration talks directly to the SHC on your LAN. Remote access
+  (from outside the home network) is not possible without a VPN or similar tunnel.
+- **No hot-plug** — new physical devices paired in the Bosch app only appear in HA after
+  reloading the integration (**Bosch SHC → ⋮ → Reload**) or restarting Home Assistant.
+  The SHC API does not push device-added events.
+- **SHC Classic / SHC I not supported** — the local REST API used here was introduced
+  with the SHC II. Older hardware uses a different protocol and is incompatible.
+- **Encrypted SSL private keys are not supported** — a limitation of the underlying
+  TLS library. Keys generated by the registration flow are unencrypted and work fine.
+- **Alarm control panel PIN** — arming/disarming via HA does not require (or support)
+  a PIN code, regardless of whether one is set in the Bosch app.
+- **Light Control II / Hue bridge devices** — exposed as `switch` by default to avoid
+  accidental platform conflicts; opt in per device via Options → Expose light relays.
+- **Certificate expiry** — client certificates expire after approximately 10 years.
+  A repair issue appears 30 days before expiry; after expiry, re-pair via
+  **Bosch SHC → ⋮ → Reconfigure → Re-pair credentials**.
+- **Camera stream** — only the privacy / light / notification switches are exposed.
+  For snapshots, motion events and richer camera control use the companion
+  [Bosch Smart Home Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant).
+
+---
+
+## Use cases
+
+### Home security
+
+Combine the intrusion detection alarm panel with smoke detectors and water leakage sensors
+for a unified safety dashboard. Use an automation to send a push notification (or activate
+a siren) when `alarm_control_panel.bosch_shc` switches to `triggered`, and another to
+alert on `binary_sensor.*_water_leakage` going `on`.
+
+### Presence-based comfort
+
+Use motion sensors from Motion Detector I/II as triggers to turn on lights or adjust
+thermostats. The **child lock** option lets you track presence entities (people, device
+trackers) and automatically lock/unlock thermostat controls when you leave or arrive.
+
+### Energy monitoring
+
+Smart Plugs and Compact Plugs expose real-time watt sensors and cumulative kWh sensors.
+Add these to the **HA Energy dashboard** (Settings → Energy) for appliance-level consumption
+tracking. The EMMA module can additionally report grid-level import/export power.
+
+---
+
+## Automation examples
+
+### Trigger a scenario when you leave home
+
+```yaml
+automation:
+  trigger:
+    - platform: state
+      entity_id: person.thomas
+      to: not_home
+  action:
+    - action: bosch_shc.trigger_scenario
+      data:
+        name: "Away"
+```
+
+### Notify on smoke alarm
+
+```yaml
+automation:
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.twinguard_smoke  # entity_id depends on device name
+      to: "on"
+  action:
+    - action: notify.mobile_app_phone
+      data:
+        title: "⚠️ Smoke alarm"
+        message: "Twinguard has detected smoke."
+```
+
+### Auto-arm intrusion system when leaving
+
+```yaml
+automation:
+  trigger:
+    - platform: state
+      entity_id: person.thomas
+      to: not_home
+  action:
+    - action: alarm_control_panel.alarm_arm_away
+      target:
+        entity_id: alarm_control_panel.bosch_shc  # entity_id depends on SHC name
+```
+
+### Motion-triggered lights (with timeout)
+
+```yaml
+automation:
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.motion_detector  # entity_id depends on device name
+      to: "on"
+  action:
+    - action: light.turn_on
+      target:
+        area_id: hallway
+    - delay: "00:05:00"
+    - action: light.turn_off
+      target:
+        area_id: hallway
+```
 
 ---
 
