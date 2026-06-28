@@ -1,6 +1,7 @@
 name: Quality
 
 on:
+  workflow_call:
   push:
     branches: [master]
   pull_request:
@@ -14,8 +15,8 @@ jobs:
     name: ruff · codespell · pip-audit · pylint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: "3.13"
           cache: pip
@@ -58,6 +59,9 @@ jobs:
 
       - name: pylint
         run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
+
+      - name: mypy (informational — Platinum strict-typing in progress)
+        run: pip install mypy && mypy --ignore-missing-imports custom_components/bosch_shc || true
 
       - name: quality scale gate (gold)
         run: python3 scripts/check-quality-scale.py --tier gold

@@ -11,15 +11,19 @@ permissions:
 
 jobs:
   tests:
-    name: pytest (unit)
+    name: pytest (unit) / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
             requirements_test.txt
@@ -55,3 +59,6 @@ jobs:
           pytest tests/bosch_shc -q -o addopts=""
           --ignore=tests/bosch_shc/test_config_flow.py
           --ignore=tests/bosch_shc/test_device_trigger.py
+
+      - name: Syntax check HA-harness test files (excluded from run)
+        run: python3 -m py_compile tests/bosch_shc/test_config_flow.py tests/bosch_shc/test_device_trigger.py
