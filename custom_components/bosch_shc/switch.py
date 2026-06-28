@@ -24,7 +24,6 @@ from boschshcpy import (
 )
 from boschshcpy.device import SHCDevice
 from homeassistant.components.switch import (
-    ENTITY_ID_FORMAT,
     SwitchDeviceClass,
     SwitchEntity,
     SwitchEntityDescription,
@@ -37,8 +36,6 @@ from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
-from homeassistant.util import slugify
-
 from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
@@ -1060,9 +1057,6 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         # identifiable (e.g. "Vacation Mode").
         self._attr_name = device.name if attr_name is None else attr_name
 
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"userdefinedstate_{slugify(self._device.name)}"
-        )
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None

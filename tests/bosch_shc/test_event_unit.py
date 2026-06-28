@@ -131,27 +131,12 @@ class TestUniversalSwitchEventInit:
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "UPPER_BUTTON")
         assert entity._attr_unique_id == "root:r_hdm:sw:99_UPPER_BUTTON"
 
-    def test_entity_id_slugified_lowercase(self):
-        dev = self._make_dev(name="Außen Schalter", device_id="hdm:sw:1", root_device_id="root:1")
-        entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
-        with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
-            UniversalSwitchEvent.__init__(entity, dev, "entry1", "UPPER_BUTTON")
-        assert entity.entity_id.startswith("event.")
-        assert entity.entity_id == entity.entity_id.lower()
-
     def test_last_fired_timestamp_initialized_to_minus_one(self):
         dev = self._make_dev()
         entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
         with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "UPPER_BUTTON")
         assert entity._last_fired_timestamp == -1
-
-    def test_key_id_casefolded_in_entity_id(self):
-        dev = self._make_dev(name="Switch")
-        entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
-        with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
-            UniversalSwitchEvent.__init__(entity, dev, "entry1", "UPPER_BUTTON")
-        assert "upper_button" in entity.entity_id
 
     def test_lower_button_key_id_in_name_and_uid(self):
         dev = self._make_dev(name="Hallway SW", device_id="hdm:sw:5", root_device_id="root:5")

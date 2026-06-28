@@ -563,14 +563,6 @@ class TestSHCScenarioEventInit:
         )
         assert entity._attr_unique_id == "SHC-UID-123_scn:99"
 
-    def test_entity_id_starts_with_event_dot(self):
-        entity, _, _ = _make_scenario_entity(scenario_name="Night Mode")
-        assert entity.entity_id.startswith("event.")
-
-    def test_entity_id_contains_scenario_slug(self):
-        entity, _, _ = _make_scenario_entity(scenario_name="Night Mode")
-        assert "night_mode" in entity.entity_id
-
     def test_shc_device_entry_stored(self):
         entity, _, shc_entry = _make_scenario_entity()
         assert entity._shc is shc_entry

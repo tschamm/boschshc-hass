@@ -887,11 +887,6 @@ class TestSHCUserDefinedStateSwitch:
         sw = _make_uds_switch()
         assert sw.should_poll is False
 
-    def test_entity_id_uses_slugified_name(self):
-        """entity_id must be switch.userdefinedstate_<slug>."""
-        sw = _make_uds_switch(name="My State")
-        assert sw.entity_id == "switch.userdefinedstate_my_state"
-
     def test_unique_id_no_attr_name(self):
         sw = _make_uds_switch(dev_id="uds9", root_id="mac9")
         assert sw._attr_unique_id == "mac9_uds9"
@@ -964,17 +959,6 @@ class TestSHCUserDefinedStateSwitch:
         )
         asyncio.run(sw.async_update())
         sw._device.async_update.assert_awaited_once()
-
-    def test_entity_id_umlaut_slug(self):
-        """Device names with umlauts must produce a valid entity_id slug."""
-        sw = _make_uds_switch(name="Küche")
-        assert sw.entity_id.startswith("switch.userdefinedstate_")
-        # Must not contain non-slug chars
-        import re
-        slug_part = sw.entity_id[len("switch."):]
-        assert re.match(r"^[a-z0-9_]+$", slug_part), (
-            f"entity_id slug {slug_part!r} contains invalid characters"
-        )
 
 
 # ---------------------------------------------------------------------------

@@ -8,3 +8,4 @@ build/
 dist/
 *.pem
 scaffold.readme
+.coverage

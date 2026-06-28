@@ -19,6 +19,30 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 > Looking for the version that ships *inside* Home Assistant Core? This HACS repo is the
 > **bleeding-edge** upstream — fixes and new devices land here first, then flow to Core later.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tschamm&repository=boschshc-hass&category=integration)
+
+---
+
+## Contents
+
+- [Highlights](#highlights)
+- [Quick start](#quick-start)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Supported platforms](#supported-platforms)
+- [Supported devices](#supported-devices)
+- [Services / actions](#services--actions)
+- [Data updates](#data-updates)
+- [Troubleshooting](#troubleshooting)
+- [Removal](#removal)
+- [Known limitations](#known-limitations)
+- [Use cases](#use-cases)
+- [Automation examples](#automation-examples)
+- [Architecture](#architecture)
+- [Quality](#quality)
+- [What's new](#whats-new)
+- [Maintainers & support](#maintainers--support)
+
 ---
 
 ## Highlights
@@ -32,163 +56,37 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 - 🌍 **30 languages** for the configuration UI.
 - 🏅 **Home Assistant Gold** quality scale (Platinum in progress).
 
-### What's new in 0.7
-
-**0.7.18 — Suppress & filter options**
-
-Six new opt-in suppression toggles keep your entity list tidy. All default to **off** so nothing
-changes for existing setups:
-
-- **Suppress power sensors** — hides the watt + kWh sensors on plugs (Smart Plug, Compact, EMMA).
-- **Suppress camera switches** — hides the privacy / light / notification switches for
-  Camera Eyes, 360, and Outdoor Gen2 (useful when the
-  [Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant) is installed).
-- **Suppress Hue lights** — hides lights paired through the SHC Hue bridge
-  *(shown only when Hue devices are connected)*.
-- **Suppress LEDVANCE lights** — hides LEDVANCE lights paired to the SHC
-  *(shown only when LEDVANCE devices are connected)*.
-- **Suppress MD2 indicator light** — hides the orientation LED entity on Motion Detector II
-  *(shown only when MD2 devices are connected)*.
-- **Scenario filter** — a multi-select allow-list; only the chosen scenarios become button entities
-  (stale IDs are auto-cleared on reload) *(shown only when scenarios exist)*.
-- **Expose light relay as `light`** — per-device picker (and a "flip all" toggle) to expose
-  BSM / Light Control II channels as `light` entities instead of `switch`
-  *(shown only when compatible light-relay devices are connected)*.
-
-CI now enforces translation completeness for all 30 languages.
-
-**0.7.15 — Fully async**
-
-The integration is now event-loop-native — no executor round-trips for writes. This was the final
-phase of a multi-release async migration.
-
-**0.7 — Motion Detector II, climate polish**
-
-- **Motion Detector II [+M] — full configuration parity with the Bosch app:**
-  - **Detection (Walk) Test** — start/stop buttons + a state sensor, for verifying
-    mounting/coverage. Works whether your device exposes the `DetectionTest` *or* the
-    `WalkTest` service (the local API and the app use different names for the same feature).
-  - **Tamper protection** — a switch to enable/disable it, a **Reset Tamper** button to
-    clear an active tamper condition, and the existing tamper state sensor.
-  - **Orientation-light response time** — a select (Long = lower battery use / Short =
-    more responsive), backed by the `PollControl` service.
-  - **Installation profile** — a read-only sensor showing the active environment
-    (e.g. `GENERIC` / `OUTDOOR`).
-- **Climate display polish** — preset icons (`auto`/`manual`/`eco`/`boost`) and a proper
-  `translation_key`, plus `hvac_modes` ordered `[HEAT, (COOL), OFF]` so cards that hide
-  modes after `OFF` (e.g. Mushroom thermostat) show the COOL button. *(thanks @jumlu)*
-
 ---
 
-## Supported platforms
+## Quick start
 
-| Platform | Devices / features |
-|---|---|
-| `alarm_control_panel` | Intrusion Detection System |
-| `binary_sensor` | Shutter Contact (Gen 1 + Gen 2), Motion Detector (Gen 1 + Gen 2 [+M]), Smoke Detector (Gen 1 + Gen 2), Smoke Detection System, Water Leakage Sensor, Shutter Contact 2 Plus (vibration), Twinguard smoke alarm, Battery state (all battery devices) |
-| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper |
-| `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
-| `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
-| `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
-| `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options) |
-| `number` | Thermostat temperature offset |
-| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
-| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state & installation profile, EMMA grid power, Battery level (diagnostic, optional) |
-| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States |
-| `valve` | Thermostat radiator valve (position, diagnostic) |
+> **Requirements:** Home Assistant 2025.2 or later · Bosch SHC II on the same LAN · [HACS](https://hacs.xyz) installed.
 
-> [!TIP]
-> **Bosch cameras?** This integration exposes the basics (privacy / light / notification switches, stream). For a lot more — snapshots, motion / FCM push events, light control and richer streaming — use the dedicated companion project: **[Bosch Smart Home Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant)**. The two run side by side. (When a camera is present, the integration also shows a one-time, dismissible suggestion pointing there.)
+**1 — Install via HACS**
 
----
+Click the button below, or open **HACS → Integrations**, search for **Bosch SHC**, install, then restart Home Assistant.
 
-## Supported devices
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tschamm&repository=boschshc-hass&category=integration)
 
-### Controller
+**2 — Put the SHC into registration mode**
 
-| Model | Status |
-|---|---|
-| Bosch Smart Home Controller II (SHC II) | ✅ Supported |
-| Bosch Smart Home Controller I (SHC I) | ❌ Not supported |
-| Bosch Smart Home Controller Classic | ❌ Not supported |
+Press and hold the button on the front of the SHC until the LEDs flash (~10 s).
 
-The SHC II is required. The integration uses the local REST API introduced with the SHC II firmware; the older SHC I and SHC Classic hardware uses a different protocol and is not compatible.
+**3 — Add the integration**
 
-### Accessories
+Go to **Settings → Devices & Services**. The SHC appears under *Discovered* — click **Configure**.
+If it doesn't auto-discover, click **+ Add integration** and search for *Bosch SHC*, then enter the SHC's IP address.
 
-The following device families are supported. Devices not in this list are either
-unsupported or may appear only as partial entries (e.g. a device paired to the SHC but
-not yet implemented in this integration).
+**4 — Enter your system password**
 
-| Device family | Entity types created |
-|---|---|
-| Room Climate Controller (BWTH/BWTH24) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset), `valve` (tappet position, diagnostic) |
-| Room Thermostat (wall-mounted) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset) |
-| Heating Circuit | `climate`, `number` (eco + comfort setpoints) |
-| Shutter Control (BBL) / Micromodule Shutter / Awning | `cover` (position) |
-| Micromodule Blinds | `cover` (position + tilt), `sensor` (power, energy) |
-| Shutter Contact I | `binary_sensor` (window/door open state) |
-| Shutter Contact II | `binary_sensor` (open state), `switch` (bypass) |
-| Shutter Contact 2 Plus | `binary_sensor` (open state, vibration), `select` (vibration sensitivity), `switch` (bypass, vibration enabled) |
-| Motion Detector I | `binary_sensor` (motion), `sensor` (illuminance), `event` (motion) |
-| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹, installation profile¹), `select` (sensitivity, orientation-light), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
-| Smoke Detector I / II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
-| Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test) |
-| Smoke Detection System | `binary_sensor` (aggregate alarm state), `event` (alarm events) |
-| Outdoor Siren | `binary_sensor` (acoustic alarm, visual alarm, tamper), `sensor` (battery %, power source, solar quality), `button` (test alarm), `number` (alarm/flash duration + delay), `select` (sound level) |
-| Smart Plug (PSM) | `switch`, `sensor` (power, energy) |
-| Smart Plug Compact (PSM Compact) | `switch`, `sensor` (power, energy) |
-| Light Control / Micromodule Relay (BSM) | `switch` (or `light` — opt-in per device), `sensor` (power, energy) |
-| Micromodule Dimmer | `light` (brightness) |
-| LEDVANCE lights (ZigBee via SHC) | `light` (on/off, brightness, color) |
-| Hue lights (via SHC Hue bridge) | `light` (on/off, brightness, color) |
-| Water Leakage Sensor | `binary_sensor` (moisture) |
-| Universal Switch (WRC2 / SWITCH2) | `event` (button press: upper/lower, short/long) |
-| Camera Eyes | `switch` (privacy, light, notification) |
-| Camera 360 | `switch` (privacy, notification) |
-| Outdoor Camera Gen2 | `switch` (privacy, front light, ambient light) |
-| EMMA (Energy Management Module A) | `sensor` (grid power) |
-| Scenarios | `button` (optional, one per scenario), `event` (always, one per scenario) |
-| User-Defined States | `switch` (one per user-defined state) |
-| Intrusion Detection System | `alarm_control_panel` |
+The password you set when first setting up the SHC in the Bosch Smart Home app.
 
-> ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**.
->
-> Devices not listed (e.g. third-party ZigBee or Z-Wave accessories not
-> from Bosch) may be physically paired to the SHC but are not surfaced by
-> this integration.
+**5 — Done**
 
----
+All paired devices are discovered automatically. Customise what gets created under
+**Settings → Devices & Services → Bosch SHC → Configure**.
 
-## Data updates
-
-The SHC exposes a **long-poll REST API** on port 8446 (mTLS). The integration
-maintains a persistent connection: the SHC holds the request open until a state
-change occurs, then responds immediately with the changed values. This gives
-**near-real-time** push updates — typically under 100 ms — without polling.
-
-- **No polling interval** — state changes arrive as push events. `should_poll = False`
-  on all entities (exception: camera-type switches and motion derived from timestamps,
-  which set `should_poll = True` for their specific sensors).
-- **Reconnect** — if the connection drops (network glitch, SHC restart), the library
-  automatically reconnects and re-subscribes. A warning is logged on disconnect; an
-  info message confirms reconnection.
-- **Long-poll timeout** — configurable in Options → Advanced (default: 10 s). Lower
-  values increase responsiveness after a network glitch; higher values reduce chatter.
-
----
-
-## Services / actions
-
-| Action | Description |
-|---|---|
-| `bosch_shc.trigger_scenario` | Trigger a scenario by name |
-| `bosch_shc.trigger_rawscan` | Dump raw JSON from the SHC (devices, services, rooms, scenarios, …) — see [Creating a rawscan](#creating-a-rawscan-for-bug-reports) |
-| `bosch_shc.smokedetector_check` | Trigger a self-test on a Smoke Detector entity |
-| `bosch_shc.smokedetector_alarmstate` | Set the alarm state on a Smoke Detector entity |
-
-Events are fired on the `bosch_shc.event` bus — button presses (Universal Switch: lower/upper,
-short/long), scenario triggers, motion events, and smoke-detector alarms.
+> If the SHC doesn't appear automatically, verify that Home Assistant and the SHC are on the same subnet — auto-discovery uses mDNS/zeroconf which doesn't cross router boundaries.
 
 ---
 
@@ -293,22 +191,115 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 
 ---
 
-## Quality
+## Supported platforms
 
-Targets the [Home Assistant **Gold** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
-All Bronze + Silver + Gold rules implemented. Platinum progress tracked in `quality_scale.yaml`
-(`scripts/check-quality-scale.py --tier platinum`).
+| Platform | Devices / features |
+|---|---|
+| `alarm_control_panel` | Intrusion Detection System |
+| `binary_sensor` | Shutter Contact (Gen 1 + Gen 2), Motion Detector (Gen 1 + Gen 2 [+M]), Smoke Detector (Gen 1 + Gen 2), Smoke Detection System, Water Leakage Sensor, Shutter Contact 2 Plus (vibration), Twinguard smoke alarm, Battery state (all battery devices) |
+| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper |
+| `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
+| `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
+| `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
+| `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options) |
+| `number` | Thermostat temperature offset |
+| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
+| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state & installation profile, EMMA grid power, Battery level (diagnostic, optional) |
+| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States |
+| `valve` | Thermostat radiator valve (position, diagnostic) |
 
-- `local_push` IoT class — no cloud, no polling (camera-type devices update on poll only).
-- Config flow with zeroconf discovery, re-auth, reconfigure and options flow.
-- Unique config-entry enforcement, test-before-configure validation.
-- Fully async — event-loop native; long-poll push via `SHCSessionAsync` (aiohttp).
-- `runtime_data`, `has_entity_name = True`, `PARALLEL_UPDATES` on every platform.
-- Entity + icon + exception translations (30 languages); repair issues for certificate expiry.
-- Domain actions (`trigger_scenario`, `trigger_rawscan`) available even if an entry fails to load.
-- Diagnostics download — redacted JSON snapshot of all device states.
-- CI: hassfest + HACS validation, unit tests, ruff/codespell/pip-audit/pylint, CodeQL,
-  secret scan, translation-completeness gate, quality-scale gate (Gold hard / Platinum informational).
+> [!TIP]
+> **Bosch cameras?** This integration exposes the basics (privacy / light / notification switches, stream). For a lot more — snapshots, motion / FCM push events, light control and richer streaming — use the dedicated companion project: **[Bosch Smart Home Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant)**. The two run side by side. (When a camera is present, the integration also shows a one-time, dismissible suggestion pointing there.)
+
+---
+
+## Supported devices
+
+### Controller
+
+| Model | Status |
+|---|---|
+| Bosch Smart Home Controller II (SHC II) | ✅ Supported |
+| Bosch Smart Home Controller I (SHC I) | ❌ Not supported |
+| Bosch Smart Home Controller Classic | ❌ Not supported |
+
+The SHC II is required. The integration uses the local REST API introduced with the SHC II firmware; the older SHC I and SHC Classic hardware uses a different protocol and is not compatible.
+
+### Accessories
+
+The following device families are supported. Devices not in this list are either
+unsupported or may appear only as partial entries (e.g. a device paired to the SHC but
+not yet implemented in this integration).
+
+| Device family | Entity types created |
+|---|---|
+| Room Climate Controller (BWTH/BWTH24) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset), `valve` (tappet position, diagnostic) |
+| Room Thermostat (wall-mounted) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset) |
+| Heating Circuit | `climate`, `number` (eco + comfort setpoints) |
+| Shutter Control (BBL) / Micromodule Shutter / Awning | `cover` (position) |
+| Micromodule Blinds | `cover` (position + tilt), `sensor` (power, energy) |
+| Shutter Contact I | `binary_sensor` (window/door open state) |
+| Shutter Contact II | `binary_sensor` (open state), `switch` (bypass) |
+| Shutter Contact 2 Plus | `binary_sensor` (open state, vibration), `select` (vibration sensitivity), `switch` (bypass, vibration enabled) |
+| Motion Detector I | `binary_sensor` (motion), `sensor` (illuminance), `event` (motion) |
+| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹, installation profile¹), `select` (sensitivity, orientation-light), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
+| Smoke Detector I / II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
+| Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test) |
+| Smoke Detection System | `binary_sensor` (aggregate alarm state), `event` (alarm events) |
+| Outdoor Siren | `binary_sensor` (acoustic alarm, visual alarm, tamper), `sensor` (battery %, power source, solar quality), `button` (test alarm), `number` (alarm/flash duration + delay), `select` (sound level) |
+| Smart Plug (PSM) | `switch`, `sensor` (power, energy) |
+| Smart Plug Compact (PSM Compact) | `switch`, `sensor` (power, energy) |
+| Light Control / Micromodule Relay (BSM) | `switch` (or `light` — opt-in per device), `sensor` (power, energy) |
+| Micromodule Dimmer | `light` (brightness) |
+| LEDVANCE lights (ZigBee via SHC) | `light` (on/off, brightness, color) |
+| Hue lights (via SHC Hue bridge) | `light` (on/off, brightness, color) |
+| Water Leakage Sensor | `binary_sensor` (moisture) |
+| Universal Switch (WRC2 / SWITCH2) | `event` (button press: upper/lower, short/long) |
+| Camera Eyes | `switch` (privacy, light, notification) |
+| Camera 360 | `switch` (privacy, notification) |
+| Outdoor Camera Gen2 | `switch` (privacy, front light, ambient light) |
+| EMMA (Energy Management Module A) | `sensor` (grid power) |
+| Scenarios | `button` (optional, one per scenario), `event` (always, one per scenario) |
+| User-Defined States | `switch` (one per user-defined state) |
+| Intrusion Detection System | `alarm_control_panel` |
+
+> ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**.
+>
+> Devices not listed (e.g. third-party ZigBee or Z-Wave accessories not
+> from Bosch) may be physically paired to the SHC but are not surfaced by
+> this integration.
+
+---
+
+## Services / actions
+
+| Action | Description |
+|---|---|
+| `bosch_shc.trigger_scenario` | Trigger a scenario by name |
+| `bosch_shc.trigger_rawscan` | Dump raw JSON from the SHC (devices, services, rooms, scenarios, …) — see [Creating a rawscan](#creating-a-rawscan-for-bug-reports) |
+| `bosch_shc.smokedetector_check` | Trigger a self-test on a Smoke Detector entity |
+| `bosch_shc.smokedetector_alarmstate` | Set the alarm state on a Smoke Detector entity |
+
+Events are fired on the `bosch_shc.event` bus — button presses (Universal Switch: lower/upper,
+short/long), scenario triggers, motion events, and smoke-detector alarms.
+
+---
+
+## Data updates
+
+The SHC exposes a **long-poll REST API** on port 8446 (mTLS). The integration
+maintains a persistent connection: the SHC holds the request open until a state
+change occurs, then responds immediately with the changed values. This gives
+**near-real-time** push updates — typically under 100 ms — without polling.
+
+- **No polling interval** — state changes arrive as push events. `should_poll = False`
+  on all entities (exception: camera-type switches and motion derived from timestamps,
+  which set `should_poll = True` for their specific sensors).
+- **Reconnect** — if the connection drops (network glitch, SHC restart), the library
+  automatically reconnects and re-subscribes. A warning is logged on disconnect; an
+  info message confirms reconnection.
+- **Long-poll timeout** — configurable in Options → Advanced (default: 10 s). Lower
+  values increase responsiveness after a network glitch; higher values reduce chatter.
 
 ---
 
@@ -391,6 +382,8 @@ logger:
 2. **Manual cleanup:** the client certificate/key files in `/config/bosch_shc/`
    (`bosch_shc-cert_<hostname>.pem` / `bosch_shc-key_<hostname>.pem`) are **not** removed
    automatically — delete them if you no longer use the integration.
+
+---
 
 ## Known limitations
 
@@ -502,6 +495,126 @@ automation:
       target:
         area_id: hallway
 ```
+
+---
+
+## Architecture
+
+```mermaid
+graph LR
+    SHC("Bosch SHC II\non your LAN")
+    LIB("boschshcpy\nPython library")
+    INT("bosch_shc\nHA component")
+    HA("Home Assistant\nentities & automations")
+
+    SHC -->|"mTLS · port 8446\nlong-poll push"| LIB
+    LIB -->|"state callbacks"| INT
+    INT -->|"entity updates"| HA
+    HA -.->|"service calls"| INT
+    INT -.->|"async writes"| LIB
+    LIB -.->|"REST PUT/POST"| SHC
+```
+
+```mermaid
+sequenceDiagram
+    participant SHC as Bosch SHC II
+    participant Lib as boschshcpy
+    participant HA as Home Assistant
+
+    Lib->>SHC: subscribe (long-poll, mTLS port 8446)
+    Note over SHC,Lib: SHC holds request open until state changes
+    SHC-->>Lib: state change event (JSON)
+    Lib->>HA: callback -> schedule_update_ha_state()
+    Note over Lib,HA: latency typically under 100 ms
+    loop every ~24 h
+        Lib->>SHC: resubscribe + refresh all device states
+    end
+```
+
+---
+
+## Quality
+
+Targets the [Home Assistant **Gold** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
+All Bronze + Silver + Gold rules implemented. Platinum progress tracked in `quality_scale.yaml`
+(`scripts/check-quality-scale.py --tier platinum`).
+
+- `local_push` IoT class — no cloud, no polling (camera-type devices update on poll only).
+- Config flow with zeroconf discovery, re-auth, reconfigure and options flow.
+- Unique config-entry enforcement, test-before-configure validation.
+- Fully async — event-loop native; long-poll push via `SHCSessionAsync` (aiohttp).
+- `runtime_data`, `has_entity_name = True`, `PARALLEL_UPDATES` on every platform.
+- Entity + icon + exception translations (30 languages); repair issues for certificate expiry.
+- Domain actions (`trigger_scenario`, `trigger_rawscan`) available even if an entry fails to load.
+- Diagnostics download — redacted JSON snapshot of all device states.
+- CI: hassfest + HACS validation, unit tests, ruff/codespell/pip-audit/pylint, CodeQL,
+  secret scan, translation-completeness gate, quality-scale gate (Gold hard / Platinum informational).
+
+---
+
+## What's new
+
+**0.7.27 — entity_id deprecation fix + CI / docs**
+
+- **event / switch** — Remove all manual `self.entity_id` assignments (`SHCUniversalSwitchEvent`, `SHCLightControlButtonEvent`, `SHCScenarioEvent`, `SHCUserDefinedStateSwitch`). HA now generates entity IDs from `unique_id` — the modern, deprecation-safe approach. Existing installs are unaffected (HA persists entity IDs in the registry; the stored value is reused). Addresses #296.
+- **CI** — Fix `homeassistant>=2026.6.4` in `requirements_test.txt` (unavailable on Python 3.13 CI); changed to `>=2026.2.0`. Tests now resolve to the latest Python-3.13-compatible HA version (2026.2.3).
+- **Docs** — README restructured: HACS one-click install button, logical section order (Highlights → Quick start → Install → Config → Reference → Troubleshooting → Architecture → What's new), updated TOC.
+
+**0.7.26 — Bug fixes + coverage gate**
+
+Ten targeted bug fixes and CI hardening, paired with **boschshcpy 0.3.20**:
+
+- **Climate** — skip `set_temperature` when `hvac_mode=AUTO`; Bosch rejects setpoints in schedule mode (previously caused a silent HTTP 400).
+- **Number** — guard `step_size=None` in `native_step` (was `TypeError` on certain thermostat models).
+- **Binary sensor** — smoke-detector sensors now properly unsubscribe their service callback on unload, and guard against unexpected enum values.
+- **Event** — motion-detector events have a dedup guard (`_last_fired_timestamp`) to suppress phantom events caused by unrelated battery-level polls.
+- **Switch** — `SHCUserDefinedStateSwitch.available` property added; was always `True` even after a user-defined state was deleted from the SHC.
+- **CI** — coverage gate ≥ 95 % (current: **99.28 %**, 2939 tests, 20/22 files at 100 %).
+- **Library** — `boschshcpy 0.3.20`: thread-safety `list()` copies in the long-poll callback loop + ruff CI gate.
+
+**0.7.18 — Suppress & filter options**
+
+Six new opt-in suppression toggles keep your entity list tidy. All default to **off** so nothing
+changes for existing setups:
+
+- **Suppress power sensors** — hides the watt + kWh sensors on plugs (Smart Plug, Compact, EMMA).
+- **Suppress camera switches** — hides the privacy / light / notification switches for
+  Camera Eyes, 360, and Outdoor Gen2 (useful when the
+  [Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant) is installed).
+- **Suppress Hue lights** — hides lights paired through the SHC Hue bridge
+  *(shown only when Hue devices are connected)*.
+- **Suppress LEDVANCE lights** — hides LEDVANCE lights paired to the SHC
+  *(shown only when LEDVANCE devices are connected)*.
+- **Suppress MD2 indicator light** — hides the orientation LED entity on Motion Detector II
+  *(shown only when MD2 devices are connected)*.
+- **Scenario filter** — a multi-select allow-list; only the chosen scenarios become button entities
+  (stale IDs are auto-cleared on reload) *(shown only when scenarios exist)*.
+- **Expose light relay as `light`** — per-device picker (and a "flip all" toggle) to expose
+  BSM / Light Control II channels as `light` entities instead of `switch`
+  *(shown only when compatible light-relay devices are connected)*.
+
+CI now enforces translation completeness for all 30 languages.
+
+**0.7.15 — Fully async**
+
+The integration is now event-loop-native — no executor round-trips for writes. This was the final
+phase of a multi-release async migration.
+
+**0.7 — Motion Detector II, climate polish**
+
+- **Motion Detector II [+M] — full configuration parity with the Bosch app:**
+  - **Detection (Walk) Test** — start/stop buttons + a state sensor, for verifying
+    mounting/coverage. Works whether your device exposes the `DetectionTest` *or* the
+    `WalkTest` service (the local API and the app use different names for the same feature).
+  - **Tamper protection** — a switch to enable/disable it, a **Reset Tamper** button to
+    clear an active tamper condition, and the existing tamper state sensor.
+  - **Orientation-light response time** — a select (Long = lower battery use / Short =
+    more responsive), backed by the `PollControl` service.
+  - **Installation profile** — a read-only sensor showing the active environment
+    (e.g. `GENERIC` / `OUTDOOR`).
+- **Climate display polish** — preset icons (`auto`/`manual`/`eco`/`boost`) and a proper
+  `translation_key`, plus `hvac_modes` ordered `[HEAT, (COOL), OFF]` so cards that hide
+  modes after `OFF` (e.g. Mushroom thermostat) show the COOL button. *(thanks @jumlu)*
 
 ---
 

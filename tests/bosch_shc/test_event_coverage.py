@@ -142,10 +142,6 @@ class TestSHCScenarioEventProperties:
         entity = _make_scenario_entity(scenario_name="Guten Morgen")
         assert "Guten Morgen" in entity._attr_name
 
-    def test_entity_id_slug_contains_scenario_name(self):
-        entity = _make_scenario_entity(scenario_name="Evening")
-        assert "evening" in entity.entity_id
-
     def test_event_types_is_scenario(self):
         entity = _make_scenario_entity()
         assert entity._attr_event_types == ["SCENARIO"]

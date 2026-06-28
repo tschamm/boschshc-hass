@@ -521,14 +521,6 @@ def test_setup_userdefinedstate_entity_description():
     assert entities[0].entity_description.key == "user_defined_state"
 
 
-def test_setup_userdefinedstate_entity_id_slugified():
-    uds = _fake_uds(name="At Home", dev_id="uds3", root_id="mac1")
-    session = _make_session(userdefinedstates=[uds])
-    entities, _ = _setup(session)
-    # ENTITY_ID_FORMAT is "switch.{}" → "switch.userdefinedstate_at_home"
-    assert entities[0].entity_id == "switch.userdefinedstate_at_home"
-
-
 def test_setup_userdefinedstate_unique_id():
     uds = _fake_uds(name="Night", dev_id="uds4", root_id="macABC")
     session = _make_session(userdefinedstates=[uds])
@@ -736,11 +728,6 @@ def test_uds_switch_turn_off_sets_state():
 def test_uds_switch_should_poll_false():
     sw = _make_uds_switch()
     assert sw.should_poll is False
-
-
-def test_uds_switch_entity_id_format():
-    sw = _make_uds_switch(name="Night Mode", dev_id="nm1")
-    assert sw.entity_id == "switch.userdefinedstate_night_mode"
 
 
 def test_uds_switch_unique_id_no_attr_name():

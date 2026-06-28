@@ -293,15 +293,6 @@ class TestUserDefinedStatesPath:
         uds_entities = [e for e in added if isinstance(e, SHCUserDefinedStateSwitch)]
         assert len(uds_entities) == 1
 
-    def test_uds_entity_id_is_slugified(self):
-        """Entity id follows the switch.userdefinedstate_<slug> convention."""
-        from custom_components.bosch_shc.switch import SHCUserDefinedStateSwitch
-
-        uds = self._make_uds_device("Night Mode", "uds-002")
-        added, _ = self._setup_with_uds([uds])
-        uds_entities = [e for e in added if isinstance(e, SHCUserDefinedStateSwitch)]
-        assert uds_entities[0].entity_id == "switch.userdefinedstate_night_mode"
-
     def test_multiple_uds_create_multiple_entities(self):
         """Two UDS devices produce two switch entities."""
         from custom_components.bosch_shc.switch import SHCUserDefinedStateSwitch

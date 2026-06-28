@@ -11,7 +11,6 @@ from boschshcpy import (
     SHCUniversalSwitch,
 )
 from homeassistant.components.event import (
-    ENTITY_ID_FORMAT,
     EventDeviceClass,
     EventEntity,
 )
@@ -24,8 +23,6 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util import slugify
-
 from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
@@ -143,9 +140,6 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
         # (same keyName, same eventTimestamp) does not trigger a duplicate event.
         self._last_fired_timestamp: int = -1
 
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"{slugify(self._device.name)}_button_{key_id.casefold()}"
-        )
         self._attr_name = f"Button {key_id}"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
@@ -218,7 +212,6 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
         # Guard against phantom events: a Keypad update piggybacking on another
         # state change can replay the last eventTimestamp (cf. #192).
         self._last_fired_timestamp: int = -1
-        self.entity_id = ENTITY_ID_FORMAT.format(f"{slugify(self._device.name)}_button")
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_button"
 
     async def async_added_to_hass(self) -> None:
@@ -278,9 +271,6 @@ class SHCScenarioEvent(EventEntity):
         self._scenario = scenario
         self._session = session
 
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"scenario_{slugify(self._scenario.name)}"
-        )
         # Scenario name is the feature label; HA prepends the device (controller) name.
         self._attr_name = f"{self._scenario.name} Scenario"
         self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"
