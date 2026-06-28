@@ -1,6 +1,7 @@
 name: Quality
 
 on:
+  workflow_call:
   push:
     branches: [master]
   pull_request:
@@ -14,12 +15,14 @@ jobs:
     name: ruff · codespell · pip-audit · pylint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: requirements_test.txt
+          cache-dependency-path: |
+            requirements_test.txt
+            custom_components/bosch_shc/manifest.json
 
       - name: Install tooling
         run: pip install ruff codespell pip-audit pylint -r requirements_test.txt
@@ -57,6 +60,9 @@ jobs:
       - name: pylint
         run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
 
+      - name: mypy (informational — Platinum strict-typing in progress)
+        run: pip install mypy && mypy --ignore-missing-imports custom_components/bosch_shc || true
+
       - name: quality scale gate (gold)
         run: python3 scripts/check-quality-scale.py --tier gold
 
@@ -64,31 +70,53 @@ jobs:
         run: python3 scripts/check-quality-scale.py --tier platinum || true
 
       - name: translation completeness
-        # Every translation/*.json must have exactly the same data keys in
-        # options.step.init.sections.features as strings.json.
+        # Checks: (1) every translation/*.json has the same options.features keys
+        # as strings.json; (2) en.json entity section stays in sync with strings.json.
         run: |
           python3 - <<'PYEOF'
           import json, os, sys
           base = "custom_components/bosch_shc"
-          with open(f"{base}/strings.json") as f:
-              ref = set(json.load(f)["options"]["step"]["init"]["sections"]["features"]["data"].keys())
           errors = []
-          for fname in sorted(os.listdir(f"{base}/translations")):
-              if not fname.endswith(".json"):
-                  continue
+
+          # 1. options.features keys: must be identical across all translation files
+          with open(f"{base}/strings.json") as f:
+              strings_data = json.load(f)
+          ref = set(strings_data["options"]["step"]["init"]["sections"]["features"]["data"].keys())
+          json_files = [f for f in sorted(os.listdir(f"{base}/translations")) if f.endswith(".json")]
+          for fname in json_files:
               with open(f"{base}/translations/{fname}") as f:
                   d = json.load(f)
               keys = set(d["options"]["step"]["init"]["sections"]["features"]["data"].keys())
               missing = ref - keys
               extra = keys - ref
               if missing:
-                  errors.append(f"  {fname}: missing keys {sorted(missing)}")
+                  errors.append(f"  {fname}: missing options.features keys {sorted(missing)}")
               if extra:
-                  errors.append(f"  {fname}: extra keys {sorted(extra)}")
+                  errors.append(f"  {fname}: extra options.features keys {sorted(extra)}")
+
+          # 2. entity keys: en.json must stay in sync with strings.json
+          def _flat(d, pfx=""):
+              keys = set()
+              if isinstance(d, dict):
+                  for k, v in d.items():
+                      p = f"{pfx}.{k}" if pfx else k
+                      keys.update(_flat(v, p) if isinstance(v, dict) else {p})
+              return keys
+
+          strings_ent = _flat(strings_data.get("entity", {}))
+          with open(f"{base}/translations/en.json") as f:
+              en_ent = _flat(json.load(f).get("entity", {}))
+          only_in_strings = strings_ent - en_ent
+          only_in_en = en_ent - strings_ent
+          if only_in_strings:
+              errors.append(f"  en.json: entity keys in strings.json but missing: {sorted(only_in_strings)}")
+          if only_in_en:
+              errors.append(f"  en.json: extra entity keys not in strings.json: {sorted(only_in_en)}")
+
           if errors:
-              print("Translation key mismatches found:")
+              print("Translation issues found:")
               for e in errors:
                   print(e)
               sys.exit(1)
-          print(f"All {len(os.listdir(f'{base}/translations'))} translation files match strings.json")
+          print(f"All {len(json_files)} translation files match strings.json; en.json entity keys in sync")
           PYEOF

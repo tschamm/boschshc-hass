@@ -11,17 +11,23 @@ permissions:
 
 jobs:
   tests:
-    name: pytest (unit)
+    name: pytest (unit) / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements_test.txt
+          cache-dependency-path: |
+            requirements_test.txt
+            custom_components/bosch_shc/manifest.json
 
       # Retry on PyPI edge-lag: a just-released pinned boschshcpy may not have
       # propagated to this runner's PyPI edge yet. Retry with backoff so the
@@ -40,16 +46,25 @@ jobs:
           echo "::error::pip install still failing after 5 attempts."
           exit 1
 
-      # Mirrors scripts/local-ci.sh (hass leg): the pure-unit suite runs with
-      # the pytest-homeassistant autoload DISABLED. test_config_flow.py and
-      # test_device_trigger.py (+ tests/harness) need the full HA harness
-      # (tests.common.MockConfigEntry) and are still WIP — excluded here.
-      - name: Run unit tests
+      # pure-unit suite: suppress the HA pytest plugin with -p no:homeassistant
+      # (PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 also disables pytest-cov, so we can't
+      # use it for coverage). test_config_flow.py and test_device_trigger.py need
+      # the full HA harness and are still WIP — excluded here.
+      # --cov-fail-under=95: gate catches major coverage regressions.  Lines that
+      # require the full HA harness (__init__.py, config_flow.py) account for the
+      # 1% gap between 95% and the current 99%.
+      - name: Run unit tests with coverage gate
         env:
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
           # Repo root on the path so `import custom_components.bosch_shc` resolves.
           PYTHONPATH: ${{ github.workspace }}
         run: >-
           pytest tests/bosch_shc -q -o addopts=""
+          -p no:homeassistant
           --ignore=tests/bosch_shc/test_config_flow.py
           --ignore=tests/bosch_shc/test_device_trigger.py
+          --cov=custom_components/bosch_shc
+          --cov-report=term-missing
+          --cov-fail-under=95
+
+      - name: Syntax check HA-harness test files (excluded from run)
+        run: python3 -m py_compile tests/bosch_shc/test_config_flow.py tests/bosch_shc/test_device_trigger.py

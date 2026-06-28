@@ -280,6 +280,12 @@ class ClimateControl(SHCEntity, ClimateEntity):
             )
             return
 
+        if kwargs.get(ATTR_HVAC_MODE) == HVACMode.AUTO:
+            # Bosch rejects a setpoint write while in AUTOMATIC (schedule) mode.
+            # When the caller explicitly requested AUTO, honour the mode change
+            # and return — the schedule controls the temperature.
+            return
+
         if self.preset_mode == PRESET_BOOST:
             LOGGER.warning(
                 "Cannot set temperature on device %s while in BOOST mode "

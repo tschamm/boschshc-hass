@@ -305,7 +305,7 @@ class SHCNumber(SHCEntity, NumberEntity):
     def native_step(self) -> float:
         """Return the step of the number."""
         step = self._device.step_size
-        return step if step > 0 else 0.5
+        return step if step is not None and step > 0 else 0.5
 
     @property
     def native_min_value(self) -> float:

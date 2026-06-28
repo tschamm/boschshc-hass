@@ -382,6 +382,7 @@ def _make_motion_entity(
     entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
+    entity._last_fired_timestamp = ""  # dedup guard — must differ from latestmotion
     return entity
 
 

@@ -96,6 +96,7 @@ class TestMotionDetectorEventDispatch:
         entity._attr_unique_id = "root-1_md-1"
         entity._trigger_event = MagicMock()
         entity.schedule_update_ha_state = MagicMock()
+        entity._last_fired_timestamp = ""  # dedup guard — empty so callback fires
         return entity
 
     def test_event_callback_calls_dispatch_directly(self):
