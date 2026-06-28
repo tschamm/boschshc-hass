@@ -13,4 +13,4 @@ homeassistant>=2026.2.0
 # Runtime dependency of the integration — pinned to the manifest version so the
 # unit gate tests against the exact released lib (an unpinned spec let CI install
 # a stale cached wheel and miss new lib APIs).
-boschshcpy==0.3.20
+boschshcpy==0.3.21
