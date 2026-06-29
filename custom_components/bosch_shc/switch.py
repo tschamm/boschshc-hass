@@ -863,7 +863,7 @@ async def async_setup_entry(  # noqa: C901
 
     # ThermostatGen2 / RoomThermostat2: humidity warning toggle.
     # Guarded by hasattr so old lib (no display_config) doesn't create it.
-    for switch in list(session.device_helper.thermostats) + list(
+    for switch in list(session.device_helper.thermostats) + list(  # type: ignore[assignment]
         session.device_helper.roomthermostats
     ):
         if device_excluded(switch, config_entry.options):
@@ -900,7 +900,7 @@ async def async_setup_entry(  # noqa: C901
 
     # add all current items in session
     for switch in session.userdefinedstates:  # type: ignore[assignment]
-        async_add_userdefinedstateswitch(device=switch)
+        async_add_userdefinedstateswitch(device=switch)  # type: ignore[arg-type]
 
     # Register listener for new user-defined state switches and ensure it is
     # torn down on config entry unload.  session.subscribe() returns None, so

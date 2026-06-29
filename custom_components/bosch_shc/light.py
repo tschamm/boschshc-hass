@@ -47,7 +47,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the light platform."""
-    entities = []
+    entities: list[LightEntity] = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     hue_lights: list[SHCLight] = []
@@ -90,7 +90,7 @@ async def async_setup_entry(
         )
 
     if not config_entry.options.get(OPT_SUPPRESS_MOTION_INDICATOR_LIGHT, False):
-        for light in session.device_helper.motion_detectors2:
+        for light in session.device_helper.motion_detectors2:  # type: ignore[assignment]
             if device_excluded(light, config_entry.options):
                 continue
             await async_migrate_to_new_unique_id(

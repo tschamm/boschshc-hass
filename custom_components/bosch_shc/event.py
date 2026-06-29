@@ -7,6 +7,7 @@ from typing import Any
 from boschshcpy import (
     SHCLightControl,
     SHCMotionDetector,
+    SHCMotionDetector2,
     SHCSession,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
@@ -340,7 +341,9 @@ class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     _attr_device_class = EventDeviceClass.MOTION
     _attr_event_types = ["MOTION"]
 
-    def __init__(self, device: SHCMotionDetector, entry_id: str) -> None:
+    def __init__(
+        self, device: SHCMotionDetector | SHCMotionDetector2, entry_id: str
+    ) -> None:
         """Initialize the Universal Switch device."""
         super().__init__(device, entry_id)
         self._device = device
