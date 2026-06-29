@@ -12,7 +12,15 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
+from homeassistant.const import (
+    ATTR_COMMAND,
+    ATTR_DEVICE_ID,
+    ATTR_ID,
+    ATTR_NAME,
+    EVENT_HOMEASSISTANT_STOP,
+)
 
 from custom_components.bosch_shc.const import (
     ATTR_EVENT_SUBTYPE,
@@ -27,14 +35,6 @@ from custom_components.bosch_shc.const import (
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
 )
-from homeassistant.const import (
-    ATTR_COMMAND,
-    ATTR_DEVICE_ID,
-    ATTR_ID,
-    ATTR_NAME,
-    EVENT_HOMEASSISTANT_STOP,
-)
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -217,7 +217,8 @@ class TestAsyncSetupEntryHappyPath:
 
     def test_services_registered(self):
         """Services are registered in async_setup (module-level Bronze action); test
-        must call async_setup first so the handlers exist."""
+        must call async_setup first so the handlers exist.
+        """
         from custom_components.bosch_shc.__init__ import async_setup
         session = _make_fake_session()
         _, hass, _, _ = self._do_setup(session)
@@ -242,7 +243,8 @@ class TestAsyncSetupEntryHappyPath:
     def test_update_listener_not_registered(self):
         """B2: add_update_listener must NOT be called — HA auto-reloads on options_flow
         async_create_entry; registering an extra reload listener caused a double-reload
-        and a DeprecationWarning in HA 2026.6 (hard error in 2026.12)."""
+        and a DeprecationWarning in HA 2026.6 (hard error in 2026.12).
+        """
         session = _make_fake_session()
         _, _, entry, _ = self._do_setup(session)
         entry.add_update_listener.assert_not_called()
@@ -417,7 +419,8 @@ class TestScenarioSubscription:
     def test_scenario_callback_subscribed_with_no_scenarios(self):
         """Regression (Bug 1): subscribe_scenario_callback must be called ONCE even
         when the SHC has NO scenarios — otherwise scenario-triggered automations
-        never fire on a controller that starts with an empty scenario list."""
+        never fire on a controller that starts with an empty scenario list.
+        """
         session = _make_fake_session(scenarios=[])
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
@@ -437,7 +440,8 @@ class TestScenarioSubscription:
 
     def test_scenario_callback_subscribed_once_even_with_multiple_scenarios(self):
         """Regression (Bug 1): when multiple scenarios exist, subscribe_scenario_callback
-        must still only be called ONCE — the old loop caused N duplicate registrations."""
+        must still only be called ONCE — the old loop caused N duplicate registrations.
+        """
         scenarios = [
             SimpleNamespace(name="Morning", id="s1"),
             SimpleNamespace(name="Evening", id="s2"),
@@ -536,7 +540,10 @@ ANY_callable = _AnyCallable()
 
 class TestAsyncUnloadEntry:
     def _setup_and_unload(self):
-        from custom_components.bosch_shc.__init__ import async_setup_entry, async_unload_entry
+        from custom_components.bosch_shc.__init__ import (
+            async_setup_entry,
+            async_unload_entry,
+        )
 
         session = _make_fake_session()
         hass = _make_fake_hass()
@@ -758,7 +765,9 @@ class TestServiceHandlers:
         assert result == {"info": {"version": "9.0"}}
 
     def test_rawscan_service_filters_by_title(self):
-        """Title mismatch → api methods not called."""
+        """Title mismatch → ServiceValidationError (no matching entry)."""
+        from homeassistant.exceptions import ServiceValidationError
+
         session = _make_fake_session()
 
         handlers, hass, entry, session_obj = self._setup_with_session(session)
@@ -770,9 +779,9 @@ class TestServiceHandlers:
             ATTR_DEVICE_ID: "",
             "service_id": "",
         })
-        result = _run(handler(call_obj))
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
         session_obj.api.get_devices.assert_not_awaited()
-        assert result is None
 
     def test_rawscan_service_unknown_command_raises(self):
         """Unknown rawscan command raises ServiceValidationError."""
@@ -825,7 +834,8 @@ class TestSwitchDeviceEventListener:
     def test_init_does_not_subscribe_keypad_before_setup(self):
         """Regression (Bug 2): subscribe_callback must NOT be called in __init__ —
         device_id is None at that point, so events fired before async_setup() would
-        carry ATTR_DEVICE_ID=None and never match device-trigger automations."""
+        carry ATTR_DEVICE_ID=None and never match device-trigger automations.
+        """
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
         hass = _make_fake_hass()
@@ -838,7 +848,8 @@ class TestSwitchDeviceEventListener:
 
     def test_async_setup_subscribes_keypad_after_device_id_set(self):
         """Regression (Bug 2): subscribe_callback is called in async_setup(), after
-        self.device_id is populated — guaranteeing events carry a valid device_id."""
+        self.device_id is populated — guaranteeing events carry a valid device_id.
+        """
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
         hass = _make_fake_hass()
@@ -861,18 +872,6 @@ class TestSwitchDeviceEventListener:
         # Now subscribed, and device_id is already set before subscribe
         ks.subscribe_callback.assert_called_once_with(dev.id, listener._input_events_handler)
         assert listener.device_id == "reg-dev-id-999"
-
-    def test_init_registers_ha_stop_listener(self):
-        from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
-
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
-        ks = self._make_keypad_service()
-        dev = self._make_switch_device(keypad_service=ks)
-
-        SwitchDeviceEventListener(hass, entry, dev)
-        listen_args = [c.args[0] for c in hass.bus.async_listen_once.call_args_list]
-        assert EVENT_HOMEASSISTANT_STOP in listen_args
 
     def test_input_events_handler_fires_bus_event(self):
         """_input_events_handler fires via hass.bus.async_fire (async session)."""
@@ -923,18 +922,6 @@ class TestSwitchDeviceEventListener:
 
         listener = SwitchDeviceEventListener(hass, entry, dev)
         listener.shutdown()
-        ks.unsubscribe_callback.assert_called_once_with(dev.id)
-
-    def test_handle_ha_stop_calls_shutdown(self):
-        from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
-
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
-        ks = self._make_keypad_service()
-        dev = self._make_switch_device(keypad_service=ks)
-
-        listener = SwitchDeviceEventListener(hass, entry, dev)
-        listener._handle_ha_stop(None)
         ks.unsubscribe_callback.assert_called_once_with(dev.id)
 
     def test_no_keypad_service_no_subscribe(self):
@@ -1088,8 +1075,9 @@ class TestScheduledCertCheck:
 
 class TestPlatformValveGuard:
     def test_valve_in_platforms_if_available(self):
-        from custom_components.bosch_shc.__init__ import PLATFORMS
         from homeassistant.const import Platform
+
+        from custom_components.bosch_shc.__init__ import PLATFORMS
 
         if hasattr(Platform, "VALVE"):
             assert Platform.VALVE in PLATFORMS

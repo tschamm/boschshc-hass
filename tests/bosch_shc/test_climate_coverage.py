@@ -19,7 +19,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from boschshcpy import SHCHeatingCircuit
+from boschshcpy import HeatingCircuitService
 from boschshcpy.exceptions import JSONRPCError, SHCException
 from boschshcpy.services_impl import RoomClimateControlService
 from homeassistant.components.climate.const import (
@@ -31,10 +31,10 @@ from homeassistant.components.climate.const import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from custom_components.bosch_shc.climate import (
-    ClimateControl,
-    HeatingCircuit,
     PRESET_BOOST,
     PRESET_ECO,
+    ClimateControl,
+    HeatingCircuit,
 )
 
 # ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ from custom_components.bosch_shc.climate import (
 # ---------------------------------------------------------------------------
 
 OM_CC = RoomClimateControlService.OperationMode
-OM_HC = SHCHeatingCircuit.HeatingCircuitService.OperationMode
+OM_HC = HeatingCircuitService.OperationMode
 
 
 # ---------------------------------------------------------------------------
@@ -214,7 +214,8 @@ class TestHvacModesProperty:
 
 class TestPresetModesProperty:
     """#334: preset_modes is override-only (boost/eco); auto/manual removed.
-    Returns None when no presets available."""
+    Returns None when no presets available.
+    """
 
     def test_no_presets_when_no_boost_no_low(self):
         """Device without boost or low → preset_modes is None."""
@@ -629,7 +630,7 @@ class TestClimateControlHvacAction:
         assert entity.hvac_action == HVACAction.IDLE
 
     def test_missing_has_demand_attr_treated_as_false(self):
-        """getattr guard: device without has_demand attribute → IDLE."""
+        """Getattr guard: device without has_demand attribute → IDLE."""
         device = _make_cc_device(summer_mode=False, operation_mode_value="AUTOMATIC")
         del device.has_demand  # simulate older lib without attribute
         entity = _make_cc(device)

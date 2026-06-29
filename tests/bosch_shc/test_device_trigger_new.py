@@ -11,6 +11,13 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from homeassistant.const import (
+    ATTR_DEVICE_ID,
+    CONF_DEVICE_ID,
+    CONF_DOMAIN,
+    CONF_PLATFORM,
+    CONF_TYPE,
+)
 
 from custom_components.bosch_shc.const import (
     ALARM_EVENTS_SUBTYPES_SD,
@@ -30,14 +37,6 @@ from custom_components.bosch_shc.device_trigger import (
     async_get_triggers,
     get_device_from_id,
 )
-from homeassistant.const import (
-    ATTR_DEVICE_ID,
-    CONF_DEVICE_ID,
-    CONF_DOMAIN,
-    CONF_PLATFORM,
-    CONF_TYPE,
-)
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -455,9 +454,8 @@ class TestAsyncGetTriggers:
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
             return_value=mock_registry,
-        ):
-            with pytest.raises(InvalidDeviceAutomationConfig):
-                asyncio.run(async_get_triggers(hass, "no-such-device"))
+        ), pytest.raises(InvalidDeviceAutomationConfig):
+            asyncio.run(async_get_triggers(hass, "no-such-device"))
 
     def test_all_trigger_dicts_have_required_keys(self):
         triggers = self._run_get_triggers("ha-wrc2", "WRC2")

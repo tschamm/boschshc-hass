@@ -25,12 +25,12 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from boschshcpy.services_impl import PowerSwitchConfigurationService
+
+from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
     StateAfterPowerOutageSelect,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers

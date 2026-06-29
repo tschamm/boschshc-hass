@@ -16,12 +16,12 @@ blinds_level.
 
 from types import SimpleNamespace
 
-from boschshcpy import SHCShutterControl
+from boschshcpy import ShutterControlService
 
 from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControlCover
 
-STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
-MOVING = SHCShutterControl.ShutterControlService.State.MOVING
+STOPPED = ShutterControlService.State.STOPPED
+MOVING = ShutterControlService.State.MOVING
 
 
 def _make_blinds_cover(level: float, blinds_level: float = 0.0,
@@ -55,7 +55,8 @@ def _make_blinds_cover(level: float, blinds_level: float = 0.0,
 
 class TestBlindsCurrentCoverPosition:
     """current_cover_position must reflect ShutterControl.level (the live lift),
-    independent of blinds_level (BlindsSceneControl, the stale scene value)."""
+    independent of blinds_level (BlindsSceneControl, the stale scene value).
+    """
 
     def test_position_uses_level_not_blinds_level(self):
         """CORE #100 FIX: when level != blinds_level, return the level value."""
@@ -68,7 +69,8 @@ class TestBlindsCurrentCoverPosition:
 
     def test_fully_up_shows_100_not_scene_zero(self):
         """The exact reported symptom: fully up = ShutterControl.level 1.0 but
-        BlindsSceneControl.level 0.0 → must be 100%, not 0%."""
+        BlindsSceneControl.level 0.0 → must be 100%, not 0%.
+        """
         cover = _make_blinds_cover(level=1.0, blinds_level=0.0)
         assert cover.current_cover_position == 100
 

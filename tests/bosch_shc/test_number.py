@@ -11,10 +11,11 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from custom_components.bosch_shc.number import SHCNumber
 from homeassistant.components.number import NumberDeviceClass
 from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory
+
+from custom_components.bosch_shc.number import SHCNumber
 
 
 def _make_number(

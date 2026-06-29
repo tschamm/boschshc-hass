@@ -8,11 +8,9 @@ from boschshcpy.exceptions import (
     SHCSessionError,
 )
 from boschshcpy.information import SHCInformation
-
 from homeassistant import config_entries, setup
 from homeassistant.components.bosch_shc.config_flow import write_tls_asset
 from homeassistant.components.bosch_shc.const import CONF_SHC_CERT, CONF_SHC_KEY, DOMAIN
-
 from tests.common import MockConfigEntry
 
 MOCK_SETTINGS = {

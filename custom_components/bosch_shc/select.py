@@ -172,7 +172,7 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    for device in session.device_helper.shutter_contacts2:
+    for device in session.device_helper.shutter_contacts2:  # type: ignore[assignment]
         if device_excluded(device, config_entry.options):
             continue
         if not isinstance(device, SHCShutterContact2Plus):
@@ -374,7 +374,7 @@ async def async_setup_entry(  # noqa: C901
 _SIREN_SOUND_LEVEL_OPTIONS = ["low", "medium", "high"]
 
 
-class SirenSoundLevelSelect(SHCEntity, SelectEntity):
+class SirenSoundLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for the Outdoor Siren sound level (#120)."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -390,7 +390,7 @@ class SirenSoundLevelSelect(SHCEntity, SelectEntity):
     def current_option(self) -> str | None:
         """Return the current sound level option."""
         try:
-            return self._device.siren.sound_level.name.lower()
+            return str(self._device.siren.sound_level.name.lower())
         except (AttributeError, ValueError):
             return None
 
@@ -403,7 +403,7 @@ class SirenSoundLevelSelect(SHCEntity, SelectEntity):
         await self._device.siren.async_set_configuration(sound_level=level)
 
 
-class MotionSensitivitySelect(SHCEntity, SelectEntity):
+class MotionSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for Motion Detector II [+M] motion sensitivity."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -419,7 +419,7 @@ class MotionSensitivitySelect(SHCEntity, SelectEntity):
     def current_option(self) -> str | None:
         """Return the current sensitivity option."""
         try:
-            return self._device.motion_sensitivity.name
+            return str(self._device.motion_sensitivity.name)
         except (AttributeError, ValueError) as err:
             LOGGER.warning(
                 "Unknown motion_sensitivity for %s: %s", self._device.name, err
@@ -432,7 +432,7 @@ class MotionSensitivitySelect(SHCEntity, SelectEntity):
         await self._device.async_set_motion_sensitivity(motion_sensitivity[option])
 
 
-class OrientationLightResponseSelect(SHCEntity, SelectEntity):
+class OrientationLightResponseSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select for the Motion Detector II orientation-light response time.
 
     Backed by the PollControl service (longPollInterval): LONG = lower battery
@@ -458,7 +458,7 @@ class OrientationLightResponseSelect(SHCEntity, SelectEntity):
             val = self._device.long_poll_interval
             if val is None or val.name not in self._attr_options:
                 return None
-            return val.name
+            return str(val.name)
         except (AttributeError, ValueError) as err:
             LOGGER.warning(
                 "Unknown long_poll_interval for %s: %s", self._device.name, err
@@ -471,7 +471,7 @@ class OrientationLightResponseSelect(SHCEntity, SelectEntity):
         await self._device.async_set_long_poll_interval(state)
 
 
-class VibrationSensitivitySelect(SHCEntity, SelectEntity):
+class VibrationSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for ShutterContact2Plus vibration sensitivity."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -489,7 +489,7 @@ class VibrationSensitivitySelect(SHCEntity, SelectEntity):
     def current_option(self) -> str | None:
         """Return the current sensitivity option."""
         try:
-            return self._device.sensitivity.name
+            return str(self._device.sensitivity.name)
         except (AttributeError, ValueError) as err:
             LOGGER.warning(
                 "Unknown vibration sensitivity for %s: %s", self._device.name, err
@@ -502,7 +502,7 @@ class VibrationSensitivitySelect(SHCEntity, SelectEntity):
         await self._device.async_set_sensitivity(sensitivity_state[option])
 
 
-class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):
+class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for smart plug power-loss behaviour."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -523,7 +523,7 @@ class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):
             val = self._device.state_after_power_outage
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -541,7 +541,7 @@ class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):
         )
 
 
-class SmokeSensitivitySelect(SHCEntity, SelectEntity):
+class SmokeSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for smoke detector / twinguard smoke sensitivity."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -560,7 +560,7 @@ class SmokeSensitivitySelect(SHCEntity, SelectEntity):
             val = self._device.smoke_sensitivity
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -576,7 +576,7 @@ class SmokeSensitivitySelect(SHCEntity, SelectEntity):
         await self._device.async_set_smoke_sensitivity(smoke_sensitivity_level[option])
 
 
-class DisplayDirectionSelect(SHCEntity, SelectEntity):
+class DisplayDirectionSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for thermostat display orientation."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -595,7 +595,7 @@ class DisplayDirectionSelect(SHCEntity, SelectEntity):
             val = self._device.display_direction
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -611,7 +611,7 @@ class DisplayDirectionSelect(SHCEntity, SelectEntity):
         await self._device.async_set_display_direction(direction[option])
 
 
-class DisplayedTemperatureSelect(SHCEntity, SelectEntity):
+class DisplayedTemperatureSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for which temperature value the thermostat display shows."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -632,7 +632,7 @@ class DisplayedTemperatureSelect(SHCEntity, SelectEntity):
             val = self._device.displayed_temperature
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -650,7 +650,7 @@ class DisplayedTemperatureSelect(SHCEntity, SelectEntity):
         )
 
 
-class TerminalTypeSelect(SHCEntity, SelectEntity):
+class TerminalTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for RoomThermostat2 terminal (external sensor) type."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -669,7 +669,7 @@ class TerminalTypeSelect(SHCEntity, SelectEntity):
             val = self._device.terminal_type
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -683,7 +683,7 @@ class TerminalTypeSelect(SHCEntity, SelectEntity):
         await self._device.async_set_terminal_type(terminal_type[option])
 
 
-class ValveTypeSelect(SHCEntity, SelectEntity):
+class ValveTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for ThermostatGen2 valve type (normally open/close)."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -702,7 +702,7 @@ class ValveTypeSelect(SHCEntity, SelectEntity):
             val = self._device.valve_type
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -716,7 +716,7 @@ class ValveTypeSelect(SHCEntity, SelectEntity):
         await self._device.async_set_valve_type(valve_type[option])
 
 
-class HeaterTypeSelect(SHCEntity, SelectEntity):
+class HeaterTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for ThermostatGen2 heater type."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -735,7 +735,7 @@ class HeaterTypeSelect(SHCEntity, SelectEntity):
             val = self._device.heater_type
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -749,7 +749,7 @@ class HeaterTypeSelect(SHCEntity, SelectEntity):
         await self._device.async_set_heater_type(heater_type[option])
 
 
-class SwitchTypeSelect(SHCEntity, SelectEntity):
+class SwitchTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for SwitchConfiguration switch type."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -768,7 +768,7 @@ class SwitchTypeSelect(SHCEntity, SelectEntity):
             val = self._device.switch_type
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -782,7 +782,7 @@ class SwitchTypeSelect(SHCEntity, SelectEntity):
         await self._device.async_set_switch_type(switch_type[option])
 
 
-class ActuatorTypeSelect(SHCEntity, SelectEntity):
+class ActuatorTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for SwitchConfiguration actuator type."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -801,7 +801,7 @@ class ActuatorTypeSelect(SHCEntity, SelectEntity):
             val = self._device.actuator_type
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -815,7 +815,7 @@ class ActuatorTypeSelect(SHCEntity, SelectEntity):
         await self._device.async_set_actuator_type(actuator_type[option])
 
 
-class OutputModeSelect(SHCEntity, SelectEntity):
+class OutputModeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for SwitchConfiguration output mode."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -834,7 +834,7 @@ class OutputModeSelect(SHCEntity, SelectEntity):
             val = self._device.output_mode
             if val is None:
                 return None
-            name = val.name
+            name: str = str(val.name)
             if name not in self._attr_options:
                 return None
             return name
@@ -848,7 +848,7 @@ class OutputModeSelect(SHCEntity, SelectEntity):
         await self._device.async_set_output_mode(output_mode[option])
 
 
-class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):
+class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for SmartSensitivityControl manual level — SECURITY context.
 
     The MD2 SmartSensitivityControl service stores a per-context manualLevel
@@ -890,7 +890,7 @@ class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):
         await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
 
 
-class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):
+class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for SmartSensitivityControl manual level — COMFORT context."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -927,7 +927,7 @@ class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):
         await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
 
 
-class DimmerPhaseControlSelect(SHCEntity, SelectEntity):
+class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     """Select entity for micromodule dimmer phase-control mode (#123)."""
 
     _attr_entity_category = EntityCategory.CONFIG

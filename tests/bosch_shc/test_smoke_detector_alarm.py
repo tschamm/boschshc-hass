@@ -8,6 +8,8 @@ Fix: is_on only returns True for PRIMARY_ALARM or SECONDARY_ALARM.
 from enum import Enum
 from types import SimpleNamespace
 
+from boschshcpy import AlarmService
+
 from custom_components.bosch_shc.binary_sensor import SmokeDetectorSensor
 
 
@@ -21,12 +23,11 @@ class _FakeAlarmState(Enum):
 def _sensor(alarm_state):
     """Build a SmokeDetectorSensor without running __init__."""
     s = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
-    # AlarmService.State is referenced via SHCSmokeDetector.AlarmService.State in
+    # AlarmService.State is referenced via AlarmService.State in
     # is_on — patch _device.alarmstate with the real imported enum so the
     # identity check works correctly.
-    from boschshcpy import SHCSmokeDetector
 
-    state = SHCSmokeDetector.AlarmService.State[alarm_state.name]
+    state = AlarmService.State[alarm_state.name]
     s._device = SimpleNamespace(alarmstate=state)
     return s
 

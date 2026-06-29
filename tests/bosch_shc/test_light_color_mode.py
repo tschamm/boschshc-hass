@@ -14,9 +14,13 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-from custom_components.bosch_shc.light import LightSwitch
-from homeassistant.components.light import ATTR_COLOR_TEMP_KELVIN, ATTR_HS_COLOR, ColorMode
+from homeassistant.components.light import (
+    ATTR_COLOR_TEMP_KELVIN,
+    ATTR_HS_COLOR,
+    ColorMode,
+)
 
+from custom_components.bosch_shc.light import LightSwitch
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -8,11 +8,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 from custom_components.bosch_shc.const import DOMAIN
 from custom_components.bosch_shc.entity import SHCEntity
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -301,7 +298,8 @@ class TestOnStateChangedCallback:
 
     def test_update_entity_information_deleted_calls_async_create_task(self):
         """When device.deleted is True, update_entity_information should call
-        hass.async_create_task directly (not call_soon_threadsafe)."""
+        hass.async_create_task directly (not call_soon_threadsafe).
+        """
         svc = FakeService()
         task_calls = []
         ent = TrackingEntity()

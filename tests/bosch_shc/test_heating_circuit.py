@@ -2,12 +2,12 @@
 
 from types import SimpleNamespace
 
-from boschshcpy import SHCHeatingCircuit
+from boschshcpy import HeatingCircuitService
 from homeassistant.components.climate.const import HVACAction, HVACMode
 
 from custom_components.bosch_shc.climate import HeatingCircuit
 
-OM = SHCHeatingCircuit.HeatingCircuitService.OperationMode
+OM = HeatingCircuitService.OperationMode
 
 
 def _hc(operation_mode, on, setpoint=21.0):

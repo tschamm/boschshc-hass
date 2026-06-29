@@ -16,21 +16,24 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch  # noqa: F401
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.bosch_shc.button import (
     SHCWalkTestButton,
     SHCWalkTestStopButton,
+)
+from custom_components.bosch_shc.button import (
     async_setup_entry as button_setup_entry,
 )
-from custom_components.bosch_shc.sensor import WalkStateSensor
+from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.select import (
-    SmartSensitivitySecurityLevelSelect,
     SmartSensitivityComfortLevelSelect,
+    SmartSensitivitySecurityLevelSelect,
+)
+from custom_components.bosch_shc.select import (
     async_setup_entry as select_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
-
+from custom_components.bosch_shc.sensor import WalkStateSensor
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -45,7 +48,7 @@ def _fake_md2(**kwargs):
 
 
 def _executor_hass():
-    """hass stub whose async_add_executor_job runs the sync fn inline.
+    """Hass stub whose async_add_executor_job runs the sync fn inline.
 
     The integration runs the sync session, so entities call the device's
     SYNC setter via hass.async_add_executor_job (not the async_* coroutine).
@@ -344,8 +347,8 @@ class TestWalkStateSensor:
 
 class TestWalkStateSensorSetup:
     def _run_sensor_setup(self, md2_list):
-        from custom_components.bosch_shc.sensor import async_setup_entry as sensor_setup
         from custom_components.bosch_shc.const import DATA_SHC
+        from custom_components.bosch_shc.sensor import async_setup_entry as sensor_setup
 
         entry_id = "E1"
         emma = SimpleNamespace(
@@ -531,7 +534,7 @@ class TestSmartSensitivitySecurityLevelSelect:
         assert "LOW" in e._attr_options
 
     def test_current_option_string_level(self):
-        """level may be a plain string (not an enum) — should still work."""
+        """Level may be a plain string (not an enum) — should still work."""
         def _get_str_level(c):
             return {"context": "SECURITY", "manualLevel": "LOW"}
 
@@ -673,7 +676,7 @@ class TestSmartSensitivityComfortLevelSelect:
         assert "LOW" in e._attr_options
 
     def test_current_option_string_level(self):
-        """level may be a plain string (not an enum) — should still work."""
+        """Level may be a plain string (not an enum) — should still work."""
         def _get_str_level(c):
             return {"context": "COMFORT", "manualLevel": "HIGH"}
 

@@ -6,7 +6,7 @@ No HA harness, no tests.common, no async_setup_entry.
 
 from types import SimpleNamespace
 
-from boschshcpy.models_impl import SHCSmartPlugCompact
+from boschshcpy import CommunicationQualityService
 from boschshcpy.services_impl import AirQualityLevelService, ValveTappetService
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
@@ -35,7 +35,6 @@ from custom_components.bosch_shc.sensor import (
     TemperatureSensor,
     ValveTappetSensor,
 )
-
 
 # ---------------------------------------------------------------------------
 # TemperatureSensor
@@ -289,7 +288,7 @@ def _energy_sensor(energyconsumption_wh):
 
 class TestEnergySensor:
     def test_native_value_converts_wh_to_kwh(self):
-        """energyconsumption is in Wh; native_value must divide by 1000."""
+        """Energyconsumption is in Wh; native_value must divide by 1000."""
         assert _energy_sensor(5000).native_value == 5.0
 
     def test_native_value_zero(self):
@@ -322,27 +321,27 @@ def _comm_quality_sensor(state):
 class TestCommunicationQualitySensor:
     # #339: native_value is now a lowercase, translatable slug.
     def test_native_value_good(self):
-        state = SHCSmartPlugCompact.CommunicationQualityService.State.GOOD
+        state = CommunicationQualityService.State.GOOD
         assert _comm_quality_sensor(state).native_value == "good"
 
     def test_native_value_medium(self):
-        state = SHCSmartPlugCompact.CommunicationQualityService.State.MEDIUM
+        state = CommunicationQualityService.State.MEDIUM
         assert _comm_quality_sensor(state).native_value == "medium"
 
     def test_native_value_bad(self):
-        state = SHCSmartPlugCompact.CommunicationQualityService.State.BAD
+        state = CommunicationQualityService.State.BAD
         assert _comm_quality_sensor(state).native_value == "bad"
 
     def test_native_value_unknown(self):
-        state = SHCSmartPlugCompact.CommunicationQualityService.State.UNKNOWN
+        state = CommunicationQualityService.State.UNKNOWN
         assert _comm_quality_sensor(state).native_value == "unknown"
 
     def test_native_value_fetching(self):
-        state = SHCSmartPlugCompact.CommunicationQualityService.State.FETCHING
+        state = CommunicationQualityService.State.FETCHING
         assert _comm_quality_sensor(state).native_value == "fetching"
 
     def test_native_value_normal(self):
-        state = SHCSmartPlugCompact.CommunicationQualityService.State.NORMAL
+        state = CommunicationQualityService.State.NORMAL
         assert _comm_quality_sensor(state).native_value == "normal"
 
 

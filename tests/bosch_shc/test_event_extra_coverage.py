@@ -9,18 +9,17 @@ Targets:
 import asyncio
 from types import SimpleNamespace
 
-from custom_components.bosch_shc.event import (
-    UniversalSwitchEvent,
-    MotionDetectorEvent,
-    SmokeDetectorEvent,
-    async_setup_entry,
-)
 from custom_components.bosch_shc.const import (
     DATA_SESSION,
     DOMAIN,
     OPT_EXCLUDED_DEVICES,
 )
-
+from custom_components.bosch_shc.event import (
+    MotionDetectorEvent,
+    SmokeDetectorEvent,
+    UniversalSwitchEvent,
+    async_setup_entry,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers

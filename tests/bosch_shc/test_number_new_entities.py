@@ -9,17 +9,15 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from homeassistant.components.number import NumberMode
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.const import UnitOfTime
+from homeassistant.helpers.entity import EntityCategory
 
-from custom_components.bosch_shc.number import (
-    ImpulseLengthNumber,
-    HeatingCircuitSetpointNumber,
-)
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
+from custom_components.bosch_shc.number import (
+    HeatingCircuitSetpointNumber,
+    ImpulseLengthNumber,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers

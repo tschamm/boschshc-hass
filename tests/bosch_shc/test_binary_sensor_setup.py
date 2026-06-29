@@ -15,15 +15,17 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from boschshcpy import (
-    SHCBatteryDevice,
-    SHCSmokeDetectionSystem,
-    SHCSmokeDetector,
+    AlarmService,
+    BatteryLevelService,
     SHCShutterContact,
     SHCShutterContact2Plus,
-    SHCWaterLeakageSensor,
+    ShutterContactService,
+    SmokeDetectorCheckService,
+    SurveillanceAlarmService,
+    VibrationSensorService,
+    WaterLeakageSensorService,
+    WaterLeakageSensorTiltService,
 )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.helpers.entity import EntityCategory
@@ -41,7 +43,6 @@ from custom_components.bosch_shc.binary_sensor import (
     async_setup_entry,
 )
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers: build minimal fake device attributes for each entity __init__
@@ -231,7 +232,7 @@ class TestAsyncSetupEntry:
     # -- shutter contacts --
     def test_shutter_contact_added(self):
         dev = _make_base_device("sc1")
-        dev.state = SHCShutterContact.ShutterContactService.State.CLOSED
+        dev.state = ShutterContactService.State.CLOSED
         dev.device_class = "REGULAR_WINDOW"
         session = _make_fake_session(shutter_contacts=[dev])
         entities, _ = self._setup(session)
@@ -254,9 +255,9 @@ class TestAsyncSetupEntry:
         dev.status = "AVAILABLE"
         dev.subscribe_callback = lambda key, cb: None
         dev.unsubscribe_callback = lambda key: None
-        dev.state = SHCShutterContact.ShutterContactService.State.CLOSED
+        dev.state = ShutterContactService.State.CLOSED
         dev.device_class = "ENTRANCE_DOOR"
-        dev.vibrationsensor = SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+        dev.vibrationsensor = VibrationSensorService.State.NO_VIBRATION
         session = _make_fake_session(shutter_contacts2=[dev])
         entities, _ = self._setup(session)
         # ShutterContactSensor for the contact + ShutterContactVibrationSensor
@@ -276,7 +277,7 @@ class TestAsyncSetupEntry:
     def test_subscriber_callback_creates_entity(self):
         """Calling the registered subscriber callback creates a new sensor."""
         dev = _make_base_device("sc3")
-        dev.state = SHCShutterContact.ShutterContactService.State.OPEN
+        dev.state = ShutterContactService.State.OPEN
         dev.device_class = "GENERIC"
         session = _make_fake_session()
         entities, _ = self._setup(session)
@@ -355,8 +356,8 @@ class TestAsyncSetupEntry:
     def test_smoke_detector_added(self):
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd1", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         session = _make_fake_session(smoke_detectors=[dev])
         entities, _ = self._setup(session)
         assert any(isinstance(e, SmokeDetectorSensor) for e in entities)
@@ -366,8 +367,8 @@ class TestAsyncSetupEntry:
         cb_store = {}
         alarm_svc = _make_service("Alarm", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("sd2", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         session = _make_fake_session(smoke_detectors=[dev])
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
@@ -400,7 +401,7 @@ class TestAsyncSetupEntry:
     def test_smoke_detection_system_added(self):
         surv_svc = _make_service("SurveillanceAlarm")
         dev = _make_base_device("sds1", device_services=[surv_svc])
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=dev)
         entities, _ = self._setup(session)
         assert any(isinstance(e, SmokeDetectionSystemSensor) for e in entities)
@@ -415,7 +416,7 @@ class TestAsyncSetupEntry:
         cb_store = {}
         surv_svc = _make_service("SurveillanceAlarm", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("sds2", device_services=[surv_svc])
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=dev)
         hass = _make_hass()
         hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
@@ -449,7 +450,7 @@ class TestAsyncSetupEntry:
         """TwinguardSmokeAlarmSensor created for each Twinguard when SDS exists."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("smokeDetectionSystem", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         tw1 = _make_base_device("tw1", name="TW1")
         tw2 = _make_base_device("tw2", name="TW2")
         session = _make_fake_session(smoke_detection_system=sds, twinguards=[tw1, tw2])
@@ -461,7 +462,7 @@ class TestAsyncSetupEntry:
         """No TwinguardSmokeAlarmSensor when twinguards list is empty."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("smokeDetectionSystem", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds, twinguards=[])
         entities, _ = self._setup(session)
         assert not any(isinstance(e, TwinguardSmokeAlarmSensor) for e in entities)
@@ -477,7 +478,7 @@ class TestAsyncSetupEntry:
         """TwinguardSmokeAlarmSensor gets _smoke suffix unique_id and name=Smoke."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-x", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         tw = _make_base_device("tw-x", name="TW", root_device_id="root-x")
         session = _make_fake_session(smoke_detection_system=sds, twinguards=[tw])
         entities, _ = self._setup(session)
@@ -493,7 +494,7 @@ class TestAsyncSetupEntry:
             subscribe_callback=lambda k, cb: cb_store.update({k: cb}),
         )
         sds = _make_base_device("sds-sub", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         tw = _make_base_device("tw-sub")
         session = _make_fake_session(smoke_detection_system=sds, twinguards=[tw])
         self._setup(session)
@@ -502,9 +503,9 @@ class TestAsyncSetupEntry:
     # -- water leakage --
     def test_water_leakage_detector_added(self):
         dev = _make_base_device("wl1")
-        dev.leakage_state = SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
-        dev.push_notification_state = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
-        dev.acoustic_signal_state = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
+        dev.leakage_state = WaterLeakageSensorService.State.NO_LEAKAGE
+        dev.push_notification_state = WaterLeakageSensorTiltService.State.ENABLED
+        dev.acoustic_signal_state = WaterLeakageSensorTiltService.State.ENABLED
         session = _make_fake_session(water_leakage_detectors=[dev])
         entities, _ = self._setup(session)
         assert any(isinstance(e, WaterLeakageDetectorSensor) for e in entities)
@@ -512,7 +513,7 @@ class TestAsyncSetupEntry:
     # -- battery sensors --
     def test_battery_sensor_added_when_supported(self):
         dev = _make_base_device("bat1", supports_batterylevel=True)
-        dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        dev.batterylevel = BatteryLevelService.State.OK
         session = _make_fake_session(motion_detectors=[dev])
         entities, _ = self._setup(session)
         assert any(isinstance(e, BatterySensor) for e in entities)
@@ -527,7 +528,7 @@ class TestAsyncSetupEntry:
         """All 10 device-type lists feed the battery loop."""
         def _bdev(did):
             d = _make_base_device(did, supports_batterylevel=True)
-            d.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+            d.batterylevel = BatteryLevelService.State.OK
             return d
 
         session = _make_fake_session(
@@ -610,7 +611,7 @@ class TestAsyncSetupEntry:
         lm_svc = _make_service("LatestMotion")
         dev = _make_base_device("md2-bat", device_services=[lm_svc], supports_batterylevel=True)
         dev.latestmotion = None
-        dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        dev.batterylevel = BatteryLevelService.State.OK
         session = _make_fake_session(motion_detectors2=[dev])
         entities, _ = self._setup(session)
         assert any(isinstance(e, BatterySensor) for e in entities)
@@ -705,11 +706,12 @@ class TestAsyncSetupEntry:
 
     def test_l4_ha_stop_listener_registered_with_async_on_unload(self):
         """L4: async_listen_once(EVENT_HOMEASSISTANT_STOP) return value passed to
-        config_entry.async_on_unload so the listener is removed on entry reload."""
+        config_entry.async_on_unload so the listener is removed on entry reload.
+        """
         unload_callbacks = []
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-l4", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         tw = _make_base_device("tw-l4")
         session = _make_fake_session(smoke_detection_system=sds, twinguards=[tw])
         hass = _make_hass()
@@ -749,7 +751,7 @@ class TestAsyncSetupEntry:
 class TestShutterContactVibrationSensorInit:
     def test_init_sets_name_and_unique_id(self):
         dev = _make_base_device("sc-vib", name="Fenster", root_device_id="root-vib")
-        dev.vibrationsensor = SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+        dev.vibrationsensor = VibrationSensorService.State.NO_VIBRATION
         sensor = ShutterContactVibrationSensor(device=dev, entry_id="E1")
         # name comes from translation_key
         assert sensor.translation_key == "vibration"
@@ -758,7 +760,7 @@ class TestShutterContactVibrationSensorInit:
 
     def test_init_device_stored(self):
         dev = _make_base_device("sc-vib2")
-        dev.vibrationsensor = SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+        dev.vibrationsensor = VibrationSensorService.State.NO_VIBRATION
         sensor = ShutterContactVibrationSensor(device=dev, entry_id="E1")
         assert sensor._device is dev
 
@@ -766,7 +768,7 @@ class TestShutterContactVibrationSensorInit:
 class TestBatterySensorInit:
     def test_init_sets_name_unique_id_category(self):
         dev = _make_base_device("bat-dev", name="Sensor A", root_device_id="root-b")
-        dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        dev.batterylevel = BatteryLevelService.State.OK
         sensor = BatterySensor(device=dev, entry_id="E1")
         # name comes from device_class (BinarySensorDeviceClass.BATTERY); _attr_name is None
         assert sensor._attr_name is None
@@ -775,7 +777,7 @@ class TestBatterySensorInit:
 
     def test_init_device_class_battery(self):
         dev = _make_base_device("bat-dev2")
-        dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        dev.batterylevel = BatteryLevelService.State.OK
         sensor = BatterySensor(device=dev, entry_id="E1")
         assert sensor._attr_device_class == BinarySensorDeviceClass.BATTERY
 
@@ -847,8 +849,8 @@ class TestSmokeDetectorSensorInit:
         cb_store = {}
         alarm_svc = _make_service("Alarm", subscribe_callback=lambda k, cb: cb_store.update({k: cb}))
         dev = _make_base_device("sd-init", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         hass = _make_hass()
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         assert sensor._service is alarm_svc
@@ -869,8 +871,8 @@ class TestSmokeDetectorSensorInit:
     def test_init_without_alarm_service(self):
         other_svc = _make_service("OtherService")
         dev = _make_base_device("sd-init2", device_services=[other_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         hass = _make_hass()
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         assert sensor._service is None
@@ -879,8 +881,8 @@ class TestSmokeDetectorSensorInit:
         fired = []
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd-ev", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.PRIMARY_ALARM
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.PRIMARY_ALARM
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         hass = _make_hass()
         hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
@@ -897,8 +899,8 @@ class TestSmokeDetectorSensorInit:
         alarm_svc = _make_service("Alarm")
         alarm_svc.unsubscribe_callback = lambda k: unsub_store.update({k: True})
         dev = _make_base_device("sd-stop", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         hass = _make_hass()
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         sensor._handle_ha_stop(None)
@@ -907,8 +909,8 @@ class TestSmokeDetectorSensorInit:
     def test_async_request_smoketest(self):
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd-smoke", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         dev.async_smoketest_requested = AsyncMock()
         hass = _make_hass()
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
@@ -920,8 +922,8 @@ class TestSmokeDetectorSensorInit:
         """async_request_alarmstate calls device.async_set_alarmstate(command) directly."""
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd-alarm", device_services=[alarm_svc])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         dev.async_set_alarmstate = AsyncMock()
         hass = _make_hass()
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
@@ -934,7 +936,7 @@ class TestSmokeDetectionSystemSensorInit:
     def test_init_sets_unique_id_and_name(self):
         surv_svc = _make_service("SurveillanceAlarm")
         dev = _make_base_device("sds-init", name="SDS", root_device_id="root-sds")
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         hass = _make_hass()
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         # __init__ sets unique_id = root_device_id + "_" + device_id
@@ -950,7 +952,7 @@ class TestSmokeDetectionSystemSensorInit:
             subscribe_callback=lambda k, cb: cb_store.update({k: cb}),
         )
         dev = _make_base_device("sds-init2", device_services=[surv_svc])
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         hass = _make_hass()
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         assert sensor._service is surv_svc
@@ -971,7 +973,7 @@ class TestSmokeDetectionSystemSensorInit:
     def test_init_without_surveillance_service(self):
         other_svc = _make_service("OtherService")
         dev = _make_base_device("sds-init3", device_services=[other_svc])
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         hass = _make_hass()
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         assert sensor._service is None
@@ -980,7 +982,7 @@ class TestSmokeDetectionSystemSensorInit:
         fired = []
         surv_svc = _make_service("SurveillanceAlarm")
         dev = _make_base_device("sds-ev", device_services=[surv_svc])
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        dev.alarm = SurveillanceAlarmService.State.ALARM_ON
         hass = _make_hass()
         hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
@@ -997,7 +999,7 @@ class TestSmokeDetectionSystemSensorInit:
         surv_svc = _make_service("SurveillanceAlarm")
         surv_svc.unsubscribe_callback = lambda k: unsub_store.update({k: True})
         dev = _make_base_device("sds-stop", device_services=[surv_svc])
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         hass = _make_hass()
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         sensor._handle_ha_stop(None)
@@ -1049,7 +1051,7 @@ class TestTwinguardAlarmTracker:
         """When alarm state is ALARM_OFF, active_trigger_ids is cleared."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds1", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         tracker._active_trigger_ids = {"tw1"}  # simulate previous state
@@ -1060,7 +1062,7 @@ class TestTwinguardAlarmTracker:
         """ALARM_ON + SMOKE_ALARM message populates active_trigger_ids."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("smokeDetectionSystem", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1082,7 +1084,7 @@ class TestTwinguardAlarmTracker:
         """A SMOKE_ALARM message containing an ALARM_OFF event is skipped."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-ao", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1105,7 +1107,7 @@ class TestTwinguardAlarmTracker:
         """Messages with a different sourceId are ignored."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-correct", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1126,7 +1128,7 @@ class TestTwinguardAlarmTracker:
         """refresh() with no state change must not call listeners."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-nc", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         # First refresh establishes baseline
@@ -1142,7 +1144,7 @@ class TestTwinguardAlarmTracker:
         """Changing alarm state from ALARM_ON to ALARM_MUTED notifies listeners."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-notify", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1161,7 +1163,7 @@ class TestTwinguardAlarmTracker:
         hass = _make_hass()
         tracker.register_listener(hass, lambda: called.append(1))
         # Switch to ALARM_MUTED (same trigger, different alarm_state)
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_MUTED
+        sds.alarm = SurveillanceAlarmService.State.ALARM_MUTED
         asyncio.run(tracker.async_refresh())
         assert called == [1]
 
@@ -1169,7 +1171,7 @@ class TestTwinguardAlarmTracker:
         """Transitioning to ALARM_OFF clears trigger ids and notifies."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-clear", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1190,7 +1192,7 @@ class TestTwinguardAlarmTracker:
         hass = _make_hass()
         tracker.register_listener(hass, lambda: called.append(1))
 
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         asyncio.run(tracker.async_refresh())
         assert tracker.is_alarm_active_for("tw1") is False
         assert called == [1]
@@ -1201,7 +1203,7 @@ class TestTwinguardAlarmTracker:
         """Unregistered listener is not called on refresh."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-unreg", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         asyncio.run(tracker.async_refresh())  # establish ALARM_ON baseline
@@ -1215,7 +1217,7 @@ class TestTwinguardAlarmTracker:
         tracker.register_listener(hass, _cb)
         tracker.unregister_listener(_cb)
 
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         asyncio.run(tracker.async_refresh())
         assert called == []
 
@@ -1227,7 +1229,7 @@ class TestTwinguardAlarmTracker:
         surv_svc = _make_service("SurveillanceAlarm")
         surv_svc.unsubscribe_callback = lambda k: unsub_store.update({k: True})
         sds = _make_base_device("sds-td", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         tracker.teardown()
@@ -1237,7 +1239,7 @@ class TestTwinguardAlarmTracker:
         """teardown() can be called multiple times without error."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-idem", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = self._make_tracker(sds, session)
         tracker.teardown()
@@ -1247,7 +1249,7 @@ class TestTwinguardAlarmTracker:
         """After teardown(), refresh() is a no-op."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-post-td", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1268,7 +1270,7 @@ class TestTwinguardAlarmTracker:
         tracker.register_listener(hass, lambda: called.append(1))
         tracker.teardown()
 
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         asyncio.run(tracker.async_refresh())  # should be skipped
         assert called == []
 
@@ -1283,7 +1285,7 @@ class TestTwinguardAlarmTracker:
         """
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-upd", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1310,7 +1312,7 @@ class TestTwinguardAlarmTracker:
         """M1: _handle_alarm_update must schedule via async_create_task (not inline)."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-m1", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         hass = _make_hass()
         hass.async_create_task = MagicMock()
@@ -1323,7 +1325,7 @@ class TestTwinguardAlarmTracker:
         """Regression: _handle_alarm_update must use async_create_task, not executor."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-future", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         hass = _make_hass()
         hass.async_create_task = MagicMock()
@@ -1342,7 +1344,7 @@ class TestTwinguardAlarmTracker:
         """get_messages() raising an exception returns the previous trigger set."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-err", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(smoke_detection_system=sds)
         session.api.get_messages = AsyncMock(side_effect=RuntimeError("network error"))
         tracker = self._make_tracker(sds, session)
@@ -1357,7 +1359,7 @@ class TestTwinguardAlarmTracker:
         """M2: messageCode as string (not dict) must be skipped, not raise."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-m2a", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1374,7 +1376,7 @@ class TestTwinguardAlarmTracker:
         """M2: arguments as string (not dict) must be skipped, not raise."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-m2b", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1395,7 +1397,7 @@ class TestTwinguardAlarmTracker:
         """M2: arguments as None must be skipped, not raise."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-m2c", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1414,7 +1416,7 @@ class TestTwinguardAlarmTracker:
         """M2: one malformed message must not prevent processing of subsequent valid ones."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-m2d", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
         session = _make_fake_session(
             smoke_detection_system=sds,
             messages=[
@@ -1442,7 +1444,7 @@ class TestTwinguardAlarmTracker:
         """L3: _listeners must contain (hass, callable) tuples, not bare callables."""
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-l3", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         hass = _make_hass()
         tracker = self._make_tracker(sds, session)
@@ -1470,7 +1472,7 @@ class TestTwinguardSmokeAlarmSensor:
     def _make_sensor(self, device_id="tw1", root_device_id="root1"):
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _make_base_device("sds-sensor", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=sds)
         tracker = TwinguardAlarmTracker(
             session=session, smoke_detection_system=sds, hass=_make_hass()

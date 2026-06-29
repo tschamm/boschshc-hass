@@ -11,13 +11,13 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
-
 from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
     SHCRegistrationError,
     SHCSessionError,
 )
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 
 from custom_components.bosch_shc.config_flow import (
     ConfigFlow,
@@ -45,8 +45,6 @@ from custom_components.bosch_shc.const import (
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
 )
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
-
 
 # ---------------------------------------------------------------------------
 # Helpers shared across tests
@@ -277,9 +275,8 @@ class TestGetInfoFromHost:
         with patch(
             "custom_components.bosch_shc.config_flow.SHCSession",
             return_value=session_mock,
-        ):
-            with pytest.raises(SHCConnectionError):
-                get_info_from_host(hass, "192.168.1.1", MagicMock())
+        ), pytest.raises(SHCConnectionError):
+            get_info_from_host(hass, "192.168.1.1", MagicMock())
 
 
 # ===========================================================================

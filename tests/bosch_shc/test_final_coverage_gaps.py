@@ -115,7 +115,8 @@ class TestPresenceStateNoneEntity:
         """When hass.states.get(eid) returns None, the loop continues (line 436)."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
         from custom_components.bosch_shc.const import (
-            OPT_CHILD_LOCK_ENABLED, OPT_PRESENCE_ENTITY,
+            OPT_CHILD_LOCK_ENABLED,
+            OPT_PRESENCE_ENTITY,
         )
 
         session = self._make_session()
@@ -252,7 +253,7 @@ class TestCleanupTrackerBody:
         tg.subscribe_callback = MagicMock()
         session.device_helper.twinguards = [tg]
 
-        from custom_components.bosch_shc.const import DOMAIN, DATA_SESSION
+        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
         hass = MagicMock()
         hass.data = {DOMAIN: {"eid1": {DATA_SESSION: session}}}
@@ -269,6 +270,9 @@ class TestCleanupTrackerBody:
         fake_platform = MagicMock()
         fake_platform.async_register_entity_service = MagicMock()
 
+        fake_ent_reg = MagicMock()
+        fake_ent_reg.async_get_entity_id.return_value = None
+
         with (
             patch(
                 "custom_components.bosch_shc.binary_sensor.TwinguardAlarmTracker",
@@ -277,6 +281,10 @@ class TestCleanupTrackerBody:
             patch(
                 "homeassistant.helpers.entity_platform.current_platform",
                 MagicMock(get=MagicMock(return_value=fake_platform)),
+            ),
+            patch(
+                "custom_components.bosch_shc.entity.entity_registry.async_get",
+                return_value=fake_ent_reg,
             ),
         ):
             asyncio.run(
@@ -308,7 +316,7 @@ class TestDeviceTriggerGetDeviceFromId:
 
     def _make_hass_with_data(self, shc_devices, intrusion_system=None):
         """Build a hass mock with a session that has given devices."""
-        from custom_components.bosch_shc.const import DOMAIN, DATA_SESSION
+        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
         session = MagicMock()
         session.devices = shc_devices
@@ -403,6 +411,7 @@ class TestGetTriggersMatchDefaultBranch:
         We document this intentionally and accept 97% on device_trigger.py.
         """
         import inspect
+
         from custom_components.bosch_shc import device_trigger as dt_mod
         src = inspect.getsource(dt_mod.async_get_triggers)
         assert "case _:" in src, "case _: branch exists in source"
@@ -416,7 +425,7 @@ class TestSelectSetupExcludedAndAttributeError:
     """Tests for select.py async_setup_entry edge cases."""
 
     def _make_hass(self, devices):
-        from custom_components.bosch_shc.const import DOMAIN, DATA_SESSION
+        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         session = MagicMock()
         session.device_helper.motion_detectors2 = devices
         hass = MagicMock()
@@ -519,7 +528,7 @@ class TestBatteryLevelSensorCreation:
 
     def test_battery_level_sensor_added(self):
         """Lines 354,736-738: a device with supports_batterylevel=True gets a sensor."""
-        from custom_components.bosch_shc.const import DOMAIN, DATA_SESSION
+        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
         device = MagicMock()
         device.id = "dev-battery-001"

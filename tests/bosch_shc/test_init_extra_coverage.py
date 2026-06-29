@@ -22,7 +22,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
+from homeassistant.const import ATTR_COMMAND, ATTR_NAME
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.bosch_shc.const import (
@@ -32,8 +32,6 @@ from custom_components.bosch_shc.const import (
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
 )
-from homeassistant.const import ATTR_COMMAND, ATTR_NAME
-
 
 # ---------------------------------------------------------------------------
 # Patch targets
@@ -515,7 +513,8 @@ class TestScheduledCertCheckNoCertPath:
 
 class TestScheduledCertCheckWarningBranch:
     """When days_remaining <= CERT_EXPIRY_WARNING_DAYS (but >= 0),
-    ir.async_create_issue must be called in the daily scheduled check."""
+    ir.async_create_issue must be called in the daily scheduled check.
+    """
 
     def _capture_cert_check_fn_with_cert(self, cert_return):
         """Run async_setup_entry WITH a cert and capture the scheduled check fn."""

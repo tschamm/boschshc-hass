@@ -43,7 +43,7 @@ async def async_setup_entry(
         async_add_entities(entities)
 
 
-class SHCValve(SHCEntity, ValveEntity):
+class SHCValve(SHCEntity, ValveEntity):  # type: ignore[misc]
     """Representation of a SHC valve."""
 
     _attr_device_class = ValveDeviceClass.WATER
@@ -58,13 +58,14 @@ class SHCValve(SHCEntity, ValveEntity):
     ) -> None:
         """Initialize a SHC valve."""
         super().__init__(device, entry_id)
-        self._attr_name = None if attr_name is None else attr_name
+        if attr_name is not None:
+            self._attr_name = attr_name  # type: ignore[assignment]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        self._device: SHCThermostat = device
+        self._device: SHCThermostat = device  # type: ignore[assignment]
 
     @property
     def current_valve_position(self) -> int | None:
@@ -73,7 +74,8 @@ class SHCValve(SHCEntity, ValveEntity):
         None is unknown, 0 is closed, 100 is fully open.
         """
         try:
-            return self._device.position
+            pos = self._device.position
+            return int(pos) if pos is not None else None
         except (ValueError, KeyError, AttributeError) as err:
             LOGGER.debug(
                 "Could not read valve position for %s: %s", self._device.name, err

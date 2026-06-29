@@ -6,8 +6,8 @@ must declare target: with an entity selector (not a fields.entity_id text field)
 """
 
 import pathlib
-import yaml
 
+import yaml
 
 SERVICES_YAML = (
     pathlib.Path(__file__).parent.parent.parent

@@ -28,12 +28,15 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from boschshcpy import (
-    SHCBatteryDevice,
-    SHCSmokeDetectionSystem,
-    SHCSmokeDetector,
-    SHCShutterContact2Plus,
-    SHCWaterLeakageSensor,
+    AlarmService,
+    BatteryLevelService,
+    SmokeDetectorCheckService,
+    SurveillanceAlarmService,
+    VibrationSensorService,
+    WaterLeakageSensorService,
+    WaterLeakageSensorTiltService,
 )
+from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
 
 from custom_components.bosch_shc.binary_sensor import (
     BatterySensor,
@@ -45,13 +48,11 @@ from custom_components.bosch_shc.binary_sensor import (
     WaterLeakageDetectorSensor,
 )
 from custom_components.bosch_shc.const import (
-    ATTR_EVENT_TYPE,
     ATTR_EVENT_SUBTYPE,
+    ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
     EVENT_BOSCH_SHC,
 )
-from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
-
 
 # ---------------------------------------------------------------------------
 # Helper: base device with all fields SHCEntity.__init__ needs
@@ -82,7 +83,7 @@ def _sds_sensor(alarm_state_name):
     """Build SmokeDetectionSystemSensor via __new__."""
     s = SmokeDetectionSystemSensor.__new__(SmokeDetectionSystemSensor)
     s._device = SimpleNamespace(
-        alarm=SHCSmokeDetectionSystem.SurveillanceAlarmService.State[alarm_state_name]
+        alarm=SurveillanceAlarmService.State[alarm_state_name]
     )
     return s
 
@@ -121,7 +122,7 @@ class TestSmokeDetectionSystemSensorInit:
 
     def _make_dev(self, device_id="sds-x", root_device_id="root-x", name="SDS"):
         dev = _base_device(device_id=device_id, name=name, root_device_id=root_device_id)
-        dev.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         dev.device_services = []
         return dev
 
@@ -173,14 +174,14 @@ class TestBatterySensorLoggingPaths:
 
     def test_not_available_logs_debug_and_returns_false(self):
         """NOT_AVAILABLE → debug log, is_on is False (no battery state yet)."""
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE)
+        s = _battery_sensor(BatteryLevelService.State.NOT_AVAILABLE)
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
         mock_log.debug.assert_called_once()
         assert result is False
 
     def test_critical_low_logs_warning(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW)
+        s = _battery_sensor(BatteryLevelService.State.CRITICAL_LOW)
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
         mock_log.warning.assert_called_once()
@@ -189,7 +190,7 @@ class TestBatterySensorLoggingPaths:
     def test_critically_low_battery_logs_warning(self):
         """CRITICALLY_LOW_BATTERY → warning log + is_on True."""
         s = _battery_sensor(
-            SHCBatteryDevice.BatteryLevelService.State.CRITICALLY_LOW_BATTERY
+            BatteryLevelService.State.CRITICALLY_LOW_BATTERY
         )
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
@@ -197,14 +198,14 @@ class TestBatterySensorLoggingPaths:
         assert result is True
 
     def test_low_battery_logs_warning(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY)
+        s = _battery_sensor(BatteryLevelService.State.LOW_BATTERY)
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
         mock_log.warning.assert_called_once()
         assert result is True
 
     def test_ok_logs_nothing(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.OK)
+        s = _battery_sensor(BatteryLevelService.State.OK)
         with patch("custom_components.bosch_shc.binary_sensor.LOGGER") as mock_log:
             result = s.is_on
         mock_log.debug.assert_not_called()
@@ -213,7 +214,7 @@ class TestBatterySensorLoggingPaths:
 
     def test_critically_low_battery_is_on(self):
         """CRITICALLY_LOW_BATTERY is not OK → is_on True (no special logging path)."""
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.CRITICALLY_LOW_BATTERY)
+        s = _battery_sensor(BatteryLevelService.State.CRITICALLY_LOW_BATTERY)
         assert s.is_on is True
 
 
@@ -350,7 +351,7 @@ class TestShutterContactVibrationSensorInit:
 
     def _make_dev(self, device_id="sc-vib", root_device_id="root-vib", name="Fenster"):
         dev = _base_device(device_id=device_id, name=name, root_device_id=root_device_id)
-        dev.vibrationsensor = SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+        dev.vibrationsensor = VibrationSensorService.State.NO_VIBRATION
         return dev
 
     def test_attr_name_is_vibration_literal(self):
@@ -385,24 +386,24 @@ class TestSmokeDetectorSensorIsOnBoundary:
         s = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
         s._device = SimpleNamespace(
             alarmstate=alarm_state,
-            smokedetectorcheck_state=SHCSmokeDetector.SmokeDetectorCheckService.State.NONE,
+            smokedetectorcheck_state=SmokeDetectorCheckService.State.NONE,
         )
         return s
 
     def test_secondary_alarm_is_smoke(self):
-        s = self._sensor(SHCSmokeDetector.AlarmService.State.SECONDARY_ALARM)
+        s = self._sensor(AlarmService.State.SECONDARY_ALARM)
         assert s.is_on is True
 
     def test_primary_alarm_is_smoke(self):
-        s = self._sensor(SHCSmokeDetector.AlarmService.State.PRIMARY_ALARM)
+        s = self._sensor(AlarmService.State.PRIMARY_ALARM)
         assert s.is_on is True
 
     def test_intrusion_alarm_is_not_smoke(self):
-        s = self._sensor(SHCSmokeDetector.AlarmService.State.INTRUSION_ALARM)
+        s = self._sensor(AlarmService.State.INTRUSION_ALARM)
         assert s.is_on is False
 
     def test_idle_off_is_not_smoke(self):
-        s = self._sensor(SHCSmokeDetector.AlarmService.State.IDLE_OFF)
+        s = self._sensor(AlarmService.State.IDLE_OFF)
         assert s.is_on is False
 
 
@@ -413,9 +414,9 @@ class TestSmokeDetectorSensorIsOnBoundary:
 class TestWaterLeakageDetectorSensorLeakageDetectedAttributes:
     """extra_state_attributes must still return push/acoustic names even during leak."""
 
-    _WL_DETECTED = SHCWaterLeakageSensor.WaterLeakageSensorService.State.LEAKAGE_DETECTED
-    _ENABLED = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
-    _DISABLED = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.DISABLED
+    _WL_DETECTED = WaterLeakageSensorService.State.LEAKAGE_DETECTED
+    _ENABLED = WaterLeakageSensorTiltService.State.ENABLED
+    _DISABLED = WaterLeakageSensorTiltService.State.DISABLED
 
     def _sensor(self, leakage, push, acoustic):
         s = WaterLeakageDetectorSensor.__new__(WaterLeakageDetectorSensor)

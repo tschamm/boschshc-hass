@@ -37,7 +37,6 @@ from custom_components.bosch_shc.sensor import (
     async_setup_entry,
 )
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
@@ -310,7 +309,7 @@ class TestAirQualitySensorComfortZone:
         assert attrs["comfort_zone"] == "COMFORT"
 
     def test_comfort_zone_value_passed_through(self):
-        """comfortZone value (any type) is preserved as-is."""
+        """ComfortZone value (any type) is preserved as-is."""
         s = self._make_sensor(comfort_zone=42, description="Desc")
         attrs = s.extra_state_attributes
         assert attrs["comfort_zone"] == 42

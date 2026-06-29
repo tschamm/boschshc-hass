@@ -1,17 +1,24 @@
 """Describe Shelly logbook events."""
 
+from __future__ import annotations
+
+from typing import Any, Callable
+
 from homeassistant.const import ATTR_NAME
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 
 from .const import ATTR_EVENT_SUBTYPE, ATTR_EVENT_TYPE, DOMAIN, EVENT_BOSCH_SHC
 
 
-@callback
-def async_describe_events(hass, async_describe_event):
+@callback  # type: ignore[untyped-decorator]
+def async_describe_events(
+    hass: HomeAssistant,
+    async_describe_event: Callable[..., None],
+) -> None:
     """Describe logbook events."""
 
-    @callback
-    def async_describe_bosch_shc_event(event):
+    @callback  # type: ignore[untyped-decorator]
+    def async_describe_bosch_shc_event(event: Any) -> dict[str, str]:
         """Describe bosch_shc.click logbook event."""
         device_name = event.data[ATTR_NAME]
         event_subtype = event.data[ATTR_EVENT_SUBTYPE]

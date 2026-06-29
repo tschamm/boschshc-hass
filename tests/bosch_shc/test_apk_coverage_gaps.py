@@ -30,7 +30,6 @@ from custom_components.bosch_shc.const import (
     OPT_EXCLUDED_DEVICES,
 )
 
-
 # ---------------------------------------------------------------------------
 # Generic helpers
 # ---------------------------------------------------------------------------
@@ -328,8 +327,9 @@ def _make_switch_session(**kw):
 
 
 def _run_switch_setup(session, options=None):
-    from custom_components.bosch_shc.switch import async_setup_entry
     from unittest.mock import MagicMock
+
+    from custom_components.bosch_shc.switch import async_setup_entry
     hass = SimpleNamespace(
         data={DOMAIN: {"E1": {
             DATA_SESSION: session,

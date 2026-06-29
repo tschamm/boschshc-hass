@@ -33,7 +33,6 @@ from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode
 
 from custom_components.bosch_shc.light import LightSwitch, MotionDetectorLight
 
-
 # ---------------------------------------------------------------------------
 # LightSwitch helpers
 # ---------------------------------------------------------------------------

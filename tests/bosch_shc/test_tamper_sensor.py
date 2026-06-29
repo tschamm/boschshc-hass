@@ -11,7 +11,6 @@ from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.binary_sensor import TamperSensor
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -59,7 +58,7 @@ class TestTamperSensorIsOn:
         assert sensor.is_on is False
 
     def test_is_on_with_falsy_was_tampered(self):
-        """getattr default and bool() coercion guard."""
+        """Getattr default and bool() coercion guard."""
         dev = SimpleNamespace(
             name="MD2",
             id="dev1",

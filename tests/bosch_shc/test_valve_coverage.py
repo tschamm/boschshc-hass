@@ -14,14 +14,13 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
-from custom_components.bosch_shc.valve import SHCValve, async_setup_entry
 from custom_components.bosch_shc.const import (
     DATA_SESSION,
     DOMAIN,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
 )
-
+from custom_components.bosch_shc.valve import SHCValve, async_setup_entry
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -12,10 +12,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from custom_components.bosch_shc.event import (
-    UniversalSwitchEvent,
     MotionDetectorEvent,
     SmokeDetectionSystemEvent,
     SmokeDetectorEvent,
+    UniversalSwitchEvent,
 )
 
 

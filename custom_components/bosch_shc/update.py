@@ -10,6 +10,7 @@ Bosch Smart Home app.
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
 from boschshcpy import SHCSession
 from boschshcpy.device import SHCDevice
@@ -60,7 +61,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ControllerUpdate(UpdateEntity):
+class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
     """Read-only firmware-update indicator for the SHC controller."""
 
     _attr_has_entity_name = True
@@ -68,7 +69,7 @@ class ControllerUpdate(UpdateEntity):
     _attr_supported_features = UpdateEntityFeature(0)
     _attr_should_poll = True
 
-    def __init__(self, information, title: str, entry_id: str) -> None:
+    def __init__(self, information: Any, title: str, entry_id: str) -> None:
         """Initialize the controller update entity."""
         self._information = information
         self._entry_id = entry_id
@@ -83,7 +84,7 @@ class ControllerUpdate(UpdateEntity):
     @property
     def installed_version(self) -> str | None:
         """Return the currently installed firmware version."""
-        return self._information.version
+        return self._information.version  # type: ignore[no-any-return]
 
     @property
     def latest_version(self) -> str | None:
@@ -92,8 +93,8 @@ class ControllerUpdate(UpdateEntity):
         # otherwise report the installed version so HA shows "up to date".
         available = getattr(self._information, "available_version", None)
         if available:
-            return available
-        return self._information.version
+            return available  # type: ignore[no-any-return]
+        return self._information.version  # type: ignore[no-any-return]
 
     @property
     def in_progress(self) -> bool:
@@ -113,7 +114,7 @@ class ControllerUpdate(UpdateEntity):
             await refresh()
 
 
-class DeviceUpdate(SHCEntity, UpdateEntity):
+class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
     """Read-only per-device firmware-update indicator (spec-grounded).
 
     Surfaces a device's installed/available firmware from its SoftwareUpdate
@@ -158,8 +159,8 @@ class DeviceUpdate(SHCEntity, UpdateEntity):
             service.sw_update_state in offered_or_running
             and service.sw_update_available_version
         ):
-            return service.sw_update_available_version
-        return service.sw_installed_version
+            return service.sw_update_available_version  # type: ignore[no-any-return]
+        return service.sw_installed_version  # type: ignore[no-any-return]
 
     @property
     def in_progress(self) -> bool:

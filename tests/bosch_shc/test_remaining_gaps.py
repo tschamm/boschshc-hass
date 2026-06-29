@@ -22,9 +22,9 @@ No HA harness.
 from __future__ import annotations
 
 import asyncio
+import pytest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
-
 
 # ---------------------------------------------------------------------------
 # __init__.py — line 155: rawscan continue when no runtime_data
@@ -34,11 +34,13 @@ class TestRawscanNoRuntimeData:
     """rawscan_service_call must skip entries lacking runtime_data (line 155)."""
 
     def test_rawscan_skips_entry_without_runtime_data(self):
+        from homeassistant.const import ATTR_COMMAND
+
         from custom_components.bosch_shc import _register_rawscan_service
         from custom_components.bosch_shc.const import (
-            ATTR_TITLE, SERVICE_TRIGGER_RAWSCAN
+            ATTR_TITLE,
+            SERVICE_TRIGGER_RAWSCAN,
         )
-        from homeassistant.const import ATTR_COMMAND
 
         hass = MagicMock()
         hass.services = MagicMock()
@@ -65,10 +67,10 @@ class TestRawscanNoRuntimeData:
                   "device_id": "", "service_id": ""}
         )
 
-        # Must not raise — entry is silently skipped
-        result = asyncio.run(handler(fake_call))
-        # Returns None (no entry processed)
-        assert result is None
+        # Entry skipped (no runtime_data) → ServiceValidationError (no matching entry processed)
+        from homeassistant.exceptions import ServiceValidationError
+        with pytest.raises(ServiceValidationError):
+            asyncio.run(handler(fake_call))
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +84,8 @@ class TestEntityIsPresentZoneDomain:
         """Extract the _entity_is_present inner function via setup with presence."""
         from custom_components.bosch_shc import async_setup_entry
         from custom_components.bosch_shc.const import (
-            OPT_CHILD_LOCK_ENABLED, OPT_PRESENCE_ENTITY,
+            OPT_CHILD_LOCK_ENABLED,
+            OPT_PRESENCE_ENTITY,
         )
 
         hass = MagicMock()
@@ -153,7 +156,7 @@ class TestEntityIsPresentZoneDomain:
         return captured_fn[0], hass
 
     def test_zone_domain_numeric_state_present(self):
-        """zone with numeric state > 0 -> present (line 350)."""
+        """Zone with numeric state > 0 -> present (line 350)."""
         presence_fn, hass = self._get_entity_is_present_fn()
 
         hass.states.get = MagicMock(
@@ -167,7 +170,7 @@ class TestEntityIsPresentZoneDomain:
         presence_fn(event)
 
     def test_zone_domain_zero_state_absent(self):
-        """zone with state '0' -> not present."""
+        """Zone with state '0' -> not present."""
         presence_fn, hass = self._get_entity_is_present_fn()
 
         hass.states.get = MagicMock(
@@ -180,7 +183,7 @@ class TestEntityIsPresentZoneDomain:
         presence_fn(event)
 
     def test_zone_domain_non_numeric_state_absent(self):
-        """zone with non-numeric state -> fallback returns False (line 351-352)."""
+        """Zone with non-numeric state -> fallback returns False (line 351-352)."""
         presence_fn, hass = self._get_entity_is_present_fn()
 
         hass.states.get = MagicMock(
@@ -193,7 +196,7 @@ class TestEntityIsPresentZoneDomain:
         presence_fn(event)  # Must not raise
 
     def test_zone_domain_none_state_absent(self):
-        """zone with state=None -> TypeError -> fallback False (line 351-352)."""
+        """Zone with state=None -> TypeError -> fallback False (line 351-352)."""
         presence_fn, hass = self._get_entity_is_present_fn()
 
         hass.states.get = MagicMock(
@@ -230,11 +233,11 @@ class TestUnloadPresenceUnsub:
     """async_unload_entry must call runtime.presence_unsub() (line 507)."""
 
     def test_presence_unsub_called(self):
-        from custom_components.bosch_shc import async_unload_entry
-        from custom_components.bosch_shc.data import SHCData
-        from custom_components.bosch_shc.const import DOMAIN
-
         from boschshcpy import SHCSessionAsync as _SHCSessionAsync
+
+        from custom_components.bosch_shc import async_unload_entry
+        from custom_components.bosch_shc.const import DOMAIN
+        from custom_components.bosch_shc.data import SHCData
         fake_session = MagicMock(spec=_SHCSessionAsync)
         fake_session.stop_polling = AsyncMock()
         fake_session.unsubscribe_scenario_callback = MagicMock()
@@ -392,8 +395,8 @@ class TestCoverDeviceExcluded:
     """device_excluded continue for shutter/blind cover paths."""
 
     async def _run_setup(self, session, options):
-        from custom_components.bosch_shc.cover import async_setup_entry
         from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
+        from custom_components.bosch_shc.cover import async_setup_entry
 
         hass = SimpleNamespace(
             data={DOMAIN: {"E1": {DATA_SESSION: session}}}
@@ -483,7 +486,9 @@ class TestImpulseRelayDeviceExcluded:
     def test_excluded_impulse_relay_not_added(self):
         """Excluded impulse relay must be skipped (line 53)."""
         from custom_components.bosch_shc.const import (
-            DATA_SESSION, DOMAIN, OPT_EXCLUDED_DEVICES
+            DATA_SESSION,
+            DOMAIN,
+            OPT_EXCLUDED_DEVICES,
         )
         from custom_components.bosch_shc.number import async_setup_entry
 
@@ -587,8 +592,9 @@ class TestSelectMotionDetectorExcluded:
 
     def test_excluded_motion_detector2_not_in_entities(self):
         """Excluded motion_detector2 must be skipped (line 58 continue)."""
-        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
         from boschshcpy.services_impl import PirSensorConfigurationService
+
+        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
         dev = SimpleNamespace(
             id="md2-excl",
@@ -607,8 +613,9 @@ class TestSelectMotionDetectorExcluded:
 
     def test_non_excluded_motion_detector2_with_sensitivity_attr_added(self):
         """Non-excluded device WITH motion_sensitivity attr produces entity."""
-        from custom_components.bosch_shc.select import MotionSensitivitySelect
         from boschshcpy.services_impl import PirSensorConfigurationService
+
+        from custom_components.bosch_shc.select import MotionSensitivitySelect
 
         dev = SimpleNamespace(
             id="md2-ok",
@@ -652,7 +659,10 @@ class TestBatterySensorSupportsFalse:
 
     def test_no_battery_entity_when_not_supported(self):
         from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-        from custom_components.bosch_shc.sensor import BatteryLevelSensor, async_setup_entry
+        from custom_components.bosch_shc.sensor import (
+            BatteryLevelSensor,
+            async_setup_entry,
+        )
 
         async def _noop_migrate(*a, **kw):
             return None

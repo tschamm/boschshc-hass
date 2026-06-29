@@ -11,8 +11,8 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import DOMAIN
 
 try:
-    from cryptography import x509  # type: ignore[import]
-    from cryptography.hazmat.backends import default_backend  # type: ignore[import]
+    from cryptography import x509
+    from cryptography.hazmat.backends import default_backend
 except Exception as exc:  # pragma: no cover - cryptography should exist in HA
     raise HomeAssistantError(
         "cryptography library not available",
@@ -58,7 +58,7 @@ def parse_certificate(cert_path: str) -> CertificateInfo:
     # Use *_utc properties (cryptography >= 41), fallback to naive + replace for older.
     if hasattr(cert, "not_valid_before_utc"):
         not_before = cert.not_valid_before_utc
-        not_after = cert.not_valid_after_utc
+        not_after = cert.not_valid_after_utc  # type: ignore[attr-defined]
     else:
         not_before = cert.not_valid_before.replace(tzinfo=timezone.utc)
         not_after = cert.not_valid_after.replace(tzinfo=timezone.utc)

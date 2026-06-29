@@ -1,5 +1,9 @@
 """Platform for button integration."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from boschshcpy import (
     SHCDevice,
     SHCSession,
@@ -123,7 +127,7 @@ async def async_setup_entry(
         shc_device: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
         scenario_filter = config_entry.options.get(OPT_SCENARIOS_FILTER) or []
 
-        def _make_scenario_button(scenario):
+        def _make_scenario_button(scenario: Any) -> SHCScenarioButton | None:
             """Build a SHCScenarioButton, returning None on malformed payload."""
             try:
                 return SHCScenarioButton(
@@ -168,7 +172,7 @@ async def async_setup_entry(
         async_add_entities(entities)
 
 
-class SHCRelayButton(SHCEntity, ButtonEntity):
+class SHCRelayButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Representation of a SHC button."""
 
     def __init__(
@@ -179,7 +183,7 @@ class SHCRelayButton(SHCEntity, ButtonEntity):
     ) -> None:
         """Initialize a SHC switch."""
         super().__init__(device, entry_id)
-        self._attr_name = None if attr_name is None else attr_name
+        self._attr_name = attr_name  # type: ignore[assignment]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
@@ -191,7 +195,7 @@ class SHCRelayButton(SHCEntity, ButtonEntity):
         await self._device.async_trigger_impulse_state()
 
 
-class SHCSmokeTestButton(SHCEntity, ButtonEntity):
+class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button entity that requests a smoke detector self-test."""
 
     _attr_icon = "mdi:smoke-detector-alert"
@@ -207,7 +211,7 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):
         await self._device.async_smoketest_requested()
 
 
-class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):
+class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that fires a short Outdoor Siren test alarm (#120)."""
 
     _attr_icon = "mdi:bullhorn"
@@ -223,7 +227,7 @@ class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):
         await self._device.async_trigger_test_alarm()
 
 
-class SHCScenarioButton(ButtonEntity):
+class SHCScenarioButton(ButtonEntity):  # type: ignore[misc]
     """Button entity that triggers a single Bosch SHC scenario.
 
     Scenarios are not SHC devices, so this entity does NOT inherit SHCEntity.
@@ -237,7 +241,7 @@ class SHCScenarioButton(ButtonEntity):
 
     def __init__(
         self,
-        scenario,
+        scenario: Any,
         entry_unique_id: str | None,
         entry_id: str,
         shc_device: DeviceEntry | None = None,
@@ -250,7 +254,7 @@ class SHCScenarioButton(ButtonEntity):
         self._attr_name = scenario.name
 
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any] | None:
         """Return the device info (links this button to the SHC controller device)."""
         if self._shc_device is None:
             return None
@@ -266,7 +270,7 @@ class SHCScenarioButton(ButtonEntity):
         await self._scenario.async_trigger()
 
 
-class SHCWalkTestButton(SHCEntity, ButtonEntity):
+class SHCWalkTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button entity that starts a WalkTest on a Motion Detector II.
 
     The WalkTest service is optional on MD2 hardware; this entity is only
@@ -289,7 +293,7 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):
         )
 
 
-class SHCWalkTestStopButton(SHCEntity, ButtonEntity):
+class SHCWalkTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button entity that stops a WalkTest on a Motion Detector II.
 
     Stops an in-progress walk test by sending WALK_STATE_STOP to the
@@ -311,7 +315,7 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):
         )
 
 
-class SHCDetectionTestButton(SHCEntity, ButtonEntity):
+class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that starts a detection (walk) test via the DetectionTest service.
 
     The local Bosch API exposes the walk test through DetectionTest; only
@@ -333,7 +337,7 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):
         )
 
 
-class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):
+class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that stops an in-progress detection (walk) test."""
 
     _attr_icon = "mdi:stop"
@@ -353,7 +357,7 @@ class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):
         )
 
 
-class SHCTamperResetButton(SHCEntity, ButtonEntity):
+class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that resets an active tamper condition (LatestTamper service)."""
 
     _attr_icon = "mdi:restart-alert"
@@ -369,7 +373,7 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):
         await self._device.async_reset_tampered_state()
 
 
-class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):
+class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that flashes the dimmer at max brightness for load calibration (#123)."""
 
     _attr_icon = "mdi:brightness-7"
@@ -388,7 +392,7 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):
             await svc.async_preview_max_brightness()
 
 
-class DimmerPreviewMinButton(SHCEntity, ButtonEntity):
+class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that flashes the dimmer at min brightness for load calibration (#123)."""
 
     _attr_icon = "mdi:brightness-2"

@@ -18,12 +18,12 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from boschshcpy import SHCShutterControl
+from boschshcpy import ShutterControlService
 
-from custom_components.bosch_shc.cover import ShutterControlCover, BlindsControlCover
+from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControlCover
 
-STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
-MOVING = SHCShutterControl.ShutterControlService.State.MOVING
+STOPPED = ShutterControlService.State.STOPPED
+MOVING = ShutterControlService.State.MOVING
 
 
 # ---------------------------------------------------------------------------

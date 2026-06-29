@@ -11,8 +11,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, call
 
-from boschshcpy import SHCClimateControl
-
+from boschshcpy import RoomClimateControlService
 from homeassistant.components.climate.const import ATTR_HVAC_MODE
 from homeassistant.const import ATTR_TEMPERATURE
 
@@ -27,8 +26,8 @@ from custom_components.bosch_shc.const import (
 )
 
 # Shorthand for AUTOMATIC enum value
-_AUTO = SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
-_MANUAL = SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
+_AUTO = RoomClimateControlService.OperationMode.AUTOMATIC
+_MANUAL = RoomClimateControlService.OperationMode.MANUAL
 
 
 # ---------------------------------------------------------------------------
@@ -243,7 +242,8 @@ class TestClimateSetTemperatureManualSwitch:
     def test_set_temperature_auto_mode_switches_to_manual_first(self):
         """Line 233: when operation_mode==AUTOMATIC and no ATTR_HVAC_MODE in kwargs,
         async_set_temperature must call async_set_operation_mode(MANUAL)
-        BEFORE the setpoint write."""
+        BEFORE the setpoint write.
+        """
         ent = self._make_entity(operation_mode=_AUTO)
 
         # Track call order
@@ -282,7 +282,8 @@ class TestClimateSetTemperatureManualSwitch:
 
     def test_set_temperature_with_explicit_hvac_mode_skips_manual_switch(self):
         """When ATTR_HVAC_MODE is explicitly provided, the MANUAL switch must NOT happen.
-        This ensures line 229's guard (kwargs.get(ATTR_HVAC_MODE) is None) works."""
+        This ensures line 229's guard (kwargs.get(ATTR_HVAC_MODE) is None) works.
+        """
         from homeassistant.components.climate.const import HVACMode
         ent = self._make_entity(operation_mode=_AUTO)
 

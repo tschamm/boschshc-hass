@@ -5,12 +5,14 @@ Pure-unit style: build entities via __new__ or direct constructor + SimpleNamesp
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
+from custom_components.bosch_shc.button import (
+    DimmerPreviewMaxButton,
+    DimmerPreviewMinButton,
+)
 from custom_components.bosch_shc.number import DimmerConfigNumber
-from custom_components.bosch_shc.button import DimmerPreviewMaxButton, DimmerPreviewMinButton
 from custom_components.bosch_shc.select import DimmerPhaseControlSelect
-
 
 _FAKE_DEVICE = SimpleNamespace(
     root_device_id="root-1",

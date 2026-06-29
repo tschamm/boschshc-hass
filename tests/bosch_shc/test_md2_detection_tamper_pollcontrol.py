@@ -16,18 +16,22 @@ from custom_components.bosch_shc.button import (
     SHCDetectionTestButton,
     SHCDetectionTestStopButton,
     SHCTamperResetButton,
+)
+from custom_components.bosch_shc.button import (
     async_setup_entry as button_setup_entry,
+)
+from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
+from custom_components.bosch_shc.select import (
+    OrientationLightResponseSelect,
+)
+from custom_components.bosch_shc.select import (
+    async_setup_entry as select_setup_entry,
 )
 from custom_components.bosch_shc.sensor import (
     DetectionStateSensor,
     InstallationProfileSensor,
 )
-from custom_components.bosch_shc.select import (
-    OrientationLightResponseSelect,
-    async_setup_entry as select_setup_entry,
-)
-from custom_components.bosch_shc.switch import SHCSwitch, SWITCH_TYPES
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
+from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
 
 def _fake_md2(**kwargs):

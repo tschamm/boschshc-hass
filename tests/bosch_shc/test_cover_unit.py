@@ -21,15 +21,22 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from boschshcpy import SHCShutterControl, SHCMicromoduleShutterControl
+from boschshcpy import (
+    KeypadService,
+    ShutterControlService,
+)
+from homeassistant.components.cover import (
+    ATTR_POSITION,
+    ATTR_TILT_POSITION,
+    CoverDeviceClass,
+)
 
-from custom_components.bosch_shc.cover import ShutterControlCover, BlindsControlCover
-from homeassistant.components.cover import ATTR_POSITION, ATTR_TILT_POSITION, CoverDeviceClass
+from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControlCover
 
-MOVING = SHCShutterControl.ShutterControlService.State.MOVING
-STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
-SWITCH_ON = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
-SWITCH_OFF = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
+MOVING = ShutterControlService.State.MOVING
+STOPPED = ShutterControlService.State.STOPPED
+SWITCH_ON = KeypadService.KeyEvent.SWITCH_ON
+SWITCH_OFF = KeypadService.KeyEvent.SWITCH_OFF
 
 
 # ---------------------------------------------------------------------------
@@ -485,7 +492,8 @@ class TestBlindsCurrentCoverPositionIssue100:
     def test_fully_up_blind_reads_100_not_scene_level_zero(self):
         """The exact #100 symptom: blind fully up → ShutterControl.level=1.0
         (=100%) while BlindsSceneControl.level (blinds_level) is 0.0. Position
-        must follow the live lift (100%), NOT the stale scene level (0%)."""
+        must follow the live lift (100%), NOT the stale scene level (0%).
+        """
         cover = _make_blinds(level=1.0, blinds_level=0.0)
         assert cover.current_cover_position == 100
 
@@ -505,7 +513,8 @@ class TestBlindsCurrentCoverPositionIssue100:
         the MOVING direction inference must both track ShutterControl.level, not
         the stale BlindsSceneControl.level (blinds_level). Mirrors an external
         (Bosch-app / wall-switch) move where operationState is only STOPPED/
-        MOVING and level jumps to the target early."""
+        MOVING and level jumps to the target early.
+        """
         # 1. rest fully down: ShutterControl.level=0, scene level frozen at 1.0
         cover = _make_blinds(level=0.0, blinds_level=1.0, operation_state=STOPPED)
         cover._update_attr()
@@ -540,7 +549,8 @@ class TestBlindsCurrentCoverPositionIssue100:
 class TestBlindsStopCover:
     def test_stop_cover_calls_async_stop_blinds(self):
         """BlindsControlCover.async_stop_cover() must call async_stop_blinds()
-        (blind endpoint), not the inherited async_stop() (ShutterControl endpoint)."""
+        (blind endpoint), not the inherited async_stop() (ShutterControl endpoint).
+        """
         cover = _make_blinds()
         # Ensure there is no sync `stop` method — proves we use the async variant
         assert not hasattr(cover._device, "stop"), (
@@ -659,7 +669,8 @@ def test_micromodule_shutter_physical_down_after_up_shows_closing_issue_294():
     refresh at every rest (incl. physical moves) — otherwise the reference is
     frozen at the load-time position and the down move keeps showing 'opening'.
     Verified against a live device (deviceModel MICROMODULE_SHUTTER, Keypad
-    eventType PRESS_SHORT)."""
+    eventType PRESS_SHORT).
+    """
     cover = _make_cover(
         "MICROMODULE_SHUTTER", level=0.0, operation_state=STOPPED,
         eventtype="PRESS_SHORT", keycode=2,

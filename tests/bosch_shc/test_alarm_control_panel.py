@@ -76,7 +76,8 @@ def test_alarm_state_alarm_off_falls_through_to_arming_state():
 
 def test_alarm_state_alarm_muted_returns_triggered():
     """ALARM_MUTED means the alarm fired but the siren was silenced — alarm is NOT cleared.
-    Must map to TRIGGERED (not fall through to ArmingState which would show ARMING/DISARMED)."""
+    Must map to TRIGGERED (not fall through to ArmingState which would show ARMING/DISARMED).
+    """
     panel = _panel(alarm_state=AlarmState.ALARM_MUTED, arming_state=ArmingState.SYSTEM_ARMING)
     assert panel.alarm_state == AlarmControlPanelState.TRIGGERED
 

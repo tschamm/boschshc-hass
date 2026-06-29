@@ -20,9 +20,12 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch, async_setup_entry
 from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
-
+from custom_components.bosch_shc.switch import (
+    SWITCH_TYPES,
+    SHCSwitch,
+    async_setup_entry,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers

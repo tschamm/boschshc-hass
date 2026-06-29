@@ -46,7 +46,8 @@ class TestStaticMetadata:
 
     def test_metadata_stable_when_value_none(self):
         """Regression #315: a None value must NOT drop state_class/unit
-        (that re-raised the state_class_removed repair + unit-change warnings)."""
+        (that re-raised the state_class_removed repair + unit-change warnings).
+        """
         s = _make_sensor(None)
         assert s.state_class == SensorStateClass.MEASUREMENT
         assert s.device_class == SensorDeviceClass.ILLUMINANCE
@@ -83,6 +84,6 @@ class TestNativeValue:
         assert _make_sensor("LOW").native_value is None
 
     def test_bool_coerced_to_none(self):
-        """bool is an int subclass but is not a real lux reading."""
+        """Bool is an int subclass but is not a real lux reading."""
         assert _make_sensor(True).native_value is None
         assert _make_sensor(False).native_value is None

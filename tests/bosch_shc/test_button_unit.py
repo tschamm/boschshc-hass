@@ -16,10 +16,10 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from custom_components.bosch_shc.button import SHCRelayButton, SHCSmokeTestButton
-from custom_components.bosch_shc.entity import SHCEntity
 from homeassistant.components.button import ButtonEntity
 
+from custom_components.bosch_shc.button import SHCRelayButton, SHCSmokeTestButton
+from custom_components.bosch_shc.entity import SHCEntity
 
 # ---------------------------------------------------------------------------
 # Fake device — minimal attributes SHCEntity.__init__ reads

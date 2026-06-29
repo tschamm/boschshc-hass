@@ -12,19 +12,19 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from boschshcpy import SHCHeatingCircuit
+from boschshcpy import HeatingCircuitService
 from boschshcpy.services_impl import RoomClimateControlService
 from homeassistant.components.climate.const import (
-    HVACMode,
     HVACAction,
+    HVACMode,
 )
 from homeassistant.const import ATTR_TEMPERATURE
 
 from custom_components.bosch_shc.climate import (
-    ClimateControl,
-    HeatingCircuit,
     PRESET_BOOST,
     PRESET_ECO,
+    ClimateControl,
+    HeatingCircuit,
 )
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ from custom_components.bosch_shc.climate import (
 # ---------------------------------------------------------------------------
 
 OM_CC = RoomClimateControlService.OperationMode
-OM_HC = SHCHeatingCircuit.HeatingCircuitService.OperationMode
+OM_HC = HeatingCircuitService.OperationMode
 
 
 def _make_cc_device(

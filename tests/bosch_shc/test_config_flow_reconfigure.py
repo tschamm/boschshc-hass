@@ -8,6 +8,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 
 from custom_components.bosch_shc.config_flow import ConfigFlow, OptionsFlowHandler
 from custom_components.bosch_shc.const import (
@@ -16,12 +17,10 @@ from custom_components.bosch_shc.const import (
     CONF_SSL_KEY,
     DOMAIN,
     OPT_DIAGNOSTIC_ENTITIES,
+    OPT_LONG_POLL_TIMEOUT,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
-    OPT_LONG_POLL_TIMEOUT,
 )
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -107,7 +106,6 @@ class TestReconfigureStep:
 
         async def fake_set_uid(uid):
             flow.context["unique_id"] = uid
-            return None
 
         flow.async_set_unique_id = fake_set_uid
 
@@ -187,7 +185,6 @@ class TestReconfigureMenu:
 
         async def fake_set_uid(uid):
             flow.context["unique_id"] = uid
-            return None
 
         flow.async_set_unique_id = fake_set_uid
         flow._abort_if_unique_id_mismatch = MagicMock()

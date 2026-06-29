@@ -13,16 +13,19 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from boschshcpy import SHCShutterControl, SHCMicromoduleShutterControl
+from boschshcpy import (
+    KeypadService,
+    ShutterControlService,
+)
 
 from custom_components.bosch_shc.cover import ShutterControlCover
 
-MOVING = SHCShutterControl.ShutterControlService.State.MOVING
-STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
-OPENING = SHCShutterControl.ShutterControlService.State.OPENING
-CLOSING = SHCShutterControl.ShutterControlService.State.CLOSING
-SWITCH_ON = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
-SWITCH_OFF = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
+MOVING = ShutterControlService.State.MOVING
+STOPPED = ShutterControlService.State.STOPPED
+OPENING = ShutterControlService.State.OPENING
+CLOSING = ShutterControlService.State.CLOSING
+SWITCH_ON = KeypadService.KeyEvent.SWITCH_ON
+SWITCH_OFF = KeypadService.KeyEvent.SWITCH_OFF
 
 
 def _make_cover(device_model, level, operation_state, eventtype=None, keycode=None):
@@ -56,7 +59,7 @@ class TestMicromoduleShutterNoneGuard:
     """_update_attr must NOT raise when _last_position is None at first MOVING update."""
 
     def test_no_raise_when_last_position_none_moving_up(self):
-        """level > _last_position would crash; with None guard it must not raise."""
+        """Level > _last_position would crash; with None guard it must not raise."""
         cover = _make_cover(
             device_model="MICROMODULE_SHUTTER",
             level=0.5,

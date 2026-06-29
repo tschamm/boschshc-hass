@@ -11,7 +11,7 @@ only the properties under test run.
 import asyncio
 from types import SimpleNamespace
 
-from boschshcpy import SHCLightSwitch
+from boschshcpy import PowerSwitchService
 from homeassistant.components.light import ColorMode
 
 from custom_components.bosch_shc.const import OPT_LIGHTS_AS_LIGHT
@@ -21,7 +21,7 @@ from custom_components.bosch_shc.entity import (
 )
 from custom_components.bosch_shc.light import RelayLight
 
-State = SHCLightSwitch.PowerSwitchService.State
+State = PowerSwitchService.State
 
 
 def _make_device(**kwargs):

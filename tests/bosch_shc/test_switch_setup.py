@@ -20,16 +20,15 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from boschshcpy import SHCShutterContact2Plus, SHCUserDefinedState
+from boschshcpy import SHCShutterContact2Plus, SHCUserDefinedState, ThermostatService
 
+from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.switch import (
     SWITCH_TYPES,
     SHCSwitch,
     SHCUserDefinedStateSwitch,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers — fake devices
@@ -452,7 +451,6 @@ def test_setup_wallthermostat_child_lock_only():
 
 def test_setup_wallthermostat_uses_enum_description():
     """Confirms the wallthermostat child_lock entity uses the enum-aware description."""
-    from boschshcpy import SHCThermostat
 
     wt = _fake_device(name="WallThermo2", dev_id="wt2")
     wt.child_lock = "ON"  # boschshcpy >= 0.2.119 exposes child_lock on wall thermostats
@@ -460,7 +458,7 @@ def test_setup_wallthermostat_uses_enum_description():
     entities, _ = _setup(session)
     cl_entities = [e for e in entities if e.entity_description.key == "child_lock_thermostat"]
     assert len(cl_entities) == 1
-    assert cl_entities[0].entity_description.on_value == SHCThermostat.ThermostatService.State.ON
+    assert cl_entities[0].entity_description.on_value == ThermostatService.State.ON
 
 
 # ---------------------------------------------------------------------------
@@ -992,7 +990,8 @@ def test_uds_switch_on_state_changed_callback_calls_schedule():
 
 def test_uds_switch_update_entity_information_deleted():
     """update_entity_information callback: deleted device → sets unavailable +
-    schedules removal via hass.async_create_task (not call_soon_threadsafe)."""
+    schedules removal via hass.async_create_task (not call_soon_threadsafe).
+    """
     task_calls: list = []
     scheduled: list = []
 
@@ -1049,7 +1048,8 @@ def test_uds_switch_update_entity_information_deleted():
 
 def test_setup_wallthermostat_without_child_lock_skipped_old_lib():
     """Guard (0.4.112): a wall thermostat from an older boschshcpy (no child_lock
-    attribute) must be skipped, not crash, when the lib is pinned to 0.2.117."""
+    attribute) must be skipped, not crash, when the lib is pinned to 0.2.117.
+    """
     wt = _fake_device(name="OldWallThermo", dev_id="wt-old")
     # ensure the attribute is absent (older lib)
     if hasattr(wt, "child_lock"):

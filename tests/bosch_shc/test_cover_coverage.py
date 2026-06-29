@@ -37,20 +37,22 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-
-from boschshcpy import SHCShutterControl, SHCMicromoduleShutterControl
-
-from custom_components.bosch_shc.cover import ShutterControlCover, BlindsControlCover
+from boschshcpy import (
+    KeypadService,
+    ShutterControlService,
+)
 from homeassistant.components.cover import ATTR_POSITION
 
-STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
-MOVING = SHCShutterControl.ShutterControlService.State.MOVING
-CALIBRATING = SHCShutterControl.ShutterControlService.State.CALIBRATING
-OPENING = SHCShutterControl.ShutterControlService.State.OPENING
-CLOSING = SHCShutterControl.ShutterControlService.State.CLOSING
-SWITCH_ON = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_ON
-SWITCH_OFF = SHCMicromoduleShutterControl.KeypadService.KeyEvent.SWITCH_OFF
-PRESS_SHORT = SHCMicromoduleShutterControl.KeypadService.KeyEvent.PRESS_SHORT
+from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControlCover
+
+STOPPED = ShutterControlService.State.STOPPED
+MOVING = ShutterControlService.State.MOVING
+CALIBRATING = ShutterControlService.State.CALIBRATING
+OPENING = ShutterControlService.State.OPENING
+CLOSING = ShutterControlService.State.CLOSING
+SWITCH_ON = KeypadService.KeyEvent.SWITCH_ON
+SWITCH_OFF = KeypadService.KeyEvent.SWITCH_OFF
+PRESS_SHORT = KeypadService.KeyEvent.PRESS_SHORT
 
 
 # ---------------------------------------------------------------------------
@@ -463,7 +465,8 @@ class TestNonStoppedNonMovingStates:
     def test_other_state_does_not_alter_flags(self, state):
         """CALIBRATING: neither branch fires, flags unchanged. (OPENING/CLOSING now
         set the direction flags via the Shutter-II handler — see issue #100 and
-        test_cover.py::TestShutterIIOperationStateDirection.)"""
+        test_cover.py::TestShutterIIOperationStateDirection.)
+        """
         cover = _make_cover(device_model="BBL", level=0.5, operation_state=state)
         cover._attr_is_opening = True
         cover._attr_is_closing = False
@@ -532,7 +535,8 @@ class TestMicromoduleShutterCurrentPositionMovingTargetSet:
 class TestBlindsUpdateAttrCachesLevel:
     def test_stopped_attr_current_cover_position_uses_level(self):
         """BlindsControlCover STOPPED: _attr_current_cover_position reflects
-        ShutterControl.level (the live lift), not blinds_level (#100)."""
+        ShutterControl.level (the live lift), not blinds_level (#100).
+        """
         cover = _make_blinds(blinds_level=0.6, level=0.3, operation_state=STOPPED)
         cover._update_attr()
         # current_cover_position uses ShutterControl.level → round(0.3*100)
@@ -540,7 +544,8 @@ class TestBlindsUpdateAttrCachesLevel:
 
     def test_moving_attr_current_cover_position_uses_level(self):
         """BlindsControlCover MOVING: _attr_current_cover_position uses
-        ShutterControl.level (#100), independent of blinds_level."""
+        ShutterControl.level (#100), independent of blinds_level.
+        """
         cover = _make_blinds(blinds_level=0.4, level=0.9, operation_state=MOVING)
         cover._last_position = 20  # direction: 90 > 20 → opening
         cover._update_attr()

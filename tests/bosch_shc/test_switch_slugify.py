@@ -7,7 +7,6 @@ Does NOT require HA runtime — imports slugify directly.
 import re
 
 import pytest
-
 from homeassistant.util import slugify
 
 VALID_SLUG_RE = re.compile(r"^[a-z0-9_]+$")

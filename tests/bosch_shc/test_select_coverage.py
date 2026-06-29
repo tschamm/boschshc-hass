@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
+
 from boschshcpy import SHCShutterContact2Plus
 from boschshcpy.services_impl import (
     PirSensorConfigurationService,
@@ -35,7 +36,6 @@ from custom_components.bosch_shc.select import (
     VibrationSensitivitySelect,
     async_setup_entry,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -141,9 +141,10 @@ class TestMotionDetectorNoAttr:
 
 class TestMotionDetectorAttrRaisesAttributeError:
     def test_attr_raises_attribute_error_skipped(self):
-        """hasattr passes but accessing device.motion_sensitivity raises AttributeError
+        """Hasattr passes but accessing device.motion_sensitivity raises AttributeError
         (e.g. the getter calls an internal service that is absent).
-        The device must be silently skipped (lines 64-65)."""
+        The device must be silently skipped (lines 64-65).
+        """
         class _BadAttrDevice:
             name = "MD2 bad-getter"
             id = "md2-bad"
@@ -160,7 +161,8 @@ class TestMotionDetectorAttrRaisesAttributeError:
 
     def test_attr_raises_good_device_still_added(self):
         """When one device raises AttributeError and another is fine, only the good
-        device produces an entity."""
+        device produces an entity.
+        """
         class _BadAttrDevice:
             name = "MD2-bad"
             id = "md2-bad2"
@@ -237,7 +239,8 @@ class TestShutterContact2NotPlus:
 
     def test_excluded_sc2plus_skipped_before_isinstance_check(self):
         """An excluded SC2Plus device is filtered out at line 74 (device_excluded)
-        before reaching the isinstance check on line 75/76."""
+        before reaching the isinstance check on line 75/76.
+        """
         dev = _make_fake_sc2plus(dev_id="sc2p-excl")
         session = _make_session(shutter_contacts2=[dev])
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["sc2p-excl"]})

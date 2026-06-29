@@ -28,14 +28,13 @@ from unittest.mock import MagicMock
 
 from custom_components.bosch_shc.binary_sensor import (
     MotionDetectionSensor,
-    SmokeDetectorSensor,
     SmokeDetectionSystemSensor,
+    SmokeDetectorSensor,
 )
 from custom_components.bosch_shc.const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

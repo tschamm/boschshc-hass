@@ -188,7 +188,8 @@ class TestBatteryUpdateSimulation:
 
     def test_phantom_event_not_fired_on_battery_update(self):
         """After a genuine press, a battery update that replays the same
-        Keypad state must NOT generate a second HA event."""
+        Keypad state must NOT generate a second HA event.
+        """
         entity = _make_entity(eventtype=_PRESS_SHORT, eventtimestamp=9999)
 
         # First: genuine keypress event

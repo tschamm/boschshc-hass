@@ -37,7 +37,6 @@ from custom_components.bosch_shc.sensor import (
     async_setup_entry,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers — build a fake SHCDevice-like object that satisfies SHCEntity.__init__
 # ---------------------------------------------------------------------------

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import voluptuous as vol
-from boschshcpy import SHCDevice, SHCSession
+from boschshcpy import SHCSession
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (
     InvalidDeviceAutomationConfig,
@@ -45,7 +47,7 @@ TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
 )
 
 
-async def get_device_from_id(hass, device_id) -> tuple[SHCDevice, str]:
+async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, str]:
     """Get the device for the given device id."""
     dev_registry = dr.async_get(hass)
     for config_entry in hass.data[DOMAIN]:
@@ -68,7 +70,10 @@ async def get_device_from_id(hass, device_id) -> tuple[SHCDevice, str]:
                 return ids, "IDS"
 
         device = dev_registry.async_get_device(
-            identifiers={(DOMAIN, session.information.unique_id)}, connections=set()
+            identifiers={
+                (DOMAIN, session.information.unique_id if session.information else "")
+            },
+            connections=set(),
         )
         if device is not None and device.id == device_id:
             return session, "SHC"
@@ -76,7 +81,9 @@ async def get_device_from_id(hass, device_id) -> tuple[SHCDevice, str]:
     return None, ""
 
 
-async def async_get_triggers(hass: HomeAssistant, device_id: str) -> list[dict]:
+async def async_get_triggers(
+    hass: HomeAssistant, device_id: str
+) -> list[dict[str, Any]]:
     """List device triggers for SHC devices."""
     triggers = []
 
@@ -85,7 +92,7 @@ async def async_get_triggers(hass: HomeAssistant, device_id: str) -> list[dict]:
         raise InvalidDeviceAutomationConfig(f"Device not found: {device_id}")
 
     if dev_type in {"WRC2", "SWITCH2"}:
-        input_triggers = []
+        input_triggers: list[tuple[str, str]] = []
         for trigger in SUPPORTED_INPUTS_EVENTS_TYPES:
             if trigger in ("PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"):
                 match dev_type:
@@ -169,7 +176,7 @@ async def async_attach_trigger(
     hass: HomeAssistant,
     config: ConfigType,
     action: TriggerActionType,
-    automation_info: dict,
+    automation_info: dict[str, Any],
 ) -> CALLBACK_TYPE:
     """Attach a trigger."""
     event_config = None

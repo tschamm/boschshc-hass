@@ -16,8 +16,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from boschshcpy.exceptions import SHCConnectionError, SHCException
+from homeassistant.const import ATTR_NAME
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.bosch_shc.binary_sensor import SmokeDetectorSensor
@@ -25,8 +25,6 @@ from custom_components.bosch_shc.const import (
     ATTR_TITLE,
     SERVICE_TRIGGER_SCENARIO,
 )
-from homeassistant.const import ATTR_NAME
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -128,7 +126,8 @@ class TestSmokeDetectorSensorAlarmstateError:
 
 class TestScenarioServiceCallTriggerError:
     """scenario_service_call must raise ServiceValidationError when scenario.trigger
-    raises SHCException or SHCConnectionError (lines 126-127)."""
+    raises SHCException or SHCConnectionError (lines 126-127).
+    """
 
     def _get_scenario_handler(self):
         """Register scenario service via async_setup and return the handler."""

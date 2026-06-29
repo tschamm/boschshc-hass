@@ -32,7 +32,6 @@ from custom_components.bosch_shc.sensor import (
     ValveTappetSensor,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers for bad-enum simulation
 # ---------------------------------------------------------------------------
@@ -266,11 +265,11 @@ def _illum_sensor(value):
 
 class TestIlluminanceLevelSensorBoolGuard:
     def test_bool_true_returns_none(self):
-        """bool True is a subclass of int; must return None, not 1."""
+        """Bool True is a subclass of int; must return None, not 1."""
         assert _illum_sensor(True).native_value is None
 
     def test_bool_false_returns_none(self):
-        """bool False is a subclass of int; must return None, not 0."""
+        """Bool False is a subclass of int; must return None, not 0."""
         assert _illum_sensor(False).native_value is None
 
     def test_float_value_returned(self):

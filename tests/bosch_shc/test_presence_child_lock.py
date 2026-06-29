@@ -23,7 +23,6 @@ from custom_components.bosch_shc.const import (
     OPT_PRESENCE_ENTITY,
 )
 
-
 # ---------------------------------------------------------------------------
 # Patch targets
 # ---------------------------------------------------------------------------
@@ -236,7 +235,8 @@ class TestPresenceDisabled:
 
     def test_master_toggle_off_disables_even_with_entities(self):
         """child_lock_enabled=False must suppress the feature even when
-        presence entities are configured (explicit off switch)."""
+        presence entities are configured (explicit off switch).
+        """
         session = _make_fake_session()
         with patch(PATCH_TRACK_STATE) as mock_track:
             hass, entry, _ = _do_setup(
@@ -673,7 +673,10 @@ class TestErrorHandling:
 
 class TestUnloadCleansUp:
     def test_presence_unsub_called_on_unload(self):
-        from custom_components.bosch_shc.__init__ import async_setup_entry, async_unload_entry
+        from custom_components.bosch_shc.__init__ import (
+            async_setup_entry,
+            async_unload_entry,
+        )
 
         session = _make_fake_session()
         hass = _make_fake_hass()
@@ -698,7 +701,10 @@ class TestUnloadCleansUp:
 
     def test_no_unsub_called_when_presence_disabled(self):
         """presence_unsub is None when feature is off; unload must not crash."""
-        from custom_components.bosch_shc.__init__ import async_setup_entry, async_unload_entry
+        from custom_components.bosch_shc.__init__ import (
+            async_setup_entry,
+            async_unload_entry,
+        )
 
         session = _make_fake_session()
         hass = _make_fake_hass()

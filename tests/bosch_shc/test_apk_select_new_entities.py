@@ -23,21 +23,20 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
-    StateAfterPowerOutageSelect,
-    SmokeSensitivitySelect,
+    ActuatorTypeSelect,
     DisplayDirectionSelect,
     DisplayedTemperatureSelect,
+    HeaterTypeSelect,
+    OutputModeSelect,
+    SmokeSensitivitySelect,
+    StateAfterPowerOutageSelect,
+    SwitchTypeSelect,
     TerminalTypeSelect,
     ValveTypeSelect,
-    HeaterTypeSelect,
-    SwitchTypeSelect,
-    ActuatorTypeSelect,
-    OutputModeSelect,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -145,8 +144,9 @@ class TestStateAfterPowerOutageSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import PowerSwitchConfigurationService
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import PowerSwitchConfigurationService
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             state_after_power_outage=None,
@@ -229,8 +229,9 @@ class TestSmokeSensitivitySelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import SmokeSensitivityService
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import SmokeSensitivityService
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             smoke_sensitivity=None,
@@ -337,8 +338,9 @@ class TestDisplayDirectionSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import DisplayDirection
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import DisplayDirection
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             display_direction=None,
@@ -417,8 +419,9 @@ class TestDisplayedTemperatureSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import DisplayedTemperatureConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import DisplayedTemperatureConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             displayed_temperature=None,
@@ -497,8 +500,9 @@ class TestTerminalTypeSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import TerminalConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import TerminalConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             terminal_type=None,
@@ -577,8 +581,9 @@ class TestValveTypeSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import WallThermostatConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import WallThermostatConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             valve_type=None,
@@ -657,8 +662,9 @@ class TestHeaterTypeSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import WallThermostatConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import WallThermostatConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             heater_type=None,
@@ -730,8 +736,9 @@ class TestSwitchTypeSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import SwitchConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import SwitchConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             switch_type=None,
@@ -810,8 +817,9 @@ class TestActuatorTypeSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import SwitchConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import SwitchConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             actuator_type=None,
@@ -890,8 +898,9 @@ class TestOutputModeSelect:
         assert e.current_option is None
 
     def test_async_select_option_calls_device_method(self):
-        from boschshcpy.services_impl import SwitchConfiguration
         from unittest.mock import AsyncMock
+
+        from boschshcpy.services_impl import SwitchConfiguration
         dev = SimpleNamespace(
             root_device_id="r", id="d", name="X",
             output_mode=None,

@@ -43,6 +43,15 @@ run_hass() {
 
 run_lib() {
   cd "$LIB_DIR"
+  _banner "ruff check (lib)"
+  if ruff check --select=E,W,F --ignore=E501,F401 boschshcpy; then _ok "ruff check lib"; else _fail "ruff check lib"; fi
+
+  _banner "ruff format (lib)"
+  if ruff format --check boschshcpy; then _ok "ruff format lib"; else _fail "ruff format lib"; fi
+
+  _banner "mypy (lib)"
+  if mypy --strict --ignore-missing-imports boschshcpy/; then _ok "mypy lib"; else _fail "mypy lib"; fi
+
   _banner "pytest (lib)"
   if PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest tests/ -q -o addopts=""; then
     _ok "pytest lib"

@@ -10,13 +10,12 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.sensor import (
     AirQualitySensor,
     CommunicationQualitySensor,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -23,7 +23,6 @@ import boschshcpy.models_impl as models
 from boschshcpy import SHCBatteryDevice
 from boschshcpy.services_impl import BatteryLevelService
 
-
 # Battery-capable lib classes known to be wired into the HA battery loops.
 # device_helper accessor in parentheses (binary_sensor.py:234-244 /
 # sensor.py battery loop). If a NEW battery device is added to the lib, the
@@ -75,7 +74,8 @@ class TestBatteryDeviceWiring:
     def test_no_unwired_battery_device(self):
         """Every SHCBatteryDevice subclass must be accounted for. A new battery
         device added to the lib fails this until it is wired into the HA battery
-        loops (binary_sensor.py + sensor.py) and listed above."""
+        loops (binary_sensor.py + sensor.py) and listed above.
+        """
         actual = _lib_battery_subclasses()
         new = actual - KNOWN_BATTERY_DEVICE_CLASSES
         assert not new, (
@@ -88,7 +88,8 @@ class TestBatteryDeviceWiring:
 
     def test_known_set_has_no_stale_entries(self):
         """KNOWN set must not reference classes that no longer exist / no longer
-        carry a battery (caught after a lib refactor)."""
+        carry a battery (caught after a lib refactor).
+        """
         actual = _lib_battery_subclasses()
         stale = KNOWN_BATTERY_DEVICE_CLASSES - actual
         assert not stale, (
@@ -99,7 +100,8 @@ class TestBatteryDeviceWiring:
     def test_accessors_present_in_binary_sensor_and_sensor(self):
         """The battery-loop device_helper accessors must exist in both platform
         files, so each battery device gets the binary 'Battery' AND the enum
-        'Battery Level' entity."""
+        'Battery Level' entity.
+        """
         import custom_components.bosch_shc.binary_sensor as bs
         import custom_components.bosch_shc.sensor as sn
 
@@ -122,7 +124,8 @@ class TestBatteryEnumExhaustive:
         """BatterySensor.is_on returns `level != OK` after explicit branches for
         NOT_AVAILABLE / LOW_BATTERY / CRITICAL_LOW / CRITICALLY_LOW_BATTERY. If
         Bosch firmware adds a new enum value, this fails so the new state is
-        consciously triaged (problem vs benign) in is_on before shipping."""
+        consciously triaged (problem vs benign) in is_on before shipping.
+        """
         expected = {
             "OK",
             "LOW_BATTERY",

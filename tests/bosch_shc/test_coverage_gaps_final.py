@@ -31,7 +31,8 @@ def _run(coro):
 
 class TestBinarySensorCleanupTrackerBody:
     """Call async_setup_entry with a twinguard + SDS, capture _cleanup_tracker,
-    invoke it, and verify tracker.teardown() is called (line 187)."""
+    invoke it, and verify tracker.teardown() is called (line 187).
+    """
 
     def _make_hass(self):
         async def _async_add_executor_job(fn, *args):
@@ -192,7 +193,8 @@ class TestSelectMotionSensitivityUnstableProperty:
 
     def test_unstable_motion_sensitivity_property_skipped(self):
         """Device where motion_sensitivity raises on second access is skipped
-        (lines 64-65)."""
+        (lines 64-65).
+        """
         class _UnstableDevice:
             id = "md2-unstable"
             name = "MD2 Unstable"

@@ -13,10 +13,9 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from boschshcpy import SHCThermostat
+from boschshcpy import SilentModeService
 
-from custom_components.bosch_shc.switch import SHCSwitch, SWITCH_TYPES
-
+from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -186,18 +185,18 @@ def test_silent_mode_on_value_is_mode_silent_enum():
     """on_value for silent_mode must be the MODE_SILENT enum member."""
     desc = SWITCH_TYPES["silent_mode"]
     assert desc.on_key == "silentmode"
-    assert desc.on_value is SHCThermostat.SilentModeService.State.MODE_SILENT
+    assert desc.on_value is SilentModeService.State.MODE_SILENT
 
 
 def test_silent_mode_is_on_true_when_mode_silent():
     """is_on returns True when device.silentmode == MODE_SILENT."""
-    State = SHCThermostat.SilentModeService.State
+    State = SilentModeService.State
     sw = _make_switch(SWITCH_TYPES["silent_mode"], silentmode=State.MODE_SILENT)
     assert sw.is_on is True
 
 
 def test_silent_mode_is_on_false_when_mode_normal():
     """is_on returns False when device.silentmode == MODE_NORMAL."""
-    State = SHCThermostat.SilentModeService.State
+    State = SilentModeService.State
     sw = _make_switch(SWITCH_TYPES["silent_mode"], silentmode=State.MODE_NORMAL)
     assert sw.is_on is False

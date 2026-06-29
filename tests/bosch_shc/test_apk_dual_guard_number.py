@@ -19,9 +19,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from custom_components.bosch_shc.number import async_setup_entry
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
+from custom_components.bosch_shc.number import async_setup_entry
 
 # ---------------------------------------------------------------------------
 # Helpers

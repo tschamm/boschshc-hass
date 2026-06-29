@@ -27,7 +27,6 @@ from custom_components.bosch_shc.button import (
 )
 from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------

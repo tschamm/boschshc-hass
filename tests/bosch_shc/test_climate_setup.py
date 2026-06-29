@@ -8,12 +8,12 @@ Pattern: SimpleNamespace fakes + asyncio.new_event_loop(); no HA harness, no net
 import asyncio
 from types import SimpleNamespace
 
-from homeassistant.components.climate.const import HVACMode, ClimateEntityFeature
+from boschshcpy import HeatingCircuitService
+from homeassistant.components.climate.const import ClimateEntityFeature
 from homeassistant.const import UnitOfTemperature
 
 from custom_components.bosch_shc.climate import ClimateControl, HeatingCircuit
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -48,7 +48,8 @@ def _make_cc_device(
     cooling_mode=False,
 ):
     """Full fake SHCClimateControl device satisfying both SHCEntity.__init__ and
-    ClimateControl.__init__ attribute access."""
+    ClimateControl.__init__ attribute access.
+    """
     from boschshcpy.services_impl import RoomClimateControlService
     op = RoomClimateControlService.OperationMode(operation_mode_value)
     return SimpleNamespace(
@@ -86,8 +87,8 @@ def _make_hc_device(
     on=False,
 ):
     """Full fake SHCHeatingCircuit device satisfying SHCEntity.__init__ and
-    HeatingCircuit.__init__ attribute access."""
-    from boschshcpy import SHCHeatingCircuit
+    HeatingCircuit.__init__ attribute access.
+    """
     return SimpleNamespace(
         name=name,
         manufacturer=manufacturer,
@@ -99,7 +100,7 @@ def _make_hc_device(
         device_services=[],
         setpoint_temperature=setpoint_temperature,
         on=on,
-        operation_mode=SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC,
+        operation_mode=HeatingCircuitService.OperationMode.AUTOMATIC,
     )
 
 
@@ -173,7 +174,8 @@ class TestAsyncSetupEntry:
     def test_climate_control_name_uses_room_name(self):
         """Device name = room name; the entity name comes from the
         translation_key 'room_climate_control' (#333), so _attr_name is None
-        and the friendly name resolves to '<room> <translated>' — no doubling."""
+        and the friendly name resolves to '<room> <translated>' — no doubling.
+        """
         dev = _make_cc_device(room_id="r2")
         rooms = {"r2": _make_room("Bedroom")}
         added = self._setup([dev], [], rooms)
@@ -244,7 +246,8 @@ class TestClimateControlInit:
 
     def test_init_sets_name(self):
         """ClimateControl stores the room label in _room_label and keeps
-        _attr_name None (primary entity → friendly name = device name)."""
+        _attr_name None (primary entity → friendly name = device name).
+        """
         entity = self._make_entity()
         assert entity._room_label == "Test Room Climate"
         assert entity._attr_name is None

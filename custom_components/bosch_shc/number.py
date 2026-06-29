@@ -37,9 +37,9 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for number in (
-        session.device_helper.thermostats
-        + session.device_helper.roomthermostats
-        + getattr(session.device_helper, "wallthermostats", [])
+        list(session.device_helper.thermostats)
+        + list(session.device_helper.roomthermostats)
+        + list(getattr(session.device_helper, "wallthermostats", []))
     ):
         if device_excluded(number, config_entry.options) or not getattr(
             number, "supports_temperature_offset", True
@@ -67,7 +67,7 @@ async def async_setup_entry(
             )
         )
 
-    for device in session.device_helper.heating_circuits:
+    for device in session.device_helper.heating_circuits:  # type: ignore[assignment]
         if device_excluded(device, config_entry.options):
             continue
         entities.append(
@@ -129,8 +129,9 @@ async def async_setup_entry(
             )
 
     # Display config numbers: brightness + on-time (ThermostatGen2 / RoomThermostat2).
-    for device in (
-        session.device_helper.thermostats + session.device_helper.roomthermostats
+    for device in (  # type: ignore[assignment]
+        list(session.device_helper.thermostats)
+        + list(session.device_helper.roomthermostats)
     ):
         if device_excluded(device, config_entry.options):
             continue
@@ -212,7 +213,7 @@ _SIREN_ALARM_DELAY = ("alarm_delay", "siren_alarm_delay", UnitOfTime.SECONDS, 0,
 _SIREN_FLASH_DELAY = ("flash_delay", "siren_flash_delay", UnitOfTime.SECONDS, 0, 180)
 
 
-class SirenConfigNumber(SHCEntity, NumberEntity):
+class SirenConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """Configurable Outdoor Siren duration/delay (#120).
 
     Each field maps to one key of outdoorSirenConfiguration; the lib re-sends the
@@ -223,7 +224,16 @@ class SirenConfigNumber(SHCEntity, NumberEntity):
     _attr_native_step = 1.0
     _attr_mode = NumberMode.BOX
 
-    def __init__(self, device, entry_id, field, translation_key, unit, lo, hi) -> None:
+    def __init__(
+        self,
+        device: SHCDevice,
+        entry_id: str,
+        field: str,
+        translation_key: str,
+        unit: str,
+        lo: int,
+        hi: int,
+    ) -> None:
         """Initialize the siren configuration number."""
         super().__init__(device, entry_id)
         self._field = field
@@ -260,7 +270,7 @@ class SirenConfigNumber(SHCEntity, NumberEntity):
             )
 
 
-class SHCNumber(SHCEntity, NumberEntity):
+class SHCNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """Representation of a SHC number."""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
@@ -275,13 +285,13 @@ class SHCNumber(SHCEntity, NumberEntity):
     ) -> None:
         """Initialize a SHC number."""
         super().__init__(device, entry_id)
-        self._attr_name = attr_name
+        self._attr_name = attr_name  # type: ignore[assignment]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        self._device: SHCThermostat = device
+        self._device: SHCThermostat = device  # type: ignore[assignment]
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value, clamped to [native_min_value, native_max_value]."""
@@ -297,9 +307,10 @@ class SHCNumber(SHCEntity, NumberEntity):
             LOGGER.warning("Unable to set offset for %s: %s", self._device.name, err)
 
     @property
-    def native_value(self) -> float:
+    def native_value(self) -> float | None:
         """Return the value of the number."""
-        return self._device.offset
+        offset = self._device.offset
+        return float(offset) if offset is not None else None
 
     @property
     def native_step(self) -> float:
@@ -310,15 +321,15 @@ class SHCNumber(SHCEntity, NumberEntity):
     @property
     def native_min_value(self) -> float:
         """Return the min value of the number."""
-        return self._device.min_offset
+        return float(self._device.min_offset)
 
     @property
     def native_max_value(self) -> float:
         """Return the max value of the number."""
-        return self._device.max_offset
+        return float(self._device.max_offset)
 
 
-class ImpulseLengthNumber(SHCEntity, NumberEntity):
+class ImpulseLengthNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for the impulse length of a MicromoduleImpulseRelay.
 
     The lib stores impulse_length in tenths of seconds (integer units of 100 ms).
@@ -346,7 +357,7 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):
         if raw is None:
             return None
         # lib stores in tenths of seconds → divide by 10
-        return raw / 10.0
+        return float(raw) / 10.0
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the impulse length; convert seconds → tenths of seconds (int)."""
@@ -366,7 +377,7 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):
             )
 
 
-class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
+class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for HeatingCircuit eco/comfort setpoint temperatures.
 
     The HeatingCircuitService exposes setpoint_temperature_eco and
@@ -393,7 +404,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
     ) -> None:
         """Initialize the heating circuit setpoint number."""
         super().__init__(device, entry_id)
-        self._attr_name = label
+        self._attr_name = label  # type: ignore[assignment]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
@@ -407,7 +418,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
             svc = getattr(self._device, "_heating_circuit_service", None)
             if svc is None:
                 return None
-            return getattr(svc, self._getter_name)
+            return float(getattr(svc, self._getter_name))
         except (AttributeError, KeyError) as err:
             LOGGER.warning(
                 "Unable to read %s for %s: %s",
@@ -446,7 +457,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):
             )
 
 
-class PowerThresholdNumber(SHCEntity, NumberEntity):
+class PowerThresholdNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for the energy-saving power threshold of a smart plug.
 
     When the plug draws less than this value for enterDurationSeconds, energy
@@ -490,7 +501,7 @@ class PowerThresholdNumber(SHCEntity, NumberEntity):
             )
 
 
-class EnterDurationNumber(SHCEntity, NumberEntity):
+class EnterDurationNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for the energy-saving enter duration of a smart plug.
 
     Number of seconds the plug must draw below the threshold before turning off.
@@ -538,7 +549,7 @@ class EnterDurationNumber(SHCEntity, NumberEntity):
             )
 
 
-class LedBrightnessNumber(SHCEntity, NumberEntity):
+class LedBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for the LED brightness of a smart plug.
 
     Bounds are read from the lib service (min/max/step from device state).
@@ -592,7 +603,7 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set the LED brightness."""
         try:
-            await self._device.async_set_led_brightness(value)
+            await self._device.async_set_led_brightness(round(value))
         except (
             AttributeError,
             KeyError,
@@ -604,7 +615,7 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):
             )
 
 
-class DisplayBrightnessNumber(SHCEntity, NumberEntity):
+class DisplayBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for the display brightness of ThermostatGen2 / RoomThermostat2."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -654,7 +665,7 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set the display brightness."""
         try:
-            await self._device.async_set_display_brightness(value)
+            await self._device.async_set_display_brightness(round(value))
         except (
             AttributeError,
             KeyError,
@@ -666,7 +677,7 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):
             )
 
 
-class DisplayOnTimeNumber(SHCEntity, NumberEntity):
+class DisplayOnTimeNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for the display on-time of ThermostatGen2 / RoomThermostat2.
 
     Display stays lit for this many seconds after interaction. Range from device.
@@ -723,7 +734,7 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set the display on-time."""
         try:
-            await self._device.async_set_display_on_time(value)
+            await self._device.async_set_display_on_time(round(value))
         except (
             AttributeError,
             KeyError,
@@ -735,7 +746,7 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):
             )
 
 
-class DimmerConfigNumber(SHCEntity, NumberEntity):
+class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
     """NumberEntity for DimmerConfiguration calibration values (#123).
 
     field="min": calibrated minimum brightness (0-100).
@@ -758,7 +769,7 @@ class DimmerConfigNumber(SHCEntity, NumberEntity):
         """Initialize the dimmer configuration number."""
         super().__init__(device, entry_id)
         self._field = field
-        self._attr_name = self._NAMES[field]
+        self._attr_name = self._NAMES[field]  # type: ignore[assignment]
         self._attr_native_min_value = float(lo)
         self._attr_native_max_value = float(hi)
         self._attr_mode = NumberMode.BOX if field == "speed" else NumberMode.SLIDER

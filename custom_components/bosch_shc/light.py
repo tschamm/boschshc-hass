@@ -1,9 +1,13 @@
 """Platform for light integration."""
 
+from __future__ import annotations
+
 import asyncio
+from typing import Any
 
 import aiohttp
-from boschshcpy import SHCLightSwitch, SHCSession
+from boschshcpy import PowerSwitchService, SHCLight, SHCSession
+from boschshcpy.device import SHCDevice
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
@@ -11,8 +15,11 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntity,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import color as color_util
 
 from .const import (
@@ -34,13 +41,17 @@ from .entity import (
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the light platform."""
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
+    hue_lights: list[SHCLight] = []
     if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False):
-        hue_lights = []
         dev_registry = get_dev_reg(hass)
         for shc_device in session.device_helper.hue_lights:
             dev_entry = dev_registry.async_get_device(
@@ -51,9 +62,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     dev_entry.id, remove_config_entry_id=config_entry.entry_id
                 )
     else:
-        hue_lights = session.device_helper.hue_lights
+        hue_lights = list(session.device_helper.hue_lights)
+    ledvance_lights: list[SHCLight] = []
     if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False):
-        ledvance_lights = []
         dev_registry = get_dev_reg(hass)
         for shc_device in session.device_helper.ledvance_lights:
             dev_entry = dev_registry.async_get_device(
@@ -64,9 +75,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     dev_entry.id, remove_config_entry_id=config_entry.entry_id
                 )
     else:
-        ledvance_lights = session.device_helper.ledvance_lights
+        ledvance_lights = list(session.device_helper.ledvance_lights)
     for light in (
-        ledvance_lights + session.device_helper.micromodule_dimmers + hue_lights
+        ledvance_lights + list(session.device_helper.micromodule_dimmers) + hue_lights
     ):
         if device_excluded(light, config_entry.options):
             continue
@@ -112,10 +123,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         async_add_entities(entities)
 
 
-class LightSwitch(SHCEntity, LightEntity):
+class LightSwitch(SHCEntity, LightEntity):  # type: ignore[misc]
     """Representation of a SHC controlled light."""
 
-    def __init__(self, device, entry_id) -> None:
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the SHC light switch entity."""
         super().__init__(device=device, entry_id=entry_id)
         self._attr_supported_color_modes: set[ColorMode] = set()
@@ -160,9 +171,10 @@ class LightSwitch(SHCEntity, LightEntity):
             self._attr_color_mode = ColorMode.ONOFF
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool | None:
         """Return light state."""
-        return self._device.binarystate
+        state = self._device.binarystate
+        return None if state is None else bool(state)
 
     @property
     def brightness(self) -> int | None:
@@ -170,25 +182,29 @@ class LightSwitch(SHCEntity, LightEntity):
         raw = self._device.brightness
         if raw is None:
             return None
-        return round(raw * 255 / 100)
+        return round(float(raw) * 255 / 100)
 
     @property
-    def hs_color(self):
+    def hs_color(self) -> tuple[float, float] | None:
         """Return the rgb color of this light."""
         rgb_raw = self._device.rgb
         if rgb_raw is None:
             return None
-        rgb = ((rgb_raw >> 16) & 0xFF, (rgb_raw >> 8) & 0xFF, rgb_raw & 0xFF)
-        return color_util.color_RGB_to_hs(*rgb)
+        rgb = (
+            int((rgb_raw >> 16) & 0xFF),
+            int((rgb_raw >> 8) & 0xFF),
+            int(rgb_raw & 0xFF),
+        )
+        return color_util.color_RGB_to_hs(*rgb)  # type: ignore[no-any-return]
 
     @property
-    def color_temp_kelvin(self):
+    def color_temp_kelvin(self) -> int | None:
         """Return the color temp of this light."""
         if not self._device.color:
             return None
-        return color_util.color_temperature_mired_to_kelvin(self._device.color)
+        return int(color_util.color_temperature_mired_to_kelvin(self._device.color))
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on."""
         hs_color = kwargs.get(ATTR_HS_COLOR)
         color_temp_kelvin = kwargs.get(ATTR_COLOR_TEMP_KELVIN)
@@ -219,19 +235,19 @@ class LightSwitch(SHCEntity, LightEntity):
 
         self.schedule_update_ha_state()
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
         await self._device.async_set_binarystate(False)
 
 
-class MotionDetectorLight(SHCEntity, LightEntity):
+class MotionDetectorLight(SHCEntity, LightEntity):  # type: ignore[misc]
     """Representation of the indicator light on a SHC Motion Detector II [+M]."""
 
     _attr_supported_color_modes: set[ColorMode] = {ColorMode.BRIGHTNESS}
     _attr_color_mode = ColorMode.BRIGHTNESS
     _attr_translation_key = "motion_light"
 
-    def __init__(self, device, entry_id: str) -> None:
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the Motion Detector II light entity."""
         super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_motionlight"
@@ -239,7 +255,7 @@ class MotionDetectorLight(SHCEntity, LightEntity):
     @property
     def is_on(self) -> bool:
         """Return the current on/off state."""
-        return self._device.binaryswitch
+        return bool(self._device.binaryswitch)
 
     @property
     def brightness(self) -> int:
@@ -247,9 +263,9 @@ class MotionDetectorLight(SHCEntity, LightEntity):
         level = self._device.multi_level_switch
         if level is None:
             return 0
-        return round(level * 255 / 100)
+        return round(float(level) * 255 / 100)
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on, optionally setting brightness."""
         brightness = kwargs.get(ATTR_BRIGHTNESS)
         if brightness is not None:
@@ -259,12 +275,12 @@ class MotionDetectorLight(SHCEntity, LightEntity):
         if not self.is_on:
             await self._device.async_set_binaryswitch(True)
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
         await self._device.async_set_binaryswitch(False)
 
 
-class RelayLight(SHCEntity, LightEntity):
+class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
     """A Light/Shutter Control II (or BSM) light relay presented as a `light`.
 
     These devices wrap a plain on/off PowerSwitch relay (no brightness/colour),
@@ -286,13 +302,11 @@ class RelayLight(SHCEntity, LightEntity):
         (mirrors SHCSwitch.is_on); return None (unknown) rather than crash.
         """
         try:
-            return (
-                self._device.switchstate == SHCLightSwitch.PowerSwitchService.State.ON
-            )
+            return bool(self._device.switchstate == PowerSwitchService.State.ON)
         except AttributeError:
             return None
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the relay on."""
         try:
             await self._device.async_set_switchstate(True)
@@ -306,7 +320,7 @@ class RelayLight(SHCEntity, LightEntity):
             # service layer (error log / notification) for this relay.
             LOGGER.debug("turn_on failed for %s: %s", self.entity_id, err)
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the relay off."""
         try:
             await self._device.async_set_switchstate(False)

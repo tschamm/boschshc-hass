@@ -22,6 +22,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from boschshcpy import SurveillanceAlarmService
+
 # ---------------------------------------------------------------------------
 # __init__.py line 436 — `continue` when hass.states.get(eid) returns None
 # ---------------------------------------------------------------------------
@@ -134,7 +136,8 @@ class TestPresenceStateContinueOnNone:
     def test_none_state_obj_skipped_other_entity_still_evaluated(self):
         """Two entities: first returns None, second returns 'home'.
         The continue at line 436 is hit for the first entity, but the second
-        entity is still evaluated and causes lock_on = True."""
+        entity is still evaluated and causes lock_on = True.
+        """
         hass, state_cb = _run_setup_with_presence(
             presence_entities=["person.alice", "person.bob"],
             # person.alice is not in the map (returns None from states.get)
@@ -152,7 +155,8 @@ class TestPresenceStateContinueOnNone:
 
     def test_all_states_none_means_no_present_entity(self):
         """All entities return None from states.get: loop hits continue for each,
-        any_present stays False → lock_off."""
+        any_present stays False → lock_off.
+        """
         hass, state_cb = _run_setup_with_presence(
             presence_entities=["person.alice", "person.bob"],
             # Neither entity is in the map
@@ -170,7 +174,8 @@ class TestPresenceStateContinueOnNone:
 
     def test_first_entity_none_second_entity_home_lock_turns_on(self):
         """When first entity state_obj is None (continue), second is home.
-        aggregate = True → task created to set lock on."""
+        aggregate = True → task created to set lock on.
+        """
         hass, state_cb = _run_setup_with_presence(
             presence_entities=["person.ghost", "person.real"],
             hass_states={"person.real": "home"},
@@ -186,7 +191,8 @@ class TestPresenceStateContinueOnNone:
     def test_first_entity_none_second_not_home_no_task_when_aggregate_unchanged(self):
         """First entity returns None (continue), second is not_home.
         aggregate = False, _last_lock_state starts None so first call creates a task,
-        subsequent calls with same aggregate don't."""
+        subsequent calls with same aggregate don't.
+        """
         hass, state_cb = _run_setup_with_presence(
             presence_entities=["person.ghost", "person.real"],
             hass_states={"person.real": "not_home"},
@@ -215,9 +221,10 @@ class TestCleanupTrackerActualClosure:
 
     def test_cleanup_tracker_teardown_called_via_captured_closure(self):
         """Capture the _cleanup_tracker closure registered via async_on_unload
-        and invoke it — this executes binary_sensor.py line 187."""
+        and invoke it — this executes binary_sensor.py line 187.
+        """
         import asyncio
-        from boschshcpy import SHCSmokeDetectionSystem
+
         from custom_components.bosch_shc.binary_sensor import async_setup_entry
         from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
@@ -244,7 +251,7 @@ class TestCleanupTrackerActualClosure:
             serial="sds-serial",
             deleted=False,
             status="AVAILABLE",
-            alarm=SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF,
+            alarm=SurveillanceAlarmService.State.ALARM_OFF,
             subscribe_callback=lambda key, cb: None,
             unsubscribe_callback=lambda key: None,
         )
@@ -386,8 +393,9 @@ class TestSelectMotionDetector2ExcludedDevice:
 
     def test_excluded_motion_detector2_not_added(self):
         """An excluded motion_detector2 must be skipped at line 58 (continue)."""
-        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
         from boschshcpy.services_impl import PirSensorConfigurationService
+
+        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
         dev = SimpleNamespace(
             id="md2-excl",
@@ -406,9 +414,11 @@ class TestSelectMotionDetector2ExcludedDevice:
 
     def test_excluded_device_and_non_excluded_device_in_same_list(self):
         """When one device is excluded and another is not, only the non-excluded
-        one produces an entity. The excluded one hits line 58 (continue)."""
-        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
+        one produces an entity. The excluded one hits line 58 (continue).
+        """
         from boschshcpy.services_impl import PirSensorConfigurationService
+
+        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
         from custom_components.bosch_shc.select import MotionSensitivitySelect
 
         excluded = SimpleNamespace(
@@ -458,9 +468,11 @@ class TestSelectMotionSensitivityAttributeError:
 
     def test_excluded_then_attr_error_both_skipped(self):
         """First device excluded (line 58 continue), second device raises
-        AttributeError (lines 64-65 continue). Neither produces an entity."""
-        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
+        AttributeError (lines 64-65 continue). Neither produces an entity.
+        """
         from boschshcpy.services_impl import PirSensorConfigurationService
+
+        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
         excl = SimpleNamespace(
             id="md2-x",
@@ -599,7 +611,8 @@ class TestBatteryLevelSensorCreation:
     def test_battery_level_sensor_created_for_battery_device(self):
         """Device with supports_batterylevel=True AND diagnostic_enabled=True
         causes BatteryLevelSensor to be appended (line 354) and its __init__
-        to run (lines 736-738)."""
+        to run (lines 736-738).
+        """
         from custom_components.bosch_shc.sensor import BatteryLevelSensor
 
         dev = _fake_battery_device("md-has-bat", "Motion With Bat", "root-mbat")
@@ -638,7 +651,8 @@ class TestBatteryLevelSensorCreation:
 
     def test_battery_level_sensor_not_created_when_diagnostic_disabled(self):
         """OPT_DIAGNOSTIC_ENTITIES=False: BatteryLevelSensor not created (line 354
-        not reached because the if diagnostic_enabled: block is False)."""
+        not reached because the if diagnostic_enabled: block is False).
+        """
         from custom_components.bosch_shc.const import OPT_DIAGNOSTIC_ENTITIES
         from custom_components.bosch_shc.sensor import BatteryLevelSensor
 

@@ -1,6 +1,16 @@
 """Platform for climate integration."""
 
-from boschshcpy import SHCClimateControl, SHCHeatingCircuit, SHCSession
+from __future__ import annotations
+
+from typing import Any
+
+from boschshcpy import (
+    HeatingCircuitService,
+    RoomClimateControlService,
+    SHCClimateControl,
+    SHCHeatingCircuit,
+    SHCSession,
+)
 from boschshcpy.exceptions import JSONRPCError, SHCException
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -9,7 +19,10 @@ from homeassistant.components.climate.const import (
     HVACAction,
     HVACMode,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
 from .entity import SHCEntity, device_excluded
@@ -24,20 +37,28 @@ PRESET_BOOST = "boost"
 PRESET_ECO = "eco"
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the SHC climate platform."""
-    entities = []
+    entities: list[Any] = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for climate in session.device_helper.climate_controls:
         if device_excluded(climate, config_entry.options):
             continue
         room_id = climate.room_id
+        try:
+            room_name = session.room(room_id).name
+        except KeyError:
+            room_name = climate.name
         entities.append(
             ClimateControl(
                 device=climate,
                 entry_id=config_entry.entry_id,
-                name=session.room(room_id).name,
+                name=room_name,
             )
         )
 
@@ -64,7 +85,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         async_add_entities(entities)
 
 
-class ClimateControl(SHCEntity, ClimateEntity):
+class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     """Representation of a SHC room climate control.
 
     #334 rework: AUTOMATIC is HVACMode.AUTO so the HA thermostat card renders
@@ -102,7 +123,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         device: SHCClimateControl,
         name: str,
         entry_id: str,
-    ):
+    ) -> None:
         """Initialize the SHC device."""
         super().__init__(device=device, entry_id=entry_id)
         # Device name = room name (e.g. "Arbeitszimmer").
@@ -115,42 +136,42 @@ class ClimateControl(SHCEntity, ClimateEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     @property
-    def device_name(self):
+    def device_name(self) -> str:
         """Name of the device."""
         return self._room_label
 
     @property
-    def temperature_unit(self):
+    def temperature_unit(self) -> str:
         """Return the temperature unit."""
-        return UnitOfTemperature.CELSIUS
+        return UnitOfTemperature.CELSIUS  # type: ignore[no-any-return]
 
     @property
-    def current_temperature(self):
+    def current_temperature(self) -> float | None:
         """Return the current temperature."""
-        return self._device.temperature
+        return self._device.temperature  # type: ignore[no-any-return]
 
     @property
-    def max_temp(self):
+    def max_temp(self) -> float:
         """Return the maximum temperature allowed."""
         return 30.0
 
     @property
-    def min_temp(self):
+    def min_temp(self) -> float:
         """Return the minimum temperature allowed."""
         return 5.0
 
     @property
-    def target_temperature(self):
+    def target_temperature(self) -> float | None:
         """Return the target temperature setpoint."""
-        return self._device.setpoint_temperature
+        return self._device.setpoint_temperature  # type: ignore[no-any-return]
 
     @property
-    def target_temperature_step(self):
+    def target_temperature_step(self) -> float:
         """Return the temperature step."""
         return 0.5
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> HVACMode:
         """Return the hvac mode.
 
         Maps the Bosch state fields onto HA hvac_mode:
@@ -167,14 +188,14 @@ class ClimateControl(SHCEntity, ClimateEntity):
 
         if (
             self._device.operation_mode
-            == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
+            == RoomClimateControlService.OperationMode.AUTOMATIC
         ):
             return HVACMode.AUTO
 
         return HVACMode.HEAT
 
     @property
-    def hvac_modes(self):
+    def hvac_modes(self) -> list[HVACMode]:
         """Return available hvac modes.
 
         AUTO is always present (RoomClimateControl always supports AUTOMATIC).
@@ -189,7 +210,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         return modes
 
     @property
-    def hvac_action(self):
+    def hvac_action(self) -> HVACAction:
         """Return the current HVAC action."""
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
@@ -207,7 +228,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         )
 
     @property
-    def preset_mode(self):
+    def preset_mode(self) -> str | None:
         """Return the current preset mode (transient overrides only).
 
         boost_mode=True  → "boost"  (only if device supports boost)
@@ -230,7 +251,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         return None
 
     @property
-    def preset_modes(self):
+    def preset_modes(self) -> list[str] | None:
         """Return available preset modes.
 
         #334: auto/manual removed — they are hvac_modes now.
@@ -261,7 +282,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
             features |= ClimateEntityFeature.PRESET_MODE
         return features
 
-    async def async_set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set the temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
@@ -270,7 +291,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
         # P2-B: call async_set_hvac_mode BEFORE the OFF guard so that a
         # combined temperature+mode call can change the mode first.
         await self.async_set_hvac_mode(
-            kwargs.get(ATTR_HVAC_MODE)
+            kwargs.get(ATTR_HVAC_MODE)  # type: ignore[arg-type]
         )  # set_temperature args may provide HVAC mode as well
 
         if self.hvac_mode == HVACMode.OFF:
@@ -307,10 +328,10 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 if (
                     kwargs.get(ATTR_HVAC_MODE) is None
                     and self._device.operation_mode
-                    == SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
+                    == RoomClimateControlService.OperationMode.AUTOMATIC
                 ):
                     await self._device.async_set_operation_mode(
-                        SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
+                        RoomClimateControlService.OperationMode.MANUAL
                     )
                 await self._device.async_set_setpoint_temperature(
                     float(round(temperature * 2.0) / 2.0)
@@ -322,7 +343,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
                     err,
                 )
 
-    async def async_set_hvac_mode(self, hvac_mode: str):
+    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         """Set hvac mode.
 
         #334: AUTO sets operationMode=AUTOMATIC; HEAT sets MANUAL (+ clears cooling).
@@ -343,14 +364,14 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 if self._device.supports_cooling:
                     await self._device.async_set_cooling_mode(False)
                 await self._device.async_set_operation_mode(
-                    SHCClimateControl.RoomClimateControlService.OperationMode.AUTOMATIC
+                    RoomClimateControlService.OperationMode.AUTOMATIC
                 )
             elif hvac_mode == HVACMode.HEAT:
                 await self._device.async_set_summer_mode(False)
                 if self._device.supports_cooling:
                     await self._device.async_set_cooling_mode(False)
                 await self._device.async_set_operation_mode(
-                    SHCClimateControl.RoomClimateControlService.OperationMode.MANUAL
+                    RoomClimateControlService.OperationMode.MANUAL
                 )
             elif hvac_mode == HVACMode.COOL:
                 await self._device.async_set_summer_mode(False)
@@ -366,7 +387,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
                 err,
             )
 
-    async def async_set_preset_mode(self, preset_mode: str):
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode (transient override states only).
 
         "boost"  → boost_mode=True
@@ -405,7 +426,7 @@ class ClimateControl(SHCEntity, ClimateEntity):
             await self.async_set_hvac_mode(HVACMode.OFF)
 
 
-class HeatingCircuit(SHCEntity, ClimateEntity):
+class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
     """Representation of a SHC heating circuit.
 
     The HeatingCircuit service exposes a setpoint temperature and an operation
@@ -430,35 +451,32 @@ class HeatingCircuit(SHCEntity, ClimateEntity):
     ) -> None:
         """Initialize the SHC heating circuit."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = name
+        self._attr_name: str | None = name  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     @property
-    def current_temperature(self):
+    def current_temperature(self) -> float | None:
         """Heating circuits expose no measured temperature."""
         return None
 
     @property
-    def target_temperature(self):
+    def target_temperature(self) -> float | None:
         """Return the setpoint temperature."""
-        return self._device.setpoint_temperature
+        return self._device.setpoint_temperature  # type: ignore[no-any-return]
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> HVACMode:
         """Return the hvac mode derived from the operation mode."""
-        if (
-            self._device.operation_mode
-            == SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC
-        ):
+        if self._device.operation_mode == HeatingCircuitService.OperationMode.AUTOMATIC:
             return HVACMode.AUTO
         return HVACMode.HEAT
 
     @property
-    def hvac_action(self):
+    def hvac_action(self) -> HVACAction:
         """Return whether the circuit is currently heating."""
         return HVACAction.HEATING if self._device.on else HVACAction.IDLE
 
-    async def async_set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set a new setpoint temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
@@ -475,14 +493,14 @@ class HeatingCircuit(SHCEntity, ClimateEntity):
                     err,
                 )
 
-    async def async_set_hvac_mode(self, hvac_mode: str):
+    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         """Set the operation mode."""
         if hvac_mode not in self.hvac_modes:
             return
         mode = (
-            SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC
+            HeatingCircuitService.OperationMode.AUTOMATIC
             if hvac_mode == HVACMode.AUTO
-            else SHCHeatingCircuit.HeatingCircuitService.OperationMode.MANUAL
+            else HeatingCircuitService.OperationMode.MANUAL
         )
         try:
             await self._device.async_set_operation_mode(mode)

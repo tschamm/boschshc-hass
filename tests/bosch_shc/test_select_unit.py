@@ -8,22 +8,20 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from homeassistant.helpers.entity import EntityCategory
-
 from boschshcpy.services_impl import (
     PirSensorConfigurationService,
     VibrationSensorService,
 )
+from homeassistant.helpers.entity import EntityCategory
 
+from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
-    MotionSensitivitySelect,
-    VibrationSensitivitySelect,
     _MOTION_SENSITIVITY_OPTIONS,
     _VIBRATION_SENSITIVITY_OPTIONS,
+    MotionSensitivitySelect,
+    VibrationSensitivitySelect,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -27,13 +27,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from custom_components.bosch_shc.event import (
-    MotionDetectorEvent,
-    SHCScenarioEvent,
-    SmokeDetectionSystemEvent,
-    SmokeDetectorEvent,
-    UniversalSwitchEvent,
-)
+from homeassistant.const import ATTR_ID, ATTR_NAME
+
 from custom_components.bosch_shc.const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
@@ -41,15 +36,20 @@ from custom_components.bosch_shc.const import (
     DATA_SHC,
     DOMAIN,
 )
-from homeassistant.const import ATTR_ID, ATTR_NAME
-
+from custom_components.bosch_shc.event import (
+    MotionDetectorEvent,
+    SHCScenarioEvent,
+    SmokeDetectionSystemEvent,
+    SmokeDetectorEvent,
+    UniversalSwitchEvent,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _make_hass_direct():
-    """hass whose call_soon_threadsafe executes fn synchronously."""
+    """Hass whose call_soon_threadsafe executes fn synchronously."""
     hass = MagicMock(name="hass")
 
     def _sync_call(fn, *args, **kwargs):
@@ -60,7 +60,7 @@ def _make_hass_direct():
 
 
 def _make_hass_capturing():
-    """hass that captures call_soon_threadsafe args without executing."""
+    """Hass that captures call_soon_threadsafe args without executing."""
     hass = MagicMock(name="hass")
     hass.loop = MagicMock(name="loop")
     return hass

@@ -24,7 +24,6 @@ from custom_components.bosch_shc.binary_sensor import OccupancyDetectionSensor
 from custom_components.bosch_shc.light import MotionDetectorLight
 from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -323,7 +322,7 @@ class TestSHCMotionDetector2LibSetters:
     """Verify that the new public setters on SHCMotionDetector2 call through."""
 
     def test_binaryswitch_setter_calls_put_state_element(self):
-        """binaryswitch setter must invoke put_state_element('on', bool)."""
+        """Binaryswitch setter must invoke put_state_element('on', bool)."""
         calls = []
 
         class _FakeBinarySwitchService:

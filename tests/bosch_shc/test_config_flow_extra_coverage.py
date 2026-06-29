@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
 
 from custom_components.bosch_shc.config_flow import (
     ConfigFlow,
@@ -38,8 +39,6 @@ from custom_components.bosch_shc.const import (
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SSL_VERIFY_HOSTNAME,
 )
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
-
 
 # ---------------------------------------------------------------------------
 # Helpers

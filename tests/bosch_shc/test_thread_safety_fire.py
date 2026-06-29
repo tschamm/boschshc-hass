@@ -19,15 +19,14 @@ from unittest.mock import MagicMock
 from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 from custom_components.bosch_shc.binary_sensor import (
     MotionDetectionSensor,
-    SmokeDetectorSensor,
     SmokeDetectionSystemSensor,
+    SmokeDetectorSensor,
 )
 from custom_components.bosch_shc.const import (
-    EVENT_BOSCH_SHC,
-    ATTR_EVENT_TYPE,
     ATTR_EVENT_SUBTYPE,
+    ATTR_EVENT_TYPE,
+    EVENT_BOSCH_SHC,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

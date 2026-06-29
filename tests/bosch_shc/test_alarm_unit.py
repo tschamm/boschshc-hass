@@ -12,7 +12,6 @@ Pattern: NO HA harness, NO tests.common.
 """
 
 import asyncio
-import sys
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -155,7 +154,7 @@ def test_async_will_remove_from_hass_unsubscribes():
 
 
 def test_async_will_remove_from_hass_tolerates_not_subscribed():
-    """unsubscribe when never subscribed must not raise."""
+    """Unsubscribe when never subscribed must not raise."""
     device = _fake_device()
     panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
     panel._device = device

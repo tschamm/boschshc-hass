@@ -21,6 +21,22 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from homeassistant.const import ATTR_ID, ATTR_NAME
+
+from custom_components.bosch_shc.const import (
+    ATTR_EVENT_TYPE,
+    ATTR_LAST_TIME_TRIGGERED,
+    DATA_SESSION,
+    DATA_SHC,
+    DOMAIN,
+)
+from custom_components.bosch_shc.entity import (
+    SHCEntity,
+    async_get_device_id,
+    async_migrate_to_new_unique_id,
+    async_remove_devices,
+)
+
 # ---------------------------------------------------------------------------
 # Imports under test
 # ---------------------------------------------------------------------------
@@ -29,20 +45,6 @@ from custom_components.bosch_shc.event import (
     UniversalSwitchEvent,
     async_setup_entry,
 )
-from custom_components.bosch_shc.entity import (
-    SHCEntity,
-    async_get_device_id,
-    async_migrate_to_new_unique_id,
-    async_remove_devices,
-)
-from custom_components.bosch_shc.const import (
-    ATTR_EVENT_TYPE,
-    ATTR_LAST_TIME_TRIGGERED,
-    DATA_SESSION,
-    DATA_SHC,
-    DOMAIN,
-)
-from homeassistant.const import ATTR_ID, ATTR_NAME
 
 # ---------------------------------------------------------------------------
 # Shared sentinel press-type
@@ -442,7 +444,7 @@ class TestUniversalSwitchEventDedupGuards:
     """Cover the dedup/none/non-press branches in _event_callback."""
 
     def test_none_eventtype_returns_early_no_trigger(self):
-        """eventtype is None → return immediately, _trigger_event not called."""
+        """Eventtype is None → return immediately, _trigger_event not called."""
         entity = _make_bare_usw(eventtype=None)
         entity._event_callback()
         entity._trigger_event.assert_not_called()

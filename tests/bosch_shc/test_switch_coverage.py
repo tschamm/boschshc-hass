@@ -24,11 +24,14 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 from boschshcpy import (
-    SHCCamera360,
-    SHCCameraEyes,
-    SHCCameraOutdoorGen2,
-    SHCShutterContact2,
-    SHCThermostat,
+    BypassService,
+    CameraAmbientLightService,
+    CameraFrontLightService,
+    CameraLightService,
+    CameraNotificationService,
+    PowerSwitchService,
+    RoutingService,
+    ThermostatService,
 )
 from homeassistant.components.switch import SwitchDeviceClass
 from homeassistant.helpers.entity import EntityCategory
@@ -38,7 +41,6 @@ from custom_components.bosch_shc.switch import (
     SHCSwitch,
     SHCUserDefinedStateSwitch,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -199,19 +201,19 @@ class TestEdgeStateIsOn:
 
     def test_bypass_unknown_is_off(self):
         """UNKNOWN bypass state → is_on False (not ON_VALUE)."""
-        State = SHCShutterContact2.BypassService.State
+        State = BypassService.State
         sw = _make_switch(SWITCH_TYPES["bypass"], bypass=State.UNKNOWN)
         assert sw.is_on is False
 
     def test_cameraeyes_cameralight_none_is_off(self):
         """CameraLight.NONE → is_on False."""
-        State = SHCCameraEyes.CameraLightService.State
+        State = CameraLightService.State
         sw = _make_switch(SWITCH_TYPES["cameraeyes_cameralight"], cameralight=State.NONE)
         assert sw.is_on is False
 
     def test_cameraoutdoorgen2_frontlight_none_is_off(self):
         """FrontLight.NONE → is_on False."""
-        State = SHCCameraOutdoorGen2.CameraFrontLightService.State
+        State = CameraFrontLightService.State
         sw = _make_switch(
             SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
             camerafrontlight=State.NONE,
@@ -220,7 +222,7 @@ class TestEdgeStateIsOn:
 
     def test_cameraoutdoorgen2_ambientlight_none_is_off(self):
         """AmbientLight.NONE → is_on False."""
-        State = SHCCameraOutdoorGen2.CameraAmbientLightService.State
+        State = CameraAmbientLightService.State
         sw = _make_switch(
             SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
             cameraambientlight=State.NONE,
@@ -234,7 +236,7 @@ class TestEdgeStateIsOn:
 
     def test_child_lock_thermostat_enum_off_is_off(self):
         """ThermostatService.State.OFF → is_on False (enum path)."""
-        State = SHCThermostat.ThermostatService.State
+        State = ThermostatService.State
         sw = _make_switch(SWITCH_TYPES["child_lock_thermostat"], child_lock=State.OFF)
         assert sw.is_on is False
 
@@ -252,7 +254,7 @@ class TestEdgeStateIsOn:
         assert sw.is_on is True
 
     def test_camera360_cameranotification_disabled_is_off(self):
-        State = SHCCamera360.CameraNotificationService.State
+        State = CameraNotificationService.State
         sw = _make_switch(
             SWITCH_TYPES["camera360_notification"],
             cameranotification=State.DISABLED,
@@ -978,20 +980,17 @@ class TestShouldPollRemaining:
         assert sw.should_poll is False
 
     def test_micromodule_relay_should_poll_false(self):
-        from boschshcpy import SHCMicromoduleRelay
-        State = SHCMicromoduleRelay.PowerSwitchService.State
+        State = PowerSwitchService.State
         sw = _make_switch(SWITCH_TYPES["micromodule_relay_switch"], switchstate=State.OFF)
         assert sw.should_poll is False
 
     def test_lightswitch_should_poll_false(self):
-        from boschshcpy import SHCLightSwitch
-        State = SHCLightSwitch.PowerSwitchService.State
+        State = PowerSwitchService.State
         sw = _make_switch(SWITCH_TYPES["lightswitch"], switchstate=State.OFF)
         assert sw.should_poll is False
 
     def test_smartplugcompact_should_poll_false(self):
-        from boschshcpy import SHCSmartPlugCompact
-        State = SHCSmartPlugCompact.PowerSwitchService.State
+        State = PowerSwitchService.State
         sw = _make_switch(SWITCH_TYPES["smartplugcompact"], switchstate=State.OFF)
         assert sw.should_poll is False
 
@@ -1000,14 +999,12 @@ class TestShouldPollRemaining:
         assert sw.should_poll is False
 
     def test_smartplug_routing_should_poll_false(self):
-        from boschshcpy import SHCSmartPlug
-        State = SHCSmartPlug.RoutingService.State
+        State = RoutingService.State
         sw = _make_switch(SWITCH_TYPES["smartplug_routing"], routing=State.DISABLED)
         assert sw.should_poll is False
 
     def test_cameraeyes_notification_should_poll_true(self):
-        from boschshcpy import SHCCameraEyes
-        State = SHCCameraEyes.CameraNotificationService.State
+        State = CameraNotificationService.State
         sw = _make_switch(
             SWITCH_TYPES["cameraeyes_notification"],
             cameranotification=State.DISABLED,
@@ -1015,7 +1012,7 @@ class TestShouldPollRemaining:
         assert sw.should_poll is True
 
     def test_camera360_notification_should_poll_true(self):
-        State = SHCCamera360.CameraNotificationService.State
+        State = CameraNotificationService.State
         sw = _make_switch(
             SWITCH_TYPES["camera360_notification"],
             cameranotification=State.DISABLED,
@@ -1023,7 +1020,7 @@ class TestShouldPollRemaining:
         assert sw.should_poll is True
 
     def test_cameraoutdoorgen2_frontlight_should_poll_true(self):
-        State = SHCCameraOutdoorGen2.CameraFrontLightService.State
+        State = CameraFrontLightService.State
         sw = _make_switch(
             SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
             camerafrontlight=State.OFF,
@@ -1031,7 +1028,7 @@ class TestShouldPollRemaining:
         assert sw.should_poll is True
 
     def test_cameraoutdoorgen2_ambientlight_should_poll_true(self):
-        State = SHCCameraOutdoorGen2.CameraAmbientLightService.State
+        State = CameraAmbientLightService.State
         sw = _make_switch(
             SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
             cameraambientlight=State.OFF,

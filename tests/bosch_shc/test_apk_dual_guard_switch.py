@@ -20,9 +20,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from custom_components.bosch_shc.switch import async_setup_entry
 from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
-
+from custom_components.bosch_shc.switch import async_setup_entry
 
 # ---------------------------------------------------------------------------
 # Helpers (shared with test_apk_switch_new_entities.py pattern)
@@ -62,7 +61,6 @@ def _make_session(**helper_lists):
     )
     defaults.update(helper_lists)
     device_helper = SimpleNamespace(**defaults)
-    from unittest.mock import MagicMock
     session = SimpleNamespace(
         device_helper=device_helper,
         userdefinedstates=[],

@@ -16,8 +16,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.bosch_shc.valve import SHCValve
 from custom_components.bosch_shc.sensor import ValveTappetSensor
+from custom_components.bosch_shc.valve import SHCValve
 
 
 def _make_valve(position_raises=None, position_value=50):

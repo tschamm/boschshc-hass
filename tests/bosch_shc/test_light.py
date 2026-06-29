@@ -13,7 +13,6 @@ from homeassistant.util import color as color_util
 
 from custom_components.bosch_shc.light import LightSwitch
 
-
 # ---------------------------------------------------------------------------
 # Helper: build a LightSwitch without calling SHCEntity.__init__
 # ---------------------------------------------------------------------------
@@ -75,10 +74,9 @@ def _make_switch(device):
         if len(sw._attr_supported_color_modes) == 0:
             sw._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
             sw._attr_color_mode = ColorMode.BRIGHTNESS
-    else:
-        if len(sw._attr_supported_color_modes) == 0:
-            sw._attr_supported_color_modes.add(ColorMode.ONOFF)
-            sw._attr_color_mode = ColorMode.ONOFF
+    elif len(sw._attr_supported_color_modes) == 0:
+        sw._attr_supported_color_modes.add(ColorMode.ONOFF)
+        sw._attr_color_mode = ColorMode.ONOFF
     return sw
 
 
@@ -133,7 +131,7 @@ def test_brightness_99_percent():
 
 
 def test_brightness_none_guard():
-    """brightness property must return None when device reports None (e.g. unavailable)."""
+    """Brightness property must return None when device reports None (e.g. unavailable)."""
     sw = _make_switch(_make_device(brightness=None))
     assert sw.brightness is None
 
@@ -326,7 +324,7 @@ def test_turn_on_activates_binarystate_when_off():
 
 
 def test_turn_on_does_not_double_set_binarystate_when_already_on():
-    """binarystate stays True -- no redundant write."""
+    """Binarystate stays True -- no redundant write."""
     device = _make_device(binarystate=True)
     sw = _make_switch(device)
     asyncio.run(sw.async_turn_on())

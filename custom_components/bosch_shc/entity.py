@@ -1,5 +1,9 @@
 """Bosch Smart Home Controller base entity."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from boschshcpy.device import SHCDevice
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
@@ -25,13 +29,13 @@ _LIGHT_RELAY_FRIENDLY_MODEL = {
 }
 
 
-def light_relay_friendly_model(device) -> str:
+def light_relay_friendly_model(device: Any) -> str:
     """Friendly model label for a light-relay device (falls back to the model)."""
     model = getattr(device, "device_model", "") or ""
     return _LIGHT_RELAY_FRIENDLY_MODEL.get(model, model)
 
 
-def light_switch_devices(session) -> list:
+def light_switch_devices(session: Any) -> list[Any]:
     """Return the on/off light-relay devices that can be a switch OR a light.
 
     These are the Light/Shutter Control II light channels
@@ -45,7 +49,7 @@ def light_switch_devices(session) -> list:
     )
 
 
-def light_switch_as_light(device, options) -> bool:
+def light_switch_as_light(device: Any, options: dict[str, Any]) -> bool:
     """True if this light-relay device should be a `light` (#338).
 
     The global "all" toggle wins; otherwise fall back to the per-device list.
@@ -56,7 +60,7 @@ def light_switch_as_light(device, options) -> bool:
     return getattr(device, "id", None) in opted_in
 
 
-def device_excluded(device, options) -> bool:
+def device_excluded(device: Any, options: dict[str, Any]) -> bool:
     """True if the Bosch device is excluded by the device/room filter options."""
     excluded_devices = options.get(OPT_EXCLUDED_DEVICES) or []
     excluded_rooms = options.get(OPT_EXCLUDED_ROOMS) or []
@@ -130,7 +134,7 @@ async def async_migrate_to_new_unique_id(
             )
 
 
-class SHCEntity(Entity):
+class SHCEntity(Entity):  # type: ignore[misc]
     """Representation of a SHC base entity."""
 
     _attr_has_entity_name = True
@@ -155,15 +159,15 @@ class SHCEntity(Entity):
     def _update_attr(self) -> None:
         pass
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
-        def on_state_changed():
+        def on_state_changed() -> None:
             self._update_attr()
             self.schedule_update_ha_state()
 
-        def update_entity_information():
+        def update_entity_information() -> None:
             if self._device.deleted:
                 self.hass.async_create_task(
                     async_remove_devices(self.hass, self, self._entry_id)
@@ -176,7 +180,7 @@ class SHCEntity(Entity):
             service.subscribe_callback(self.entity_id, on_state_changed)
         self._device.subscribe_callback(self.entity_id, update_entity_information)
 
-    async def async_will_remove_from_hass(self):
+    async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
@@ -184,14 +188,14 @@ class SHCEntity(Entity):
         self._device.unsubscribe_callback(self.entity_id)
 
     @property
-    def device_name(self):
+    def device_name(self) -> str:
         """Name of the device."""
-        return self._device.name
+        return str(self._device.name)
 
     @property
-    def device_id(self):
+    def device_id(self) -> str:
         """Device id of the entity."""
-        return self._device.id
+        return str(self._device.id)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -205,11 +209,11 @@ class SHCEntity(Entity):
         )
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """Return false if status is unavailable."""
-        return self._device.status == "AVAILABLE"
+        return bool(self._device.status == "AVAILABLE")
 
     @property
-    def should_poll(self):
+    def should_poll(self) -> bool:
         """Report polling mode. SHC Entity is communicating via long polling."""
         return False

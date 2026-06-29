@@ -29,12 +29,15 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from boschshcpy import (
-    SHCBatteryDevice,
-    SHCSmokeDetectionSystem,
-    SHCSmokeDetector,
-    SHCShutterContact,
+    AlarmService,
+    BatteryLevelService,
     SHCShutterContact2Plus,
-    SHCWaterLeakageSensor,
+    ShutterContactService,
+    SmokeDetectorCheckService,
+    SurveillanceAlarmService,
+    VibrationSensorService,
+    WaterLeakageSensorService,
+    WaterLeakageSensorTiltService,
 )
 
 from custom_components.bosch_shc.binary_sensor import (
@@ -45,7 +48,6 @@ from custom_components.bosch_shc.binary_sensor import (
     async_setup_entry,
 )
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN, OPT_EXCLUDED_DEVICES
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -98,14 +100,14 @@ def _make_fake_session(**lists):
     return SimpleNamespace(
         _subscribers=[],
         subscribe=lambda cb: None,
-        api=SimpleNamespace(get_messages=lambda: []),
+        api=SimpleNamespace(get_messages=list),
         device_helper=SimpleNamespace(
             shutter_contacts=lists.get("shutter_contacts", []),
             shutter_contacts2=lists.get("shutter_contacts2", []),
             motion_detectors=lists.get("motion_detectors", []),
             motion_detectors2=lists.get("motion_detectors2", []),
             smoke_detectors=lists.get("smoke_detectors", []),
-            smoke_detection_system=lists.get("smoke_detection_system", None),
+            smoke_detection_system=lists.get("smoke_detection_system"),
             water_leakage_detectors=lists.get("water_leakage_detectors", []),
             thermostats=lists.get("thermostats", []),
             twinguards=lists.get("twinguards", []),
@@ -165,7 +167,7 @@ class TestBinarySensorSetupExcludedBranches:
 
     def test_excluded_shutter_contact_not_in_entities(self):
         dev = _fake_device("sc-excl")
-        dev.state = SHCShutterContact.ShutterContactService.State.CLOSED
+        dev.state = ShutterContactService.State.CLOSED
         dev.device_class = "REGULAR_WINDOW"
         session = _make_fake_session(shutter_contacts=[dev])
         # Shutter contacts are added via async_add_shuttercontact callback (not collected),
@@ -198,8 +200,8 @@ class TestBinarySensorSetupExcludedBranches:
 
     def test_excluded_smoke_detector_not_in_entities(self):
         dev = _fake_device("sd-excl", device_services=[_make_service("Alarm")])
-        dev.alarmstate = SHCSmokeDetector.AlarmService.State.IDLE_OFF
-        dev.smokedetectorcheck_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+        dev.alarmstate = AlarmService.State.IDLE_OFF
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         session = _make_fake_session(smoke_detectors=[dev])
         entities = _run_setup_with_options(session, _excl("sd-excl"))
         from custom_components.bosch_shc.binary_sensor import SmokeDetectorSensor
@@ -211,7 +213,7 @@ class TestBinarySensorSetupExcludedBranches:
     def test_excluded_twinguard_not_in_entities_when_sds_present(self):
         surv_svc = _make_service("SurveillanceAlarm")
         sds = _fake_device("sds-1", device_services=[surv_svc])
-        sds.alarm = SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+        sds.alarm = SurveillanceAlarmService.State.ALARM_OFF
         tw = _fake_device("tw-excl")
         session = _make_fake_session(
             smoke_detection_system=sds, twinguards=[tw]
@@ -224,9 +226,9 @@ class TestBinarySensorSetupExcludedBranches:
 
     def test_excluded_water_leakage_detector_not_in_entities(self):
         dev = _fake_device("wl-excl")
-        dev.leakage_state = SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
-        dev.push_notification_state = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
-        dev.acoustic_signal_state = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
+        dev.leakage_state = WaterLeakageSensorService.State.NO_LEAKAGE
+        dev.push_notification_state = WaterLeakageSensorTiltService.State.ENABLED
+        dev.acoustic_signal_state = WaterLeakageSensorTiltService.State.ENABLED
         session = _make_fake_session(water_leakage_detectors=[dev])
         entities = _run_setup_with_options(session, _excl("wl-excl"))
         from custom_components.bosch_shc.binary_sensor import WaterLeakageDetectorSensor
@@ -249,14 +251,16 @@ class TestBinarySensorSetupExcludedBranches:
         dev.status = "AVAILABLE"
         dev.subscribe_callback = lambda k, cb: None
         dev.unsubscribe_callback = lambda k: None
-        dev.state = SHCShutterContact.ShutterContactService.State.CLOSED
+        dev.state = ShutterContactService.State.CLOSED
         dev.device_class = "REGULAR_WINDOW"
         dev.vibrationsensor = (
-            SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+            VibrationSensorService.State.NO_VIBRATION
         )
         session = _make_fake_session(shutter_contacts2=[dev])
         entities = _run_setup_with_options(session, _excl("sc2p-excl"))
-        from custom_components.bosch_shc.binary_sensor import ShutterContactVibrationSensor
+        from custom_components.bosch_shc.binary_sensor import (
+            ShutterContactVibrationSensor,
+        )
         vib_ents = [e for e in entities if isinstance(e, ShutterContactVibrationSensor)]
         assert vib_ents == []
 
@@ -264,7 +268,7 @@ class TestBinarySensorSetupExcludedBranches:
 
     def test_excluded_device_skipped_in_battery_loop(self):
         dev = _fake_device("md-bat-excl", supports_batterylevel=True)
-        dev.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        dev.batterylevel = BatteryLevelService.State.OK
         dev.latestmotion = None
         dev.device_services = [_make_service("LatestMotion")]
         session = _make_fake_session(motion_detectors=[dev])
@@ -311,15 +315,15 @@ class TestBinarySensorSetupExcludedBranches:
         md = _fake_device(excl_ids[0], device_services=[_make_service("LatestMotion")])
         md.latestmotion = None
         wl = _fake_device(excl_ids[1])
-        wl.leakage_state = SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
-        wl.push_notification_state = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
-        wl.acoustic_signal_state = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
+        wl.leakage_state = WaterLeakageSensorService.State.NO_LEAKAGE
+        wl.push_notification_state = WaterLeakageSensorTiltService.State.ENABLED
+        wl.acoustic_signal_state = WaterLeakageSensorTiltService.State.ENABLED
         cc = _fake_device(excl_ids[2])
         cc.has_demand = False
         th = _fake_device(excl_ids[3], supports_batterylevel=True)
-        th.batterylevel = SHCBatteryDevice.BatteryLevelService.State.OK
+        th.batterylevel = BatteryLevelService.State.OK
         sc = _fake_device(excl_ids[4])
-        sc.state = SHCShutterContact.ShutterContactService.State.CLOSED
+        sc.state = ShutterContactService.State.CLOSED
         sc.device_class = "GENERIC"
         session = _make_fake_session(
             motion_detectors=[md],
@@ -381,13 +385,13 @@ class TestTwinguardAlarmTrackerAlarmStateValueError:
     def test_alarm_state_valid_returns_name(self):
         """Valid alarm.name must be returned as-is."""
         tracker = self._make_tracker(
-            SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF
+            SurveillanceAlarmService.State.ALARM_OFF
         )
         assert tracker.alarm_state == "ALARM_OFF"
 
     def test_alarm_state_alarm_on_returns_name(self):
         tracker = self._make_tracker(
-            SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_ON
+            SurveillanceAlarmService.State.ALARM_ON
         )
         assert tracker.alarm_state == "ALARM_ON"
 
@@ -408,7 +412,7 @@ class TestTwinguardAlarmTrackerRefreshNoChange:
         sds = SimpleNamespace(
             id="sds-nc",
             name="SDS",
-            alarm=SHCSmokeDetectionSystem.SurveillanceAlarmService.State.ALARM_OFF,
+            alarm=SurveillanceAlarmService.State.ALARM_OFF,
             device_services=[surv_svc],
         )
         hass = _make_hass()

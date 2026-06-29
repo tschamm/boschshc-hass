@@ -528,6 +528,9 @@
     "rawscan_type_unknown": {
       "message": "Rawscan type not found."
     },
+    "rawscan_entry_not_found": {
+      "message": "No loaded Bosch SHC entry with that title found."
+    },
     "scenario_not_found": {
       "message": "Scenario not found."
     },

@@ -15,14 +15,16 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+from boschshcpy import HeatingCircuitService
 from boschshcpy.exceptions import JSONRPCError, SHCException
+from homeassistant.components.climate.const import HVACMode
+
 from custom_components.bosch_shc.climate import (
-    ClimateControl,
-    HeatingCircuit,
     PRESET_BOOST,
     PRESET_ECO,
+    ClimateControl,
+    HeatingCircuit,
 )
-from homeassistant.components.climate.const import HVACMode
 
 
 # JSONRPCError requires (code, message) — use a subclass for brevity
@@ -193,14 +195,13 @@ class TestHeatingCircuitTemperatureErrors:
 
 def _make_hc_entity():
     """HeatingCircuit bypassing SHCEntity.__init__."""
-    from boschshcpy import SHCHeatingCircuit
     entity = HeatingCircuit.__new__(HeatingCircuit)
     entity._device = SimpleNamespace(
         name="HC1",
         id="hc-1",
         root_device_id="root-1",
         setpoint_temperature=20.0,
-        operation_mode=SHCHeatingCircuit.HeatingCircuitService.OperationMode.AUTOMATIC,
+        operation_mode=HeatingCircuitService.OperationMode.AUTOMATIC,
         on=False,
         async_set_setpoint_temperature=AsyncMock(),
         async_set_operation_mode=AsyncMock(),

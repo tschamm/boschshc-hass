@@ -18,7 +18,6 @@ from unittest.mock import AsyncMock
 
 from custom_components.bosch_shc.number import SHCNumber
 
-
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------

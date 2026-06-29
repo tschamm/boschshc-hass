@@ -21,6 +21,13 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
+
+from custom_components.bosch_shc.const import (
+    ATTR_EVENT_SUBTYPE,
+    ATTR_EVENT_TYPE,
+    ATTR_LAST_TIME_TRIGGERED,
+)
 from custom_components.bosch_shc.event import (
     LightControlButtonEvent,
     MotionDetectorEvent,
@@ -28,13 +35,6 @@ from custom_components.bosch_shc.event import (
     SmokeDetectorEvent,
     UniversalSwitchEvent,
 )
-from custom_components.bosch_shc.const import (
-    ATTR_EVENT_TYPE,
-    ATTR_EVENT_SUBTYPE,
-    ATTR_LAST_TIME_TRIGGERED,
-)
-from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
-
 
 # ---------------------------------------------------------------------------
 # Shared fake press-type sentinels

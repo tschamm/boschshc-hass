@@ -1,9 +1,12 @@
 """The Bosch Smart Home Controller integration."""
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 from datetime import time as dt_time
 from datetime import timedelta
+from typing import Any
 
 import aiohttp
 import voluptuous as vol
@@ -40,6 +43,7 @@ from homeassistant.exceptions import (
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
@@ -117,7 +121,7 @@ RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
 )
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """Set up the Bosch SHC component.
 
     The trigger_scenario service is registered here so it exists even when a
@@ -179,12 +183,12 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                 # async API (mirrors SHCSession.rawscan_commands).
                 commands = {
                     "devices": api.get_devices,
-                    "device": lambda _api=api, _did=device_id: _api.get_device(_did),
+                    "device": lambda _api=api, _did=device_id: _api.get_device(_did),  # type: ignore[misc]
                     "services": api.get_services,
-                    "device_services": lambda _api=api, _did=device_id: (
+                    "device_services": lambda _api=api, _did=device_id: (  # type: ignore[misc]
                         _api.get_device_services(_did)
                     ),
-                    "device_service": lambda _api=api, _did=device_id, _sid=service_id: (
+                    "device_service": lambda _api=api, _did=device_id, _sid=service_id: (  # type: ignore[misc]
                         _api.get_device_service(_did, _sid)
                     ),
                     "rooms": api.get_rooms,
@@ -204,7 +208,11 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                     )
                 rawscan = await commands[command]()
                 return {command: rawscan}
-        return None
+        raise ServiceValidationError(
+            f"No loaded Bosch SHC entry with title '{title}' found.",
+            translation_domain=DOMAIN,
+            translation_key="rawscan_entry_not_found",
+        )
 
     hass.services.async_register(
         DOMAIN,
@@ -279,6 +287,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # Build the mTLS SSLContext off the event loop — it reads the cert/key/CA
     # PEM files (blocking I/O) — then hand it to the session so construction on
     # the loop stays non-blocking. Guard for older libs lacking the kwarg.
+    # HA-managed aiohttp session (Phase 3c inject-websession).
+    # verify_ssl=False: the per-request ssl= kwarg in SHCAPIAsync passes the
+    # mTLS SSLContext, so connector-level SSL verification is not needed.
+    websession = async_get_clientsession(hass, verify_ssl=False)
     _session_kwargs = {"long_poll_timeout": long_poll_timeout}
     if "ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters:
         _session_kwargs["ssl_context"] = await hass.async_add_executor_job(
@@ -286,6 +298,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             data[CONF_SSL_CERTIFICATE],
             data[CONF_SSL_KEY],
         )
+    if "external_session" in inspect.signature(SHCSessionAsync.__init__).parameters:
+        _session_kwargs["external_session"] = websession
     session = SHCSessionAsync(
         data[CONF_HOST],
         data[CONF_SSL_CERTIFICATE],
@@ -337,7 +351,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     }
 
     # Daily certificate re-check scheduling
-    async def _scheduled_cert_check(_now):
+    async def _scheduled_cert_check(_now: Any) -> None:
         # async_track_time_interval dispatches sync callbacks to a worker
         # thread, where hass.async_create_task triggers HA 2026.x's escalated
         # report_non_thread_safe_operation RuntimeError for custom integrations.
@@ -398,7 +412,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         #   person / device_tracker / group  -> state == "home"
         #   zone                             -> occupancy count > 0
         #   binary_sensor / input_boolean    -> state == "on"
-        def _entity_is_present(entity_id, state_obj) -> bool:
+        def _entity_is_present(entity_id: str, state_obj: Any) -> bool:
             domain = entity_id.split(".", 1)[0]
             value = state_obj.state
             if domain == "zone":
@@ -407,15 +421,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 except (TypeError, ValueError):
                     return False
             if domain in ("binary_sensor", "input_boolean"):
-                return value == "on"
+                return bool(value == "on")
             # person, device_tracker, group and anything else use the standard
             # home/away semantics (group of presence entities reports "home").
-            return value in ("home", "on")
+            return bool(value in ("home", "on"))
 
         # Track last-applied lock state to suppress redundant API writes.
         _last_lock_state: list[bool | None] = [None]
 
-        def _child_lock_devices(session):
+        def _child_lock_devices(session: Any) -> tuple[list[Any], list[Any]]:
             """Return (thermostat_devices, bool_devices) from this SHC session."""
             dh = session.device_helper
             thermostats = (
@@ -434,7 +448,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             )
             return thermostats, bool_devices
 
-        async def _set_child_lock_one(device, lock_state: bool) -> None:
+        async def _set_child_lock_one(device: Any, lock_state: bool) -> None:
             """Set child lock on a single device, logging on error."""
             try:
                 await device.async_set_child_lock(lock_state)
@@ -453,14 +467,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                     err,
                 )
 
-        async def _apply_child_lock(lock_state: bool):
+        async def _apply_child_lock(lock_state: bool) -> None:
             """Set child lock on all SHC devices (async; on the event loop)."""
             thermostats, bool_devices = _child_lock_devices(session)
             for device in thermostats + bool_devices:
                 await _set_child_lock_one(device, lock_state)
 
-        @callback
-        def _presence_state_changed(event):
+        @callback  # type: ignore[untyped-decorator]
+        def _presence_state_changed(event: Any) -> None:
             """Handle state changes for any tracked presence entity.
 
             Semantics: child lock ON when ANY tracked entity is present;
@@ -501,7 +515,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # otherwise MODE_NORMAL. Mirrors the child-lock feature but adds a window.
     silent_mode_enabled = entry.options.get(OPT_SILENT_MODE_ENABLED, False)
 
-    def _parse_time(value):
+    def _parse_time(value: Any) -> dt_time | None:
         """Parse an 'HH:MM[:SS]' option value into a datetime.time, or None."""
         if not value:
             return None
@@ -519,7 +533,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
 
     if silent_mode_enabled and presence_entities and silent_start and silent_end:
 
-        def _silent_entity_is_present(entity_id) -> bool:
+        def _silent_entity_is_present(entity_id: str) -> bool:
             state_obj = hass.states.get(entity_id)
             if state_obj is None or state_obj.state in ("unavailable", "unknown"):
                 return False
@@ -531,21 +545,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 except (TypeError, ValueError):
                     return False
             if domain in ("binary_sensor", "input_boolean"):
-                return value == "on"
-            return value in ("home", "on")
+                return bool(value == "on")
+            return bool(value in ("home", "on"))
 
         def _within_window() -> bool:
             now_t = dt_util.now().time()
             if silent_start == silent_end:
                 return False
             if silent_start < silent_end:
-                return silent_start <= now_t < silent_end
+                return bool(silent_start <= now_t < silent_end)
             # Overnight window (e.g. 22:00 → 06:00).
-            return now_t >= silent_start or now_t < silent_end
+            return bool(now_t >= silent_start or now_t < silent_end)
 
         _last_silent_state: list[bool | None] = [None]
 
-        async def _set_silent_one(device, silent_on: bool) -> None:
+        async def _set_silent_one(device: Any, silent_on: bool) -> None:
             """Set silent mode on a single device, logging on error."""
             try:
                 await device.async_set_silentmode(silent_on)
@@ -564,19 +578,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                     err,
                 )
 
-        async def _apply_silent(silent_on: bool):
+        async def _apply_silent(silent_on: bool) -> None:
             """Set silent mode on all capable SHC devices (async; on the loop)."""
             dh = session.device_helper
+            if dh is None:
+                return
             devices = [
                 d
-                for d in (dh.thermostats + dh.roomthermostats)
+                for d in (list(dh.thermostats) + list(dh.roomthermostats))
                 if getattr(d, "supports_silentmode", False)
             ]
             for device in devices:
                 await _set_silent_one(device, silent_on)
 
-        @callback
-        def _evaluate_silent(*_args):
+        @callback  # type: ignore[untyped-decorator]
+        def _evaluate_silent(*_args: Any) -> None:
             """Recompute desired silent state and apply when it changed."""
             any_present = any(
                 _silent_entity_is_present(eid) for eid in presence_entities
@@ -612,7 +628,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         # Apply the correct state once at startup.
         _evaluate_silent()
 
-    async def stop_polling(event):
+    async def stop_polling(event: Any) -> None:
         """Stop polling service."""
         LOGGER.debug(
             "Bosch SHC '%s': stopping long-poll session (HA shutdown).", entry.title
@@ -633,8 +649,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         entry.runtime_data.polling_handler
     )
 
-    @callback
-    def _scenario_trigger(event_data):
+    @callback  # type: ignore[untyped-decorator]
+    def _scenario_trigger(event_data: Any) -> None:
         # Fired from the async poll loop — already on the event loop, so fire
         # directly (no call_soon_threadsafe marshalling).
         hass.bus.async_fire(
@@ -651,7 +667,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
 
     session.subscribe_scenario_callback("shc", _scenario_trigger)
 
-    for switch_device in session.device_helper.universal_switches:
+    for switch_device in (
+        session.device_helper.universal_switches if session.device_helper else []
+    ):
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
         await event_listener.async_setup()
         entry.runtime_data.switch_event_listeners.append(event_listener)
@@ -667,9 +685,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # Surface a dismissible tip when cameras are present and the dedicated
     # Camera Tool is not already installed; remove it otherwise.
     has_cameras = bool(
-        session.device_helper.camera_eyes
-        or session.device_helper.camera_360
-        or session.device_helper.camera_outdoor_gen2
+        session.device_helper is not None
+        and (
+            session.device_helper.camera_eyes
+            or session.device_helper.camera_360
+            or session.device_helper.camera_outdoor_gen2
+        )
     )
     camera_tool_installed = bool(hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN))
     if has_cameras and not camera_tool_installed:
@@ -707,7 +728,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     runtime.switch_event_listeners.clear()
     await runtime.session.stop_polling()
 
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = bool(await hass.config_entries.async_unload_platforms(entry, PLATFORMS))
     if unload_ok:
         hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
 
@@ -729,7 +750,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class SwitchDeviceEventListener:
     """Event listener for a Switch device."""
 
-    def __init__(self, hass, entry, device: SHCUniversalSwitch):
+    def __init__(
+        self, hass: HomeAssistant, entry: ConfigEntry, device: SHCUniversalSwitch
+    ) -> None:
         """Initialize the Switch device event listener."""
         self.hass = hass
         self.entry = entry
@@ -742,13 +765,7 @@ class SwitchDeviceEventListener:
                 self._keypad_service = service
                 break
 
-        # Store the unsub callable so it can be cancelled on unload/shutdown,
-        # preventing a stale listener from leaking across reloads.
-        self._ha_stop_unsub = hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
-        )
-
-    def _input_events_handler(self):
+    def _input_events_handler(self) -> None:
         """Handle device input events (fired on the event loop by the async session)."""
         if self._device.eventtype is None:
             return
@@ -764,7 +781,9 @@ class SwitchDeviceEventListener:
                     ATTR_ID: self._device.id,
                     ATTR_NAME: self._device.name,
                     ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
-                    ATTR_EVENT_SUBTYPE: self._device.keyname.name,
+                    ATTR_EVENT_SUBTYPE: self._device.keyname.name
+                    if self._device.keyname
+                    else None,
                     ATTR_EVENT_TYPE: event_type,
                 },
             )
@@ -775,7 +794,7 @@ class SwitchDeviceEventListener:
                 self._device.name,
             )
 
-    async def async_setup(self):
+    async def async_setup(self) -> None:
         """Set up the listener."""
         device_registry = dr.async_get(self.hass)
         device_entry = device_registry.async_get_or_create(
@@ -792,17 +811,10 @@ class SwitchDeviceEventListener:
                 self._device.id, self._input_events_handler
             )
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the listener."""
-        # Cancel the HA-stop listener to prevent leaks across reloads.
-        if self._ha_stop_unsub is not None:
-            self._ha_stop_unsub()
-            self._ha_stop_unsub = None
+        # async_unload_entry calls this for all switch listeners on both reload and
+        # HA shutdown (via config_entries.async_close()), so no separate
+        # homeassistant_stop listener is needed on SwitchDeviceEventListener.
         if self._keypad_service is not None:
             self._keypad_service.unsubscribe_callback(self._device.id)
-
-    @callback
-    def _handle_ha_stop(self, _):
-        """Handle Home Assistant stopping."""
-        LOGGER.debug("Stopping Switch event listener for %s", self._device.name)
-        self.shutdown()

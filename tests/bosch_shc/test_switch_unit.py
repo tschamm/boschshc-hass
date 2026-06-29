@@ -11,19 +11,19 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 from boschshcpy import (
-    SHCCamera360,
-    SHCCameraEyes,
-    SHCCameraOutdoorGen2,
-    SHCLightSwitch,
-    SHCMicromoduleRelay,
-    SHCShutterContact2,
-    SHCSmartPlug,
-    SHCSmartPlugCompact,
-    SHCThermostat,
+    BypassService,
+    CameraAmbientLightService,
+    CameraFrontLightService,
+    CameraLightService,
+    CameraNotificationService,
+    PowerSwitchService,
+    PrivacyModeService,
+    RoutingService,
+    SilentModeService,
+    ThermostatService,
 )
 
 from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -65,25 +65,25 @@ def _async_spy_device(on_key: str):
 
 
 def test_smartplug_is_on_true():
-    State = SHCSmartPlug.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["smartplug"], switchstate=State.ON)
     assert sw.is_on is True
 
 
 def test_smartplug_is_on_false():
-    State = SHCSmartPlug.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["smartplug"], switchstate=State.OFF)
     assert sw.is_on is False
 
 
 def test_smartplug_routing_is_on_enabled():
-    State = SHCSmartPlug.RoutingService.State
+    State = RoutingService.State
     sw = _make_switch(SWITCH_TYPES["smartplug_routing"], routing=State.ENABLED)
     assert sw.is_on is True
 
 
 def test_smartplug_routing_is_on_disabled():
-    State = SHCSmartPlug.RoutingService.State
+    State = RoutingService.State
     sw = _make_switch(SWITCH_TYPES["smartplug_routing"], routing=State.DISABLED)
     assert sw.is_on is False
 
@@ -94,13 +94,13 @@ def test_smartplug_routing_is_on_disabled():
 
 
 def test_smartplugcompact_is_on_true():
-    State = SHCSmartPlugCompact.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["smartplugcompact"], switchstate=State.ON)
     assert sw.is_on is True
 
 
 def test_smartplugcompact_is_on_false():
-    State = SHCSmartPlugCompact.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["smartplugcompact"], switchstate=State.OFF)
     assert sw.is_on is False
 
@@ -111,13 +111,13 @@ def test_smartplugcompact_is_on_false():
 
 
 def test_micromodule_relay_is_on_true():
-    State = SHCMicromoduleRelay.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["micromodule_relay_switch"], switchstate=State.ON)
     assert sw.is_on is True
 
 
 def test_micromodule_relay_is_on_false():
-    State = SHCMicromoduleRelay.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["micromodule_relay_switch"], switchstate=State.OFF)
     assert sw.is_on is False
 
@@ -128,13 +128,13 @@ def test_micromodule_relay_is_on_false():
 
 
 def test_lightswitch_is_on_true():
-    State = SHCLightSwitch.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["lightswitch"], switchstate=State.ON)
     assert sw.is_on is True
 
 
 def test_lightswitch_is_on_false():
-    State = SHCLightSwitch.PowerSwitchService.State
+    State = PowerSwitchService.State
     sw = _make_switch(SWITCH_TYPES["lightswitch"], switchstate=State.OFF)
     assert sw.is_on is False
 
@@ -146,14 +146,14 @@ def test_lightswitch_is_on_false():
 
 def test_cameraeyes_privacy_on():
     """Privacy DISABLED → camera is ON → is_on True."""
-    State = SHCCameraEyes.PrivacyModeService.State
+    State = PrivacyModeService.State
     sw = _make_switch(SWITCH_TYPES["cameraeyes"], privacymode=State.DISABLED)
     assert sw.is_on is True
 
 
 def test_cameraeyes_privacy_off():
     """Privacy ENABLED → camera is OFF → is_on False."""
-    State = SHCCameraEyes.PrivacyModeService.State
+    State = PrivacyModeService.State
     sw = _make_switch(SWITCH_TYPES["cameraeyes"], privacymode=State.ENABLED)
     assert sw.is_on is False
 
@@ -164,13 +164,13 @@ def test_cameraeyes_privacy_off():
 
 
 def test_cameraeyes_cameralight_on():
-    State = SHCCameraEyes.CameraLightService.State
+    State = CameraLightService.State
     sw = _make_switch(SWITCH_TYPES["cameraeyes_cameralight"], cameralight=State.ON)
     assert sw.is_on is True
 
 
 def test_cameraeyes_cameralight_off():
-    State = SHCCameraEyes.CameraLightService.State
+    State = CameraLightService.State
     sw = _make_switch(SWITCH_TYPES["cameraeyes_cameralight"], cameralight=State.OFF)
     assert sw.is_on is False
 
@@ -181,7 +181,7 @@ def test_cameraeyes_cameralight_off():
 
 
 def test_cameraeyes_notification_enabled():
-    State = SHCCameraEyes.CameraNotificationService.State
+    State = CameraNotificationService.State
     sw = _make_switch(
         SWITCH_TYPES["cameraeyes_notification"], cameranotification=State.ENABLED
     )
@@ -189,7 +189,7 @@ def test_cameraeyes_notification_enabled():
 
 
 def test_cameraeyes_notification_disabled():
-    State = SHCCameraEyes.CameraNotificationService.State
+    State = CameraNotificationService.State
     sw = _make_switch(
         SWITCH_TYPES["cameraeyes_notification"], cameranotification=State.DISABLED
     )
@@ -202,13 +202,13 @@ def test_cameraeyes_notification_disabled():
 
 
 def test_camera360_privacy_on():
-    State = SHCCamera360.PrivacyModeService.State
+    State = PrivacyModeService.State
     sw = _make_switch(SWITCH_TYPES["camera360"], privacymode=State.DISABLED)
     assert sw.is_on is True
 
 
 def test_camera360_privacy_off():
-    State = SHCCamera360.PrivacyModeService.State
+    State = PrivacyModeService.State
     sw = _make_switch(SWITCH_TYPES["camera360"], privacymode=State.ENABLED)
     assert sw.is_on is False
 
@@ -219,7 +219,7 @@ def test_camera360_privacy_off():
 
 
 def test_camera360_notification_enabled():
-    State = SHCCamera360.CameraNotificationService.State
+    State = CameraNotificationService.State
     sw = _make_switch(
         SWITCH_TYPES["camera360_notification"], cameranotification=State.ENABLED
     )
@@ -227,7 +227,7 @@ def test_camera360_notification_enabled():
 
 
 def test_camera360_notification_disabled():
-    State = SHCCamera360.CameraNotificationService.State
+    State = CameraNotificationService.State
     sw = _make_switch(
         SWITCH_TYPES["camera360_notification"], cameranotification=State.DISABLED
     )
@@ -240,13 +240,13 @@ def test_camera360_notification_disabled():
 
 
 def test_cameraoutdoorgen2_privacy_on():
-    State = SHCCameraOutdoorGen2.PrivacyModeService.State
+    State = PrivacyModeService.State
     sw = _make_switch(SWITCH_TYPES["cameraoutdoorgen2"], privacymode=State.DISABLED)
     assert sw.is_on is True
 
 
 def test_cameraoutdoorgen2_privacy_off():
-    State = SHCCameraOutdoorGen2.PrivacyModeService.State
+    State = PrivacyModeService.State
     sw = _make_switch(SWITCH_TYPES["cameraoutdoorgen2"], privacymode=State.ENABLED)
     assert sw.is_on is False
 
@@ -257,7 +257,7 @@ def test_cameraoutdoorgen2_privacy_off():
 
 
 def test_cameraoutdoorgen2_frontlight_on():
-    State = SHCCameraOutdoorGen2.CameraFrontLightService.State
+    State = CameraFrontLightService.State
     sw = _make_switch(
         SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"], camerafrontlight=State.ON
     )
@@ -265,7 +265,7 @@ def test_cameraoutdoorgen2_frontlight_on():
 
 
 def test_cameraoutdoorgen2_frontlight_off():
-    State = SHCCameraOutdoorGen2.CameraFrontLightService.State
+    State = CameraFrontLightService.State
     sw = _make_switch(
         SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"], camerafrontlight=State.OFF
     )
@@ -278,7 +278,7 @@ def test_cameraoutdoorgen2_frontlight_off():
 
 
 def test_cameraoutdoorgen2_ambientlight_on():
-    State = SHCCameraOutdoorGen2.CameraAmbientLightService.State
+    State = CameraAmbientLightService.State
     sw = _make_switch(
         SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"], cameraambientlight=State.ON
     )
@@ -286,7 +286,7 @@ def test_cameraoutdoorgen2_ambientlight_on():
 
 
 def test_cameraoutdoorgen2_ambientlight_off():
-    State = SHCCameraOutdoorGen2.CameraAmbientLightService.State
+    State = CameraAmbientLightService.State
     sw = _make_switch(
         SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"], cameraambientlight=State.OFF
     )
@@ -314,13 +314,13 @@ def test_presencesimulation_is_on_false():
 
 
 def test_bypass_active():
-    State = SHCShutterContact2.BypassService.State
+    State = BypassService.State
     sw = _make_switch(SWITCH_TYPES["bypass"], bypass=State.BYPASS_ACTIVE)
     assert sw.is_on is True
 
 
 def test_bypass_inactive():
-    State = SHCShutterContact2.BypassService.State
+    State = BypassService.State
     sw = _make_switch(SWITCH_TYPES["bypass"], bypass=State.BYPASS_INACTIVE)
     assert sw.is_on is False
 
@@ -346,13 +346,13 @@ def test_child_lock_bool_false():
 
 
 def test_child_lock_thermostat_on():
-    State = SHCThermostat.ThermostatService.State
+    State = ThermostatService.State
     sw = _make_switch(SWITCH_TYPES["child_lock_thermostat"], child_lock=State.ON)
     assert sw.is_on is True
 
 
 def test_child_lock_thermostat_off():
-    State = SHCThermostat.ThermostatService.State
+    State = ThermostatService.State
     sw = _make_switch(SWITCH_TYPES["child_lock_thermostat"], child_lock=State.OFF)
     assert sw.is_on is False
 
@@ -360,7 +360,7 @@ def test_child_lock_thermostat_off():
 def test_child_lock_thermostat_bool_true_does_not_match():
     """child_lock_thermostat on_value is an enum — plain True must NOT match."""
     sw = _make_switch(SWITCH_TYPES["child_lock_thermostat"], child_lock=True)
-    # SHCThermostat.ThermostatService.State.ON != True → is_on must be False
+    # ThermostatService.State.ON != True → is_on must be False
     assert sw.is_on is False
 
 
@@ -370,13 +370,13 @@ def test_child_lock_thermostat_bool_true_does_not_match():
 
 
 def test_silent_mode_is_on_true_when_mode_silent():
-    State = SHCThermostat.SilentModeService.State
+    State = SilentModeService.State
     sw = _make_switch(SWITCH_TYPES["silent_mode"], silentmode=State.MODE_SILENT)
     assert sw.is_on is True
 
 
 def test_silent_mode_is_on_false_when_mode_normal():
-    State = SHCThermostat.SilentModeService.State
+    State = SilentModeService.State
     sw = _make_switch(SWITCH_TYPES["silent_mode"], silentmode=State.MODE_NORMAL)
     assert sw.is_on is False
 
@@ -586,7 +586,7 @@ def test_should_poll_presencesimulation_is_false():
 
 
 def test_should_poll_bypass_is_false():
-    State = SHCShutterContact2.BypassService.State
+    State = BypassService.State
     sw = _make_switch(SWITCH_TYPES["bypass"], bypass=State.BYPASS_INACTIVE)
     assert sw.should_poll is False
 
@@ -597,7 +597,7 @@ def test_should_poll_child_lock_is_false():
 
 
 def test_should_poll_silent_mode_is_false():
-    State = SHCThermostat.SilentModeService.State
+    State = SilentModeService.State
     sw = _make_switch(SWITCH_TYPES["silent_mode"], silentmode=State.MODE_NORMAL)
     assert sw.should_poll is False
 
@@ -734,7 +734,7 @@ def test_child_lock_on_value_is_bool_true():
 
 def test_child_lock_thermostat_on_value_is_enum():
     assert SWITCH_TYPES["child_lock_thermostat"].on_value is (
-        SHCThermostat.ThermostatService.State.ON
+        ThermostatService.State.ON
     )
 
 
@@ -748,30 +748,30 @@ def test_user_defined_state_on_value_is_bool_true():
 
 def test_bypass_on_value_is_bypass_active():
     assert SWITCH_TYPES["bypass"].on_value is (
-        SHCShutterContact2.BypassService.State.BYPASS_ACTIVE
+        BypassService.State.BYPASS_ACTIVE
     )
 
 
 def test_silent_mode_on_value_is_mode_silent():
     assert SWITCH_TYPES["silent_mode"].on_value is (
-        SHCThermostat.SilentModeService.State.MODE_SILENT
+        SilentModeService.State.MODE_SILENT
     )
 
 
 def test_cameraeyes_on_value_is_privacy_disabled():
     """Camera-on = privacy DISABLED (inverted logic)."""
     assert SWITCH_TYPES["cameraeyes"].on_value is (
-        SHCCameraEyes.PrivacyModeService.State.DISABLED
+        PrivacyModeService.State.DISABLED
     )
 
 
 def test_camera360_on_value_is_privacy_disabled():
     assert SWITCH_TYPES["camera360"].on_value is (
-        SHCCamera360.PrivacyModeService.State.DISABLED
+        PrivacyModeService.State.DISABLED
     )
 
 
 def test_cameraoutdoorgen2_on_value_is_privacy_disabled():
     assert SWITCH_TYPES["cameraoutdoorgen2"].on_value is (
-        SHCCameraOutdoorGen2.PrivacyModeService.State.DISABLED
+        PrivacyModeService.State.DISABLED
     )

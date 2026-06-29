@@ -7,17 +7,17 @@ from types import SimpleNamespace
 
 from custom_components.bosch_shc.binary_sensor import (
     SirenAcousticAlarmSensor,
-    SirenVisualAlarmSensor,
     SirenTamperSensor,
+    SirenVisualAlarmSensor,
 )
+from custom_components.bosch_shc.number import _SIREN_ALARM_DELAY, SirenConfigNumber
+from custom_components.bosch_shc.select import SirenSoundLevelSelect
 from custom_components.bosch_shc.sensor import (
+    KeypadTriggerSensor,
     SirenBatterySensor,
     SirenMainPowerSensor,
     SirenSolarChargingSensor,
 )
-from custom_components.bosch_shc.number import SirenConfigNumber, _SIREN_ALARM_DELAY
-from custom_components.bosch_shc.select import SirenSoundLevelSelect
-from custom_components.bosch_shc.sensor import KeypadTriggerSensor
 from custom_components.bosch_shc.update import ControllerUpdate, DeviceUpdate
 
 
@@ -220,7 +220,7 @@ def test_bypass_switch_uses_translation_key_not_device_name():
     If _attr_name stayed None, HA's _name_internal returns it (device name) before
     consulting translation_key — defeating the whole fix.
     """
-    from custom_components.bosch_shc.switch import SHCSwitch, SWITCH_TYPES
+    from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
     sw = SHCSwitch(
         device=_FAKE_DEVICE, entry_id="e1", description=SWITCH_TYPES["bypass"]

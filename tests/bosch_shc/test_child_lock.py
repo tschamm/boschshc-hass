@@ -10,13 +10,13 @@ Two bugs were fixed:
 
 from types import SimpleNamespace
 
-from boschshcpy import SHCThermostat
+from boschshcpy import ThermostatService
 
-from custom_components.bosch_shc.switch import SHCSwitch, SWITCH_TYPES
+from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
 
 def test_thermostat_child_lock_description_uses_enum():
-    enum_on = SHCThermostat.ThermostatService.State.ON
+    enum_on = ThermostatService.State.ON
     # the root cause: the enum is never equal to the bool True
     assert (enum_on == True) is False  # noqa: E712
     assert SWITCH_TYPES["child_lock_thermostat"].on_value == enum_on
@@ -33,13 +33,13 @@ def _switch(description, child_lock_value):
 
 
 def test_is_on_thermostat_enum_on_reads_true():
-    State = SHCThermostat.ThermostatService.State
+    State = ThermostatService.State
     sw = _switch(SWITCH_TYPES["child_lock_thermostat"], State.ON)
     assert sw.is_on is True
 
 
 def test_is_on_thermostat_enum_off_reads_false():
-    State = SHCThermostat.ThermostatService.State
+    State = ThermostatService.State
     sw = _switch(SWITCH_TYPES["child_lock_thermostat"], State.OFF)
     assert sw.is_on is False
 

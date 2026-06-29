@@ -4,18 +4,17 @@ Pattern: bypass __init__ via Cls.__new__(Cls), inject fake device via SimpleName
 No HA harness, no tests.common, no async_setup_entry.
 """
 
-from enum import Enum
 from types import SimpleNamespace
 
-import pytest
-
 from boschshcpy import (
-    SHCBatteryDevice,
-    SHCSmokeDetectionSystem,
-    SHCSmokeDetector,
-    SHCShutterContact,
-    SHCShutterContact2Plus,
-    SHCWaterLeakageSensor,
+    AlarmService,
+    BatteryLevelService,
+    ShutterContactService,
+    SmokeDetectorCheckService,
+    SurveillanceAlarmService,
+    VibrationSensorService,
+    WaterLeakageSensorService,
+    WaterLeakageSensorTiltService,
 )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -30,7 +29,6 @@ from custom_components.bosch_shc.binary_sensor import (
     WaterLeakageDetectorSensor,
 )
 
-
 # ---------------------------------------------------------------------------
 # ShutterContactSensor
 # ---------------------------------------------------------------------------
@@ -44,31 +42,31 @@ def _shutter_sensor(state, device_class="GENERIC"):
 
 class TestShutterContactSensor:
     def test_open_is_on(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.OPEN)
+        s = _shutter_sensor(ShutterContactService.State.OPEN)
         assert s.is_on is True
 
     def test_closed_is_off(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.CLOSED)
+        s = _shutter_sensor(ShutterContactService.State.CLOSED)
         assert s.is_on is False
 
     def test_device_class_entrance_door(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.CLOSED, "ENTRANCE_DOOR")
+        s = _shutter_sensor(ShutterContactService.State.CLOSED, "ENTRANCE_DOOR")
         assert s.device_class == BinarySensorDeviceClass.DOOR
 
     def test_device_class_regular_window(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.CLOSED, "REGULAR_WINDOW")
+        s = _shutter_sensor(ShutterContactService.State.CLOSED, "REGULAR_WINDOW")
         assert s.device_class == BinarySensorDeviceClass.WINDOW
 
     def test_device_class_french_window(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.CLOSED, "FRENCH_WINDOW")
+        s = _shutter_sensor(ShutterContactService.State.CLOSED, "FRENCH_WINDOW")
         assert s.device_class == BinarySensorDeviceClass.DOOR
 
     def test_device_class_generic(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.CLOSED, "GENERIC")
+        s = _shutter_sensor(ShutterContactService.State.CLOSED, "GENERIC")
         assert s.device_class == BinarySensorDeviceClass.WINDOW
 
     def test_device_class_unknown_defaults_to_window(self):
-        s = _shutter_sensor(SHCShutterContact.ShutterContactService.State.CLOSED, "UNKNOWN_TYPE")
+        s = _shutter_sensor(ShutterContactService.State.CLOSED, "UNKNOWN_TYPE")
         assert s.device_class == BinarySensorDeviceClass.WINDOW
 
 
@@ -86,25 +84,25 @@ def _vibration_sensor(state):
 class TestShutterContactVibrationSensor:
     def test_vibration_detected_is_on(self):
         s = _vibration_sensor(
-            SHCShutterContact2Plus.VibrationSensorService.State.VIBRATION_DETECTED
+            VibrationSensorService.State.VIBRATION_DETECTED
         )
         assert s.is_on is True
 
     def test_no_vibration_is_off(self):
         s = _vibration_sensor(
-            SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+            VibrationSensorService.State.NO_VIBRATION
         )
         assert s.is_on is False
 
     def test_unknown_state_is_off(self):
         s = _vibration_sensor(
-            SHCShutterContact2Plus.VibrationSensorService.State.UNKNOWN
+            VibrationSensorService.State.UNKNOWN
         )
         assert s.is_on is False
 
     def test_device_class_is_vibration(self):
         s = _vibration_sensor(
-            SHCShutterContact2Plus.VibrationSensorService.State.NO_VIBRATION
+            VibrationSensorService.State.NO_VIBRATION
         )
         assert s._attr_device_class == BinarySensorDeviceClass.VIBRATION
 
@@ -216,8 +214,8 @@ class TestMotionDetectionSensorMD2:
 
 def _smoke_sensor(alarm_state):
     s = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
-    state = SHCSmokeDetector.AlarmService.State[alarm_state]
-    check_state = SHCSmokeDetector.SmokeDetectorCheckService.State.NONE
+    state = AlarmService.State[alarm_state]
+    check_state = SmokeDetectorCheckService.State.NONE
     s._device = SimpleNamespace(
         alarmstate=state,
         smokedetectorcheck_state=check_state,
@@ -261,8 +259,8 @@ class TestSmokeDetectorSensor:
     def test_extra_state_attributes_smoke_test_ok(self):
         sensor = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
         sensor._device = SimpleNamespace(
-            alarmstate=SHCSmokeDetector.AlarmService.State.IDLE_OFF,
-            smokedetectorcheck_state=SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_OK,
+            alarmstate=AlarmService.State.IDLE_OFF,
+            smokedetectorcheck_state=SmokeDetectorCheckService.State.SMOKE_TEST_OK,
         )
         attrs = sensor.extra_state_attributes
         assert attrs["smokedetectorcheck_state"] == "SMOKE_TEST_OK"
@@ -270,8 +268,8 @@ class TestSmokeDetectorSensor:
     def test_extra_state_attributes_smoke_test_requested(self):
         sensor = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
         sensor._device = SimpleNamespace(
-            alarmstate=SHCSmokeDetector.AlarmService.State.IDLE_OFF,
-            smokedetectorcheck_state=SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_REQUESTED,
+            alarmstate=AlarmService.State.IDLE_OFF,
+            smokedetectorcheck_state=SmokeDetectorCheckService.State.SMOKE_TEST_REQUESTED,
         )
         attrs = sensor.extra_state_attributes
         assert attrs["smokedetectorcheck_state"] == "SMOKE_TEST_REQUESTED"
@@ -279,8 +277,8 @@ class TestSmokeDetectorSensor:
     def test_extra_state_attributes_smoke_test_failed(self):
         sensor = SmokeDetectorSensor.__new__(SmokeDetectorSensor)
         sensor._device = SimpleNamespace(
-            alarmstate=SHCSmokeDetector.AlarmService.State.IDLE_OFF,
-            smokedetectorcheck_state=SHCSmokeDetector.SmokeDetectorCheckService.State.SMOKE_TEST_FAILED,
+            alarmstate=AlarmService.State.IDLE_OFF,
+            smokedetectorcheck_state=SmokeDetectorCheckService.State.SMOKE_TEST_FAILED,
         )
         attrs = sensor.extra_state_attributes
         assert attrs["smokedetectorcheck_state"] == "SMOKE_TEST_FAILED"
@@ -310,7 +308,7 @@ class TestSmokeDetectorSensor:
 
 def _sds_sensor(alarm_state_name):
     s = SmokeDetectionSystemSensor.__new__(SmokeDetectionSystemSensor)
-    state = SHCSmokeDetectionSystem.SurveillanceAlarmService.State[alarm_state_name]
+    state = SurveillanceAlarmService.State[alarm_state_name]
     s._device = SimpleNamespace(alarm=state)
     return s
 
@@ -362,10 +360,10 @@ def _water_sensor(leakage_state, push_notification_state, acoustic_signal_state)
     return s
 
 
-_TILT_ENABLED = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.ENABLED
-_TILT_DISABLED = SHCWaterLeakageSensor.WaterLeakageSensorTiltService.State.DISABLED
-_WL_DETECTED = SHCWaterLeakageSensor.WaterLeakageSensorService.State.LEAKAGE_DETECTED
-_WL_NONE = SHCWaterLeakageSensor.WaterLeakageSensorService.State.NO_LEAKAGE
+_TILT_ENABLED = WaterLeakageSensorTiltService.State.ENABLED
+_TILT_DISABLED = WaterLeakageSensorTiltService.State.DISABLED
+_WL_DETECTED = WaterLeakageSensorService.State.LEAKAGE_DETECTED
+_WL_NONE = WaterLeakageSensorService.State.NO_LEAKAGE
 
 
 class TestWaterLeakageDetectorSensor:
@@ -411,36 +409,36 @@ class TestWaterLeakageDetectorSensor:
 
 def _battery_sensor(battery_level):
     s = BatterySensor.__new__(BatterySensor)
-    s._device = SimpleNamespace(batterylevel=battery_level)
+    s._device = SimpleNamespace(batterylevel=battery_level, name="TestDevice")
     return s
 
 
 class TestBatterySensor:
     def test_ok_is_off(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.OK)
+        s = _battery_sensor(BatteryLevelService.State.OK)
         assert s.is_on is False
 
     def test_low_battery_is_on(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.LOW_BATTERY)
+        s = _battery_sensor(BatteryLevelService.State.LOW_BATTERY)
         assert s.is_on is True
 
     def test_critical_low_is_on(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.CRITICAL_LOW)
+        s = _battery_sensor(BatteryLevelService.State.CRITICAL_LOW)
         assert s.is_on is True
 
     def test_critically_low_battery_is_on(self):
         s = _battery_sensor(
-            SHCBatteryDevice.BatteryLevelService.State.CRITICALLY_LOW_BATTERY
+            BatteryLevelService.State.CRITICALLY_LOW_BATTERY
         )
         assert s.is_on is True
 
     def test_not_available_is_on(self):
         """NOT_AVAILABLE means no battery state reported — is_on is False (not a problem)."""
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.NOT_AVAILABLE)
+        s = _battery_sensor(BatteryLevelService.State.NOT_AVAILABLE)
         assert s.is_on is False
 
     def test_device_class_is_battery(self):
-        s = _battery_sensor(SHCBatteryDevice.BatteryLevelService.State.OK)
+        s = _battery_sensor(BatteryLevelService.State.OK)
         assert s._attr_device_class == BinarySensorDeviceClass.BATTERY
 
 

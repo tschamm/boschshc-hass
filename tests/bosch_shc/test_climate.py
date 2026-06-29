@@ -24,16 +24,15 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-
 from boschshcpy.exceptions import JSONRPCError, SHCException
-from custom_components.bosch_shc.climate import (
-    ClimateControl,
-    PRESET_BOOST,
-    PRESET_ECO,
-)
 from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import ATTR_TEMPERATURE
 
+from custom_components.bosch_shc.climate import (
+    PRESET_BOOST,
+    PRESET_ECO,
+    ClimateControl,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -103,7 +102,8 @@ def _run_async(coro):
 
 class TestBoostPresetGuard:
     """When preset_mode == PRESET_BOOST, async_set_temperature must return
-    early — the setpoint setter must never be called."""
+    early — the setpoint setter must never be called.
+    """
 
     def test_preset_is_boost(self):
         device = _make_device(boost_mode=True)
@@ -136,7 +136,8 @@ class TestBoostPresetGuard:
 
 class TestBoostJsonRpcErrorSwallowed:
     """If the SHC returns HTTP 400, the JSONRPCError must be caught;
-    no unhandled exception propagates to HA."""
+    no unhandled exception propagates to HA.
+    """
 
     def test_jsonrpc_error_is_swallowed(self):
         device = _make_device(boost_mode=False, low=False, operation_mode_value="MANUAL")
@@ -427,6 +428,7 @@ class TestPresetModeOverrideAxis:
     def test_eco_not_offered_without_low_attr(self):
         # Device without `low` attribute → eco not offered
         from types import SimpleNamespace
+
         from boschshcpy.services_impl import RoomClimateControlService
         op = RoomClimateControlService.OperationMode("AUTOMATIC")
         device = SimpleNamespace(
@@ -448,6 +450,7 @@ class TestPresetModeOverrideAxis:
     def test_preset_modes_none_when_no_presets(self):
         """When supports_boost_mode=False and no low attribute, preset_modes is None."""
         from types import SimpleNamespace
+
         from boschshcpy.services_impl import RoomClimateControlService
         op = RoomClimateControlService.OperationMode("AUTOMATIC")
         device = SimpleNamespace(

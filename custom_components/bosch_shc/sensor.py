@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from boschshcpy import SHCEmma, SHCSession
 from boschshcpy.device import SHCDevice
 from homeassistant.components.sensor import (
@@ -21,7 +23,7 @@ from homeassistant.const import (
 try:
     from homeassistant.const import UnitOfRatio
 except ImportError:
-    from homeassistant.const import (  # type: ignore[assignment]
+    from homeassistant.const import (
         CONCENTRATION_PARTS_PER_MILLION as _ppm,
     )
     from homeassistant.const import (
@@ -88,8 +90,8 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for sensor in (
-        session.device_helper.wallthermostats + session.device_helper.roomthermostats
+    for sensor in list(session.device_helper.wallthermostats) + list(
+        session.device_helper.roomthermostats
     ):
         if device_excluded(sensor, config_entry.options):
             continue
@@ -219,11 +221,11 @@ async def async_setup_entry(  # noqa: C901
 
     if power_sensors_enabled:
         for sensor in (
-            session.device_helper.smart_plugs
-            + session.device_helper.light_switches_bsm
-            + session.device_helper.micromodule_light_controls
-            + session.device_helper.micromodule_shutter_controls
-            + session.device_helper.micromodule_blinds
+            list(session.device_helper.smart_plugs)
+            + list(session.device_helper.light_switches_bsm)
+            + list(session.device_helper.micromodule_light_controls)
+            + list(session.device_helper.micromodule_shutter_controls)
+            + list(session.device_helper.micromodule_blinds)
         ):
             if device_excluded(sensor, config_entry.options):
                 continue
@@ -409,26 +411,27 @@ async def async_setup_entry(  # noqa: C901
 
     if power_sensors_enabled:
         sensor = session.emma
-        entities.append(
-            EmmaPowerSensor(
-                device=sensor,
-                entry_id=config_entry.entry_id,
+        if sensor is not None:
+            entities.append(
+                EmmaPowerSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
             )
-        )
 
     if diagnostic_enabled:
         for sensor in (
-            session.device_helper.motion_detectors
-            + session.device_helper.motion_detectors2
-            + session.device_helper.shutter_contacts
-            + session.device_helper.shutter_contacts2
-            + session.device_helper.smoke_detectors
-            + session.device_helper.thermostats
-            + session.device_helper.twinguards
-            + session.device_helper.universal_switches
-            + session.device_helper.wallthermostats
-            + session.device_helper.roomthermostats
-            + session.device_helper.water_leakage_detectors
+            list(session.device_helper.motion_detectors)
+            + list(session.device_helper.motion_detectors2)
+            + list(session.device_helper.shutter_contacts)
+            + list(session.device_helper.shutter_contacts2)
+            + list(session.device_helper.smoke_detectors)
+            + list(session.device_helper.thermostats)
+            + list(session.device_helper.twinguards)
+            + list(session.device_helper.universal_switches)
+            + list(session.device_helper.wallthermostats)
+            + list(session.device_helper.roomthermostats)
+            + list(session.device_helper.water_leakage_detectors)
             + list(getattr(session.device_helper, "outdoor_sirens", []))
         ):
             if device_excluded(sensor, config_entry.options):
@@ -473,7 +476,7 @@ async def async_setup_entry(  # noqa: C901
         async_add_entities(entities)
 
 
-class TemperatureSensor(SHCEntity, SensorEntity):
+class TemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC temperature reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.TEMPERATURE
@@ -487,12 +490,12 @@ class TemperatureSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_temperature"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         return self._device.temperature
 
 
-class TerminalTemperatureSensor(SHCEntity, SensorEntity):
+class TerminalTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """External floor/terminal sensor temperature of a Room Thermostat II 230V.
 
     #198 / #330: RTH2_230 with a floor sensor wired to its terminal reports a
@@ -514,12 +517,12 @@ class TerminalTemperatureSensor(SHCEntity, SensorEntity):
         )
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the external floor/terminal sensor temperature."""
         return self._device.terminal_temperature
 
 
-class HumiditySensor(SHCEntity, SensorEntity):
+class HumiditySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC humidity reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.HUMIDITY
@@ -533,12 +536,12 @@ class HumiditySensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_humidity"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         return self._device.humidity
 
 
-class PuritySensor(SHCEntity, SensorEntity):
+class PuritySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC purity reporting sensor."""
 
     # Bosch "purity" is an air-purity/VOC ppm value, NOT CO2.  HA Core's own
@@ -557,12 +560,12 @@ class PuritySensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_purity"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         return self._device.purity
 
 
-class AirQualitySensor(SHCEntity, SensorEntity):
+class AirQualitySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC airquality reporting sensor."""
 
     _attr_translation_key = "air_quality"
@@ -573,16 +576,16 @@ class AirQualitySensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_airquality"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
         try:
-            return self._device.combined_rating.name
+            return str(self._device.combined_rating.name)
         except ValueError as err:
             LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
             return None
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes.
 
         comfort_zone is read from the AirQualityLevelService via a service-level
@@ -605,7 +608,7 @@ class AirQualitySensor(SHCEntity, SensorEntity):
         return attrs
 
 
-class TemperatureRatingSensor(SHCEntity, SensorEntity):
+class TemperatureRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC temperature rating sensor."""
 
     _attr_translation_key = "temperature_rating"
@@ -616,10 +619,10 @@ class TemperatureRatingSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_temperaturerating"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
         try:
-            return self._device.temperature_rating.name
+            return str(self._device.temperature_rating.name)
         except ValueError as err:
             LOGGER.warning(
                 "Unknown temperature rating for %s: %s", self._device.name, err
@@ -627,7 +630,7 @@ class TemperatureRatingSensor(SHCEntity, SensorEntity):
             return None
 
 
-class CommunicationQualitySensor(SHCEntity, SensorEntity):
+class CommunicationQualitySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC communication quality reporting sensor.
 
     #339: a pure diagnostic (Diagnostics category) ENUM sensor; state values are
@@ -649,10 +652,10 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):
         )
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the quality as a lowercase slug (translated for display)."""
         try:
-            return self._device.communicationquality.name.lower()
+            return str(self._device.communicationquality.name.lower())
         except (ValueError, AttributeError) as err:
             LOGGER.warning(
                 "Unknown communication quality for %s: %s", self._device.name, err
@@ -660,7 +663,7 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):
             return None
 
 
-class KeypadTriggerSensor(SHCEntity, SensorEntity):
+class KeypadTriggerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Diagnostic: Universal Switch II button->scenario mapping (spec-grounded).
 
     Reports the switchType; the scenario associations are exposed as state
@@ -678,13 +681,13 @@ class KeypadTriggerSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_keypadtrigger"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the switch type of the keypad trigger service."""
         service = self._device.keypadtrigger
         return service.switch_type if service is not None else None
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return scenario association state attributes."""
         service = self._device.keypadtrigger
         if service is None:
@@ -695,7 +698,7 @@ class KeypadTriggerSensor(SHCEntity, SensorEntity):
         }
 
 
-class HumidityRatingSensor(SHCEntity, SensorEntity):
+class HumidityRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC humidity rating sensor."""
 
     _attr_translation_key = "humidity_rating"
@@ -706,16 +709,16 @@ class HumidityRatingSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_humidityrating"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
         try:
-            return self._device.humidity_rating.name
+            return str(self._device.humidity_rating.name)
         except ValueError as err:
             LOGGER.warning("Unknown humidity rating for %s: %s", self._device.name, err)
             return None
 
 
-class PurityRatingSensor(SHCEntity, SensorEntity):
+class PurityRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC purity rating sensor."""
 
     _attr_translation_key = "purity_rating"
@@ -726,16 +729,16 @@ class PurityRatingSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_purityrating"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
         try:
-            return self._device.purity_rating.name
+            return str(self._device.purity_rating.name)
         except ValueError as err:
             LOGGER.warning("Unknown purity rating for %s: %s", self._device.name, err)
             return None
 
 
-class PowerSensor(SHCEntity, SensorEntity):
+class PowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC power reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.POWER
@@ -749,12 +752,12 @@ class PowerSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         return self._device.powerconsumption
 
 
-class EmmaPowerSensor(SHCEntity, SensorEntity):
+class EmmaPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC power reporting sensor."""
 
     _attr_entity_registry_enabled_default = False
@@ -768,34 +771,34 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
-        def update_entity_information():
+        def update_entity_information() -> None:
             self.schedule_update_ha_state()
 
         self._device.subscribe_callback(self.entity_id, update_entity_information)
 
-    async def async_will_remove_from_hass(self):
+    async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         self._device.unsubscribe_callback(self.entity_id)
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor. Negative value if power is consumed from the grid, positive if fed to the grid."""
         return self._device.value
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
         return {
             "power_flow": self._device.localizedSubtitles,
         }
 
 
-class EnergySensor(SHCEntity, SensorEntity):
+class EnergySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC energy reporting sensor."""
 
     _attr_device_class = SensorDeviceClass.ENERGY
@@ -809,12 +812,12 @@ class EnergySensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         return self._device.energyconsumption / 1000.0
 
 
-class EnergyYieldSensor(SHCEntity, SensorEntity):
+class EnergyYieldSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """PV energy yield of a Smart Plug [+M] in Mini-PV mode (#331)."""
 
     _attr_device_class = SensorDeviceClass.ENERGY
@@ -829,13 +832,13 @@ class EnergyYieldSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy_yield"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the PV energy yield (kWh), or None when unreported."""
         value = self._device.energy_yield
         return None if value is None else value / 1000.0
 
 
-class PowerYieldSensor(SHCEntity, SensorEntity):
+class PowerYieldSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """PV power yield of a Smart Plug [+M] as a positive value (#331).
 
     The PowerMeter reports negative powerConsumption while feeding in. This
@@ -855,7 +858,7 @@ class PowerYieldSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_power_yield"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return positive PV power (W); 0 while net-consuming."""
         consumption = self._device.powerconsumption
         if consumption is None:
@@ -863,7 +866,7 @@ class PowerYieldSensor(SHCEntity, SensorEntity):
         return -consumption if consumption < 0 else 0.0
 
 
-class ValveTappetSensor(SHCEntity, SensorEntity):
+class ValveTappetSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC valve tappet reporting sensor."""
 
     _attr_icon = "mdi:gauge"
@@ -880,12 +883,12 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_valvetappet"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         return self._device.position
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
         try:
             valve_tappet_state = self._device.valvestate.name
@@ -899,7 +902,7 @@ class ValveTappetSensor(SHCEntity, SensorEntity):
         }
 
 
-class IlluminanceLevelSensor(SHCEntity, SensorEntity):
+class IlluminanceLevelSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC illuminance level reporting sensor.
 
     The Bosch SHC API spec defines illuminance as integer for both Gen1
@@ -926,7 +929,7 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_illuminance"
 
     @property
-    def native_value(self):
+    def native_value(self) -> float | None:
         """Return the numeric lux value, or None for non-numeric values."""
         value = self._device.illuminance
         if isinstance(value, bool):
@@ -936,7 +939,7 @@ class IlluminanceLevelSensor(SHCEntity, SensorEntity):
         return None
 
 
-class BatteryLevelSensor(SHCEntity, SensorEntity):
+class BatteryLevelSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Granular battery-level diagnostic sensor (ENUM, all 5 BatteryLevelService states).
 
     Complements the binary BatterySensor (binary_sensor.py) which only signals
@@ -965,16 +968,16 @@ class BatteryLevelSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery_level"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the battery level state string, or None on unknown value."""
         try:
-            return self._device.batterylevel.value.lower()
+            return str(self._device.batterylevel.value.lower())
         except (ValueError, AttributeError) as err:
             LOGGER.warning("Unknown battery level for %s: %s", self._device.name, err)
             return None
 
 
-class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):
+class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Diagnostic ENUM sensor for Twinguard overall combined air-quality rating.
 
     Surfaces the combinedRating field from AirQualityLevelService (CAT-3e gap).
@@ -994,16 +997,16 @@ class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_combined_rating"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the combined rating enum name, or None on unknown value."""
         try:
-            return self._device.combined_rating.name.lower()
+            return str(self._device.combined_rating.name.lower())
         except (ValueError, AttributeError) as err:
             LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
             return None
 
 
-class TwinguardDescriptionSensor(SHCEntity, SensorEntity):
+class TwinguardDescriptionSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Diagnostic sensor for Twinguard air-quality text description.
 
     Surfaces the description field from AirQualityLevelService (CAT-3e gap).
@@ -1019,12 +1022,12 @@ class TwinguardDescriptionSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_description"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the air quality description string."""
         return self._device.description
 
 
-class WalkStateSensor(SHCEntity, SensorEntity):
+class WalkStateSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Sensor for the Motion Detector II walk-test state.
 
     Reports the current WalkTest walkState enum name (WALK_TEST_STARTED /
@@ -1050,12 +1053,12 @@ class WalkStateSensor(SHCEntity, SensorEntity):
             val = self._device.walk_state
             if val is None:
                 return None
-            return val.name.lower()
+            return str(val.name.lower())
         except (AttributeError, ValueError):
             return None
 
 
-class DetectionStateSensor(SHCEntity, SensorEntity):
+class DetectionStateSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Sensor for the Motion Detector II detection-test state.
 
     Reports the DetectionTest detectionState enum name (DETECTION_TEST_STARTED
@@ -1085,12 +1088,12 @@ class DetectionStateSensor(SHCEntity, SensorEntity):
             val = self._device.detection_state
             if val is None:
                 return None
-            return val.name.lower()
+            return str(val.name.lower())
         except (AttributeError, ValueError):
             return None
 
 
-class InstallationProfileSensor(SHCEntity, SensorEntity):
+class InstallationProfileSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Read-only sensor for the device installation profile.
 
     Reports the currently selected installation environment (e.g. GENERIC /
@@ -1124,13 +1127,13 @@ class InstallationProfileSensor(SHCEntity, SensorEntity):
         val = getattr(self._device, "profile", None)
         if val is None:
             return None
-        val_lower = val.lower()
+        val_lower = str(val).lower()
         if val_lower not in (self._attr_options or []):
             return None
         return val_lower
 
 
-class SirenBatterySensor(SHCEntity, SensorEntity):
+class SirenBatterySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Outdoor Siren battery charge (#120)."""
 
     _attr_device_class = SensorDeviceClass.BATTERY
@@ -1145,12 +1148,12 @@ class SirenBatterySensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_battery"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the remaining battery percentage."""
         return getattr(self._device.power_supply, "battery_percentage_remaining", None)
 
 
-class SirenMainPowerSensor(SHCEntity, SensorEntity):
+class SirenMainPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Outdoor Siren active power source (#120)."""
 
     _attr_device_class = SensorDeviceClass.ENUM
@@ -1164,15 +1167,15 @@ class SirenMainPowerSensor(SHCEntity, SensorEntity):
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_main_power"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the active power source as a lowercase slug."""
         try:
-            return self._device.power_supply.main_power_supply.name.lower()
+            return str(self._device.power_supply.main_power_supply.name.lower())
         except AttributeError:
             return None
 
 
-class SirenSolarChargingSensor(SHCEntity, SensorEntity):
+class SirenSolarChargingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Outdoor Siren solar-charging quality (#120)."""
 
     _attr_device_class = SensorDeviceClass.ENUM
@@ -1189,9 +1192,9 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):
         )
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the solar charging score as a lowercase slug."""
         try:
-            return self._device.power_supply.solar_charging_score.name.lower()
+            return str(self._device.power_supply.solar_charging_score.name.lower())
         except AttributeError:
             return None

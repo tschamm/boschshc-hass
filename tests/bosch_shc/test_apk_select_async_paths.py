@@ -13,21 +13,20 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
-    StateAfterPowerOutageSelect,
-    SmokeSensitivitySelect,
+    ActuatorTypeSelect,
     DisplayDirectionSelect,
     DisplayedTemperatureSelect,
+    HeaterTypeSelect,
+    OutputModeSelect,
+    SmokeSensitivitySelect,
+    StateAfterPowerOutageSelect,
+    SwitchTypeSelect,
     TerminalTypeSelect,
     ValveTypeSelect,
-    HeaterTypeSelect,
-    SwitchTypeSelect,
-    ActuatorTypeSelect,
-    OutputModeSelect,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 
 # ---------------------------------------------------------------------------
 # Helper

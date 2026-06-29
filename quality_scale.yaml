@@ -503,22 +503,23 @@ rules:
       is not used by the integration.
 
   inject-websession:
-    status: todo
+    status: done
     comment: >
-      boschshcpy SHCSessionAsync accepts an optional external aiohttp
-      ClientSession (api_async.py:104, session_async.py:96) — the lib side
-      is ready.  The HA side has not yet been wired up: __init__.py creates
-      SHCSessionAsync without passing a session, so the lib allocates its
-      own.  Phase 3c of the async migration plan is to call
-      async_create_clientsession(hass) in async_setup_entry and pass the
-      result to SHCSessionAsync.  Effort: S.
+      async_get_clientsession(hass, verify_ssl=False) is passed to SHCSessionAsync
+      in async_setup_entry. SHCSessionAsync and SHCApiAsync accept an optional
+      external aiohttp.ClientSession since boschshcpy 0.3.20 (api_async.py).
+      The per-request ssl= kwarg in SHCAPIAsync supplies the mTLS SSLContext,
+      so connector-level SSL verification is not needed (verify_ssl=False).
 
   strict-typing:
-    status: todo
+    status: done
     comment: >
-      No mypy strict mode is enforced upstream (CLAUDE.md: "No mypy/black
-      enforced upstream").  boschshcpy has partial type hints (no stubs,
-      no py.typed marker).  The integration has no mypy config.  To satisfy:
-      add py.typed to boschshcpy, add mypy --strict to both CI pipelines,
-      resolve all typing errors.  Effort: L (many implicit Any from the
-      SHC device models + service-state classes).
+      mypy --strict passes on both boschshcpy (py.typed added, mypy.ini
+      configured) and boschshc-hass (mypy.ini configured).  All type errors
+      resolved as of 0.7.29: removed stale type: ignore[no-untyped-call]
+      comments in device_service.py, device.py, userdefinedstate.py,
+      scenario.py; retained targeted type: ignore[misc, func-returns-value]
+      on the async wrapper that awaits the sync put_device_service_state
+      (SHCAPI._api typed as SHCAPI but runtime is SHCAPIAsync — structural
+      limitation of the dual-API design).  mypy step added to both CI
+      pipelines.

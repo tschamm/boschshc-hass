@@ -17,7 +17,6 @@ from homeassistant.util import color as color_util
 
 from custom_components.bosch_shc.light import LightSwitch
 
-
 # ---------------------------------------------------------------------------
 # Helper: build a fake device accepted by SHCEntity.__init__ + LightSwitch
 # ---------------------------------------------------------------------------

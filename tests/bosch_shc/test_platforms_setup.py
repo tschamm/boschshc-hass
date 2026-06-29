@@ -19,7 +19,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from boschshcpy import SHCShutterControl
+from boschshcpy import ShutterControlService
 
 from custom_components.bosch_shc.button import SHCRelayButton, SHCSmokeTestButton
 from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
@@ -28,7 +28,7 @@ from custom_components.bosch_shc.light import LightSwitch
 from custom_components.bosch_shc.number import SHCNumber
 from custom_components.bosch_shc.valve import SHCValve
 
-STOPPED = SHCShutterControl.ShutterControlService.State.STOPPED
+STOPPED = ShutterControlService.State.STOPPED
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -266,7 +266,7 @@ class TestCoverSetupEntry:
         assert isinstance(result[0], BlindsControlCover)
 
     def test_mixed_devices_all_collected(self) -> None:
-        """shutter + micromodule_shutter + blinds → 3 entities total."""
+        """Shutter + micromodule_shutter + blinds → 3 entities total."""
         session = SimpleNamespace(
             device_helper=SimpleNamespace(
                 shutter_controls=[_cover_device()],
@@ -375,7 +375,7 @@ class TestLightSetupEntry:
         assert isinstance(result[0], LightSwitch)
 
     def test_mixed_light_devices_all_collected(self) -> None:
-        """ledvance + micromodule_dimmer → 2 entities."""
+        """Ledvance + micromodule_dimmer → 2 entities."""
         session = SimpleNamespace(
             device_helper=SimpleNamespace(
                 ledvance_lights=[_light_device()],
@@ -477,7 +477,7 @@ class TestLightSetupEntry:
         assert isinstance(result[0], LightSwitch)
 
     def test_hue_lights_mixed_with_others_all_collected(self) -> None:
-        """ledvance + hue → 2 LightSwitch entities."""
+        """Ledvance + hue → 2 LightSwitch entities."""
         session = SimpleNamespace(
             device_helper=SimpleNamespace(
                 ledvance_lights=[_light_device()],
@@ -560,7 +560,7 @@ class TestNumberSetupEntry:
         assert result == []
 
     def test_mixed_thermostats_collected(self) -> None:
-        """thermostat + roomthermostat + wallthermostat → 3 SHCNumber entities."""
+        """Thermostat + roomthermostat + wallthermostat → 3 SHCNumber entities."""
         session = _make_number_session(
             thermostats=[_number_device()],
             roomthermostats=[_number_device()],

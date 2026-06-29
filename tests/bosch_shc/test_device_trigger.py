@@ -1,12 +1,10 @@
 """The tests for Bosch SHC Integration device triggers."""
 import pytest
-
 from homeassistant.components import automation
 from homeassistant.components.bosch_shc import DOMAIN
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.helpers import device_registry
 from homeassistant.setup import async_setup_component
-
 from tests.common import (
     MockConfigEntry,
     assert_lists_same,

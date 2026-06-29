@@ -18,7 +18,6 @@ from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.sensor import BatteryLevelSensor
 
-
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------

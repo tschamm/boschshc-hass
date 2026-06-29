@@ -45,7 +45,7 @@ def test_motion_event_name():
 
 def test_motion_event_message_contains_device():
     result = describe(_event("MOTION", device_name="Garten"))
-    assert "'Garten' motion event was fired." == result["message"]
+    assert result["message"] == "'Garten' motion event was fired."
 
 
 def test_motion_event_subtype_not_in_message():

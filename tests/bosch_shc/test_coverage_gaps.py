@@ -34,10 +34,9 @@ from custom_components.bosch_shc.const import (
     DOMAIN,
     OPT_ALL_LIGHTS_AS_LIGHT,
     OPT_EXCLUDED_DEVICES,
-    OPT_LIGHTS_AS_LIGHT,
+    OPT_SUPPRESS_CAMERA_SWITCHES,
     OPT_SUPPRESS_HUE_LIGHTS,
     OPT_SUPPRESS_LEDVANCE_LIGHTS,
-    OPT_SUPPRESS_CAMERA_SWITCHES,
 )
 
 
@@ -128,7 +127,7 @@ class TestUpdateAsyncSetupEntry:
 
     def test_setup_entry_device_with_software_update(self):
         """Lines 54-58: device with supports_software_update=True adds DeviceUpdate."""
-        from custom_components.bosch_shc.update import async_setup_entry, DeviceUpdate
+        from custom_components.bosch_shc.update import DeviceUpdate, async_setup_entry
 
         dev = _fake_dev(supports_software_update=True)
         session = self._make_session(devices=[dev])
@@ -141,7 +140,7 @@ class TestUpdateAsyncSetupEntry:
 
     def test_setup_entry_device_without_software_update(self):
         """Line 57: device without supports_software_update is skipped."""
-        from custom_components.bosch_shc.update import async_setup_entry, DeviceUpdate
+        from custom_components.bosch_shc.update import DeviceUpdate, async_setup_entry
 
         dev = _fake_dev()  # no supports_software_update
         session = self._make_session(devices=[dev])
@@ -599,7 +598,6 @@ class TestSirenSensorInits:
         """Lines 274-282: async_setup_entry creates siren binary sensors."""
         from custom_components.bosch_shc.binary_sensor import (
             async_setup_entry,
-            SirenAcousticAlarmSensor, SirenVisualAlarmSensor, SirenTamperSensor,
         )
 
         siren = _fake_dev("s1", siren=MagicMock(), supports_batterylevel=False)
@@ -656,7 +654,9 @@ class TestMotionDetectorWillRemoveUnsub:
         ent = MotionDetectionSensor.__new__(MotionDetectionSensor)
         unsub = MagicMock()
         ent._ha_stop_unsub = unsub
-        _run(ent.async_will_remove_from_hass())
+        ent._service = None
+        with patch("custom_components.bosch_shc.entity.SHCEntity.async_will_remove_from_hass", new_callable=AsyncMock):
+            _run(ent.async_will_remove_from_hass())
         unsub.assert_called_once()
         assert ent._ha_stop_unsub is None
 
@@ -666,7 +666,9 @@ class TestMotionDetectorWillRemoveUnsub:
 
         ent = MotionDetectionSensor.__new__(MotionDetectionSensor)
         ent._ha_stop_unsub = None
-        _run(ent.async_will_remove_from_hass())  # must not raise
+        ent._service = None
+        with patch("custom_components.bosch_shc.entity.SHCEntity.async_will_remove_from_hass", new_callable=AsyncMock):
+            _run(ent.async_will_remove_from_hass())  # must not raise
 
 
 class TestAlarmStateWillRemoveUnsub:
@@ -679,7 +681,8 @@ class TestAlarmStateWillRemoveUnsub:
         unsub = MagicMock()
         ent._ha_stop_unsub = unsub
         ent._service = None  # no service → unsubscribe branch skipped
-        _run(ent.async_will_remove_from_hass())
+        with patch("custom_components.bosch_shc.entity.SHCEntity.async_will_remove_from_hass", new_callable=AsyncMock):
+            _run(ent.async_will_remove_from_hass())
         unsub.assert_called_once()
         assert ent._ha_stop_unsub is None
 
@@ -694,7 +697,8 @@ class TestSurveillanceAlarmWillRemoveUnsub:
         unsub = MagicMock()
         ent._ha_stop_unsub = unsub
         ent._service = None  # no service → unsubscribe branch skipped
-        _run(ent.async_will_remove_from_hass())
+        with patch("custom_components.bosch_shc.entity.SHCEntity.async_will_remove_from_hass", new_callable=AsyncMock):
+            _run(ent.async_will_remove_from_hass())
         unsub.assert_called_once()
         assert ent._ha_stop_unsub is None
 
@@ -704,9 +708,10 @@ class TestTwinguardSmokeTestException:
 
     def test_smoketest_raises_homeassistant_error_on_exception(self):
         """Lines 1044-1045: SHCException → HomeAssistantError."""
-        from custom_components.bosch_shc.binary_sensor import TwinguardSmokeAlarmSensor
         from boschshcpy.exceptions import SHCException
         from homeassistant.exceptions import HomeAssistantError
+
+        from custom_components.bosch_shc.binary_sensor import TwinguardSmokeAlarmSensor
 
         ent = TwinguardSmokeAlarmSensor.__new__(TwinguardSmokeAlarmSensor)
         ent._device = SimpleNamespace(
@@ -746,9 +751,6 @@ class TestButtonDimmerSetup:
 
     def test_dimmer_with_dimmer_configuration_adds_preview_buttons(self):
         """Lines 157-165: dimmer with supports_dimmer_configuration=True."""
-        from custom_components.bosch_shc.button import (
-            DimmerPreviewMaxButton, DimmerPreviewMinButton,
-        )
 
         dev = _fake_dev("dim1", supports_dimmer_configuration=True)
         collected = self._run_button_setup([dev])
@@ -758,9 +760,6 @@ class TestButtonDimmerSetup:
 
     def test_dimmer_without_supports_skips_preview_buttons(self):
         """Line 159: supports_dimmer_configuration=False → buttons not added."""
-        from custom_components.bosch_shc.button import (
-            DimmerPreviewMaxButton, DimmerPreviewMinButton,
-        )
 
         dev = _fake_dev("dim1")  # no supports_dimmer_configuration
         collected = self._run_button_setup([dev])
@@ -821,8 +820,9 @@ class TestClimateSupportsCoolingAutoMode:
 
     def test_set_hvac_mode_auto_with_cooling(self):
         """Line 338: AUTO mode + supports_cooling → async_set_cooling_mode called."""
-        from custom_components.bosch_shc.climate import ClimateControl
         from homeassistant.components.climate import HVACMode
+
+        from custom_components.bosch_shc.climate import ClimateControl
 
         ent = ClimateControl.__new__(ClimateControl)
 
@@ -985,8 +985,8 @@ class TestSirenSoundLevelSelectAsyncSelect:
 
     def test_async_select_valid_option(self):
         """Lines 399-403: valid option → async_set_configuration called."""
+
         from custom_components.bosch_shc.select import SirenSoundLevelSelect
-        from boschshcpy.services_impl import OutdoorSirenService
 
         sel = SirenSoundLevelSelect.__new__(SirenSoundLevelSelect)
         siren = MagicMock()
@@ -1167,7 +1167,6 @@ class TestSensorEnergyYieldSmartPlug:
 
     def test_energy_yield_sensors_added_when_supported(self):
         """Lines 257-263: supports_energy_yield=True → EnergyYieldSensor added."""
-        from custom_components.bosch_shc.sensor import EnergyYieldSensor, PowerYieldSensor
 
         dev = _fake_dev("sp1", supports_energy_yield=True,
                         supports_batterylevel=False, serial="SER1")
@@ -1218,9 +1217,6 @@ class TestSensorSirenSetup:
 
     def test_siren_battery_solar_added_when_power_supply_supported(self):
         """Lines 447-456: supports_power_supply=True → 3 siren sensors added."""
-        from custom_components.bosch_shc.sensor import (
-            SirenBatterySensor, SirenMainPowerSensor, SirenSolarChargingSensor,
-        )
 
         siren = _fake_dev("s1", supports_power_supply=True, supports_batterylevel=False)
         collected = self._run_sensor_setup_sirens([siren])
@@ -1231,7 +1227,6 @@ class TestSensorSirenSetup:
 
     def test_siren_excluded_skips_sensors(self):
         """Lines 445-446: device_excluded → continue."""
-        from custom_components.bosch_shc.sensor import SirenBatterySensor
 
         siren = _fake_dev("s1", supports_power_supply=True, supports_batterylevel=False)
         collected = self._run_sensor_setup_sirens(
@@ -1282,8 +1277,6 @@ class TestSensorKeypadTriggerSetup:
 
     def test_keypad_trigger_added_when_supported(self):
         """Lines 461-469: diagnostic_enabled (default True) + supports_keypadtrigger → added."""
-        from custom_components.bosch_shc.sensor import KeypadTriggerSensor
-        from custom_components.bosch_shc.const import OPT_DIAGNOSTIC_ENTITIES
 
         sw = _fake_dev("us1", supports_keypadtrigger=True, supports_batterylevel=False)
         # OPT_DIAGNOSTIC_ENTITIES defaults to True — just pass {} to use default
@@ -1422,10 +1415,14 @@ class TestSwitchLightRelayOptInSkip:
         collected = self._run_switch_setup(
             [dev], options={OPT_ALL_LIGHTS_AS_LIGHT: True}
         )
-        # No switch entity for bsm1
+        # No switch entity for bsm1 (ChildLock config entities are allowed)
         switch_ids = [getattr(e, "_attr_unique_id", "") for e in collected]
-        assert not any("bsm1" in sid and "SwapOutputs" not in sid
-                       and "ChildLock" not in sid for sid in switch_ids)
+        assert not any(
+            "bsm1" in sid
+            and "swapoutputs" not in sid.lower()
+            and "childlock" not in sid.lower()
+            for sid in switch_ids
+        )
 
 
 class TestSwitchSuppressCamerasRegistry:
@@ -1608,8 +1605,11 @@ class TestSHCSwitchTurnOnClientError:
     """Lines 991-992: SHCSwitch.async_turn_on aiohttp.ClientError branch."""
 
     def _make_switch(self, on_key="switchstate", on_value=True):
-        from custom_components.bosch_shc.switch import SHCSwitch, SHCSwitchEntityDescription
         from homeassistant.components.switch import SwitchDeviceClass
+
+        from custom_components.bosch_shc.switch import (
+            SHCSwitch,
+        )
 
         desc = SimpleNamespace(
             on_key=on_key,
@@ -1764,11 +1764,13 @@ class TestInitParsetime:
         return hass
 
     def _make_entry(self):
+
         from custom_components.bosch_shc.const import (
-            OPT_PRESENCE_ENTITY, OPT_SILENT_MODE_ENABLED,
-            OPT_SILENT_MODE_START, OPT_SILENT_MODE_END,
+            OPT_PRESENCE_ENTITY,
+            OPT_SILENT_MODE_ENABLED,
+            OPT_SILENT_MODE_END,
+            OPT_SILENT_MODE_START,
         )
-        from homeassistant.const import CONF_HOST
 
         entry = MagicMock()
         entry.entry_id = "eid_parsetime"
@@ -1819,8 +1821,9 @@ class TestInitCameraToolIssue:
     """Line 676: ir.async_create_issue for camera tool when cameras present."""
 
     def _make_full_setup_with_cameras(self, has_cameras, camera_tool_installed):
-        from custom_components.bosch_shc import async_setup_entry
         from boschshcpy import SHCSessionAsync as _SA
+
+        from custom_components.bosch_shc import async_setup_entry
 
         session = MagicMock(spec=_SA)
         session.async_init = AsyncMock()
@@ -1914,7 +1917,6 @@ class TestInitCameraToolIssue:
         ir_mock, issues = self._make_full_setup_with_cameras(
             has_cameras=False, camera_tool_installed=False
         )
-        from custom_components.bosch_shc.const import ISSUE_CAMERA_TOOL
         ir_mock.async_delete_issue.assert_called()
 
 
@@ -1922,8 +1924,9 @@ class TestInitUnloadPollingAndListeners:
     """Lines 703, 706: async_unload_entry — polling_handler + switch_event_listeners."""
 
     def _build_runtime(self, with_polling_handler=True, with_listeners=True):
-        from custom_components.bosch_shc.data import SHCData
         from homeassistant.helpers.device_registry import DeviceEntry
+
+        from custom_components.bosch_shc.data import SHCData
 
         session = MagicMock()
         session.stop_polling = AsyncMock()
@@ -1990,7 +1993,7 @@ class TestUpdateExcludedDevice:
 
     def test_excluded_device_skipped_in_update_setup(self):
         """Line 56: device in OPT_EXCLUDED_DEVICES → continue (no DeviceUpdate added)."""
-        from custom_components.bosch_shc.update import async_setup_entry, DeviceUpdate
+        from custom_components.bosch_shc.update import DeviceUpdate, async_setup_entry
 
         dev = _fake_dev("excl1", supports_software_update=True)
         session = MagicMock()
@@ -2012,7 +2015,7 @@ class TestLightExcludedRelayDevice:
 
     def test_excluded_relay_device_skipped(self):
         """Line 101: device_excluded → continue before opt-in check."""
-        from custom_components.bosch_shc.light import async_setup_entry, RelayLight
+        from custom_components.bosch_shc.light import RelayLight, async_setup_entry
 
         dev = _fake_dev("bsm_excl")
         dh = MagicMock()
@@ -2045,7 +2048,10 @@ class TestButtonDimmerExcluded:
 
     def test_excluded_dimmer_skipped_in_button_setup(self):
         """Line 158: device_excluded → continue before dimmer_configuration check."""
-        from custom_components.bosch_shc.button import async_setup_entry, DimmerPreviewMaxButton
+        from custom_components.bosch_shc.button import (
+            DimmerPreviewMaxButton,
+            async_setup_entry,
+        )
 
         dev = _fake_dev("dim_excl", supports_dimmer_configuration=True)
 
@@ -2072,7 +2078,8 @@ class TestBinarySensorSirenExcluded:
     def test_excluded_siren_skipped_in_binary_sensor_setup(self):
         """Line 275: device_excluded → continue before creating siren sensors."""
         from custom_components.bosch_shc.binary_sensor import (
-            async_setup_entry, SirenAcousticAlarmSensor,
+            SirenAcousticAlarmSensor,
+            async_setup_entry,
         )
 
         siren = _fake_dev("siren_excl", siren=MagicMock(), supports_batterylevel=False)
@@ -2120,7 +2127,10 @@ class TestSelectDimmerExcluded:
 
     def test_excluded_dimmer_skipped_in_select_setup(self):
         """Line 364: device_excluded → continue before DimmerPhaseControlSelect."""
-        from custom_components.bosch_shc.select import async_setup_entry, DimmerPhaseControlSelect
+        from custom_components.bosch_shc.select import (
+            DimmerPhaseControlSelect,
+            async_setup_entry,
+        )
 
         dev = _fake_dev("dim_excl", supports_dimmer_configuration=True)
 
@@ -2149,8 +2159,10 @@ class TestSensorKeypadTriggerExcluded:
 
     def test_excluded_universal_switch_skipped(self):
         """Line 463: device_excluded → continue before KeypadTriggerSensor."""
-        from custom_components.bosch_shc.sensor import async_setup_entry, KeypadTriggerSensor
-        from custom_components.bosch_shc.const import OPT_DIAGNOSTIC_ENTITIES
+        from custom_components.bosch_shc.sensor import (
+            KeypadTriggerSensor,
+            async_setup_entry,
+        )
 
         sw = _fake_dev("us_excl", supports_keypadtrigger=True, supports_batterylevel=False)
 
@@ -2194,10 +2206,11 @@ class TestInitUnloadSilentModeUnsub:
 
     def test_unload_calls_silent_mode_unsub(self):
         """Line 703: _unsub() called for each silent_mode_unsub in unload."""
-        from custom_components.bosch_shc import async_unload_entry
-        from custom_components.bosch_shc.data import SHCData
-        from custom_components.bosch_shc.const import DOMAIN
         from homeassistant.helpers.device_registry import DeviceEntry
+
+        from custom_components.bosch_shc import async_unload_entry
+        from custom_components.bosch_shc.const import DOMAIN
+        from custom_components.bosch_shc.data import SHCData
 
         session = MagicMock()
         session.stop_polling = AsyncMock()
@@ -2240,11 +2253,14 @@ class TestInitParseTimeError:
 
     def test_parse_time_invalid_value_returns_none(self):
         """Lines 514-515: invalid time format → ValueError caught → return None."""
-        from custom_components.bosch_shc import async_setup_entry
         from boschshcpy import SHCSessionAsync as _SA
+
+        from custom_components.bosch_shc import async_setup_entry
         from custom_components.bosch_shc.const import (
-            OPT_PRESENCE_ENTITY, OPT_SILENT_MODE_ENABLED,
-            OPT_SILENT_MODE_START, OPT_SILENT_MODE_END,
+            OPT_PRESENCE_ENTITY,
+            OPT_SILENT_MODE_ENABLED,
+            OPT_SILENT_MODE_END,
+            OPT_SILENT_MODE_START,
         )
 
         session = MagicMock(spec=_SA)
@@ -2393,7 +2409,6 @@ class TestNumberSirenSetup:
 
     def test_siren_config_numbers_created_when_siren_service_present(self):
         """Lines 159-172: siren with siren service → SirenConfigNumber entities."""
-        from custom_components.bosch_shc.number import SirenConfigNumber
 
         siren = _fake_dev("s1", siren=MagicMock())
 
@@ -2421,7 +2436,6 @@ class TestNumberSirenSetup:
 
     def test_siren_excluded_skipped_in_number_setup(self):
         """Line 160: device_excluded → continue (no SirenConfigNumber added)."""
-        from custom_components.bosch_shc.number import SirenConfigNumber
 
         siren_excl = _fake_dev("siren_excl", siren=MagicMock())
 
@@ -2448,7 +2462,6 @@ class TestNumberSirenSetup:
 
     def test_siren_without_siren_service_skipped_in_number_setup(self):
         """Line 162: siren with siren=None → continue (no SirenConfigNumber added)."""
-        from custom_components.bosch_shc.number import SirenConfigNumber
 
         siren_no_svc = _fake_dev("siren_no_svc", siren=None)
 
@@ -2475,7 +2488,6 @@ class TestNumberSirenSetup:
 
     def test_dimmer_excluded_skipped_in_number_setup(self):
         """Line 179: device_excluded → continue (no DimmerConfigNumber added)."""
-        from custom_components.bosch_shc.number import DimmerConfigNumber
 
         dev_excl = _fake_dev("dim_excl", supports_dimmer_configuration=True)
 
@@ -2502,7 +2514,6 @@ class TestNumberSirenSetup:
 
     def test_dimmer_config_numbers_created_when_supports_dimmer(self):
         """Lines 178-187: dimmer with supports_dimmer_configuration → DimmerConfigNumber."""
-        from custom_components.bosch_shc.number import DimmerConfigNumber
 
         dev = _fake_dev("dim1", supports_dimmer_configuration=True)
 
@@ -2712,7 +2723,6 @@ class TestSmokeDetectionSystemEventBadEnum:
         return entity
 
     def test_bad_alarm_no_dispatch(self):
-        import logging
         entity = self._make_entity()
         with patch("custom_components.bosch_shc.event.LOGGER") as mock_log:
             entity._event_callback()
@@ -2761,7 +2771,8 @@ class TestSmokeDetectorSensorServiceUnsub:
         ent._service = svc
         ent._device = SimpleNamespace(id="sd-1")
         ent._ha_stop_unsub = None
-        _run(ent.async_will_remove_from_hass())
+        with patch("custom_components.bosch_shc.entity.SHCEntity.async_will_remove_from_hass", new_callable=AsyncMock):
+            _run(ent.async_will_remove_from_hass())
         svc.unsubscribe_callback.assert_called_once_with("sd-1_eventlistener")
 
 
@@ -2800,7 +2811,8 @@ class TestSmokeDetectionSystemSensorServiceUnsub:
         ent._service = svc
         ent._device = SimpleNamespace(id="sds-1")
         ent._ha_stop_unsub = None
-        _run(ent.async_will_remove_from_hass())
+        with patch("custom_components.bosch_shc.entity.SHCEntity.async_will_remove_from_hass", new_callable=AsyncMock):
+            _run(ent.async_will_remove_from_hass())
         svc.unsubscribe_callback.assert_called_once_with("sds-1_eventlistener")
 
 

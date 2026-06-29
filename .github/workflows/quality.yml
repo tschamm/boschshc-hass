@@ -60,14 +60,11 @@ jobs:
       - name: pylint
         run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
 
-      - name: mypy (informational — Platinum strict-typing in progress)
-        run: pip install mypy && mypy --ignore-missing-imports custom_components/bosch_shc || true
+      - name: Type check
+        run: mypy custom_components/bosch_shc/
 
-      - name: quality scale gate (gold)
-        run: python3 scripts/check-quality-scale.py --tier gold
-
-      - name: quality scale platinum (informational — see inject-websession + strict-typing)
-        run: python3 scripts/check-quality-scale.py --tier platinum || true
+      - name: quality scale gate (platinum)
+        run: python3 scripts/check-quality-scale.py --tier platinum
 
       - name: translation completeness
         # Checks: (1) every translation/*.json has the same options.features keys
