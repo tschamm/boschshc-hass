@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.2 — Fix Twinguard temperature reporting only whole degrees
+
+- **Fixed** (#352): the Twinguard temperature sensor reported only integer
+  values — stepwise 1 °C jumps and an apparent flat-line. The underlying lib
+  (`boschshcpy`) truncated the reading with `int()`; it now keeps the decimal
+  Bosch sends. Requires **boschshcpy 0.4.1**.
+
 ## 0.8.1 — Document Smoke Detector II intrusion-alarm scope
 
 - **Docs:** clarified that the Smoke Detector II **intrusion alarm** switch (#174) sounds
