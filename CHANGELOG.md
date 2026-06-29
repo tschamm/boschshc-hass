@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.1 — Document Smoke Detector II intrusion-alarm scope
+
+- **Docs:** clarified that the Smoke Detector II **intrusion alarm** switch (#174) sounds
+  **only that one detector's** siren. Verified on real hardware (#322): it does **not**
+  cascade to other smoke detectors / Twinguards and raises **no** Bosch app notification.
+  There is no local-API path to force the whole intrusion-alarm system (`SurveillanceAlarm`
+  is read-only; the IDS only supports arm / disarm / mute) — so a generic "trigger alarm"
+  service is not feasible. README entity table now lists Smoke Detector II's `switch`
+  separately with a footnote describing the single-device scope.
+- No functional change — the 0.7.11 switch behaviour is correct as-is.
+
 ## 0.8.0 — Platinum quality scale + boschshcpy 0.4.0
 
 ### boschshcpy 0.4.0

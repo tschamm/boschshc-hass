@@ -243,7 +243,8 @@ not yet implemented in this integration).
 | Shutter Contact 2 Plus | `binary_sensor` (open state, vibration), `select` (vibration sensitivity), `switch` (bypass, vibration enabled) |
 | Motion Detector I | `binary_sensor` (motion), `sensor` (illuminance), `event` (motion) |
 | Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹, installation profile¹), `select` (sensitivity, orientation-light), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
-| Smoke Detector I / II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
+| Smoke Detector I | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
+| Smoke Detector II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test), `switch` (intrusion alarm — sounds this detector's own siren only²) |
 | Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test) |
 | Smoke Detection System | `binary_sensor` (aggregate alarm state), `event` (alarm events) |
 | Outdoor Siren | `binary_sensor` (acoustic alarm, visual alarm, tamper), `sensor` (battery %, power source, solar quality), `button` (test alarm), `number` (alarm/flash duration + delay), `select` (sound level) |
@@ -264,6 +265,13 @@ not yet implemented in this integration).
 | Intrusion Detection System | `alarm_control_panel` |
 
 > ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**.
+>
+> ² The Smoke Detector II **intrusion alarm** switch writes `INTRUSION_ALARM_ON_REQUESTED`
+> to that single device. Verified on hardware: it sounds (and silences) **only that one
+> detector's** siren — it does **not** cascade to other smoke detectors / Twinguards and
+> raises **no** Bosch app notification. There is no local-API way to force the whole
+> intrusion-alarm system (`SurveillanceAlarm` is read-only); the IDS only supports
+> arm / disarm / mute. Treat this switch as a single-device siren, not a system alarm.
 >
 > Devices not listed (e.g. third-party ZigBee or Z-Wave accessories not
 > from Bosch) may be physically paired to the SHC but are not surfaced by
