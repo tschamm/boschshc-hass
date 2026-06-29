@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.3 — Keep decimals for more Twinguard / thermostat readings
+
+- **Fixed** (#352 follow-up): the same `int()` truncation behind the Twinguard
+  temperature bug also coarsened three other readings the SHC sends as decimals
+  — Twinguard **humidity** and **air purity**, and the Thermostat II **valve
+  position**. These now keep full precision. The sensors display them rounded,
+  so the visible value is unchanged; long-term statistics graphs are smoother.
+  Requires **boschshcpy 0.4.2**.
+
 ## 0.8.2 — Fix Twinguard temperature reporting only whole degrees
 
 - **Fixed** (#352): the Twinguard temperature sensor reported only integer
