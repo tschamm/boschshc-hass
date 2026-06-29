@@ -100,6 +100,12 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           VERSION="${TAG#v}"
+          # Release title = the full CHANGELOG heading ("X.Y.Z — summary"), so the
+          # GitHub release matches the house style without manual polishing. Falls
+          # back to the bare version if the heading has no "— summary" part.
+          HEADING=$(grep -m1 "^## ${VERSION}\( \|$\)" CHANGELOG.md | sed 's/^## //')
+          [ -z "$HEADING" ] && HEADING="$VERSION"
+          echo "title=$HEADING" >> "$GITHUB_OUTPUT"
           awk "/^## $VERSION( |$)/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
             > /tmp/release-notes.md
           if [ ! -s /tmp/release-notes.md ]; then
@@ -114,8 +120,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.tag.outputs.tag }}
           FALLBACK: ${{ steps.notes.outputs.fallback }}
+          TITLE: ${{ steps.notes.outputs.title }}
         run: |
-          TITLE="${TAG#v}"
           NOTES_FLAG="--notes-file /tmp/release-notes.md"
           [ "$FALLBACK" = "true" ] && NOTES_FLAG="--generate-notes"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
