@@ -37,7 +37,6 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
@@ -58,7 +57,7 @@ class SHCSwitchRequiredKeysMixin:
 
     key: str
     on_key: str
-    on_value: StateType
+    on_value: Any
     should_poll: bool
     device_class: SwitchDeviceClass | None = None
     icon: str | None = None
@@ -401,7 +400,7 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in list(session.device_helper.light_switches_bsm) + list(
+    for switch in list(session.device_helper.light_switches_bsm) + list(  # type: ignore[assignment]
         session.device_helper.micromodule_light_attached
     ):
         if device_excluded(switch, config_entry.options):
@@ -729,7 +728,7 @@ async def async_setup_entry(  # noqa: C901
 
     # Thermostats / room thermostats / wall thermostats expose child lock as a
     # ThermostatService.State enum (ON/OFF) -> needs the enum-aware description.
-    for switch in (
+    for switch in (  # type: ignore[assignment]
         list(session.device_helper.thermostats)
         + list(session.device_helper.roomthermostats)
         # wall thermostats expose child_lock only with boschshcpy >= 0.2.119;
@@ -750,7 +749,7 @@ async def async_setup_entry(  # noqa: C901
     # ChildProtection devices expose child lock as a bool (childLockActive).
     # micromodule_dimmers and light_switches_bsm also carry the ChildProtection
     # service but were previously not wired -> no child-lock entity was created.
-    for switch in (
+    for switch in (  # type: ignore[assignment]
         list(session.device_helper.micromodule_shutter_controls)
         + list(session.device_helper.micromodule_blinds)
         + list(session.device_helper.micromodule_light_attached)

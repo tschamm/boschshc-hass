@@ -21,7 +21,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.trigger import TriggerActionType
+from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -71,7 +71,7 @@ async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, 
 
         device = dev_registry.async_get_device(
             identifiers={
-                (DOMAIN, session.information.unique_id if session.information else "")
+                (DOMAIN, (session.information.unique_id or "") if session.information else "")
             },
             connections=set(),
         )
@@ -176,7 +176,7 @@ async def async_attach_trigger(
     hass: HomeAssistant,
     config: ConfigType,
     action: TriggerActionType,
-    automation_info: dict[str, Any],
+    automation_info: TriggerInfo,
 ) -> CALLBACK_TYPE:
     """Attach a trigger."""
     event_config = None

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from boschshcpy.device import SHCDevice
@@ -49,7 +50,7 @@ def light_switch_devices(session: Any) -> list[Any]:
     )
 
 
-def light_switch_as_light(device: Any, options: dict[str, Any]) -> bool:
+def light_switch_as_light(device: Any, options: Mapping[str, Any]) -> bool:
     """True if this light-relay device should be a `light` (#338).
 
     The global "all" toggle wins; otherwise fall back to the per-device list.
@@ -60,7 +61,7 @@ def light_switch_as_light(device: Any, options: dict[str, Any]) -> bool:
     return getattr(device, "id", None) in opted_in
 
 
-def device_excluded(device: Any, options: dict[str, Any]) -> bool:
+def device_excluded(device: Any, options: Mapping[str, Any]) -> bool:
     """True if the Bosch device is excluded by the device/room filter options."""
     excluded_devices = options.get(OPT_EXCLUDED_DEVICES) or []
     excluded_rooms = options.get(OPT_EXCLUDED_ROOMS) or []
