@@ -25,7 +25,20 @@ jobs:
             custom_components/bosch_shc/manifest.json
 
       - name: Install tooling
-        run: pip install ruff codespell pip-audit pylint -r requirements_test.txt
+        # Retry: just-released boschshcpy pin may not have propagated to the
+        # GitHub-runner PyPI edge yet — mirrors the same retry in release.yml.
+        run: |
+          python -m pip install --upgrade pip
+          for attempt in 1 2 3 4 5; do
+            if pip install ruff codespell pip-audit pylint -r requirements_test.txt; then
+              echo "Installed on attempt $attempt."
+              exit 0
+            fi
+            echo "::warning::pip install failed (attempt $attempt) — PyPI edge lag?; retrying in $((attempt * 30))s."
+            sleep $((attempt * 30))
+          done
+          echo "::error::pip install still failing after 5 attempts."
+          exit 1
 
       - name: ruff check (lint)
         run: ruff check custom_components
