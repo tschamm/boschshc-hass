@@ -71,7 +71,12 @@ async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, 
 
         device = dev_registry.async_get_device(
             identifiers={
-                (DOMAIN, (session.information.unique_id or "") if session.information else "")
+                (
+                    DOMAIN,
+                    (session.information.unique_id or "")
+                    if session.information
+                    else "",
+                )
             },
             connections=set(),
         )
