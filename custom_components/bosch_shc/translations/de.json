@@ -280,6 +280,13 @@
           "medium": "Mittel",
           "high": "Hoch"
         }
+      },
+      "installation_profile": {
+        "name": "Einsatzbereich",
+        "state": {
+          "generic": "Innen (Standard)",
+          "outdoor": "Außen"
+        }
       }
     },
     "sensor": {
@@ -297,9 +304,6 @@
       },
       "detection_state": {
         "name": "Erkennungstest-Status"
-      },
-      "installation_profile": {
-        "name": "Installationsprofil"
       },
       "communication_quality": {
         "name": "Kommunikationsqualität",

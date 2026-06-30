@@ -290,6 +290,13 @@
           "medium": "Medium",
           "high": "High"
         }
+      },
+      "installation_profile": {
+        "name": "Installation Profile",
+        "state": {
+          "generic": "Indoor (Generic)",
+          "outdoor": "Outdoor"
+        }
       }
     },
     "sensor": {
@@ -334,9 +341,6 @@
       },
       "detection_test_state": {
         "name": "Detection Test State"
-      },
-      "installation_profile": {
-        "name": "Installation Profile"
       },
       "communication_quality": {
         "name": "Communication Quality",

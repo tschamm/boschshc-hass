@@ -366,16 +366,8 @@ async def async_setup_entry(  # noqa: C901
                     entry_id=config_entry.entry_id,
                 )
             )
-        # Installation profile (e.g. GENERIC / OUTDOOR) — read-only: the
-        # write path is an undocumented device-level call, so only the
-        # current selection is surfaced for now.
-        if getattr(sensor, "supported_profiles", None):
-            entities.append(
-                InstallationProfileSensor(
-                    device=sensor,
-                    entry_id=config_entry.entry_id,
-                )
-            )
+        # Installation profile is exposed as a writable `select` entity
+        # (InstallationProfileSelect), not a sensor — see select.py (#353).
         if diagnostic_enabled:
             await async_migrate_to_new_unique_id(
                 hass,
@@ -1091,46 +1083,6 @@ class DetectionStateSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
             return str(val.name.lower())
         except (AttributeError, ValueError):
             return None
-
-
-class InstallationProfileSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Read-only sensor for the device installation profile.
-
-    Reports the currently selected installation environment (e.g. GENERIC /
-    OUTDOOR). Read-only: the Bosch app can change this, but the local-API
-    write path is undocumented, so only the current value is exposed.
-    """
-
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    _attr_translation_key = "installation_profile"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the installation-profile sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_installation_profile"
-        )
-        # Options come from the device's advertised supportedProfiles (lowercased for HA ENUM).
-        self._attr_options = [
-            p.lower() for p in (getattr(device, "supported_profiles", []) or [])
-        ]
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the current installation profile (lowercased).
-
-        Guarded: a profile not in supported_profiles (e.g. after a firmware
-        vocabulary change) would trip HA's ENUM validation — return None instead.
-        """
-        val = getattr(self._device, "profile", None)
-        if val is None:
-            return None
-        val_lower = str(val).lower()
-        if val_lower not in (self._attr_options or []):
-            return None
-        return val_lower
 
 
 class SirenBatterySensor(SHCEntity, SensorEntity):  # type: ignore[misc]

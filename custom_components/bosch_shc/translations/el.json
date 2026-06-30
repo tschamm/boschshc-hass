@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "Κατάσταση δοκιμής ανίχνευσης"
       },
-      "installation_profile": {
-        "name": "Προφίλ εγκατάστασης"
-      },
       "communication_quality": {
         "name": "Ποιότητα επικοινωνίας",
         "state": {

@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "Algılama Testi Durumu"
       },
-      "installation_profile": {
-        "name": "Kurulum Profili"
-      },
       "communication_quality": {
         "name": "İletişim Kalitesi",
         "state": {

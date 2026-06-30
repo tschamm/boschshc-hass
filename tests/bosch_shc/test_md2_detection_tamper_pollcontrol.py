@@ -22,6 +22,7 @@ from custom_components.bosch_shc.button import (
 )
 from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.select import (
+    InstallationProfileSelect,
     OrientationLightResponseSelect,
 )
 from custom_components.bosch_shc.select import (
@@ -29,7 +30,6 @@ from custom_components.bosch_shc.select import (
 )
 from custom_components.bosch_shc.sensor import (
     DetectionStateSensor,
-    InstallationProfileSensor,
 )
 from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
@@ -257,34 +257,53 @@ class TestDetectionStateSensor:
 
 
 # ---------------------------------------------------------------------------
-# InstallationProfileSensor
+# InstallationProfileSelect (#353 — writable, replaces the read-only sensor)
 # ---------------------------------------------------------------------------
 
-class TestInstallationProfileSensor:
-    def test_native_value(self):
+class TestInstallationProfileSelect:
+    def test_current_option(self):
         dev = _fake_md2(profile="GENERIC", supported_profiles=["OUTDOOR", "GENERIC"])
-        s = InstallationProfileSensor.__new__(InstallationProfileSensor)
-        s._device = dev
-        s._attr_options = ["outdoor", "generic"]
-        assert s.native_value == "generic"
+        e = InstallationProfileSelect.__new__(InstallationProfileSelect)
+        e._device = dev
+        e._attr_options = ["outdoor", "generic"]
+        assert e.current_option == "generic"
 
-    def test_native_value_out_of_options_returns_none(self):
-        # Profile not advertised in supported_profiles must not trip ENUM validation.
+    def test_current_option_out_of_options_returns_none(self):
+        # Profile not advertised in supported_profiles must not be a valid option.
         dev = _fake_md2(profile="SURPRISE", supported_profiles=["OUTDOOR", "GENERIC"])
-        s = InstallationProfileSensor.__new__(InstallationProfileSensor)
-        s._device = dev
-        s._attr_options = ["outdoor", "generic"]
-        assert s.native_value is None
+        e = InstallationProfileSelect.__new__(InstallationProfileSelect)
+        e._device = dev
+        e._attr_options = ["outdoor", "generic"]
+        assert e.current_option is None
+
+    def test_async_select_option_uppercases(self):
+        dev = _fake_md2(
+            profile="GENERIC",
+            supported_profiles=["OUTDOOR", "GENERIC"],
+            async_set_profile=AsyncMock(),
+        )
+        e = InstallationProfileSelect.__new__(InstallationProfileSelect)
+        e._device = dev
+        e._attr_options = ["outdoor", "generic"]
+        asyncio.run(e.async_select_option("outdoor"))
+        dev.async_set_profile.assert_called_once_with("OUTDOOR")
+
+    def test_options_lowercased_from_supported_profiles(self):
+        md2 = _fake_md2(profile="GENERIC", supported_profiles=["OUTDOOR", "GENERIC"])
+        e = InstallationProfileSelect(device=md2, entry_id="entry-1")
+        assert e._attr_options == ["outdoor", "generic"]
 
     def test_setup_created_when_profiles_present(self):
         md2 = _fake_md2(profile="GENERIC", supported_profiles=["OUTDOOR", "GENERIC"])
-        types = [type(e).__name__ for e in _setup_sensors([md2])]
-        assert "InstallationProfileSensor" in types
+        types = [type(e).__name__ for e in
+                 _setup_selects(_make_select_session(motion_detectors2=[md2]))]
+        assert "InstallationProfileSelect" in types
 
     def test_setup_skipped_when_no_profiles(self):
         md2 = _fake_md2(supported_profiles=[])
-        types = [type(e).__name__ for e in _setup_sensors([md2])]
-        assert "InstallationProfileSensor" not in types
+        types = [type(e).__name__ for e in
+                 _setup_selects(_make_select_session(motion_detectors2=[md2]))]
+        assert "InstallationProfileSelect" not in types
 
 
 # ---------------------------------------------------------------------------

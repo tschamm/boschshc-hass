@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "Noteikšanas testa stāvoklis"
       },
-      "installation_profile": {
-        "name": "Uzstādīšanas profils"
-      },
       "communication_quality": {
         "name": "Komunikācijas kvalitāte",
         "state": {

@@ -403,7 +403,8 @@ rules:
       TEMPERATURE, HumiditySensor → HUMIDITY, PowerSensor → POWER,
       EnergySensor → ENERGY, IlluminanceSensor → ILLUMINANCE; ENUM sensors
       (BatteryLevelSensor, TwinguardCombinedRatingSensor, WalkStateSensor,
-      DetectionStateSensor, InstallationProfileSensor) → ENUM.  Binary sensors:
+      DetectionStateSensor) → ENUM.  (The installation profile is a CONFIG
+      select, which needs no device class.)  Binary sensors:
       ShutterContactSensor → DOOR/WINDOW, SHCBatterySensor → BATTERY,
       MotionDetectionSensor → MOTION, WaterLeakageSensor → MOISTURE.
       Entities with no matching device class (valve tappet, scenario buttons,
@@ -482,10 +483,10 @@ rules:
   entity-disabled-by-default:
     status: done
     comment: >
-      Five sensors set _attr_entity_registry_enabled_default = False (0.7.25):
+      Four sensors set _attr_entity_registry_enabled_default = False (0.7.25):
       CommunicationQualitySensor (DIAGNOSTIC ENUM), ValveTappetSensor
       (DIAGNOSTIC %, high-frequency), WalkStateSensor (test-mode only),
-      DetectionStateSensor (test-mode only), InstallationProfileSensor (DIAGNOSTIC).
+      DetectionStateSensor (test-mode only).
       EmmaPowerSensor and BatteryLevelSensor were already disabled-by-default.
 
   # ── PLATINUM TIER ────────────────────────────────────────────────────────────

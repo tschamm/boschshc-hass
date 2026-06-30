@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "מצב בדיקת זיהוי"
       },
-      "installation_profile": {
-        "name": "פרופיל התקנה"
-      },
       "communication_quality": {
         "name": "איכות תקשורת",
         "state": {

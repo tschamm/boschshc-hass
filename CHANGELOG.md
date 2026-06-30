@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.9.0 — Change the Motion Detector II installation profile from Home Assistant
+
+### Breaking changes
+
+- **The read-only `Installation Profile` sensor was removed and replaced by a
+  writable `Installation Profile` select** (#353). The installation profile
+  (e.g. `GENERIC` / `OUTDOOR`) of the Motion Detector II [+M] can now be
+  **changed** from Home Assistant, not just read.
+  - The old sensor (`sensor.*_installation_profile`) **no longer exists**. Any
+    dashboard card, automation, or template that referenced that sensor
+    entity_id must be updated to use the new select entity
+    (`select.*_installation_profile`).
+  - The former sensor was disabled by default, so most installations will only
+    see a new select appear.
+
+### Added
+
+- **Writable installation profile** for the Motion Detector II [+M] (#353).
+  Options are populated from the device's advertised `supportedProfiles`;
+  selecting one writes the device-level `profile` field via the local API
+  (`boschshcpy` 0.4.3 `SHCDevice.async_set_profile()`). Use cases: switch the
+  detection environment (indoor ↔ outdoor) without the Bosch app, and include
+  profile changes in automations.
+
+### Requirements
+
+- Requires **boschshcpy 0.4.3** (adds the device-profile write path).
+
 ## 0.8.4 — Stop phantom switch/alarm events on resubscribe and restart
 
 - **Fixed** (#336): Universal Switch button presses (and motion / smoke-alarm

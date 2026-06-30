@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "Състояние на теста за засичане"
       },
-      "installation_profile": {
-        "name": "Профил на инсталацията"
-      },
       "communication_quality": {
         "name": "Качество на комуникацията",
         "state": {

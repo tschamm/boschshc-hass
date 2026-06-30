@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "감지 테스트 상태"
       },
-      "installation_profile": {
-        "name": "설치 프로파일"
-      },
       "communication_quality": {
         "name": "통신 품질",
         "state": {

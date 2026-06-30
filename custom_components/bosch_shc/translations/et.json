@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "Tuvastamistesti olek"
       },
-      "installation_profile": {
-        "name": "Paigaldusprofiil"
-      },
       "communication_quality": {
         "name": "Sideühenduse kvaliteet",
         "state": {

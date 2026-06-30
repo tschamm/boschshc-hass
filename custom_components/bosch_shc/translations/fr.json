@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "État du test de détection"
       },
-      "installation_profile": {
-        "name": "Profil d'installation"
-      },
       "communication_quality": {
         "name": "Qualité de communication",
         "state": {

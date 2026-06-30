@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "検知テスト状態"
       },
-      "installation_profile": {
-        "name": "設置プロファイル"
-      },
       "communication_quality": {
         "name": "通信品質",
         "state": {

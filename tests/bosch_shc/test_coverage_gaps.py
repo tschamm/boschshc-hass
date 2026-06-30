@@ -1297,17 +1297,17 @@ class TestTerminalTemperatureSensorInit:
         assert "terminal_temperature" in sensor._attr_unique_id
 
 
-class TestInstallationProfileNativeValueNone:
-    """Line 1126: InstallationProfileSensor.native_value returns None when val is None."""
+class TestInstallationProfileCurrentOptionNone:
+    """InstallationProfileSelect.current_option returns None when profile is None."""
 
-    def test_native_value_none_when_profile_is_none(self):
-        """Line 1126: getattr returns None → return None immediately."""
-        from custom_components.bosch_shc.sensor import InstallationProfileSensor
+    def test_current_option_none_when_profile_is_none(self):
+        """getattr returns None → return None immediately."""
+        from custom_components.bosch_shc.select import InstallationProfileSelect
 
-        ent = InstallationProfileSensor.__new__(InstallationProfileSensor)
-        ent._attr_options = ["standard", "boosted"]
+        ent = InstallationProfileSelect.__new__(InstallationProfileSelect)
+        ent._attr_options = ["generic", "outdoor"]
         ent._device = SimpleNamespace(profile=None)
-        assert ent.native_value is None
+        assert ent.current_option is None
 
 
 class TestSirenSensorInits2:

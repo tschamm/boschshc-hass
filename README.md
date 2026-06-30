@@ -203,8 +203,8 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 | `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
 | `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options) |
 | `number` | Thermostat temperature offset |
-| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
-| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state & installation profile, EMMA grid power, Battery level (diagnostic, optional) |
+| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time, installation profile), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
+| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state, EMMA grid power, Battery level (diagnostic, optional) |
 | `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States |
 | `valve` | Thermostat radiator valve (position, diagnostic) |
 
@@ -242,7 +242,7 @@ not yet implemented in this integration).
 | Shutter Contact II | `binary_sensor` (open state), `switch` (bypass) |
 | Shutter Contact 2 Plus | `binary_sensor` (open state, vibration), `select` (vibration sensitivity), `switch` (bypass, vibration enabled) |
 | Motion Detector I | `binary_sensor` (motion), `sensor` (illuminance), `event` (motion) |
-| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹, installation profile¹), `select` (sensitivity, orientation-light), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
+| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹), `select` (sensitivity, orientation-light, installation profile), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
 | Smoke Detector I | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
 | Smoke Detector II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test), `switch` (intrusion alarm — sounds this detector's own siren only²) |
 | Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test) |
@@ -621,8 +621,9 @@ phase of a multi-release async migration.
     clear an active tamper condition, and the existing tamper state sensor.
   - **Orientation-light response time** — a select (Long = lower battery use / Short =
     more responsive), backed by the `PollControl` service.
-  - **Installation profile** — a read-only sensor showing the active environment
-    (e.g. `GENERIC` / `OUTDOOR`).
+  - **Installation profile** — a writable select for the active detection
+    environment (e.g. `GENERIC` / `OUTDOOR`); selecting an option writes the
+    device-level profile via the local API.
 - **Climate display polish** — preset icons (`auto`/`manual`/`eco`/`boost`) and a proper
   `translation_key`, plus `hvac_modes` ordered `[HEAT, (COOL), OFF]` so cards that hide
   modes after `OFF` (e.g. Mushroom thermostat) show the COOL button. *(thanks @jumlu)*

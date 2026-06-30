@@ -298,9 +298,6 @@
       "detection_state": {
         "name": "Estat de la prova de detecció"
       },
-      "installation_profile": {
-        "name": "Perfil d'instal·lació"
-      },
       "communication_quality": {
         "name": "Qualitat de comunicació",
         "state": {

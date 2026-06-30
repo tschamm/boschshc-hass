@@ -349,6 +349,20 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
+    # Installation profile (e.g. GENERIC / OUTDOOR) for Motion Detector II.
+    # Writable replacement for the former read-only InstallationProfileSensor.
+    for device in getattr(session.device_helper, "motion_detectors2", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        if not getattr(device, "supported_profiles", None):
+            continue
+        entities.append(
+            InstallationProfileSelect(
+                device=device,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     for siren in getattr(session.device_helper, "outdoor_sirens", []):
         if device_excluded(siren, config_entry.options):
             continue
@@ -964,3 +978,47 @@ class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
         except KeyError:
             return
         await service.async_set_edge_phase_control_mode(mode)
+
+
+class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+    """Writable select for the device installation profile (#353).
+
+    Replaces the former read-only InstallationProfileSensor. Options are taken
+    from the device's advertised ``supportedProfiles`` (e.g. GENERIC / OUTDOOR
+    for the Motion Detector II [+M]); selecting one writes the device-level
+    ``profile`` field. Option values are lowercased to match the translation
+    state keys, mirroring the previous sensor's ENUM convention.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "installation_profile"
+    _attr_icon = "mdi:map-marker-radius-outline"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the installation-profile select."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_installation_profile"
+        )
+        self._attr_options = [
+            p.lower() for p in (getattr(device, "supported_profiles", []) or [])
+        ]
+
+    @property
+    def current_option(self) -> str | None:
+        """Return the current installation profile (lowercased).
+
+        Guarded: a profile not in the advertised options (e.g. after a firmware
+        vocabulary change) returns None instead of an invalid option.
+        """
+        val = getattr(self._device, "profile", None)
+        if val is None:
+            return None
+        val_lower = str(val).lower()
+        if val_lower not in (self._attr_options or []):
+            return None
+        return val_lower
+
+    async def async_select_option(self, option: str) -> None:
+        """Write the installation profile (uppercased back to the API value)."""
+        await self._device.async_set_profile(option.upper())
