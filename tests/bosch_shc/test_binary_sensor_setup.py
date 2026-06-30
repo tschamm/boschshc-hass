@@ -79,6 +79,10 @@ def _make_base_device(device_id="dev1", name="FakeDev", root_device_id="root1",
         serial=f"{device_id}-serial",
         deleted=False,
         status="AVAILABLE",
+        # Replay-guard seeds read current state at construction (#336).
+        latestmotion=None,
+        alarmstate=SimpleNamespace(name="IDLE_OFF"),
+        alarm=SimpleNamespace(name="ALARM_OFF"),
         # Unsubscribe callback needed by SHCEntity
         subscribe_callback=lambda key, cb: None,
         unsubscribe_callback=lambda key: None,
@@ -819,17 +823,33 @@ class TestMotionDetectionSensorInit:
         fired = []
         lm_svc = _make_service("LatestMotion")
         dev = _make_base_device("md-ev", device_services=[lm_svc])
-        dev.latestmotion = "2026-06-20T08:00:00.000Z"
+        dev.latestmotion = None  # construction baseline (no prior motion)
         hass = _make_hass()
         hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = MotionDetectionSensor(hass=hass, device=dev, entry_id="E1")
         sensor._cached_device_id = "ha-device-id"
+        # Genuine new motion advances past the seeded baseline -> fires.
+        dev.latestmotion = "2026-06-20T08:00:00.000Z"
         sensor._input_events_handler()
         assert len(fired) == 1
         event_name, data = fired[0]
         assert event_name == "bosch_shc.event"
         assert data["event_type"] == "MOTION"
         assert data["lastTimeTriggered"] == "2026-06-20T08:00:00.000Z"
+
+    def test_input_events_handler_restart_replay_no_fire(self):
+        """#336 restart: a stale latestmotion present at construction seeds the
+        baseline, so the first re-delivered snapshot must NOT fire a phantom."""
+        fired = []
+        lm_svc = _make_service("LatestMotion")
+        dev = _make_base_device("md-restart", device_services=[lm_svc])
+        dev.latestmotion = "2026-06-20T08:00:00.000Z"  # stale last motion at startup
+        hass = _make_hass()
+        hass.bus.async_fire = lambda event, data: fired.append((event, data))
+        sensor = MotionDetectionSensor(hass=hass, device=dev, entry_id="E1")
+        sensor._cached_device_id = "ha-device-id"
+        sensor._input_events_handler()  # same stale ts re-delivered -> suppressed
+        assert fired == []
 
     def test_handle_ha_stop_unsubscribes(self):
         unsub_store = {}
@@ -881,18 +901,35 @@ class TestSmokeDetectorSensorInit:
         fired = []
         alarm_svc = _make_service("Alarm")
         dev = _make_base_device("sd-ev", device_services=[alarm_svc])
-        dev.alarmstate = AlarmService.State.PRIMARY_ALARM
+        dev.alarmstate = AlarmService.State.IDLE_OFF  # construction baseline
         dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         hass = _make_hass()
         hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
         sensor._cached_device_id = "ha-device-id"
+        # Genuine new alarm changes state past the seeded baseline -> fires.
+        dev.alarmstate = AlarmService.State.PRIMARY_ALARM
         sensor._input_events_handler()
         assert len(fired) == 1
         event_name, data = fired[0]
         assert event_name == "bosch_shc.event"
         assert data["event_type"] == "ALARM"
         assert data["event_subtype"] == "PRIMARY_ALARM"
+
+    def test_input_events_handler_restart_replay_no_fire(self):
+        """#336 restart: a stale alarmstate present at construction seeds the
+        baseline, so the first re-delivered snapshot must NOT fire a phantom."""
+        fired = []
+        alarm_svc = _make_service("Alarm")
+        dev = _make_base_device("sd-restart", device_services=[alarm_svc])
+        dev.alarmstate = AlarmService.State.IDLE_OFF  # stale state at startup
+        dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
+        hass = _make_hass()
+        hass.bus.async_fire = lambda event, data: fired.append((event, data))
+        sensor = SmokeDetectorSensor(device=dev, hass=hass, entry_id="E1")
+        sensor._cached_device_id = "ha-device-id"
+        sensor._input_events_handler()  # same IDLE_OFF re-delivered -> suppressed
+        assert fired == []
 
     def test_handle_ha_stop_unsubscribes(self):
         unsub_store = {}
@@ -982,17 +1019,33 @@ class TestSmokeDetectionSystemSensorInit:
         fired = []
         surv_svc = _make_service("SurveillanceAlarm")
         dev = _make_base_device("sds-ev", device_services=[surv_svc])
-        dev.alarm = SurveillanceAlarmService.State.ALARM_ON
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF  # construction baseline
         hass = _make_hass()
         hass.bus.async_fire = lambda event, data: fired.append((event, data))
         sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
         sensor._cached_device_id = "ha-device-id"
+        # Genuine new alarm changes state past the seeded baseline -> fires.
+        dev.alarm = SurveillanceAlarmService.State.ALARM_ON
         sensor._input_events_handler()
         assert len(fired) == 1
         event_name, data = fired[0]
         assert event_name == "bosch_shc.event"
         assert data["event_type"] == "ALARM"
         assert data["event_subtype"] == "ALARM_ON"
+
+    def test_input_events_handler_restart_replay_no_fire(self):
+        """#336 restart: a stale SurveillanceAlarm state present at construction
+        seeds the baseline, so the first re-delivered snapshot must NOT fire."""
+        fired = []
+        surv_svc = _make_service("SurveillanceAlarm")
+        dev = _make_base_device("sds-restart", device_services=[surv_svc])
+        dev.alarm = SurveillanceAlarmService.State.ALARM_OFF  # stale state at startup
+        hass = _make_hass()
+        hass.bus.async_fire = lambda event, data: fired.append((event, data))
+        sensor = SmokeDetectionSystemSensor(device=dev, hass=hass, entry_id="E1")
+        sensor._cached_device_id = "ha-device-id"
+        sensor._input_events_handler()  # same ALARM_OFF re-delivered -> suppressed
+        assert fired == []
 
     def test_handle_ha_stop_unsubscribes(self):
         unsub_store = {}

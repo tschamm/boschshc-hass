@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.4 — Stop phantom switch/alarm events on resubscribe and restart
+
+- **Fixed** (#336): Universal Switch button presses (and motion / smoke-alarm
+  events) could re-fire as **phantom events** when the SHC rotated its long-poll
+  subscription (~every 24 h) and again on every Home Assistant **restart**. The
+  controller re-delivers each service's current state on (re)subscribe; the
+  device-trigger path (`bosch_shc.event`) for Universal Switches had **no replay
+  guard**, so every switch's last keypress replayed at once — re-triggering
+  device-trigger automations (e.g. "all lights turned on" with nobody home).
+  The switch listener now tracks the last fired `eventTimestamp`, seeded from the
+  device's current state at startup, and only fires when it advances. The motion
+  and smoke / smoke-detection-system guards are now likewise **seeded at startup**
+  so they no longer fire a stale snapshot once per restart. Genuine presses and
+  real state changes still fire normally.
+
 ## 0.8.3 — Keep decimals for more Twinguard / thermostat readings
 
 - **Fixed** (#352 follow-up): the same `int()` truncation behind the Twinguard

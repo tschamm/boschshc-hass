@@ -873,8 +873,9 @@ class TestSwitchDeviceEventListener:
         ks.subscribe_callback.assert_called_once_with(dev.id, listener._input_events_handler)
         assert listener.device_id == "reg-dev-id-999"
 
-    def test_input_events_handler_fires_bus_event(self):
-        """_input_events_handler fires via hass.bus.async_fire (async session)."""
+    def test_input_events_handler_new_press_fires_bus_event(self):
+        """A genuinely new press (eventtimestamp advanced past the construction
+        baseline) fires via hass.bus.async_fire (async session)."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
         hass = _make_fake_hass()
@@ -884,6 +885,7 @@ class TestSwitchDeviceEventListener:
 
         listener = SwitchDeviceEventListener(hass, entry, dev)
         listener.device_id = "hass-device-id-123"
+        dev.eventtimestamp = 100000  # real new press, advanced past seed (99999)
         listener._input_events_handler()
 
         # Async session fires callbacks on the loop — async_fire used directly
@@ -895,8 +897,69 @@ class TestSwitchDeviceEventListener:
         assert event_data[ATTR_EVENT_SUBTYPE] == "UPPER_BUTTON"
         assert event_data[ATTR_ID] == dev.id
         assert event_data[ATTR_NAME] == dev.name
-        assert event_data[ATTR_LAST_TIME_TRIGGERED] == dev.eventtimestamp
+        assert event_data[ATTR_LAST_TIME_TRIGGERED] == 100000
         assert event_data[ATTR_DEVICE_ID] == "hass-device-id-123"
+
+    def test_input_events_handler_restart_replay_no_fire(self):
+        """Replay-guard (#336): on restart the first re-delivered Keypad snapshot
+        carries the last (stale) press; seeding _last_fired_timestamp from the
+        device at construction means it must NOT fire as a phantom."""
+        from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        ks = self._make_keypad_service()
+        dev = self._make_switch_device(keypad_service=ks, supported_event=True)
+
+        listener = SwitchDeviceEventListener(hass, entry, dev)
+        listener.device_id = "hass-device-id-123"
+
+        # dev.eventtimestamp == construction seed (99999): stale replay.
+        listener._input_events_handler()
+        hass.bus.async_fire.assert_not_called()
+
+    def test_input_events_handler_resubscribe_replay_no_fire(self):
+        """Replay-guard (#336): after a real press, a re-delivered state with an
+        unchanged eventtimestamp (24 h poll-id resubscribe) must NOT re-fire."""
+        from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        ks = self._make_keypad_service()
+        dev = self._make_switch_device(keypad_service=ks, supported_event=True)
+
+        listener = SwitchDeviceEventListener(hass, entry, dev)
+        listener.device_id = "hass-device-id-123"
+
+        dev.eventtimestamp = 100000  # real new press
+        listener._input_events_handler()
+        assert hass.bus.async_fire.call_count == 1
+
+        # Resubscribe replays the SAME eventtimestamp — must be suppressed.
+        listener._input_events_handler()
+        assert hass.bus.async_fire.call_count == 1
+
+    def test_input_events_handler_advanced_timestamp_fires_again(self):
+        """Replay-guard (#336): a genuinely new press (advanced eventtimestamp)
+        after a replay still fires."""
+        from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        ks = self._make_keypad_service()
+        dev = self._make_switch_device(keypad_service=ks, supported_event=True)
+
+        listener = SwitchDeviceEventListener(hass, entry, dev)
+        listener.device_id = "hass-device-id-123"
+
+        dev.eventtimestamp = 100000
+        listener._input_events_handler()  # -> fire
+        listener._input_events_handler()  # ts=100000 replay -> suppressed
+        dev.eventtimestamp = 100001  # real new press
+        listener._input_events_handler()  # -> fire
+
+        assert hass.bus.async_fire.call_count == 2
+        assert hass.bus.async_fire.call_args.args[1][ATTR_LAST_TIME_TRIGGERED] == 100001
 
     def test_input_events_handler_unsupported_event_no_fire(self):
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener

@@ -759,6 +759,19 @@ class SwitchDeviceEventListener:
         self._device = device
         self._keypad_service = None
         self.device_id = None
+        # Replay-guard (#336): the Keypad service callback is registered on the
+        # generic subscribe_callback channel, which the lib re-fires with the
+        # *current* state on the ~24 h poll-id resubscribe, on the resubscribe
+        # short-poll refresh, AND as the first long-poll snapshot after every
+        # HA restart / config-entry reload.  Without a guard every switch's last
+        # keypress replays as a fresh bosch_shc.event PRESS_SHORT at once,
+        # re-triggering device-trigger automations (e.g. "all lights on").
+        # Seed from the device's current eventtimestamp (already populated from
+        # the initial GET) so the first re-delivered snapshot is treated as a
+        # baseline and only a genuinely newer press fires — mirrors the lib's
+        # SHCDeviceService._last_event_timestamp seed / _is_replayed_event.
+        seed_ts = device.eventtimestamp
+        self._last_fired_timestamp: int = seed_ts if seed_ts is not None else -1
 
         for service in self._device.device_services:
             if service.id == "Keypad":
@@ -772,6 +785,20 @@ class SwitchDeviceEventListener:
         event_type = self._device.eventtype.name
 
         if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
+            # Replay-guard (#336): skip a re-delivered Keypad state whose
+            # eventtimestamp has not advanced past the last event we fired
+            # (resubscribe / restart re-deliver the last keypress unchanged).
+            # `<=` (not `==`) also rejects a non-advancing/backward timestamp,
+            # matching the lib's _is_replayed_event.
+            current_ts = self._device.eventtimestamp
+            if current_ts is not None and current_ts <= self._last_fired_timestamp:
+                LOGGER.debug(
+                    "Skipping replayed Keypad event for %s (ts=%s not advanced)",
+                    self._device.name,
+                    current_ts,
+                )
+                return
+            self._last_fired_timestamp = current_ts
             # The async session fires callbacks on the event loop, so fire the
             # bus event directly (no call_soon_threadsafe marshalling).
             self.hass.bus.async_fire(
@@ -780,7 +807,7 @@ class SwitchDeviceEventListener:
                     ATTR_DEVICE_ID: self.device_id,
                     ATTR_ID: self._device.id,
                     ATTR_NAME: self._device.name,
-                    ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
+                    ATTR_LAST_TIME_TRIGGERED: current_ts,
                     ATTR_EVENT_SUBTYPE: self._device.keyname.name
                     if self._device.keyname
                     else None,

@@ -435,6 +435,10 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
         # advances (genuine new motion).
         self._last_fired_latestmotion: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        # Seed from current state so the first snapshot re-delivered after an HA
+        # restart / config-entry reload is a baseline, not a phantom MOTION (the
+        # restart counterpart of the 24 h resubscribe replay, #336).
+        self._last_fired_latestmotion = self._device.latestmotion
 
         for service in self._device.device_services:
             if service.id == "LatestMotion":
@@ -553,6 +557,13 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         # last alarmstate name we fired on and skip when it is unchanged.
         self._last_fired_alarmstate: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        # Seed from current state so the first snapshot re-delivered after an HA
+        # restart / config-entry reload is a baseline, not a phantom ALARM event
+        # (the restart counterpart of the 24 h resubscribe replay, #336).
+        try:
+            self._last_fired_alarmstate = self._device.alarmstate.name
+        except (ValueError, KeyError):
+            self._last_fired_alarmstate = None
 
         for service in self._device.device_services:
             if service.id == "Alarm":
@@ -736,6 +747,13 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
         # last SurveillanceAlarm state name we fired on and skip when unchanged.
         self._last_fired_alarm: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        # Seed from current state so the first snapshot re-delivered after an HA
+        # restart / config-entry reload is a baseline, not a phantom ALARM event
+        # (the restart counterpart of the 24 h resubscribe replay, #336).
+        try:
+            self._last_fired_alarm = self._device.alarm.name
+        except (ValueError, KeyError):
+            self._last_fired_alarm = None
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":

@@ -46,6 +46,7 @@ def _make_switch_listener(eventtype_name="PRESS_SHORT", keyname_name="UPPER_BUTT
     listener = SwitchDeviceEventListener.__new__(SwitchDeviceEventListener)
     listener.hass = _make_hass()
     listener.device_id = "ha-device-id-1"
+    listener._last_fired_timestamp = -1  # fresh; first real ts fires (#336 guard)
     listener._device = SimpleNamespace(
         id="hdm:switch:1",
         name="Test Switch",
