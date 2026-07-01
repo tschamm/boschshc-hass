@@ -455,7 +455,6 @@ class OrientationLightResponseSelect(SHCEntity, SelectEntity):  # type: ignore[m
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "orientation_light_response_time"
-    _attr_icon = "mdi:timer-cog-outline"
     _attr_options = _POLL_CONTROL_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -946,7 +945,6 @@ class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "dimmer_phase_control"
-    _attr_icon = "mdi:sine-wave"
     _attr_options = ["TRAILING", "LEADING"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -992,7 +990,6 @@ class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "installation_profile"
-    _attr_icon = "mdi:map-marker-radius-outline"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the installation-profile select."""

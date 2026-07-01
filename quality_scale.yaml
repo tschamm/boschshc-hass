@@ -105,18 +105,22 @@ rules:
   dependency-transparency:
     status: done
     comment: >
-      manifest.json "requirements": ["boschshcpy==0.2.117"] pins the exact
-      PyPI package.  No vendored hidden external deps; certificate.py is an
-      internal parser, not an external dependency.
+      manifest.json "requirements" pins an exact boschshcpy version (kept in
+      lockstep with requirements_test.txt on every release — see
+      VERIFY_PIP_MIRRORED in the project's release rules). No vendored hidden
+      external deps; certificate.py is an internal parser, not an external
+      dependency. (Avoid quoting the exact pinned version here — it rots on
+      every release; check manifest.json for the current value.)
 
   common-modules:
     status: done
     comment: >
       entity.py provides SHCEntity base class, async_migrate_to_new_unique_id,
-      async_get_device_id, async_remove_devices — reused across all 11
-      platforms.  const.py centralises all constants.  certificate.py provides
-      shared cert parsing.  Platform files import from .entity and .const
-      consistently, with no duplicated patterns across files.
+      async_get_device_id, async_remove_devices, and async_remove_stale_entity
+      (single-entity registry cleanup, added 0.10.1 for #356) — reused across
+      all platforms. const.py centralises all constants. certificate.py
+      provides shared cert parsing. Platform files import from .entity and
+      .const consistently, with no duplicated patterns across files.
 
   # ── DONE (bronze-quality-scale branch, 2026-06-20) ───────────────────────────
 
@@ -231,16 +235,20 @@ rules:
   discovery:
     status: done
     comment: >
-      config_flow.py implements async_step_zeroconf (line ~207) for automatic
-      SHC discovery on the local network.  manifest.json declares
-      "zeroconf": ["_http._tcp.local."].
+      config_flow.py implements async_step_zeroconf for automatic SHC
+      discovery on the local network. manifest.json declares a zeroconf
+      matcher on "_http._tcp.local." (schema: list of {type, name} objects,
+      not a bare string list — check manifest.json for the exact current
+      form).
 
   parallel-updates:
     status: done
     comment: >
-      PARALLEL_UPDATES = 1 is set in all 12 platform files (alarm_control_panel,
-      binary_sensor, button, climate, cover, event, light, number, select,
-      sensor, switch, valve).
+      PARALLEL_UPDATES = 1 is set in every platform file — 13 as of 0.10.x
+      (alarm_control_panel, binary_sensor, button, climate, cover, event,
+      light, number, select, sensor, switch, update, valve). Grep
+      `PARALLEL_UPDATES` across custom_components/bosch_shc/*.py to
+      re-verify count as platforms are added.
 
   devices:
     status: done
@@ -258,8 +266,8 @@ rules:
       communication-quality sensor, battery binary sensor) use
       EntityCategory.DIAGNOSTIC.  All other entities are primary (no category
       set).  switch.py SHCSwitchEntityDescription allows per-entity category
-      override; binary_sensor.py:SHCBatterySensor and
-      SHCCommunicationQualitySensor use EntityCategory.DIAGNOSTIC explicitly.
+      override; binary_sensor.py:BatterySensor and sensor.py:
+      CommunicationQualitySensor use EntityCategory.DIAGNOSTIC explicitly.
 
   docs-configuration-parameters:
     status: done
@@ -320,8 +328,18 @@ rules:
   icon-translations:
     status: done
     comment: >
-      icons.json created with icon entries tied to _attr_translation_key for
-      all entity classes that use translation keys.  Released 0.7.24.
+      icons.json has an entry keyed by _attr_translation_key for every entity
+      class that needs a NON-default icon (climate preset-mode state icons,
+      plus 18 button/sensor/select/binary_sensor entities). Created 0.7.24,
+      but a real gap was found+fixed 2026-07-01 (quality-scale audit): those
+      18 classes had BOTH a hardcoded _attr_icon AND _attr_translation_key —
+      the hardcoded icon (which wins over icons.json's default when both are
+      set) defeated the point of the rule. Moved all 18 into icons.json and
+      removed the hardcoded _attr_icon; SHCScenarioButton keeps _attr_icon
+      (no translation key — dynamic per-scenario name, nothing to conflict
+      with). New CI gate (scripts/check-icon-translations.py) fails the
+      build if _attr_icon and _attr_translation_key co-occur on the same
+      class again.
 
   exception-translations:
     status: done
@@ -363,11 +381,12 @@ rules:
   test-coverage:
     status: done
     comment: >
-      Unit-test suite in tests/bosch_shc/ covers all platforms.  Coverage
-      was raised from 48% to ≥90% across the 0.4.104–0.4.108 releases.
-      The ignored test files (test_config_flow.py, test_device_trigger.py)
-      require the HA harness and are exercised by the upstream CI (hassfest
-      + HACS validate).  All 2196 isolation-safe tests pass.
+      Unit-test suite in tests/bosch_shc/ covers all platforms, gated at
+      ≥95% coverage in CI (tests.yml --cov-fail-under=95). The ignored test
+      files (test_config_flow.py, test_device_trigger.py) require the HA
+      harness and are exercised by the upstream CI (hassfest + HACS
+      validate). (Avoid quoting an exact test count here — it rots on every
+      release; run the suite to see the current count.)
 
   # ── GOLD TIER ────────────────────────────────────────────────────────────────
   # Gold rules — assessed 2026-06-28 against bosch_shc v0.7.24
@@ -400,12 +419,12 @@ rules:
     comment: >
       All sensors with an HA equivalent use a device class: TemperatureSensor →
       TEMPERATURE, HumiditySensor → HUMIDITY, PowerSensor → POWER,
-      EnergySensor → ENERGY, IlluminanceSensor → ILLUMINANCE; ENUM sensors
+      EnergySensor → ENERGY, IlluminanceLevelSensor → ILLUMINANCE; ENUM sensors
       (BatteryLevelSensor, TwinguardCombinedRatingSensor, WalkStateSensor,
       DetectionStateSensor) → ENUM.  (The installation profile is a CONFIG
       select, which needs no device class.)  Binary sensors:
-      ShutterContactSensor → DOOR/WINDOW, SHCBatterySensor → BATTERY,
-      MotionDetectionSensor → MOTION, WaterLeakageSensor → MOISTURE.
+      ShutterContactSensor → DOOR/WINDOW, BatterySensor → BATTERY,
+      MotionDetectionSensor → MOTION, WaterLeakageDetectorSensor → MOISTURE.
       Entities with no matching device class (valve tappet, scenario buttons,
       user-defined states) intentionally have no device class set.
 
@@ -443,17 +462,22 @@ rules:
   docs-known-limitations:
     status: done
     comment: >
-      README.md "Known limitations" section expanded (0.7.25) to eight items:
-      local-only access, no hot-plug, SHC Classic/I unsupported, encrypted key
-      limitation, alarm PIN limitation, Light Control II opt-in, certificate
-      expiry, and camera stream scope.
+      README.md "Known limitations" section (added 0.7.25, revised 0.7.28):
+      local-only access, no hot-plug, encrypted key limitation, alarm PIN
+      limitation, Light Control II opt-in, certificate expiry, and camera
+      stream scope. NOTE: the original 0.7.25 version also listed "SHC
+      Classic/I unsupported" — 0.7.28 corrected the hardware-compatibility
+      claim (SHC I, SHC II, and SHC Classic all support the local REST API)
+      and removed that item; this yaml comment was stale until the
+      2026-07-01 quality-scale audit caught the mismatch.
 
   docs-supported-devices:
     status: done
     comment: >
-      README.md "Supported devices" section (added 0.7.25): controller compatibility
-      table (SHC II supported; SHC I + Classic not supported) and a full accessory
-      table mapping each device family to its entity types, plus unsupported note.
+      README.md "Supported devices" section (added 0.7.25, corrected 0.7.28):
+      controller compatibility table shows SHC I, SHC II, and SHC Classic all
+      ✅ Supported (both generations expose the same local REST API), plus a
+      full accessory table mapping each device family to its entity types.
 
   docs-supported-functions:
     status: done
@@ -495,18 +519,24 @@ rules:
       EmmaPowerSensor and BatteryLevelSensor were already disabled-by-default.
 
   # ── PLATINUM TIER ────────────────────────────────────────────────────────────
-  # Platinum rules — assessed 2026-06-28 against boschshcpy v0.3.19 / hass v0.7.24
-  # Rule count: 3  |  DONE: 1  |  TODO: 2
+  # Platinum rules — assessed 2026-06-28, corrected 2026-07-01 audit
+  # Rule count: 3  |  DONE: 3  |  TODO: 0
 
   async-dependency:
     status: done
     comment: >
       boschshcpy exposes SHCSessionAsync (session_async.py) and SHCApiAsync
       (api_async.py) — a fully async aiohttp-based client.  __init__.py
-      imports SHCSessionAsync and uses it exclusively for all I/O since the
-      0.7.22 async-migration (phases 0-3b released).  The synchronous
-      SHCSession is still present in the lib for backwards compatibility but
-      is not used by the integration.
+      imports SHCSessionAsync and uses it exclusively for the runtime
+      session/all polling I/O since the 0.7.22 async-migration.  CORRECTION
+      (2026-07-01 audit): the synchronous SHCSession is NOT fully unused —
+      config_flow.py still imports and instantiates it for the one-off
+      pairing calls (session.authenticate(), session.mdns_info()), offloaded
+      via hass.async_add_executor_job rather than replaced with an async
+      equivalent. This is an acceptable, intentional design (pairing is a
+      rare, one-shot blocking operation already correctly kept off the event
+      loop), but the earlier "not used by the integration" phrasing was
+      false — corrected here.
 
   inject-websession:
     status: done
@@ -520,12 +550,19 @@ rules:
   strict-typing:
     status: done
     comment: >
-      mypy --strict passes on both boschshcpy (py.typed added, mypy.ini
-      configured) and boschshc-hass (mypy.ini configured).  All type errors
-      resolved as of 0.7.29: removed stale type: ignore[no-untyped-call]
-      comments in device_service.py, device.py, userdefinedstate.py,
-      scenario.py; retained targeted type: ignore[misc, func-returns-value]
-      on the async wrapper that awaits the sync put_device_service_state
-      (SHCAPI._api typed as SHCAPI but runtime is SHCAPIAsync — structural
-      limitation of the dual-API design).  mypy step added to both CI
-      pipelines.
+      boschshcpy: mypy.ini has `strict = true`, py.typed marker present,
+      passes clean. boschshc-hass: mypy.ini does NOT set `strict = true` —
+      it intentionally disables several strict-mode checks
+      (disable_error_code = attr-defined,return-value,override,
+      typeddict-item,dict-item,assignment,arg-type,union-attr) because the
+      integration's device/service objects come from the untyped-at-runtime
+      boschshcpy dynamic attribute model. CORRECTION (2026-07-01 audit): the
+      earlier "mypy --strict passes on both" claim was false for
+      boschshc-hass — it passes its own (looser) configured rule set, not
+      literal --strict. Tightening it further (removing disabled error
+      codes one at a time) is a legitimate follow-up but a separate,
+      possibly large undertaking — not done here. Retained targeted
+      type: ignore[misc, func-returns-value] on the async wrapper that
+      awaits the sync put_device_service_state (device_service.py) —
+      structural limitation of the dual-API design, still present and
+      justified. mypy step present in both CI pipelines.

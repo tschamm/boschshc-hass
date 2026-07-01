@@ -79,6 +79,12 @@ jobs:
       - name: quality scale gate (platinum)
         run: python3 scripts/check-quality-scale.py --tier platinum
 
+      - name: icon-translations invariant (no hardcoded _attr_icon + translation_key)
+        run: python3 scripts/check-icon-translations.py
+
+      - name: parallel-updates coverage (every platform module)
+        run: python3 scripts/check-parallel-updates.py
+
       - name: translation completeness
         # Full-parity gate: every translations/<lang>.json must have the exact
         # same recursive key set as en.json (no untranslated fall-throughs, no

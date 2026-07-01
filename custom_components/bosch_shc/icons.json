@@ -11,6 +11,68 @@
           }
         }
       }
+    },
+    "binary_sensor": {
+      "call_for_heat": {
+        "default": "mdi:radiator"
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "default": "mdi:smoke-detector-alert"
+      },
+      "siren_test_alarm": {
+        "default": "mdi:bullhorn"
+      },
+      "walk_test": {
+        "default": "mdi:walk"
+      },
+      "walk_test_stop": {
+        "default": "mdi:stop"
+      },
+      "detection_test": {
+        "default": "mdi:walk"
+      },
+      "detection_test_stop": {
+        "default": "mdi:stop"
+      },
+      "reset_tamper": {
+        "default": "mdi:restart-alert"
+      },
+      "preview_max_brightness": {
+        "default": "mdi:brightness-7"
+      },
+      "preview_min_brightness": {
+        "default": "mdi:brightness-2"
+      }
+    },
+    "sensor": {
+      "purity": {
+        "default": "mdi:air-filter"
+      },
+      "communication_quality": {
+        "default": "mdi:wifi"
+      },
+      "keypad_trigger": {
+        "default": "mdi:gesture-tap-button"
+      },
+      "valve_tappet": {
+        "default": "mdi:gauge"
+      },
+      "siren_solar_charging": {
+        "default": "mdi:solar-power"
+      }
+    },
+    "select": {
+      "orientation_light_response_time": {
+        "default": "mdi:timer-cog-outline"
+      },
+      "dimmer_phase_control": {
+        "default": "mdi:sine-wave"
+      },
+      "installation_profile": {
+        "default": "mdi:map-marker-radius-outline"
+      }
     }
   }
 }

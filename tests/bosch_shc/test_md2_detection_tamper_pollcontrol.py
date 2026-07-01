@@ -270,9 +270,11 @@ class TestTamperResetButton:
         asyncio.run(b.async_press())
         dev.async_reset_tampered_state.assert_called_once_with()
 
-    def test_icon(self):
+    def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         b = SHCTamperResetButton.__new__(SHCTamperResetButton)
-        assert b._attr_icon == "mdi:restart-alert"
+        assert b._attr_translation_key == "reset_tamper"
 
 
 # ---------------------------------------------------------------------------

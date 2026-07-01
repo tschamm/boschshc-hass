@@ -198,7 +198,6 @@ class SHCRelayButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button entity that requests a smoke detector self-test."""
 
-    _attr_icon = "mdi:smoke-detector-alert"
     _attr_translation_key = "smoke_test"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -214,7 +213,6 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that fires a short Outdoor Siren test alarm (#120)."""
 
-    _attr_icon = "mdi:bullhorn"
     _attr_translation_key = "siren_test_alarm"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -278,7 +276,6 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     Pressing starts the test; a separate stop button is also created.
     """
 
-    _attr_icon = "mdi:walk"
     _attr_translation_key = "walk_test"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -300,7 +297,6 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     WalkTest service.  Only created when the WalkTest service is present.
     """
 
-    _attr_icon = "mdi:stop"
     _attr_translation_key = "walk_test_stop"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -322,7 +318,6 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     created when the device carries that service (supports_detection_test).
     """
 
-    _attr_icon = "mdi:walk"
     _attr_translation_key = "detection_test"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -340,7 +335,6 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that stops an in-progress detection (walk) test."""
 
-    _attr_icon = "mdi:stop"
     _attr_translation_key = "detection_test_stop"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -360,7 +354,6 @@ class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that resets an active tamper condition (LatestTamper service)."""
 
-    _attr_icon = "mdi:restart-alert"
     _attr_translation_key = "reset_tamper"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -376,7 +369,6 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that flashes the dimmer at max brightness for load calibration (#123)."""
 
-    _attr_icon = "mdi:brightness-7"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "preview_max_brightness"
 
@@ -395,7 +387,6 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that flashes the dimmer at min brightness for load calibration (#123)."""
 
-    _attr_icon = "mdi:brightness-2"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "preview_min_brightness"
 

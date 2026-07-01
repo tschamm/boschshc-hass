@@ -312,7 +312,6 @@ class CallForHeatSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     """
 
     _attr_device_class = BinarySensorDeviceClass.RUNNING
-    _attr_icon = "mdi:radiator"
     _attr_translation_key = "call_for_heat"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:

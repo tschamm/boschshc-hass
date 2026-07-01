@@ -540,7 +540,6 @@ class PuritySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     # bosch_shc integration assigns no device_class here either; the previous
     # SensorDeviceClass.CO2 mis-classified the reading (and pulled in HA's CO2
     # safety thresholds / statistics handling). #204
-    _attr_icon = "mdi:air-filter"
     _attr_native_unit_of_measurement = UnitOfRatio.PARTS_PER_MILLION
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
@@ -629,7 +628,6 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     lowercase slugs so HA can translate them (no more raw ALL-CAPS "GOOD"/"BAD").
     """
 
-    _attr_icon = "mdi:wifi"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.ENUM
@@ -665,7 +663,6 @@ class KeypadTriggerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "keypad_trigger"
-    _attr_icon = "mdi:gesture-tap-button"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize a SHC keypad-trigger mapping sensor."""
@@ -861,7 +858,6 @@ class PowerYieldSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
 class ValveTappetSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC valve tappet reporting sensor."""
 
-    _attr_icon = "mdi:gauge"
     _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -1132,7 +1128,6 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:solar-power"
     _attr_translation_key = "siren_solar_charging"
     _attr_options = ["bad", "medium", "good", "unknown"]
 

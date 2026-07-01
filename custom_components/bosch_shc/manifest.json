@@ -9,6 +9,6 @@
   "issue_tracker": "https://github.com/tschamm/boschshc-hass/issues",
   "loggers": ["boschshcpy"],
   "requirements": ["boschshcpy==0.4.5"],
-  "version": "0.10.1",
+  "version": "0.10.2",
   "zeroconf": [{ "type": "_http._tcp.local.", "name": "bosch shc*" }]
 }

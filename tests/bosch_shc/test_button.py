@@ -229,10 +229,11 @@ class TestSHCSmokeTestButton:
         btn = self._make(root="r1", device_id="d1")
         assert btn._attr_unique_id == "r1_d1_smoke_test"
 
-    def test_icon(self):
+    def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make()
-        # HA ButtonEntity may wrap _attr_icon as a property — check on instance.
-        assert btn._attr_icon == "mdi:smoke-detector-alert"
+        assert btn._attr_translation_key == "smoke_test"
 
     def test_press_calls_async_smoketest_requested(self):
         btn = self._make()
@@ -328,9 +329,11 @@ class TestSHCWalkTestButtons:
         btn = self._make_walk(SHCWalkTestButton, root="r1", device_id="d1")
         assert btn._attr_unique_id == "r1_d1_walk_test"
 
-    def test_walk_start_icon(self):
+    def test_walk_start_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make_walk(SHCWalkTestButton)
-        assert btn._attr_icon == "mdi:walk"
+        assert btn._attr_translation_key == "walk_test"
 
     def test_walk_start_press_sends_start_request(self):
         from boschshcpy.services_impl import WalkTestService
@@ -355,9 +358,11 @@ class TestSHCWalkTestButtons:
         btn = self._make_walk(SHCWalkTestStopButton, root="r1", device_id="d1")
         assert btn._attr_unique_id == "r1_d1_walk_test_stop"
 
-    def test_walk_stop_icon(self):
+    def test_walk_stop_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make_walk(SHCWalkTestStopButton)
-        assert btn._attr_icon == "mdi:stop"
+        assert btn._attr_translation_key == "walk_test_stop"
 
     def test_walk_stop_press_sends_stop_request(self):
         from boschshcpy.services_impl import WalkTestService
@@ -465,9 +470,11 @@ class TestSHCDetectionTestButtons:
         btn = self._make_det(SHCDetectionTestButton, root="r1", device_id="d1")
         assert btn._attr_unique_id == "r1_d1_detection_test"
 
-    def test_det_start_icon(self):
+    def test_det_start_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make_det(SHCDetectionTestButton)
-        assert btn._attr_icon == "mdi:walk"
+        assert btn._attr_translation_key == "detection_test"
 
     def test_det_start_press_sends_start_request(self):
         from boschshcpy.services_impl import DetectionTestService
@@ -492,9 +499,11 @@ class TestSHCDetectionTestButtons:
         btn = self._make_det(SHCDetectionTestStopButton, root="r2", device_id="d2")
         assert btn._attr_unique_id == "r2_d2_detection_test_stop"
 
-    def test_det_stop_icon(self):
+    def test_det_stop_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make_det(SHCDetectionTestStopButton)
-        assert btn._attr_icon == "mdi:stop"
+        assert btn._attr_translation_key == "detection_test_stop"
 
     def test_det_stop_press_sends_stop_request(self):
         from boschshcpy.services_impl import DetectionTestService
@@ -581,9 +590,11 @@ class TestSHCTamperResetButton:
         btn = self._make(root="r1", device_id="d1")
         assert btn._attr_unique_id == "r1_d1_reset_tamper"
 
-    def test_icon(self):
+    def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make()
-        assert btn._attr_icon == "mdi:restart-alert"
+        assert btn._attr_translation_key == "reset_tamper"
 
     def test_press_calls_async_reset_tampered_state(self):
         btn = self._make()
@@ -840,11 +851,9 @@ class TestSHCSirenTestAlarmButton:
         btn = self._make(root="r1", device_id="d1")
         assert btn._attr_unique_id == "r1_d1_test_alarm"
 
-    def test_icon(self):
-        btn = self._make()
-        assert btn._attr_icon == "mdi:bullhorn"
-
     def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         btn = self._make()
         assert btn._attr_translation_key == "siren_test_alarm"
 

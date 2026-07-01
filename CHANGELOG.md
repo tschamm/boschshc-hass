@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.10.2 — Quality-scale audit: icon-translations gap + doc corrections
+
+**No breaking config changes.**
+
+Full audit of all 52 `quality_scale.yaml` claims against current code (4
+independent reviewers, one per tier) found one real implementation gap and
+several stale documentation claims — no other functional bugs.
+
+### Fixed
+
+- **`icon-translations`: 18 entity classes hardcoded `_attr_icon` alongside
+  `_attr_translation_key`** (`binary_sensor.py`, `button.py`, `sensor.py`,
+  `select.py`). A hardcoded instance icon wins over `icons.json`'s default
+  lookup, silently defeating the point of icon translations. Moved all 18
+  icons into `icons.json` (keyed by `translation_key`) and removed the
+  hardcoded `_attr_icon`. `SHCScenarioButton` intentionally keeps its
+  hardcoded icon (no translation key — dynamic per-scenario name, nothing
+  to conflict with).
+
+### Added
+
+- **New CI gates**: `scripts/check-icon-translations.py` (fails if
+  `_attr_icon` and `_attr_translation_key` ever co-occur on the same class
+  again) and `scripts/check-parallel-updates.py` (fails if any platform
+  module is missing `PARALLEL_UPDATES` — also caught that the previous
+  hand-maintained count in `quality_scale.yaml` was stale by one platform,
+  `update.py`).
+
+### Changed
+
+- Corrected several stale `quality_scale.yaml` claims: an ancient pinned
+  `boschshcpy` version quoted verbatim in `dependency-transparency`;
+  `docs-known-limitations`/`docs-supported-devices` still said SHC I/Classic
+  were unsupported (README corrected this in 0.7.28, the tracking doc
+  wasn't updated); `async-dependency` claimed the synchronous `SHCSession`
+  is unused (it's still used for pairing in `config_flow.py`, correctly
+  offloaded to an executor); `strict-typing` claimed `mypy --strict` passes
+  on boschshc-hass (it runs its own documented, intentionally looser rule
+  set, not literal `--strict`); a few stale class-name references.
+
 ## 0.10.1 — Motion Detector II indicator light left orphaned after profile switch (#356)
 
 **No breaking config changes.**

@@ -241,9 +241,11 @@ class TestSHCWalkTestButton:
         call_arg = dev.async_set_walk_state_request.call_args[0][0]
         assert call_arg == WalkTestService.WalkStateRequest.WALK_STATE_START
 
-    def test_icon(self):
+    def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         b = self._make()
-        assert b._attr_icon == "mdi:walk"
+        assert b._attr_translation_key == "walk_test"
 
 
 # ---------------------------------------------------------------------------
@@ -284,9 +286,11 @@ class TestSHCWalkTestStopButton:
         assert call_arg == WalkTestService.WalkStateRequest.WALK_STATE_STOP
         assert call_arg != WalkTestService.WalkStateRequest.WALK_STATE_START
 
-    def test_icon(self):
+    def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
         b = self._make()
-        assert b._attr_icon == "mdi:stop"
+        assert b._attr_translation_key == "walk_test_stop"
 
 
 # ---------------------------------------------------------------------------
