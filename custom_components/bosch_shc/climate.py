@@ -347,6 +347,17 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
 
         if self.min_temp <= temperature <= self.max_temp:
             try:
+                # SHC also rejects a setpoint write while the room is in
+                # eco/reduced ("low") state — independent of operationMode,
+                # e.g. triggered by an open window — with the same
+                # WRONG_THERMOSTAT_GROUP_MODE error. Clear it first, same as
+                # _async_apply_hvac_mode already does for HVAC mode changes.
+                # Keyed on the raw `low` field rather than
+                # preset_mode/supports_eco: floor-heating rooms can have
+                # low=True without exposing a distinct eco preset. #73
+                if getattr(self._device, "low", False):
+                    await self._device.async_set_low(False)
+
                 # SHC rejects a setpoint write while operationMode=AUTOMATIC
                 # (HTTP 400 WRONG_THERMOSTAT_GROUP_MODE).  For a bare
                 # set_temperature (no hvac_mode given, e.g. from a script) drop

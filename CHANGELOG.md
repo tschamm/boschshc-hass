@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.9.3 — Eco/reduced state still blocked temperature writes (#73)
+
+**No breaking config changes.**
+
+### Fixed
+
+- **`WRONG_THERMOSTAT_GROUP_MODE` when setting temperature on a room in
+  eco/reduced state** (`climate.py`). 0.5.1 fixed the case where a room was
+  in `AUTOMATIC` (schedule) mode by dropping it to `MANUAL` before writing
+  the setpoint, but the SHC independently rejects the same write whenever
+  the room's `low` (eco/reduced) flag is set — e.g. triggered by an open
+  window, or by underfloor heating cutting out. That branch only ran when
+  an explicit `hvac_mode` was passed to `set_temperature`; a bare call (the
+  common case — a script or automation just adjusting the setpoint) never
+  cleared it. `async_set_temperature` now clears `low` itself first,
+  independent of `operationMode`, whenever the device reports it.
+
 ## 0.9.2 — Three rounds of fleet bug-hunt fixes
 
 **No breaking config changes.** One behavior change worth knowing about:

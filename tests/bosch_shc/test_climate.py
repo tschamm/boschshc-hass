@@ -172,10 +172,16 @@ class TestEcoPreset:
     """preset_mode == PRESET_ECO when device.low is True.
 
     P2-B (#196): the old guard that silently skipped setpoint writes in ECO
-    mode has been removed.  async_set_hvac_mode (called first in
-    async_set_temperature) already clears low=False, but put_state_element
-    does NOT update the in-memory _raw_state cache, so the stale ECO check
-    would always block the write.  The fix: only skip the write when truly OFF.
+    mode has been removed.  only skip the write when truly OFF.
+
+    #73: a bare set_temperature (no explicit hvac_mode, e.g. called from an
+    automation) never reaches _async_apply_hvac_mode's ECO-clearing branch,
+    since that only runs when a mode is actually requested. The real SHC
+    rejects the setpoint write with WRONG_THERMOSTAT_GROUP_MODE while
+    low=True, independent of operationMode (confirmed by both an open-window
+    report and a floor-heating report on the SHC-II, which has `low` without
+    a dedicated eco preset). async_set_temperature now clears low=False
+    itself before writing the setpoint whenever the device reports low=True.
     """
 
     def test_preset_mode_eco_when_low(self):
@@ -210,6 +216,33 @@ class TestEcoPreset:
             _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
         except Exception as exc:
             pytest.fail(f"async_set_temperature raised in ECO: {exc!r}")
+
+    def test_eco_set_temperature_clears_low_first(self):
+        """#73: bare set_temperature (no hvac_mode) must clear low=False
+        itself — the ECO-clearing branch in _async_apply_hvac_mode is never
+        reached when no explicit hvac_mode is requested."""
+        device = _make_device(low=True, operation_mode_value="MANUAL")
+        entity = _make_entity(device)
+        _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
+        device.async_set_low.assert_awaited_once_with(False)
+
+    def test_eco_and_automatic_set_temperature_clears_low_and_manual(self):
+        """#73: the exact reported scenario — a room left in eco/reduced
+        (open window) AND still on the AUTOMATIC schedule. Both the low
+        state and the operation mode must be cleared before the setpoint
+        write, or the SHC still rejects it with
+        WRONG_THERMOSTAT_GROUP_MODE."""
+        device = _make_device(low=True, operation_mode_value="AUTOMATIC")
+        entity = _make_entity(device)
+        _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
+        device.async_set_low.assert_awaited_once_with(False)
+        device.async_set_setpoint_temperature.assert_awaited_with(19.0)
+
+    def test_not_eco_does_not_call_async_set_low(self):
+        device = _make_device(low=False, operation_mode_value="MANUAL")
+        entity = _make_entity(device)
+        _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
+        device.async_set_low.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------
