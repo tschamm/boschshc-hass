@@ -75,7 +75,10 @@ class SHCValve(SHCEntity, ValveEntity):  # type: ignore[misc]
         """
         try:
             pos = self._device.position
-            return int(pos) if pos is not None else None
+            # round(), not int(): int() truncates toward zero (63.9% would
+            # show as 63%, not 64%) — same precision class as the Twinguard
+            # int-truncation fix (#352).
+            return round(pos) if pos is not None else None
         except (ValueError, KeyError, AttributeError) as err:
             LOGGER.debug(
                 "Could not read valve position for %s: %s", self._device.name, err

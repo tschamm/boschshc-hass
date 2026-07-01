@@ -1133,6 +1133,68 @@ class TestTwinguardAlarmTracker:
         assert tracker.is_alarm_active_for("tw1") is True
         assert tracker.is_alarm_active_for("tw2") is False
 
+    def test_concurrent_refresh_newer_result_not_overwritten_by_stale_slower_call(self):
+        """Regression: two async_refresh() calls in flight at once (e.g. a
+        burst of SurveillanceAlarm callbacks) must not let an
+        earlier-started-but-slower-to-respond get_messages() call overwrite
+        the result of a later-started-but-faster call. The generation guard
+        must discard the stale (first-started) result."""
+        surv_svc = _make_service("SurveillanceAlarm")
+        sds = _make_base_device("smokeDetectionSystem", device_services=[surv_svc])
+        sds.alarm = SurveillanceAlarmService.State.ALARM_ON
+
+        resume_first = asyncio.Event()
+        call_count = [0]
+
+        async def get_messages_side_effect():
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First (older) call: block until the second call has
+                # already completed, simulating an out-of-order HTTP response.
+                await resume_first.wait()
+                return [
+                    {
+                        "messageCode": {"name": "SMOKE_ALARM"},
+                        "sourceId": "smokeDetectionSystem",
+                        "arguments": {
+                            "surveillanceEvents": [
+                                {"type": "SMOKE_LIGHT", "triggerId": "stale-tw"}
+                            ]
+                        },
+                    }
+                ]
+            # Second (newer) call: resolves immediately with the correct,
+            # up-to-date trigger — and unblocks the first call afterwards.
+            return [
+                {
+                    "messageCode": {"name": "SMOKE_ALARM"},
+                    "sourceId": "smokeDetectionSystem",
+                    "arguments": {
+                        "surveillanceEvents": [
+                            {"type": "SMOKE_LIGHT", "triggerId": "fresh-tw"}
+                        ]
+                    },
+                }
+            ]
+
+        session = SimpleNamespace(
+            api=SimpleNamespace(get_messages=AsyncMock(side_effect=get_messages_side_effect))
+        )
+        tracker = self._make_tracker(sds, session)
+
+        async def _run():
+            task1 = asyncio.ensure_future(tracker.async_refresh())
+            await asyncio.sleep(0)  # let task1 start and reach the blocked await
+            task2 = asyncio.ensure_future(tracker.async_refresh())
+            await task2
+            resume_first.set()
+            await task1
+
+        asyncio.run(_run())
+
+        assert tracker.is_alarm_active_for("fresh-tw") is True
+        assert tracker.is_alarm_active_for("stale-tw") is False
+
     def test_refresh_message_with_alarm_off_event_is_skipped(self):
         """A SMOKE_ALARM message containing an ALARM_OFF event is skipped."""
         surv_svc = _make_service("SurveillanceAlarm")

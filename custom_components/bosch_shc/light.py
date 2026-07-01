@@ -93,6 +93,12 @@ async def async_setup_entry(
         for light in session.device_helper.motion_detectors2:  # type: ignore[assignment]
             if device_excluded(light, config_entry.options):
                 continue
+            # The [+M] indicator-light services (BinarySwitch/MultiLevelSwitch)
+            # only exist on an MD2 in the OUTDOOR/[+M] installation profile —
+            # a base/GENERIC profile MD2 has neither, and every read/write on
+            # this entity would raise AttributeError on the None service.
+            if not getattr(light, "supports_light", False):
+                continue
             await async_migrate_to_new_unique_id(
                 hass, Platform.LIGHT, device=light, attr_name="MotionLight"
             )

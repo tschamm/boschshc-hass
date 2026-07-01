@@ -474,25 +474,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 await _set_child_lock_one(device, lock_state)
 
         @callback  # type: ignore[untyped-decorator]
-        def _presence_state_changed(event: Any) -> None:
-            """Handle state changes for any tracked presence entity.
+        def _evaluate_child_lock(*_args: Any) -> None:
+            """(Re-)evaluate and apply the aggregate child-lock state.
 
             Semantics: child lock ON when ANY tracked entity is present;
             OFF when ALL are away. "Present" is auto-inferred per domain.
             Redundant writes are suppressed via _last_lock_state.
+            Called both on presence state-change events and once at startup
+            (see below) so a person already present across a restart/reload
+            still gets locked, instead of only on the next state transition.
             """
-            new_state = event.data.get("new_state")
-            if new_state is None:
-                return
-            # Skip unavailable/unknown — entity is in a transient state.
-            if new_state.state in ("unavailable", "unknown"):
-                return
-
             # Recompute aggregate: is ANY tracked entity present?
             any_present = False
             for eid in presence_entities:
                 state_obj = hass.states.get(eid)
-                if state_obj is None:
+                if state_obj is None or state_obj.state in ("unavailable", "unknown"):
                     continue
                 if _entity_is_present(eid, state_obj):
                     any_present = True
@@ -506,8 +502,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             hass.async_create_task(_apply_child_lock(lock_on))
 
         entry.runtime_data.presence_unsub = async_track_state_change_event(
-            hass, presence_entities, _presence_state_changed
+            hass, presence_entities, _evaluate_child_lock
         )
+        # Apply the correct state once at startup/reload — otherwise a
+        # presence entity already "home" across the restart would leave
+        # devices unlocked until its next state-change event. Trade-off:
+        # _last_lock_state is a fresh local (seeded to None) every time this
+        # runs, so this fires one API write on EVERY setup — including a
+        # lightweight config-entry reload (e.g. an unrelated options-flow
+        # change), not just a real restart — even if the device is already in
+        # the correct lock state. We don't read back the device's actual
+        # current child_lock (extra API round-trip) to dedupe that, since the
+        # write is idempotent and correctness (never leaving an already-home
+        # person unlocked) matters more here than avoiding a redundant write.
+        _evaluate_child_lock()
 
     # Presence + time-window driven silent mode: optional, default off.
     # When enabled and someone is present AND the current time is inside the

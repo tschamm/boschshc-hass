@@ -990,7 +990,9 @@ def test_uds_switch_on_state_changed_callback_calls_schedule():
 
 def test_uds_switch_update_entity_information_deleted():
     """update_entity_information callback: deleted device → sets unavailable +
-    schedules removal via hass.async_create_task (not call_soon_threadsafe).
+    schedules removal via the thread-safe hass.create_task() — NOT
+    hass.async_create_task(), which is not thread-safe and raises when called
+    from boschshcpy's background polling thread (this callback's real caller).
     """
     task_calls: list = []
     scheduled: list = []
@@ -1021,9 +1023,12 @@ def test_uds_switch_update_entity_information_deleted():
     )
     sw.schedule_update_ha_state = lambda: scheduled.append(True)
     fake_loop = SimpleNamespace(call_soon_threadsafe=MagicMock())
+    # Fake hass exposing only the thread-safe create_task(); a stray
+    # async_create_task() call would raise AttributeError here, exactly like
+    # the real (non-thread-safe) HA method would raise off-loop.
     mock_hass = SimpleNamespace(
         loop=fake_loop,
-        async_create_task=lambda coro: task_calls.append(coro),
+        create_task=lambda coro: task_calls.append(coro),
     )
     sw.hass = mock_hass
 
@@ -1040,7 +1045,7 @@ def test_uds_switch_update_entity_information_deleted():
     second_cb = session.subscribe_userdefinedstate_callback.call_args_list[1][0][1]
     second_cb()
 
-    # Entity should be marked unavailable and async_create_task called (not call_soon_threadsafe)
+    # Entity should be marked unavailable and create_task called (not call_soon_threadsafe)
     assert sw._attr_available is False
     assert len(task_calls) >= 1
     assert not fake_loop.call_soon_threadsafe.called

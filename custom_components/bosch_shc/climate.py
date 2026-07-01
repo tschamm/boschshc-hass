@@ -290,21 +290,51 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
 
         # P2-B: call async_set_hvac_mode BEFORE the OFF guard so that a
         # combined temperature+mode call can change the mode first.
-        await self.async_set_hvac_mode(
-            kwargs.get(ATTR_HVAC_MODE)  # type: ignore[arg-type]
-        )  # set_temperature args may provide HVAC mode as well
+        requested_hvac_mode = kwargs.get(ATTR_HVAC_MODE)  # type: ignore[assignment]
+        # set_temperature args may provide HVAC mode as well
+        hvac_mode_write_succeeded = await self._async_apply_hvac_mode(
+            requested_hvac_mode  # type: ignore[arg-type]
+        )
 
-        if self.hvac_mode == HVACMode.OFF:
+        # boschshcpy's async_put_state_element() only awaits the HTTP PUT — it
+        # never updates the local device cache, which only refreshes on the
+        # next long-poll notification. So self.hvac_mode right after the
+        # await above can still read the PRE-write value. When the caller
+        # explicitly requested a mode AND that write actually succeeded (e.g.
+        # set_temperature(hvac_mode="heat", temperature=21) on a device that
+        # was OFF), trust the requested mode instead of re-reading the stale
+        # cache — otherwise the OFF guard below fires on stale
+        # summer_mode=True and silently drops the temperature write even
+        # though async_set_hvac_mode just turned heating back on. If the
+        # write FAILED (caught JSONRPCError/SHCException, logged inside
+        # _async_apply_hvac_mode), fall back to the real cached state rather
+        # than trusting a mode change that never actually applied — otherwise
+        # a failed mode write masks itself behind a second, more confusing
+        # "failed to set temperature" warning from the setpoint write below.
+        effective_hvac_mode = (
+            requested_hvac_mode
+            if requested_hvac_mode is not None and hvac_mode_write_succeeded
+            else self.hvac_mode
+        )
+
+        if effective_hvac_mode == HVACMode.OFF:
             LOGGER.debug(
                 "Skipping setting temperature as device %s is off.",
                 self.device_name,
             )
             return
 
-        if kwargs.get(ATTR_HVAC_MODE) == HVACMode.AUTO:
+        if requested_hvac_mode == HVACMode.AUTO and hvac_mode_write_succeeded:
             # Bosch rejects a setpoint write while in AUTOMATIC (schedule) mode.
-            # When the caller explicitly requested AUTO, honour the mode change
-            # and return — the schedule controls the temperature.
+            # When the caller explicitly requested AUTO and that write
+            # succeeded, honour the mode change and return — the schedule
+            # controls the temperature. Deliberately keyed on the REQUESTED
+            # mode (not effective_hvac_mode) and gated on success: a bare
+            # temperature call (no explicit hvac_mode) on a device that's
+            # currently AUTOMATIC must still fall through to the
+            # AUTOMATIC→MANUAL-then-write logic below, not bail out here; and
+            # a failed AUTO write must not silently drop the temperature
+            # request either.
             return
 
         if self.preset_mode == PRESET_BOOST:
@@ -350,8 +380,25 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
         COOL sets cooling_mode=True; OFF sets summer_mode=True.
         ECO (low) is cleared first when active so HVAC writes are never blocked. #196
         """
+        await self._async_apply_hvac_mode(hvac_mode)
+
+    async def _async_apply_hvac_mode(self, hvac_mode: str | None) -> bool:
+        """Write hvac_mode to the device; return whether it actually applied.
+
+        Split out from async_set_hvac_mode so async_set_temperature can tell
+        a successful mode change apart from a silently-caught write failure
+        (JSONRPCError/SHCException) or a no-op (mode not in hvac_modes) —
+        trusting a mode that was never actually applied would mask the real
+        failure behind a second, more confusing setpoint-write error.
+
+        Returns True when hvac_mode is None (nothing requested — not a
+        failure), False when hvac_mode isn't a supported mode (no-op) or a
+        write raised, True when all writes succeeded.
+        """
+        if hvac_mode is None:
+            return True
         if hvac_mode not in self.hvac_modes:
-            return
+            return False
 
         try:
             # Exit ECO (low) before applying any HVAC mode change so that
@@ -386,6 +433,8 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
                 self.device_name,
                 err,
             )
+            return False
+        return True
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode (transient override states only).

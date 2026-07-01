@@ -101,6 +101,21 @@ def test_dimmer_number_set_no_service_is_safe():
     asyncio.run(n.async_set_native_value(50.0))
 
 
+def test_dimmer_number_inverted_range_value_error_caught_not_raised():
+    """Regression: async_set_brightness_range() (boschshcpy) raises
+    ValueError on an inverted min/max range — DimmerConfigNumber must catch
+    it and log a warning, not let it propagate and crash the service call."""
+    n = DimmerConfigNumber(_FAKE_DEVICE, "e1", "min", 0, 100)
+    svc = _dimmer_svc(min_b=10, max_b=90)
+    svc.async_set_brightness_range = AsyncMock(
+        side_effect=ValueError("Invalid brightness range: minBrightness (95) must be less than maxBrightness (90)")
+    )
+    n._device = SimpleNamespace(dimmer_configuration=svc, name="Büro Dimmer")
+    # must not raise
+    asyncio.run(n.async_set_native_value(95.0))
+    svc.async_set_brightness_range.assert_awaited_once_with(min_brightness=95)
+
+
 def test_dimmer_number_has_correct_names():
     n_min = DimmerConfigNumber(_FAKE_DEVICE, "e1", "min", 0, 100)
     n_max = DimmerConfigNumber(_FAKE_DEVICE, "e1", "max", 0, 100)

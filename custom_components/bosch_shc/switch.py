@@ -1073,7 +1073,11 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
         def update_entity_information() -> None:
             if self._device.deleted:
                 self._attr_available = False
-                self.hass.async_create_task(self.async_will_remove_from_hass())
+                # This callback fires from boschshcpy's background polling
+                # thread, not the event loop — hass.async_create_task() would
+                # raise (HA's non-thread-safe-operation guard). hass.create_task()
+                # is the thread-safe wrapper (loop.call_soon_threadsafe).
+                self.hass.create_task(self.async_will_remove_from_hass())
             self.schedule_update_ha_state()
 
         self._session.subscribe_userdefinedstate_callback(

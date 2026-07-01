@@ -9,6 +9,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
+
 from boschshcpy import SHCIntrusionSystem
 from homeassistant.components.alarm_control_panel.const import (
     AlarmControlPanelEntityFeature,
@@ -301,6 +303,68 @@ def test_alarm_mute_calls_device_mute():
     panel._device.async_mute = AsyncMock()
     asyncio.run(panel.async_alarm_mute())
     panel._device.async_mute.assert_called_once_with()
+
+
+# ---------------------------------------------------------------------------
+# Regression: arm/disarm write failures must surface as HomeAssistantError,
+# not a raw SHCException/SHCConnectionError traceback (the SHC can reject an
+# arm/disarm request, e.g. a door/window sensor open).
+# ---------------------------------------------------------------------------
+
+def test_alarm_disarm_shcexception_raises_homeassistanterror():
+    from boschshcpy.exceptions import SHCException
+    from homeassistant.exceptions import HomeAssistantError
+
+    panel = _panel()
+    panel._device.async_disarm = AsyncMock(side_effect=SHCException("rejected"))
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(panel.async_alarm_disarm())
+
+
+def test_alarm_arm_away_shcconnectionerror_raises_homeassistanterror():
+    from boschshcpy.exceptions import SHCConnectionError
+    from homeassistant.exceptions import HomeAssistantError
+
+    panel = _panel()
+    panel._device.async_arm_full_protection = AsyncMock(
+        side_effect=SHCConnectionError("network down")
+    )
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(panel.async_alarm_arm_away())
+
+
+def test_alarm_arm_home_shcexception_raises_homeassistanterror():
+    from boschshcpy.exceptions import SHCException
+    from homeassistant.exceptions import HomeAssistantError
+
+    panel = _panel()
+    panel._device.async_arm_partial_protection = AsyncMock(
+        side_effect=SHCException("sensor open")
+    )
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(panel.async_alarm_arm_home())
+
+
+def test_alarm_arm_custom_bypass_shcexception_raises_homeassistanterror():
+    from boschshcpy.exceptions import SHCException
+    from homeassistant.exceptions import HomeAssistantError
+
+    panel = _panel()
+    panel._device.async_arm_individual_protection = AsyncMock(
+        side_effect=SHCException("rejected")
+    )
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(panel.async_alarm_arm_custom_bypass())
+
+
+def test_alarm_mute_shcexception_raises_homeassistanterror():
+    from boschshcpy.exceptions import SHCException
+    from homeassistant.exceptions import HomeAssistantError
+
+    panel = _panel()
+    panel._device.async_mute = AsyncMock(side_effect=SHCException("rejected"))
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(panel.async_alarm_mute())
 
 
 # ---------------------------------------------------------------------------

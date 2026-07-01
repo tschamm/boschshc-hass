@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from boschshcpy import SHCIntrusionSystem, SHCSession
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from homeassistant.components.alarm_control_panel import AlarmControlPanelEntity
 from homeassistant.components.alarm_control_panel.const import (
     AlarmControlPanelEntityFeature,
@@ -15,6 +16,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -165,23 +167,63 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
-        await self._device.async_disarm()
+        try:
+            await self._device.async_disarm()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Disarm failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_state_failed",
+            ) from err
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
-        await self._device.async_arm_full_protection()
+        try:
+            await self._device.async_arm_full_protection()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Arm away failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_state_failed",
+            ) from err
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
-        await self._device.async_arm_partial_protection()
+        try:
+            await self._device.async_arm_partial_protection()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Arm home failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_state_failed",
+            ) from err
 
     async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
         """Send arm home command."""
-        await self._device.async_arm_individual_protection()
+        try:
+            await self._device.async_arm_individual_protection()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Arm custom bypass failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_state_failed",
+            ) from err
 
     async def async_alarm_mute(self) -> None:
-        """Mute alarm command."""
-        await self._device.async_mute()
+        """Mute alarm command.
+
+        Note: HA core's AlarmControlPanelEntity has no alarm_mute hook /
+        feature flag, so this is currently unreachable from the UI/services —
+        kept for programmatic/future use, not a bug in itself.
+        """
+        try:
+            await self._device.async_mute()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Mute failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_state_failed",
+            ) from err
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

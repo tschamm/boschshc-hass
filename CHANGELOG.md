@@ -1,5 +1,88 @@
 # Changelog
 
+## 0.9.2 — Three rounds of fleet bug-hunt fixes
+
+**No breaking config changes.** One behavior change worth knowing about:
+a Motion Detector II in the base/GENERIC installation profile (no `[+M]`)
+no longer gets a (previously crash-prone) indicator-light entity — see
+"Fixed" below. Pins `boschshcpy==0.4.5` (also released today; see that
+repo's CHANGELOG for the matching lib-side fixes).
+
+Three rounds of proactive fleet bug-hunting (parallel independent agents
+per round), every fix adversarially re-verified by an independent post-fix
+pass before being applied. Deployed and running on Thomas' own HA before
+this release.
+
+### Fixed
+
+- **Silently dropped temperature write on a device that was off**
+  (`climate.py`). `set_temperature(hvac_mode="heat", temperature=21)` on an
+  OFF device could skip the setpoint write entirely: boschshcpy only awaits
+  the HTTP PUT, it never updates the local device cache, so the code was
+  re-reading the pre-write (stale) state right after telling the device to
+  turn on. A follow-up pass then found the fix itself needed to fall back
+  to the real cached state when the mode write *fails* (network error) —
+  otherwise a failed mode change was trusted anyway, masking the real
+  error behind a second, more confusing "failed to set temperature"
+  warning.
+- **Off-loop crash on device deletion** (`entity.py`, `switch.py`).
+  Deleting a device (or User Defined State) in the Bosch app while HA is
+  running called `hass.async_create_task()` from boschshcpy's background
+  polling thread — not thread-safe, raises under HA's non-thread-safe-
+  operation guard. Switched to the thread-safe `hass.create_task()`.
+- **Child-lock left unlocked across a restart** (`__init__.py`). The
+  presence-driven child-lock feature only reacted to state-*change*
+  events — a person already home when HA restarted stayed unlocked until
+  their next transition. Now evaluates and applies the correct state once
+  at startup/reload too.
+- **Diagnostics leaked a Zigbee hardware address** (`diagnostics.py`).
+  `device.id` (e.g. `hdm:ZigBee:5c0272fffe462481`) wasn't in the redaction
+  list — every "Download diagnostics" dump (routinely attached to public
+  bug reports) leaked one per device. Redacted, renamed to `device_id` so
+  the redaction doesn't also swallow the non-identifying `service.id`
+  fields the dump is read for.
+- **Credential repair could silently repoint an entry at the wrong
+  controller** (`config_flow.py`). `async_step_repair_credentials` didn't
+  verify the target host is the *same* physical SHC before writing new
+  credentials over an existing entry — a typo, DHCP reassignment, or a
+  second controller on the LAN would silently succeed. Now mDNS-probes and
+  verifies identity first, matching the existing `reconfigure_host` guard.
+- **Twinguard alarm-tracker race** (`binary_sensor.py`). A burst of
+  `SurveillanceAlarm` callbacks (e.g. multiple Twinguards) could have two
+  `get_messages()` HTTP calls in flight at once with no ordering
+  guarantee — a slower, earlier-started call could overwrite a faster,
+  fresher one. Added a generation counter so only the most-recently-
+  started call's result is ever applied.
+- **Motion Detector II crashed on the base/GENERIC installation profile**
+  (`light.py`). The `[+M]` indicator-light services (`BinarySwitch`/
+  `MultiLevelSwitch`) only exist on an MD2 in the `OUTDOOR`/`[+M]` profile
+  — the far more common base-profile MD2 has neither, so every state
+  read/write on the indicator-light entity raised `AttributeError`. The
+  entity is no longer created for a base-profile device (paired with a
+  `boschshcpy` fix that also makes the underlying getters/setters
+  None-safe).
+- **Alarm arm/disarm commands could crash with a raw traceback**
+  (`alarm_control_panel.py`). The SHC can reject an arm/disarm request
+  (e.g. a door/window sensor open) — `async_alarm_disarm`/`arm_away`/
+  `arm_home`/`arm_custom_bypass`/`mute` had no exception handling, unlike
+  every other write path in this integration. Now raises a clean
+  `HomeAssistantError` instead.
+- **Dimmer min/max brightness could be set to an inverted range**
+  (`number.py`). `Dimmer Min Brightness` and `Dimmer Max Brightness` are
+  independent HA number entities with no cross-validation — setting one
+  past the other's cached value silently sent an invalid range to the SHC.
+  Now caught (the underlying `boschshcpy` service rejects it) and logged
+  as a warning instead.
+- **Valve position display truncated instead of rounded** (`valve.py`).
+  `int()` truncates toward zero (63.9% showed as 63%, not 64%) — switched
+  to `round()`, same precision class as the earlier Twinguard fix.
+
+### Security
+
+- No hass-side security findings this round (see the paired `boschshcpy`
+  0.4.5 CHANGELOG for lib-side security fixes: private-key file
+  permissions, no key material printed to stdout, password prompting).
+
 ## 0.9.1 — Complete translations for all 29 languages
 
 ### Added

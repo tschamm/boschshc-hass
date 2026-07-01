@@ -94,10 +94,16 @@ def test_device_dump_redacts_pii_keeps_name_model_state():
     # PII redacted
     assert dev["root_device_id"] == REDACTED
     assert dev["serial"] == REDACTED
+    # device_id embeds a hardware address for Zigbee devices
+    # (e.g. "hdm:ZigBee:5c0272fffe462481") — same class of PII as
+    # macAddress/serial/root_device_id, must be redacted too.
+    assert dev["device_id"] == REDACTED
     # debugging-relevant fields kept
     assert dev["name"] == "Living Room Shutter"
     assert dev["device_model"] == "MICROMODULE_SHUTTER"
-    assert dev["id"] == "hdm:ZigBee:abc123"
+    # service.id (e.g. "ShutterControl") is not identifying and must survive
+    # redaction — it's needed to read the dump.
+    assert dev["services"][0]["id"] == "ShutterControl"
     state = dev["services"][0]["state"]
     assert state["operationState"] == "MOVING"
     assert state["level"] == 0.5

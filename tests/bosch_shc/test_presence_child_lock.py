@@ -56,6 +56,12 @@ def _make_fake_hass(states=None):
 
     hass.states = MagicMock()
     hass.states.get = MagicMock(side_effect=_states_get)
+    # _evaluate_child_lock() re-reads live state via hass.states.get() rather
+    # than the triggering event's payload — tests that want to exercise the
+    # unavailable/unknown/absent skip logic must mutate the backing dict via
+    # this helper before firing the callback, not just vary the event.
+    hass._set_state = lambda entity_id, val: _states.__setitem__(entity_id, val)
+    hass._del_state = lambda entity_id: _states.pop(entity_id, None)
 
     async def _executor_job(fn, *args):
         return fn(*args)
@@ -577,18 +583,28 @@ class TestNoOp:
         return hass, state_cb, therm
 
     def test_no_task_when_new_state_is_unavailable(self):
+        """_evaluate_child_lock() re-reads live state via hass.states.get()
+        rather than the event payload, so the skip logic must be exercised by
+        mutating the backing hass.states dict — not by varying an event
+        argument that the function never actually reads."""
         hass, state_cb, therm = self._setup()
+        hass.async_create_task.reset_mock()
+        hass._set_state("person.felix", "unavailable")
         state_cb(_state_event("unavailable", "home"))
         hass.async_create_task.assert_not_called()
 
     def test_no_task_when_new_state_is_unknown(self):
         hass, state_cb, therm = self._setup()
+        hass.async_create_task.reset_mock()
+        hass._set_state("person.felix", "unknown")
         state_cb(_state_event("unknown", "home"))
         hass.async_create_task.assert_not_called()
 
     def test_no_task_when_new_state_is_none(self):
-        """new_state=None (entity removed): ignore."""
+        """Entity removed from hass.states entirely: ignore."""
         hass, state_cb, therm = self._setup()
+        hass.async_create_task.reset_mock()
+        hass._del_state("person.felix")
         event = SimpleNamespace(
             data={
                 "new_state": None,
@@ -597,6 +613,46 @@ class TestNoOp:
         )
         state_cb(event)
         hass.async_create_task.assert_not_called()
+
+    def test_absent_entity_skipped_but_other_tracked_entity_still_detected(self):
+        """Regression: a tracked entity that is unavailable/not-yet-restored
+        must not short-circuit the whole aggregate — a DIFFERENT tracked
+        entity that's genuinely home must still lock. Proves the per-entity
+        skip is a `continue`, not an early return."""
+        therm = _make_device("therm-1")
+        session = _make_fake_session(thermostats=[therm])
+        opts = {OPT_PRESENCE_ENTITY: ["person.felix", "person.anna"]}
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.anna": "home"},  # person.felix absent entirely
+        )
+
+        hass.async_create_task.assert_called_once()
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        therm.async_set_child_lock.assert_awaited_once_with(True)
+
+    def test_unavailable_transition_unlocks_after_being_home(self):
+        """A tracked person going home -> unavailable must be treated as
+        absent (not "still home"), unlocking the device."""
+        therm = _make_device("therm-1")
+        session = _make_fake_session(thermostats=[therm])
+        opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "home"},
+        )
+        # Startup locked it (drain that call).
+        hass.async_create_task.reset_mock()
+        therm.async_set_child_lock.reset_mock()
+
+        hass._set_state("person.felix", "unavailable")
+        state_cb(_state_event("unavailable", "home"))
+
+        hass.async_create_task.assert_called_once()
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        therm.async_set_child_lock.assert_awaited_once_with(False)
 
     def test_no_task_when_aggregate_unchanged_away(self):
         """Transition between two non-present states: aggregate stays False -> no write."""
@@ -665,6 +721,45 @@ class TestErrorHandling:
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
+
+
+# ---------------------------------------------------------------------------
+# Tests: initial state applied at startup/reload (not just on state-change)
+# ---------------------------------------------------------------------------
+
+class TestInitialStateAppliedAtStartup:
+    def test_lock_applied_at_setup_when_person_already_home(self):
+        """A person already 'home' across a restart/reload must be locked
+        immediately at setup — not only on their next state-change event."""
+        therm = _make_device("therm-1")
+        session = _make_fake_session(thermostats=[therm])
+        opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "home"},
+        )
+
+        hass.async_create_task.assert_called_once()
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        therm.async_set_child_lock.assert_awaited_once_with(True)
+
+    def test_no_lock_applied_at_setup_when_nobody_home(self):
+        """Nobody home at setup: aggregate is False, matching the initial
+        sentinel semantics for 'off' — a task still fires once to make sure
+        devices aren't left locked from a prior session, then settles."""
+        therm = _make_device("therm-1")
+        session = _make_fake_session(thermostats=[therm])
+        opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
+        hass, entry, state_cb = _do_setup(
+            session, options=opts, capture_state_cb=True,
+            hass_states={"person.felix": "not_home"},
+        )
+
+        hass.async_create_task.assert_called_once()
+        task_coro = hass.async_create_task.call_args[0][0]
+        _run(task_coro)
+        therm.async_set_child_lock.assert_awaited_once_with(False)
 
 
 # ---------------------------------------------------------------------------

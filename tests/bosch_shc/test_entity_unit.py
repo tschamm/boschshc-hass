@@ -296,10 +296,11 @@ class TestOnStateChangedCallback:
         on_state_changed()
         assert ent.schedule_calls >= 1
 
-    def test_update_entity_information_deleted_calls_async_create_task(self):
-        """When device.deleted is True, update_entity_information should call
-        hass.async_create_task directly (not call_soon_threadsafe).
-        """
+    def test_update_entity_information_deleted_calls_create_task(self):
+        """When device.deleted is True, update_entity_information must call
+        the thread-safe hass.create_task() — NOT hass.async_create_task(),
+        which is not thread-safe and raises when called from boschshcpy's
+        background polling thread (this callback's real caller)."""
         svc = FakeService()
         task_calls = []
         ent = TrackingEntity()
@@ -322,13 +323,15 @@ class TestOnStateChangedCallback:
         ent.update_attr_calls = 0
         ent.schedule_calls = 0
 
-        # Fake hass with async_create_task (direct call path after thread-safety fix)
+        # Fake hass exposing only the thread-safe create_task(); a stray
+        # async_create_task() call would raise AttributeError here, exactly
+        # like the real (non-thread-safe) HA method would raise off-loop.
         fake_loop = SimpleNamespace(
             call_soon_threadsafe=lambda *a, **kw: None
         )
         fake_hass = SimpleNamespace(
             loop=fake_loop,
-            async_create_task=lambda coro: task_calls.append(coro),
+            create_task=lambda coro: task_calls.append(coro),
         )
         ent.hass = fake_hass
 
@@ -349,8 +352,8 @@ class TestOnStateChangedCallback:
         assert dev_callbacks, "No device subscribe_callback registered"
         update_entity_information = dev_callbacks[0]
 
-        # Calling it with deleted=True should call hass.async_create_task directly
+        # Calling it with deleted=True should call hass.create_task
         update_entity_information()
         assert len(task_calls) >= 1, (
-            "Expected hass.async_create_task to be called for deleted device"
+            "Expected hass.create_task to be called for deleted device"
         )

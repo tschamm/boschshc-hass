@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
+from homeassistant.data_entry_flow import AbortFlow
 
 from custom_components.bosch_shc.config_flow import ConfigFlow, OptionsFlowHandler
 from custom_components.bosch_shc.const import (
@@ -230,8 +231,13 @@ class TestReconfigureMenu:
 class TestRepairCredentials:
     """Unit tests for async_step_repair_credentials."""
 
-    def _make_repair_flow(self, host="10.0.0.1"):
-        """Return a ConfigFlow wired for repair_credentials tests."""
+    def _make_repair_flow(self, host="10.0.0.1", probed_unique_id="shc-serial-001"):
+        """Return a ConfigFlow wired for repair_credentials tests.
+
+        probed_unique_id is what the pre-registration _get_info() mDNS probe
+        (fix: SHC-identity check) returns; defaults to matching the entry's
+        so existing success/error-path tests aren't affected by that check.
+        """
         entry = _make_entry(host=host, unique_id="shc-serial-001", data={
             CONF_HOST: host,
             CONF_TOKEN: "old-token:oldhostname",
@@ -241,6 +247,22 @@ class TestRepairCredentials:
         })
         flow = _make_flow(entry=entry)
         flow._get_reconfigure_entry = lambda: entry
+
+        async def fake_get_info(_host):
+            return {"title": "probed", "unique_id": probed_unique_id}
+
+        flow._get_info = fake_get_info
+
+        async def fake_set_uid(uid):
+            flow.context["unique_id"] = uid
+
+        flow.async_set_unique_id = fake_set_uid
+
+        def fake_mismatch(*, reason="unique_id_mismatch"):
+            if flow.unique_id != entry.unique_id:
+                raise AbortFlow(reason)
+
+        flow._abort_if_unique_id_mismatch = fake_mismatch
         return flow, entry
 
     def test_repair_shows_form_on_none_input(self):
@@ -387,6 +409,31 @@ class TestRepairCredentials:
         assert flow.async_show_form.called
         errors = flow.async_show_form.call_args[1]["errors"]
         assert errors.get("base") == "pairing_failed"
+
+    def test_repair_wrong_shc_aborts_before_writing_credentials(self):
+        """Typing a different SHC's host must abort, not silently repoint the
+        entry's cert/token at an unrelated controller (fix: repair_credentials
+        previously had no _abort_if_unique_id_mismatch check, unlike
+        reconfigure_host)."""
+        flow, entry = self._make_repair_flow(probed_unique_id="shc-serial-999")
+        flow.async_update_reload_and_abort = MagicMock()
+
+        user_input = {
+            CONF_HOST: "10.0.0.3",
+            CONF_PASSWORD: "secret",
+            CONF_NAME: "HomeAssistant",
+        }
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.zeroconf.async_get_instance",
+            new=AsyncMock(return_value=MagicMock()),
+        ):
+            with pytest.raises(AbortFlow) as exc_info:
+                asyncio.run(flow.async_step_repair_credentials(user_input=user_input))
+
+        assert "wrong_shc" in str(exc_info.value)
+        # Must not have proceeded to write new credentials over the entry.
+        assert not flow.async_update_reload_and_abort.called
 
     def test_repair_host_prefilled_from_entry(self):
         """The repair form pre-fills the host from the existing config entry."""

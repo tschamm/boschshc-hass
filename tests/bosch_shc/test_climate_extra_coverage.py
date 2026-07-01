@@ -305,3 +305,48 @@ class TestClimateSetTemperatureManualSwitch:
 
         # async_set_operation_mode must not have been called at all
         ent._device.async_set_operation_mode.assert_not_awaited()
+
+    def test_set_temperature_explicit_heat_writes_setpoint_despite_stale_off_cache(self):
+        """Regression: boschshcpy's async_put_state_element() only awaits the
+        HTTP PUT, it never updates the local device cache — so right after
+        async_set_hvac_mode(HEAT) awaits async_set_summer_mode(False), the
+        device's cached summer_mode is still stale True until the next
+        long-poll. set_temperature(hvac_mode="heat", temperature=21) on a
+        device that was OFF must still write the setpoint — it must not
+        re-read the stale cache and bail out via the OFF guard, silently
+        dropping the temperature the caller explicitly asked for."""
+        from homeassistant.components.climate.const import HVACMode
+
+        ent = self._make_entity(operation_mode=_MANUAL)
+        ent._device.summer_mode = True  # stale "device is off" cache
+
+        asyncio.run(ent.async_set_temperature(
+            **{ATTR_TEMPERATURE: 21.0, ATTR_HVAC_MODE: HVACMode.HEAT}
+        ))
+
+        ent._device.async_set_summer_mode.assert_awaited_with(False)
+        ent._device.async_set_setpoint_temperature.assert_awaited_with(21.0)
+
+    def test_set_temperature_explicit_heat_write_failure_falls_back_to_stale_cache_off_guard(self):
+        """Regression: if the HEAT mode write itself fails (JSONRPCError/
+        SHCException, caught+logged inside _async_apply_hvac_mode), the
+        device is still actually OFF — set_temperature must NOT trust the
+        (never-applied) requested mode and must fall back to the real
+        cached state, so the OFF guard correctly skips the setpoint write
+        instead of attempting (and failing) it a second time."""
+        from boschshcpy.api import JSONRPCError
+        from homeassistant.components.climate.const import HVACMode
+
+        ent = self._make_entity(operation_mode=_MANUAL)
+        ent._device.summer_mode = True  # device is genuinely OFF
+        ent._device.async_set_summer_mode = AsyncMock(
+            side_effect=JSONRPCError(-1, "network error")
+        )
+
+        asyncio.run(ent.async_set_temperature(
+            **{ATTR_TEMPERATURE: 21.0, ATTR_HVAC_MODE: HVACMode.HEAT}
+        ))
+
+        # The failed mode write must not be trusted — setpoint must NOT be
+        # written since the device is still actually off.
+        ent._device.async_set_setpoint_temperature.assert_not_awaited()

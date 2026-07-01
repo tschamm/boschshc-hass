@@ -49,8 +49,13 @@ def _make_light_device(device_id="light-1", room_id="room-1"):
     )
 
 
-def _make_motion_detector2(device_id="md2-1", room_id="room-2"):
-    """Minimal device double for a motion detector II."""
+def _make_motion_detector2(device_id="md2-1", room_id="room-2", supports_light=True):
+    """Minimal device double for a motion detector II.
+
+    supports_light=True models the OUTDOOR/[+M] installation profile (has the
+    indicator-light services); False models the base/GENERIC profile MD2,
+    which has neither BinarySwitch nor MultiLevelSwitch (#325/#303).
+    """
     return SimpleNamespace(
         id=device_id,
         root_device_id="shc-root",
@@ -66,6 +71,7 @@ def _make_motion_detector2(device_id="md2-1", room_id="room-2"):
         unsubscribe_callback=lambda eid: None,
         binaryswitch=False,
         multi_level_switch=None,
+        supports_light=supports_light,
     )
 
 
@@ -190,6 +196,21 @@ class TestMotionDetector2Setup:
         assert any(
             isinstance(e, MotionDetectorLight) and e._device is dev for e in added
         ), "Non-excluded MD2 should produce a MotionDetectorLight entity"
+
+    def test_base_profile_motion_detector2_skipped_no_light_services(self):
+        """Regression: a base/GENERIC profile MD2 (supports_light=False, no
+        BinarySwitch/MultiLevelSwitch services) must NOT get a
+        MotionDetectorLight entity — previously this crashed on every state
+        read/write with AttributeError on the None service (#325/#303)."""
+        dev = _make_motion_detector2(device_id="base-md2", supports_light=False)
+        hass, entry = _make_hass_and_entry(
+            motion2=[dev],
+            excluded_device_ids=[],
+        )
+        added = _run_setup(hass, entry)
+        assert all(
+            getattr(e, "_device", None) is not dev for e in added
+        ), "Base-profile MD2 (no [+M] light services) must not get a MotionDetectorLight"
 
     def test_async_migrate_called_for_motion_detector2(self):
         """async_migrate_to_new_unique_id must be called with attr_name='MotionLight'."""

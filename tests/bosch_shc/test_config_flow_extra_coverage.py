@@ -453,6 +453,14 @@ class TestAsyncStepRepairCredentialsErrors:
         })
         flow = _make_flow(entry=entry)
         flow._get_reconfigure_entry = lambda: entry
+        # Fix: repair_credentials now mDNS-probes the target's identity
+        # before registering (SHC-identity check). Stub it to succeed/match
+        # so these tests exercise the registration error path, as before.
+        flow._get_info = AsyncMock(
+            return_value={"title": "probed", "unique_id": entry.unique_id}
+        )
+        flow.async_set_unique_id = AsyncMock()
+        flow._abort_if_unique_id_mismatch = MagicMock()
         return flow
 
     def test_session_error_sets_session_error(self):

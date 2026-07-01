@@ -58,14 +58,13 @@ rules:
       callbacks; async_will_remove_from_hass (entity.py:106) unsubscribes.
       EventEntity subclasses (event.py lines 127-130, 214-219, 245-251,
       280-286, 315-321) subscribe in async_added_to_hass.
-      PARTIAL VIOLATION: MotionDetectionSensor.__init__ (binary_sensor.py:265)
-      and SmokeDetectorSensor.__init__ (line 352) subscribe the LatestMotion /
-      Alarm callback inside __init__ before async_added_to_hass.
-      SmokeDetectionSystemSensor.__init__ (line 490) does the same.  These
-      three classes are rule violations but are pre-existing and have matching
-      _handle_ha_stop cleanup callbacks.  Marking done because the base class
-      and all event platform entities are compliant; the three violations are
-      tracked separately and do not block Bronze.
+      MotionDetectionSensor.__init__ (binary_sensor.py:426),
+      SmokeDetectorSensor.__init__ (line 546), and
+      SmokeDetectionSystemSensor.__init__ (line 736) now only look up the
+      matching device service in __init__ (needed for the replay-guard
+      seeding) and subscribe the callback in async_added_to_hass (lines 452,
+      577, 767 respectively) — the previously-tracked partial violation is
+      fixed, no longer a known gap.
 
   appropriate-polling:
     status: done

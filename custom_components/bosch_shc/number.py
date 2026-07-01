@@ -805,9 +805,14 @@ class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         except (
             AttributeError,
             KeyError,
+            ValueError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
         ) as err:
+            # ValueError: async_set_brightness_range() rejects an inverted
+            # range (min >= max) — min/max are independent HA number
+            # entities, so setting one past the other's cached value is a
+            # realistic user action, not a programming error.
             LOGGER.warning(
                 "Unable to set dimmer %s for %s: %s",
                 self._field,

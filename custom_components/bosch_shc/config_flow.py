@@ -293,28 +293,54 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
         if user_input is not None:
             host = user_input[CONF_HOST]
             zeroconf_instance = await zeroconf.async_get_instance(self.hass)
+
+            # mDNS-probe the target host's identity BEFORE registering new
+            # credentials against it — unlike reconfigure_host, this step
+            # previously wrote whatever host the user typed straight into the
+            # entry with no check it's the same physical SHC (typo, DHCP
+            # reassignment, second controller on the LAN would all silently
+            # repoint an existing entry's cert/token). Kept in its own
+            # try/except: _abort_if_unique_id_mismatch raises AbortFlow, which
+            # must propagate to HA's flow manager, not be swallowed by the
+            # broad `except Exception` in the registration try/except below.
             try:
-                result = await self.hass.async_add_executor_job(
-                    create_credentials_and_validate,
-                    self.hass,
-                    host,
-                    user_input,
-                    zeroconf_instance,
-                )
-            except SHCAuthenticationError:
-                errors["base"] = "invalid_auth"
+                info = await self._get_info(host)
             except SHCConnectionError:
                 errors["base"] = "cannot_connect"
-            except SHCSessionError as err:
-                LOGGER.warning("Session error: %s", err.message)
-                errors["base"] = "session_error"
-            except SHCRegistrationError as err:
-                LOGGER.warning("Registration error: %s", err.message)
-                errors["base"] = "pairing_failed"
             except Exception:  # pylint: disable=broad-except  # noqa: BLE001
-                LOGGER.exception("Unexpected exception during repair_credentials")
+                LOGGER.exception(
+                    "Unexpected exception probing SHC identity for repair_credentials"
+                )
                 errors["base"] = "unknown"
             else:
+                await self.async_set_unique_id(info["unique_id"])
+                self._abort_if_unique_id_mismatch(reason="wrong_shc")
+
+            result = None
+            if not errors:
+                try:
+                    result = await self.hass.async_add_executor_job(
+                        create_credentials_and_validate,
+                        self.hass,
+                        host,
+                        user_input,
+                        zeroconf_instance,
+                    )
+                except SHCAuthenticationError:
+                    errors["base"] = "invalid_auth"
+                except SHCConnectionError:
+                    errors["base"] = "cannot_connect"
+                except SHCSessionError as err:
+                    LOGGER.warning("Session error: %s", err.message)
+                    errors["base"] = "session_error"
+                except SHCRegistrationError as err:
+                    LOGGER.warning("Registration error: %s", err.message)
+                    errors["base"] = "pairing_failed"
+                except Exception:  # pylint: disable=broad-except  # noqa: BLE001
+                    LOGGER.exception("Unexpected exception during repair_credentials")
+                    errors["base"] = "unknown"
+
+            if not errors:
                 if result is None:
                     errors["base"] = "pairing_failed"
                 else:

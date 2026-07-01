@@ -115,6 +115,12 @@ class TestSHCValvePosition:
         valve = _make_valve(position_value=100)
         assert valve.current_valve_position == 100
 
+    def test_rounds_fractional_position_instead_of_truncating(self):
+        """Regression: int() truncates toward zero (63.9 -> 63); round() must
+        be used instead, same precision class as the Twinguard fix (#352)."""
+        valve = _make_valve(position_value=63.9)
+        assert valve.current_valve_position == 64
+
 
 # ---------------------------------------------------------------------------
 # ValveTappetSensor.extra_state_attributes — unknown valvestate guard
