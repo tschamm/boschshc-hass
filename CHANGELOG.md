@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.10.0 — HA 2026.7 compatibility: purpose-specific event triggers
+
+**Breaking requirement change:** minimum supported Home Assistant version is
+now **2026.7.0** (was effectively unbounded before, floor enforced only in
+CI at 2026.2.0). HACS will block installs/updates on older HA. CI now runs
+on Python 3.14 (HA 2026.7.0 requires Python >=3.14.2).
+
+### Added
+
+- **Compatibility with HA Core's new purpose-specific `event.received`
+  trigger** (HA 2026.7 "Integrations have long been able to add their own
+  actions; now they can add their own triggers and conditions too").  This
+  is an entity-domain-generic trigger platform
+  (`homeassistant/components/event/trigger.py`) that HA Core now ships for
+  every `event.*` entity — no bosch_shc-specific code was needed since our
+  event entities (`UniversalSwitchEvent`, `LightControlButtonEvent`,
+  `SHCScenarioEvent`, `MotionDetectorEvent`, `SmokeDetectionSystemEvent`,
+  `SmokeDetectorEvent`) already declare `_attr_event_types` — the only
+  attribute the new trigger's `is_valid_state` actually checks (confirmed
+  against the installed HA 2026.7.0 source; `_attr_device_class` is unset on
+  the two smoke/alarm event entities, which is harmless since `device_class`
+  only affects icon/naming, not trigger matching). Users on HA 2026.7+ can
+  now build
+  automations directly on "Event received" for any Bosch SHC button,
+  scenario, motion, or alarm event entity, in addition to the existing
+  `device_trigger.py` device-automation UI path (unaffected, still
+  bus-event-based).
+
+### Changed
+
+- `requirements_test.txt`: `homeassistant` floor raised `>=2026.2.0` →
+  `>=2026.7.0`.
+- `hacs.json`: minimum `homeassistant` version raised `2021.1.5` →
+  `2026.7.0`.
+- CI (`tests.yml`, `quality.yml`, `release.yml`): Python `3.13` → `3.14`.
+
 ## 0.9.3 — Eco/reduced state still blocked temperature writes (#73)
 
 **No breaking config changes.**

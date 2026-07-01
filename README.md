@@ -60,7 +60,7 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 
 ## Quick start
 
-> **Requirements:** Home Assistant 2025.2 or later · Bosch SHC (I or II) on the same LAN · [HACS](https://hacs.xyz) installed.
+> **Requirements:** Home Assistant 2026.7 or later · Bosch SHC (I or II) on the same LAN · [HACS](https://hacs.xyz) installed.
 
 **1 — Install via HACS**
 

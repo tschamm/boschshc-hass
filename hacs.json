@@ -1,5 +1,5 @@
 {
   "name": "Bosch Smart Home Controller (SHC) integration",
   "render_readme": false,
-  "homeassistant": "2021.1.5"
+  "homeassistant": "2026.7.0"
 }
