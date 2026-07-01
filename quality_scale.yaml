@@ -417,6 +417,12 @@ rules:
       options (suppress_hue_lights, suppress_ledvance_lights,
       suppress_camera_switches) call async_remove_devices for orphaned child
       devices when toggled.  Released 0.7.20 (#344) and 0.7.21 (#345).
+      Complementary async_remove_stale_entity (entity.py) handles the narrower
+      case where a device persists but one specific entity's capability
+      disappears — e.g. a Motion Detector II's indicator light when the
+      installation profile is switched [+M] -> GENERIC at runtime — removing
+      just that stale entity registry entry instead of leaving it orphaned.
+      Not itself a formal quality-scale rule; released 0.10.1 (#356).
 
   # Gold TODO
 

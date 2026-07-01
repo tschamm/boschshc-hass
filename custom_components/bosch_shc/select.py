@@ -1022,3 +1022,10 @@ class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Write the installation profile (uppercased back to the API value)."""
         await self._device.async_set_profile(option.upper())
+        # #356: switching the profile can add/remove capability-gated entities
+        # (e.g. the Motion Detector II [+M] indicator light) — reload so the
+        # entity list reflects the new profile immediately, instead of only
+        # after the user manually reloads the integration or restarts HA.
+        self.hass.async_create_task(
+            self.hass.config_entries.async_reload(self._entry_id)
+        )

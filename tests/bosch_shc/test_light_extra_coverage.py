@@ -10,6 +10,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+from homeassistant.const import Platform
+
 from custom_components.bosch_shc.const import (
     DATA_SESSION,
     DOMAIN,
@@ -23,6 +25,7 @@ from custom_components.bosch_shc.light import (
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_light_device(device_id="light-1", room_id="room-1"):
     """Minimal device double for a ledvance/dimmer/hue light."""
@@ -114,9 +117,15 @@ def _run_setup(hass, config_entry):
     def _sync_add(entities):
         added.extend(entities)
 
-    with patch(
-        "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-        new=AsyncMock(return_value=None),
+    with (
+        patch(
+            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "custom_components.bosch_shc.light.async_remove_stale_entity",
+            new=AsyncMock(return_value=None),
+        ),
     ):
         asyncio.run(async_setup_entry(hass, config_entry, _sync_add))
 
@@ -137,9 +146,9 @@ class TestLightSetupExcluded:
             excluded_device_ids=["excl-light"],
         )
         added = _run_setup(hass, entry)
-        assert all(
-            getattr(e, "_device", None) is not dev for e in added
-        ), "Excluded ledvance light should not be added"
+        assert all(getattr(e, "_device", None) is not dev for e in added), (
+            "Excluded ledvance light should not be added"
+        )
 
     def test_non_excluded_ledvance_light_is_added(self):
         """Non-excluded ledvance light must appear in entities."""
@@ -149,9 +158,9 @@ class TestLightSetupExcluded:
             excluded_device_ids=[],
         )
         added = _run_setup(hass, entry)
-        assert any(
-            getattr(e, "_device", None) is dev for e in added
-        ), "Non-excluded ledvance light should be added"
+        assert any(getattr(e, "_device", None) is dev for e in added), (
+            "Non-excluded ledvance light should be added"
+        )
 
     def test_mixed_lights_only_excluded_is_skipped(self):
         """When one of two lights is excluded, only the non-excluded one is added."""
@@ -181,9 +190,9 @@ class TestMotionDetector2Setup:
             excluded_device_ids=["excl-md2"],
         )
         added = _run_setup(hass, entry)
-        assert all(
-            getattr(e, "_device", None) is not dev for e in added
-        ), "Excluded motion_detector2 should not be added"
+        assert all(getattr(e, "_device", None) is not dev for e in added), (
+            "Excluded motion_detector2 should not be added"
+        )
 
     def test_non_excluded_motion_detector2_is_added(self):
         """Non-excluded MD2 must result in a MotionDetectorLight entity (lines 42-50)."""
@@ -208,9 +217,67 @@ class TestMotionDetector2Setup:
             excluded_device_ids=[],
         )
         added = _run_setup(hass, entry)
-        assert all(
-            getattr(e, "_device", None) is not dev for e in added
-        ), "Base-profile MD2 (no [+M] light services) must not get a MotionDetectorLight"
+        assert all(getattr(e, "_device", None) is not dev for e in added), (
+            "Base-profile MD2 (no [+M] light services) must not get a MotionDetectorLight"
+        )
+
+    def test_unsupported_profile_motion_detector2_removes_stale_entity(self):
+        """#356: a MD2 whose profile no longer supports the light (e.g. after
+        switching [+M] -> GENERIC via select.installation_profile) must have
+        any previously-registered MotionDetectorLight entity actively removed,
+        not just skipped on this setup pass."""
+        dev = _make_motion_detector2(device_id="was-plusm-md2", supports_light=False)
+        hass, entry = _make_hass_and_entry(motion2=[dev], excluded_device_ids=[])
+        remove_calls = []
+
+        async def _fake_remove(hass_arg, entity_domain, unique_id):
+            remove_calls.append((entity_domain, unique_id))
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                side_effect=_fake_remove,
+            ),
+        ):
+            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
+
+        assert remove_calls == [
+            (Platform.LIGHT, "shc-root_was-plusm-md2_motionlight")
+        ], (
+            f"Expected one stale-removal call for the unsupported MD2, got {remove_calls}"
+        )
+
+    def test_excluded_motion_detector2_removes_stale_entity(self):
+        """#356: excluding a device that previously had a light entity must
+        also clean up the stale registry entry, not just skip creation."""
+        dev = _make_motion_detector2(device_id="excl-had-light", supports_light=True)
+        hass, entry = _make_hass_and_entry(
+            motion2=[dev], excluded_device_ids=["excl-had-light"]
+        )
+        remove_calls = []
+
+        async def _fake_remove(hass_arg, entity_domain, unique_id):
+            remove_calls.append((entity_domain, unique_id))
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                side_effect=_fake_remove,
+            ),
+        ):
+            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
+
+        assert remove_calls == [
+            (Platform.LIGHT, "shc-root_excl-had-light_motionlight")
+        ], f"Expected one stale-removal call for the excluded MD2, got {remove_calls}"
 
     def test_async_migrate_called_for_motion_detector2(self):
         """async_migrate_to_new_unique_id must be called with attr_name='MotionLight'."""
@@ -248,15 +315,21 @@ class TestMotionDetector2Setup:
         async def _fake_migrate(hass_arg, platform, device, **kw):
             migrate_calls.append(device)
 
-        with patch(
-            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-            side_effect=_fake_migrate,
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                side_effect=_fake_migrate,
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                new=AsyncMock(return_value=None),
+            ),
         ):
             asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
 
-        assert not any(
-            c is dev for c in migrate_calls
-        ), "Excluded MD2 must not trigger async_migrate_to_new_unique_id"
+        assert not any(c is dev for c in migrate_calls), (
+            "Excluded MD2 must not trigger async_migrate_to_new_unique_id"
+        )
 
 
 # ---------------------------------------------------------------------------

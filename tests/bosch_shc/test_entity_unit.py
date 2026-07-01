@@ -6,10 +6,10 @@ via SimpleNamespace. No HA harness, no tests.common.
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.bosch_shc.const import DOMAIN
-from custom_components.bosch_shc.entity import SHCEntity
+from custom_components.bosch_shc.entity import SHCEntity, async_remove_stale_entity
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -131,7 +131,9 @@ class TestAsyncAddedToHass:
             status="AVAILABLE",
             deleted=False,
             device_services=[svc],
-            subscribe_callback=lambda eid, cb: device_calls.append(("subscribe", eid, cb)),
+            subscribe_callback=lambda eid, cb: device_calls.append(
+                ("subscribe", eid, cb)
+            ),
             unsubscribe_callback=lambda eid: device_calls.append(("unsubscribe", eid)),
         )
         ent._entry_id = "entry1"
@@ -141,9 +143,9 @@ class TestAsyncAddedToHass:
 
         self._run_added(ent)
 
-        assert any(
-            c[0] == "subscribe" and c[1] == "switch.test" for c in svc.calls
-        ), f"Expected service subscribe call, got: {svc.calls}"
+        assert any(c[0] == "subscribe" and c[1] == "switch.test" for c in svc.calls), (
+            f"Expected service subscribe call, got: {svc.calls}"
+        )
 
     def test_async_added_subscribes_device_callback(self):
         svc = FakeService()
@@ -158,7 +160,9 @@ class TestAsyncAddedToHass:
             status="AVAILABLE",
             deleted=False,
             device_services=[svc],
-            subscribe_callback=lambda eid, cb: device_calls.append(("subscribe", eid, cb)),
+            subscribe_callback=lambda eid, cb: device_calls.append(
+                ("subscribe", eid, cb)
+            ),
             unsubscribe_callback=lambda eid: device_calls.append(("unsubscribe", eid)),
         )
         ent._entry_id = "entry1"
@@ -255,7 +259,9 @@ class TestOnStateChangedCallback:
             status="AVAILABLE",
             deleted=False,
             device_services=[svc],
-            subscribe_callback=lambda eid, cb: device_calls.append(("subscribe", eid, cb)),
+            subscribe_callback=lambda eid, cb: device_calls.append(
+                ("subscribe", eid, cb)
+            ),
             unsubscribe_callback=lambda eid: None,
         )
         ent._entry_id = "entry1"
@@ -326,9 +332,7 @@ class TestOnStateChangedCallback:
         # Fake hass exposing only the thread-safe create_task(); a stray
         # async_create_task() call would raise AttributeError here, exactly
         # like the real (non-thread-safe) HA method would raise off-loop.
-        fake_loop = SimpleNamespace(
-            call_soon_threadsafe=lambda *a, **kw: None
-        )
+        fake_loop = SimpleNamespace(call_soon_threadsafe=lambda *a, **kw: None)
         fake_hass = SimpleNamespace(
             loop=fake_loop,
             create_task=lambda coro: task_calls.append(coro),
@@ -357,3 +361,52 @@ class TestOnStateChangedCallback:
         assert len(task_calls) >= 1, (
             "Expected hass.create_task to be called for deleted device"
         )
+
+
+# ---------------------------------------------------------------------------
+# async_remove_stale_entity (#356)
+# ---------------------------------------------------------------------------
+
+
+class TestAsyncRemoveStaleEntity:
+    def test_removes_entity_when_registered(self):
+        """A registered stale entity is looked up by (domain, DOMAIN, unique_id)
+        and removed via entity_registry.async_remove."""
+        fake_ent_reg = MagicMock()
+        fake_ent_reg.async_get_entity_id.return_value = "light.md2_motion_light"
+
+        with patch(
+            "custom_components.bosch_shc.entity.entity_registry.async_get",
+            return_value=fake_ent_reg,
+        ):
+            asyncio.run(
+                async_remove_stale_entity(
+                    hass=SimpleNamespace(),
+                    entity_domain="light",
+                    unique_id="root_dev-1_motionlight",
+                )
+            )
+
+        fake_ent_reg.async_get_entity_id.assert_called_once_with(
+            "light", DOMAIN, "root_dev-1_motionlight"
+        )
+        fake_ent_reg.async_remove.assert_called_once_with("light.md2_motion_light")
+
+    def test_no_op_when_not_registered(self):
+        """No matching entity in the registry -> async_remove is never called."""
+        fake_ent_reg = MagicMock()
+        fake_ent_reg.async_get_entity_id.return_value = None
+
+        with patch(
+            "custom_components.bosch_shc.entity.entity_registry.async_get",
+            return_value=fake_ent_reg,
+        ):
+            asyncio.run(
+                async_remove_stale_entity(
+                    hass=SimpleNamespace(),
+                    entity_domain="light",
+                    unique_id="root_dev-1_motionlight",
+                )
+            )
+
+        fake_ent_reg.async_remove.assert_not_called()

@@ -95,6 +95,24 @@ async def async_remove_devices(
         dev_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
 
 
+async def async_remove_stale_entity(
+    hass: HomeAssistant, entity_domain: str, unique_id: str
+) -> None:
+    """Remove a single stale entity from the registry, if it exists.
+
+    Unlike ``async_remove_devices`` (which detaches an entire *device* that
+    was deleted on the SHC), this removes one no-longer-applicable *entity*
+    while leaving the device and its other entities untouched — e.g. a
+    Motion Detector II's indicator light after its installation profile is
+    switched from ``[+M]``/OUTDOOR to GENERIC (#356), where the light
+    service disappears but the motion sensor itself remains.
+    """
+    ent_reg = entity_registry.async_get(hass)
+    entity_id = ent_reg.async_get_entity_id(entity_domain, DOMAIN, unique_id)
+    if entity_id is not None:
+        ent_reg.async_remove(entity_id)
+
+
 async def async_migrate_to_new_unique_id(
     hass: HomeAssistant,
     platform: str,

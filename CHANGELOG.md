@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.10.1 — Motion Detector II indicator light left orphaned after profile switch (#356)
+
+**No breaking config changes.**
+
+### Fixed
+
+- **Stale `MotionDetectorLight` entity after an installation-profile switch**
+  (`light.py`, `select.py`, new `entity.py` helper). The Motion Detector II
+  `[+M]`/OUTDOOR indicator light is only backed by BinarySwitch/MultiLevelSwitch
+  services that exist in that profile; switching the device to GENERIC via the
+  writable `select.installation_profile` (#353) made `light.py` simply stop
+  creating the entity on the next setup pass, leaving the old one orphaned in
+  the entity registry indefinitely. Two fixes: (1) new
+  `entity.async_remove_stale_entity()` actively removes the registry entry
+  once a MD2's light becomes unsupported/excluded/suppressed, instead of just
+  skipping creation; (2) `InstallationProfileSelect.async_select_option` now
+  triggers a config-entry reload after writing the new profile, so the
+  entity list updates immediately instead of only after a manual
+  reload/restart. The motion sensor itself is unaffected either way.
+- Same cleanup now also fires when a MD2 that previously had the light
+  entity is added to the excluded-devices option (was previously skipped
+  silently, same orphaning bug).
+
 ## 0.10.0 — HA 2026.7 compatibility: purpose-specific event triggers
 
 **Breaking requirement change:** minimum supported Home Assistant version is

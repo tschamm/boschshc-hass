@@ -33,6 +33,7 @@ from .const import (
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
+    async_remove_stale_entity,
     device_excluded,
     light_switch_as_light,
     light_switch_devices,
@@ -89,25 +90,42 @@ async def async_setup_entry(
             )
         )
 
-    if not config_entry.options.get(OPT_SUPPRESS_MOTION_INDICATOR_LIGHT, False):
-        for light in session.device_helper.motion_detectors2:  # type: ignore[assignment]
-            if device_excluded(light, config_entry.options):
-                continue
-            # The [+M] indicator-light services (BinarySwitch/MultiLevelSwitch)
-            # only exist on an MD2 in the OUTDOOR/[+M] installation profile —
-            # a base/GENERIC profile MD2 has neither, and every read/write on
-            # this entity would raise AttributeError on the None service.
-            if not getattr(light, "supports_light", False):
-                continue
-            await async_migrate_to_new_unique_id(
-                hass, Platform.LIGHT, device=light, attr_name="MotionLight"
+    motion_light_suppressed = config_entry.options.get(
+        OPT_SUPPRESS_MOTION_INDICATOR_LIGHT, False
+    )
+    for light in session.device_helper.motion_detectors2:  # type: ignore[assignment]
+        # The [+M] indicator-light services (BinarySwitch/MultiLevelSwitch)
+        # only exist on an MD2 in the OUTDOOR/[+M] installation profile — a
+        # base/GENERIC profile MD2 has neither, and every read/write on this
+        # entity would raise AttributeError on the None service.
+        no_light_entity = (
+            device_excluded(light, config_entry.options)
+            or motion_light_suppressed
+            or not getattr(light, "supports_light", False)
+        )
+        if no_light_entity:
+            # #356: the device may become excluded, the option may get
+            # toggled, or the installation profile is user-switchable at
+            # runtime (select.py InstallationProfileSelect) — in every case,
+            # if a light entity was previously created for this device and
+            # has since become unsupported/excluded, remove the now-stale
+            # registry entry instead of leaving an orphaned entity behind.
+            # The motion sensor itself is unaffected.
+            await async_remove_stale_entity(
+                hass,
+                Platform.LIGHT,
+                f"{light.root_device_id}_{light.id}_motionlight",
             )
-            entities.append(
-                MotionDetectorLight(
-                    device=light,
-                    entry_id=config_entry.entry_id,
-                )
+            continue
+        await async_migrate_to_new_unique_id(
+            hass, Platform.LIGHT, device=light, attr_name="MotionLight"
+        )
+        entities.append(
+            MotionDetectorLight(
+                device=light,
+                entry_id=config_entry.entry_id,
             )
+        )
 
     # #338: Light/Shutter Control II light channels (and BSM light switches) that
     # the user opted in to present as a `light`.  These wrap a plain on/off
