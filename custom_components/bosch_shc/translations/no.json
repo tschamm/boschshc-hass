@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Testalarm"
+      },
+      "preview_max_brightness": {
+        "name": "Forhåndsvis maksimal lysstyrke"
+      },
+      "preview_min_brightness": {
+        "name": "Forhåndsvis minimal lysstyrke"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Utgangsmodus"
       },
-      "smart_sensitivity_security": {
-        "name": "Sikkerhetsfølsomhetsnivå"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Komfortfølsomhetsnivå"
-      },
-      "orientation_light_response": {
-        "name": "Responstid for orienteringslys"
-      },
       "siren_sound_level": {
         "name": "Lydnivå",
         "state": {
           "low": "Lav",
           "medium": "Middels",
           "high": "Høy"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Responstid orienteringslys"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Smart Sensitivity sikkerhetsnivå"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Smart Sensitivity komfortnivå"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer fasekontroll"
+      },
+      "installation_profile": {
+        "name": "Installasjonsprofil",
+        "state": {
+          "generic": "Innendørs (Generisk)",
+          "outdoor": "Utendørs"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Beskrivelse av luftkvalitet"
-      },
-      "detection_state": {
-        "name": "Deteksjonstesttilstand"
       },
       "communication_quality": {
         "name": "Kommunikasjonskvalitet",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Knappetilordning"
+      },
+      "floor_temperature": {
+        "name": "Gulvtemperatur"
+      },
+      "purity": {
+        "name": "Renhet"
+      },
+      "air_quality": {
+        "name": "Luftkvalitet"
+      },
+      "temperature_rating": {
+        "name": "Temperaturvurdering"
+      },
+      "humidity_rating": {
+        "name": "Fuktighetsvurdering"
+      },
+      "purity_rating": {
+        "name": "Renhetsvurdering"
+      },
+      "energy_yield": {
+        "name": "Energiutbytte"
+      },
+      "power_yield": {
+        "name": "Effektutbytte"
+      },
+      "valve_tappet": {
+        "name": "Ventilstøter"
+      },
+      "detection_test_state": {
+        "name": "Deteksjonstest tilstand"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "Manipulering"
+      },
+      "call_for_heat": {
+        "name": "Varmebehov"
+      },
+      "vibration": {
+        "name": "Vibrasjon"
+      },
+      "smoke": {
+        "name": "Røyk"
+      },
+      "occupancy": {
+        "name": "Tilstedeværelse"
+      },
+      "tamper": {
+        "name": "Sabotasje"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Alarmforbikobling"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Bevegelseslys"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Kommandostreng som skal sendes til røykdetektoren."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Mer for Bosch-kameraene dine",
+      "description": "Bosch-kameraer ble oppdaget. Denne integrasjonen dekker det grunnleggende; det dedikerte **Bosch Smart Home Camera Tool** gjør mye mer (bilder, bevegelse / FCM-push, lys, strømmer). Åpne \"Finn ut mer\" for prosjektet, og lukk deretter denne meldingen."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC-klientsertifikat utløper snart",
+      "description": "Bosch SHC-klientsertifikatet utløper om {days} dag(er) (den {expiry}). For å fornye det: sett kontrolleren i paringsmodus (trykk på frontknappen til LED-lysene blinker), og gå deretter til **Innstillinger → Enheter og tjenester → Bosch Smart Home Controller** og velg **Konfigurer på nytt**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Kryptografibiblioteket er ikke tilgjengelig. Kontroller at det er installert."
+    },
+    "cert_file_missing": {
+      "message": "Sertifikatfil mangler: {path}"
+    },
+    "cert_invalid": {
+      "message": "Ugyldig sertifikat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan-type ikke funnet."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Fant ingen lastet Bosch SHC-oppføring med den tittelen."
+    },
+    "scenario_not_found": {
+      "message": "Scenario ikke funnet."
+    },
+    "smoke_test_failed": {
+      "message": "Røyktest mislyktes."
+    },
+    "alarm_state_failed": {
+      "message": "Endring av alarmtilstand mislyktes."
     }
   }
 }

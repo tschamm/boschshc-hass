@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Tesztriasztás"
+      },
+      "preview_max_brightness": {
+        "name": "Maximális fényerő előnézet"
+      },
+      "preview_min_brightness": {
+        "name": "Minimális fényerő előnézet"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Kimeneti mód"
       },
-      "smart_sensitivity_security": {
-        "name": "Biztonsági érzékenységi szint"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Kényelmi érzékenységi szint"
-      },
-      "orientation_light_response": {
-        "name": "Tájékozódási fény reakcióideje"
-      },
       "siren_sound_level": {
         "name": "Hangerő",
         "state": {
           "low": "Alacsony",
           "medium": "Közepes",
           "high": "Magas"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Tájékoztató fény reakcióideje"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Okos érzékenység biztonsági szintje"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Okos érzékenység kényelmi szintje"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer fázisszabályozás"
+      },
+      "installation_profile": {
+        "name": "Telepítési profil",
+        "state": {
+          "generic": "Beltéri (általános)",
+          "outdoor": "Kültéri"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Levegőminőség leírása"
-      },
-      "detection_state": {
-        "name": "Érzékelési teszt állapota"
       },
       "communication_quality": {
         "name": "Kommunikáció minősége",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Gombhozzárendelés"
+      },
+      "floor_temperature": {
+        "name": "Padlóhőmérséklet"
+      },
+      "purity": {
+        "name": "Tisztaság"
+      },
+      "air_quality": {
+        "name": "Levegőminőség"
+      },
+      "temperature_rating": {
+        "name": "Hőmérséklet értékelés"
+      },
+      "humidity_rating": {
+        "name": "Páratartalom értékelés"
+      },
+      "purity_rating": {
+        "name": "Tisztasági értékelés"
+      },
+      "energy_yield": {
+        "name": "Energiahozam"
+      },
+      "power_yield": {
+        "name": "Teljesítményhozam"
+      },
+      "valve_tappet": {
+        "name": "Szeleptányér"
+      },
+      "detection_test_state": {
+        "name": "Érzékelési teszt állapota"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "Illetéktelen beavatkozás"
+      },
+      "call_for_heat": {
+        "name": "Fűtési igény"
+      },
+      "vibration": {
+        "name": "Rezgés"
+      },
+      "smoke": {
+        "name": "Füst"
+      },
+      "occupancy": {
+        "name": "Jelenlét"
+      },
+      "tamper": {
+        "name": "Szabotázs"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Riasztás kihagyása"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Mozgásvezérelt lámpa"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "A füstérzékelőnek küldendő parancsszöveg."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Több a Bosch kameráihoz",
+      "description": "Bosch kamerák észlelve. Ez az integráció az alapokat fedi le; a dedikált **Bosch Smart Home Camera Tool** sokkal többet tud értük tenni (pillanatfelvételek, mozgás / FCM értesítések, fények, adatfolyamok). Nyissa meg a „További információ“ részt a projekthez, majd zárja be ezt az értesítést."
+    },
+    "cert_expiring": {
+      "title": "A Bosch SHC ügyféltanúsítvány hamarosan lejár",
+      "description": "A Bosch SHC ügyféltanúsítvány {days} nap múlva lejár ({expiry}). A megújításhoz: állítsa a vezérlőt párosítási módba (nyomja meg az elülső gombot, amíg a LED-ek villogni nem kezdenek), majd lépjen ide: **Beállítások → Eszközök és szolgáltatások → Bosch Smart Home Controller**, és válassza az **Újrakonfigurálás** lehetőséget."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "A kriptográfiai könyvtár nem érhető el. Kérjük, győződjön meg róla, hogy telepítve van."
+    },
+    "cert_file_missing": {
+      "message": "Hiányzó tanúsítványfájl: {path}"
+    },
+    "cert_invalid": {
+      "message": "Érvénytelen tanúsítvány: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "A rawscan típus nem található."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Nem található ilyen nevű betöltött Bosch SHC bejegyzés."
+    },
+    "scenario_not_found": {
+      "message": "A forgatókönyv nem található."
+    },
+    "smoke_test_failed": {
+      "message": "A füstérzékelő teszt sikertelen."
+    },
+    "alarm_state_failed": {
+      "message": "A riasztás állapotának megváltoztatása sikertelen."
     }
   }
 }

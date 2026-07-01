@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "測試警報"
+      },
+      "preview_max_brightness": {
+        "name": "預覽最大亮度"
+      },
+      "preview_min_brightness": {
+        "name": "預覽最小亮度"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "輸出模式"
       },
-      "smart_sensitivity_security": {
-        "name": "安全靈敏度等級"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "舒適靈敏度等級"
-      },
-      "orientation_light_response": {
-        "name": "方向燈回應時間"
-      },
       "siren_sound_level": {
         "name": "音量等級",
         "state": {
           "low": "低",
           "medium": "中",
           "high": "高"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "引導燈回應時間"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "智慧靈敏度安全等級"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "智慧靈敏度舒適等級"
+      },
+      "dimmer_phase_control": {
+        "name": "調光器相位控制"
+      },
+      "installation_profile": {
+        "name": "安裝配置檔",
+        "state": {
+          "generic": "室內（通用）",
+          "outdoor": "室外"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "空氣品質描述"
-      },
-      "detection_state": {
-        "name": "偵測測試狀態"
       },
       "communication_quality": {
         "name": "通訊品質",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "按鈕對應"
+      },
+      "floor_temperature": {
+        "name": "地板溫度"
+      },
+      "purity": {
+        "name": "純淨度"
+      },
+      "air_quality": {
+        "name": "空氣品質"
+      },
+      "temperature_rating": {
+        "name": "溫度評級"
+      },
+      "humidity_rating": {
+        "name": "濕度評級"
+      },
+      "purity_rating": {
+        "name": "純淨度評級"
+      },
+      "energy_yield": {
+        "name": "能量產出"
+      },
+      "power_yield": {
+        "name": "功率產出"
+      },
+      "valve_tappet": {
+        "name": "閥門挺桿"
+      },
+      "detection_test_state": {
+        "name": "偵測測試狀態"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "防拆警報"
+      },
+      "call_for_heat": {
+        "name": "供熱請求"
+      },
+      "vibration": {
+        "name": "振動"
+      },
+      "smoke": {
+        "name": "煙霧"
+      },
+      "occupancy": {
+        "name": "佔用"
+      },
+      "tamper": {
+        "name": "竄改"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "警報旁路"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "動作燈"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "要傳送至煙霧偵測器的指令字串。"
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "為您的 Bosch 攝影機獲取更多功能",
+      "description": "偵測到 Bosch 攝影機。此整合涵蓋基本功能；專用的 **Bosch Smart Home Camera Tool** 提供更多功能（快照、移動 / FCM 推播、燈光、串流）。開啟「了解更多」查看該專案，然後關閉此通知。"
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC 用戶端憑證即將到期",
+      "description": "Bosch SHC 用戶端憑證將在 {days} 天後（{expiry}）到期。若要續期：將控制器置於配對模式（按住前面的按鈕直到 LED 閃爍），然後前往 **設定 → 裝置與服務 → Bosch Smart Home Controller** 並選擇 **重新設定**。"
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "加密函式庫無法使用。請確認已安裝。"
+    },
+    "cert_file_missing": {
+      "message": "憑證檔案遺失：{path}"
+    },
+    "cert_invalid": {
+      "message": "無效的憑證：{path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "找不到 Rawscan 類型。"
+    },
+    "rawscan_entry_not_found": {
+      "message": "找不到具有該標題的已載入 Bosch SHC 項目。"
+    },
+    "scenario_not_found": {
+      "message": "找不到情境。"
+    },
+    "smoke_test_failed": {
+      "message": "煙霧測試失敗。"
+    },
+    "alarm_state_failed": {
+      "message": "警報狀態變更失敗。"
     }
   }
 }

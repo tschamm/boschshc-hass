@@ -32,6 +32,9 @@ run_hass() {
   _banner "quality scale (gold)"
   if python3 scripts/check-quality-scale.py --tier gold; then _ok "quality scale"; else _fail "quality scale"; fi
 
+  _banner "translation completeness"
+  if python3 scripts/check-translations.py; then _ok "translation completeness"; else _fail "translation completeness"; fi
+
   _banner "pytest (hass)"
   if PYTHONPATH="$HASS_DIR:$LIB_DIR" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
       python3 -m pytest tests/bosch_shc/ -q -o addopts="" \

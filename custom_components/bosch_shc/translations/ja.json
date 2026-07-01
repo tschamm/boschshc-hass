@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "テストアラーム"
+      },
+      "preview_max_brightness": {
+        "name": "最大輝度プレビュー"
+      },
+      "preview_min_brightness": {
+        "name": "最小輝度プレビュー"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "出力モード"
       },
-      "smart_sensitivity_security": {
-        "name": "セキュリティ感度レベル"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "コンフォート感度レベル"
-      },
-      "orientation_light_response": {
-        "name": "誘導灯応答時間"
-      },
       "siren_sound_level": {
         "name": "音量レベル",
         "state": {
           "low": "低",
           "medium": "中",
           "high": "高"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "誘導灯応答時間"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "スマート感度セキュリティレベル"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "スマート感度快適レベル"
+      },
+      "dimmer_phase_control": {
+        "name": "調光器位相制御"
+      },
+      "installation_profile": {
+        "name": "設置プロファイル",
+        "state": {
+          "generic": "屋内（汎用）",
+          "outdoor": "屋外"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "空気品質の説明"
-      },
-      "detection_state": {
-        "name": "検知テスト状態"
       },
       "communication_quality": {
         "name": "通信品質",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "ボタン割り当て"
+      },
+      "floor_temperature": {
+        "name": "床面温度"
+      },
+      "purity": {
+        "name": "純度"
+      },
+      "air_quality": {
+        "name": "空気質"
+      },
+      "temperature_rating": {
+        "name": "温度評価"
+      },
+      "humidity_rating": {
+        "name": "湿度評価"
+      },
+      "purity_rating": {
+        "name": "純度評価"
+      },
+      "energy_yield": {
+        "name": "エネルギー収量"
+      },
+      "power_yield": {
+        "name": "電力収量"
+      },
+      "valve_tappet": {
+        "name": "バルブタペット"
+      },
+      "detection_test_state": {
+        "name": "検知テスト状態"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "不正開封"
+      },
+      "call_for_heat": {
+        "name": "暖房要求"
+      },
+      "vibration": {
+        "name": "振動"
+      },
+      "smoke": {
+        "name": "煙"
+      },
+      "occupancy": {
+        "name": "在室"
+      },
+      "tamper": {
+        "name": "改ざん"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "アラームバイパス"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "モーションライト"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "煙感知器に送信するコマンド文字列。"
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Bosch カメラの追加機能",
+      "description": "Bosch カメラが検出されました。この統合は基本的な機能をカバーしています。専用の **Bosch Smart Home Camera Tool** では、より多くの機能（スナップショット、モーション / FCM プッシュ、ライト、ストリーム）を利用できます。プロジェクトについては「詳細を見る」を開き、その後この通知を閉じてください。"
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC クライアント証明書の有効期限が近づいています",
+      "description": "Bosch SHC クライアント証明書は {days} 日後（{expiry}）に有効期限が切れます。更新するには、コントローラーをペアリングモードにし（LED が点滅するまで前面ボタンを押す）、**設定 → デバイスとサービス → Bosch Smart Home Controller** に移動して **再設定** を選択してください。"
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "暗号化ライブラリが利用できません。インストールされていることを確認してください。"
+    },
+    "cert_file_missing": {
+      "message": "証明書ファイルが見つかりません: {path}"
+    },
+    "cert_invalid": {
+      "message": "無効な証明書: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan タイプが見つかりません。"
+    },
+    "rawscan_entry_not_found": {
+      "message": "そのタイトルで読み込まれた Bosch SHC エントリが見つかりません。"
+    },
+    "scenario_not_found": {
+      "message": "シナリオが見つかりません。"
+    },
+    "smoke_test_failed": {
+      "message": "スモークテストに失敗しました。"
+    },
+    "alarm_state_failed": {
+      "message": "アラーム状態の変更に失敗しました。"
     }
   }
 }

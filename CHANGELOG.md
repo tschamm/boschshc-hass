@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.9.1 — Complete translations for all 29 languages
+
+### Added
+
+- **Full translation parity across all 29 languages.** Every translation file
+  was brought up to date with `en.json` (391 keys). Previously all non-English
+  languages were ~74 keys behind, so recently added strings fell back to
+  English. Newly localized strings include:
+  - Repair issues shown to users: the **certificate-expiring** notice (with
+    renewal steps) and the **camera-tool-available** notice.
+  - Service/error messages (`exceptions.*`): certificate errors, rawscan and
+    scenario lookups, smoke-test and alarm-state failures.
+  - Entity names added in recent releases: `Installation Profile` (incl.
+    Indoor/Outdoor states), `Dimmer Phase Control`, the renamed
+    `Smart Sensitivity Security/Comfort Level` and
+    `Orientation Light Response Time` selects, the `Floor Temperature`,
+    `Purity`, `Air Quality`, `*_rating`, `Energy/Power Yield`, `Valve Tappet`
+    and `Detection Test State` sensors, the `Call for Heat`, `Vibration`,
+    `Smoke`, `Occupancy` and `Tamper` binary sensors, the `Motion Light` and
+    the `Preview Min/Max Brightness` buttons.
+  - The complete Slovak (`sk`) translation contributed in #354.
+
+### Fixed
+
+- Removed stale translation keys left behind by earlier entity renames
+  (`smart_sensitivity_security`, `smart_sensitivity_comfort`,
+  `orientation_light_response`, `detection_state`) from every language file.
+  These four entities showed English names in all non-English locales.
+
+### Developer
+
+- New `scripts/check-translations.py` gate enforces **full `en.json` key
+  parity** for every translation file (no missing fall-throughs, no stale
+  keys) and keeps `en.json` in sync with `strings.json`. Wired into both
+  `scripts/local-ci.sh` and the `Quality` CI workflow, replacing the previous
+  shallow `options.features`-only check.
+
 ## 0.9.0 — Change the Motion Detector II installation profile from Home Assistant
 
 ### Breaking changes

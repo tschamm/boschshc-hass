@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Testalarm"
+      },
+      "preview_max_brightness": {
+        "name": "Vorschau maximale Helligkeit"
+      },
+      "preview_min_brightness": {
+        "name": "Vorschau minimale Helligkeit"
       }
     },
     "number": {
@@ -264,15 +270,6 @@
       "output_mode": {
         "name": "Ausgabemodus"
       },
-      "smart_sensitivity_security": {
-        "name": "Sicherheits-Empfindlichkeitsstufe"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Komfort-Empfindlichkeitsstufe"
-      },
-      "orientation_light_response": {
-        "name": "Reaktionszeit Orientierungslicht"
-      },
       "siren_sound_level": {
         "name": "Lautstärke",
         "state": {
@@ -280,6 +277,18 @@
           "medium": "Mittel",
           "high": "Hoch"
         }
+      },
+      "orientation_light_response_time": {
+        "name": "Reaktionszeit Orientierungslicht"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Smart Sensitivity Sicherheitsstufe"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Smart Sensitivity Komfortstufe"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer-Phasensteuerung"
       },
       "installation_profile": {
         "name": "Einsatzbereich",
@@ -301,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Luftqualitätsbeschreibung"
-      },
-      "detection_state": {
-        "name": "Erkennungstest-Status"
       },
       "communication_quality": {
         "name": "Kommunikationsqualität",
@@ -340,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Tastenzuordnung"
+      },
+      "floor_temperature": {
+        "name": "Fußbodentemperatur"
+      },
+      "purity": {
+        "name": "Reinheit"
+      },
+      "air_quality": {
+        "name": "Luftqualität"
+      },
+      "temperature_rating": {
+        "name": "Temperaturbewertung"
+      },
+      "humidity_rating": {
+        "name": "Feuchtigkeitsbewertung"
+      },
+      "purity_rating": {
+        "name": "Reinheitsbewertung"
+      },
+      "energy_yield": {
+        "name": "Energieertrag"
+      },
+      "power_yield": {
+        "name": "Leistungsertrag"
+      },
+      "valve_tappet": {
+        "name": "Ventilstößel"
+      },
+      "detection_test_state": {
+        "name": "Erkennungstest-Status"
       }
     },
     "binary_sensor": {
@@ -350,6 +386,21 @@
         "name": "Visueller Alarm"
       },
       "siren_tamper": {
+        "name": "Manipulation"
+      },
+      "call_for_heat": {
+        "name": "Wärmeanforderung"
+      },
+      "vibration": {
+        "name": "Vibration"
+      },
+      "smoke": {
+        "name": "Rauch"
+      },
+      "occupancy": {
+        "name": "Präsenz"
+      },
+      "tamper": {
         "name": "Manipulation"
       }
     },
@@ -364,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Alarm-Bypass"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Bewegungslicht"
       }
     }
   },
@@ -457,6 +513,36 @@
     "camera_tool_available": {
       "title": "Mehr für deine Bosch-Kameras",
       "description": "Bosch-Kameras erkannt. Diese Integration deckt die Grundfunktionen ab; das dedizierte **Bosch Smart Home Camera Tool** kann für Kameras deutlich mehr (Snapshots, Bewegungs-/FCM-Push, Licht, Streams). Öffne \"Mehr erfahren\" für das Projekt und blende diesen Hinweis dann aus."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC-Client-Zertifikat läuft bald ab",
+      "description": "Das Bosch SHC-Client-Zertifikat läuft in {days} Tag(en) ab (am {expiry}). Um es zu erneuern: Versetzen Sie den Controller in den Kopplungsmodus (drücken Sie die Fronttaste, bis die LEDs blinken), und gehen Sie dann zu **Einstellungen → Geräte & Dienste → Bosch Smart Home Controller** und wählen Sie **Neu konfigurieren**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Die Kryptographiebibliothek ist nicht verfügbar. Bitte stellen Sie sicher, dass sie installiert ist."
+    },
+    "cert_file_missing": {
+      "message": "Zertifikatsdatei fehlt: {path}"
+    },
+    "cert_invalid": {
+      "message": "Ungültiges Zertifikat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan-Typ nicht gefunden."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Kein geladener Bosch SHC-Eintrag mit diesem Titel gefunden."
+    },
+    "scenario_not_found": {
+      "message": "Szenario nicht gefunden."
+    },
+    "smoke_test_failed": {
+      "message": "Rauchmelde-Test fehlgeschlagen."
+    },
+    "alarm_state_failed": {
+      "message": "Änderung des Alarmstatus fehlgeschlagen."
     }
   }
 }

@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Testalarm"
+      },
+      "preview_max_brightness": {
+        "name": "Voorbeeld maximale helderheid"
+      },
+      "preview_min_brightness": {
+        "name": "Voorbeeld minimale helderheid"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Uitvoermodus"
       },
-      "smart_sensitivity_security": {
-        "name": "Beveiligingsgevoeligheidsniveau"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Comfortgevoeligheidsniveau"
-      },
-      "orientation_light_response": {
-        "name": "Reactietijd oriëntatielicht"
-      },
       "siren_sound_level": {
         "name": "Geluidsniveau",
         "state": {
           "low": "Laag",
           "medium": "Gemiddeld",
           "high": "Hoog"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Reactietijd oriëntatielicht"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Smart Sensitivity beveiligingsniveau"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Smart Sensitivity comfortniveau"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer faseregeling"
+      },
+      "installation_profile": {
+        "name": "Installatieprofiel",
+        "state": {
+          "generic": "Binnen (Algemeen)",
+          "outdoor": "Buiten"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Luchtkwaliteitsbeschrijving"
-      },
-      "detection_state": {
-        "name": "Detectietest-status"
       },
       "communication_quality": {
         "name": "Communicatiekwaliteit",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Knoptoewijzing"
+      },
+      "floor_temperature": {
+        "name": "Vloertemperatuur"
+      },
+      "purity": {
+        "name": "Zuiverheid"
+      },
+      "air_quality": {
+        "name": "Luchtkwaliteit"
+      },
+      "temperature_rating": {
+        "name": "Temperatuurbeoordeling"
+      },
+      "humidity_rating": {
+        "name": "Vochtigheidsbeoordeling"
+      },
+      "purity_rating": {
+        "name": "Zuiverheidsbeoordeling"
+      },
+      "energy_yield": {
+        "name": "Energieopbrengst"
+      },
+      "power_yield": {
+        "name": "Vermogensopbrengst"
+      },
+      "valve_tappet": {
+        "name": "Ventielstoterstang"
+      },
+      "detection_test_state": {
+        "name": "Detectietest status"
       }
     },
     "binary_sensor": {
@@ -343,6 +386,21 @@
         "name": "Visueel alarm"
       },
       "siren_tamper": {
+        "name": "Sabotage"
+      },
+      "call_for_heat": {
+        "name": "Warmtevraag"
+      },
+      "vibration": {
+        "name": "Vibratie"
+      },
+      "smoke": {
+        "name": "Rook"
+      },
+      "occupancy": {
+        "name": "Aanwezigheid"
+      },
+      "tamper": {
         "name": "Sabotage"
       }
     },
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Alarm overbruggen"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Bewegingslamp"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Opdrachtstring te sturen naar de rookmelder."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Meer voor uw Bosch-camera's",
+      "description": "Bosch-camera's zijn gedetecteerd. Deze integratie biedt de basisfuncties; de speciale **Bosch Smart Home Camera Tool** doet veel meer (snapshots, beweging / FCM-push, verlichting, streams). Open \"Meer informatie\" voor het project en sluit daarna deze melding."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC-clientcertificaat verloopt binnenkort",
+      "description": "Het Bosch SHC-clientcertificaat verloopt over {days} dag(en) (op {expiry}). Om het te vernieuwen: zet de controller in koppelingsmodus (druk op de voorknop totdat de LED's knipperen) en ga naar **Instellingen → Apparaten & diensten → Bosch Smart Home Controller** en selecteer **Opnieuw configureren**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "De cryptografiebibliotheek is niet beschikbaar. Zorg ervoor dat deze is geïnstalleerd."
+    },
+    "cert_file_missing": {
+      "message": "Certificaatbestand ontbreekt: {path}"
+    },
+    "cert_invalid": {
+      "message": "Ongeldig certificaat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan-type niet gevonden."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Geen geladen Bosch SHC-vermelding met die titel gevonden."
+    },
+    "scenario_not_found": {
+      "message": "Scenario niet gevonden."
+    },
+    "smoke_test_failed": {
+      "message": "Rooktest mislukt."
+    },
+    "alarm_state_failed": {
+      "message": "Wijziging van alarmstatus mislukt."
     }
   }
 }

@@ -80,53 +80,7 @@ jobs:
         run: python3 scripts/check-quality-scale.py --tier platinum
 
       - name: translation completeness
-        # Checks: (1) every translation/*.json has the same options.features keys
-        # as strings.json; (2) en.json entity section stays in sync with strings.json.
-        run: |
-          python3 - <<'PYEOF'
-          import json, os, sys
-          base = "custom_components/bosch_shc"
-          errors = []
-
-          # 1. options.features keys: must be identical across all translation files
-          with open(f"{base}/strings.json") as f:
-              strings_data = json.load(f)
-          ref = set(strings_data["options"]["step"]["init"]["sections"]["features"]["data"].keys())
-          json_files = [f for f in sorted(os.listdir(f"{base}/translations")) if f.endswith(".json")]
-          for fname in json_files:
-              with open(f"{base}/translations/{fname}") as f:
-                  d = json.load(f)
-              keys = set(d["options"]["step"]["init"]["sections"]["features"]["data"].keys())
-              missing = ref - keys
-              extra = keys - ref
-              if missing:
-                  errors.append(f"  {fname}: missing options.features keys {sorted(missing)}")
-              if extra:
-                  errors.append(f"  {fname}: extra options.features keys {sorted(extra)}")
-
-          # 2. entity keys: en.json must stay in sync with strings.json
-          def _flat(d, pfx=""):
-              keys = set()
-              if isinstance(d, dict):
-                  for k, v in d.items():
-                      p = f"{pfx}.{k}" if pfx else k
-                      keys.update(_flat(v, p) if isinstance(v, dict) else {p})
-              return keys
-
-          strings_ent = _flat(strings_data.get("entity", {}))
-          with open(f"{base}/translations/en.json") as f:
-              en_ent = _flat(json.load(f).get("entity", {}))
-          only_in_strings = strings_ent - en_ent
-          only_in_en = en_ent - strings_ent
-          if only_in_strings:
-              errors.append(f"  en.json: entity keys in strings.json but missing: {sorted(only_in_strings)}")
-          if only_in_en:
-              errors.append(f"  en.json: extra entity keys not in strings.json: {sorted(only_in_en)}")
-
-          if errors:
-              print("Translation issues found:")
-              for e in errors:
-                  print(e)
-              sys.exit(1)
-          print(f"All {len(json_files)} translation files match strings.json; en.json entity keys in sync")
-          PYEOF
+        # Full-parity gate: every translations/<lang>.json must have the exact
+        # same recursive key set as en.json (no untranslated fall-throughs, no
+        # stale keys), and en.json entity section stays in sync with strings.json.
+        run: python3 scripts/check-translations.py

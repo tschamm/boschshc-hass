@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Uji Alarm"
+      },
+      "preview_max_brightness": {
+        "name": "Pratinjau Kecerahan Maksimum"
+      },
+      "preview_min_brightness": {
+        "name": "Pratinjau Kecerahan Minimum"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Mode Keluaran"
       },
-      "smart_sensitivity_security": {
-        "name": "Tingkat Sensitivitas Keamanan"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Tingkat Sensitivitas Kenyamanan"
-      },
-      "orientation_light_response": {
-        "name": "Waktu Respons Lampu Orientasi"
-      },
       "siren_sound_level": {
         "name": "Tingkat Suara",
         "state": {
           "low": "Rendah",
           "medium": "Sedang",
           "high": "Tinggi"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Waktu Respons Lampu Orientasi"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Level Keamanan Sensitivitas Cerdas"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Level Kenyamanan Sensitivitas Cerdas"
+      },
+      "dimmer_phase_control": {
+        "name": "Kontrol Fase Dimmer"
+      },
+      "installation_profile": {
+        "name": "Profil Instalasi",
+        "state": {
+          "generic": "Dalam Ruangan (Umum)",
+          "outdoor": "Luar Ruangan"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Deskripsi Kualitas Udara"
-      },
-      "detection_state": {
-        "name": "Status Uji Deteksi"
       },
       "communication_quality": {
         "name": "Kualitas Komunikasi",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Pemetaan tombol"
+      },
+      "floor_temperature": {
+        "name": "Suhu Lantai"
+      },
+      "purity": {
+        "name": "Kemurnian"
+      },
+      "air_quality": {
+        "name": "Kualitas Udara"
+      },
+      "temperature_rating": {
+        "name": "Penilaian Suhu"
+      },
+      "humidity_rating": {
+        "name": "Penilaian Kelembapan"
+      },
+      "purity_rating": {
+        "name": "Penilaian Kemurnian"
+      },
+      "energy_yield": {
+        "name": "Hasil Energi"
+      },
+      "power_yield": {
+        "name": "Hasil Daya"
+      },
+      "valve_tappet": {
+        "name": "Tapet Katup"
+      },
+      "detection_test_state": {
+        "name": "Status Uji Deteksi"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "Gangguan Fisik"
+      },
+      "call_for_heat": {
+        "name": "Permintaan Pemanas"
+      },
+      "vibration": {
+        "name": "Getaran"
+      },
+      "smoke": {
+        "name": "Asap"
+      },
+      "occupancy": {
+        "name": "Hunian"
+      },
+      "tamper": {
+        "name": "Gangguan"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Lewati alarm"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Lampu Gerak"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "String perintah yang akan dikirim ke detektor asap."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Lebih banyak untuk kamera Bosch Anda",
+      "description": "Kamera Bosch terdeteksi. Integrasi ini mencakup dasar-dasarnya; **Bosch Smart Home Camera Tool** yang didedikasikan melakukan lebih banyak (cuplikan layar, gerakan / push FCM, lampu, streaming). Buka \"Pelajari selengkapnya\" untuk proyeknya, lalu tutup notifikasi ini."
+    },
+    "cert_expiring": {
+      "title": "Sertifikat klien Bosch SHC akan segera kedaluwarsa",
+      "description": "Sertifikat klien Bosch SHC akan kedaluwarsa dalam {days} hari (pada {expiry}). Untuk memperbaruinya: masukkan pengontrol ke mode pemasangan (tekan tombol depan hingga LED berkedip), lalu buka **Pengaturan → Perangkat & layanan → Bosch Smart Home Controller** dan pilih **Konfigurasi ulang**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Pustaka kriptografi tidak tersedia. Pastikan sudah diinstal."
+    },
+    "cert_file_missing": {
+      "message": "File sertifikat tidak ada: {path}"
+    },
+    "cert_invalid": {
+      "message": "Sertifikat tidak valid: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Jenis rawscan tidak ditemukan."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Tidak ada entri Bosch SHC yang dimuat dengan judul tersebut."
+    },
+    "scenario_not_found": {
+      "message": "Skenario tidak ditemukan."
+    },
+    "smoke_test_failed": {
+      "message": "Uji asap gagal."
+    },
+    "alarm_state_failed": {
+      "message": "Perubahan status alarm gagal."
     }
   }
 }

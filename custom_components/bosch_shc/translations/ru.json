@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Тестовая тревога"
+      },
+      "preview_max_brightness": {
+        "name": "Предпросмотр максимальной яркости"
+      },
+      "preview_min_brightness": {
+        "name": "Предпросмотр минимальной яркости"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Режим выхода"
       },
-      "smart_sensitivity_security": {
-        "name": "Уровень чувствительности безопасности"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Уровень чувствительности комфорта"
-      },
-      "orientation_light_response": {
-        "name": "Время отклика ориентационного освещения"
-      },
       "siren_sound_level": {
         "name": "Уровень звука",
         "state": {
           "low": "Низкий",
           "medium": "Средний",
           "high": "Высокий"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Время отклика ориентационного света"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Уровень безопасности умной чувствительности"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Уровень комфорта умной чувствительности"
+      },
+      "dimmer_phase_control": {
+        "name": "Управление фазой диммера"
+      },
+      "installation_profile": {
+        "name": "Профиль установки",
+        "state": {
+          "generic": "Внутренний (общий)",
+          "outdoor": "Уличный"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Описание качества воздуха"
-      },
-      "detection_state": {
-        "name": "Состояние теста обнаружения"
       },
       "communication_quality": {
         "name": "Качество связи",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Назначение кнопок"
+      },
+      "floor_temperature": {
+        "name": "Температура пола"
+      },
+      "purity": {
+        "name": "Чистота"
+      },
+      "air_quality": {
+        "name": "Качество воздуха"
+      },
+      "temperature_rating": {
+        "name": "Оценка температуры"
+      },
+      "humidity_rating": {
+        "name": "Оценка влажности"
+      },
+      "purity_rating": {
+        "name": "Оценка чистоты"
+      },
+      "energy_yield": {
+        "name": "Выработка энергии"
+      },
+      "power_yield": {
+        "name": "Выходная мощность"
+      },
+      "valve_tappet": {
+        "name": "Толкатель клапана"
+      },
+      "detection_test_state": {
+        "name": "Состояние теста обнаружения"
       }
     },
     "binary_sensor": {
@@ -343,6 +386,21 @@
         "name": "Световая сирена"
       },
       "siren_tamper": {
+        "name": "Вскрытие"
+      },
+      "call_for_heat": {
+        "name": "Запрос тепла"
+      },
+      "vibration": {
+        "name": "Вибрация"
+      },
+      "smoke": {
+        "name": "Дым"
+      },
+      "occupancy": {
+        "name": "Присутствие"
+      },
+      "tamper": {
         "name": "Вскрытие"
       }
     },
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Обход тревоги"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Светильник движения"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Строка команды для отправки дымовому датчику."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Больше возможностей для камер Bosch",
+      "description": "Обнаружены камеры Bosch. Эта интеграция покрывает базовые функции; специализированный **Bosch Smart Home Camera Tool** предоставляет значительно больше возможностей (снимки, уведомления о движении / FCM, освещение, потоки). Откройте «Подробнее» для проекта, затем закройте это уведомление."
+    },
+    "cert_expiring": {
+      "title": "Срок действия клиентского сертификата Bosch SHC скоро истечёт",
+      "description": "Клиентский сертификат Bosch SHC истечёт через {days} день/дней (дата {expiry}). Чтобы обновить его: переведите контроллер в режим сопряжения (нажмите кнопку на передней панели до тех пор, пока не начнут мигать светодиоды), затем перейдите в **Настройки → Устройства и службы → Bosch Smart Home Controller** и выберите **Перенастроить**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Библиотека криптографии недоступна. Убедитесь, что она установлена."
+    },
+    "cert_file_missing": {
+      "message": "Файл сертификата отсутствует: {path}"
+    },
+    "cert_invalid": {
+      "message": "Недействительный сертификат: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Тип rawscan не найден."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Загруженная запись Bosch SHC с таким именем не найдена."
+    },
+    "scenario_not_found": {
+      "message": "Сценарий не найден."
+    },
+    "smoke_test_failed": {
+      "message": "Тест дыма не выполнен."
+    },
+    "alarm_state_failed": {
+      "message": "Не удалось изменить состояние сигнализации."
     }
   }
 }

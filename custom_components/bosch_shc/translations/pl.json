@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Alarm testowy"
+      },
+      "preview_max_brightness": {
+        "name": "Podgląd maksymalnej jasności"
+      },
+      "preview_min_brightness": {
+        "name": "Podgląd minimalnej jasności"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Tryb wyjścia"
       },
-      "smart_sensitivity_security": {
-        "name": "Poziom czułości zabezpieczeń"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Poziom czułości komfortu"
-      },
-      "orientation_light_response": {
-        "name": "Czas reakcji światła orientacyjnego"
-      },
       "siren_sound_level": {
         "name": "Poziom dźwięku",
         "state": {
           "low": "Niski",
           "medium": "Średni",
           "high": "Wysoki"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Czas reakcji światła orientacyjnego"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Poziom bezpieczeństwa czułości inteligentnej"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Poziom komfortu czułości inteligentnej"
+      },
+      "dimmer_phase_control": {
+        "name": "Sterowanie fazą ściemniacza"
+      },
+      "installation_profile": {
+        "name": "Profil instalacji",
+        "state": {
+          "generic": "Wewnętrzny (ogólny)",
+          "outdoor": "Zewnętrzny"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Opis jakości powietrza"
-      },
-      "detection_state": {
-        "name": "Stan testu wykrywania"
       },
       "communication_quality": {
         "name": "Jakość komunikacji",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Przypisanie przycisków"
+      },
+      "floor_temperature": {
+        "name": "Temperatura podłogi"
+      },
+      "purity": {
+        "name": "Czystość"
+      },
+      "air_quality": {
+        "name": "Jakość powietrza"
+      },
+      "temperature_rating": {
+        "name": "Ocena temperatury"
+      },
+      "humidity_rating": {
+        "name": "Ocena wilgotności"
+      },
+      "purity_rating": {
+        "name": "Ocena czystości"
+      },
+      "energy_yield": {
+        "name": "Uzysk energii"
+      },
+      "power_yield": {
+        "name": "Moc wyjściowa"
+      },
+      "valve_tappet": {
+        "name": "Popychacz zaworu"
+      },
+      "detection_test_state": {
+        "name": "Stan testu wykrywania"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "Ingerencja"
+      },
+      "call_for_heat": {
+        "name": "Zapotrzebowanie na ciepło"
+      },
+      "vibration": {
+        "name": "Wibracje"
+      },
+      "smoke": {
+        "name": "Dym"
+      },
+      "occupancy": {
+        "name": "Obecność"
+      },
+      "tamper": {
+        "name": "Sabotaż"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Pominięcie alarmu"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Lampka ruchu"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Ciąg polecenia do wysłania do czujnika dymu."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Więcej dla kamer Bosch",
+      "description": "Wykryto kamery Bosch. Ta integracja obsługuje podstawowe funkcje; dedykowane **Bosch Smart Home Camera Tool** oferuje znacznie więcej (zrzuty ekranu, powiadomienia o ruchu / FCM, światła, strumienie). Otwórz „Dowiedz się więcej”, aby poznać projekt, a następnie odrzuć to powiadomienie."
+    },
+    "cert_expiring": {
+      "title": "Certyfikat klienta Bosch SHC wkrótce wygaśnie",
+      "description": "Certyfikat klienta Bosch SHC wygaśnie za {days} dzień/dni (dnia {expiry}). Aby go odnowić: przełącz kontroler w tryb parowania (naciśnij przycisk z przodu, aż diody LED zaczną migać), a następnie przejdź do **Ustawienia → Urządzenia i usługi → Bosch Smart Home Controller** i wybierz **Skonfiguruj ponownie**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Biblioteka kryptografii jest niedostępna. Upewnij się, że jest zainstalowana."
+    },
+    "cert_file_missing": {
+      "message": "Brak pliku certyfikatu: {path}"
+    },
+    "cert_invalid": {
+      "message": "Nieprawidłowy certyfikat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Typ rawscan nie został znaleziony."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Nie znaleziono załadowanego wpisu Bosch SHC o tej nazwie."
+    },
+    "scenario_not_found": {
+      "message": "Scenariusz nie został znaleziony."
+    },
+    "smoke_test_failed": {
+      "message": "Test dymu nie powiódł się."
+    },
+    "alarm_state_failed": {
+      "message": "Zmiana stanu alarmu nie powiodła się."
     }
   }
 }

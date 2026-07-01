@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "בדיקת אזעקה"
+      },
+      "preview_max_brightness": {
+        "name": "תצוגה מקדימה של בהירות מקסימלית"
+      },
+      "preview_min_brightness": {
+        "name": "תצוגה מקדימה של בהירות מינימלית"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "מצב פלט"
       },
-      "smart_sensitivity_security": {
-        "name": "רמת רגישות אבטחה"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "רמת רגישות נוחות"
-      },
-      "orientation_light_response": {
-        "name": "זמן תגובת תאורת כיוון"
-      },
       "siren_sound_level": {
         "name": "עוצמת הצליל",
         "state": {
           "low": "נמוכה",
           "medium": "בינונית",
           "high": "גבוהה"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "זמן תגובה של אור אוריינטציה"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "רמת אבטחה של רגישות חכמה"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "רמת נוחות של רגישות חכמה"
+      },
+      "dimmer_phase_control": {
+        "name": "בקרת פאזה של דימר"
+      },
+      "installation_profile": {
+        "name": "פרופיל התקנה",
+        "state": {
+          "generic": "פנים (כללי)",
+          "outdoor": "חוץ"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "תיאור איכות אוויר"
-      },
-      "detection_state": {
-        "name": "מצב בדיקת זיהוי"
       },
       "communication_quality": {
         "name": "איכות תקשורת",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "מיפוי לחצנים"
+      },
+      "floor_temperature": {
+        "name": "טמפרטורת רצפה"
+      },
+      "purity": {
+        "name": "טוהר"
+      },
+      "air_quality": {
+        "name": "איכות אוויר"
+      },
+      "temperature_rating": {
+        "name": "דירוג טמפרטורה"
+      },
+      "humidity_rating": {
+        "name": "דירוג לחות"
+      },
+      "purity_rating": {
+        "name": "דירוג טוהר"
+      },
+      "energy_yield": {
+        "name": "תפוקת אנרגיה"
+      },
+      "power_yield": {
+        "name": "תפוקת כוח"
+      },
+      "valve_tappet": {
+        "name": "מרים שסתום"
+      },
+      "detection_test_state": {
+        "name": "מצב בדיקת גילוי"
       }
     },
     "binary_sensor": {
@@ -343,6 +386,21 @@
         "name": "אזעקה חזותית"
       },
       "siren_tamper": {
+        "name": "חבלה"
+      },
+      "call_for_heat": {
+        "name": "קריאה לחימום"
+      },
+      "vibration": {
+        "name": "רטט"
+      },
+      "smoke": {
+        "name": "עשן"
+      },
+      "occupancy": {
+        "name": "תפוסה"
+      },
+      "tamper": {
         "name": "חבלה"
       }
     },
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "עקיפת אזעקה"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "אור תנועה"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "מחרוזת הפקודה לשליחה לגלאי העשן."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "עוד עבור מצלמות ה-Bosch שלך",
+      "description": "זוהו מצלמות Bosch. אינטגרציה זו מכסה את היסודות; **Bosch Smart Home Camera Tool** הייעודי עושה הרבה יותר עבורן (תמונות מצב, תנועה / push FCM, תאורה, זרמים). פתח את \"למד עוד\" עבור הפרויקט, ולאחר מכן סגור הודעה זו."
+    },
+    "cert_expiring": {
+      "title": "אישור הלקוח של Bosch SHC עומד לפוג בקרוב",
+      "description": "אישור הלקוח של Bosch SHC יפוג בעוד {days} יום/ימים (בתאריך {expiry}). לחידוש: הכנס את הבקר למצב צימוד (לחץ על הכפתור הקדמי עד שה-LED יהבהבו), לאחר מכן עבור אל **הגדרות → מכשירים ושירותים → Bosch Smart Home Controller** ובחר **הגדרה מחדש**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "ספריית ההצפנה אינה זמינה. אנא וודא שהיא מותקנת."
+    },
+    "cert_file_missing": {
+      "message": "קובץ האישור חסר: {path}"
+    },
+    "cert_invalid": {
+      "message": "אישור לא תקין: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "סוג rawscan לא נמצא."
+    },
+    "rawscan_entry_not_found": {
+      "message": "לא נמצאה רשומת Bosch SHC טעונה עם כותרת זו."
+    },
+    "scenario_not_found": {
+      "message": "התרחיש לא נמצא."
+    },
+    "smoke_test_failed": {
+      "message": "בדיקת עשן נכשלה."
+    },
+    "alarm_state_failed": {
+      "message": "שינוי מצב האזעקה נכשל."
     }
   }
 }

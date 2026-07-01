@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Δοκιμαστικός συναγερμός"
+      },
+      "preview_max_brightness": {
+        "name": "Προεπισκόπηση Μέγιστης Φωτεινότητας"
+      },
+      "preview_min_brightness": {
+        "name": "Προεπισκόπηση Ελάχιστης Φωτεινότητας"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Λειτουργία εξόδου"
       },
-      "smart_sensitivity_security": {
-        "name": "Επίπεδο ευαισθησίας ασφαλείας"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Επίπεδο ευαισθησίας άνεσης"
-      },
-      "orientation_light_response": {
-        "name": "Χρόνος απόκρισης φωτισμού προσανατολισμού"
-      },
       "siren_sound_level": {
         "name": "Επίπεδο ήχου",
         "state": {
           "low": "Χαμηλό",
           "medium": "Μεσαίο",
           "high": "Υψηλό"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Χρόνος Απόκρισης Φωτισμού Προσανατολισμού"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Επίπεδο Ασφάλειας Έξυπνης Ευαισθησίας"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Επίπεδο Άνεσης Έξυπνης Ευαισθησίας"
+      },
+      "dimmer_phase_control": {
+        "name": "Έλεγχος Φάσης Dimmer"
+      },
+      "installation_profile": {
+        "name": "Προφίλ Εγκατάστασης",
+        "state": {
+          "generic": "Εσωτερικός (Γενικός)",
+          "outdoor": "Εξωτερικός"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Περιγραφή ποιότητας αέρα"
-      },
-      "detection_state": {
-        "name": "Κατάσταση δοκιμής ανίχνευσης"
       },
       "communication_quality": {
         "name": "Ποιότητα επικοινωνίας",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Αντιστοίχιση κουμπιών"
+      },
+      "floor_temperature": {
+        "name": "Θερμοκρασία Δαπέδου"
+      },
+      "purity": {
+        "name": "Καθαρότητα"
+      },
+      "air_quality": {
+        "name": "Ποιότητα Αέρα"
+      },
+      "temperature_rating": {
+        "name": "Βαθμολογία Θερμοκρασίας"
+      },
+      "humidity_rating": {
+        "name": "Βαθμολογία Υγρασίας"
+      },
+      "purity_rating": {
+        "name": "Βαθμολογία Καθαρότητας"
+      },
+      "energy_yield": {
+        "name": "Παραγωγή Ενέργειας"
+      },
+      "power_yield": {
+        "name": "Παραγωγή Ισχύος"
+      },
+      "valve_tappet": {
+        "name": "Έμβολο Βαλβίδας"
+      },
+      "detection_test_state": {
+        "name": "Κατάσταση Δοκιμής Ανίχνευσης"
       }
     },
     "binary_sensor": {
@@ -343,6 +386,21 @@
         "name": "Οπτικός συναγερμός"
       },
       "siren_tamper": {
+        "name": "Παραβίαση"
+      },
+      "call_for_heat": {
+        "name": "Αίτημα Θέρμανσης"
+      },
+      "vibration": {
+        "name": "Δόνηση"
+      },
+      "smoke": {
+        "name": "Καπνός"
+      },
+      "occupancy": {
+        "name": "Παρουσία"
+      },
+      "tamper": {
         "name": "Παραβίαση"
       }
     },
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Παράκαμψη συναγερμού"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Φως Κίνησης"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Συμβολοσειρά εντολής προς αποστολή στον ανιχνευτή καπνού."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Περισσότερα για τις κάμερες Bosch σας",
+      "description": "Εντοπίστηκαν κάμερες Bosch. Αυτή η ενοποίηση καλύπτει τα βασικά· το ειδικό **Bosch Smart Home Camera Tool** κάνει πολύ περισσότερα (στιγμιότυπα, κίνηση / push FCM, φώτα, ροές). Ανοίξτε το \"Μάθετε περισσότερα\" για το έργο και έπειτα απορρίψτε αυτή την ειδοποίηση."
+    },
+    "cert_expiring": {
+      "title": "Το πιστοποιητικό πελάτη Bosch SHC λήγει σύντομα",
+      "description": "Το πιστοποιητικό πελάτη Bosch SHC θα λήξει σε {days} ημέρα(ες) (στις {expiry}). Για ανανέωση: θέστε τον ελεγκτή σε λειτουργία σύζευξης (πατήστε το μπροστινό κουμπί μέχρι να αναβοσβήσουν τα LED), στη συνέχεια μεταβείτε στις **Ρυθμίσεις → Συσκευές και υπηρεσίες → Bosch Smart Home Controller** και επιλέξτε **Επαναδιαμόρφωση**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Η βιβλιοθήκη κρυπτογραφίας δεν είναι διαθέσιμη. Βεβαιωθείτε ότι είναι εγκατεστημένη."
+    },
+    "cert_file_missing": {
+      "message": "Το αρχείο πιστοποιητικού λείπει: {path}"
+    },
+    "cert_invalid": {
+      "message": "Μη έγκυρο πιστοποιητικό: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Ο τύπος rawscan δεν βρέθηκε."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Δεν βρέθηκε φορτωμένη καταχώρηση Bosch SHC με αυτόν τον τίτλο."
+    },
+    "scenario_not_found": {
+      "message": "Το σενάριο δεν βρέθηκε."
+    },
+    "smoke_test_failed": {
+      "message": "Η δοκιμή καπνού απέτυχε."
+    },
+    "alarm_state_failed": {
+      "message": "Η αλλαγή κατάστασης συναγερμού απέτυχε."
     }
   }
 }

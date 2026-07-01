@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Testi alarm"
+      },
+      "preview_max_brightness": {
+        "name": "Maksimaalse heleduse eelvaade"
+      },
+      "preview_min_brightness": {
+        "name": "Minimaalse heleduse eelvaade"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Väljundrežiim"
       },
-      "smart_sensitivity_security": {
-        "name": "Turvalisuse tundlikkuse tase"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Mugavuse tundlikkuse tase"
-      },
-      "orientation_light_response": {
-        "name": "Orienteerumisvalgusti reageerimisaeg"
-      },
       "siren_sound_level": {
         "name": "Helitase",
         "state": {
           "low": "Madal",
           "medium": "Keskmine",
           "high": "Kõrge"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Orientatsioonivalguse reageerimisaeg"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Nutika tundlikkuse turvalisuse tase"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Nutika tundlikkuse mugavustase"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmeri faasijuhtimine"
+      },
+      "installation_profile": {
+        "name": "Paigaldusprofiil",
+        "state": {
+          "generic": "Siseruumis (üldine)",
+          "outdoor": "Välitingimustes"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Õhukvaliteedi kirjeldus"
-      },
-      "detection_state": {
-        "name": "Tuvastamistesti olek"
       },
       "communication_quality": {
         "name": "Sideühenduse kvaliteet",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Nuppude vastendus"
+      },
+      "floor_temperature": {
+        "name": "Põrandatemperatuur"
+      },
+      "purity": {
+        "name": "Puhtus"
+      },
+      "air_quality": {
+        "name": "Õhukvaliteet"
+      },
+      "temperature_rating": {
+        "name": "Temperatuuri hinnang"
+      },
+      "humidity_rating": {
+        "name": "Niiskuse hinnang"
+      },
+      "purity_rating": {
+        "name": "Puhtuse hinnang"
+      },
+      "energy_yield": {
+        "name": "Energiatootlus"
+      },
+      "power_yield": {
+        "name": "Võimsustootlus"
+      },
+      "valve_tappet": {
+        "name": "Klapi kergiti"
+      },
+      "detection_test_state": {
+        "name": "Tuvastustesti olek"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "Võltsimiskaitse"
+      },
+      "call_for_heat": {
+        "name": "Soojusenõue"
+      },
+      "vibration": {
+        "name": "Vibratsioon"
+      },
+      "smoke": {
+        "name": "Suits"
+      },
+      "occupancy": {
+        "name": "Kohalolu"
+      },
+      "tamper": {
+        "name": "Rikkumine"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Alarmi möödaviik"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Liikumisvalgus"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Suitsuandurile saadetav käsustring."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Rohkem teie Bosch kaameratele",
+      "description": "Tuvastati Bosch kaamerad. See integratsioon katab põhifunktsioonid; spetsiaalne **Bosch Smart Home Camera Tool** teeb nende jaoks palju rohkem (hetktõmmised, liikumine / FCM teavitused, tuled, vood). Avage projekti jaoks „Lisateave“, seejärel lükake see teade tagasi."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC kliendi sertifikaat aegub peagi",
+      "description": "Bosch SHC kliendi sertifikaat aegub {days} päeva(de) pärast ({expiry}). Selle uuendamiseks: pange seade paaritusse (vajutage esipaneeli nuppu, kuni LED-id hakkavad vilkuma), seejärel minge jaotisse **Seaded → Seadmed ja teenused → Bosch Smart Home Controller** ja valige **Uuesti seadistamine**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Krüptograafia teek pole saadaval. Palun veenduge, et see on installitud."
+    },
+    "cert_file_missing": {
+      "message": "Sertifikaadifail puudub: {path}"
+    },
+    "cert_invalid": {
+      "message": "Kehtetu sertifikaat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan tüüpi ei leitud."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Selle pealkirjaga laaditud Bosch SHC kirjet ei leitud."
+    },
+    "scenario_not_found": {
+      "message": "Stsenaariumi ei leitud."
+    },
+    "smoke_test_failed": {
+      "message": "Suitsutest ebaõnnestus."
+    },
+    "alarm_state_failed": {
+      "message": "Häire oleku muutmine ebaõnnestus."
     }
   }
 }

@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Test Alarmı"
+      },
+      "preview_max_brightness": {
+        "name": "Maksimum Parlaklık Önizlemesi"
+      },
+      "preview_min_brightness": {
+        "name": "Minimum Parlaklık Önizlemesi"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Çıkış Modu"
       },
-      "smart_sensitivity_security": {
-        "name": "Güvenlik Duyarlılık Seviyesi"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Konfor Duyarlılık Seviyesi"
-      },
-      "orientation_light_response": {
-        "name": "Yön Işığı Tepki Süresi"
-      },
       "siren_sound_level": {
         "name": "Ses Seviyesi",
         "state": {
           "low": "Düşük",
           "medium": "Orta",
           "high": "Yüksek"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Yönlendirme Işığı Yanıt Süresi"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Akıllı Hassasiyet Güvenlik Düzeyi"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Akıllı Hassasiyet Konfor Düzeyi"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer Faz Kontrolü"
+      },
+      "installation_profile": {
+        "name": "Kurulum Profili",
+        "state": {
+          "generic": "İç Mekan (Genel)",
+          "outdoor": "Dış Mekan"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Hava Kalitesi Açıklaması"
-      },
-      "detection_state": {
-        "name": "Algılama Testi Durumu"
       },
       "communication_quality": {
         "name": "İletişim Kalitesi",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Düğme eşlemesi"
+      },
+      "floor_temperature": {
+        "name": "Zemin Sıcaklığı"
+      },
+      "purity": {
+        "name": "Saflık"
+      },
+      "air_quality": {
+        "name": "Hava Kalitesi"
+      },
+      "temperature_rating": {
+        "name": "Sıcaklık Değerlendirmesi"
+      },
+      "humidity_rating": {
+        "name": "Nem Değerlendirmesi"
+      },
+      "purity_rating": {
+        "name": "Saflık Değerlendirmesi"
+      },
+      "energy_yield": {
+        "name": "Enerji Verimi"
+      },
+      "power_yield": {
+        "name": "Güç Verimi"
+      },
+      "valve_tappet": {
+        "name": "Valf İticisi"
+      },
+      "detection_test_state": {
+        "name": "Algılama Testi Durumu"
       }
     },
     "binary_sensor": {
@@ -343,6 +386,21 @@
         "name": "Görsel Alarm"
       },
       "siren_tamper": {
+        "name": "Kurcalama"
+      },
+      "call_for_heat": {
+        "name": "Isıtma Talebi"
+      },
+      "vibration": {
+        "name": "Titreşim"
+      },
+      "smoke": {
+        "name": "Duman"
+      },
+      "occupancy": {
+        "name": "Doluluk"
+      },
+      "tamper": {
         "name": "Kurcalama"
       }
     },
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Alarm atlama"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Hareket Işığı"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Duman dedektörüne gönderilecek komut dizesi."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Bosch kameralarınız için daha fazlası",
+      "description": "Bosch kameralar tespit edildi. Bu entegrasyon temel işlevleri kapsar; özel **Bosch Smart Home Camera Tool** bunlar için çok daha fazlasını sunar (anlık görüntüler, hareket / FCM bildirimi, ışıklar, akışlar). Proje için \"Daha fazla bilgi\" seçeneğini açın, ardından bu bildirimi kapatın."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC istemci sertifikasının süresi yakında doluyor",
+      "description": "Bosch SHC istemci sertifikası {days} gün içinde ({expiry} tarihinde) sona erecek. Yenilemek için: denetleyiciyi eşleştirme moduna alın (LED'ler yanıp sönene kadar ön düğmeye basın), ardından **Ayarlar → Cihazlar ve hizmetler → Bosch Smart Home Controller** bölümüne gidip **Yeniden yapılandır**'ı seçin."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Kriptografi kütüphanesi mevcut değil. Lütfen yüklendiğinden emin olun."
+    },
+    "cert_file_missing": {
+      "message": "Sertifika dosyası eksik: {path}"
+    },
+    "cert_invalid": {
+      "message": "Geçersiz sertifika: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan türü bulunamadı."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Bu başlıkla yüklenmiş bir Bosch SHC girişi bulunamadı."
+    },
+    "scenario_not_found": {
+      "message": "Senaryo bulunamadı."
+    },
+    "smoke_test_failed": {
+      "message": "Duman testi başarısız oldu."
+    },
+    "alarm_state_failed": {
+      "message": "Alarm durumu değişikliği başarısız oldu."
     }
   }
 }

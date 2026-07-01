@@ -193,6 +193,12 @@
       },
       "siren_test_alarm": {
         "name": "Testlarm"
+      },
+      "preview_max_brightness": {
+        "name": "Förhandsgranska maxljusstyrka"
+      },
+      "preview_min_brightness": {
+        "name": "Förhandsgranska minljusstyrka"
       }
     },
     "number": {
@@ -264,21 +270,31 @@
       "output_mode": {
         "name": "Utmatningsläge"
       },
-      "smart_sensitivity_security": {
-        "name": "Säkerhetskänslighetsnivå"
-      },
-      "smart_sensitivity_comfort": {
-        "name": "Komfortkänslighetsnivå"
-      },
-      "orientation_light_response": {
-        "name": "Svarstid för orienteringsbelysning"
-      },
       "siren_sound_level": {
         "name": "Ljudnivå",
         "state": {
           "low": "Låg",
           "medium": "Medel",
           "high": "Hög"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Orientationsljus svarstid"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Smart känslighet – säkerhetsnivå"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Smart känslighet – komfortnivå"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimrarfaskontroll"
+      },
+      "installation_profile": {
+        "name": "Installationsprofil",
+        "state": {
+          "generic": "Inomhus (generisk)",
+          "outdoor": "Utomhus"
         }
       }
     },
@@ -294,9 +310,6 @@
       },
       "air_quality_description": {
         "name": "Luftkvalitetsbeskrivning"
-      },
-      "detection_state": {
-        "name": "Status för detektionstest"
       },
       "communication_quality": {
         "name": "Kommunikationskvalitet",
@@ -333,6 +346,36 @@
       },
       "keypad_trigger": {
         "name": "Knapptilldelning"
+      },
+      "floor_temperature": {
+        "name": "Golvtemperatur"
+      },
+      "purity": {
+        "name": "Renhet"
+      },
+      "air_quality": {
+        "name": "Luftkvalitet"
+      },
+      "temperature_rating": {
+        "name": "Temperaturvärdering"
+      },
+      "humidity_rating": {
+        "name": "Fuktighetsvärdering"
+      },
+      "purity_rating": {
+        "name": "Renhetsvärdering"
+      },
+      "energy_yield": {
+        "name": "Energiutbyte"
+      },
+      "power_yield": {
+        "name": "Effektutbyte"
+      },
+      "valve_tappet": {
+        "name": "Ventilstössel"
+      },
+      "detection_test_state": {
+        "name": "Detekteringstestläge"
       }
     },
     "binary_sensor": {
@@ -344,6 +387,21 @@
       },
       "siren_tamper": {
         "name": "Sabotage"
+      },
+      "call_for_heat": {
+        "name": "Värmebegäran"
+      },
+      "vibration": {
+        "name": "Vibration"
+      },
+      "smoke": {
+        "name": "Rök"
+      },
+      "occupancy": {
+        "name": "Närvaro"
+      },
+      "tamper": {
+        "name": "Manipulering"
       }
     },
     "update": {
@@ -357,6 +415,11 @@
     "switch": {
       "bypass": {
         "name": "Förbikoppling av larm"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Rörelselampa"
       }
     }
   },
@@ -444,6 +507,42 @@
           "description": "Kommandosträng att skicka till brandvarnaren."
         }
       }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Mer för dina Bosch-kameror",
+      "description": "Bosch-kameror hittades. Denna integration täcker grundläggande funktioner; det dedikerade **Bosch Smart Home Camera Tool** erbjuder mycket mer (ögonblicksbilder, rörelse-/FCM-push, lampor, strömmar). Öppna \"Läs mer\" för projektet och stäng sedan detta meddelande."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC-klientcertifikatet löper snart ut",
+      "description": "Bosch SHC-klientcertifikatet löper ut om {days} dag(ar) (den {expiry}). Förnya det så här: sätt styrenheten i parkopplingsläge (håll in frontknappen tills lysdioderna blinkar) och gå sedan till **Inställningar → Enheter och tjänster → Bosch Smart Home Controller** och välj **Konfigurera om**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Kryptografibiblioteket är inte tillgängligt. Kontrollera att det är installerat."
+    },
+    "cert_file_missing": {
+      "message": "Certifikatfil saknas: {path}"
+    },
+    "cert_invalid": {
+      "message": "Ogiltigt certifikat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan-typen hittades inte."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Ingen inläst Bosch SHC-post med den titeln hittades."
+    },
+    "scenario_not_found": {
+      "message": "Scenariot hittades inte."
+    },
+    "smoke_test_failed": {
+      "message": "Brandtestet misslyckades."
+    },
+    "alarm_state_failed": {
+      "message": "Det gick inte att ändra larmläget."
     }
   }
 }
