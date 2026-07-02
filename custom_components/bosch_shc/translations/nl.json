@@ -320,7 +320,7 @@
         "state": {
           "good": "Goed",
           "normal": "Normaal",
-          "medium": "Gemiddeld",
+          "not_supported": "Niet ondersteund",
           "bad": "Slecht",
           "unknown": "Onbekend",
           "fetching": "Ophalen"

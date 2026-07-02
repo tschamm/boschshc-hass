@@ -320,7 +320,7 @@
         "state": {
           "good": "Dobrá",
           "normal": "Normálna",
-          "medium": "Stredná",
+          "not_supported": "Nepodporované",
           "bad": "Zlá",
           "unknown": "Neznáma",
           "fetching": "Načítavanie"

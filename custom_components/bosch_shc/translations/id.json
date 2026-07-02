@@ -320,7 +320,7 @@
         "state": {
           "good": "Baik",
           "normal": "Normal",
-          "medium": "Sedang",
+          "not_supported": "Tidak Didukung",
           "bad": "Buruk",
           "unknown": "Tidak Diketahui",
           "fetching": "Mengambil"

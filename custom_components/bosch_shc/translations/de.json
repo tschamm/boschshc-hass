@@ -320,7 +320,7 @@
         "state": {
           "good": "Gut",
           "normal": "Normal",
-          "medium": "Mittel",
+          "not_supported": "Nicht unterstützt",
           "bad": "Schlecht",
           "unknown": "Unbekannt",
           "fetching": "Wird abgerufen"

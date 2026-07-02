@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased
+## 0.10.3 — Real #356 root cause found in boschshcpy, plus a wider APK audit
+
+Pins `boschshcpy==0.4.6` (see that repo's CHANGELOG — this release grew
+out of finding the real root cause of #356 there, which led to a wider
+audit against a decompiled copy of the official Bosch app).
+
+### Fixed
+
+- **#356 — Motion Detector II `[+M]` indicator-light entity missing.**
+  Root cause turned out not to be the installation profile (that theory,
+  posted on the issue, was wrong and has been retracted there): the
+  `boschshcpy` property this integration's `light.py` depends on
+  (`supports_light`) was never actually implemented in the lib, despite
+  0.9.2's CHANGELOG claiming it shipped paired with `boschshcpy` 0.4.5.
+  Since `light.py` reads it via `getattr(light, "supports_light", False)`,
+  the missing attribute silently defaulted to "unsupported" for every
+  `[+M]` Motion Detector II since 0.9.2. Fixed lib-side in `boschshcpy`
+  0.4.6; comment here corrected to no longer claim a profile dependency.
+- **`CommunicationQualitySensor` had an invented `medium` state** that
+  doesn't exist in the real API (`boschshcpy`'s `CommunicationQualityService.State`
+  had a fictional `MEDIUM` member with no matching value on real
+  hardware). Now reports `not_supported`, the value the Bosch app itself
+  uses. Translation key renamed (`medium` → `not_supported`) across all
+  30 languages.
 
 ### Added
 
@@ -17,6 +40,15 @@
   outage produced zero visible signal in Home Assistant. Gated on
   `supports_power_supply`, alongside the existing
   `SirenAcousticAlarmSensor`/`SirenVisualAlarmSensor`/`SirenTamperSensor`.
+- **Installation Profile select now available on relays and smart
+  plugs**, not just Motion Detector II — `InstallationProfileSelect` was
+  already fully generic (works on any device with `supported_profiles`),
+  it just wasn't offered outside `motion_detectors2`. Added 4 new profile
+  translation strings (`light`/`heating_rcc`/`boiler`/`mini_pv`) across
+  all 30 languages for the wider device vocabulary this now surfaces.
+- **`HeaterTypeSelect`: `VOLT_FREE_HEATING` option** — matches the new
+  `boschshcpy` 0.4.6 enum member (a real heater type seen on hardware
+  that previously collapsed to `UNKNOWN`).
 
 ## 0.10.2 — Quality-scale audit: icon-translations gap + doc corrections
 

@@ -112,6 +112,7 @@ _HEATER_TYPE_OPTIONS = [
     WallThermostatConfiguration.HeaterType.RADIATOR.name,
     WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE.name,
     WallThermostatConfiguration.HeaterType.CONVECTOR_ACTIVE.name,
+    WallThermostatConfiguration.HeaterType.VOLT_FREE_HEATING.name,
 ]
 
 # SwitchConfiguration switch type: exclude UNKNOWN.

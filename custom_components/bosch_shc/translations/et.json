@@ -320,7 +320,7 @@
         "state": {
           "good": "Hea",
           "normal": "Normaalne",
-          "medium": "Keskmine",
+          "not_supported": "Ei toetata",
           "bad": "Halb",
           "unknown": "Teadmata",
           "fetching": "Pärimine"

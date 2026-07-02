@@ -320,7 +320,7 @@
         "state": {
           "good": "良好",
           "normal": "普通",
-          "medium": "中程度",
+          "not_supported": "非対応",
           "bad": "不良",
           "unknown": "不明",
           "fetching": "取得中"

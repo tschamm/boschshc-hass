@@ -320,7 +320,7 @@
         "state": {
           "good": "İyi",
           "normal": "Normal",
-          "medium": "Orta",
+          "not_supported": "Desteklenmiyor",
           "bad": "Kötü",
           "unknown": "Bilinmiyor",
           "fetching": "Alınıyor"

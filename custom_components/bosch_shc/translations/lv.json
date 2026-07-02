@@ -320,7 +320,7 @@
         "state": {
           "good": "Laba",
           "normal": "Normāla",
-          "medium": "Vidēja",
+          "not_supported": "Netiek atbalstīts",
           "bad": "Slikta",
           "unknown": "Nezināma",
           "fetching": "Ielādē"

@@ -632,7 +632,7 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_translation_key = "communication_quality"
-    _attr_options = ["good", "normal", "medium", "bad", "unknown", "fetching"]
+    _attr_options = ["good", "normal", "not_supported", "bad", "unknown", "fetching"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize an SHC communication quality reporting sensor."""

@@ -320,7 +320,7 @@
         "state": {
           "good": "Jó",
           "normal": "Normál",
-          "medium": "Közepes",
+          "not_supported": "Nem támogatott",
           "bad": "Rossz",
           "unknown": "Ismeretlen",
           "fetching": "Lekérés"

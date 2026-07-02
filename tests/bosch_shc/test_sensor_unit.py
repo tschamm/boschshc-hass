@@ -324,9 +324,9 @@ class TestCommunicationQualitySensor:
         state = CommunicationQualityService.State.GOOD
         assert _comm_quality_sensor(state).native_value == "good"
 
-    def test_native_value_medium(self):
-        state = CommunicationQualityService.State.MEDIUM
-        assert _comm_quality_sensor(state).native_value == "medium"
+    def test_native_value_not_supported(self):
+        state = CommunicationQualityService.State.NOT_SUPPORTED
+        assert _comm_quality_sensor(state).native_value == "not_supported"
 
     def test_native_value_bad(self):
         state = CommunicationQualityService.State.BAD

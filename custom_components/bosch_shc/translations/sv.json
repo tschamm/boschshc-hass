@@ -320,7 +320,7 @@
         "state": {
           "good": "Bra",
           "normal": "Normal",
-          "medium": "Medel",
+          "not_supported": "Stöds inte",
           "bad": "Dålig",
           "unknown": "Okänd",
           "fetching": "Hämtar"

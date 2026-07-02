@@ -320,7 +320,7 @@
         "state": {
           "good": "טובה",
           "normal": "רגילה",
-          "medium": "בינונית",
+          "not_supported": "לא נתמך",
           "bad": "גרועה",
           "unknown": "לא ידוע",
           "fetching": "מאחזר"

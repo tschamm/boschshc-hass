@@ -320,7 +320,7 @@
         "state": {
           "good": "Bona",
           "normal": "Normal",
-          "medium": "Mitjana",
+          "not_supported": "No compatible",
           "bad": "Dolenta",
           "unknown": "Desconeguda",
           "fetching": "Obtenint"

@@ -320,7 +320,7 @@
         "state": {
           "good": "Καλή",
           "normal": "Κανονική",
-          "medium": "Μέτρια",
+          "not_supported": "Δεν υποστηρίζεται",
           "bad": "Κακή",
           "unknown": "Άγνωστη",
           "fetching": "Λήψη"

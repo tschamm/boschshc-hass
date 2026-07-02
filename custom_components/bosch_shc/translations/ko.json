@@ -320,7 +320,7 @@
         "state": {
           "good": "좋음",
           "normal": "보통",
-          "medium": "중간",
+          "not_supported": "지원되지 않음",
           "bad": "나쁨",
           "unknown": "알 수 없음",
           "fetching": "가져오는 중"

@@ -351,7 +351,7 @@
         "state": {
           "good": "Good",
           "normal": "Normal",
-          "medium": "Medium",
+          "not_supported": "Not Supported",
           "bad": "Bad",
           "unknown": "Unknown",
           "fetching": "Fetching"
