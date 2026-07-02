@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Outdoor Siren power-supply fault diagnostics**: 4 new diagnostic
+  `binary_sensor` entities — `siren_ac_dc_error`, `siren_battery_defect`,
+  `siren_battery_temperature_abnormal`, `siren_primary_power_supply_outage`.
+  boschshcpy's `OutdoorSirenPowerSupplyService` already exposed all four
+  (`ac_dc_error`/`battery_defect`/`battery_temperature_abnormal`/
+  `primary_power_supply_outage`, matching the APK's `PowerSupplyState`
+  getters `isAcDcError()`/`isBatteryDefect()`/
+  `isBatteryTemperatureAbnormal()`/`isPrimaryPowerSupplyOutage()`), but
+  boschshc-hass never wired them into an entity — a siren with a real
+  AC/DC fault, defective battery, abnormal battery temperature, or a mains
+  outage produced zero visible signal in Home Assistant. Gated on
+  `supports_power_supply`, alongside the existing
+  `SirenAcousticAlarmSensor`/`SirenVisualAlarmSensor`/`SirenTamperSensor`.
+
 ## 0.10.2 — Quality-scale audit: icon-translations gap + doc corrections
 
 **No breaking config changes.**

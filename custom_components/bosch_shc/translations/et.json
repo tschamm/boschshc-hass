@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "Võltsimiskaitse"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DC viga"
+      },
+      "siren_battery_defect": {
+        "name": "Aku defekt"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Aku temperatuur ebanormaalne"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Toite katkestus"
+      },
       "call_for_heat": {
         "name": "Soojusenõue"
       },

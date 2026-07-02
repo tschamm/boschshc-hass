@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "Illetéktelen beavatkozás"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DC hiba"
+      },
+      "siren_battery_defect": {
+        "name": "Akkumulátor meghibásodás"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Akkumulátor hőmérséklete rendellenes"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Áramkimaradás"
+      },
       "call_for_heat": {
         "name": "Fűtési igény"
       },

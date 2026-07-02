@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "Ingerencja"
       },
+      "siren_ac_dc_error": {
+        "name": "Błąd AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Uszkodzenie baterii"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Nieprawidłowa temperatura baterii"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Zanik zasilania"
+      },
       "call_for_heat": {
         "name": "Zapotrzebowanie na ciepło"
       },

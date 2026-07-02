@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "防拆报警"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DC 错误"
+      },
+      "siren_battery_defect": {
+        "name": "电池故障"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "电池温度异常"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "主电源中断"
+      },
       "call_for_heat": {
         "name": "供热请求"
       },

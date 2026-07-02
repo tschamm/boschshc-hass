@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "Sabotáž"
       },
+      "siren_ac_dc_error": {
+        "name": "Chyba AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Vadná baterie"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Abnormální teplota baterie"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Výpadek napájení"
+      },
       "call_for_heat": {
         "name": "Požadavek na teplo"
       },

@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "Подправяне"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DC грешка"
+      },
+      "siren_battery_defect": {
+        "name": "Дефектна батерия"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Абнормална температура на батерията"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Прекъсване на захранването"
+      },
       "call_for_heat": {
         "name": "Заявка за отопление"
       },

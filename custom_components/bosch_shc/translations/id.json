@@ -392,6 +392,18 @@
       "siren_tamper": {
         "name": "Gangguan Fisik"
       },
+      "siren_ac_dc_error": {
+        "name": "Kesalahan AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Baterai rusak"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Suhu baterai tidak normal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Pemadaman daya"
+      },
       "call_for_heat": {
         "name": "Permintaan Pemanas"
       },
