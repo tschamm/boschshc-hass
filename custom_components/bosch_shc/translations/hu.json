@@ -294,7 +294,11 @@
         "name": "Telepítési profil",
         "state": {
           "generic": "Beltéri (általános)",
-          "outdoor": "Kültéri"
+          "outdoor": "Kültéri",
+          "light": "Világítás",
+          "heating_rcc": "Fűtés (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini napelem"
         }
       }
     },

@@ -294,7 +294,11 @@
         "name": "Installasjonsprofil",
         "state": {
           "generic": "Innendørs (Generisk)",
-          "outdoor": "Utendørs"
+          "outdoor": "Utendørs",
+          "light": "Lys",
+          "heating_rcc": "Oppvarming (RCC)",
+          "boiler": "Kjele",
+          "mini_pv": "Mini solcelle"
         }
       }
     },

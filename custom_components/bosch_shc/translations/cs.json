@@ -294,7 +294,11 @@
         "name": "Instalační profil",
         "state": {
           "generic": "Vnitřní (obecný)",
-          "outdoor": "Venkovní"
+          "outdoor": "Venkovní",
+          "light": "Světlo",
+          "heating_rcc": "Topení (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini FV"
         }
       }
     },

@@ -295,7 +295,11 @@
         "name": "Installation Profile",
         "state": {
           "generic": "Indoor (Generic)",
-          "outdoor": "Outdoor"
+          "outdoor": "Outdoor",
+          "light": "Light",
+          "heating_rcc": "Heating (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini PV"
         }
       }
     },

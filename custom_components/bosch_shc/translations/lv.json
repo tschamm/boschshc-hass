@@ -294,7 +294,11 @@
         "name": "Uzstādīšanas profils",
         "state": {
           "generic": "Iekštelpas (vispārīgs)",
-          "outdoor": "Ārtelpas"
+          "outdoor": "Ārtelpas",
+          "light": "Apgaismojums",
+          "heating_rcc": "Apkure (RCC)",
+          "boiler": "Boilers",
+          "mini_pv": "Mini saules panelis"
         }
       }
     },

@@ -294,7 +294,11 @@
         "name": "Perfil d'instal·lació",
         "state": {
           "generic": "Interior (genèric)",
-          "outdoor": "Exterior"
+          "outdoor": "Exterior",
+          "light": "Llum",
+          "heating_rcc": "Calefacció (RCC)",
+          "boiler": "Escalfador",
+          "mini_pv": "Mini fotovoltaica"
         }
       }
     },

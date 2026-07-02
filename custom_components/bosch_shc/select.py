@@ -349,9 +349,20 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    # Installation profile (e.g. GENERIC / OUTDOOR) for Motion Detector II.
-    # Writable replacement for the former read-only InstallationProfileSensor.
-    for device in getattr(session.device_helper, "motion_detectors2", []):
+    # Installation profile (e.g. GENERIC / OUTDOOR / LIGHT / HEATING_RCC /
+    # BOILER / MINI_PV) — writable device-level "purpose of use" field.
+    # Not MD2-specific: micromodule relays and smart plugs also advertise a
+    # non-empty supportedProfiles list on real hardware (see
+    # knowledge-base/rawscan-database.md), so the same generic select is
+    # wired up for all of them, guarded by the device's own advertised
+    # supported_profiles. Writable replacement for the former read-only
+    # InstallationProfileSensor (MD2 only).
+    for device in (
+        list(getattr(session.device_helper, "motion_detectors2", []))
+        + list(getattr(session.device_helper, "micromodule_relays", []))
+        + list(getattr(session.device_helper, "smart_plugs", []))
+        + list(getattr(session.device_helper, "smart_plugs_compact", []))
+    ):
         if device_excluded(device, config_entry.options):
             continue
         if not getattr(device, "supported_profiles", None):

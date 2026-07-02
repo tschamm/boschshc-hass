@@ -294,7 +294,11 @@
         "name": "설치 프로필",
         "state": {
           "generic": "실내 (일반)",
-          "outdoor": "실외"
+          "outdoor": "실외",
+          "light": "조명",
+          "heating_rcc": "난방 (RCC)",
+          "boiler": "보일러",
+          "mini_pv": "미니 태양광"
         }
       }
     },

@@ -294,7 +294,11 @@
         "name": "Installationsprofil",
         "state": {
           "generic": "Inomhus (generisk)",
-          "outdoor": "Utomhus"
+          "outdoor": "Utomhus",
+          "light": "Belysning",
+          "heating_rcc": "Uppvärmning (RCC)",
+          "boiler": "Panna",
+          "mini_pv": "Mini solcell"
         }
       }
     },

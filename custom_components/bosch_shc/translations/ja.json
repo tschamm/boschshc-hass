@@ -294,7 +294,11 @@
         "name": "設置プロファイル",
         "state": {
           "generic": "屋内（汎用）",
-          "outdoor": "屋外"
+          "outdoor": "屋外",
+          "light": "照明",
+          "heating_rcc": "暖房 (RCC)",
+          "boiler": "ボイラー",
+          "mini_pv": "ミニ太陽光"
         }
       }
     },

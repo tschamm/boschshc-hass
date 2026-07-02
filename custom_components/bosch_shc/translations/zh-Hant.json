@@ -294,7 +294,11 @@
         "name": "安裝配置檔",
         "state": {
           "generic": "室內（通用）",
-          "outdoor": "室外"
+          "outdoor": "室外",
+          "light": "燈光",
+          "heating_rcc": "暖氣 (RCC)",
+          "boiler": "鍋爐",
+          "mini_pv": "迷你光伏"
         }
       }
     },

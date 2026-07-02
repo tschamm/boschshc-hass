@@ -294,7 +294,11 @@
         "name": "Kurulum Profili",
         "state": {
           "generic": "İç Mekan (Genel)",
-          "outdoor": "Dış Mekan"
+          "outdoor": "Dış Mekan",
+          "light": "Işık",
+          "heating_rcc": "Isıtma (RCC)",
+          "boiler": "Kombi",
+          "mini_pv": "Mini Güneş Paneli"
         }
       }
     },
