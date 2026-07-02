@@ -294,7 +294,11 @@
         "name": "Einsatzbereich",
         "state": {
           "generic": "Innen (Standard)",
-          "outdoor": "Außen"
+          "outdoor": "Außen",
+          "light": "Licht",
+          "heating_rcc": "Heizung (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini-PV"
         }
       }
     },

@@ -294,7 +294,11 @@
         "name": "Installatieprofiel",
         "state": {
           "generic": "Binnen (Algemeen)",
-          "outdoor": "Buiten"
+          "outdoor": "Buiten",
+          "light": "Licht",
+          "heating_rcc": "Verwarming (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini-zonnepaneel"
         }
       }
     },

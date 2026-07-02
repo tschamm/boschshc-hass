@@ -398,6 +398,52 @@ class TestInstallationProfileSelect:
         ]
         assert "InstallationProfileSelect" not in types
 
+    # The device-level "profile" field (and lib SHCDevice.set_profile) is not
+    # MD2-specific: real-world rawscans confirm non-empty supportedProfiles
+    # on MICROMODULE_RELAY / PLUG_COMPACT / PLUG_COMPACT_DUAL
+    # (knowledge-base/rawscan-database.md), so the select must also be wired
+    # up for micromodule_relays / smart_plugs / smart_plugs_compact.
+    def test_setup_created_for_micromodule_relay_when_profiles_present(self):
+        relay = _fake_md2(
+            profile="LIGHT", supported_profiles=["LIGHT", "GENERIC", "HEATING_RCC"]
+        )
+        types = [
+            type(e).__name__
+            for e in _setup_selects(_make_select_session(micromodule_relays=[relay]))
+        ]
+        assert "InstallationProfileSelect" in types
+
+    def test_setup_created_for_smart_plug_when_profiles_present(self):
+        plug = _fake_md2(
+            profile="GENERIC", supported_profiles=["LIGHT", "GENERIC", "HEATING_RCC"]
+        )
+        types = [
+            type(e).__name__
+            for e in _setup_selects(_make_select_session(smart_plugs=[plug]))
+        ]
+        assert "InstallationProfileSelect" in types
+
+    def test_setup_created_for_smart_plug_compact_when_profiles_present(self):
+        plug = _fake_md2(
+            profile="MINI_PV",
+            supported_profiles=["LIGHT", "MINI_PV", "GENERIC", "HEATING_RCC"],
+        )
+        types = [
+            type(e).__name__
+            for e in _setup_selects(
+                _make_select_session(smart_plugs_compact=[plug])
+            )
+        ]
+        assert "InstallationProfileSelect" in types
+
+    def test_setup_skipped_for_micromodule_relay_when_no_profiles(self):
+        relay = _fake_md2(supported_profiles=[])
+        types = [
+            type(e).__name__
+            for e in _setup_selects(_make_select_session(micromodule_relays=[relay]))
+        ]
+        assert "InstallationProfileSelect" not in types
+
 
 # ---------------------------------------------------------------------------
 # OrientationLightResponseSelect (PollControl)

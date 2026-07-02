@@ -294,7 +294,11 @@
         "name": "פרופיל התקנה",
         "state": {
           "generic": "פנים (כללי)",
-          "outdoor": "חוץ"
+          "outdoor": "חוץ",
+          "light": "תאורה",
+          "heating_rcc": "חימום (RCC)",
+          "boiler": "דוד",
+          "mini_pv": "מיני פוטו-וולטאי"
         }
       }
     },

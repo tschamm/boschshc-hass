@@ -294,7 +294,11 @@
         "name": "Profil Instalasi",
         "state": {
           "generic": "Dalam Ruangan (Umum)",
-          "outdoor": "Luar Ruangan"
+          "outdoor": "Luar Ruangan",
+          "light": "Lampu",
+          "heating_rcc": "Pemanas (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini PV"
         }
       }
     },

@@ -294,7 +294,11 @@
         "name": "Profil inštalácie",
         "state": {
           "generic": "Vnútorné (všeobecné)",
-          "outdoor": "Vonkajšie"
+          "outdoor": "Vonkajšie",
+          "light": "Svetlo",
+          "heating_rcc": "Kúrenie (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini fotovoltika"
         }
       }
     },

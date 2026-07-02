@@ -294,7 +294,11 @@
         "name": "Paigaldusprofiil",
         "state": {
           "generic": "Siseruumis (üldine)",
-          "outdoor": "Välitingimustes"
+          "outdoor": "Välitingimustes",
+          "light": "Valgustus",
+          "heating_rcc": "Küte (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini päikesepaneel"
         }
       }
     },

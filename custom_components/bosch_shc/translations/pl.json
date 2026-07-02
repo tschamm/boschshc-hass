@@ -294,7 +294,11 @@
         "name": "Profil instalacji",
         "state": {
           "generic": "Wewnętrzny (ogólny)",
-          "outdoor": "Zewnętrzny"
+          "outdoor": "Zewnętrzny",
+          "light": "Światło",
+          "heating_rcc": "Ogrzewanie (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini fotowoltaika"
         }
       }
     },
