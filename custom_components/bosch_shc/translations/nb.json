@@ -388,6 +388,18 @@
       "siren_tamper": {
         "name": "Sabotasje"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DC-feil"
+      },
+      "siren_battery_defect": {
+        "name": "Batteridefekt"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Unormal batteritemperatur"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Strømbrudd"
+      },
       "call_for_heat": {
         "name": "Varmebehov"
       },

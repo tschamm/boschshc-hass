@@ -284,6 +284,23 @@ async def async_setup_entry(  # noqa: C901
             SirenVisualAlarmSensor(device=siren, entry_id=config_entry.entry_id)
         )
         entities.append(SirenTamperSensor(device=siren, entry_id=config_entry.entry_id))
+        if getattr(siren, "supports_power_supply", False):
+            entities.append(
+                SirenAcDcErrorSensor(device=siren, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                SirenBatteryDefectSensor(device=siren, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                SirenBatteryTemperatureAbnormalSensor(
+                    device=siren, entry_id=config_entry.entry_id
+                )
+            )
+            entities.append(
+                SirenPrimaryPowerSupplyOutageSensor(
+                    device=siren, entry_id=config_entry.entry_id
+                )
+            )
 
     platform = entity_platform.current_platform.get()
 
@@ -375,6 +392,86 @@ class SirenTamperSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     def is_on(self) -> bool:
         """Return True when a tamper event is active."""
         return bool(getattr(self._device.siren, "tamper_activated", False))
+
+
+class SirenAcDcErrorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Outdoor Siren: AC/DC power-supply fault (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_ac_dc_error"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the siren AC/DC error sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_ac_dc_error"
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the power supply reports an AC/DC fault."""
+        return bool(getattr(self._device.power_supply, "ac_dc_error", False))
+
+
+class SirenBatteryDefectSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Outdoor Siren: battery defect (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_battery_defect"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the siren battery defect sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery_defect"
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the power supply reports a defective battery."""
+        return bool(getattr(self._device.power_supply, "battery_defect", False))
+
+
+class SirenBatteryTemperatureAbnormalSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Outdoor Siren: battery temperature abnormal (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_battery_temperature_abnormal"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the siren battery temperature abnormal sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_battery_temperature_abnormal"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the battery temperature is reported abnormal."""
+        return bool(
+            getattr(self._device.power_supply, "battery_temperature_abnormal", False)
+        )
+
+
+class SirenPrimaryPowerSupplyOutageSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Outdoor Siren: primary (mains) power supply outage (read-only, #120)."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "siren_primary_power_supply_outage"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the siren primary power supply outage sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_primary_power_supply_outage"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the primary (mains) power supply is out."""
+        return bool(
+            getattr(self._device.power_supply, "primary_power_supply_outage", False)
+        )
 
 
 class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]

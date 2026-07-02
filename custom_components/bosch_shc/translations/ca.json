@@ -388,6 +388,18 @@
       "siren_tamper": {
         "name": "Manipulació"
       },
+      "siren_ac_dc_error": {
+        "name": "Error CA/CC"
+      },
+      "siren_battery_defect": {
+        "name": "Bateria defectuosa"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Temperatura de la bateria anormal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Tall del subministrament elèctric"
+      },
       "call_for_heat": {
         "name": "Sol·licitud de calefacció"
       },

@@ -388,6 +388,18 @@
       "siren_tamper": {
         "name": "Tamper"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DC Error"
+      },
+      "siren_battery_defect": {
+        "name": "Battery Defect"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Battery Temperature Abnormal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Power Supply Outage"
+      },
       "call_for_heat": {
         "name": "Call for Heat"
       },

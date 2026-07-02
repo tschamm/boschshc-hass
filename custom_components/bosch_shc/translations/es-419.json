@@ -388,6 +388,18 @@
       "siren_tamper": {
         "name": "Manipulación"
       },
+      "siren_ac_dc_error": {
+        "name": "Error de CA/CC"
+      },
+      "siren_battery_defect": {
+        "name": "Batería defectuosa"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Temperatura de batería anómala"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Corte de suministro eléctrico"
+      },
       "call_for_heat": {
         "name": "Llamada de calor"
       },

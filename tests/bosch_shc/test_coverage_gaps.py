@@ -644,6 +644,171 @@ class TestSirenSensorInits:
         assert "SirenTamperSensor" in types
 
 
+class TestSirenPowerSupplyFaultSensors:
+    """Outdoor Siren power-supply fault flags (ac_dc_error/battery_defect/
+    battery_temperature_abnormal/primary_power_supply_outage) must be wired
+    into binary_sensor entities, gated on supports_power_supply, same as the
+    existing sensor.py SirenBatterySensor/SirenMainPowerSensor/
+    SirenSolarChargingSensor triplet.
+    """
+
+    def _make_siren_dev(self, dev_id="siren1", power_supply=None):
+        return _fake_dev(
+            dev_id,
+            supports_batterylevel=False,
+            supports_power_supply=True,
+            power_supply=power_supply or MagicMock(),
+        )
+
+    def test_ac_dc_error_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import SirenAcDcErrorSensor
+
+        dev = self._make_siren_dev("s1")
+        sensor = SirenAcDcErrorSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s1_ac_dc_error"
+
+    def test_battery_defect_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import SirenBatteryDefectSensor
+
+        dev = self._make_siren_dev("s2")
+        sensor = SirenBatteryDefectSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s2_battery_defect"
+
+    def test_battery_temperature_abnormal_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import (
+            SirenBatteryTemperatureAbnormalSensor,
+        )
+
+        dev = self._make_siren_dev("s3")
+        sensor = SirenBatteryTemperatureAbnormalSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s3_battery_temperature_abnormal"
+
+    def test_primary_power_supply_outage_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import (
+            SirenPrimaryPowerSupplyOutageSensor,
+        )
+
+        dev = self._make_siren_dev("s4")
+        sensor = SirenPrimaryPowerSupplyOutageSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s4_primary_power_supply_outage"
+
+    def test_is_on_reads_underlying_power_supply_flags(self):
+        from custom_components.bosch_shc.binary_sensor import (
+            SirenAcDcErrorSensor,
+            SirenBatteryDefectSensor,
+            SirenBatteryTemperatureAbnormalSensor,
+            SirenPrimaryPowerSupplyOutageSensor,
+        )
+
+        power_supply = SimpleNamespace(
+            ac_dc_error=True,
+            battery_defect=True,
+            battery_temperature_abnormal=True,
+            primary_power_supply_outage=True,
+        )
+        dev = self._make_siren_dev("s5", power_supply=power_supply)
+
+        assert SirenAcDcErrorSensor(dev, "entry1").is_on is True
+        assert SirenBatteryDefectSensor(dev, "entry1").is_on is True
+        assert SirenBatteryTemperatureAbnormalSensor(dev, "entry1").is_on is True
+        assert SirenPrimaryPowerSupplyOutageSensor(dev, "entry1").is_on is True
+
+    def test_is_on_false_when_power_supply_flags_clear(self):
+        from custom_components.bosch_shc.binary_sensor import (
+            SirenAcDcErrorSensor,
+            SirenBatteryDefectSensor,
+            SirenBatteryTemperatureAbnormalSensor,
+            SirenPrimaryPowerSupplyOutageSensor,
+        )
+
+        power_supply = SimpleNamespace(
+            ac_dc_error=False,
+            battery_defect=False,
+            battery_temperature_abnormal=False,
+            primary_power_supply_outage=False,
+        )
+        dev = self._make_siren_dev("s6", power_supply=power_supply)
+
+        assert SirenAcDcErrorSensor(dev, "entry1").is_on is False
+        assert SirenBatteryDefectSensor(dev, "entry1").is_on is False
+        assert SirenBatteryTemperatureAbnormalSensor(dev, "entry1").is_on is False
+        assert SirenPrimaryPowerSupplyOutageSensor(dev, "entry1").is_on is False
+
+    def _setup_with_siren(self, siren):
+        """Run async_setup_entry with a single outdoor siren and return the
+        list of created entity type names."""
+        from custom_components.bosch_shc.binary_sensor import async_setup_entry
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.motion_detectors = []
+        dh.motion_detectors2 = []
+        dh.shutter_contacts = []
+        dh.shutter_contacts2 = []
+        dh.smoke_detectors = []
+        dh.twinguards = []
+        dh.micromodule_shutter_controls = []
+        dh.micromodule_blinds = []
+        dh.outdoor_sirens = [siren]
+        dh.smoke_detection_system = None
+        dh.heating_circuits = []
+        dh.universal_switches = []
+        dh.water_leakage_detectors = []
+        dh.micromodule_dimmers = []
+        dh.micromodule_relays = []
+        dh.micromodule_impulse_relays = []
+        dh.climate_controls = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry()
+
+        platform_mock = MagicMock()
+        platform_mock.async_register_entity_service = MagicMock()
+        with patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id",
+                   new_callable=AsyncMock), \
+             patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp:
+            _cp.get.return_value = platform_mock
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        return [type(e).__name__ for e in collected]
+
+    def test_setup_creates_power_supply_fault_sensors_when_supported(self):
+        """supports_power_supply=True -> all 4 fault binary_sensors added."""
+        siren = _fake_dev(
+            "s1",
+            siren=MagicMock(),
+            supports_batterylevel=False,
+            supports_power_supply=True,
+        )
+        types = self._setup_with_siren(siren)
+        assert "SirenAcDcErrorSensor" in types
+        assert "SirenBatteryDefectSensor" in types
+        assert "SirenBatteryTemperatureAbnormalSensor" in types
+        assert "SirenPrimaryPowerSupplyOutageSensor" in types
+
+    def test_setup_skips_power_supply_fault_sensors_when_unsupported(self):
+        """supports_power_supply=False (or missing) -> none of the 4 created."""
+        siren = _fake_dev(
+            "s1",
+            siren=MagicMock(),
+            supports_batterylevel=False,
+            supports_power_supply=False,
+        )
+        types = self._setup_with_siren(siren)
+        assert "SirenAcDcErrorSensor" not in types
+        assert "SirenBatteryDefectSensor" not in types
+        assert "SirenBatteryTemperatureAbnormalSensor" not in types
+        assert "SirenPrimaryPowerSupplyOutageSensor" not in types
+        # Baseline read-only siren sensors are still created regardless.
+        assert "SirenTamperSensor" in types
+
+
 class TestMotionDetectorWillRemoveUnsub:
     """Lines 457-459: MotionDetectionSensor.async_will_remove_from_hass."""
 

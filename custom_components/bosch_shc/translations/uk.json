@@ -388,6 +388,18 @@
       "siren_tamper": {
         "name": "Втручання"
       },
+      "siren_ac_dc_error": {
+        "name": "Помилка AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Несправність батареї"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Аномальна температура батареї"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Відключення живлення"
+      },
       "call_for_heat": {
         "name": "Запит тепла"
       },

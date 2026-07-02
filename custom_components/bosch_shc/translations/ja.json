@@ -388,6 +388,18 @@
       "siren_tamper": {
         "name": "不正開封"
       },
+      "siren_ac_dc_error": {
+        "name": "AC/DCエラー"
+      },
+      "siren_battery_defect": {
+        "name": "バッテリー故障"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "バッテリー温度異常"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "電源供給停止"
+      },
       "call_for_heat": {
         "name": "暖房要求"
       },
