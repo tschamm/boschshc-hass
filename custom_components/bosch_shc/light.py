@@ -95,9 +95,11 @@ async def async_setup_entry(
     )
     for light in session.device_helper.motion_detectors2:  # type: ignore[assignment]
         # The [+M] indicator-light services (BinarySwitch/MultiLevelSwitch)
-        # only exist on an MD2 in the OUTDOOR/[+M] installation profile — a
-        # base/GENERIC profile MD2 has neither, and every read/write on this
-        # entity would raise AttributeError on the None service.
+        # depend on the physical [+M] hardware variant, NOT on the
+        # installation profile — a GENERIC-profile MD2 [+M] still has both
+        # (rawscan-confirmed, hass#356). A base MD2 without the [+M] light
+        # module has neither, and every read/write on this entity would
+        # raise AttributeError on the None service without this guard.
         no_light_entity = (
             device_excluded(light, config_entry.options)
             or motion_light_suppressed
