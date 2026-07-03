@@ -279,35 +279,32 @@ async def async_setup_entry(  # noqa: C901
             )
 
     # SwitchConfiguration selects (MicromoduleRelay + LightControl).
+    # supports_switch_configuration only exists on SHCMicromoduleRelay (where
+    # it's simply "the switch-config service is present"); SHCLightControl has
+    # no such flag at all, so gating on it here silently produced zero
+    # switch/actuator/output-mode selects for every Light Control II, even
+    # though switch_type/actuator_type/output_mode are already null-safe
+    # (None when the underlying service isn't present) on both classes.
     for device in getattr(session.device_helper, "micromodule_relays", []) + getattr(
         session.device_helper, "micromodule_light_controls", []
     ):
         if device_excluded(device, config_entry.options):
             continue
-        if (
-            getattr(device, "supports_switch_configuration", False)
-            and getattr(device, "switch_type", None) is not None
-        ):
+        if getattr(device, "switch_type", None) is not None:
             entities.append(
                 SwitchTypeSelect(
                     device=device,
                     entry_id=config_entry.entry_id,
                 )
             )
-        if (
-            getattr(device, "supports_switch_configuration", False)
-            and getattr(device, "actuator_type", None) is not None
-        ):
+        if getattr(device, "actuator_type", None) is not None:
             entities.append(
                 ActuatorTypeSelect(
                     device=device,
                     entry_id=config_entry.entry_id,
                 )
             )
-        if (
-            getattr(device, "supports_switch_configuration", False)
-            and getattr(device, "output_mode", None) is not None
-        ):
+        if getattr(device, "output_mode", None) is not None:
             entities.append(
                 OutputModeSelect(
                     device=device,
