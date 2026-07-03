@@ -41,7 +41,9 @@ jobs:
           exit 1
 
       - name: ruff check (lint)
-        run: ruff check custom_components
+        # github format surfaces violations as inline PR annotations, same
+        # spot Copilot/CodeRabbit-style comments show up, no extra action needed.
+        run: ruff check --output-format=github custom_components
 
       - name: ruff format (format check)
         run: ruff format --check custom_components
@@ -74,7 +76,10 @@ jobs:
         run: pylint --rcfile=pyproject.toml custom_components/bosch_shc
 
       - name: Type check
-        run: mypy custom_components/bosch_shc/
+        run: |
+          echo "::add-matcher::.github/matchers/mypy.json"
+          mypy custom_components/bosch_shc/
+          echo "::remove-matcher owner=mypy::"
 
       - name: quality scale gate (platinum)
         run: python3 scripts/check-quality-scale.py --tier platinum
