@@ -14,7 +14,6 @@ from boschshcpy.services_impl import (
 )
 from homeassistant.helpers.entity import EntityCategory
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
     _MOTION_SENSITIVITY_OPTIONS,
     _VIBRATION_SENSITIVITY_OPTIONS,
@@ -27,12 +26,14 @@ from custom_components.bosch_shc.select import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_hass(session):
-    return SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+def _make_hass():
+    return SimpleNamespace()
 
 
-def _make_config_entry():
-    return SimpleNamespace(options={}, entry_id="E1")
+def _make_config_entry(session):
+    entry = SimpleNamespace(options={}, entry_id="E1")
+    entry.runtime_data = SimpleNamespace(session=session)
+    return entry
 
 
 def _ms_device(sensitivity_name="HIGH", **kwargs):
@@ -342,8 +343,8 @@ class TestSelectSetupEntry:
     """select.py async_setup_entry produces the right entities."""
 
     def _run(self, session):
-        hass = _make_hass(session)
-        entry = _make_config_entry()
+        hass = _make_hass()
+        entry = _make_config_entry(session)
         collected = []
 
         def add(entities):

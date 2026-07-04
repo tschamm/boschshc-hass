@@ -13,7 +13,6 @@ from homeassistant.components.number import NumberMode
 from homeassistant.const import UnitOfTime
 from homeassistant.helpers.entity import EntityCategory
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.number import (
     HeatingCircuitSetpointNumber,
     ImpulseLengthNumber,
@@ -24,11 +23,15 @@ from custom_components.bosch_shc.number import (
 # ---------------------------------------------------------------------------
 
 def _make_hass(session):
-    return SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+    return SimpleNamespace()
 
 
-def _make_config_entry():
-    return SimpleNamespace(options={}, entry_id="E1")
+def _make_config_entry(session):
+    entry = SimpleNamespace(options={}, entry_id="E1")
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
+    )
+    return entry
 
 
 def _impulse_device(impulse_length=100):
@@ -334,7 +337,7 @@ class TestNumberSetupNewEntities:
     def _run(self, session):
         from custom_components.bosch_shc.number import async_setup_entry
         hass = _make_hass(session)
-        entry = _make_config_entry()
+        entry = _make_config_entry(session)
         collected = []
 
         def add(entities):

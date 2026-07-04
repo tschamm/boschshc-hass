@@ -226,7 +226,6 @@ class TestCleanupTrackerActualClosure:
         import asyncio
 
         from custom_components.bosch_shc.binary_sensor import async_setup_entry
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
         # Capture all unload callbacks
         unload_callbacks = []
@@ -302,7 +301,6 @@ class TestCleanupTrackerActualClosure:
         loop = SimpleNamespace(call_soon_threadsafe=lambda cb, *a: cb(*a))
         hass = SimpleNamespace(
             bus=bus,
-            data={DOMAIN: {"E1": {DATA_SESSION: session}}},
             loop=loop,
             async_add_executor_job=_async_add_executor_job,
         )
@@ -311,6 +309,9 @@ class TestCleanupTrackerActualClosure:
             options={},
             entry_id="E1",
             async_on_unload=_capture_on_unload,
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
         )
 
         platform_mock = MagicMock()
@@ -382,11 +383,13 @@ class TestSelectMotionDetector2ExcludedDevice:
     """select.py line 58: excluded device in motion_detectors2 is skipped."""
 
     def _run_setup(self, session, options=None):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.select import async_setup_entry
 
-        hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(entry_id="E1", options=options or {})
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         collected = []
         asyncio.run(async_setup_entry(hass, config_entry, lambda e: collected.extend(e)))
         return collected
@@ -457,11 +460,13 @@ class TestSelectMotionSensitivityAttributeError:
     """select.py lines 64-65: AttributeError from motion_sensitivity accessor."""
 
     def _run_setup(self, session, options=None):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.select import async_setup_entry
 
-        hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(entry_id="E1", options=options or {})
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         collected = []
         asyncio.run(async_setup_entry(hass, config_entry, lambda e: collected.extend(e)))
         return collected
@@ -516,10 +521,12 @@ class TestSelectMotionSensitivityAttributeError:
                 shutter_contacts2=[],
             )
         )
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.select import async_setup_entry
-        hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(entry_id="E1", options={})
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         collected = []
         # Must not raise AttributeError
         asyncio.run(async_setup_entry(hass, config_entry, lambda e: collected.extend(e)))
@@ -590,11 +597,13 @@ def _fake_battery_device(device_id="bat-dev", name="BatDev", root_id="root-bat")
 
 
 def _run_sensor_setup(session, options):
-    from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
     from custom_components.bosch_shc.sensor import async_setup_entry
 
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options=options, entry_id="E1")
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
+    )
     collected = []
 
     async def _inner():

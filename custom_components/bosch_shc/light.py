@@ -23,7 +23,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import color as color_util
 
 from .const import (
-    DATA_SESSION,
     DOMAIN,
     LOGGER,
     OPT_SUPPRESS_HUE_LIGHTS,
@@ -49,7 +48,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the light platform."""
     entities: list[LightEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     hue_lights: list[SHCLight] = []
     if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False):

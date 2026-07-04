@@ -42,8 +42,6 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    DATA_SESSION,
-    DOMAIN,
     LOGGER,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_SUPPRESS_POWER_SENSORS,
@@ -60,7 +58,7 @@ async def async_setup_entry(  # noqa: C901
 ) -> None:
     """Set up the SHC sensor platform."""
     entities: list[SensorEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
     sensor: SHCDevice
     diagnostic_enabled = config_entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True)
     power_sensors_enabled = not config_entry.options.get(

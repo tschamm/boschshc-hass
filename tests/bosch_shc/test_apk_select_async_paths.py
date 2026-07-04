@@ -13,7 +13,6 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
     ActuatorTypeSelect,
     DisplayDirectionSelect,
@@ -464,15 +463,14 @@ def _make_excluded_session(device_list_name, device):
 def _run_setup_with_exclusion(session, excluded_id):
     from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}}
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         options={OPT_EXCLUDED_DEVICES: [excluded_id]},
         entry_id=entry_id,
         unique_id="UID1",
         async_on_unload=MagicMock(),
     )
+    config_entry.runtime_data = SimpleNamespace(session=session)
     entities = []
 
     def add_entities(new_ents, *args, **kwargs):

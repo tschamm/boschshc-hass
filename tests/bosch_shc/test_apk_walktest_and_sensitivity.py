@@ -25,7 +25,6 @@ from custom_components.bosch_shc.button import (
 from custom_components.bosch_shc.button import (
     async_setup_entry as button_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.select import (
     SmartSensitivityComfortLevelSelect,
     SmartSensitivitySecurityLevelSelect,
@@ -95,33 +94,30 @@ def _make_select_session(**helper_lists):
 
 def _make_button_hass_and_entry(session):
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={
-            DOMAIN: {entry_id: {
-                DATA_SESSION: session,
-                DATA_SHC: SimpleNamespace(
-                    name="SHC", id="shc", identifiers={("bosch_shc", "shc")},
-                    manufacturer="Bosch", model="SHC"),
-            }}
-        }
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         options={},
         entry_id=entry_id,
         unique_id="UID1",
         async_on_unload=MagicMock(),
     )
+    config_entry.runtime_data = SimpleNamespace(
+        session=session,
+        shc_device=SimpleNamespace(
+            name="SHC", id="shc", identifiers={("bosch_shc", "shc")},
+            manufacturer="Bosch", model="SHC"),
+        title="Test SHC",
+    )
     return hass, config_entry
 
 
 def _make_select_hass_and_entry(session):
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}}
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options={}, entry_id=entry_id,
                                    unique_id="UID1",
                                    async_on_unload=MagicMock())
+    config_entry.runtime_data = SimpleNamespace(session=session)
     return hass, config_entry
 
 
@@ -351,7 +347,6 @@ class TestWalkStateSensor:
 
 class TestWalkStateSensorSetup:
     def _run_sensor_setup(self, md2_list):
-        from custom_components.bosch_shc.const import DATA_SHC
         from custom_components.bosch_shc.sensor import async_setup_entry as sensor_setup
 
         entry_id = "E1"
@@ -380,22 +375,20 @@ class TestWalkStateSensorSetup:
             water_leakage_detectors=[],
         )
         session = SimpleNamespace(device_helper=device_helper, emma=emma)
-        hass = SimpleNamespace(
-            data={
-                DOMAIN: {entry_id: {
-                    DATA_SESSION: session,
-                    DATA_SHC: SimpleNamespace(
-                        name="SHC", id="shc",
-                        identifiers={("bosch_shc", "shc")},
-                        manufacturer="Bosch", model="SHC",
-                    ),
-                }}
-            }
-        )
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(
             options={},
             entry_id=entry_id,
             async_on_unload=MagicMock(),
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session,
+            shc_device=SimpleNamespace(
+                name="SHC", id="shc",
+                identifiers={("bosch_shc", "shc")},
+                manufacturer="Bosch", model="SHC",
+            ),
+            title="Test SHC",
         )
         entities = []
 

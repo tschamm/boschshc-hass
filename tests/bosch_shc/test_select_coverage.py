@@ -26,11 +26,7 @@ from boschshcpy.services_impl import (
     VibrationSensorService,
 )
 
-from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DOMAIN,
-    OPT_EXCLUDED_DEVICES,
-)
+from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 from custom_components.bosch_shc.select import (
     MotionSensitivitySelect,
     VibrationSensitivitySelect,
@@ -41,8 +37,8 @@ from custom_components.bosch_shc.select import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_hass(session):
-    return SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+def _make_hass():
+    return SimpleNamespace()
 
 
 def _make_entry(options=None, entry_id="E1"):
@@ -50,7 +46,8 @@ def _make_entry(options=None, entry_id="E1"):
 
 
 def _run_setup(session, entry):
-    hass = _make_hass(session)
+    hass = _make_hass()
+    entry.runtime_data = SimpleNamespace(session=session)
     collected = []
 
     def add(entities):

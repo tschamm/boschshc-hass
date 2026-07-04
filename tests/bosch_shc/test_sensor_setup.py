@@ -17,7 +17,6 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.sensor import (
     AirQualitySensor,
     CommunicationQualitySensor,
@@ -134,8 +133,9 @@ def _make_fake_session(
 
 def _run_setup(session):
     """Run async_setup_entry with a fake session. Returns list of added entities."""
-    hass = SimpleNamespace(data={DOMAIN: {ENTRY_ID: {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options={}, entry_id=ENTRY_ID)
+    config_entry.runtime_data = SimpleNamespace(session=session)
     collected: list = []
 
     def _add_entities(entity_list):

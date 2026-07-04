@@ -26,7 +26,6 @@ from unittest.mock import MagicMock, patch
 
 from boschshcpy.services_impl import PowerSwitchConfigurationService
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.select import (
     StateAfterPowerOutageSelect,
     async_setup_entry,
@@ -63,11 +62,12 @@ def _make_session(**helper_lists):
 
 async def _async_setup(session):
     entry_id = "E1"
-    hass = SimpleNamespace(data={DOMAIN: {entry_id: {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         options={}, entry_id=entry_id, unique_id="UID1",
         async_on_unload=MagicMock(),
     )
+    config_entry.runtime_data = SimpleNamespace(session=session)
     entities = []
 
     def add_entities(new_ents, *args, **kwargs):

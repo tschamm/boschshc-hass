@@ -42,8 +42,6 @@ from custom_components.bosch_shc.binary_sensor import (
     WaterLeakageDetectorSensor,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
 # ---------------------------------------------------------------------------
 # Helpers: build minimal fake device attributes for each entity __init__
 # ---------------------------------------------------------------------------
@@ -190,7 +188,6 @@ class TestAsyncSetupEntry:
     def _setup(self, session):
         """Wire hass + config_entry + platform mock and call async_setup_entry."""
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         # async_add_executor_job: call synchronously in tests (no thread needed)
 
         async def _fake_executor_job(fn, *args):
@@ -200,6 +197,9 @@ class TestAsyncSetupEntry:
         config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: None,
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
         )
         entities_collected = []
 
@@ -301,8 +301,10 @@ class TestAsyncSetupEntry:
         dev.latestmotion = None
         session = _make_fake_session(motion_detectors=[dev])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -329,8 +331,10 @@ class TestAsyncSetupEntry:
         dev.latestmotion = None
         session = _make_fake_session(motion_detectors=[dev])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -375,8 +379,10 @@ class TestAsyncSetupEntry:
         dev.smokedetectorcheck_state = SmokeDetectorCheckService.State.NONE
         session = _make_fake_session(smoke_detectors=[dev])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -423,8 +429,10 @@ class TestAsyncSetupEntry:
         dev.alarm = SurveillanceAlarmService.State.ALARM_OFF
         session = _make_fake_session(smoke_detection_system=dev)
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -556,8 +564,10 @@ class TestAsyncSetupEntry:
         dev.latestmotion = None
         session = _make_fake_session(motion_detectors2=[dev])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -584,8 +594,10 @@ class TestAsyncSetupEntry:
         dev.latestmotion = None
         session = _make_fake_session(motion_detectors2=[dev])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -632,8 +644,10 @@ class TestAsyncSetupEntry:
 
         session = _make_fake_session(motion_detectors=[dev1], motion_detectors2=[dev2])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={}, entry_id="E1", async_on_unload=lambda fn: None)
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         entities_collected = []
 
         async def _run_setup():
@@ -662,10 +676,12 @@ class TestAsyncSetupEntry:
         unload_callbacks = []
         session = _make_fake_session()
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: unload_callbacks.append(fn),
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
         )
 
         async def _run_setup():
@@ -689,10 +705,12 @@ class TestAsyncSetupEntry:
         unload_callbacks = []
         session = _make_fake_session()
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
         config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: unload_callbacks.append(fn),
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
         )
 
         async def _run_setup():
@@ -719,7 +737,6 @@ class TestAsyncSetupEntry:
         tw = _make_base_device("tw-l4")
         session = _make_fake_session(smoke_detection_system=sds, twinguards=[tw])
         hass = _make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
 
         async def _fake_executor_job(fn, *args):
             return fn(*args)
@@ -728,6 +745,9 @@ class TestAsyncSetupEntry:
         config_entry = SimpleNamespace(options={},
             entry_id="E1",
             async_on_unload=lambda fn: unload_callbacks.append(fn),
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
         )
 
         async def _run_setup():

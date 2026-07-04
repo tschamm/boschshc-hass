@@ -44,7 +44,6 @@ from .const import (
     CONF_SHC_KEY,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_SESSION,
     DOMAIN,
     LOGGER,
     OPT_ALL_LIGHTS_AS_LIGHT,
@@ -616,9 +615,8 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
             _camera_tool_installed = bool(
                 self.hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
             )
-            data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
-            if data:
-                session = data[DATA_SESSION]
+            if hasattr(self.config_entry, "runtime_data"):
+                session = self.config_entry.runtime_data.session
                 _has_cameras = bool(
                     session.device_helper.camera_eyes
                     or session.device_helper.camera_360

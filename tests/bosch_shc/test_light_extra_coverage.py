@@ -13,8 +13,6 @@ from unittest.mock import AsyncMock, patch
 from homeassistant.const import Platform
 
 from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DOMAIN,
     OPT_EXCLUDED_DEVICES,
     OPT_LIGHTS_AS_LIGHT,
 )
@@ -127,12 +125,13 @@ def _make_hass_and_entry(
     if lights_as_light_ids is not None:
         options[OPT_LIGHTS_AS_LIGHT] = lights_as_light_ids
 
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         entry_id=entry_id,
         options=options,
+    )
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
     )
     return hass, config_entry
 

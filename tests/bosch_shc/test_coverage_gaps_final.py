@@ -77,7 +77,6 @@ class TestBinarySensorCleanupTrackerBody:
         7. Assert tracker.teardown() was called.
         """
         from custom_components.bosch_shc.binary_sensor import async_setup_entry
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
         tracker_mock = MagicMock()
         tracker_mock.teardown = MagicMock()
@@ -113,13 +112,13 @@ class TestBinarySensorCleanupTrackerBody:
         )
 
         hass = self._make_hass()
-        hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
 
         captured_unloads = []
         config_entry = SimpleNamespace(
             options={},
             entry_id="E1",
             async_on_unload=lambda fn: captured_unloads.append(fn),
+            runtime_data=SimpleNamespace(session=session),
         )
 
         platform_mock = MagicMock()
@@ -181,11 +180,14 @@ class TestSelectMotionSensitivityUnstableProperty:
     """
 
     def _run_setup(self, session):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.select import async_setup_entry
 
-        hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
-        config_entry = SimpleNamespace(entry_id="E1", options={})
+        hass = SimpleNamespace(data={})
+        config_entry = SimpleNamespace(
+            entry_id="E1",
+            options={},
+            runtime_data=SimpleNamespace(session=session),
+        )
         collected = []
 
         _run(async_setup_entry(hass, config_entry, lambda e: collected.extend(e)))

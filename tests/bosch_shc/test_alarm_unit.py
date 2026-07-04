@@ -21,7 +21,6 @@ from custom_components.bosch_shc.alarm_control_panel import (
     IntrusionSystemAlarmControlPanel,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
 AlarmState = SHCIntrusionSystem.AlarmState
 ArmingState = SHCIntrusionSystem.ArmingState
@@ -177,11 +176,10 @@ async def _run_setup_entry():
 
     session = SimpleNamespace(intrusion_system=device)
 
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
-    )
+    hass = SimpleNamespace()
 
     config_entry = SimpleNamespace(options={}, entry_id=entry_id)
+    config_entry.runtime_data = SimpleNamespace(session=session)
 
     added: list = []
 
@@ -228,10 +226,9 @@ def test_async_setup_entry_calls_migrate_with_old_unique_id():
     device = _fake_device(root_device_id="r3", device_id="dev-migrate")
 
     session = SimpleNamespace(intrusion_system=device)
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options={}, entry_id=entry_id)
+    config_entry.runtime_data = SimpleNamespace(session=session)
 
     migrate_mock = AsyncMock(return_value=None)
 

@@ -16,12 +16,6 @@ CONF_SUBTYPE = "subtype"
 CONF_SSL_CERTIFICATE = "ssl_certificate"
 CONF_SSL_KEY = "ssl_key"
 
-DATA_SESSION = "session"
-DATA_SHC = "shc"
-DATA_TITLE = "title"
-DATA_POLLING_HANDLER = "polling_handler"
-DATA_CERT_CHECK_UNSUB = "cert_check_unsub"
-
 DOMAIN = "bosch_shc"
 
 EVENT_BOSCH_SHC = "bosch_shc.event"

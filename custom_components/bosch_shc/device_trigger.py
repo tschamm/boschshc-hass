@@ -30,7 +30,6 @@ from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
-    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     INPUTS_EVENTS_SUBTYPES_SWITCH2,
@@ -50,8 +49,10 @@ TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
 async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, str]:
     """Get the device for the given device id."""
     dev_registry = dr.async_get(hass)
-    for config_entry in hass.data[DOMAIN]:
-        session: SHCSession = hass.data[DOMAIN][config_entry][DATA_SESSION]
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if not hasattr(entry, "runtime_data"):
+            continue
+        session: SHCSession = entry.runtime_data.session
 
         for shc_device in session.devices:
             device = dev_registry.async_get_device(

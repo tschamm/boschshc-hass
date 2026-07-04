@@ -13,7 +13,6 @@ from homeassistant.components.climate.const import ClimateEntityFeature
 from homeassistant.const import UnitOfTemperature
 
 from custom_components.bosch_shc.climate import ClimateControl, HeatingCircuit
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -123,13 +122,15 @@ def _make_session(climate_controls=None, heating_circuits=None, rooms=None):
 
 
 def _make_hass(session, entry_id="entry-1"):
-    return SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}}
+    return SimpleNamespace()
+
+
+def _make_config_entry(entry_id="entry-1", session=None):
+    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
     )
-
-
-def _make_config_entry(entry_id="entry-1"):
-    return SimpleNamespace(options={}, entry_id=entry_id)
+    return config_entry
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +149,7 @@ class TestAsyncSetupEntry:
             rooms=rooms,
         )
         hass = _make_hass(session, entry_id)
-        config_entry = _make_config_entry(entry_id)
+        config_entry = _make_config_entry(entry_id, session=session)
 
         added = []
         _run(async_setup_entry(hass, config_entry, added.append))

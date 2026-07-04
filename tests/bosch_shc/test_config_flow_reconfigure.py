@@ -16,7 +16,6 @@ from custom_components.bosch_shc.const import (
     CONF_HOSTNAME,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DOMAIN,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_LONG_POLL_TIMEOUT,
     OPT_SCENARIOS_AS_BUTTONS,
@@ -605,7 +604,7 @@ class TestDiagnosticEntitiesOption:
         entry.entry_id = "eid"
 
         hass = MagicMock()
-        hass.data = {DOMAIN: {"eid": {"session": session}}}
+        entry.runtime_data = MagicMock(session=session)
         added = []
 
         async def run():
@@ -631,7 +630,7 @@ class TestDiagnosticEntitiesOption:
         entry.entry_id = "eid"
 
         hass = MagicMock()
-        hass.data = {DOMAIN: {"eid": {"session": session}}}
+        entry.runtime_data = MagicMock(session=session)
         added = []
 
         async def run():

@@ -20,7 +20,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DOMAIN
 from .entity import async_migrate_to_new_unique_id
 
 PARALLEL_UPDATES = 1
@@ -34,7 +34,7 @@ async def async_setup_entry(
     """Set up the alarm control panel platform."""
     devices = []
 
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     intrusion_system = session.intrusion_system
     await async_migrate_to_new_unique_id(

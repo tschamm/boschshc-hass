@@ -19,9 +19,6 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    DATA_SESSION,
-    DATA_SHC,
-    DOMAIN,
     LOGGER,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SCENARIOS_FILTER,
@@ -38,7 +35,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the SHC binary sensor platform."""
     entities: list[ButtonEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     for button in getattr(session.device_helper, "micromodule_impulse_relays", []):
         if device_excluded(button, config_entry.options):
@@ -127,7 +124,7 @@ async def async_setup_entry(
     if config_entry.options.get(OPT_SCENARIOS_AS_BUTTONS, False):
         entry_unique_id = config_entry.unique_id
         entry_id = config_entry.entry_id
-        shc_device: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
+        shc_device: DeviceEntry = config_entry.runtime_data.shc_device
         scenario_filter = config_entry.options.get(OPT_SCENARIOS_FILTER) or []
 
         def _make_scenario_button(scenario: Any) -> SHCScenarioButton | None:

@@ -27,7 +27,6 @@ from custom_components.bosch_shc.const import (
     CONF_HOSTNAME,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_SESSION,
     DOMAIN,
     OPT_CHILD_LOCK_ENABLED,
     OPT_DIAGNOSTIC_ENTITIES,
@@ -937,11 +936,9 @@ class TestOptionsFlowInit:
         session.rooms = [room1, room2]
         session.devices = [dev1, dev2]
 
-        flow.hass.data = {
-            DOMAIN: {
-                entry_id: {DATA_SESSION: session}
-            }
-        }
+        entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=MagicMock(), title="Test SHC"
+        )
 
         asyncio.run(flow.async_step_init(user_input=None))
 
@@ -957,11 +954,10 @@ class TestOptionsFlowInit:
         """Lines 489-492: if session access raises, form is still shown (no crash)."""
         flow, entry = _make_options_flow()
 
-        # Simulate hass.data[DOMAIN][entry_id] raising on access
-        bad_data = MagicMock()
-        bad_data.__getitem__ = MagicMock(side_effect=KeyError("DATA_SESSION"))
-        bad_data.get = MagicMock(return_value=bad_data)
-        flow.hass.data = {DOMAIN: bad_data}
+        # entry.runtime_data exists but has no .session attribute -> accessing
+        # it raises AttributeError, which the broad except in
+        # async_step_init must catch without crashing.
+        entry.runtime_data = SimpleNamespace()
 
         # Should NOT raise
         asyncio.run(flow.async_step_init(user_input=None))
@@ -985,9 +981,9 @@ class TestOptionsFlowInit:
         session.rooms = [room]
         session.devices = [dev]
 
-        flow.hass.data = {
-            DOMAIN: {entry_id: {DATA_SESSION: session}}
-        }
+        entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=MagicMock(), title="Test SHC"
+        )
 
         asyncio.run(flow.async_step_init(user_input=None))
         assert flow.async_show_form.called
@@ -1023,10 +1019,10 @@ class TestOptionsFlowInit:
         assert saved[OPT_PRESENCE_ENTITY] == ["person.user1"]
 
     def test_no_data_session_uses_empty_options(self):
-        """Lines 474-488: hass.data has no session → device/room options are empty."""
-        flow, _ = _make_options_flow()
-        # Provide hass.data with domain but no session data
-        flow.hass.data = {DOMAIN: {}}
+        """Lines 474-488: no runtime_data → device/room options are empty."""
+        flow, entry = _make_options_flow()
+        # No runtime_data at all on the config entry.
+        del entry.runtime_data
 
         asyncio.run(flow.async_step_init(user_input=None))
         # Should render fine without session

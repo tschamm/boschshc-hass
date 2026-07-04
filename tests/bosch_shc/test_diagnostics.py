@@ -9,14 +9,17 @@ from types import SimpleNamespace
 
 from homeassistant.components.diagnostics import REDACTED
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.diagnostics import (
     async_get_config_entry_diagnostics,
 )
 
 
-def _entry():
-    return SimpleNamespace(
+def _entry(session=None):
+    """Build a fake config entry. When `session` is given, entry.runtime_data
+    carries it (the modern storage location); otherwise runtime_data is left
+    unset entirely so hasattr(entry, "runtime_data") is False, exercising the
+    "not loaded" branch."""
+    entry = SimpleNamespace(
         entry_id="E1",
         title="Bosch SHC",
         data={
@@ -29,6 +32,9 @@ def _entry():
         },
         options={},
     )
+    if session is not None:
+        entry.runtime_data = SimpleNamespace(session=session)
+    return entry
 
 
 def _session():
@@ -70,8 +76,8 @@ def _run(hass, entry):
 
 
 def test_redacts_entry_credentials_keeps_title():
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: _session()}}})
-    diag = _run(hass, _entry())
+    hass = SimpleNamespace()
+    diag = _run(hass, _entry(_session()))
     d = diag["entry"]["data"]
     assert d["password"] == REDACTED
     assert d["ssl_certificate"] == REDACTED
@@ -83,8 +89,8 @@ def test_redacts_entry_credentials_keeps_title():
 
 
 def test_shc_block_redacts_mac_and_ip_keeps_version():
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: _session()}}})
-    diag = _run(hass, _entry())
+    hass = SimpleNamespace()
+    diag = _run(hass, _entry(_session()))
     assert diag["shc"]["macAddress"] == REDACTED
     assert diag["shc"]["ip"] == REDACTED
     assert diag["shc"]["version"] == "10.25.0"
@@ -102,14 +108,14 @@ def test_shc_block_falls_back_to_sync_update_state_enum():
         shcIpAddress="192.0.2.10",
     )
     session = SimpleNamespace(information=shc_info, devices=[])
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
-    diag = _run(hass, _entry())
+    hass = SimpleNamespace()
+    diag = _run(hass, _entry(session))
     assert diag["shc"]["update_state"] == "UPDATE_AVAILABLE"
 
 
 def test_device_dump_redacts_pii_keeps_name_model_state():
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: _session()}}})
-    diag = _run(hass, _entry())
+    hass = SimpleNamespace()
+    diag = _run(hass, _entry(_session()))
     assert diag["device_count"] == 1
     dev = diag["devices"][0]
     # PII redacted
@@ -131,7 +137,8 @@ def test_device_dump_redacts_pii_keeps_name_model_state():
 
 
 def test_session_not_loaded():
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {}}})
+    """entry.runtime_data unset entirely -> "not loaded"."""
+    hass = SimpleNamespace()
     diag = _run(hass, _entry())
     assert diag["session"] == "not loaded"
     # entry data still present + redacted
@@ -139,13 +146,15 @@ def test_session_not_loaded():
 
 
 def test_domain_missing_entirely():
-    hass = SimpleNamespace(data={})
+    """Same "not loaded" branch, exercised again for a config entry that was
+    never actually set up (no runtime_data attribute at all)."""
+    hass = SimpleNamespace()
     diag = _run(hass, _entry())
     assert diag["session"] == "not loaded"
 
 
 def test_integration_version_present():
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: _session()}}})
-    diag = _run(hass, _entry())
+    hass = SimpleNamespace()
+    diag = _run(hass, _entry(_session()))
     assert isinstance(diag["integration_version"], str)
     assert diag["integration_version"]  # non-empty

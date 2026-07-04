@@ -10,7 +10,6 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.sensor import (
     AirQualitySensor,
     CommunicationQualitySensor,
@@ -84,13 +83,12 @@ def _make_fake_session(
 
 
 def _run_setup(session, options=None):
-    hass = SimpleNamespace(
-        data={DOMAIN: {ENTRY_ID: {DATA_SESSION: session}}}
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         options=options or {"opt_diagnostic_entities": True},
         entry_id=ENTRY_ID,
     )
+    config_entry.runtime_data = SimpleNamespace(session=session)
     collected = []
 
     def _add_entities(entity_list):

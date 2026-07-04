@@ -26,11 +26,6 @@ from custom_components.bosch_shc.const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
-    DATA_CERT_CHECK_UNSUB,
-    DATA_SESSION,
-    DATA_SHC,
-    DATA_TITLE,
-    DOMAIN,
     EVENT_BOSCH_SHC,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
@@ -198,15 +193,12 @@ class TestAsyncSetupEntryHappyPath:
         result, _, _, _ = self._do_setup(session)
         assert result is True
 
-    def test_hass_data_populated(self):
+    def test_runtime_data_populated(self):
         session = _make_fake_session()
         _, hass, entry, _ = self._do_setup(session)
-        assert DOMAIN in hass.data
-        assert entry.entry_id in hass.data[DOMAIN]
-        d = hass.data[DOMAIN][entry.entry_id]
-        assert d[DATA_SESSION] is session
-        assert DATA_SHC in d
-        assert d[DATA_TITLE] == entry.title
+        assert entry.runtime_data.session is session
+        assert entry.runtime_data.shc_device is not None
+        assert entry.runtime_data.title == entry.title
 
     def test_platforms_forwarded(self):
         session = _make_fake_session()
@@ -252,7 +244,7 @@ class TestAsyncSetupEntryHappyPath:
     def test_cert_check_unsub_stored(self):
         session = _make_fake_session()
         _, hass, entry, _ = self._do_setup(session)
-        assert DATA_CERT_CHECK_UNSUB in hass.data[DOMAIN][entry.entry_id]
+        assert entry.runtime_data.cert_check_unsub is not None
 
     def test_async_init_awaited(self):
         """async_init() must be awaited during setup (replaces executor SHCSession)."""
@@ -582,9 +574,11 @@ class TestAsyncUnloadEntry:
         _, _, _, _, track_unsub = self._setup_and_unload()
         track_unsub.assert_called()
 
-    def test_unload_removes_entry_from_hass_data(self):
+    def test_unload_clears_switch_event_listeners(self):
+        """Runtime data now lives on the config entry (not hass.data), so unload
+        is verified via its own teardown bookkeeping instead of a hass.data pop."""
         _, hass, entry, _, _ = self._setup_and_unload()
-        assert entry.entry_id not in hass.data.get(DOMAIN, {})
+        assert entry.runtime_data.switch_event_listeners == []
 
     def test_platforms_unloaded(self):
         _, hass, entry, _, _ = self._setup_and_unload()

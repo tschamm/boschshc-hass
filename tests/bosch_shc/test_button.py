@@ -25,7 +25,6 @@ from custom_components.bosch_shc.button import (
     SHCWalkTestButton,
     SHCWalkTestStopButton,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -52,23 +51,20 @@ def _make_device(
     )
 
 
-def _make_hass(session: object, shc_device=None) -> SimpleNamespace:
-    """Minimal fake hass with DOMAIN data."""
-    return SimpleNamespace(
-        data={
-            DOMAIN: {
-                "E1": {
-                    DATA_SESSION: session,
-                    DATA_SHC: shc_device,
-                }
-            }
-        }
+def _make_hass() -> SimpleNamespace:
+    """Minimal fake hass (unused by button.async_setup_entry, kept for parity)."""
+    return SimpleNamespace()
+
+
+def _make_config_entry(
+    session: object, options=None, unique_id="test-uid", shc_device=None
+) -> SimpleNamespace:
+    """Minimal fake ConfigEntry with runtime_data (session/shc_device)."""
+    entry = SimpleNamespace(options=options or {}, entry_id="E1", unique_id=unique_id)
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=shc_device, title="Test SHC"
     )
-
-
-def _make_config_entry(options=None, unique_id="test-uid") -> SimpleNamespace:
-    """Minimal fake ConfigEntry."""
-    return SimpleNamespace(options=options or {}, entry_id="E1", unique_id=unique_id)
+    return entry
 
 
 def _collect():
@@ -86,8 +82,10 @@ def _run_setup(session: object, options=None, unique_id="test-uid",
     """Drive button.async_setup_entry with fake hass/entry/session."""
     from custom_components.bosch_shc.button import async_setup_entry
 
-    hass = _make_hass(session, shc_device=shc_device)
-    entry = _make_config_entry(options=options, unique_id=unique_id)
+    hass = _make_hass()
+    entry = _make_config_entry(
+        session, options=options, unique_id=unique_id, shc_device=shc_device
+    )
     collected, add = _collect()
     asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
     return collected

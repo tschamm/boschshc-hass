@@ -47,7 +47,7 @@ from custom_components.bosch_shc.binary_sensor import (
     TwinguardSmokeAlarmSensor,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN, OPT_EXCLUDED_DEVICES
+from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -122,10 +122,12 @@ def _make_fake_session(**lists):
 def _run_setup_with_options(session, options):
     """Run async_setup_entry with custom options. Returns list of collected entities."""
     hass = _make_hass()
-    hass.data = {DOMAIN: {"E1": {DATA_SESSION: session}}}
     config_entry = SimpleNamespace(
         options=options, entry_id="E1",
         async_on_unload=lambda fn: None,
+    )
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
     )
     collected = []
 

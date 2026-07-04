@@ -48,7 +48,6 @@ from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
-    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     LOGGER,
@@ -72,7 +71,7 @@ async def async_setup_entry(  # noqa: C901
 ) -> None:
     """Set up the SHC binary sensor platform."""
     entities = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     @callback  # type: ignore[untyped-decorator]
     def async_add_shuttercontact(

@@ -18,7 +18,6 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.number import (
     DisplayBrightnessNumber,
     DisplayOnTimeNumber,
@@ -54,11 +53,10 @@ def _make_session(**helper_lists):
 
 def _make_hass_and_entry(session):
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}}
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options={}, entry_id=entry_id,
                                    async_on_unload=MagicMock())
+    config_entry.runtime_data = SimpleNamespace(session=session)
     return hass, config_entry
 
 

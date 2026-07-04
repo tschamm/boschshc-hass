@@ -20,8 +20,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DATA_SHC,
     DOMAIN,
     OPT_EXCLUDED_DEVICES,
 )
@@ -114,14 +112,20 @@ def _make_hass(session, entry, shc_device=None):
             manufacturer="Bosch",
             model="SHC 2",
         )
-    hass = MagicMock()
-    hass.data = {DOMAIN: {entry.entry_id: {DATA_SESSION: session, DATA_SHC: shc_device}}}
+    # entry.runtime_data backs both async_setup_entry's own
+    # config_entry.runtime_data.session read and SHCUserDefinedStateSwitch's
+    # hass.config_entries.async_get_entry(entry_id).runtime_data.shc_device.
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=shc_device, title=entry.title
+    )
 
     async def _async_none(*args, **kwargs):
         return None
 
+    hass = MagicMock()
     hass.async_add_executor_job = AsyncMock(return_value=None)
     hass.config_entries = MagicMock()
+    hass.config_entries.async_get_entry = MagicMock(return_value=entry)
     hass.loop = MagicMock()
     return hass
 

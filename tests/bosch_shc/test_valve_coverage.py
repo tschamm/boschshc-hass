@@ -15,8 +15,6 @@ import asyncio
 from types import SimpleNamespace
 
 from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DOMAIN,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
 )
@@ -42,16 +40,15 @@ def _fake_thermostat(dev_id="thermo-001", room_id=None, position=50, root_id="ro
     )
 
 
-def _make_hass(session, entry_id="E1"):
-    return SimpleNamespace(data={DOMAIN: {entry_id: {DATA_SESSION: session}}})
-
-
-def _make_entry(options=None, entry_id="E1"):
-    return SimpleNamespace(options=options or {}, entry_id=entry_id)
+def _make_entry(options=None, entry_id="E1", session=None):
+    entry = SimpleNamespace(options=options or {}, entry_id=entry_id)
+    entry.runtime_data = SimpleNamespace(session=session)
+    return entry
 
 
 def _run_setup(session, entry):
-    hass = _make_hass(session, entry_id=entry.entry_id)
+    entry.runtime_data.session = session
+    hass = SimpleNamespace()
     collected = []
 
     def add(entities):

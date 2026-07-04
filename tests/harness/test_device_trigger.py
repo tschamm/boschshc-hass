@@ -13,13 +13,14 @@ from pytest_homeassistant_custom_component.common import (
     mock_device_registry,
 )
 
+from types import SimpleNamespace
+
 from custom_components.bosch_shc.const import (
     ALARM_EVENTS_SUBTYPES_SD,
     ALARM_EVENTS_SUBTYPES_SDS,
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
-    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     INPUTS_EVENTS_SUBTYPES_WRC2,
@@ -44,7 +45,14 @@ def _make_shc_device(device_id: str, device_model: str, *, extra=None) -> MagicM
 
 
 def _install_session(hass, config_entry_id: str, devices: list, *, intrusion=None, shc_controller=None):
-    """Inject a fake SHC session into hass.data[DOMAIN]."""
+    """Inject a fake SHC session via config_entry.runtime_data (the modern
+    replacement for hass.data[DOMAIN][entry_id]).
+
+    device_trigger.py's get_device_from_id() reads
+    `entry.runtime_data.session` for every entry returned by
+    hass.config_entries.async_entries(DOMAIN) — the entry must already be
+    registered on hass (via MockConfigEntry.add_to_hass) before this runs.
+    """
     session = MagicMock()
     session.devices = devices
     session.intrusion_system = intrusion
@@ -59,9 +67,8 @@ def _install_session(hass, config_entry_id: str, devices: list, *, intrusion=Non
         info.unique_id = "shc-not-used"
         session.information = info
 
-    if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {}
-    hass.data[DOMAIN][config_entry_id] = {DATA_SESSION: session}
+    entry = hass.config_entries.async_get_entry(config_entry_id)
+    entry.runtime_data = SimpleNamespace(session=session)
     return session
 
 

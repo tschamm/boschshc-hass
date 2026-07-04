@@ -253,16 +253,16 @@ class TestCleanupTrackerBody:
         tg.subscribe_callback = MagicMock()
         session.device_helper.twinguards = [tg]
 
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
         hass = MagicMock()
-        hass.data = {DOMAIN: {"eid1": {DATA_SESSION: session}}}
         hass.async_add_executor_job = AsyncMock(return_value=None)
 
         captured_unloads = []
         config_entry = MagicMock()
         config_entry.entry_id = "eid1"
         config_entry.options = {}
+        config_entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
         config_entry.async_on_unload = MagicMock(
             side_effect=lambda fn: captured_unloads.append(fn)
         )
@@ -316,8 +316,6 @@ class TestDeviceTriggerGetDeviceFromId:
 
     def _make_hass_with_data(self, shc_devices, intrusion_system=None):
         """Build a hass mock with a session that has given devices."""
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
         session = MagicMock()
         session.devices = shc_devices
         session.intrusion_system = intrusion_system
@@ -327,8 +325,13 @@ class TestDeviceTriggerGetDeviceFromId:
         session.information = shc_info
         session.scenario_names = []
 
+        entry = SimpleNamespace(entry_id="eid1")
+        entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
+
         hass = MagicMock()
-        hass.data = {DOMAIN: {"eid1": {DATA_SESSION: session}}}
+        hass.config_entries.async_entries = MagicMock(return_value=[entry])
         return hass, session
 
     def test_device_id_mismatch_continues(self):
@@ -425,11 +428,10 @@ class TestSelectSetupExcludedAndAttributeError:
     """Tests for select.py async_setup_entry edge cases."""
 
     def _make_hass(self, devices):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         session = MagicMock()
         session.device_helper.motion_detectors2 = devices
+        self._session = session
         hass = MagicMock()
-        hass.data = {DOMAIN: {"eid1": {DATA_SESSION: session}}}
         return hass
 
     def _make_entry(self, excluded_ids=None):
@@ -437,6 +439,9 @@ class TestSelectSetupExcludedAndAttributeError:
         entry.entry_id = "eid1"
         entry.options = (
             {"excluded_devices": excluded_ids} if excluded_ids else {}
+        )
+        entry.runtime_data = SimpleNamespace(
+            session=self._session, shc_device=None, title="Test SHC"
         )
         return entry
 
@@ -528,8 +533,6 @@ class TestBatteryLevelSensorCreation:
 
     def test_battery_level_sensor_added(self):
         """Lines 354,736-738: a device with supports_batterylevel=True gets a sensor."""
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
-
         device = MagicMock()
         device.id = "dev-battery-001"
         device.root_device_id = "root-001"
@@ -566,12 +569,14 @@ class TestBatteryLevelSensorCreation:
         session.emma = emma
 
         hass = MagicMock()
-        hass.data = {DOMAIN: {"eid1": {DATA_SESSION: session}}}
 
         entry = MagicMock()
         entry.entry_id = "eid1"
         # Enable diagnostic entities so the battery level loop is reached
         entry.options = {"diagnostic_entities": True}
+        entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
 
         added = []
 

@@ -20,7 +20,6 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.switch import async_setup_entry
 
 # ---------------------------------------------------------------------------
@@ -73,18 +72,15 @@ def _make_session(**helper_lists):
 def _make_hass_and_entry(session):
     from unittest.mock import MagicMock
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={
-            DOMAIN: {entry_id: {
-                DATA_SESSION: session,
-                DATA_SHC: SimpleNamespace(
-                    name="SHC", id="shc", identifiers={("bosch_shc", "shc")},
-                    manufacturer="Bosch", model="SHC"),
-            }}
-        }
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options={}, entry_id=entry_id,
                                    async_on_unload=MagicMock())
+    config_entry.runtime_data = SimpleNamespace(
+        session=session,
+        shc_device=SimpleNamespace(
+            name="SHC", id="shc", identifiers={("bosch_shc", "shc")},
+            manufacturer="Bosch", model="SHC"),
+    )
     return hass, config_entry
 
 

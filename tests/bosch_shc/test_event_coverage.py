@@ -33,7 +33,6 @@ from custom_components.bosch_shc.const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
-    DATA_SHC,
     DOMAIN,
 )
 from custom_components.bosch_shc.event import (
@@ -91,10 +90,15 @@ def _make_scenario_entity(
         model="SHC",
     )
 
-    # SHCScenarioEvent.__init__ does hass.data[DOMAIN][entry_id][DATA_SHC]
+    # SHCScenarioEvent.__init__ does
+    # hass.config_entries.async_get_entry(entry_id).runtime_data.shc_device
     entry_id = "entry1"
     hass = MagicMock(name="hass")
-    hass.data = {DOMAIN: {entry_id: {DATA_SHC: shc_device_entry}}}
+    hass.config_entries.async_get_entry = MagicMock(
+        return_value=SimpleNamespace(
+            runtime_data=SimpleNamespace(shc_device=shc_device_entry)
+        )
+    )
 
     entity = SHCScenarioEvent(scenario, session, hass, entry_id=entry_id)
     entity.hass = _make_hass_direct()
@@ -167,7 +171,11 @@ class TestSHCScenarioEventCallback:
             manufacturer="Bosch", model="SHC",
         )
         hass_init = MagicMock(name="hass_init")
-        hass_init.data = {DOMAIN: {entry_id: {DATA_SHC: shc}}}
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_capturing()
         entity._trigger_event = MagicMock()
@@ -243,7 +251,11 @@ class TestSHCScenarioEventSubscribe:
             manufacturer="Bosch", model="SHC",
         )
         hass_init = MagicMock()
-        hass_init.data = {DOMAIN: {entry_id: {DATA_SHC: shc}}}
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
         entity._trigger_event = MagicMock()
@@ -270,7 +282,11 @@ class TestSHCScenarioEventSubscribe:
             manufacturer="Bosch", model="SHC",
         )
         hass_init = MagicMock()
-        hass_init.data = {DOMAIN: {entry_id: {DATA_SHC: shc}}}
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
         entity._trigger_event = MagicMock()
@@ -299,7 +315,11 @@ class TestSHCScenarioEventSubscribe:
             manufacturer="Bosch", model="SHC",
         )
         hass_init = MagicMock()
-        hass_init.data = {DOMAIN: {entry_id: {DATA_SHC: shc}}}
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
         entity._trigger_event = MagicMock()

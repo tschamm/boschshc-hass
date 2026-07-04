@@ -23,12 +23,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DATA_SHC,
-    DOMAIN,
-    OPT_EXCLUDED_DEVICES,
-)
+from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
 # ---------------------------------------------------------------------------
 # Generic helpers
@@ -70,19 +65,18 @@ def _make_button_session(**kw):
 
 def _run_button_setup(session, options=None):
     from custom_components.bosch_shc.button import async_setup_entry
-    hass = SimpleNamespace(
-        data={DOMAIN: {"E1": {
-            DATA_SESSION: session,
-            DATA_SHC: SimpleNamespace(
-                identifiers={("bosch_shc", "shc")},
-                name="SHC", manufacturer="Bosch", model="SHC",
-            ),
-        }}}
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         options=options or {},
         entry_id="E1",
         unique_id="uid1",
+    )
+    config_entry.runtime_data = SimpleNamespace(
+        session=session,
+        shc_device=SimpleNamespace(
+            identifiers={("bosch_shc", "shc")},
+            name="SHC", manufacturer="Bosch", model="SHC",
+        ),
     )
     collected = []
 
@@ -127,8 +121,9 @@ def _make_number_session(**kw):
 
 def _run_number_setup(session, options=None):
     from custom_components.bosch_shc.number import async_setup_entry
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options=options or {}, entry_id="E1")
+    config_entry.runtime_data = SimpleNamespace(session=session)
     collected = []
 
     def _add(ents, *a, **kw):
@@ -205,8 +200,9 @@ def _make_select_session(**kw):
 
 def _run_select_setup(session, options=None):
     from custom_components.bosch_shc.select import async_setup_entry
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options=options or {}, entry_id="E1")
+    config_entry.runtime_data = SimpleNamespace(session=session)
     collected = []
 
     def _add(ents, *a, **kw):
@@ -330,18 +326,17 @@ def _run_switch_setup(session, options=None):
     from unittest.mock import MagicMock
 
     from custom_components.bosch_shc.switch import async_setup_entry
-    hass = SimpleNamespace(
-        data={DOMAIN: {"E1": {
-            DATA_SESSION: session,
-            DATA_SHC: SimpleNamespace(
-                name="SHC", id="shc", identifiers={("bosch_shc", "shc")},
-                manufacturer="Bosch", model="SHC"),
-        }}}
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(
         options=options or {},
         entry_id="E1",
         async_on_unload=MagicMock(),
+    )
+    config_entry.runtime_data = SimpleNamespace(
+        session=session,
+        shc_device=SimpleNamespace(
+            name="SHC", id="shc", identifiers={("bosch_shc", "shc")},
+            manufacturer="Bosch", model="SHC"),
     )
     collected = []
 

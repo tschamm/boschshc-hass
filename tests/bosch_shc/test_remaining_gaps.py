@@ -236,7 +236,6 @@ class TestUnloadPresenceUnsub:
         from boschshcpy import SHCSessionAsync as _SHCSessionAsync
 
         from custom_components.bosch_shc import async_unload_entry
-        from custom_components.bosch_shc.const import DOMAIN
         from custom_components.bosch_shc.data import SHCData
         fake_session = MagicMock(spec=_SHCSessionAsync)
         fake_session.stop_polling = AsyncMock()
@@ -254,7 +253,6 @@ class TestUnloadPresenceUnsub:
         runtime.cert_check_unsub = None
 
         hass = MagicMock()
-        hass.data = {DOMAIN: {"E1": {}}}
 
         async def _executor_job(fn, *args):
             return fn(*args)
@@ -395,13 +393,11 @@ class TestCoverDeviceExcluded:
     """device_excluded continue for shutter/blind cover paths."""
 
     async def _run_setup(self, session, options):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.cover import async_setup_entry
 
-        hass = SimpleNamespace(
-            data={DOMAIN: {"E1": {DATA_SESSION: session}}}
-        )
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(entry_id="E1", options=options)
+        config_entry.runtime_data = SimpleNamespace(session=session)
         collected = []
 
         def add_entities(entities):
@@ -485,11 +481,7 @@ class TestImpulseRelayDeviceExcluded:
 
     def test_excluded_impulse_relay_not_added(self):
         """Excluded impulse relay must be skipped (line 53)."""
-        from custom_components.bosch_shc.const import (
-            DATA_SESSION,
-            DOMAIN,
-            OPT_EXCLUDED_DEVICES,
-        )
+        from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
         from custom_components.bosch_shc.number import async_setup_entry
 
         dev = SimpleNamespace(
@@ -508,13 +500,12 @@ class TestImpulseRelayDeviceExcluded:
                 heating_circuits=[],
             )
         )
-        hass = SimpleNamespace(
-            data={DOMAIN: {"E1": {DATA_SESSION: session}}}
-        )
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(
             options={OPT_EXCLUDED_DEVICES: ["ir-excl"]},
             entry_id="E1",
         )
+        config_entry.runtime_data = SimpleNamespace(session=session)
         collected = []
         asyncio.run(async_setup_entry(hass, config_entry, lambda e: collected.extend(e)))
         assert not any(
@@ -581,11 +572,11 @@ class TestSelectMotionDetectorExcluded:
     """select.py line 58: device_excluded continue for motion_detectors2."""
 
     def _run_setup(self, session, options=None):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.select import async_setup_entry
 
-        hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(entry_id="E1", options=options or {})
+        config_entry.runtime_data = SimpleNamespace(session=session)
         collected = []
         asyncio.run(async_setup_entry(hass, config_entry, lambda e: collected.extend(e)))
         return collected
@@ -658,7 +649,6 @@ class TestBatterySensorSupportsFalse:
     """Device with supports_batterylevel=False must not produce BatteryLevelSensor."""
 
     def test_no_battery_entity_when_not_supported(self):
-        from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
         from custom_components.bosch_shc.sensor import (
             BatteryLevelSensor,
             async_setup_entry,
@@ -705,8 +695,9 @@ class TestBatterySensorSupportsFalse:
             ),
         )
 
-        hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+        hass = SimpleNamespace()
         config_entry = SimpleNamespace(entry_id="E1", options={})
+        config_entry.runtime_data = SimpleNamespace(session=session)
         collected = []
 
         async def _inner():

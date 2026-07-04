@@ -792,13 +792,12 @@ def _make_uds_switch(state=True, name="My State", dev_id="uds1", root_id="mac1")
         manufacturer="Bosch",
         model="SHC 2",
     )
-    # hass.data[DOMAIN][entry_id][DATA_SHC] = shc_entry
+    # entry.runtime_data.shc_device backs the __init__ shc_device lookup
+    fake_entry = SimpleNamespace(entry_id="entry1")
+    fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
     hass = SimpleNamespace(
-        data={"bosch_shc": {"entry1": {"shc": shc_entry}}}
+        config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
     )
-    # Patch hass.data so the __init__ DataSHC lookup works
-    from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
-    hass.data = {DOMAIN: {"entry1": {DATA_SHC: shc_entry}}}
 
     session = SimpleNamespace(
         subscribe_userdefinedstate_callback=lambda *a, **kw: None,
@@ -829,7 +828,6 @@ class TestSHCUserDefinedStateSwitch:
     def test_turn_on_sets_state_true(self):
         mock_set = AsyncMock()
 
-        from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
         device = SimpleNamespace(
             name="My State",
             id="uds1",
@@ -842,7 +840,11 @@ class TestSHCUserDefinedStateSwitch:
             name="SHC", id="shcid", identifiers=set(),
             manufacturer="Bosch", model="SHC2",
         )
-        hass = SimpleNamespace(data={DOMAIN: {"entry1": {DATA_SHC: shc_entry}}})
+        fake_entry = SimpleNamespace(entry_id="entry1")
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
         session = SimpleNamespace(
             subscribe_userdefinedstate_callback=lambda *a, **kw: None,
             unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
@@ -860,7 +862,6 @@ class TestSHCUserDefinedStateSwitch:
     def test_turn_off_sets_state_false(self):
         mock_set = AsyncMock()
 
-        from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
         device = SimpleNamespace(
             name="My State",
             id="uds1",
@@ -873,7 +874,11 @@ class TestSHCUserDefinedStateSwitch:
             name="SHC", id="shcid", identifiers=set(),
             manufacturer="Bosch", model="SHC2",
         )
-        hass = SimpleNamespace(data={DOMAIN: {"entry1": {DATA_SHC: shc_entry}}})
+        fake_entry = SimpleNamespace(entry_id="entry1")
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
         session = SimpleNamespace(
             subscribe_userdefinedstate_callback=lambda *a, **kw: None,
             unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
@@ -945,12 +950,15 @@ class TestSHCUserDefinedStateSwitch:
             state = False
             async_update = AsyncMock()
 
-        from custom_components.bosch_shc.const import DATA_SHC, DOMAIN
         shc_entry = SimpleNamespace(
             name="SHC", id="shcid", identifiers=set(),
             manufacturer="Bosch", model="SHC2",
         )
-        hass = SimpleNamespace(data={DOMAIN: {"entry1": {DATA_SHC: shc_entry}}})
+        fake_entry = SimpleNamespace(entry_id="entry1")
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
         session = SimpleNamespace(
             subscribe_userdefinedstate_callback=lambda *a, **kw: None,
             unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,

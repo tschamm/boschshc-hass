@@ -133,21 +133,25 @@ rules:
       manually as they are not removed on unload.
 
   runtime-data:
-    status: todo
+    status: done
     comment: >
-      data.py introduces SHCData dataclass (session, shc_device, title,
-      polling_handler, cert_check_unsub).  async_setup_entry assigns
-      entry.runtime_data = SHCData(...) and async_unload_entry reads from it.
-      However hass.data[DOMAIN] is still the primary path in practice: every
+      data.py's SHCData dataclass (session, shc_device, title, polling_handler,
+      cert_check_unsub, presence_unsub, silent_mode_unsubs,
+      switch_event_listeners) is now the ONLY storage path.
+      async_setup_entry assigns entry.runtime_data = SHCData(...); every
       platform's async_setup_entry (button, binary_sensor, climate, cover,
       event, light, number, select, sensor, switch, valve, alarm_control_panel,
-      update) plus device_trigger, diagnostics, and config_flow's options flow
-      all read the session via hass.data[DOMAIN][entry_id][...], not
-      entry.runtime_data.session — only async_unload_entry and the domain
-      services in async_setup consistently use entry.runtime_data. SHCData's
-      shc_device field is written but never read via runtime_data anywhere.
-      Not "done" in the spirit of this rule until the platforms are migrated
-      and the parallel hass.data[DOMAIN] population is dropped.
+      update), plus device_trigger.get_device_from_id,
+      diagnostics.async_get_config_entry_diagnostics, and config_flow's
+      options flow all read config_entry.runtime_data.session directly.
+      The two entity classes that only carry an entry_id string (not the
+      config_entry object) look it back up via
+      hass.config_entries.async_get_entry(entry_id).runtime_data.shc_device
+      (event.py's SHCScenarioEvent, switch.py's UDS switch). The parallel
+      hass.data[DOMAIN][entry_id] population in async_setup_entry and its
+      corresponding pop() in async_unload_entry have been removed entirely,
+      along with the now-dead DATA_SESSION/DATA_SHC/DATA_TITLE/
+      DATA_POLLING_HANDLER/DATA_CERT_CHECK_UNSUB constants.
 
   has-entity-name:
     status: done

@@ -29,8 +29,6 @@ from .const import (
     CONF_SHC_KEY,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_SESSION,
-    DOMAIN,
 )
 
 _MANIFEST: dict[str, Any] = json.loads(
@@ -97,8 +95,7 @@ async def async_get_config_entry_diagnostics(
         },
     }
 
-    container = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    session = container.get(DATA_SESSION) if container else None
+    session = entry.runtime_data.session if hasattr(entry, "runtime_data") else None
     if session is None:
         diag["session"] = "not loaded"
         return diag

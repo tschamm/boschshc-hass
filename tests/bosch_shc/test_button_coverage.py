@@ -27,9 +27,6 @@ from custom_components.bosch_shc.button import (
     async_setup_entry,
 )
 from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DATA_SHC,
-    DOMAIN,
     OPT_EXCLUDED_DEVICES,
     OPT_SCENARIOS_AS_BUTTONS,
 )
@@ -63,10 +60,9 @@ def _fake_shc_device():
     )
 
 
-def _make_hass(session):
-    return SimpleNamespace(
-        data={DOMAIN: {"E1": {DATA_SESSION: session, DATA_SHC: _fake_shc_device()}}}
-    )
+def _make_hass():
+    """Minimal fake hass (unused by button.async_setup_entry, kept for parity)."""
+    return SimpleNamespace()
 
 
 def _make_entry(options=None, entry_id="E1", unique_id="uid-001"):
@@ -78,7 +74,10 @@ def _make_entry(options=None, entry_id="E1", unique_id="uid-001"):
 
 
 def _run_setup(session, entry):
-    hass = _make_hass(session)
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=_fake_shc_device(), title="Test SHC"
+    )
+    hass = _make_hass()
     collected = []
 
     def add(entities):

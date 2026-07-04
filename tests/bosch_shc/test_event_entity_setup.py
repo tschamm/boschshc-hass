@@ -26,8 +26,6 @@ from homeassistant.const import ATTR_ID, ATTR_NAME
 from custom_components.bosch_shc.const import (
     ATTR_EVENT_TYPE,
     ATTR_LAST_TIME_TRIGGERED,
-    DATA_SESSION,
-    DATA_SHC,
     DOMAIN,
 )
 from custom_components.bosch_shc.entity import (
@@ -163,23 +161,28 @@ def _make_fake_shc_device_entry():
     )
 
 
-def _make_setup_hass(session, shc_entry=None):
-    """Return a fake hass with the right data structure for async_setup_entry."""
+def _make_setup_hass(shc_entry=None, entry_id="entry1"):
+    """Return a fake hass whose config_entries.async_get_entry(entry_id)
+    resolves to runtime_data.shc_device — read by SHCScenarioEvent.__init__
+    when async_setup_entry creates scenario entities."""
     shc = shc_entry or _make_fake_shc_device_entry()
+    fake_lookup_entry = SimpleNamespace(runtime_data=SimpleNamespace(shc_device=shc))
     return SimpleNamespace(
-        data={
-            DOMAIN: {
-                "entry1": {
-                    DATA_SESSION: session,
-                    DATA_SHC: shc,
-                }
-            }
-        }
+        config_entries=SimpleNamespace(
+            async_get_entry=lambda eid: fake_lookup_entry
+        )
     )
 
 
-def _make_entry(entry_id="entry1"):
-    return SimpleNamespace(options={}, entry_id=entry_id)
+def _make_entry(session, entry_id="entry1", shc_entry=None):
+    """Build a fake config entry with runtime_data.session — read directly
+    by event.py's async_setup_entry (not via hass.data)."""
+    shc = shc_entry or _make_fake_shc_device_entry()
+    return SimpleNamespace(
+        options={},
+        entry_id=entry_id,
+        runtime_data=SimpleNamespace(session=session, shc_device=shc, title="Test SHC"),
+    )
 
 
 def _collecting_add_fn():
@@ -198,8 +201,8 @@ class TestAsyncSetupEntryUniversalSwitch:
     def test_one_switch_two_keystates_produces_two_entities(self):
         sw = _make_fake_switch(keystates=["UPPER_BUTTON", "LOWER_BUTTON"])
         session = _make_session(switches=[sw])
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -222,8 +225,8 @@ class TestAsyncSetupEntryUniversalSwitch:
     def test_switch_entity_key_ids_match_keystates(self):
         sw = _make_fake_switch(keystates=["UPPER_BUTTON", "LOWER_BUTTON"])
         session = _make_session(switches=[sw])
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -245,8 +248,8 @@ class TestAsyncSetupEntryUniversalSwitch:
 
     def test_no_switches_produces_no_switch_entities(self):
         session = _make_session()
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -262,8 +265,8 @@ class TestAsyncSetupEntryScenario:
     def test_scenario_entity_created(self):
         scn = _make_fake_scenario(name="Night Mode", scenario_id="scn:1")
         session = _make_session(scenarios=[scn])
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -276,8 +279,8 @@ class TestAsyncSetupEntryScenario:
     def test_scenario_entity_name_set(self):
         scn = _make_fake_scenario(name="Away Mode")
         session = _make_session(scenarios=[scn])
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -290,8 +293,8 @@ class TestAsyncSetupEntryScenario:
     def test_two_scenarios_two_entities(self):
         scns = [_make_fake_scenario("A", "scn:A"), _make_fake_scenario("B", "scn:B")]
         session = _make_session(scenarios=scns)
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -307,8 +310,8 @@ class TestAsyncSetupEntryMotionAndSmoke:
     def test_motion_detector_entity_created(self):
         md = _make_fake_motion()
         session = _make_session(motion_detectors=[md])
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -331,8 +334,8 @@ class TestAsyncSetupEntryMotionAndSmoke:
     def test_smoke_detection_system_entity_created_when_present(self):
         sys = _make_fake_smoke_system()
         session = _make_session(smoke_detection_system=sys)
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -355,8 +358,8 @@ class TestAsyncSetupEntryMotionAndSmoke:
     def test_no_smoke_detection_system_when_none(self):
         """Falsy smoke_detection_system → no SmokeDetectionSystemEvent."""
         session = _make_session(smoke_detection_system=None)
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -369,8 +372,8 @@ class TestAsyncSetupEntryMotionAndSmoke:
     def test_smoke_detector_entity_created(self):
         sd = _make_fake_smoke_detector()
         session = _make_session(smoke_detectors=[sd])
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         add_fn, collected = _collecting_add_fn()
 
         async def _run():
@@ -393,8 +396,8 @@ class TestAsyncSetupEntryMotionAndSmoke:
     def test_async_add_entities_called_with_update_before_add_true(self):
         """async_setup_entry passes True as update_before_add to async_add_entities."""
         session = _make_session()
-        hass = _make_setup_hass(session)
-        entry = _make_entry()
+        hass = _make_setup_hass()
+        entry = _make_entry(session)
         calls = []
 
         def capturing_add(entities, update_before_add=False):
@@ -494,21 +497,30 @@ class TestUniversalSwitchEventDedupGuards:
 # ===========================================================================
 
 
-def _make_sync_hass(data_extra=None):
+def _make_sync_hass(shc_device=None):
     """Return a fake hass whose loop.call_soon_threadsafe executes synchronously.
 
     SHCScenarioEvent._event_callback schedules _dispatch_event via
     hass.loop.call_soon_threadsafe.  Without a real event loop in unit
     tests, that call would silently drop.  This fake executes the callable
     immediately so _trigger_event assertions work.
+
+    When `shc_device` is given, hass.config_entries.async_get_entry(...)
+    resolves to a fake config entry carrying it on runtime_data.shc_device —
+    read directly by SHCScenarioEvent.__init__.
     """
     def _sync_call_soon_threadsafe(fn, *args):
         fn(*args)
 
     fake_loop = SimpleNamespace(call_soon_threadsafe=_sync_call_soon_threadsafe)
     hass = SimpleNamespace(loop=fake_loop)
-    if data_extra:
-        hass.data = data_extra
+    if shc_device is not None:
+        fake_lookup_entry = SimpleNamespace(
+            runtime_data=SimpleNamespace(shc_device=shc_device)
+        )
+        hass.config_entries = SimpleNamespace(
+            async_get_entry=lambda eid: fake_lookup_entry
+        )
     return hass
 
 
@@ -532,22 +544,15 @@ def _make_scenario_entity(
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = _make_sync_hass(
-        data_extra={
-            DOMAIN: {
-                "entry1": {
-                    DATA_SHC: shc_entry,
-                }
-            }
-        }
-    )
+    hass = _make_sync_hass(shc_device=shc_entry)
     entity = SHCScenarioEvent(scenario, session, hass, entry_id="entry1")
     entity._trigger_event = MagicMock()
     entity.schedule_update_ha_state = MagicMock()
     # SHCScenarioEvent inherits EventEntity (not SHCEntity); the HA infrastructure
     # normally sets entity.hass after async_added_to_hass.  Inject a synchronous
     # shim so _event_callback tests can call the method directly without a real
-    # event loop.  (hass passed to __init__ is only used for DATA_SHC lookup.)
+    # event loop.  (hass passed to __init__ is only used for the
+    # runtime_data.shc_device lookup.)
     entity.hass = _make_sync_hass()
     return entity, session, shc_entry
 

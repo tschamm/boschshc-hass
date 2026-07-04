@@ -20,7 +20,6 @@ from custom_components.bosch_shc.button import (
 from custom_components.bosch_shc.button import (
     async_setup_entry as button_setup_entry,
 )
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.select import (
     InstallationProfileSelect,
     OrientationLightResponseSelect,
@@ -79,24 +78,19 @@ def _make_select_session(**helper_lists):
 
 def _button_hass_entry(session):
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={
-            DOMAIN: {
-                entry_id: {
-                    DATA_SESSION: session,
-                    DATA_SHC: SimpleNamespace(
-                        name="SHC",
-                        id="shc",
-                        identifiers={("bosch_shc", "shc")},
-                        manufacturer="Bosch",
-                        model="SHC",
-                    ),
-                }
-            }
-        }
+    hass = SimpleNamespace()
+    shc_device = SimpleNamespace(
+        name="SHC",
+        id="shc",
+        identifiers={("bosch_shc", "shc")},
+        manufacturer="Bosch",
+        model="SHC",
     )
     entry = SimpleNamespace(
         options={}, entry_id=entry_id, unique_id="UID1", async_on_unload=MagicMock()
+    )
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=shc_device, title="Test SHC"
     )
     return hass, entry
 
@@ -114,9 +108,12 @@ def _setup_buttons(session):
 
 def _setup_selects(session):
     entry_id = "E1"
-    hass = SimpleNamespace(data={DOMAIN: {entry_id: {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     entry = SimpleNamespace(
         options={}, entry_id=entry_id, unique_id="UID1", async_on_unload=MagicMock()
+    )
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
     )
     entities = []
 
@@ -162,23 +159,18 @@ def _setup_sensors(md2_list):
         water_leakage_detectors=[],
     )
     session = SimpleNamespace(device_helper=device_helper, emma=emma)
-    hass = SimpleNamespace(
-        data={
-            DOMAIN: {
-                entry_id: {
-                    DATA_SESSION: session,
-                    DATA_SHC: SimpleNamespace(
-                        name="SHC",
-                        id="shc",
-                        identifiers={("bosch_shc", "shc")},
-                        manufacturer="Bosch",
-                        model="SHC",
-                    ),
-                }
-            }
-        }
+    hass = SimpleNamespace()
+    shc_device = SimpleNamespace(
+        name="SHC",
+        id="shc",
+        identifiers={("bosch_shc", "shc")},
+        manufacturer="Bosch",
+        model="SHC",
     )
     entry = SimpleNamespace(options={}, entry_id=entry_id, async_on_unload=MagicMock())
+    entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=shc_device, title="Test SHC"
+    )
     entities = []
 
     async def _run():

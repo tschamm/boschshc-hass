@@ -6,8 +6,9 @@ session via asyncio.run — NO HA harness, NO tests.common, NO network.
 
 Pattern
 -------
-- hass   = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: fake_session}}})
 - config_entry = SimpleNamespace(options={}, entry_id="E1")
+  with config_entry.runtime_data = SimpleNamespace(session=fake_session)
+- hass    = SimpleNamespace() (unused directly; platforms read config_entry.runtime_data)
 - async_add_entities collects the created entities into a list
 - async_migrate_to_new_unique_id (cover + light) is patched to a no-op coroutine
   because it calls entity_registry.async_get(hass) which needs a real HA instance.
@@ -22,7 +23,6 @@ from unittest.mock import AsyncMock, patch
 from boschshcpy import ShutterControlService
 
 from custom_components.bosch_shc.button import SHCRelayButton, SHCSmokeTestButton
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN
 from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControlCover
 from custom_components.bosch_shc.light import LightSwitch
 from custom_components.bosch_shc.number import SHCNumber
@@ -35,12 +35,14 @@ STOPPED = ShutterControlService.State.STOPPED
 # ---------------------------------------------------------------------------
 
 
-def _make_hass(session: object) -> SimpleNamespace:
-    return SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+def _make_hass() -> SimpleNamespace:
+    return SimpleNamespace()
 
 
-def _make_config_entry() -> SimpleNamespace:
-    return SimpleNamespace(options={}, entry_id="E1")
+def _make_config_entry(session: object) -> SimpleNamespace:
+    entry = SimpleNamespace(options={}, entry_id="E1")
+    entry.runtime_data = SimpleNamespace(session=session)
+    return entry
 
 
 def _collect() -> tuple[list, callable]:
@@ -208,8 +210,8 @@ class TestCoverSetupEntry:
     def _run(self, session: object) -> list:
         from custom_components.bosch_shc.cover import async_setup_entry
 
-        hass = _make_hass(session)
-        entry = _make_config_entry()
+        hass = _make_hass()
+        entry = _make_config_entry(session)
         collected, add = _collect()
 
         async def _run_inner() -> None:
@@ -329,8 +331,8 @@ class TestLightSetupEntry:
     def _run(self, session: object) -> list:
         from custom_components.bosch_shc.light import async_setup_entry
 
-        hass = _make_hass(session)
-        entry = _make_config_entry()
+        hass = _make_hass()
+        entry = _make_config_entry(session)
         collected, add = _collect()
 
         async def _run_inner() -> None:
@@ -519,8 +521,8 @@ class TestNumberSetupEntry:
     def _run(self, session: object) -> list:
         from custom_components.bosch_shc.number import async_setup_entry
 
-        hass = _make_hass(session)
-        entry = _make_config_entry()
+        hass = _make_hass()
+        entry = _make_config_entry(session)
         collected, add = _collect()
 
         asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
@@ -611,8 +613,8 @@ class TestValveSetupEntry:
     def _run(self, session: object) -> list:
         from custom_components.bosch_shc.valve import async_setup_entry
 
-        hass = _make_hass(session)
-        entry = _make_config_entry()
+        hass = _make_hass()
+        entry = _make_config_entry(session)
         collected, add = _collect()
 
         asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
@@ -688,8 +690,8 @@ class TestButtonSetupEntry:
     def _run(self, session: object) -> list:
         from custom_components.bosch_shc.button import async_setup_entry
 
-        hass = _make_hass(session)
-        entry = _make_config_entry()
+        hass = _make_hass()
+        entry = _make_config_entry(session)
         collected, add = _collect()
 
         asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]

@@ -22,7 +22,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from boschshcpy import SHCShutterContact2Plus, SHCUserDefinedState, ThermostatService
 
-from custom_components.bosch_shc.const import DATA_SESSION, DATA_SHC, DOMAIN
 from custom_components.bosch_shc.switch import (
     SWITCH_TYPES,
     SHCSwitch,
@@ -101,7 +100,8 @@ def _fake_shutter2plus(name="Shutter+", dev_id="shp1", root_id="root1"):
 
 
 def _make_hass_and_entry(session, shc_device=None):
-    """Return (hass, config_entry) with session wired into hass.data."""
+    """Return (hass, config_entry) with session/shc_device wired into
+    config_entry.runtime_data (the modern replacement for hass.data[DOMAIN])."""
     if shc_device is None:
         shc_device = SimpleNamespace(
             name="SHC",
@@ -112,22 +112,32 @@ def _make_hass_and_entry(session, shc_device=None):
         )
 
     entry_id = "E1"
-    hass = SimpleNamespace(
-        data={
-            DOMAIN: {
-                entry_id: {
-                    DATA_SESSION: session,
-                    DATA_SHC: shc_device,
-                }
-            }
-        }
-    )
     config_entry = SimpleNamespace(
         options={},
         entry_id=entry_id,
         async_on_unload=MagicMock(),
     )
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=shc_device, title="Test SHC"
+    )
+    hass = SimpleNamespace(
+        config_entries=SimpleNamespace(
+            async_get_entry=lambda eid: config_entry
+        )
+    )
     return hass, config_entry
+
+
+def _make_fake_hass(shc_device, entry_id="E1"):
+    """Return a bare hass fake whose config_entries.async_get_entry(entry_id)
+    resolves to a fake config entry exposing runtime_data.shc_device — the
+    minimum SHCUserDefinedStateSwitch.__init__ needs when constructed
+    directly (outside async_setup_entry)."""
+    fake_entry = SimpleNamespace(entry_id=entry_id)
+    fake_entry.runtime_data = SimpleNamespace(shc_device=shc_device)
+    return SimpleNamespace(
+        config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+    )
 
 
 def _make_session(**helper_lists):
@@ -638,15 +648,7 @@ def _make_uds_switch(name="TestState", dev_id="udx1", root_id="mac9", state=True
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(
-        data={
-            DOMAIN: {
-                "E1": {
-                    DATA_SHC: shc_dev,
-                }
-            }
-        }
-    )
+    hass = _make_fake_hass(shc_dev)
     session = SimpleNamespace(
         subscribe=MagicMock(),
         _subscribers=[],
@@ -685,7 +687,7 @@ def test_uds_switch_turn_on_sets_state():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=device,
         hass=hass,
@@ -711,7 +713,7 @@ def test_uds_switch_turn_off_sets_state():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=device,
         hass=hass,
@@ -841,7 +843,7 @@ def test_uds_switch_update_calls_device_update():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=_FakeUDS(),
         hass=hass,
@@ -878,7 +880,7 @@ def test_uds_switch_async_added_subscribes_callbacks():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=uds,
         hass=hass,
@@ -923,7 +925,7 @@ def test_uds_switch_async_will_remove_unsubscribes():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=uds,
         hass=hass,
@@ -962,7 +964,7 @@ def test_uds_switch_on_state_changed_callback_calls_schedule():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass_inner = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass_inner = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=uds,
         hass=hass_inner,
@@ -1013,7 +1015,7 @@ def test_uds_switch_update_entity_information_deleted():
         manufacturer="Bosch",
         model="SHC",
     )
-    hass_inner = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SHC: shc_dev}}})
+    hass_inner = _make_fake_hass(shc_dev)
     sw = SHCUserDefinedStateSwitch(
         device=uds,
         hass=hass_inner,

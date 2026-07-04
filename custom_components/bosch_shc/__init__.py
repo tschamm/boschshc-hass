@@ -63,11 +63,6 @@ from .const import (
     CERT_EXPIRY_WARNING_DAYS,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_CERT_CHECK_UNSUB,
-    DATA_POLLING_HANDLER,
-    DATA_SESSION,
-    DATA_SHC,
-    DATA_TITLE,
     DOMAIN,
     EVENT_BOSCH_SHC,
     ISSUE_CAMERA_TOOL,
@@ -344,14 +339,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         shc_device=device_entry,
         title=entry.title,
     )
-    # Keep hass.data[DOMAIN] populated so legacy code paths (device_trigger,
-    # diagnostics) that still read hass.data work during the transition.
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = {
-        DATA_SESSION: session,
-        DATA_SHC: device_entry,
-        DATA_TITLE: entry.title,
-    }
 
     # Daily certificate re-check scheduling
     async def _scheduled_cert_check(_now: Any) -> None:
@@ -394,9 +381,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
 
     entry.runtime_data.cert_check_unsub = async_track_time_interval(
         hass, _scheduled_cert_check, timedelta(days=1)
-    )
-    hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
-        entry.runtime_data.cert_check_unsub
     )
 
     # Presence-based child lock: optional; zero overhead when unconfigured.
@@ -659,9 +643,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     entry.runtime_data.polling_handler = hass.bus.async_listen_once(
         EVENT_HOMEASSISTANT_STOP, stop_polling
     )
-    hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER] = (
-        entry.runtime_data.polling_handler
-    )
 
     @callback  # type: ignore[untyped-decorator]
     def _scenario_trigger(event_data: Any) -> None:
@@ -744,7 +725,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unload_ok = bool(await hass.config_entries.async_unload_platforms(entry, PLATFORMS))
     if unload_ok:
-        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
         # Issue ids are scoped per entry (see async_setup_entry) so a removed
         # controller's warnings don't linger in Repairs forever.
         ir.async_delete_issue(hass, DOMAIN, f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}")

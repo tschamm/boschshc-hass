@@ -21,7 +21,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN, LOGGER
+from .const import LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -34,7 +34,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the SHC cover platform."""
     entities = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     for cover in list(session.device_helper.shutter_controls) + list(
         session.device_helper.micromodule_shutter_controls

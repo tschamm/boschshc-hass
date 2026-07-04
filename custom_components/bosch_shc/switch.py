@@ -38,7 +38,7 @@ from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
+from .const import DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -349,7 +349,7 @@ async def async_setup_entry(  # noqa: C901
 ) -> None:
     """Set up the SHC switch platform."""
     entities: list[SwitchEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     for switch in session.device_helper.smart_plugs:
         if device_excluded(switch, config_entry.options):
@@ -1068,7 +1068,9 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
+        self._shc: DeviceEntry = hass.config_entries.async_get_entry(
+            entry_id
+        ).runtime_data.shc_device  # type: ignore[union-attr]
         self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
     async def async_added_to_hass(self) -> None:

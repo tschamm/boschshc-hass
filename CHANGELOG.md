@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.10.5 — runtime-data migration (Platinum quality-scale)
+
+**No breaking changes; no user-visible behavior change.** Internal
+architecture cleanup only.
+
+Migrated the last remaining `runtime-data` quality-scale gap (flagged as
+`todo` in 0.10.4's Round 1 audit): every platform's `async_setup_entry`
+(button, binary_sensor, climate, cover, event, light, number, select,
+sensor, switch, valve, alarm_control_panel, update), plus
+`device_trigger.get_device_from_id`, `diagnostics.async_get_config_entry_diagnostics`,
+and the options flow, now read `config_entry.runtime_data.session`
+directly instead of the legacy `hass.data[DOMAIN][entry_id][...]` dict.
+The two entity classes that only carry an `entry_id` string (not the
+config entry object itself — `event.py`'s `SHCScenarioEvent` and
+`switch.py`'s user-defined-state switch) look the entry back up via
+`hass.config_entries.async_get_entry(entry_id)`. The parallel
+`hass.data[DOMAIN]` population in `async_setup_entry`/`async_unload_entry`
+and the now-dead `DATA_SESSION`/`DATA_SHC`/`DATA_TITLE`/
+`DATA_POLLING_HANDLER`/`DATA_CERT_CHECK_UNSUB` constants are gone
+entirely. `quality_scale.yaml`'s `runtime-data` rule is `done` again —
+this time genuinely, not the false claim Round 1 corrected. Both the
+Gold and Platinum quality-scale gates pass in full for the first time.
+
+All ~65 touched files (17 source, ~45 tests) re-verified: 2973/2973 tests
+green, ruff/pylint/mypy/codespell clean.
+
 ## 0.10.4 — 5-round bug hunt across every platform file
 
 **No breaking changes.** Pins `boschshcpy==0.4.7` (see that repo's

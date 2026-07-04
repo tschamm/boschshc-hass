@@ -25,7 +25,6 @@ from custom_components.bosch_shc.const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
     CONF_SUBTYPE,
-    DATA_SESSION,
     DOMAIN,
     EVENT_BOSCH_SHC,
     INPUTS_EVENTS_SUBTYPES_SWITCH2,
@@ -42,10 +41,19 @@ from custom_components.bosch_shc.device_trigger import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_hass(config_entries=None, data=None):
-    """Return a minimal hass mock."""
+def _make_hass(sessions=None):
+    """Return a minimal hass mock whose config_entries.async_entries(DOMAIN)
+    yields one fake ConfigEntry (carrying .runtime_data.session) per session
+    in `sessions` — get_device_from_id() iterates hass.config_entries
+    .async_entries(DOMAIN) and reads entry.runtime_data.session for each,
+    skipping any entry that lacks a runtime_data attribute entirely."""
     hass = MagicMock()
-    hass.data = data or {}
+    entries = [
+        SimpleNamespace(runtime_data=SimpleNamespace(session=s))
+        for s in (sessions or [])
+    ]
+    hass.config_entries = MagicMock()
+    hass.config_entries.async_entries = MagicMock(return_value=entries)
     return hass
 
 
@@ -90,9 +98,7 @@ def _build_hass_with_device(
     if scenario_names is not None:
         session.scenario_names = scenario_names
 
-    hass = _make_hass(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}}
-    )
+    hass = _make_hass(sessions=[session])
 
     # dr.async_get(hass).async_get_device → return ha_device for matching id
     def fake_async_get_device(identifiers, connections):
@@ -157,7 +163,7 @@ class TestGetDeviceFromId:
 
     def test_returns_none_when_no_matching_device(self):
         session = _make_session(devices=[])
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         mock_registry = MagicMock()
         mock_registry.async_get_device.return_value = None
@@ -176,7 +182,7 @@ class TestGetDeviceFromId:
     def test_returns_shc_device_when_ids_match(self):
         shc_dev = _make_shc_device(device_id="shc-1", model="WRC2")
         session = _make_session(devices=[shc_dev])
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_device = MagicMock()
         ha_device.id = "ha-dev-1"
@@ -204,7 +210,7 @@ class TestGetDeviceFromId:
         ids_dev.id = "ids-1"
 
         session = _make_session(devices=[], intrusion_system=ids_dev)
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_device = MagicMock()
         ha_device.id = "ha-ids-dev"
@@ -229,7 +235,7 @@ class TestGetDeviceFromId:
 
     def test_returns_session_as_shc_when_matches_information_unique_id(self):
         session = _make_session(devices=[], unique_id="shc-serial-99")
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_shc = MagicMock()
         ha_shc.id = "ha-shc-controller"
@@ -255,7 +261,7 @@ class TestGetDeviceFromId:
     def test_no_intrusion_system_skips_ids_check(self):
         """When intrusion_system is falsy, that branch is skipped."""
         session = _make_session(devices=[], intrusion_system=None)
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         mock_registry = MagicMock()
         mock_registry.async_get_device.return_value = None
@@ -273,12 +279,7 @@ class TestGetDeviceFromId:
         shc_dev = _make_shc_device(device_id="shc-2", model="MD")
         session1 = _make_session(devices=[], unique_id="uid-1")
         session2 = _make_session(devices=[shc_dev], unique_id="uid-2")
-        hass = _make_hass(
-            data={DOMAIN: {
-                "e1": {DATA_SESSION: session1},
-                "e2": {DATA_SESSION: session2},
-            }}
-        )
+        hass = _make_hass(sessions=[session1, session2])
 
         ha_device = MagicMock()
         ha_device.id = "ha-md-dev"
@@ -306,7 +307,7 @@ class TestGetDeviceFromId:
         shc_dev1 = _make_shc_device(device_id="shc-a", model="WRC2")
         shc_dev2 = _make_shc_device(device_id="shc-b", model="MD")
         session = _make_session(devices=[shc_dev1, shc_dev2])
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_device_a = MagicMock()
         ha_device_a.id = "ha-dev-a"
@@ -347,7 +348,7 @@ class TestAsyncGetTriggers:
         if scenario_names is not None:
             session.scenario_names = scenario_names
 
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_device = MagicMock()
         ha_device.id = ha_device_id
@@ -434,7 +435,7 @@ class TestAsyncGetTriggers:
         session = _make_session(devices=[], unique_id="shc-serial-001")
         session.scenario_names = scenario_names
 
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_shc = MagicMock()
         ha_shc.id = "ha-shc"
@@ -469,7 +470,7 @@ class TestAsyncGetTriggers:
             InvalidDeviceAutomationConfig,
         )
         session = _make_session(devices=[])
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
         mock_registry = MagicMock()
         mock_registry.async_get_device.return_value = None
 
@@ -632,7 +633,7 @@ class TestIDSDeviceTriggers:
         ids_dev.id = "ids-device-1"
 
         session = _make_session(devices=[], intrusion_system=ids_dev)
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_ids = MagicMock()
         ha_ids.id = "ha-ids-1"
@@ -666,7 +667,7 @@ class TestSwitch2BranchCoverage:
         """SWITCH2 model has 4 subtypes × 3 types = 12 triggers."""
         shc_dev = _make_shc_device(device_id="sw2-1", model="SWITCH2")
         session = _make_session(devices=[shc_dev])
-        hass = _make_hass(data={DOMAIN: {"e1": {DATA_SESSION: session}}})
+        hass = _make_hass(sessions=[session])
 
         ha_device = MagicMock()
         ha_device.id = "ha-sw2"

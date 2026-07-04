@@ -18,7 +18,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from custom_components.bosch_shc.const import DATA_SESSION, DOMAIN, OPT_EXCLUDED_DEVICES
+from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 from custom_components.bosch_shc.number import (
     HeatingCircuitSetpointNumber,
     ImpulseLengthNumber,
@@ -55,8 +55,11 @@ def _make_fake_session(**lists):
 
 def _run_setup_with_options(session, options):
     """Run async_setup_entry with custom options. Returns list of collected entities."""
-    hass = SimpleNamespace(data={DOMAIN: {"E1": {DATA_SESSION: session}}})
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(options=options, entry_id="E1")
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
+    )
     collected = []
 
     def _add_entities(entity_list):

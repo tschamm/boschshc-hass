@@ -33,7 +33,6 @@ from custom_components.bosch_shc.const import (
     CONF_SHC_KEY,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_SESSION,
     DOMAIN,
     OPT_CHILD_LOCK_ENABLED,
     OPT_DIAGNOSTIC_ENTITIES,
@@ -92,6 +91,12 @@ def _make_options_flow(options=None, session=None):
     entry = MagicMock()
     entry.entry_id = "test-entry-id"
     entry.options = options or {}
+    if session is not None:
+        entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=MagicMock(), title="Test SHC"
+        )
+    else:
+        del entry.runtime_data
 
     flow = OptionsFlowHandler.__new__(OptionsFlowHandler)
     flow.__class__ = type(
@@ -100,10 +105,6 @@ def _make_options_flow(options=None, session=None):
         {"config_entry": property(lambda self: entry)},
     )
     hass = _make_hass()
-    if session is not None:
-        hass.data = {DOMAIN: {"test-entry-id": {DATA_SESSION: session}}}
-    else:
-        hass.data = {}
     flow.hass = hass
     flow.async_show_form = MagicMock(return_value={"type": "form", "step_id": "init"})
     flow.async_create_entry = MagicMock(
@@ -974,9 +975,10 @@ class TestOptionsFlowHandlerInit:
     def test_session_exception_does_not_crash_options_flow(self):
         """If session access raises, the form still renders (no crash)."""
         flow, entry = _make_options_flow()
-        # Make hass.data.get raise
-        flow.hass.data = MagicMock()
-        flow.hass.data.get = MagicMock(side_effect=RuntimeError("session broken"))
+        # entry.runtime_data exists but has no .session attribute -> accessing
+        # it raises AttributeError, caught by the broad except in
+        # async_step_init.
+        entry.runtime_data = SimpleNamespace()
         asyncio.run(flow.async_step_init(user_input=None))
         assert flow.async_show_form.called
 

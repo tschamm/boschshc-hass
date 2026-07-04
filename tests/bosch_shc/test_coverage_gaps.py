@@ -29,9 +29,6 @@ import aiohttp
 import pytest
 
 from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DATA_SHC,
-    DOMAIN,
     OPT_ALL_LIGHTS_AS_LIGHT,
     OPT_EXCLUDED_DEVICES,
     OPT_SUPPRESS_CAMERA_SWITCHES,
@@ -68,14 +65,17 @@ def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
 
 
 def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
-    """Minimal hass with DATA_SESSION injected."""
+    """Minimal hass. session/shc are cached so a paired _fake_entry(hass=...)
+    call can wire them onto entry.runtime_data (the modern storage location —
+    this integration no longer uses hass.data[DOMAIN])."""
     shc_obj = shc or SimpleNamespace(
         identifiers={("bosch_shc", "shc")},
         name="SHC", manufacturer="Bosch", model="SHC", id="shc1",
     )
-    data = {DOMAIN: {entry_id: {DATA_SESSION: session, DATA_SHC: shc_obj}}}
     h = MagicMock()
-    h.data = data
+    h.data = {}
+    h._fake_session = session
+    h._fake_shc = shc_obj
 
     async def _executor_job(fn, *args):
         return fn(*args)
@@ -88,13 +88,20 @@ def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
     return h
 
 
-def _fake_entry(entry_id="E1", title="Test SHC", options=None):
+def _fake_entry(entry_id="E1", title="Test SHC", options=None, hass=None):
+    """Build a fake config entry with runtime_data wired from `hass` (as
+    produced by _fake_hass) when provided."""
     entry = MagicMock()
     entry.entry_id = entry_id
     entry.title = title
     entry.options = options or {}
     entry.unique_id = "uid1"
     entry.async_on_unload = MagicMock()
+    entry.runtime_data = SimpleNamespace(
+        session=getattr(hass, "_fake_session", None) if hass is not None else None,
+        shc_device=getattr(hass, "_fake_shc", None) if hass is not None else None,
+        title=title,
+    )
     return entry
 
 
@@ -119,7 +126,7 @@ class TestUpdateAsyncSetupEntry:
 
         session = self._make_session()
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -132,7 +139,7 @@ class TestUpdateAsyncSetupEntry:
         dev = _fake_dev(supports_software_update=True)
         session = self._make_session(devices=[dev])
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -145,7 +152,7 @@ class TestUpdateAsyncSetupEntry:
         dev = _fake_dev()  # no supports_software_update
         session = self._make_session(devices=[dev])
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -224,7 +231,7 @@ class TestLightSetupHueSuppressWithRegistry:
             "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
         ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
                  new_callable=AsyncMock):
-            entry = _fake_entry(options=options)
+            entry = _fake_entry(hass=hass, options=options)
             collected = []
             _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
         return collected
@@ -282,7 +289,7 @@ class TestLightSetupLedvanceSuppressWithRegistry:
             "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
         ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
                  new_callable=AsyncMock):
-            entry = _fake_entry(options=options)
+            entry = _fake_entry(hass=hass, options=options)
             collected = []
             _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
         return collected
@@ -346,7 +353,7 @@ class TestLightRelayOptIn:
                 new_callable=AsyncMock,
             ),
         ):
-            entry = _fake_entry(options=options)
+            entry = _fake_entry(hass=hass, options=options)
             collected = []
             _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
         return collected
@@ -466,7 +473,7 @@ class TestEventSetupLightControls:
         session.device_helper.smoke_detection_system = None
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, *a, **kw: collected.extend(ents)))
@@ -635,7 +642,7 @@ class TestSirenSensorInits:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         platform_mock = MagicMock()
         platform_mock.async_register_entity_service = MagicMock()
@@ -773,7 +780,7 @@ class TestSirenPowerSupplyFaultSensors:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         platform_mock = MagicMock()
         platform_mock.async_register_entity_service = MagicMock()
@@ -916,7 +923,7 @@ class TestButtonDimmerSetup:
         session.scenarios = []
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -1040,7 +1047,7 @@ class TestSelectSirenSoundLevelSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         # select.py does NOT import async_migrate_to_new_unique_id — no patch needed
         collected = []
@@ -1093,7 +1100,7 @@ class TestSelectDimmerPhaseControlSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         # select.py does NOT import async_migrate_to_new_unique_id — no patch needed
         collected = []
@@ -1271,7 +1278,7 @@ class TestSensorTerminalTempSetup:
         session.emma = _fake_dev("emma1")  # prevent MagicMock EmmaPowerSensor
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         with patch("custom_components.bosch_shc.sensor.async_migrate_to_new_unique_id",
                    new_callable=AsyncMock):
@@ -1330,7 +1337,7 @@ class TestSensorEnergyYieldSmartPlug:
         session.emma = _fake_dev("emma1")  # give a proper fake to avoid init errors
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         with patch("custom_components.bosch_shc.sensor.async_migrate_to_new_unique_id",
                    new_callable=AsyncMock):
@@ -1380,7 +1387,7 @@ class TestSensorSirenSetup:
         session.emma = _fake_dev("emma1")
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         with patch("custom_components.bosch_shc.sensor.async_migrate_to_new_unique_id",
                    new_callable=AsyncMock):
@@ -1440,7 +1447,7 @@ class TestSensorKeypadTriggerSetup:
         session.emma = _fake_dev("emma1")
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         with patch("custom_components.bosch_shc.sensor.async_migrate_to_new_unique_id",
                    new_callable=AsyncMock):
@@ -1572,7 +1579,7 @@ class TestSwitchLightRelayOptInSkip:
         session.subscribe = MagicMock()
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options)
+        entry = _fake_entry(hass=hass, options=options)
         entry.async_on_unload = MagicMock()
 
         with (
@@ -1647,7 +1654,7 @@ class TestSwitchSuppressCamerasRegistry:
         dr_mock.async_update_device = MagicMock()
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options)
+        entry = _fake_entry(hass=hass, options=options)
         entry.async_on_unload = MagicMock()
 
         with patch("custom_components.bosch_shc.switch.get_dev_reg",
@@ -1704,7 +1711,7 @@ class TestSwitchMotionDetector2TamperProtection:
         session.subscribe = MagicMock()
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
         entry.async_on_unload = MagicMock()
 
         with patch("custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
@@ -1763,7 +1770,7 @@ class TestSwitchSmokeDetectorIntrusionAlarm:
         session.subscribe = MagicMock()
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
         entry.async_on_unload = MagicMock()
 
         with patch("custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
@@ -2147,12 +2154,10 @@ class TestInitUnloadPollingAndListeners:
     def test_unload_entry_calls_polling_handler_and_listeners(self):
         """Lines 703, 706: polling_handler() + listener.shutdown() called in unload."""
         from custom_components.bosch_shc import async_unload_entry
-        from custom_components.bosch_shc.const import DOMAIN
 
         rt, handler_called, listener_called = self._build_runtime()
 
         hass = MagicMock()
-        hass.data = {DOMAIN: {}}
         hass.config_entries = MagicMock()
         hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
         hass.config_entries.async_entries = MagicMock(return_value=[])
@@ -2189,7 +2194,7 @@ class TestUpdateExcludedDevice:
         session.devices = [dev]
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["excl1"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["excl1"]})
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -2227,7 +2232,7 @@ class TestLightExcludedRelayDevice:
                 new_callable=AsyncMock,
             ),
         ):
-            entry = _fake_entry(options={
+            entry = _fake_entry(hass=hass, options={
                 OPT_ALL_LIGHTS_AS_LIGHT: True,
                 OPT_EXCLUDED_DEVICES: ["bsm_excl"],
             })
@@ -2259,7 +2264,7 @@ class TestButtonDimmerExcluded:
         session.scenarios = []
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -2302,7 +2307,7 @@ class TestBinarySensorSirenExcluded:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
 
         platform_mock = MagicMock()
         platform_mock.async_register_entity_service = MagicMock()
@@ -2341,7 +2346,7 @@ class TestSelectDimmerExcluded:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -2385,7 +2390,7 @@ class TestSensorKeypadTriggerExcluded:
         session.emma = _fake_dev("emma1")
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["us_excl"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["us_excl"]})
 
         with patch("custom_components.bosch_shc.sensor.async_migrate_to_new_unique_id",
                    new_callable=AsyncMock):
@@ -2403,7 +2408,6 @@ class TestInitUnloadSilentModeUnsub:
         from homeassistant.helpers.device_registry import DeviceEntry
 
         from custom_components.bosch_shc import async_unload_entry
-        from custom_components.bosch_shc.const import DOMAIN
         from custom_components.bosch_shc.data import SHCData
 
         session = MagicMock()
@@ -2426,7 +2430,6 @@ class TestInitUnloadSilentModeUnsub:
         )
 
         hass = MagicMock()
-        hass.data = {DOMAIN: {}}
         hass.config_entries = MagicMock()
         hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
         hass.config_entries.async_entries = MagicMock(return_value=[])
@@ -2595,7 +2598,7 @@ class TestNumberSirenSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options=options or {})
+        entry = _fake_entry(hass=hass, options=options or {})
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -2617,7 +2620,7 @@ class TestNumberSirenSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         # Patch the dh to return our siren
         with patch.object(dh, "outdoor_sirens", [siren], create=True):
@@ -2644,7 +2647,7 @@ class TestNumberSirenSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
 
         with patch.object(dh, "outdoor_sirens", [siren_excl], create=True):
             from custom_components.bosch_shc.number import async_setup_entry
@@ -2670,7 +2673,7 @@ class TestNumberSirenSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         with patch.object(dh, "outdoor_sirens", [siren_no_svc], create=True):
             from custom_components.bosch_shc.number import async_setup_entry
@@ -2696,7 +2699,7 @@ class TestNumberSirenSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry(options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
 
         with patch.object(dh, "micromodule_dimmers", [dev_excl], create=True):
             from custom_components.bosch_shc.number import async_setup_entry
@@ -2722,7 +2725,7 @@ class TestNumberSirenSetup:
         session.device_helper = dh
 
         hass = _fake_hass(session=session)
-        entry = _fake_entry()
+        entry = _fake_entry(hass=hass)
 
         with patch.object(dh, "micromodule_dimmers", [dev], create=True):
             from custom_components.bosch_shc.number import async_setup_entry

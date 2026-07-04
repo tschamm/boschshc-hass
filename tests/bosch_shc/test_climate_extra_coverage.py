@@ -19,11 +19,7 @@ from custom_components.bosch_shc.climate import (
     ClimateControl,
     async_setup_entry,
 )
-from custom_components.bosch_shc.const import (
-    DATA_SESSION,
-    DOMAIN,
-    OPT_EXCLUDED_DEVICES,
-)
+from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
 # Shorthand for AUTOMATIC enum value
 _AUTO = RoomClimateControlService.OperationMode.AUTOMATIC
@@ -100,10 +96,11 @@ def _make_hass_and_entry(
 
     entry_id = "entry-clim"
     options = {OPT_EXCLUDED_DEVICES: excluded}
-    hass = SimpleNamespace(
-        data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
-    )
+    hass = SimpleNamespace()
     config_entry = SimpleNamespace(entry_id=entry_id, options=options)
+    config_entry.runtime_data = SimpleNamespace(
+        session=session, shc_device=None, title="Test SHC"
+    )
     return hass, config_entry
 
 
