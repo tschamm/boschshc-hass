@@ -12,11 +12,20 @@ Entities covered:
   - ValveTypeSelect (supports_wall_thermostat_configuration + valve_type)
   - HeaterTypeSelect (supports_wall_thermostat_configuration + heater_type)
   - TerminalTypeSelect (supports_terminal_configuration + terminal_type)
-  - SwitchTypeSelect (supports_switch_configuration + switch_type)
-  - ActuatorTypeSelect (supports_switch_configuration + actuator_type)
-  - OutputModeSelect (supports_switch_configuration + output_mode)
+  - SwitchTypeSelect (switch_type value only — see note below)
+  - ActuatorTypeSelect (actuator_type value only — see note below)
+  - OutputModeSelect (output_mode value only — see note below)
   - SmartSensitivitySecurityLevelSelect (supports_smart_sensitivity + get_smart_sensitivity)
   - SmartSensitivityComfortLevelSelect (supports_smart_sensitivity + get_smart_sensitivity)
+
+Note on SwitchType/ActuatorType/OutputMode: select.py no longer checks
+supports_switch_configuration for these three. That flag only exists on
+SHCMicromoduleRelay (where it's just "the switch-config service is
+present", already implied by switch_type/actuator_type/output_mode being
+non-None); SHCLightControl has no such flag at all, so the old dual guard
+meant Light Control II never got these selects even though the values are
+already null-safe on that class too. Gating on the value alone is correct
+for both device kinds.
 """
 
 from __future__ import annotations
@@ -271,29 +280,27 @@ class TestTerminalTypeSelectGuard:
 
 
 class TestSwitchTypeSelectGuard:
-    def test_supports_false_value_present_skipped(self):
-        relay = _fake_device(switch_type=True,
-                             supports_switch_configuration=False)
+    def test_value_none_skipped(self):
+        relay = _fake_device(switch_type=None)
         entities = _setup(_make_session(micromodule_relays=[relay]))
         assert "SwitchTypeSelect" not in _types(entities)
 
-    def test_supports_true_value_none_skipped(self):
-        relay = _fake_device(switch_type=None,
-                             supports_switch_configuration=True)
-        entities = _setup(_make_session(micromodule_relays=[relay]))
-        assert "SwitchTypeSelect" not in _types(entities)
-
-    def test_both_present_created(self):
-        relay = _fake_device(switch_type=True,
-                             supports_switch_configuration=True)
+    def test_value_present_created(self):
+        relay = _fake_device(switch_type=True)
         entities = _setup(_make_session(micromodule_relays=[relay]))
         assert "SwitchTypeSelect" in _types(entities)
 
     def test_light_control_value_none_skipped(self):
-        lc = _fake_device(switch_type=None,
-                          supports_switch_configuration=True)
+        lc = _fake_device(switch_type=None)
         entities = _setup(_make_session(micromodule_light_controls=[lc]))
         assert "SwitchTypeSelect" not in _types(entities)
+
+    def test_light_control_value_present_created(self):
+        """Regression test: LightControl has no supports_switch_configuration
+        at all, so this must be gated on switch_type alone, not that flag."""
+        lc = _fake_device(switch_type=True)
+        entities = _setup(_make_session(micromodule_light_controls=[lc]))
+        assert "SwitchTypeSelect" in _types(entities)
 
 
 # ---------------------------------------------------------------------------
@@ -302,22 +309,26 @@ class TestSwitchTypeSelectGuard:
 
 
 class TestActuatorTypeSelectGuard:
-    def test_supports_false_value_present_skipped(self):
-        relay = _fake_device(actuator_type=True,
-                             supports_switch_configuration=False)
+    def test_value_none_skipped(self):
+        relay = _fake_device(actuator_type=None)
         entities = _setup(_make_session(micromodule_relays=[relay]))
         assert "ActuatorTypeSelect" not in _types(entities)
 
-    def test_supports_true_value_none_skipped(self):
-        relay = _fake_device(actuator_type=None,
-                             supports_switch_configuration=True)
+    def test_value_present_created(self):
+        relay = _fake_device(actuator_type=True)
         entities = _setup(_make_session(micromodule_relays=[relay]))
+        assert "ActuatorTypeSelect" in _types(entities)
+
+    def test_light_control_value_none_skipped(self):
+        lc = _fake_device(actuator_type=None)
+        entities = _setup(_make_session(micromodule_light_controls=[lc]))
         assert "ActuatorTypeSelect" not in _types(entities)
 
-    def test_both_present_created(self):
-        relay = _fake_device(actuator_type=True,
-                             supports_switch_configuration=True)
-        entities = _setup(_make_session(micromodule_relays=[relay]))
+    def test_light_control_value_present_created(self):
+        """Regression test: LightControl has no supports_switch_configuration
+        at all, so this must be gated on actuator_type alone, not that flag."""
+        lc = _fake_device(actuator_type=True)
+        entities = _setup(_make_session(micromodule_light_controls=[lc]))
         assert "ActuatorTypeSelect" in _types(entities)
 
 
@@ -327,22 +338,26 @@ class TestActuatorTypeSelectGuard:
 
 
 class TestOutputModeSelectGuard:
-    def test_supports_false_value_present_skipped(self):
-        relay = _fake_device(output_mode=True,
-                             supports_switch_configuration=False)
+    def test_value_none_skipped(self):
+        relay = _fake_device(output_mode=None)
         entities = _setup(_make_session(micromodule_relays=[relay]))
         assert "OutputModeSelect" not in _types(entities)
 
-    def test_supports_true_value_none_skipped(self):
-        relay = _fake_device(output_mode=None,
-                             supports_switch_configuration=True)
+    def test_value_present_created(self):
+        relay = _fake_device(output_mode=True)
         entities = _setup(_make_session(micromodule_relays=[relay]))
+        assert "OutputModeSelect" in _types(entities)
+
+    def test_light_control_value_none_skipped(self):
+        lc = _fake_device(output_mode=None)
+        entities = _setup(_make_session(micromodule_light_controls=[lc]))
         assert "OutputModeSelect" not in _types(entities)
 
-    def test_both_present_created(self):
-        relay = _fake_device(output_mode=True,
-                             supports_switch_configuration=True)
-        entities = _setup(_make_session(micromodule_relays=[relay]))
+    def test_light_control_value_present_created(self):
+        """Regression test: LightControl has no supports_switch_configuration
+        at all, so this must be gated on output_mode alone, not that flag."""
+        lc = _fake_device(output_mode=True)
+        entities = _setup(_make_session(micromodule_light_controls=[lc]))
         assert "OutputModeSelect" in _types(entities)
 
 
