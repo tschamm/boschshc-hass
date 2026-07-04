@@ -162,6 +162,23 @@ def test_device_update_latest_equals_installed_when_no_update():
     assert u.latest_version == "1.0.0"
 
 
+def test_device_update_latest_version_kept_after_failed_install():
+    """Regression: a failed install doesn't apply the pending version, so
+    latest_version must keep showing it instead of falling back to
+    sw_installed_version (which would misreport "up to date" right when the
+    update is still outstanding)."""
+    from boschshcpy.services_impl import SoftwareUpdateService
+
+    svc = _sw_service(
+        sw_installed_version="1.0.0",
+        sw_update_available_version="1.1.0",
+        sw_update_state=SoftwareUpdateService.SwUpdateState.UPDATE_FAILED,
+    )
+    u = _new(DeviceUpdate)
+    u._device = SimpleNamespace(software_update=svc)
+    assert u.latest_version == "1.1.0"
+
+
 def test_device_update_in_progress():
     from boschshcpy.services_impl import SoftwareUpdateService
 

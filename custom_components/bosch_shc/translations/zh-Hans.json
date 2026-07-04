@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — 设置",
-        "description": "配置博世智能家居控制器集成创建和管理的实体及自动化。",
+        "description": "配置博世智能家居控制器集成创建和管理的实体及自动化。{camera_tool}",
         "sections": {
           "features": {
             "name": "功能",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC 客户端证书即将到期",
-      "description": "Bosch SHC 客户端证书将在 {days} 天后（{expiry}）到期。要续期：将控制器置于配对模式（按住前面的按钮直到 LED 闪烁），然后前往 **设置 → 设备与服务 → Bosch Smart Home Controller** 并选择 **重新配置**。"
+      "description": "用于 **{title}** 的 Bosch SHC 客户端证书将在 {days} 天后（{expiry}）到期。要续期：将控制器置于配对模式（按住前面的按钮直到 LED 闪烁），然后前往 **设置 → 设备与服务 → Bosch Smart Home Controller** 并选择 **重新配置**。"
     }
   },
   "exceptions": {

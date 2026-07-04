@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — 設定",
-        "description": "設定 Bosch Smart Home Controller 整合所建立和管理的實體及自動化。",
+        "description": "設定 Bosch Smart Home Controller 整合所建立和管理的實體及自動化。{camera_tool}",
         "sections": {
           "features": {
             "name": "功能",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC 用戶端憑證即將到期",
-      "description": "Bosch SHC 用戶端憑證將在 {days} 天後（{expiry}）到期。若要續期：將控制器置於配對模式（按住前面的按鈕直到 LED 閃爍），然後前往 **設定 → 裝置與服務 → Bosch Smart Home Controller** 並選擇 **重新設定**。"
+      "description": "用於 **{title}** 的 Bosch SHC 用戶端憑證將在 {days} 天後（{expiry}）到期。若要續期：將控制器置於配對模式（按住前面的按鈕直到 LED 閃爍），然後前往 **設定 → 裝置與服務 → Bosch Smart Home Controller** 並選擇 **重新設定**。"
     }
   },
   "exceptions": {

@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Innstillinger",
-        "description": "Konfigurer hvilke enheter og automatiseringer Bosch Smart Home Controller-integrasjonen oppretter og administrerer.",
+        "description": "Konfigurer hvilke enheter og automatiseringer Bosch Smart Home Controller-integrasjonen oppretter og administrerer.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funksjoner",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC-klientsertifikat utløper snart",
-      "description": "Bosch SHC-klientsertifikatet utløper om {days} dag(er) (den {expiry}). For å fornye det: sett kontrolleren i paringsmodus (trykk på frontknappen til LED-lysene blinker), og gå deretter til **Innstillinger → Enheter og tjenester → Bosch Smart Home Controller** og velg **Konfigurer på nytt**."
+      "description": "Bosch SHC-klientsertifikatet for **{title}** utløper om {days} dag(er) (den {expiry}). For å fornye det: sett kontrolleren i paringsmodus (trykk på frontknappen til LED-lysene blinker), og gå deretter til **Innstillinger → Enheter og tjenester → Bosch Smart Home Controller** og velg **Konfigurer på nytt**."
     }
   },
   "exceptions": {

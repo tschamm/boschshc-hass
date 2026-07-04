@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Beállítások",
-        "description": "Konfigurálja, hogy a Bosch Smart Home Controller integráció milyen entitásokat és automatizációkat hoz létre és kezel.",
+        "description": "Konfigurálja, hogy a Bosch Smart Home Controller integráció milyen entitásokat és automatizációkat hoz létre és kezel.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funkciók",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "A Bosch SHC ügyféltanúsítvány hamarosan lejár",
-      "description": "A Bosch SHC ügyféltanúsítvány {days} nap múlva lejár ({expiry}). A megújításhoz: állítsa a vezérlőt párosítási módba (nyomja meg az elülső gombot, amíg a LED-ek villogni nem kezdenek), majd lépjen ide: **Beállítások → Eszközök és szolgáltatások → Bosch Smart Home Controller**, és válassza az **Újrakonfigurálás** lehetőséget."
+      "description": "A Bosch SHC ügyféltanúsítvány a(z) **{title}** számára {days} nap múlva lejár ({expiry}). A megújításhoz: állítsa a vezérlőt párosítási módba (nyomja meg az elülső gombot, amíg a LED-ek villogni nem kezdenek), majd lépjen ide: **Beállítások → Eszközök és szolgáltatások → Bosch Smart Home Controller**, és válassza az **Újrakonfigurálás** lehetőséget."
     }
   },
   "exceptions": {

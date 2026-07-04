@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Ustawienia",
-        "description": "Skonfiguruj, jakie encje i automatyzacje integracja Bosch Smart Home Controller tworzy i zarządza.",
+        "description": "Skonfiguruj, jakie encje i automatyzacje integracja Bosch Smart Home Controller tworzy i zarządza.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funkcje",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Certyfikat klienta Bosch SHC wkrótce wygaśnie",
-      "description": "Certyfikat klienta Bosch SHC wygaśnie za {days} dzień/dni (dnia {expiry}). Aby go odnowić: przełącz kontroler w tryb parowania (naciśnij przycisk z przodu, aż diody LED zaczną migać), a następnie przejdź do **Ustawienia → Urządzenia i usługi → Bosch Smart Home Controller** i wybierz **Skonfiguruj ponownie**."
+      "description": "Certyfikat klienta Bosch SHC dla **{title}** wygaśnie za {days} dzień/dni (dnia {expiry}). Aby go odnowić: przełącz kontroler w tryb parowania (naciśnij przycisk z przodu, aż diody LED zaczną migać), a następnie przejdź do **Ustawienia → Urządzenia i usługi → Bosch Smart Home Controller** i wybierz **Skonfiguruj ponownie**."
     }
   },
   "exceptions": {

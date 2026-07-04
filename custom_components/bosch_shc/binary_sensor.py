@@ -178,6 +178,16 @@ async def async_setup_entry(  # noqa: C901
                 entry_id=config_entry.entry_id,
             )
         )
+
+    # The tracker/per-Twinguard alarm sensors below are independent of
+    # smoke_detection_system's own exclusion state: that flag only controls
+    # whether the (system-level) SmokeDetectionSystemSensor entity above is
+    # created, not whether the virtual device may still be used as the
+    # message source for the individually-exclusion-checked Twinguards.
+    # Nesting this under the exclusion check above previously meant
+    # excluding smoke_detection_system silently dropped every Twinguard
+    # alarm sensor too, even ones never excluded themselves.
+    if smoke_detection_system:
         twinguards = session.device_helper.twinguards
         if twinguards:
             tracker = TwinguardAlarmTracker(

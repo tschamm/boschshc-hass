@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Seaded",
-        "description": "Seadista, milliseid olemeid ja automaatikat Bosch Smart Home Controlleri integratsioon loob ja haldab.",
+        "description": "Seadista, milliseid olemeid ja automaatikat Bosch Smart Home Controlleri integratsioon loob ja haldab.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funktsioonid",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC kliendi sertifikaat aegub peagi",
-      "description": "Bosch SHC kliendi sertifikaat aegub {days} päeva(de) pärast ({expiry}). Selle uuendamiseks: pange seade paaritusse (vajutage esipaneeli nuppu, kuni LED-id hakkavad vilkuma), seejärel minge jaotisse **Seaded → Seadmed ja teenused → Bosch Smart Home Controller** ja valige **Uuesti seadistamine**."
+      "description": "Bosch SHC kliendi sertifikaat **{title}** jaoks aegub {days} päeva(de) pärast ({expiry}). Selle uuendamiseks: pange seade paaritusse (vajutage esipaneeli nuppu, kuni LED-id hakkavad vilkuma), seejärel minge jaotisse **Seaded → Seadmed ja teenused → Bosch Smart Home Controller** ja valige **Uuesti seadistamine**."
     }
   },
   "exceptions": {

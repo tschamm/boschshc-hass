@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Pengaturan",
-        "description": "Konfigurasikan entitas dan otomasi apa yang dibuat dan dikelola oleh integrasi Bosch Smart Home Controller.",
+        "description": "Konfigurasikan entitas dan otomasi apa yang dibuat dan dikelola oleh integrasi Bosch Smart Home Controller.{camera_tool}",
         "sections": {
           "features": {
             "name": "Fitur",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Sertifikat klien Bosch SHC akan segera kedaluwarsa",
-      "description": "Sertifikat klien Bosch SHC akan kedaluwarsa dalam {days} hari (pada {expiry}). Untuk memperbaruinya: masukkan pengontrol ke mode pemasangan (tekan tombol depan hingga LED berkedip), lalu buka **Pengaturan → Perangkat & layanan → Bosch Smart Home Controller** dan pilih **Konfigurasi ulang**."
+      "description": "Sertifikat klien Bosch SHC untuk **{title}** akan kedaluwarsa dalam {days} hari (pada {expiry}). Untuk memperbaruinya: masukkan pengontrol ke mode pemasangan (tekan tombol depan hingga LED berkedip), lalu buka **Pengaturan → Perangkat & layanan → Bosch Smart Home Controller** dan pilih **Konfigurasi ulang**."
     }
   },
   "exceptions": {

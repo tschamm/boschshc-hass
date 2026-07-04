@@ -392,8 +392,30 @@ class TestAsyncGetTriggers:
         assert triggers[0][CONF_TYPE] == "MOTION"
         assert triggers[0][CONF_SUBTYPE] == ""
 
+    def test_md2_returns_motion_trigger(self):
+        """Regression: MD2 (Motion Detector II) fires the identical MOTION
+        bus event as MD via the same MotionDetectionSensor class
+        (binary_sensor.py), but async_get_triggers only matched the literal
+        "MD" model string — MD2 owners got zero device-trigger options."""
+        triggers = self._run_get_triggers("ha-md2", "MD2")
+        assert len(triggers) == 1
+        assert triggers[0][CONF_TYPE] == "MOTION"
+        assert triggers[0][CONF_SUBTYPE] == ""
+
     def test_sd_returns_alarm_triggers_for_all_subtypes(self):
         triggers = self._run_get_triggers("ha-sd", "SD")
+        types = {t[CONF_TYPE] for t in triggers}
+        subtypes = {t[CONF_SUBTYPE] for t in triggers}
+        assert types == {"ALARM"}
+        assert ALARM_EVENTS_SUBTYPES_SD.issubset(subtypes)
+
+    def test_smoke_detector2_returns_alarm_triggers_for_all_subtypes(self):
+        """Regression: SMOKE_DETECTOR2 (Smoke Detector II) fires the
+        identical ALARM bus event as SD via the same SmokeDetectorSensor
+        class (binary_sensor.py), but async_get_triggers only matched the
+        literal "SD" model string — SD II owners got zero device-trigger
+        options."""
+        triggers = self._run_get_triggers("ha-sd2", "SMOKE_DETECTOR2")
         types = {t[CONF_TYPE] for t in triggers}
         subtypes = {t[CONF_SUBTYPE] for t in triggers}
         assert types == {"ALARM"}

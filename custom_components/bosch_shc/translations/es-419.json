@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Configuración",
-        "description": "Configure qué entidades y automatizaciones crea y gestiona la integración del Bosch Smart Home Controller.",
+        "description": "Configure qué entidades y automatizaciones crea y gestiona la integración del Bosch Smart Home Controller.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funciones",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "El certificado de cliente de Bosch SHC vencerá pronto",
-      "description": "El certificado de cliente de Bosch SHC vencerá en {days} día(s) (el {expiry}). Para renovarlo: ponga el controlador en modo de emparejamiento (presione el botón frontal hasta que parpadeen los LEDs), luego vaya a **Configuración → Dispositivos y servicios → Bosch Smart Home Controller** y seleccione **Reconfigurar**."
+      "description": "El certificado de cliente de Bosch SHC para **{title}** vencerá en {days} día(s) (el {expiry}). Para renovarlo: ponga el controlador en modo de emparejamiento (presione el botón frontal hasta que parpadeen los LEDs), luego vaya a **Configuración → Dispositivos y servicios → Bosch Smart Home Controller** y seleccione **Reconfigurar**."
     }
   },
   "exceptions": {

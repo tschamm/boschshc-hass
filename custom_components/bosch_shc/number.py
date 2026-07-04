@@ -418,7 +418,11 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
             svc = getattr(self._device, "_heating_circuit_service", None)
             if svc is None:
                 return None
-            return float(getattr(svc, self._getter_name))
+            value = getattr(svc, self._getter_name)
+            # setpoint_temperature_eco/_comfort are typed float | None: a
+            # heating circuit that never had that preset configured
+            # legitimately returns None here, not an AttributeError.
+            return None if value is None else float(value)
         except (AttributeError, KeyError) as err:
             LOGGER.warning(
                 "Unable to read %s for %s: %s",

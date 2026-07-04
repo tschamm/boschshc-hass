@@ -154,6 +154,11 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
             service.SwUpdateState.DOWNLOADING,
             service.SwUpdateState.INSTALLING,
             service.SwUpdateState.UPDATE_IN_PROGRESS,
+            # A failed install doesn't apply the pending version, so the
+            # update stays outstanding — without this, latest_version fell
+            # back to sw_installed_version right when the user most needs to
+            # see there's still a pending update.
+            service.SwUpdateState.UPDATE_FAILED,
         }
         if (
             service.sw_update_state in offered_or_running

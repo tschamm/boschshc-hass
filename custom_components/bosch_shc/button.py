@@ -112,8 +112,11 @@ async def async_setup_entry(
                     entry_id=config_entry.entry_id,
                 )
             )
-        # resetTamperedState — LatestTamper is a standard MD2 service.
-        if hasattr(button, "reset_tampered_state"):
+        # resetTamperedState — reset_tampered_state()/async_reset_tampered_state()
+        # are defined unconditionally on the class, so a plain hasattr() check
+        # would never actually detect a device missing the LatestTamper
+        # service; supports_tamper_reset checks the real service presence.
+        if getattr(button, "supports_tamper_reset", False):
             entities.append(
                 SHCTamperResetButton(
                     device=button,

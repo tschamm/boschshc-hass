@@ -42,6 +42,7 @@ from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
+    async_remove_stale_entity,
     device_excluded,
     light_switch_as_light,
 )
@@ -189,7 +190,6 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         # device name, so users understand it excludes the contact from the
         # intrusion alarm (open/close while armed without triggering it).
         translation_key="bypass",
-        icon="mdi:shield-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
         on_value=BypassService.State.BYPASS_ACTIVE,
@@ -410,6 +410,14 @@ async def async_setup_entry(  # noqa: C901
         # the device is not exposed twice.  (Child-lock / swap config switches
         # below stay regardless, they are independent CONFIG entities.)
         if light_switch_as_light(switch, config_entry.options):
+            # An options change reloads the entry (OptionsFlowWithReload), so
+            # if a switch entity was previously created for this device
+            # (before the option was turned on), remove the now-stale
+            # registry entry — same unique_id as RelayLight's default, since
+            # neither passes attr_name.
+            await async_remove_stale_entity(
+                hass, Platform.SWITCH, f"{switch.root_device_id}_{switch.id}"
+            )
             continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch

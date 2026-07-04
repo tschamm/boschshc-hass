@@ -16,7 +16,7 @@
     "flow_title": "Bosch SHC: {name}",
     "step": {
       "confirm_discovery": {
-        "description": "Tryck på knappen på framsidan av Bosch Smart Home Controller tills lysdioden börjar blinka.\nRedo att fortsätta att ställa in {modell} @ {host} med Home Assistant?"
+        "description": "Tryck på knappen på framsidan av Bosch Smart Home Controller tills lysdioden börjar blinka.\nRedo att fortsätta att ställa in {model} @ {host} med Home Assistant?"
       },
       "credentials": {
         "data": {
@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Inställningar",
-        "description": "Konfigurera vilka enheter och automatiseringar Bosch Smart Home Controller-integrationen skapar och hanterar.",
+        "description": "Konfigurera vilka enheter och automatiseringar Bosch Smart Home Controller-integrationen skapar och hanterar.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funktioner",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC-klientcertifikatet löper snart ut",
-      "description": "Bosch SHC-klientcertifikatet löper ut om {days} dag(ar) (den {expiry}). Förnya det så här: sätt styrenheten i parkopplingsläge (håll in frontknappen tills lysdioderna blinkar) och gå sedan till **Inställningar → Enheter och tjänster → Bosch Smart Home Controller** och välj **Konfigurera om**."
+      "description": "Bosch SHC-klientcertifikatet för **{title}** löper ut om {days} dag(ar) (den {expiry}). Förnya det så här: sätt styrenheten i parkopplingsläge (håll in frontknappen tills lysdioderna blinkar) och gå sedan till **Inställningar → Enheter och tjänster → Bosch Smart Home Controller** och välj **Konfigurera om**."
     }
   },
   "exceptions": {

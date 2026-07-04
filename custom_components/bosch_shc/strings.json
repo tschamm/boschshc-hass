@@ -559,7 +559,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC client certificate expiring soon",
-      "description": "The Bosch SHC client certificate will expire in {days} day(s) (on {expiry}). To renew it: put the controller into pairing mode (press the front button until the LEDs flash), then go to **Settings → Devices & services → Bosch Smart Home Controller** and select **Reconfigure**."
+      "description": "The client certificate for **{title}** will expire in {days} day(s) (on {expiry}). To renew it: put the controller into pairing mode (press the front button until the LEDs flash), then go to **Settings → Devices & services → Bosch Smart Home Controller** and select **Reconfigure**."
     }
   }
 }

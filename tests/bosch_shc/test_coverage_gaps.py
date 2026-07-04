@@ -336,8 +336,16 @@ class TestLightRelayOptIn:
 
         hass = _fake_hass(session=session)
 
-        with patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock):
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                new_callable=AsyncMock,
+            ),
+        ):
             entry = _fake_entry(options=options)
             collected = []
             _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
@@ -1567,8 +1575,16 @@ class TestSwitchLightRelayOptInSkip:
         entry = _fake_entry(options=options)
         entry.async_on_unload = MagicMock()
 
-        with patch("custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock):
+        with (
+            patch(
+                "custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.bosch_shc.switch.async_remove_stale_entity",
+                new_callable=AsyncMock,
+            ),
+        ):
             collected = []
             _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
         return collected
@@ -2070,12 +2086,17 @@ class TestInitCameraToolIssue:
         return ir_mock, issue_created
 
     def test_camera_tool_issue_created_when_cameras_and_no_tool(self):
-        """Line 676: has_cameras=True + tool not installed → async_create_issue called."""
+        """Line 676: has_cameras=True + tool not installed → async_create_issue called.
+
+        The issue id is scoped per config entry (so multiple SHC controllers
+        don't clear each other's warnings) — it's ISSUE_CAMERA_TOOL_<entry_id>,
+        not the bare constant.
+        """
         ir_mock, issues = self._make_full_setup_with_cameras(
             has_cameras=True, camera_tool_installed=False
         )
         from custom_components.bosch_shc.const import ISSUE_CAMERA_TOOL
-        assert ISSUE_CAMERA_TOOL in issues
+        assert f"{ISSUE_CAMERA_TOOL}_eid_cam" in issues
 
     def test_camera_tool_issue_deleted_when_no_cameras(self):
         """Else branch: no cameras → async_delete_issue called."""
@@ -2196,8 +2217,16 @@ class TestLightExcludedRelayDevice:
 
         hass = _fake_hass(session=session)
 
-        with patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock):
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                new_callable=AsyncMock,
+            ),
+        ):
             entry = _fake_entry(options={
                 OPT_ALL_LIGHTS_AS_LIGHT: True,
                 OPT_EXCLUDED_DEVICES: ["bsm_excl"],

@@ -188,10 +188,10 @@ class SHCEntity(Entity):  # type: ignore[misc]
 
         def update_entity_information() -> None:
             if self._device.deleted:
-                # This callback fires from boschshcpy's background polling
-                # thread, not the event loop — hass.async_create_task() would
-                # raise (HA's non-thread-safe-operation guard). hass.create_task()
-                # is the thread-safe wrapper (loop.call_soon_threadsafe).
+                # This callback fires on the event loop (SHCSessionAsync's
+                # long-poll is an asyncio.Task, not a background thread), but
+                # hass.create_task() works fine called from the loop's own
+                # thread too, so no special marshalling is needed here.
                 self.hass.create_task(
                     async_remove_devices(self.hass, self, self._entry_id)
                 )

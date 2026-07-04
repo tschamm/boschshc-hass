@@ -63,6 +63,11 @@
         "default": "mdi:solar-power"
       }
     },
+    "switch": {
+      "bypass": {
+        "default": "mdi:shield-off-outline"
+      }
+    },
     "select": {
       "orientation_light_response_time": {
         "default": "mdi:timer-cog-outline"

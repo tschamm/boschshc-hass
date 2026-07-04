@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Ayarlar",
-        "description": "Bosch Smart Home Controller entegrasyonunun oluşturduğu ve yönettiği varlıkları ve otomasyonları yapılandırın.",
+        "description": "Bosch Smart Home Controller entegrasyonunun oluşturduğu ve yönettiği varlıkları ve otomasyonları yapılandırın.{camera_tool}",
         "sections": {
           "features": {
             "name": "Özellikler",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC istemci sertifikasının süresi yakında doluyor",
-      "description": "Bosch SHC istemci sertifikası {days} gün içinde ({expiry} tarihinde) sona erecek. Yenilemek için: denetleyiciyi eşleştirme moduna alın (LED'ler yanıp sönene kadar ön düğmeye basın), ardından **Ayarlar → Cihazlar ve hizmetler → Bosch Smart Home Controller** bölümüne gidip **Yeniden yapılandır**'ı seçin."
+      "description": "Bosch SHC istemci sertifikası **{title}** için {days} gün içinde ({expiry} tarihinde) sona erecek. Yenilemek için: denetleyiciyi eşleştirme moduna alın (LED'ler yanıp sönene kadar ön düğmeye basın), ardından **Ayarlar → Cihazlar ve hizmetler → Bosch Smart Home Controller** bölümüne gidip **Yeniden yapılandır**'ı seçin."
     }
   },
   "exceptions": {

@@ -976,7 +976,11 @@ class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):  # type: ignore[mi
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_options = ["good", "medium", "bad"]
+    # "unknown" is a real RatingState member (boschshcpy falls back to it on a
+    # missing/unrecognized combinedRating value, not just a hypothetical) —
+    # omitting it made HA's SensorEntity.state raise ValueError instead of
+    # showing "unknown" whenever that fallback fired.
+    _attr_options = ["good", "medium", "bad", "unknown"]
     _attr_translation_key = "combined_rating"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:

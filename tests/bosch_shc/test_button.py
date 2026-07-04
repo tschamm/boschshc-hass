@@ -385,8 +385,8 @@ class TestSHCWalkTestButtons:
         dev.supports_walk_test = supports_walk
         dev.walk_state = walk_state
         dev.supports_detection_test = supports_detection
-        if has_tamper:
-            dev.reset_tampered_state = lambda: None
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = has_tamper
         return dev
 
     def _session(self, md2_devices):
@@ -434,6 +434,7 @@ class TestSHCWalkTestButtons:
         dev.walk_state = "STOPPED"
         dev.supports_detection_test = False
         dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = True
         result = _run_setup(self._session([dev]))
         uids = [e._attr_unique_id for e in result]
         assert "root1_dev1_walk_test" in uids
@@ -527,8 +528,8 @@ class TestSHCDetectionTestButtons:
         dev.supports_walk_test = False
         dev.walk_state = None
         dev.supports_detection_test = supports_detection
-        if has_tamper:
-            dev.reset_tampered_state = lambda: None
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = has_tamper
         return dev
 
     def _session(self, md2_devices):
@@ -561,6 +562,7 @@ class TestSHCDetectionTestButtons:
         dev.walk_state = None
         dev.supports_detection_test = True
         dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = True
         result = _run_setup(self._session([dev]))
         uids = [e._attr_unique_id for e in result]
         assert "root1_dev1_detection_test" in uids
@@ -614,8 +616,8 @@ class TestSHCTamperResetButton:
         dev.supports_walk_test = False
         dev.walk_state = None
         dev.supports_detection_test = False
-        if has_tamper:
-            dev.reset_tampered_state = lambda: None
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = has_tamper
         return dev
 
     def _session(self, md2_devices):
@@ -647,6 +649,7 @@ class TestSHCTamperResetButton:
         dev.walk_state = None
         dev.supports_detection_test = False
         dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = True
         result = _run_setup(self._session([dev]))
         assert result[0]._attr_unique_id == "root1_dev1_reset_tamper"
 
@@ -933,6 +936,7 @@ def test_setup_mixed_all_entity_types():
     md2.walk_state = "STOPPED"
     md2.supports_detection_test = True
     md2.reset_tampered_state = lambda: None
+    md2.supports_tamper_reset = True
 
     shc_dev = SimpleNamespace(
         identifiers={("bosch_shc", "uid")},

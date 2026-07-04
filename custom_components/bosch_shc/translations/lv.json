@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Iestatījumi",
-        "description": "Konfigurējiet, kuras entītijas un automatizācijas Bosch Smart Home Controller integrācija izveido un pārvalda.",
+        "description": "Konfigurējiet, kuras entītijas un automatizācijas Bosch Smart Home Controller integrācija izveido un pārvalda.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funkcijas",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC klienta sertifikāts drīz beigsies",
-      "description": "Bosch SHC klienta sertifikāts beigsies pēc {days} dienas(-ām) ({expiry}). Lai to atjaunotu: ievietojiet kontrolleri pārī savienošanas režīmā (nospiediet priekšējo pogu, līdz sāk mirgot LED indikatori), pēc tam dodieties uz **Iestatījumi → Ierīces un pakalpojumi → Bosch Smart Home Controller** un izvēlieties **Pārkonfigurēt**."
+      "description": "Bosch SHC klienta sertifikāts ierīcei **{title}** beigsies pēc {days} dienas(-ām) ({expiry}). Lai to atjaunotu: ievietojiet kontrolleri pārī savienošanas režīmā (nospiediet priekšējo pogu, līdz sāk mirgot LED indikatori), pēc tam dodieties uz **Iestatījumi → Ierīces un pakalpojumi → Bosch Smart Home Controller** un izvēlieties **Pārkonfigurēt**."
     }
   },
   "exceptions": {

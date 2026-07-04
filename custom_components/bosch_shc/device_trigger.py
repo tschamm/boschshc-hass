@@ -127,7 +127,7 @@ async def async_get_triggers(
                 }
             )
 
-    if dev_type == "MD":
+    if dev_type in ("MD", "MD2"):
         triggers.append(
             {
                 CONF_PLATFORM: "device",
@@ -138,7 +138,7 @@ async def async_get_triggers(
             }
         )
 
-    if dev_type == "SD":
+    if dev_type in ("SD", "SMOKE_DETECTOR2"):
         triggers.extend(
             {
                 CONF_PLATFORM: "device",

@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC-Client-Zertifikat läuft bald ab",
-      "description": "Das Bosch SHC-Client-Zertifikat läuft in {days} Tag(en) ab (am {expiry}). Um es zu erneuern: Versetzen Sie den Controller in den Kopplungsmodus (drücken Sie die Fronttaste, bis die LEDs blinken), und gehen Sie dann zu **Einstellungen → Geräte & Dienste → Bosch Smart Home Controller** und wählen Sie **Neu konfigurieren**."
+      "description": "Das Bosch SHC-Client-Zertifikat für **{title}** läuft in {days} Tag(en) ab (am {expiry}). Um es zu erneuern: Versetzen Sie den Controller in den Kopplungsmodus (drücken Sie die Fronttaste, bis die LEDs blinken), und gehen Sie dann zu **Einstellungen → Geräte & Dienste → Bosch Smart Home Controller** und wählen Sie **Neu konfigurieren**."
     }
   },
   "exceptions": {

@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Nastavenia",
-        "description": "Nakonfigurujte, ktoré entity a automatizácie integrácia Bosch Smart Home Controller vytvára a spravuje.",
+        "description": "Nakonfigurujte, ktoré entity a automatizácie integrácia Bosch Smart Home Controller vytvára a spravuje.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funkcie",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Platnosť klientskeho certifikátu Bosch SHC čoskoro vyprší",
-      "description": "Platnosť klientskeho certifikátu Bosch SHC vyprší o {days} dní (dňa {expiry}). Ak ho chcete obnoviť: prepnite ovládač do režimu párovania (stlačte predné tlačidlo, kým LED diódy nezačnú blikať), potom prejdite do **Nastavenia → Zariadenia a služby → Ovládač Bosch Smart Home** a vyberte **Prekonfigurovať**."
+      "description": "Platnosť klientskeho certifikátu Bosch SHC pre **{title}** vyprší o {days} dní (dňa {expiry}). Ak ho chcete obnoviť: prepnite ovládač do režimu párovania (stlačte predné tlačidlo, kým LED diódy nezačnú blikať), potom prejdite do **Nastavenia → Zariadenia a služby → Ovládač Bosch Smart Home** a vyberte **Prekonfigurovať**."
     }
   },
   "exceptions": {

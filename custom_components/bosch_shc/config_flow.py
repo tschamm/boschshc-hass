@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from os import makedirs
 from typing import Any
 
@@ -174,17 +175,28 @@ def create_credentials_and_validate(
 
     if result is not None:
         hostname = result["token"].split(":", 1)[1]
+        cert_path = hass.config.path(DOMAIN, CONF_SHC_CERT + "_" + hostname + ".pem")
+        key_path = hass.config.path(DOMAIN, CONF_SHC_KEY + "_" + hostname + ".pem")
         write_tls_asset(hass, CONF_SHC_CERT + "_" + hostname + ".pem", result["cert"])
         write_tls_asset(hass, CONF_SHC_KEY + "_" + hostname + ".pem", result["key"])
 
         session = SHCSession(
             host,
-            hass.config.path(DOMAIN, CONF_SHC_CERT + "_" + hostname + ".pem"),
-            hass.config.path(DOMAIN, CONF_SHC_KEY + "_" + hostname + ".pem"),
+            cert_path,
+            key_path,
             True,
             zeroconf_instance,
         )
-        session.authenticate()
+        try:
+            session.authenticate()
+        except Exception:
+            # Don't leave an orphaned cert/key pair on disk for a pairing
+            # attempt that didn't complete — the caller's except clauses
+            # handle showing the user an error; re-raise unchanged.
+            for path in (cert_path, key_path):
+                with suppress(FileNotFoundError):
+                    os.remove(path)
+            raise
 
     return result
 
@@ -231,14 +243,31 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Dialog that informs the user that reauth is required."""
-        if user_input is None:
-            return self.async_show_form(
-                step_id="reauth_confirm",
-                data_schema=HOST_SCHEMA,
-            )
-        self.host = host = user_input[CONF_HOST]
-        self.info = await self._get_info(host)
-        return await self.async_step_credentials()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            host = user_input[CONF_HOST]
+            try:
+                info = await self._get_info(host)
+            except SHCConnectionError:
+                errors["base"] = "cannot_connect"
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
+                LOGGER.exception("Unexpected exception during reauth_confirm")
+                errors["base"] = "unknown"
+            else:
+                # Guard against reauth-ing entry A's credentials onto a
+                # different SHC (typo, DHCP reassignment landing on a second
+                # controller) — mirrors reconfigure_host/repair_credentials.
+                await self.async_set_unique_id(info["unique_id"])
+                self._abort_if_unique_id_mismatch(reason="wrong_shc")
+                self.host = host
+                self.info = info
+                return await self.async_step_credentials()
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=HOST_SCHEMA,
+            errors=errors,
+        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None

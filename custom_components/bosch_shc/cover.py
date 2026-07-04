@@ -105,6 +105,15 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._attr_current_cover_position = self.current_cover_position
         self._current_operation_state = self._device.operation_state
 
+        if self._current_operation_state == ShutterControlService.State.CALIBRATING:
+            # A real, separate operationState (APK ground-truth) entered during
+            # an end-position auto-detect run. There is no meaningful open/close
+            # direction during calibration, and without this branch the flags
+            # simply freeze at whatever they held before calibration started,
+            # since none of the other branches below match this state.
+            self._attr_is_closing = False
+            self._attr_is_opening = False
+
         if self._current_operation_state == ShutterControlService.State.STOPPED:
             self._attr_is_closing = False
             self._attr_is_opening = False
@@ -248,6 +257,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         """Open the cover."""
         self._micromodule_keypad_switch_off()
         self._attr_is_opening = True
+        self._attr_is_closing = False
         await self._device.async_set_level(1.0)
         self._target_position = 100
         self._skip_update = True
@@ -257,6 +267,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         """Close cover."""
         self._micromodule_keypad_switch_off()
         self._attr_is_closing = True
+        self._attr_is_opening = False
         await self._device.async_set_level(0.0)
         self._target_position = 0
         self._skip_update = True
@@ -352,8 +363,19 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         self._app_command = True
 
     async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
-        """Stop the cover tilt."""
+        """Stop the cover tilt.
+
+        async_stop_blinds() is the same physical stop endpoint used by
+        async_stop_cover() (it halts the lift, not just the tilt motor), so
+        this must clear is_opening/is_closing the same way or a lift that was
+        mid-move keeps reporting movement until an unrelated device push
+        happens to correct it.
+        """
+        self._attr_is_opening = False
+        self._attr_is_closing = False
         await self._device.async_stop_blinds()
+        self._skip_update = True
+        self._app_command = True
 
     @property
     def current_cover_tilt_position(self) -> int:

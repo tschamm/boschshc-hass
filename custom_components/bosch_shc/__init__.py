@@ -259,17 +259,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             ir.async_create_issue(
                 hass,
                 DOMAIN,
-                ISSUE_CERT_EXPIRING,
+                f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}",
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=ISSUE_CERT_EXPIRING,
                 translation_placeholders={
+                    "title": entry.title,
                     "days": str(cert_info.days_remaining),
                     "expiry": str(expiry),
                 },
             )
         else:
-            ir.async_delete_issue(hass, DOMAIN, ISSUE_CERT_EXPIRING)
+            ir.async_delete_issue(
+                hass, DOMAIN, f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}"
+            )
 
     # NumberSelector yields a float; the SHC long-poll RPC expects an integer
     # number of seconds, so coerce it.
@@ -374,17 +377,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             ir.async_create_issue(
                 hass,
                 DOMAIN,
-                ISSUE_CERT_EXPIRING,
+                f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}",
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=ISSUE_CERT_EXPIRING,
                 translation_placeholders={
+                    "title": entry.title,
                     "days": str(info.days_remaining),
                     "expiry": str(expiry),
                 },
             )
         else:
-            ir.async_delete_issue(hass, DOMAIN, ISSUE_CERT_EXPIRING)
+            ir.async_delete_issue(
+                hass, DOMAIN, f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}"
+            )
 
     entry.runtime_data.cert_check_unsub = async_track_time_interval(
         hass, _scheduled_cert_check, timedelta(days=1)
@@ -705,14 +711,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         ir.async_create_issue(
             hass,
             DOMAIN,
-            ISSUE_CAMERA_TOOL,
+            f"{ISSUE_CAMERA_TOOL}_{entry.entry_id}",
             is_fixable=False,
             severity=ir.IssueSeverity.WARNING,
             translation_key=ISSUE_CAMERA_TOOL,
             learn_more_url=CAMERA_TOOL_URL,
         )
     else:
-        ir.async_delete_issue(hass, DOMAIN, ISSUE_CAMERA_TOOL)
+        ir.async_delete_issue(hass, DOMAIN, f"{ISSUE_CAMERA_TOOL}_{entry.entry_id}")
 
     return True
 
@@ -739,6 +745,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = bool(await hass.config_entries.async_unload_platforms(entry, PLATFORMS))
     if unload_ok:
         hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+        # Issue ids are scoped per entry (see async_setup_entry) so a removed
+        # controller's warnings don't linger in Repairs forever.
+        ir.async_delete_issue(hass, DOMAIN, f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}")
+        ir.async_delete_issue(hass, DOMAIN, f"{ISSUE_CAMERA_TOOL}_{entry.entry_id}")
 
     # Remove rawscan service if no remaining loaded entries have it enabled.
     if hass.services.has_service(DOMAIN, SERVICE_TRIGGER_RAWSCAN):

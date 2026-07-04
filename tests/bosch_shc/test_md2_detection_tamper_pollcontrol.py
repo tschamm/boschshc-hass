@@ -211,14 +211,19 @@ class TestButtonSetup:
         types = [type(e).__name__ for e in entities]
         assert "SHCDetectionTestButton" not in types
 
-    def test_tamper_reset_created_when_method_present(self):
-        md2 = _fake_md2(reset_tampered_state=lambda: None)
+    def test_tamper_reset_created_when_service_supported(self):
+        md2 = _fake_md2(
+            reset_tampered_state=lambda: None, supports_tamper_reset=True
+        )
         entities = _setup_buttons(_make_button_session(motion_detectors2=[md2]))
         types = [type(e).__name__ for e in entities]
         assert "SHCTamperResetButton" in types
 
-    def test_tamper_reset_skipped_when_method_absent(self):
-        md2 = _fake_md2()  # no reset_tampered_state attr
+    def test_tamper_reset_skipped_when_service_unsupported(self):
+        """reset_tampered_state()/async_reset_tampered_state() are defined
+        unconditionally on SHCMotionDetector2, so gating must use the real
+        supports_tamper_reset presence check, not hasattr on the method."""
+        md2 = _fake_md2(supports_tamper_reset=False)
         entities = _setup_buttons(_make_button_session(motion_detectors2=[md2]))
         types = [type(e).__name__ for e in entities]
         assert "SHCTamperResetButton" not in types

@@ -16,9 +16,11 @@ from custom_components.bosch_shc.const import (
     DATA_SESSION,
     DOMAIN,
     OPT_EXCLUDED_DEVICES,
+    OPT_LIGHTS_AS_LIGHT,
 )
 from custom_components.bosch_shc.light import (
     MotionDetectorLight,
+    RelayLight,
     async_setup_entry,
 )
 
@@ -78,14 +80,36 @@ def _make_motion_detector2(device_id="md2-1", room_id="room-2", supports_light=T
     )
 
 
+def _make_light_switch_bsm(device_id="bsm-1", room_id="room-3"):
+    """Minimal device double for a #338 light-relay (BSM/light-attached)."""
+    return SimpleNamespace(
+        id=device_id,
+        root_device_id="shc-root",
+        room_id=room_id,
+        name="Light Relay",
+        serial=f"serial-{device_id}",
+        manufacturer="Bosch",
+        device_model="BSM",
+        status="AVAILABLE",
+        deleted=False,
+        device_services=[],
+        subscribe_callback=lambda eid, cb: None,
+        unsubscribe_callback=lambda eid: None,
+        switchstate=True,
+    )
+
+
 def _make_hass_and_entry(
     ledvance=None,
     motion2=None,
+    light_switches_bsm=None,
     excluded_device_ids=None,
+    lights_as_light_ids=None,
 ):
     """Return (hass, config_entry) with faked session and options."""
     ledvance = ledvance or []
     motion2 = motion2 or []
+    light_switches_bsm = light_switches_bsm or []
     excluded = excluded_device_ids or []
 
     session = SimpleNamespace(
@@ -94,11 +118,14 @@ def _make_hass_and_entry(
             micromodule_dimmers=[],
             hue_lights=[],
             motion_detectors2=motion2,
+            light_switches_bsm=light_switches_bsm,
         ),
     )
 
     entry_id = "entry-test"
     options = {OPT_EXCLUDED_DEVICES: excluded}
+    if lights_as_light_ids is not None:
+        options[OPT_LIGHTS_AS_LIGHT] = lights_as_light_ids
 
     hass = SimpleNamespace(
         data={DOMAIN: {entry_id: {DATA_SESSION: session}}},
@@ -379,3 +406,88 @@ class TestMotionDetectorLightBrightness:
         """Level 0 → brightness 0."""
         ent = self._make_entity(multi_level_switch_value=0)
         assert ent.brightness == 0
+
+
+# ---------------------------------------------------------------------------
+# #338 light_switch_devices loop: RelayLight opt-out stale-entity cleanup
+# ---------------------------------------------------------------------------
+
+
+class TestRelayLightOptOutSetup:
+    def test_opted_in_bsm_gets_relaylight(self):
+        dev = _make_light_switch_bsm(device_id="bsm-in")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev], lights_as_light_ids=["bsm-in"]
+        )
+        added = _run_setup(hass, entry)
+        assert any(
+            isinstance(e, RelayLight) and e._device is dev for e in added
+        ), "Opted-in BSM should produce a RelayLight entity"
+
+    def test_not_opted_in_bsm_produces_no_relaylight(self):
+        dev = _make_light_switch_bsm(device_id="bsm-out")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev], lights_as_light_ids=[]
+        )
+        added = _run_setup(hass, entry)
+        assert all(getattr(e, "_device", None) is not dev for e in added)
+
+    def test_opted_out_bsm_removes_stale_relaylight_entity(self):
+        """Regression: a device previously opted in to "expose as light"
+        (RelayLight created, unique_id = root_device_id_device_id) that gets
+        opted back out must have that entity actively removed — an options
+        change reloads the entry (OptionsFlowWithReload), so simply not
+        re-creating the entity left an orphaned registry entry behind,
+        exactly the failure mode #356 already fixed for MotionDetectorLight."""
+        dev = _make_light_switch_bsm(device_id="was-light")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev], lights_as_light_ids=[]
+        )
+        remove_calls = []
+
+        async def _fake_remove(hass_arg, entity_domain, unique_id):
+            remove_calls.append((entity_domain, unique_id))
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                side_effect=_fake_remove,
+            ),
+        ):
+            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
+
+        assert remove_calls == [(Platform.LIGHT, "shc-root_was-light")], (
+            f"Expected one stale-removal call for the opted-out BSM, got {remove_calls}"
+        )
+
+    def test_excluded_bsm_that_was_opted_in_removes_stale_relaylight_entity(self):
+        dev = _make_light_switch_bsm(device_id="excl-was-light")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev],
+            excluded_device_ids=["excl-was-light"],
+            lights_as_light_ids=["excl-was-light"],
+        )
+        remove_calls = []
+
+        async def _fake_remove(hass_arg, entity_domain, unique_id):
+            remove_calls.append((entity_domain, unique_id))
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                side_effect=_fake_remove,
+            ),
+        ):
+            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
+
+        assert remove_calls == [(Platform.LIGHT, "shc-root_excl-was-light")], (
+            f"Expected one stale-removal call for the excluded+opted-in BSM, got {remove_calls}"
+        )

@@ -442,6 +442,18 @@ class TestTwinguardCombinedRatingSensorErrorPaths:
         s = self._sensor(_Good())
         assert s.native_value == "good"
 
+    def test_unknown_is_a_valid_option(self):
+        """boschshcpy's RatingState falls back to UNKNOWN (missing/unrecognized
+        combinedRating value) rather than raising — that value must be in
+        _attr_options, or HA's SensorEntity.state raises ValueError instead of
+        showing "unknown"."""
+        class _Unknown:
+            name = "UNKNOWN"
+
+        s = self._sensor(_Unknown())
+        assert s.native_value == "unknown"
+        assert s.native_value in s._attr_options
+
     def test_happy_path_bad(self):
         class _Bad:
             name = "BAD"

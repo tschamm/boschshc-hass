@@ -1,5 +1,100 @@
 # Changelog
 
+## 0.10.4 — 5-round bug hunt across every platform file
+
+**No breaking changes.** Pins `boschshcpy==0.4.7` (see that repo's
+CHANGELOG — vibration-switch no-op fix, `SHCLightControl` swap-config
+gate, `OccupancyDetectionService` hardening, MD2 tamper-reset detection,
+plus `SHCLight.hs_color`).
+
+Five rounds of bug-hunting, one per group of platform files, each
+independently re-verified against the actual current lib/API-doc source
+before fixing (not a blind pass) and covered by a new regression test.
+None of these are tied to a reported issue — found via code review.
+
+### Fixed
+
+- **`diagnostics.py` — 100% reproducible crash on every "Download
+  diagnostics" click.** Read `info.updateState.name` unconditionally, but
+  this integration only ever constructs `SHCSessionAsync`, whose
+  `.information` (`_AsyncSHCInformation`) has no `updateState` at all —
+  only a plain string `update_state` (`__init__.py` already had this
+  exact compat guard elsewhere). The test's own mock was shaped like the
+  old sync object, which is why CI never caught it.
+- **`light.py`/`switch.py` — orphaned entity after toggling "expose as
+  light" (#338).** Switching a Light/Shutter Control II or BSM device
+  between light and switch reloads the config entry, but neither
+  platform's setup loop removed the previous platform's stale registry
+  entry — same failure mode already fixed for `MotionDetectorLight` in
+  #356, now applied to both loops.
+- **`device_trigger.py` — MD2 and Smoke Detector II got zero "Add Device
+  Trigger" options.** `async_get_triggers` matched the literal Gen1 model
+  strings `"MD"`/`"SD"`, but `binary_sensor.py` fires identical
+  MOTION/ALARM bus events for MD2/Smoke Detector II via the same entity
+  classes.
+- **`cover.py` — direction flags could get stuck.** `async_open_cover`/
+  `async_close_cover` never cleared the opposite direction flag;
+  `BlindsControlCover.async_stop_cover_tilt` calls the same physical stop
+  endpoint as `async_stop_cover` but never cleared them either. Also
+  added a `CALIBRATING` branch — a real 5th `ShutterControlService.State`
+  (APK ground-truth) that previously matched nothing and left the flags
+  frozen during an end-position auto-detect run.
+- **`binary_sensor.py` — excluding the virtual "Smoke Detection System"
+  device silently dropped every individual Twinguard alarm sensor too**,
+  even ones never excluded themselves. Decoupled the tracker/per-Twinguard
+  creation from that one device's own exclusion flag.
+- **`sensor.py` — `TwinguardCombinedRatingSensor` could raise instead of
+  showing "unknown".** Its `_attr_options` was missing `"unknown"`, but
+  the lib's `RatingState` genuinely falls back to it; every sibling enum
+  sensor already listed its "unknown" member.
+- **`number.py` — `HeatingCircuitSetpointNumber` crashed on an
+  unconfigured eco/comfort preset.** `float(getattr(svc, name))` was
+  called unconditionally, but the getter legitimately returns `None` for
+  a preset that was never configured.
+- **`update.py` — a failed install could still show "up to date".**
+  `latest_version` didn't treat `UPDATE_FAILED` (a real state) as
+  still-outstanding, hiding a failed update exactly when it matters most.
+- **`button.py` — MD2's tamper-reset button gate never actually gated
+  anything.** `hasattr(device, "reset_tampered_state")` was always `True`
+  since the method is defined unconditionally; now gated on a real
+  `supports_tamper_reset` property (lib-side, checks the actual service).
+- Reauth flow (`config_flow.py`) hardened to match the sibling
+  reconfigure/repair-credentials flows (exception handling, wrong-SHC
+  guard), and orphaned cert/key files are cleaned up if authentication
+  fails after they were already written. Repairs issue IDs
+  (`ISSUE_CERT_EXPIRING`/`ISSUE_CAMERA_TOOL`) are now scoped per
+  `entry_id` so multiple SHC controllers can't collide on the same
+  warning.
+- `switch.py`/`icons.json`: the Bypass switch's hardcoded `icon=` on its
+  `EntityDescription` was overriding `icons.json`, the same precedence bug
+  already fixed for `_attr_icon` in 0.10.2 — moved into `icons.json`.
+- **Translation placeholder mismatches, caught by live-deploying this
+  release before tagging it** (Home Assistant logs an ERROR on load for
+  any string whose placeholder set doesn't match the English source):
+  Round 1's `{title}` addition to `issues.cert_expiring.description` was
+  never propagated to the other 29 languages; a long-standing gap from
+  0.7.16 left 28 languages missing `{camera_tool}` in
+  `options.step.init.description`; and Swedish had literally translated
+  the `{model}` placeholder's *name* into `{modell}`, which can never
+  match. Fixed all 29/28/1 languages respectively. `check-translations.py`
+  (the CI gate) gained a placeholder-parity check so this class of bug
+  fails the gate next time instead of only surfacing at runtime.
+
+### Known, not fixed this round
+
+- `quality_scale.yaml`'s `runtime-data` rule was corrected from `done` to
+  `todo` — 14 platforms still use the legacy `hass.data[DOMAIN]` path
+  instead of `entry.runtime_data`. This is an honest correction, not a
+  regression; the actual migration is a separate follow-up.
+- None of `button.py`/`select.py`/`switch.py`/`number.py`'s write methods
+  catch `SHCException`/`JSONRPCError` the way `climate.py` or
+  `alarm_control_panel.py`/`binary_sensor.py` do — a cross-cutting
+  convention decision bigger than this pass's scope.
+- `MICROMODULE_SHUTTER`'s `current_cover_position` can show a stale
+  `_target_position` during a physical-switch/app-triggered move; a naive
+  fix risks regressing the intentional "jump to target" UX for
+  HA-initiated commands and needs real-device testing first.
+
 ## 0.10.3 — Real #356 root cause found in boschshcpy, plus a wider APK audit
 
 Pins `boschshcpy==0.4.6` (see that repo's CHANGELOG — this release grew

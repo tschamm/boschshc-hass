@@ -133,15 +133,21 @@ rules:
       manually as they are not removed on unload.
 
   runtime-data:
-    status: done
+    status: todo
     comment: >
       data.py introduces SHCData dataclass (session, shc_device, title,
       polling_handler, cert_check_unsub).  async_setup_entry assigns
       entry.runtime_data = SHCData(...) and async_unload_entry reads from it.
-      hass.data[DOMAIN] is kept in parallel for legacy code paths (device_trigger,
-      diagnostics) during transition.  Domain services in async_setup iterate
-      hass.config_entries.async_entries(DOMAIN) and read entry.runtime_data
-      directly.
+      However hass.data[DOMAIN] is still the primary path in practice: every
+      platform's async_setup_entry (button, binary_sensor, climate, cover,
+      event, light, number, select, sensor, switch, valve, alarm_control_panel,
+      update) plus device_trigger, diagnostics, and config_flow's options flow
+      all read the session via hass.data[DOMAIN][entry_id][...], not
+      entry.runtime_data.session — only async_unload_entry and the domain
+      services in async_setup consistently use entry.runtime_data. SHCData's
+      shc_device field is written but never read via runtime_data anywhere.
+      Not "done" in the spirit of this rule until the platforms are migrated
+      and the parallel hass.data[DOMAIN] population is dropped.
 
   has-entity-name:
     status: done

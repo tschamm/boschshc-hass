@@ -457,14 +457,18 @@ class TestMicromoduleBlindsMoving:
 
 # ---------------------------------------------------------------------------
 # _update_attr — CALIBRATING / OPENING / CLOSING states
-# These fall through both STOPPED and MOVING branches → no flag changes.
+# These fall through both STOPPED and MOVING branches.
 # ---------------------------------------------------------------------------
 
 class TestNonStoppedNonMovingStates:
     @pytest.mark.parametrize("state", [CALIBRATING])
-    def test_other_state_does_not_alter_flags(self, state):
-        """CALIBRATING: neither branch fires, flags unchanged. (OPENING/CLOSING now
-        set the direction flags via the Shutter-II handler — see issue #100 and
+    def test_other_state_clears_direction_flags(self, state):
+        """CALIBRATING has its own dedicated branch (a real 5th operationState,
+        APK ground-truth) that clears both direction flags, since there is no
+        meaningful open/close direction during an end-position auto-detect
+        run. Without it the flags would stay frozen at whatever they held
+        before calibration started. (OPENING/CLOSING set the direction flags
+        via the Shutter-II handler — see issue #100 and
         test_cover.py::TestShutterIIOperationStateDirection.)
         """
         cover = _make_cover(device_model="BBL", level=0.5, operation_state=state)
@@ -472,8 +476,7 @@ class TestNonStoppedNonMovingStates:
         cover._attr_is_closing = False
         cover._last_position = 50
         cover._update_attr()
-        # flags must be untouched — neither STOPPED nor MOVING branch ran
-        assert cover._attr_is_opening is True
+        assert cover._attr_is_opening is False
         assert cover._attr_is_closing is False
         # _current_operation_state must be refreshed
         assert cover._current_operation_state == state

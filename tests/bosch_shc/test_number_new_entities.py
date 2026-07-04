@@ -202,6 +202,16 @@ class TestHeatingCircuitSetpointNativeValue:
         )
         assert num.native_value == pytest.approx(21.0)
 
+    def test_returns_none_when_getter_legitimately_returns_none(self):
+        """setpoint_temperature_eco/_comfort are typed float | None: a heating
+        circuit that never had that preset configured returns None from a
+        working getattr, not an AttributeError. float(None) would raise an
+        uncaught TypeError if not guarded explicitly."""
+        num = _make_heating_setpoint_number(
+            "setpoint_temperature_eco", "setpoint_temperature_eco", eco=None
+        )
+        assert num.native_value is None
+
     def test_returns_none_when_service_absent(self):
         dev = SimpleNamespace(
             name="HC",

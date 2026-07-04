@@ -224,6 +224,26 @@ class TestUnknownModelMoving:
 
 
 # ---------------------------------------------------------------------------
+# CALIBRATING operationState (APK ground-truth, a real 5th enum member
+# alongside STOPPED/MOVING/OPENING/CLOSING) must not leave stale direction
+# flags frozen from before the calibration run started.
+# ---------------------------------------------------------------------------
+
+class TestCalibratingClearsDirectionFlags:
+    def test_calibrating_clears_stale_direction_flags(self):
+        cover = _make_cover(
+            device_model="BBL",
+            level=0.5,
+            operation_state=ShutterControlService.State.CALIBRATING,
+        )
+        cover._attr_is_opening = True
+        cover._attr_is_closing = False
+        cover._update_attr()
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False
+
+
+# ---------------------------------------------------------------------------
 # Line 184: device_class → AWNING for MICROMODULE_AWNING, SHUTTER otherwise
 # ---------------------------------------------------------------------------
 
@@ -344,6 +364,19 @@ class TestOpenCover:
         assert cover._device.eventtype == SWITCH_OFF
         cover._device.async_set_level.assert_awaited_once_with(1.0)
 
+    def test_open_cover_clears_stale_is_closing(self):
+        """Regression: opening while a prior async_close_cover left
+        is_closing=True must not leave both flags True at once."""
+        cover = _make_cover(
+            device_model="BBL",
+            level=0.0,
+            operation_state=STOPPED,
+        )
+        cover._attr_is_closing = True
+        asyncio.run(cover.async_open_cover())
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+
 
 # ---------------------------------------------------------------------------
 # Lines 233-238: async_close_cover
@@ -373,6 +406,19 @@ class TestCloseCover:
         asyncio.run(cover.async_close_cover())
         assert cover._device.eventtype == SWITCH_OFF
         cover._device.async_set_level.assert_awaited_once_with(0.0)
+
+    def test_close_cover_clears_stale_is_opening(self):
+        """Regression: closing while a prior async_open_cover left
+        is_opening=True must not leave both flags True at once."""
+        cover = _make_cover(
+            device_model="BBL",
+            level=1.0,
+            operation_state=STOPPED,
+        )
+        cover._attr_is_opening = True
+        asyncio.run(cover.async_close_cover())
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
 
 
 # ---------------------------------------------------------------------------
@@ -583,6 +629,25 @@ class TestBlindsStopCoverTilt:
         cover = _make_blinds()
         asyncio.run(cover.async_stop_cover_tilt())
         cover._device.async_stop_blinds.assert_awaited_once()
+
+    def test_stop_cover_tilt_clears_stale_direction_flags(self):
+        """Regression: async_stop_blinds() is the same physical stop endpoint
+        as async_stop_cover() (it halts the lift, not just tilt), so a
+        mid-lift-move stop-tilt must clear is_opening/is_closing too, not
+        just halt the motor while leaving the entity looking like it's still
+        moving."""
+        cover = _make_blinds()
+        cover._attr_is_opening = True
+        cover._attr_is_closing = True
+        asyncio.run(cover.async_stop_cover_tilt())
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False
+
+    def test_stop_cover_tilt_sets_skip_update_and_app_command(self):
+        cover = _make_blinds()
+        asyncio.run(cover.async_stop_cover_tilt())
+        assert cover._skip_update is True
+        assert cover._app_command is True
 
 
 # ---------------------------------------------------------------------------

@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — הגדרות",
-        "description": "הגדר אילו ישויות ואוטומציות שילוב Bosch Smart Home Controller יוצר ומנהל.",
+        "description": "הגדר אילו ישויות ואוטומציות שילוב Bosch Smart Home Controller יוצר ומנהל.{camera_tool}",
         "sections": {
           "features": {
             "name": "תכונות",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "אישור הלקוח של Bosch SHC עומד לפוג בקרוב",
-      "description": "אישור הלקוח של Bosch SHC יפוג בעוד {days} יום/ימים (בתאריך {expiry}). לחידוש: הכנס את הבקר למצב צימוד (לחץ על הכפתור הקדמי עד שה-LED יהבהבו), לאחר מכן עבור אל **הגדרות → מכשירים ושירותים → Bosch Smart Home Controller** ובחר **הגדרה מחדש**."
+      "description": "אישור הלקוח של Bosch SHC עבור **{title}** יפוג בעוד {days} יום/ימים (בתאריך {expiry}). לחידוש: הכנס את הבקר למצב צימוד (לחץ על הכפתור הקדמי עד שה-LED יהבהבו), לאחר מכן עבור אל **הגדרות → מכשירים ושירותים → Bosch Smart Home Controller** ובחר **הגדרה מחדש**."
     }
   },
   "exceptions": {

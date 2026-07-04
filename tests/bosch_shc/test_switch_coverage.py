@@ -180,9 +180,12 @@ class TestSwitchTypeMetadata:
     def test_presencesimulation_device_class(self):
         assert SWITCH_TYPES["presencesimulation"].device_class == SwitchDeviceClass.SWITCH
 
-    def test_bypass_icon_and_translation_key(self):
-        """#342: bypass is clearly named (translation_key) with a shield icon."""
-        assert SWITCH_TYPES["bypass"].icon == "mdi:shield-off-outline"
+    def test_bypass_translation_key_not_hardcoded_icon(self):
+        """#342: bypass is clearly named via translation_key; icon lives in
+        icons.json (a hardcoded description.icon would win over icons.json's
+        lookup and defeat icon translation, per the same rule already
+        enforced for _attr_icon by check-icon-translations.py)."""
+        assert SWITCH_TYPES["bypass"].icon is None
         assert SWITCH_TYPES["bypass"].translation_key == "bypass"
 
     def test_user_defined_state_entity_category_config(self):
