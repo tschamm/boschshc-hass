@@ -9,6 +9,7 @@ from boschshcpy import (
     SHCShutterContact2Plus,
 )
 from boschshcpy.device import SHCDevice
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from boschshcpy.services_impl import (
     DimmerConfigurationService,
     DisplayDirection,
@@ -27,9 +28,11 @@ from boschshcpy.services_impl import (
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import DOMAIN
 from .entity import SHCEntity, device_excluded
 
 LOGGER = logging.getLogger(__name__)
@@ -422,7 +425,14 @@ class SirenSoundLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
             level = OutdoorSirenService.SoundLevel[option.upper()]
         except KeyError:
             return
-        await self._device.siren.async_set_configuration(sound_level=level)
+        try:
+            await self._device.siren.async_set_configuration(sound_level=level)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class MotionSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -451,7 +461,14 @@ class MotionSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the motion sensitivity."""
         motion_sensitivity = PirSensorConfigurationService.MotionSensitivity
-        await self._device.async_set_motion_sensitivity(motion_sensitivity[option])
+        try:
+            await self._device.async_set_motion_sensitivity(motion_sensitivity[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class OrientationLightResponseSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -489,7 +506,14 @@ class OrientationLightResponseSelect(SHCEntity, SelectEntity):  # type: ignore[m
     async def async_select_option(self, option: str) -> None:
         """Set the orientation-light response time (poll interval)."""
         state = PollControlService.PollControlState[option]
-        await self._device.async_set_long_poll_interval(state)
+        try:
+            await self._device.async_set_long_poll_interval(state)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class VibrationSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -520,7 +544,14 @@ class VibrationSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the vibration sensitivity."""
         sensitivity_state = VibrationSensorService.SensitivityState
-        await self._device.async_set_sensitivity(sensitivity_state[option])
+        try:
+            await self._device.async_set_sensitivity(sensitivity_state[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -557,9 +588,16 @@ class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):  # type: ignore[misc
     async def async_select_option(self, option: str) -> None:
         """Set the state-after-power-outage."""
         state_after_power_outage = PowerSwitchConfigurationService.StateAfterPowerOutage
-        await self._device.async_set_state_after_power_outage(
-            state_after_power_outage[option]
-        )
+        try:
+            await self._device.async_set_state_after_power_outage(
+                state_after_power_outage[option]
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class SmokeSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -594,7 +632,16 @@ class SmokeSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the smoke sensitivity level."""
         smoke_sensitivity_level = SmokeSensitivityService.SmokeSensitivityLevel
-        await self._device.async_set_smoke_sensitivity(smoke_sensitivity_level[option])
+        try:
+            await self._device.async_set_smoke_sensitivity(
+                smoke_sensitivity_level[option]
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class DisplayDirectionSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -629,7 +676,14 @@ class DisplayDirectionSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the display direction."""
         direction = DisplayDirection.Direction
-        await self._device.async_set_display_direction(direction[option])
+        try:
+            await self._device.async_set_display_direction(direction[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class DisplayedTemperatureSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -666,9 +720,16 @@ class DisplayedTemperatureSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the displayed-temperature type."""
         displayed_temperature = DisplayedTemperatureConfiguration.DisplayedTemperature
-        await self._device.async_set_displayed_temperature(
-            displayed_temperature[option]
-        )
+        try:
+            await self._device.async_set_displayed_temperature(
+                displayed_temperature[option]
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class TerminalTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -701,7 +762,14 @@ class TerminalTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the terminal type."""
         terminal_type = TerminalConfiguration.Type
-        await self._device.async_set_terminal_type(terminal_type[option])
+        try:
+            await self._device.async_set_terminal_type(terminal_type[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class ValveTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -734,7 +802,14 @@ class ValveTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the valve type."""
         valve_type = WallThermostatConfiguration.ValveType
-        await self._device.async_set_valve_type(valve_type[option])
+        try:
+            await self._device.async_set_valve_type(valve_type[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class HeaterTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -767,7 +842,14 @@ class HeaterTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the heater type."""
         heater_type = WallThermostatConfiguration.HeaterType
-        await self._device.async_set_heater_type(heater_type[option])
+        try:
+            await self._device.async_set_heater_type(heater_type[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class SwitchTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -800,7 +882,14 @@ class SwitchTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the switch type."""
         switch_type = SwitchConfiguration.SwitchType
-        await self._device.async_set_switch_type(switch_type[option])
+        try:
+            await self._device.async_set_switch_type(switch_type[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class ActuatorTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -833,7 +922,14 @@ class ActuatorTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the actuator type."""
         actuator_type = SwitchConfiguration.ActuatorType
-        await self._device.async_set_actuator_type(actuator_type[option])
+        try:
+            await self._device.async_set_actuator_type(actuator_type[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class OutputModeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -866,7 +962,14 @@ class OutputModeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Set the output mode."""
         output_mode = SwitchConfiguration.OutputMode
-        await self._device.async_set_output_mode(output_mode[option])
+        try:
+            await self._device.async_set_output_mode(output_mode[option])
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -908,7 +1011,14 @@ class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):  # type: ign
         """Set the manual level for the SECURITY context."""
         ctx = SmartSensitivityControlService.SmartSensitivityContext.SECURITY
         level = SmartSensitivityControlService.MotionSensitivity[option]
-        await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
+        try:
+            await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -945,7 +1055,14 @@ class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):  # type: igno
         """Set the manual level for the COMFORT context."""
         ctx = SmartSensitivityControlService.SmartSensitivityContext.COMFORT
         level = SmartSensitivityControlService.MotionSensitivity[option]
-        await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
+        try:
+            await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -983,7 +1100,14 @@ class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
             mode = DimmerConfigurationService.EdgePhaseControlMode[option]
         except KeyError:
             return
-        await service.async_set_edge_phase_control_mode(mode)
+        try:
+            await service.async_set_edge_phase_control_mode(mode)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
 
 
 class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
@@ -1026,7 +1150,14 @@ class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
 
     async def async_select_option(self, option: str) -> None:
         """Write the installation profile (uppercased back to the API value)."""
-        await self._device.async_set_profile(option.upper())
+        try:
+            await self._device.async_set_profile(option.upper())
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
         # #356: switching the profile can add/remove capability-gated entities
         # (e.g. the Motion Detector II [+M] indicator light) — reload so the
         # entity list reflects the new profile immediately, instead of only

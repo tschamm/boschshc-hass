@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Modifica dello stato dell'allarme non riuscita."
+    },
+    "button_press_failed": {
+      "message": "Pressione del pulsante non riuscita."
+    },
+    "switch_action_failed": {
+      "message": "Modifica dello stato dell'interruttore non riuscita."
+    },
+    "select_option_failed": {
+      "message": "Impostazione dell'opzione non riuscita."
+    },
+    "number_set_failed": {
+      "message": "Impostazione del valore non riuscita."
     }
   }
 }

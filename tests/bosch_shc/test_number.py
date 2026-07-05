@@ -11,8 +11,11 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from homeassistant.components.number import NumberDeviceClass
 from homeassistant.const import UnitOfTemperature
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.number import SHCNumber
@@ -28,6 +31,7 @@ def _make_number(
     """Return an SHCNumber with _device set via SimpleNamespace (no HA init)."""
     entity = SHCNumber.__new__(SHCNumber)
     entity._device = SimpleNamespace(
+        name="Test Number",
         offset=offset,
         min_offset=min_offset,
         max_offset=max_offset,
@@ -236,3 +240,31 @@ def test_set_native_value_exactly_at_min_passes_through():
     entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
     asyncio.run(entity.async_set_native_value(-5.0))
     entity._device.async_set_offset.assert_awaited_once_with(-5.0)
+
+
+# ---------------------------------------------------------------------------
+# async_set_native_value — SHCException/SHCConnectionError -> HomeAssistantError
+# ---------------------------------------------------------------------------
+
+
+def test_set_native_value_shc_exception_raises_home_assistant_error():
+    """A real SHC API rejection must surface as a translated HomeAssistantError,
+    not propagate as a raw SHCException."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity._device.async_set_offset = AsyncMock(
+        side_effect=SHCException("rejected")
+    )
+    with pytest.raises(HomeAssistantError) as exc_info:
+        asyncio.run(entity.async_set_native_value(2.0))
+    assert exc_info.value.translation_key == "number_set_failed"
+
+
+def test_set_native_value_shc_connection_error_raises_home_assistant_error():
+    """A comms failure must also surface as a translated HomeAssistantError."""
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity._device.async_set_offset = AsyncMock(
+        side_effect=SHCConnectionError("unreachable")
+    )
+    with pytest.raises(HomeAssistantError) as exc_info:
+        asyncio.run(entity.async_set_native_value(2.0))
+    assert exc_info.value.translation_key == "number_set_failed"

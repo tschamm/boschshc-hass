@@ -301,15 +301,46 @@ rules:
   action-exceptions:
     status: done
     comment: >
-      All service action handlers now raise HomeAssistantError / ServiceValidationError
-      on failure.  Implemented 2026-06-22:
+      All service action handlers AND all entity write methods now raise
+      HomeAssistantError / ServiceValidationError on failure. The 2026-06-22
+      pass (see below) only covered the two custom domain services and was
+      incorrectly claimed to cover "all lib-exception surface areas" — it
+      did not: button.py's 11 async_press methods, select.py's 18
+      async_select_option methods, switch.py's 4 async_turn_on/off methods,
+      and number.py's 10 async_set_native_value methods had NO SHCException/
+      SHCConnectionError handling at all (a real API rejection or comms
+      failure propagated as a raw unhandled exception), while climate.py's
+      write methods caught the same exceptions but only logged a WARNING
+      and silently swallowed the failure — a 3-way inconsistent convention,
+      corrected 2026-07-04 by standardizing all of them on the same
+      try/except → HomeAssistantError pattern already used here:
       (1) binary_sensor.py async_request_smoketest and async_request_alarmstate
       wrap SHCException/SHCConnectionError → HomeAssistantError.
       (2) __init__.py scenario_service_call wraps SHCException/SHCConnectionError
       → ServiceValidationError (user-facing action, hence ServiceValidationError
       rather than HomeAssistantError).
       (3) The rawscan handler already raised ServiceValidationError for unknown
-      commands.  All lib-exception surface areas are now covered.
+      commands.
+      (4) button.py/select.py/switch.py/number.py's write methods now raise
+      HomeAssistantError with a shared per-platform translation_key
+      (button_press_failed, select_option_failed, switch_action_failed,
+      number_set_failed — reusing smoke_test_failed where the action is
+      literally a smoke test, matching the existing key-reuse convention).
+      climate.py's log-and-swallow was deliberately NOT converted this round:
+      _async_apply_hvac_mode is a shared bool-returning helper called from
+      BOTH async_set_hvac_mode AND async_set_temperature (the latter uses
+      the False return to distinguish "mode write failed" from "mode is a
+      no-op" before deciding whether to proceed with the temperature write —
+      see that method's own docstring). The bool return currently conflates
+      "invalid mode requested" and "write raised an exception" into the
+      same False value with no way for either caller to tell them apart;
+      correctly disambiguating that (so async_set_hvac_mode can raise on a
+      real failure while async_set_temperature keeps its existing
+      avoid-a-confusing-second-error behavior) is a real refactor of shared
+      control flow, not a mechanical wrap, and risks a live behavior
+      regression that needs real-device verification before attempting —
+      tracked as a separate follow-up, not done blind.
+      All OTHER lib-exception surface areas are now genuinely covered.
 
   log-when-unavailable:
     status: done

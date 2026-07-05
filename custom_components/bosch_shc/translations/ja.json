@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "アラーム状態の変更に失敗しました。"
+    },
+    "button_press_failed": {
+      "message": "ボタンの押下に失敗しました。"
+    },
+    "switch_action_failed": {
+      "message": "スイッチの状態変更に失敗しました。"
+    },
+    "select_option_failed": {
+      "message": "オプションの設定に失敗しました。"
+    },
+    "number_set_failed": {
+      "message": "値の設定に失敗しました。"
     }
   }
 }

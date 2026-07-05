@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Änderung des Alarmstatus fehlgeschlagen."
+    },
+    "button_press_failed": {
+      "message": "Tastendruck fehlgeschlagen."
+    },
+    "switch_action_failed": {
+      "message": "Änderung des Schalterzustands fehlgeschlagen."
+    },
+    "select_option_failed": {
+      "message": "Festlegen der Option fehlgeschlagen."
+    },
+    "number_set_failed": {
+      "message": "Festlegen des Werts fehlgeschlagen."
     }
   }
 }

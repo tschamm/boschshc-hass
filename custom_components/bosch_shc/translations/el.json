@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Η αλλαγή κατάστασης συναγερμού απέτυχε."
+    },
+    "button_press_failed": {
+      "message": "Το πάτημα του κουμπιού απέτυχε."
+    },
+    "switch_action_failed": {
+      "message": "Η αλλαγή της κατάστασης του διακόπτη απέτυχε."
+    },
+    "select_option_failed": {
+      "message": "Ο ορισμός της επιλογής απέτυχε."
+    },
+    "number_set_failed": {
+      "message": "Ο ορισμός της τιμής απέτυχε."
     }
   }
 }

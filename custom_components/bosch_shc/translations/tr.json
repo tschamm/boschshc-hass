@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Alarm durumu değişikliği başarısız oldu."
+    },
+    "button_press_failed": {
+      "message": "Düğmeye basma işlemi başarısız oldu."
+    },
+    "switch_action_failed": {
+      "message": "Anahtar durumu değiştirilemedi."
+    },
+    "select_option_failed": {
+      "message": "Seçenek ayarlanamadı."
+    },
+    "number_set_failed": {
+      "message": "Değer ayarlanamadı."
     }
   }
 }

@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "שינוי מצב האזעקה נכשל."
+    },
+    "button_press_failed": {
+      "message": "לחיצת הכפתור נכשלה."
+    },
+    "switch_action_failed": {
+      "message": "שינוי מצב המתג נכשל."
+    },
+    "select_option_failed": {
+      "message": "הגדרת האפשרות נכשלה."
+    },
+    "number_set_failed": {
+      "message": "הגדרת הערך נכשלה."
     }
   }
 }

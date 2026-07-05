@@ -9,8 +9,10 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from homeassistant.components.number import NumberMode
 from homeassistant.const import UnitOfTime
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.number import (
@@ -186,6 +188,41 @@ class TestImpulseLengthSetNativeValue:
         asyncio.run(num.async_set_native_value(0.0))
         dev.async_set_impulse_length.assert_awaited_once_with(1)
 
+    def test_set_value_shc_exception_raises_home_assistant_error(self):
+        """A real SHC API rejection must surface as a translated
+        HomeAssistantError, not propagate as a raw SHCException."""
+        dev = SimpleNamespace(
+            name="relay",
+            impulse_length=100,
+            async_set_impulse_length=AsyncMock(side_effect=SHCException("rejected")),
+        )
+        num = ImpulseLengthNumber.__new__(ImpulseLengthNumber)
+        num._device = dev
+        # __new__ bypasses SHCEntity.__init__ (which would normally delete
+        # _attr_name in favor of translation_key lookup); set it directly so
+        # the error-message f-string's self.name access doesn't need a real
+        # platform/translation setup to resolve.
+        num._attr_name = "Impulse Length"
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(num.async_set_native_value(5.0))
+        assert exc_info.value.translation_key == "number_set_failed"
+
+    def test_set_value_shc_connection_error_raises_home_assistant_error(self):
+        """A comms failure must also surface as a translated HomeAssistantError."""
+        dev = SimpleNamespace(
+            name="relay",
+            impulse_length=100,
+            async_set_impulse_length=AsyncMock(
+                side_effect=SHCConnectionError("unreachable")
+            ),
+        )
+        num = ImpulseLengthNumber.__new__(ImpulseLengthNumber)
+        num._device = dev
+        num._attr_name = "Impulse Length"
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(num.async_set_native_value(5.0))
+        assert exc_info.value.translation_key == "number_set_failed"
+
 
 # ---------------------------------------------------------------------------
 # HeatingCircuitSetpointNumber — native_value
@@ -325,6 +362,26 @@ class TestHeatingCircuitSetpointSetValue:
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
             asyncio.run(num.async_set_native_value(20.0))  # must not raise
         mock_log.warning.assert_called_once()
+
+    def test_set_value_shc_exception_raises_home_assistant_error(self):
+        """A real SHC API rejection must surface as a translated
+        HomeAssistantError, not be swallowed as a plain LOGGER.warning."""
+        mock_setter = AsyncMock(side_effect=SHCException("rejected"))
+        dev = SimpleNamespace(
+            name="HC", id="hc1", root_device_id="root1",
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_eco=18.0,
+            ),
+            async_set_setpoint_temperature_eco=mock_setter,
+        )
+        num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
+        num._device = dev
+        num._getter_name = "setpoint_temperature_eco"
+        num._setter_name = "setpoint_temperature_eco"
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(num.async_set_native_value(19.0))
+        assert exc_info.value.translation_key == "number_set_failed"
 
 
 # ---------------------------------------------------------------------------

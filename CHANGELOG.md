@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.10.6 — consistent entity-action error handling
+
+**No breaking changes.** User-visible improvement: entity actions that fail
+now show a clear error instead of either silently no-oping or crashing.
+
+Closes a gap flagged in 0.10.4's round notes as "a cross-cutting decision
+bigger than this pass's scope": `button.py`'s 11 `async_press` methods,
+`select.py`'s 18 `async_select_option` methods, `switch.py`'s 4
+`async_turn_on`/`async_turn_off` methods, and `number.py`'s 10
+`async_set_native_value` methods had **no handling at all** for the
+library's own `SHCException`/`SHCConnectionError` — a real API rejection
+or SHC comms failure during a write propagated as a raw unhandled
+exception instead of a clean, translated error. All 43 methods now follow
+the same pattern already established in `alarm_control_panel.py`/
+`binary_sensor.py`: catch `(SHCException, SHCConnectionError)`, raise
+`HomeAssistantError` with a shared per-platform translation key
+(`button_press_failed`, `select_option_failed`, `switch_action_failed`,
+`number_set_failed` — reusing the existing `smoke_test_failed` where the
+action is literally a smoke test). Translated to all 30 languages.
+
+`quality_scale.yaml`'s `action-exceptions` rule was already marked `done`
+but the claim was incomplete — it only covered two custom domain services,
+not these 43 entity write methods. Corrected with an honest accounting of
+what's covered now versus before.
+
+`climate.py`'s existing log-and-swallow behavior was deliberately **not**
+changed: `_async_apply_hvac_mode` is a shared bool-returning helper used
+by both `async_set_hvac_mode` and `async_set_temperature`, and the two
+callers need to distinguish "mode write failed" from "mode is a no-op"
+differently. Correctly disambiguating that so one caller can raise while
+the other keeps its existing behavior is a real refactor of shared control
+flow, not a mechanical wrap — risks a live behavior regression without
+real-device verification, so it's tracked as a separate follow-up rather
+than forced through blind.
+
+15 new regression tests covering the error path (representative coverage
+across all 4 files, not one per method — 43 near-identical error-path
+tests would be redundant given they all exercise the same try/except
+shape). 2988/2988 tests green, ruff/pylint/mypy/codespell clean, Gold
+quality-scale gate still passes.
+
 ## 0.10.5 — runtime-data migration (Platinum quality-scale)
 
 **No breaking changes; no user-visible behavior change.** Internal

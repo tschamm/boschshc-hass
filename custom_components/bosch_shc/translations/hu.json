@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "A riasztás állapotának megváltoztatása sikertelen."
+    },
+    "button_press_failed": {
+      "message": "A gombnyomás sikertelen."
+    },
+    "switch_action_failed": {
+      "message": "A kapcsoló állapotának megváltoztatása sikertelen."
+    },
+    "select_option_failed": {
+      "message": "A lehetőség beállítása sikertelen."
+    },
+    "number_set_failed": {
+      "message": "Az érték beállítása sikertelen."
     }
   }
 }

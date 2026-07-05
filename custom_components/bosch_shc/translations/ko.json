@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "알람 상태 변경에 실패했습니다."
+    },
+    "button_press_failed": {
+      "message": "버튼 누르기에 실패했습니다."
+    },
+    "switch_action_failed": {
+      "message": "스위치 상태 변경에 실패했습니다."
+    },
+    "select_option_failed": {
+      "message": "옵션 설정에 실패했습니다."
+    },
+    "number_set_failed": {
+      "message": "값 설정에 실패했습니다."
     }
   }
 }

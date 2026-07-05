@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Échec du changement d'état de l'alarme."
+    },
+    "button_press_failed": {
+      "message": "Échec de l'appui sur le bouton."
+    },
+    "switch_action_failed": {
+      "message": "Échec du changement d'état de l'interrupteur."
+    },
+    "select_option_failed": {
+      "message": "Échec de la définition de l'option."
+    },
+    "number_set_failed": {
+      "message": "Échec de la définition de la valeur."
     }
   }
 }

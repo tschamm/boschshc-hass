@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Häire oleku muutmine ebaõnnestus."
+    },
+    "button_press_failed": {
+      "message": "Nupuvajutus ebaõnnestus."
+    },
+    "switch_action_failed": {
+      "message": "Lüliti oleku muutmine ebaõnnestus."
+    },
+    "select_option_failed": {
+      "message": "Valiku määramine ebaõnnestus."
+    },
+    "number_set_failed": {
+      "message": "Väärtuse määramine ebaõnnestus."
     }
   }
 }

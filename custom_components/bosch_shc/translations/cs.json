@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Změna stavu alarmu se nezdařila."
+    },
+    "button_press_failed": {
+      "message": "Stisknutí tlačítka se nezdařilo."
+    },
+    "switch_action_failed": {
+      "message": "Změna stavu přepínače se nezdařila."
+    },
+    "select_option_failed": {
+      "message": "Nastavení možnosti se nezdařilo."
+    },
+    "number_set_failed": {
+      "message": "Nastavení hodnoty se nezdařilo."
     }
   }
 }

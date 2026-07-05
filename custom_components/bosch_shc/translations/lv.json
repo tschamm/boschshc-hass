@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Trauksmes stāvokļa maiņa neizdevās."
+    },
+    "button_press_failed": {
+      "message": "Pogas nospiešana neizdevās."
+    },
+    "switch_action_failed": {
+      "message": "Slēdža stāvokļa maiņa neizdevās."
+    },
+    "select_option_failed": {
+      "message": "Opcijas iestatīšana neizdevās."
+    },
+    "number_set_failed": {
+      "message": "Vērtības iestatīšana neizdevās."
     }
   }
 }

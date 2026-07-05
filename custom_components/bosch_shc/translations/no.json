@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Endring av alarmtilstand mislyktes."
+    },
+    "button_press_failed": {
+      "message": "Knappetrykk mislyktes."
+    },
+    "switch_action_failed": {
+      "message": "Endring av bryterstatus mislyktes."
+    },
+    "select_option_failed": {
+      "message": "Kunne ikke angi alternativet."
+    },
+    "number_set_failed": {
+      "message": "Kunne ikke angi verdien."
     }
   }
 }

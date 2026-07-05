@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "警报状态更改失败。"
+    },
+    "button_press_failed": {
+      "message": "按钮按下失败。"
+    },
+    "switch_action_failed": {
+      "message": "无法更改开关状态。"
+    },
+    "select_option_failed": {
+      "message": "无法设置选项。"
+    },
+    "number_set_failed": {
+      "message": "无法设置数值。"
     }
   }
 }

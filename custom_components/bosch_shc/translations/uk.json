@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Не вдалося змінити стан сигналізації."
+    },
+    "button_press_failed": {
+      "message": "Не вдалося натиснути кнопку."
+    },
+    "switch_action_failed": {
+      "message": "Не вдалося змінити стан перемикача."
+    },
+    "select_option_failed": {
+      "message": "Не вдалося встановити параметр."
+    },
+    "number_set_failed": {
+      "message": "Не вдалося встановити значення."
     }
   }
 }

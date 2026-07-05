@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Perubahan status alarm gagal."
+    },
+    "button_press_failed": {
+      "message": "Penekanan tombol gagal."
+    },
+    "switch_action_failed": {
+      "message": "Gagal mengubah status sakelar."
+    },
+    "select_option_failed": {
+      "message": "Gagal menyetel opsi."
+    },
+    "number_set_failed": {
+      "message": "Gagal menyetel nilai."
     }
   }
 }

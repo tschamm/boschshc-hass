@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Alarm state change failed."
+    },
+    "button_press_failed": {
+      "message": "Button press failed."
+    },
+    "switch_action_failed": {
+      "message": "Failed to change the switch state."
+    },
+    "select_option_failed": {
+      "message": "Failed to set the option."
+    },
+    "number_set_failed": {
+      "message": "Failed to set the value."
     }
   }
 }

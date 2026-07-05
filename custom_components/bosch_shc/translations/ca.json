@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "No s'ha pogut canviar l'estat de l'alarma."
+    },
+    "button_press_failed": {
+      "message": "La pulsació del botó ha fallat."
+    },
+    "switch_action_failed": {
+      "message": "No s'ha pogut canviar l'estat de l'interruptor."
+    },
+    "select_option_failed": {
+      "message": "No s'ha pogut establir l'opció."
+    },
+    "number_set_failed": {
+      "message": "No s'ha pogut establir el valor."
     }
   }
 }

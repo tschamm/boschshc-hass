@@ -14,6 +14,10 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
+import pytest
+from boschshcpy.exceptions import SHCException
+from homeassistant.exceptions import HomeAssistantError
+
 from custom_components.bosch_shc.button import (
     SHCDetectionTestButton,
     SHCDetectionTestStopButton,
@@ -158,6 +162,17 @@ class TestSHCRelayButton:
         from custom_components.bosch_shc.entity import SHCEntity
         assert issubclass(SHCRelayButton, SHCEntity)
 
+    def test_press_wraps_shc_exception_in_home_assistant_error(self):
+        btn = self._make()
+
+        async def _fail():
+            raise SHCException("relay busy")
+
+        btn._device.async_trigger_impulse_state = _fail
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(btn.async_press())
+        assert exc_info.value.translation_key == "button_press_failed"
+
     # async_setup_entry integration
 
     def test_setup_impulse_relay_creates_relay_button(self):
@@ -243,6 +258,19 @@ class TestSHCSmokeTestButton:
         btn._device.async_smoketest_requested = _req
         asyncio.run(btn.async_press())
         assert called == [True]
+
+    def test_press_wraps_shc_exception_reuses_smoke_test_failed_key(self):
+        """Smoke-test button reuses the existing smoke_test_failed key (not the
+        generic button_press_failed one) to match binary_sensor.py's convention."""
+        btn = self._make()
+
+        async def _fail():
+            raise SHCException("comms failure")
+
+        btn._device.async_smoketest_requested = _fail
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(btn.async_press())
+        assert exc_info.value.translation_key == "smoke_test_failed"
 
     def test_is_button_entity(self):
         from homeassistant.components.button import ButtonEntity
@@ -733,6 +761,22 @@ class TestSHCScenarioButton:
         )
         asyncio.run(btn.async_press())
         assert called == [True]
+
+    def test_press_wraps_shc_exception_in_home_assistant_error(self):
+        """SHCScenarioButton has no self._device — must use self._scenario.name."""
+        scenario = SimpleNamespace(id="sc-1", name="Goodnight")
+
+        async def _fail():
+            raise SHCException("scenario trigger rejected")
+
+        scenario.async_trigger = _fail
+        btn = SHCScenarioButton(
+            scenario=scenario, entry_unique_id="uid", entry_id="E1"
+        )
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(btn.async_press())
+        assert exc_info.value.translation_key == "button_press_failed"
+        assert "Goodnight" in str(exc_info.value)
 
     def test_is_button_entity(self):
         from homeassistant.components.button import ButtonEntity

@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Zmiana stanu alarmu nie powiodła się."
+    },
+    "button_press_failed": {
+      "message": "Naciśnięcie przycisku nie powiodło się."
+    },
+    "switch_action_failed": {
+      "message": "Nie udało się zmienić stanu przełącznika."
+    },
+    "select_option_failed": {
+      "message": "Nie udało się ustawić opcji."
+    },
+    "number_set_failed": {
+      "message": "Nie udało się ustawić wartości."
     }
   }
 }

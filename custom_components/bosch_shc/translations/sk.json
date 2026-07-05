@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Zmena stavu alarmu zlyhala."
+    },
+    "button_press_failed": {
+      "message": "Stlačenie tlačidla zlyhalo."
+    },
+    "switch_action_failed": {
+      "message": "Zmena stavu spínača zlyhala."
+    },
+    "select_option_failed": {
+      "message": "Nastavenie možnosti zlyhalo."
+    },
+    "number_set_failed": {
+      "message": "Nastavenie hodnoty zlyhalo."
     }
   }
 }

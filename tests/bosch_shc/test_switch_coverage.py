@@ -23,6 +23,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
 from boschshcpy import (
     BypassService,
     CameraAmbientLightService,
@@ -33,7 +34,9 @@ from boschshcpy import (
     RoutingService,
     ThermostatService,
 )
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from homeassistant.components.switch import SwitchDeviceClass
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.switch import (
@@ -892,6 +895,72 @@ class TestSHCUserDefinedStateSwitch:
         )
         asyncio.run(sw.async_turn_off())
         mock_set.assert_awaited_once_with(False)
+
+    def test_turn_on_shc_exception_raises_home_assistant_error(self):
+        """A real API-level rejection must surface as HomeAssistantError, not raw."""
+        device = SimpleNamespace(
+            name="My State",
+            id="uds1",
+            root_device_id="mac1",
+            deleted=False,
+            state=False,
+            async_set_state=AsyncMock(side_effect=SHCException("rejected")),
+        )
+        shc_entry = SimpleNamespace(
+            name="SHC", id="shcid", identifiers=set(),
+            manufacturer="Bosch", model="SHC2",
+        )
+        fake_entry = SimpleNamespace(entry_id="entry1")
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
+        session = SimpleNamespace(
+            subscribe_userdefinedstate_callback=lambda *a, **kw: None,
+            unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
+        )
+        sw = SHCUserDefinedStateSwitch(
+            device=device,
+            hass=hass,
+            session=session,
+            entry_id="entry1",
+            description=SWITCH_TYPES["user_defined_state"],
+        )
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(sw.async_turn_on())
+
+    def test_turn_off_shc_connection_error_raises_home_assistant_error(self):
+        """A comms failure on turn_off must surface as HomeAssistantError, not raw."""
+        device = SimpleNamespace(
+            name="My State",
+            id="uds1",
+            root_device_id="mac1",
+            deleted=False,
+            state=True,
+            async_set_state=AsyncMock(side_effect=SHCConnectionError("no route")),
+        )
+        shc_entry = SimpleNamespace(
+            name="SHC", id="shcid", identifiers=set(),
+            manufacturer="Bosch", model="SHC2",
+        )
+        fake_entry = SimpleNamespace(entry_id="entry1")
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
+        session = SimpleNamespace(
+            subscribe_userdefinedstate_callback=lambda *a, **kw: None,
+            unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
+        )
+        sw = SHCUserDefinedStateSwitch(
+            device=device,
+            hass=hass,
+            session=session,
+            entry_id="entry1",
+            description=SWITCH_TYPES["user_defined_state"],
+        )
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(sw.async_turn_off())
 
     def test_should_poll_is_false(self):
         sw = _make_uds_switch()

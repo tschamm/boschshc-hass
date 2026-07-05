@@ -8,17 +8,20 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
 )
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from boschshcpy.services_impl import DetectionTestService, WalkTestService
 from homeassistant.components.button import (
     ButtonEntity,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    DOMAIN,
     LOGGER,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SCENARIOS_FILTER,
@@ -192,7 +195,14 @@ class SHCRelayButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Trigger the relay impulse (awaited — the session is async; #336)."""
-        await self._device.async_trigger_impulse_state()
+        try:
+            await self._device.async_trigger_impulse_state()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Impulse trigger failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -207,7 +217,14 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Trigger the device self-test (awaited — the session is async; #336)."""
-        await self._device.async_smoketest_requested()
+        try:
+            await self._device.async_smoketest_requested()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Smoke test failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="smoke_test_failed",
+            ) from err
 
 
 class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -222,7 +239,14 @@ class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Trigger a short test alarm at the configured sound level."""
-        await self._device.async_trigger_test_alarm()
+        try:
+            await self._device.async_trigger_test_alarm()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Siren test alarm failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCScenarioButton(ButtonEntity):  # type: ignore[misc]
@@ -265,7 +289,14 @@ class SHCScenarioButton(ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Trigger the scenario (awaited — the session is async; #336)."""
-        await self._scenario.async_trigger()
+        try:
+            await self._scenario.async_trigger()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Scenario trigger failed for {self._scenario.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCWalkTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -285,9 +316,16 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Send WALK_STATE_START request to the WalkTest service."""
-        await self._device.async_set_walk_state_request(
-            WalkTestService.WalkStateRequest.WALK_STATE_START
-        )
+        try:
+            await self._device.async_set_walk_state_request(
+                WalkTestService.WalkStateRequest.WALK_STATE_START
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Walk test start failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCWalkTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -306,9 +344,16 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Send WALK_STATE_STOP request to the WalkTest service."""
-        await self._device.async_set_walk_state_request(
-            WalkTestService.WalkStateRequest.WALK_STATE_STOP
-        )
+        try:
+            await self._device.async_set_walk_state_request(
+                WalkTestService.WalkStateRequest.WALK_STATE_STOP
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Walk test stop failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -327,9 +372,16 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Send DETECTION_STATE_START to the DetectionTest service."""
-        await self._device.async_set_detection_state_request(
-            DetectionTestService.DetectionStateRequest.DETECTION_STATE_START
-        )
+        try:
+            await self._device.async_set_detection_state_request(
+                DetectionTestService.DetectionStateRequest.DETECTION_STATE_START
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Detection test start failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -346,9 +398,16 @@ class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Send DETECTION_STATE_STOP to the DetectionTest service."""
-        await self._device.async_set_detection_state_request(
-            DetectionTestService.DetectionStateRequest.DETECTION_STATE_STOP
-        )
+        try:
+            await self._device.async_set_detection_state_request(
+                DetectionTestService.DetectionStateRequest.DETECTION_STATE_STOP
+            )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Detection test stop failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -363,7 +422,14 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """POST resetTamperedState to confirm the device is back in place."""
-        await self._device.async_reset_tampered_state()
+        try:
+            await self._device.async_reset_tampered_state()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Tamper reset failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
 
 
 class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -381,7 +447,14 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Flash the dimmer at maximum brightness for load calibration."""
         svc = getattr(self._device, "dimmer_configuration", None)
         if svc is not None:
-            await svc.async_preview_max_brightness()
+            try:
+                await svc.async_preview_max_brightness()
+            except (SHCException, SHCConnectionError) as err:
+                raise HomeAssistantError(
+                    f"Preview max brightness failed for {self._device.name}: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="button_press_failed",
+                ) from err
 
 
 class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
@@ -399,4 +472,11 @@ class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Flash the dimmer at minimum brightness for load calibration."""
         svc = getattr(self._device, "dimmer_configuration", None)
         if svc is not None:
-            await svc.async_preview_min_brightness()
+            try:
+                await svc.async_preview_min_brightness()
+            except (SHCException, SHCConnectionError) as err:
+                raise HomeAssistantError(
+                    f"Preview min brightness failed for {self._device.name}: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="button_press_failed",
+                ) from err

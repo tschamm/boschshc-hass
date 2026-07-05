@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Det gick inte att ändra larmläget."
+    },
+    "button_press_failed": {
+      "message": "Knapptryckningen misslyckades."
+    },
+    "switch_action_failed": {
+      "message": "Det gick inte att ändra brytarens tillstånd."
+    },
+    "select_option_failed": {
+      "message": "Det gick inte att ange alternativet."
+    },
+    "number_set_failed": {
+      "message": "Det gick inte att ange värdet."
     }
   }
 }

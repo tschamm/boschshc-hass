@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Wijziging van alarmstatus mislukt."
+    },
+    "button_press_failed": {
+      "message": "Knopdruk mislukt."
+    },
+    "switch_action_failed": {
+      "message": "Wijziging van schakelaarstatus mislukt."
+    },
+    "select_option_failed": {
+      "message": "Instellen van de optie mislukt."
+    },
+    "number_set_failed": {
+      "message": "Instellen van de waarde mislukt."
     }
   }
 }

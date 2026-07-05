@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Error al cambiar el estado de la alarma."
+    },
+    "button_press_failed": {
+      "message": "Error al presionar el botón."
+    },
+    "switch_action_failed": {
+      "message": "Error al cambiar el estado del interruptor."
+    },
+    "select_option_failed": {
+      "message": "Error al establecer la opción."
+    },
+    "number_set_failed": {
+      "message": "Error al establecer el valor."
     }
   }
 }

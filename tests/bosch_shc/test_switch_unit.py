@@ -10,6 +10,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
 from boschshcpy import (
     BypassService,
     CameraAmbientLightService,
@@ -22,6 +23,8 @@ from boschshcpy import (
     SilentModeService,
     ThermostatService,
 )
+from boschshcpy.exceptions import SHCConnectionError, SHCException
+from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
 
@@ -548,6 +551,43 @@ def test_none_guard_cameraoutdoorgen2_frontlight_turn_off():
     sw.entity_description = SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"]
     sw.entity_id = "switch.test"
     asyncio.run(sw.async_turn_off())  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# SHCException / SHCConnectionError -> HomeAssistantError
+# ---------------------------------------------------------------------------
+
+
+def test_turn_on_shc_exception_raises_home_assistant_error():
+    """A real API-level rejection must surface as HomeAssistantError, not raw."""
+    dev = SimpleNamespace(
+        name="Test Switch",
+        async_set_switchstate=AsyncMock(side_effect=SHCException("rejected")),
+    )
+    sw = SHCSwitch.__new__(SHCSwitch)
+    sw._device = dev
+    sw.entity_description = SWITCH_TYPES["smartplug"]
+    sw.entity_id = "switch.test"
+    sw._attr_name = None
+
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(sw.async_turn_on())
+
+
+def test_turn_off_shc_connection_error_raises_home_assistant_error():
+    """A comms failure on turn_off must surface as HomeAssistantError, not raw."""
+    dev = SimpleNamespace(
+        name="Test Switch",
+        async_set_switchstate=AsyncMock(side_effect=SHCConnectionError("no route")),
+    )
+    sw = SHCSwitch.__new__(SHCSwitch)
+    sw._device = dev
+    sw.entity_description = SWITCH_TYPES["smartplug"]
+    sw.entity_id = "switch.test"
+    sw._attr_name = None
+
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(sw.async_turn_off())
 
 
 # ---------------------------------------------------------------------------

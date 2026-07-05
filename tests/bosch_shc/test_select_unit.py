@@ -6,17 +6,21 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
+import pytest
+from boschshcpy.exceptions import SHCException
 from boschshcpy.services_impl import (
     PirSensorConfigurationService,
     VibrationSensorService,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.select import (
     _MOTION_SENSITIVITY_OPTIONS,
     _VIBRATION_SENSITIVITY_OPTIONS,
+    InstallationProfileSelect,
     MotionSensitivitySelect,
     VibrationSensitivitySelect,
     async_setup_entry,
@@ -415,3 +419,69 @@ class TestSelectSetupEntry:
         result = self._run(session)
         expected_uid = f"{dev.root_device_id}_{dev.id}_vibration_sensitivity"
         assert result[0]._attr_unique_id == expected_uid
+
+
+# ---------------------------------------------------------------------------
+# async_select_option — device-write failures surface as HomeAssistantError
+#
+# Regression for the 0.10.4 "known, not fixed" gap: the try/except around
+# select.py's async_select_option methods only ever guarded the option-name
+# -> enum parsing step, never the actual device write call underneath. A
+# rejected/failed write (SHCException/SHCConnectionError) used to propagate
+# as a raw, unhandled exception instead of the established
+# HomeAssistantError(translation_domain=DOMAIN, translation_key=...)
+# convention already used by alarm_control_panel.py. Covers 3 representative
+# classes (plain write, context-arg write, write-then-reload-task write) —
+# not all 18, which would be excessive given they share one code shape.
+# ---------------------------------------------------------------------------
+
+class TestAsyncSelectOptionWriteFailureSurfacesAsHomeAssistantError:
+    def test_motion_sensitivity_write_failure_raises_home_assistant_error(self):
+        """MotionSensitivitySelect: a failed async_set_motion_sensitivity call
+        must raise HomeAssistantError, not the raw SHCException.
+        """
+        sel = _make_motion_select("HIGH")
+        sel._device = SimpleNamespace(
+            name="MD2",
+            motion_sensitivity=PirSensorConfigurationService.MotionSensitivity.HIGH,
+            async_set_motion_sensitivity=AsyncMock(
+                side_effect=SHCException("rejected")
+            ),
+        )
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(sel.async_select_option("LOW"))
+
+    def test_vibration_sensitivity_write_failure_raises_home_assistant_error(self):
+        """VibrationSensitivitySelect: a failed async_set_sensitivity call
+        must raise HomeAssistantError, not the raw SHCException.
+        """
+        sel = _make_vibration_select("HIGH")
+        sel._device = SimpleNamespace(
+            name="SC2+",
+            sensitivity=VibrationSensorService.SensitivityState.HIGH,
+            async_set_sensitivity=AsyncMock(side_effect=SHCException("rejected")),
+        )
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(sel.async_select_option("MEDIUM"))
+
+    def test_installation_profile_write_failure_raises_and_skips_reload(self):
+        """InstallationProfileSelect: a failed async_set_profile call must raise
+        HomeAssistantError and must NOT schedule the post-write config-entry
+        reload task (the reload line comes after the write and should be
+        unreachable on failure).
+        """
+        ent = InstallationProfileSelect.__new__(InstallationProfileSelect)
+        ent._attr_options = ["generic", "outdoor"]
+        ent._device = SimpleNamespace(
+            name="MD2",
+            profile="GENERIC",
+            async_set_profile=AsyncMock(side_effect=SHCException("rejected")),
+        )
+        ent._entry_id = "E1"
+        ent.hass = SimpleNamespace(
+            async_create_task=lambda *_a, **_kw: pytest.fail(
+                "reload task must not be scheduled when the write failed"
+            )
+        )
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(ent.async_select_option("outdoor"))
