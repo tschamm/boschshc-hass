@@ -44,6 +44,9 @@
       },
       "preview_min_brightness": {
         "default": "mdi:brightness-2"
+      },
+      "scenario": {
+        "default": "mdi:script-text-play"
       }
     },
     "sensor": {

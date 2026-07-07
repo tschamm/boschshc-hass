@@ -338,11 +338,13 @@ class TestSHCScenarioButtonInit:
         assert btn._scenario is sc
 
     def test_icon_is_script_play(self):
+        # Icon comes from icons.json via translation_key (not a hardcoded
+        # _attr_icon) — same convention as every other button entity here.
         sc = _good_scenario()
         btn = SHCScenarioButton(
             scenario=sc, entry_unique_id=None, entry_id="entry-1"
         )
-        assert btn._attr_icon == "mdi:script-text-play"
+        assert btn._attr_translation_key == "scenario"
 
     def test_should_poll_is_false(self):
         sc = _good_scenario()

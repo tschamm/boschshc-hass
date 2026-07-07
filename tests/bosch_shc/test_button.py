@@ -749,8 +749,10 @@ class TestSHCScenarioButton:
         assert btn._attr_name == "Morning Routine"
 
     def test_icon(self):
+        # Icon comes from icons.json via translation_key (not a hardcoded
+        # _attr_icon) — same convention as every other button entity here.
         btn = self._make_scenario()
-        assert btn._attr_icon == "mdi:script-text-play"
+        assert btn._attr_translation_key == "scenario"
 
     def test_should_poll_false(self):
         btn = self._make_scenario()

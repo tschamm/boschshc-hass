@@ -8,7 +8,7 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
 )
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from boschshcpy.services_impl import DetectionTestService, WalkTestService
 from homeassistant.components.button import (
     ButtonEntity,
@@ -222,7 +222,7 @@ class SHCRelayButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Trigger the relay impulse (awaited — the session is async; #336)."""
         try:
             await self._device.async_trigger_impulse_state()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Impulse trigger failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -244,7 +244,7 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Trigger the device self-test (awaited — the session is async; #336)."""
         try:
             await self._device.async_smoketest_requested()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Smoke test failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -266,7 +266,7 @@ class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Trigger a short test alarm at the configured sound level."""
         try:
             await self._device.async_trigger_test_alarm()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Siren test alarm failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -297,7 +297,7 @@ class ResetEnergySummationButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Reset the accumulated energy counter."""
         try:
             await self._device.async_reset_energy_summation()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Reset energy summation failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -327,7 +327,7 @@ class ShutterRecalibrateButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Trigger the end-position (re)calibration run."""
         try:
             await self._device.async_reset_calibration_and_open()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Shutter recalibration failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -344,7 +344,7 @@ class SHCScenarioButton(ButtonEntity):  # type: ignore[misc]
     """
 
     _attr_has_entity_name = True
-    _attr_icon = "mdi:script-text-play"
+    _attr_translation_key = "scenario"
     _attr_should_poll = False
 
     def __init__(
@@ -377,7 +377,7 @@ class SHCScenarioButton(ButtonEntity):  # type: ignore[misc]
         """Trigger the scenario (awaited — the session is async; #336)."""
         try:
             await self._scenario.async_trigger()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Scenario trigger failed for {self._scenario.name}: {err}",
                 translation_domain=DOMAIN,
@@ -406,7 +406,7 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
             await self._device.async_set_walk_state_request(
                 WalkTestService.WalkStateRequest.WALK_STATE_START
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Walk test start failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -434,7 +434,7 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
             await self._device.async_set_walk_state_request(
                 WalkTestService.WalkStateRequest.WALK_STATE_STOP
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Walk test stop failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -462,7 +462,7 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
             await self._device.async_set_detection_state_request(
                 DetectionTestService.DetectionStateRequest.DETECTION_STATE_START
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Detection test start failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -488,7 +488,7 @@ class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
             await self._device.async_set_detection_state_request(
                 DetectionTestService.DetectionStateRequest.DETECTION_STATE_STOP
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Detection test stop failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -510,7 +510,7 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """POST resetTamperedState to confirm the device is back in place."""
         try:
             await self._device.async_reset_tampered_state()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Tamper reset failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -535,7 +535,7 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         if svc is not None:
             try:
                 await svc.async_preview_max_brightness()
-            except (SHCException, SHCConnectionError) as err:
+            except SHCException as err:
                 raise HomeAssistantError(
                     f"Preview max brightness failed for {self._device.name}: {err}",
                     translation_domain=DOMAIN,
@@ -560,7 +560,7 @@ class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         if svc is not None:
             try:
                 await svc.async_preview_min_brightness()
-            except (SHCException, SHCConnectionError) as err:
+            except SHCException as err:
                 raise HomeAssistantError(
                     f"Preview min brightness failed for {self._device.name}: {err}",
                     translation_domain=DOMAIN,
