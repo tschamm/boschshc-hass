@@ -126,11 +126,14 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     ) -> None:
         """Initialize the SHC device."""
         super().__init__(device=device, entry_id=entry_id)
-        # Device name = room name (e.g. "Arbeitszimmer").
-        # Entity name comes from translation_key "room_climate_control" in strings.json
-        # (e.g. "Raumklima" / "Room climate control"), so the friendly name is
-        # "<room> Raumklima" — no doubling. _attr_name = None lets HA resolve
-        # the name from the translation_key.
+        # Device name = room name (e.g. "Arbeitszimmer"); _attr_name = None
+        # means the entity's friendly name IS the bare room name, no suffix
+        # (HA's Entity._name_internal returns _attr_name before ever
+        # consulting translation_key, once _attr_name is set at all -- even
+        # to None). translation_key stays set below purely to resolve the
+        # boost/eco preset_mode state + icon translations in
+        # strings.json/icons.json, which is a separate lookup unaffected by
+        # _attr_name.
         self._room_label = name
         self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
