@@ -16,6 +16,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.number import (
+    BypassTimeoutNumber,
     HeatingCircuitSetpointNumber,
     ImpulseLengthNumber,
 )
@@ -305,6 +306,7 @@ class TestHeatingCircuitSetpointSetValue:
         num._device = dev
         num._getter_name = "setpoint_temperature_eco"
         num._setter_name = "setpoint_temperature_eco"
+        num._range_attr = "eco_temperature_range"
 
         asyncio.run(num.async_set_native_value(19.0))
         mock_setter.assert_awaited_once_with(pytest.approx(19.0))
@@ -323,6 +325,7 @@ class TestHeatingCircuitSetpointSetValue:
         num._device = dev
         num._getter_name = "setpoint_temperature_eco"
         num._setter_name = "setpoint_temperature_eco"
+        num._range_attr = "eco_temperature_range"
 
         asyncio.run(num.async_set_native_value(1.0))
         mock_setter.assert_awaited_once_with(pytest.approx(5.0))
@@ -341,6 +344,7 @@ class TestHeatingCircuitSetpointSetValue:
         num._device = dev
         num._getter_name = "setpoint_temperature_comfort"
         num._setter_name = "setpoint_temperature_comfort"
+        num._range_attr = "comfort_temperature_range"
 
         asyncio.run(num.async_set_native_value(100.0))
         mock_setter.assert_awaited_once_with(pytest.approx(30.0))
@@ -358,6 +362,7 @@ class TestHeatingCircuitSetpointSetValue:
         num._device = dev
         num._getter_name = "setpoint_temperature_eco"
         num._setter_name = "setpoint_temperature_eco"
+        num._range_attr = "eco_temperature_range"
 
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
             asyncio.run(num.async_set_native_value(20.0))  # must not raise
@@ -378,10 +383,56 @@ class TestHeatingCircuitSetpointSetValue:
         num._device = dev
         num._getter_name = "setpoint_temperature_eco"
         num._setter_name = "setpoint_temperature_eco"
+        num._range_attr = "eco_temperature_range"
 
         with pytest.raises(HomeAssistantError) as exc_info:
             asyncio.run(num.async_set_native_value(19.0))
         assert exc_info.value.translation_key == "number_set_failed"
+
+
+# ---------------------------------------------------------------------------
+# HeatingCircuitSetpointNumber — dynamic min/max (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+class TestHeatingCircuitSetpointDynamicBounds:
+    """The app reads a per-device setpoint range rather than a fixed
+    constant (HeatingCircuitVerticalSliderFragment.setMinMax) — a
+    floor-heating circuit commonly reports a raised minimum."""
+
+    def test_falls_back_to_5_30_when_device_has_no_range_yet(self):
+        num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
+        num._device = SimpleNamespace(eco_temperature_range=None)
+        num._range_attr = "eco_temperature_range"
+        assert num.native_min_value == 5.0
+        assert num.native_max_value == 30.0
+
+    def test_uses_device_reported_range(self):
+        num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
+        num._device = SimpleNamespace(comfort_temperature_range=(16.0, 24.0))
+        num._range_attr = "comfort_temperature_range"
+        assert num.native_min_value == 16.0
+        assert num.native_max_value == 24.0
+
+    def test_clamps_to_device_reported_range_not_the_5_30_default(self):
+        """A floor-heating circuit with a raised minimum (e.g. 10°C) must
+        clamp there, not silently allow the old 5°C default."""
+        mock_setter = AsyncMock()
+        dev = SimpleNamespace(
+            name="HC", id="hc1", root_device_id="root1",
+            _heating_circuit_service=SimpleNamespace(
+                setpoint_temperature_eco=18.0,
+            ),
+            async_set_setpoint_temperature_eco=mock_setter,
+            eco_temperature_range=(10.0, 22.0),
+        )
+        num = HeatingCircuitSetpointNumber.__new__(HeatingCircuitSetpointNumber)
+        num._device = dev
+        num._getter_name = "setpoint_temperature_eco"
+        num._setter_name = "setpoint_temperature_eco"
+        num._range_attr = "eco_temperature_range"
+
+        asyncio.run(num.async_set_native_value(1.0))
+        mock_setter.assert_awaited_once_with(pytest.approx(10.0))
 
 
 # ---------------------------------------------------------------------------
@@ -471,3 +522,87 @@ class TestNumberSetupNewEntities:
         )
         result = self._run(session)
         assert result == []
+
+
+# ---------------------------------------------------------------------------
+# BypassTimeoutNumber (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+class TestBypassTimeoutNumberClassAttrs:
+    def test_entity_category_is_config(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_entity_category == EntityCategory.CONFIG
+
+    def test_native_unit_is_minutes(self):
+        """hass#120: confirmed via APK decompile (bypass_configuration.xml
+        slider, app:quantityUnit="MINUTE") — not seconds as previously
+        assumed (no OpenAPI spec exists for this service)."""
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_native_unit_of_measurement == UnitOfTime.MINUTES
+
+    def test_native_min_is_1(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_native_min_value == 1.0
+
+    def test_native_max_is_15(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_native_max_value == 15.0
+
+
+class TestBypassTimeoutNativeValue:
+    def test_native_value_reads_bypass_timeout(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = SimpleNamespace(bypass_timeout=7)
+        assert num.native_value == pytest.approx(7.0)
+
+    def test_native_value_none_when_attribute_missing(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = SimpleNamespace()
+        assert num.native_value is None
+
+
+class TestBypassTimeoutSetNativeValue:
+    def test_set_value_writes_clamped_value(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        asyncio.run(num.async_set_native_value(9.0))
+        dev.async_set_bypass_timeout.assert_awaited_once_with(9)
+
+    def test_set_value_clamps_to_max_15(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        asyncio.run(num.async_set_native_value(999.0))
+        dev.async_set_bypass_timeout.assert_awaited_once_with(15)
+
+    def test_set_value_clamps_to_min_1(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        asyncio.run(num.async_set_native_value(0.0))
+        dev.async_set_bypass_timeout.assert_awaited_once_with(1)
+
+    def test_set_value_shc_exception_raises_home_assistant_error(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(side_effect=SHCException("rejected")),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(num.async_set_native_value(9.0))
+        assert exc_info.value.translation_key == "number_set_failed"

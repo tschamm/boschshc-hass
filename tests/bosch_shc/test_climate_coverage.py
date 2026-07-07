@@ -649,12 +649,16 @@ class TestHeatingCircuitClassAttrs:
         assert entity._attr_temperature_unit == UnitOfTemperature.CELSIUS
 
     def test_max_temp_30(self):
+        """hass#120: max_temp is now dynamic, falling back to 30.0 when the
+        device hasn't reported a setpoint_temperature_range."""
         entity = _make_hc()
-        assert entity._attr_max_temp == 30.0
+        assert entity.max_temp == 30.0
 
     def test_min_temp_5(self):
+        """hass#120: min_temp is now dynamic, falling back to 5.0 when the
+        device hasn't reported a setpoint_temperature_range."""
         entity = _make_hc()
-        assert entity._attr_min_temp == 5.0
+        assert entity.min_temp == 5.0
 
     def test_hvac_modes_auto_and_heat_only(self):
         entity = _make_hc()

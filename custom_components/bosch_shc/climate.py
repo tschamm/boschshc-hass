@@ -498,10 +498,24 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
     _attr_target_temperature_step = 0.5
     _enable_turn_on_off_backwards_compatibility = False
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _attr_max_temp = 30.0
-    _attr_min_temp = 5.0
     _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
+
+    # hass#120 audit: the app reads a per-device setpoint range
+    # (HeatingCircuitVerticalSliderFragment.setMinMax) rather than a fixed
+    # constant — a floor-heating circuit commonly reports a raised minimum.
+    # Fall back to the previous 5-30°C constant until the SHC has reported it.
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum settable temperature."""
+        rng = getattr(self._device, "setpoint_temperature_range", None)
+        return rng[0] if rng is not None else 5.0
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum settable temperature."""
+        rng = getattr(self._device, "setpoint_temperature_range", None)
+        return rng[1] if rng is not None else 30.0
 
     def __init__(
         self,

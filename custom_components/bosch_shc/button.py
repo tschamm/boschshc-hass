@@ -31,7 +31,7 @@ from .entity import SHCEntity, device_excluded
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(
+async def async_setup_entry(  # noqa: C901
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
@@ -159,6 +159,31 @@ async def async_setup_entry(
             SHCSirenTestAlarmButton(device=siren, entry_id=config_entry.entry_id)
         )
 
+    # Reset accumulated energy counter (hass#120 audit): fully modeled in
+    # boschshcpy but never wired into an HA entity.
+    for device in getattr(session.device_helper, "smart_plugs", []) + getattr(
+        session.device_helper, "smart_plugs_compact", []
+    ):
+        if device_excluded(device, config_entry.options):
+            continue
+        entities.append(
+            ResetEnergySummationButton(device=device, entry_id=config_entry.entry_id)
+        )
+
+    # Shutter Control II recalibration (hass audit): confirmed genuinely called
+    # in reachable app code (unlike muteWarning/incrementOpenLevel/
+    # decrementOpenLevel, which are declared-but-never-called).
+    for device in (
+        list(getattr(session.device_helper, "shutter_controls", []))
+        + list(getattr(session.device_helper, "micromodule_shutter_controls", []))
+        + list(getattr(session.device_helper, "micromodule_blinds", []))
+    ):
+        if device_excluded(device, config_entry.options):
+            continue
+        entities.append(
+            ShutterRecalibrateButton(device=device, entry_id=config_entry.entry_id)
+        )
+
     # DimmerConfiguration preview buttons: flash at max/min for calibration (#123).
     for device in getattr(session.device_helper, "micromodule_dimmers", []):
         if device_excluded(device, config_entry.options):
@@ -244,6 +269,67 @@ class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
                 f"Siren test alarm failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
+
+
+class ResetEnergySummationButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
+    """Button that resets a smart plug's accumulated energy counter (hass#120 audit).
+
+    Fully modeled in boschshcpy (PowerMeterService.async_reset_energy_summation
+    / _PowerMeter.async_reset_energy_summation) but never wired into an HA
+    entity. Confirmed via APK decompile (PowerSwitchAndMeterInteractor.
+    RESET_COMMAND) that the operation takes no params.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "reset_energy_summation"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the reset-energy-summation button."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_reset_energy_summation"
+        )
+
+    async def async_press(self) -> None:
+        """Reset the accumulated energy counter."""
+        try:
+            await self._device.async_reset_energy_summation()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Reset energy summation failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
+
+
+class ShutterRecalibrateButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
+    """Button that triggers a Shutter Control II end-position (re)calibration run.
+
+    Fully modeled in boschshcpy (ShutterControlService.
+    async_reset_calibration_and_open / SHCShutterControl.
+    async_reset_calibration_and_open) but never wired into an HA entity.
+    Confirmed via APK decompile (ShutterControlInteractor.
+    RESET_CALIBRATION_AND_OPEN_COMMAND) that the operation takes no params.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "shutter_recalibrate"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the shutter-recalibrate button."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_recalibrate"
+
+    async def async_press(self) -> None:
+        """Trigger the end-position (re)calibration run."""
+        try:
+            await self._device.async_reset_calibration_and_open()
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Shutter recalibration failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
                 translation_key="button_press_failed",
             ) from err

@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Pratinjau Kecerahan Minimum"
+      },
+      "reset_energy_summation": {
+        "name": "Reset Penghitung Energi"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibrasi Ulang"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Penundaan Lampu Kilat"
+      },
+      "bypass_timeout": {
+        "name": "Batas Waktu Bypass"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Status Uji Deteksi"
+      },
+      "next_setpoint_temperature": {
+        "name": "Suhu Setpoint Berikutnya"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulasi Berjalan Hingga"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulasi Berjalan Sejak"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Waktu Pergerakan Referensi (Bawah ke Atas)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Waktu Pergerakan Referensi (Atas ke Bawah)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Gangguan"
+      },
+      "schedule_override_active": {
+        "name": "Penggantian Jadwal Aktif"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrasi Diperlukan"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Lewati alarm"
+      },
+      "bypass_infinite": {
+        "name": "Lewati alarm tanpa batas waktu"
       }
     },
     "light": {

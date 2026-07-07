@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Minimum Parlaklık Önizlemesi"
+      },
+      "reset_energy_summation": {
+        "name": "Enerji Sayacını Sıfırla"
+      },
+      "shutter_recalibrate": {
+        "name": "Yeniden Kalibre Et"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Flaş Gecikmesi"
+      },
+      "bypass_timeout": {
+        "name": "Atlama Zaman Aşımı"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Algılama Testi Durumu"
+      },
+      "next_setpoint_temperature": {
+        "name": "Sonraki Hedef Sıcaklık"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simülasyon Bitiş Zamanı"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simülasyon Başlangıç Zamanı"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referans Hareket Süresi (Alttan Üste)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referans Hareket Süresi (Üstten Alta)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Kurcalama"
+      },
+      "schedule_override_active": {
+        "name": "Program Geçersiz Kılma Etkin"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrasyon Gerekli"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Alarm atlama"
+      },
+      "bypass_infinite": {
+        "name": "Atlama Asla Sona Ermez"
       }
     },
     "light": {

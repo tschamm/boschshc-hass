@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Перегляд мінімальної яскравості"
+      },
+      "reset_energy_summation": {
+        "name": "Скинути лічильник енергії"
+      },
+      "shutter_recalibrate": {
+        "name": "Перекалібрувати"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Затримка спалаху"
+      },
+      "bypass_timeout": {
+        "name": "Час очікування обходу"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Стан тесту виявлення"
+      },
+      "next_setpoint_temperature": {
+        "name": "Наступна задана температура"
+      },
+      "presence_simulation_running_end": {
+        "name": "Симуляція активна до"
+      },
+      "presence_simulation_running_start": {
+        "name": "Симуляція активна з"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Еталонний час руху (знизу вгору)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Еталонний час руху (згори вниз)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Втручання"
+      },
+      "schedule_override_active": {
+        "name": "Активне перевизначення розкладу"
+      },
+      "shutter_calibration_required": {
+        "name": "Потрібне калібрування"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Обхід тривоги"
+      },
+      "bypass_infinite": {
+        "name": "Обхід ніколи не закінчується"
       }
     },
     "light": {

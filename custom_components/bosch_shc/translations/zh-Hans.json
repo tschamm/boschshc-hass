@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "预览最小亮度"
+      },
+      "reset_energy_summation": {
+        "name": "重置能量计数器"
+      },
+      "shutter_recalibrate": {
+        "name": "重新校准"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "闪光延迟"
+      },
+      "bypass_timeout": {
+        "name": "旁路超时"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "检测测试状态"
+      },
+      "next_setpoint_temperature": {
+        "name": "下一个设定温度"
+      },
+      "presence_simulation_running_end": {
+        "name": "模拟运行至"
+      },
+      "presence_simulation_running_start": {
+        "name": "模拟运行始于"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "参考运行时间（从下到上）"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "参考运行时间（从上到下）"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "篡改"
+      },
+      "schedule_override_active": {
+        "name": "日程覆盖生效中"
+      },
+      "shutter_calibration_required": {
+        "name": "需要校准"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "警报旁路"
+      },
+      "bypass_infinite": {
+        "name": "旁路永不过期"
       }
     },
     "light": {

@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Предпросмотр минимальной яркости"
+      },
+      "reset_energy_summation": {
+        "name": "Сбросить счётчик энергии"
+      },
+      "shutter_recalibrate": {
+        "name": "Перекалибровать"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Задержка вспышки"
+      },
+      "bypass_timeout": {
+        "name": "Время ожидания обхода"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Состояние теста обнаружения"
+      },
+      "next_setpoint_temperature": {
+        "name": "Следующая заданная температура"
+      },
+      "presence_simulation_running_end": {
+        "name": "Симуляция активна до"
+      },
+      "presence_simulation_running_start": {
+        "name": "Симуляция активна с"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Эталонное время движения (снизу вверх)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Эталонное время движения (сверху вниз)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Вскрытие"
+      },
+      "schedule_override_active": {
+        "name": "Переопределение расписания активно"
+      },
+      "shutter_calibration_required": {
+        "name": "Требуется калибровка"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Обход тревоги"
+      },
+      "bypass_infinite": {
+        "name": "Обход никогда не истекает"
       }
     },
     "light": {

@@ -18,6 +18,7 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
+    UnitOfTime,
 )
 
 try:
@@ -64,6 +65,39 @@ async def async_setup_entry(  # noqa: C901
     power_sensors_enabled = not config_entry.options.get(
         OPT_SUPPRESS_POWER_SENSORS, False
     )
+
+    # Presence simulation running-window (hass#120 audit): fully modeled in
+    # boschshcpy but never wired into an HA entity. Both are DIAGNOSTIC
+    # category, so gate on diagnostic_enabled like every other diagnostic
+    # sensor in this file.
+    if diagnostic_enabled:
+        presence_simulation_system = getattr(
+            session.device_helper, "presence_simulation_system", None
+        )
+        if presence_simulation_system and not device_excluded(
+            presence_simulation_system, config_entry.options
+        ):
+            entities.append(
+                PresenceSimulationRunningStartSensor(
+                    device=presence_simulation_system, entry_id=config_entry.entry_id
+                )
+            )
+            entities.append(
+                PresenceSimulationRunningEndSensor(
+                    device=presence_simulation_system, entry_id=config_entry.entry_id
+                )
+            )
+
+    if diagnostic_enabled:
+        for climate in getattr(session.device_helper, "climate_controls", []):
+            if device_excluded(climate, config_entry.options):
+                continue
+            entities.append(
+                NextSetpointTemperatureSensor(
+                    device=climate,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in session.device_helper.thermostats:
         if device_excluded(sensor, config_entry.options):
@@ -261,6 +295,29 @@ async def async_setup_entry(  # noqa: C901
                 entities.append(
                     PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
                 )
+
+    # Shutter Control II diagnostic fields (hass audit): reference moving
+    # times recorded during the device's own calibration run. Diagnostic-only
+    # (EntityCategory.DIAGNOSTIC), gated behind the same option as the other
+    # audit-added diagnostic sensors.
+    if diagnostic_enabled:
+        for shutter in (
+            list(getattr(session.device_helper, "shutter_controls", []))
+            + list(getattr(session.device_helper, "micromodule_shutter_controls", []))
+            + list(getattr(session.device_helper, "micromodule_blinds", []))
+        ):
+            if device_excluded(shutter, config_entry.options):
+                continue
+            entities.append(
+                ReferenceMovingTimeTopToBottomSensor(
+                    device=shutter, entry_id=config_entry.entry_id
+                )
+            )
+            entities.append(
+                ReferenceMovingTimeBottomToTopSensor(
+                    device=shutter, entry_id=config_entry.entry_id
+                )
+            )
 
     for sensor in session.device_helper.smart_plugs_compact:
         if device_excluded(sensor, config_entry.options):
@@ -1147,3 +1204,139 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
             return str(self._device.power_supply.solar_charging_score.name.lower())
         except AttributeError:
             return None
+
+
+class NextSetpointTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Room-climate "next scheduled change" info (hass#120 audit).
+
+    Reads RoomClimateControl.next_setpoint_temperature (the app's "until
+    HH:MM -> X deg" label,
+    RoomClimateControlSetpointAndCurrentTemperatureFragment / UntilTimeText
+    Provider), never read anywhere before this audit. The exact change time
+    and next operation mode are exposed as attributes rather than a second
+    entity, matching the diagnostic-attribute pattern already used by
+    KeypadTriggerSensor.
+    """
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "next_setpoint_temperature"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the next-setpoint-temperature sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_next_setpoint_temperature"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the next scheduled setpoint temperature, if known."""
+        return getattr(self._device, "next_setpoint_temperature", None)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the next change time and operation mode as attributes."""
+        next_mode = getattr(self._device, "next_operation_mode", None)
+        return {
+            "next_change_at": getattr(
+                self._device, "next_setpoint_temperature_change", None
+            ),
+            "next_operation_mode": next_mode.value if next_mode is not None else None,
+        }
+
+
+class PresenceSimulationRunningStartSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """When the current presence-simulation session started (hass#120 audit).
+
+    Fully modeled in boschshcpy (PresenceSimulationConfigurationService.
+    running_start_time) but never wired into an HA entity. None whenever no
+    simulation session is currently running (the app's own NO_TIME_SET
+    sentinel, "-", already normalizes to None in the library).
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "presence_simulation_running_start"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the presence-simulation running-start sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_running_start"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return when the current simulation session started, if running."""
+        return getattr(self._device, "running_start_time", None)
+
+
+class PresenceSimulationRunningEndSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """When the current presence-simulation session will end (hass#120 audit).
+
+    See PresenceSimulationRunningStartSensor for details.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "presence_simulation_running_end"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the presence-simulation running-end sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_running_end"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return when the current simulation session will end, if running."""
+        return getattr(self._device, "running_end_time", None)
+
+
+class ReferenceMovingTimeTopToBottomSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Shutter Control II: recorded top-to-bottom reference moving time.
+
+    Reads ShutterControl.reference_moving_time_top_to_bottom_ms, recorded by
+    the device's own end-position calibration run (hass audit). Exposed in
+    seconds; None on devices that have never completed a calibration run.
+    """
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "reference_moving_time_top_to_bottom"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the top-to-bottom reference moving time sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_reference_moving_time_ttb"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the recorded top-to-bottom moving time in seconds, if known."""
+        value_ms = getattr(self._device, "reference_moving_time_top_to_bottom_ms", None)
+        return value_ms / 1000 if value_ms is not None else None
+
+
+class ReferenceMovingTimeBottomToTopSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Shutter Control II: recorded bottom-to-top reference moving time.
+
+    See ReferenceMovingTimeTopToBottomSensor for details.
+    """
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "reference_moving_time_bottom_to_top"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the bottom-to-top reference moving time sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_reference_moving_time_btt"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the recorded bottom-to-top moving time in seconds, if known."""
+        value_ms = getattr(self._device, "reference_moving_time_bottom_to_top_ms", None)
+        return value_ms / 1000 if value_ms is not None else None

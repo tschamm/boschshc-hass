@@ -29,7 +29,7 @@ LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(
+async def async_setup_entry(  # noqa: C901
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
@@ -80,6 +80,7 @@ async def async_setup_entry(
                 label="Setpoint Eco Temperature",
                 getter_name="setpoint_temperature_eco",
                 setter_name="setpoint_temperature_eco",
+                range_attr="eco_temperature_range",
             )
         )
         entities.append(
@@ -90,6 +91,19 @@ async def async_setup_entry(
                 label="Setpoint Comfort Temperature",
                 getter_name="setpoint_temperature_comfort",
                 setter_name="setpoint_temperature_comfort",
+                range_attr="comfort_temperature_range",
+            )
+        )
+
+    # Bypass auto-expiry timeout (hass#120 audit): fully modeled in
+    # boschshcpy but never wired into an HA entity.
+    for device in getattr(session.device_helper, "shutter_contacts2", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        entities.append(
+            BypassTimeoutNumber(
+                device=device,
+                entry_id=config_entry.entry_id,
             )
         )
 
@@ -196,20 +210,24 @@ async def async_setup_entry(
 
 
 # (field, translation_key, unit, min, max) — siren config numbers (#120).
-# alarmDuration/flashDuration are minutes; alarmDelay/flashDelay are seconds 0-180.
+# alarmDuration/flashDuration are minutes 1-15; alarmDelay/flashDelay are
+# seconds 0-180 — bounds confirmed via APK decompile of the official app's
+# slider widgets (layout_outdoorsiren_alarm_signal_fragment.xml /
+# layout_outdoorsiren_alarm_delay_fragment.xml), not just the OpenAPI spec
+# (already proven unreliable for this device's write paths, hass#120).
 _SIREN_ALARM_DURATION = (
     "alarm_duration",
     "siren_alarm_duration",
     UnitOfTime.MINUTES,
-    0,
-    60,
+    1,
+    15,
 )
 _SIREN_FLASH_DURATION = (
     "flash_duration",
     "siren_flash_duration",
     UnitOfTime.MINUTES,
-    0,
-    60,
+    1,
+    15,
 )
 _SIREN_ALARM_DELAY = ("alarm_delay", "siren_alarm_delay", UnitOfTime.SECONDS, 0, 180)
 _SIREN_FLASH_DELAY = ("flash_delay", "siren_flash_delay", UnitOfTime.SECONDS, 0, 180)
@@ -401,15 +419,16 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
     """NumberEntity for HeatingCircuit eco/comfort setpoint temperatures.
 
     The HeatingCircuitService exposes setpoint_temperature_eco and
-    setpoint_temperature_comfort as read/write float properties. Range 5-30 °C,
-    step 0.5 °C (Bosch app convention).
+    setpoint_temperature_comfort as read/write float properties. Step 0.5 °C
+    (Bosch app convention); min/max are read from the device's own
+    eco_temperature_range/comfort_temperature_range (hass#120 audit — the app
+    reads a per-device range rather than a fixed constant), falling back to
+    the previous 5-30 °C constant until the SHC has reported it.
     """
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_device_class = NumberDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_native_min_value = 5.0
-    _attr_native_max_value = 30.0
     _attr_native_step = 0.5
     _attr_mode = NumberMode.BOX
 
@@ -421,6 +440,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
         label: str,
         getter_name: str,
         setter_name: str,
+        range_attr: str,
     ) -> None:
         """Initialize the heating circuit setpoint number."""
         super().__init__(device, entry_id)
@@ -430,6 +450,19 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
         )
         self._getter_name = getter_name
         self._setter_name = setter_name
+        self._range_attr = range_attr
+
+    @property
+    def native_min_value(self) -> float:
+        """Return the minimum settable temperature for this preset."""
+        rng = getattr(self._device, self._range_attr, None)
+        return rng[0] if rng is not None else 5.0
+
+    @property
+    def native_max_value(self) -> float:
+        """Return the maximum settable temperature for this preset."""
+        rng = getattr(self._device, self._range_attr, None)
+        return rng[1] if rng is not None else 30.0
 
     @property
     def native_value(self) -> float | None:
@@ -454,9 +487,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
 
     async def async_set_native_value(self, value: float) -> None:
         """Write the setpoint temperature, clamped to valid range."""
-        clamped = max(
-            self._attr_native_min_value, min(self._attr_native_max_value, value)
-        )
+        clamped = max(self.native_min_value, min(self.native_max_value, value))
         async_setter = getattr(self._device, f"async_set_{self._setter_name}", None)
         if async_setter is None:
             LOGGER.warning(
@@ -882,6 +913,62 @@ class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             LOGGER.warning(
                 "Unable to set dimmer %s for %s: %s",
                 self._field,
+                self._device.name,
+                err,
+            )
+
+
+class BypassTimeoutNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
+    """Bypass auto-expiry timeout for a door/window contact (hass#120 audit).
+
+    Fully modeled in boschshcpy (BypassService.timeout /
+    SHCShutterContact2.bypass_timeout) but never wired into an HA entity.
+    Unit/bounds (1-15 minutes) confirmed via APK decompile of the official
+    app's bypass_configuration.xml slider (app:quantityUnit="MINUTE") — the
+    library previously assumed seconds (no OpenAPI spec exists for this
+    service to confirm either way).
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_native_min_value = 1.0
+    _attr_native_max_value = 15.0
+    _attr_native_step = 1.0
+    _attr_mode = NumberMode.BOX
+    _attr_translation_key = "bypass_timeout"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the bypass timeout number."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_bypass_timeout"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the bypass auto-expiry timeout in minutes."""
+        raw = getattr(self._device, "bypass_timeout", None)
+        return None if raw is None else float(raw)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the bypass auto-expiry timeout, clamped to 1-15 minutes."""
+        clamped = max(
+            self._attr_native_min_value, min(self._attr_native_max_value, value)
+        )
+        try:
+            await self._device.async_set_bypass_timeout(round(clamped))
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
+        except (
+            AttributeError,
+            KeyError,
+            aiohttp.ClientError,
+            asyncio.TimeoutError,
+        ) as err:
+            LOGGER.warning(
+                "Unable to write bypass_timeout for %s: %s",
                 self._device.name,
                 err,
             )

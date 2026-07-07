@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Minimális fényerő előnézet"
+      },
+      "reset_energy_summation": {
+        "name": "Energiaszámláló visszaállítása"
+      },
+      "shutter_recalibrate": {
+        "name": "Újrakalibrálás"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Villogás késleltetése"
+      },
+      "bypass_timeout": {
+        "name": "Kihagyás időtúllépése"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Érzékelési teszt állapota"
+      },
+      "next_setpoint_temperature": {
+        "name": "Következő célhőmérséklet"
+      },
+      "presence_simulation_running_end": {
+        "name": "Szimuláció futásának vége"
+      },
+      "presence_simulation_running_start": {
+        "name": "Szimuláció futásának kezdete"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Kalibrált mozgásidő (alulról felfelé)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Kalibrált mozgásidő (felülről lefelé)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Szabotázs"
+      },
+      "schedule_override_active": {
+        "name": "Ütemezés felülbírálása aktív"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrálás szükséges"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Riasztás kihagyása"
+      },
+      "bypass_infinite": {
+        "name": "Kihagyás lejárat nélkül"
       }
     },
     "light": {

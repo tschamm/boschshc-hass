@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Преглед на минимална яркост"
+      },
+      "reset_energy_summation": {
+        "name": "Нулиране на брояча за енергия"
+      },
+      "shutter_recalibrate": {
+        "name": "Прекалибриране"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Закъснение на мигането"
+      },
+      "bypass_timeout": {
+        "name": "Изчакване за заобикаляне"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Състояние на теста за откриване"
+      },
+      "next_setpoint_temperature": {
+        "name": "Следваща зададена температура"
+      },
+      "presence_simulation_running_end": {
+        "name": "Симулацията работи до"
+      },
+      "presence_simulation_running_start": {
+        "name": "Симулацията работи от"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Референтно време на движение (отдолу нагоре)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Референтно време на движение (отгоре надолу)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Манипулиране"
+      },
+      "schedule_override_active": {
+        "name": "Активна отмяна на графика"
+      },
+      "shutter_calibration_required": {
+        "name": "Изисква се калибриране"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Заобикаляне на алармата"
+      },
+      "bypass_infinite": {
+        "name": "Заобикалянето никога не изтича"
       }
     },
     "light": {

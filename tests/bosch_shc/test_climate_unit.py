@@ -306,6 +306,40 @@ class TestTurnOnOff:
 
 
 # ===========================================================================
+# HeatingCircuit — dynamic min_temp/max_temp (hass#120 audit)
+# ===========================================================================
+
+class TestHeatingCircuitDynamicBounds:
+    """The app reads a per-device setpoint range
+    (HeatingCircuitVerticalSliderFragment.setMinMax) rather than a fixed
+    constant — a floor-heating circuit commonly reports a raised minimum."""
+
+    def test_falls_back_to_5_30_when_device_has_no_range(self):
+        device = _make_hc_device()  # no setpoint_temperature_range attr at all
+        entity = _make_hc(device)
+        assert entity.min_temp == 5.0
+        assert entity.max_temp == 30.0
+
+    def test_uses_device_reported_range(self):
+        device = _make_hc_device()
+        device.setpoint_temperature_range = (10.0, 28.0)
+        entity = _make_hc(device)
+        assert entity.min_temp == 10.0
+        assert entity.max_temp == 28.0
+
+    def test_set_temperature_rejects_value_below_device_reported_min(self):
+        """async_set_temperature checks min_temp/max_temp before writing —
+        a value below the device's real (raised) minimum must not be sent."""
+        device = _make_hc_device()
+        device.setpoint_temperature_range = (10.0, 28.0)
+        entity = _make_hc(device)
+
+        _run(entity.async_set_temperature(**{ATTR_TEMPERATURE: 7.0}))
+
+        device.async_set_setpoint_temperature.assert_not_awaited()
+
+
+# ===========================================================================
 # HeatingCircuit — async_set_temperature (lines 364-368, 334-335)
 # ===========================================================================
 

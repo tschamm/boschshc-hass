@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Pré-visualizar brilho mínimo"
+      },
+      "reset_energy_summation": {
+        "name": "Repor Contador de Energia"
+      },
+      "shutter_recalibrate": {
+        "name": "Recalibrar"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Atraso do flash"
+      },
+      "bypass_timeout": {
+        "name": "Tempo Limite do Bypass"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Estado do teste de deteção"
+      },
+      "next_setpoint_temperature": {
+        "name": "Próxima Temperatura de Referência"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulação em Curso até"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulação em Curso desde"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Tempo de Deslocação de Referência (Baixo para Cima)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Tempo de Deslocação de Referência (Cima para Baixo)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Violação"
+      },
+      "schedule_override_active": {
+        "name": "Substituição de Programação Ativa"
+      },
+      "shutter_calibration_required": {
+        "name": "Calibração Necessária"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Bypass de alarme"
+      },
+      "bypass_infinite": {
+        "name": "Bypass Nunca Expira"
       }
     },
     "light": {

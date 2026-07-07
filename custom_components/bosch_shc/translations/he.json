@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "תצוגה מקדימה של בהירות מינימלית"
+      },
+      "reset_energy_summation": {
+        "name": "איפוס מונה האנרגיה"
+      },
+      "shutter_recalibrate": {
+        "name": "כיול מחדש"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "עיכוב ההבזק"
+      },
+      "bypass_timeout": {
+        "name": "פסק זמן לעקיפה"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "מצב בדיקת גילוי"
+      },
+      "next_setpoint_temperature": {
+        "name": "טמפרטורת היעד הבאה"
+      },
+      "presence_simulation_running_end": {
+        "name": "הדמיה פועלת עד"
+      },
+      "presence_simulation_running_start": {
+        "name": "הדמיה פועלת מאז"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "זמן תנועה מכויל (מלמטה למעלה)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "זמן תנועה מכויל (מלמעלה למטה)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "חבלה"
+      },
+      "schedule_override_active": {
+        "name": "עקיפת לוח זמנים פעילה"
+      },
+      "shutter_calibration_required": {
+        "name": "נדרש כיול"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "עקיפת אזעקה"
+      },
+      "bypass_infinite": {
+        "name": "עקיפה ללא תפוגה"
       }
     },
     "light": {

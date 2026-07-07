@@ -197,6 +197,20 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_value=BypassService.State.BYPASS_ACTIVE,
         should_poll=False,
     ),
+    "bypass_infinite": SHCSwitchEntityDescription(
+        key="bypass_infinite",
+        # hass#120 audit: fully modeled in boschshcpy (BypassService.infinite
+        # / SHCShutterContact2.bypass_infinite) but never wired into an HA
+        # entity. When off, an active bypass auto-expires after
+        # bypass_timeout seconds instead of staying active forever.
+        translation_key="bypass_infinite",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="bypass_infinite",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:timer-off-outline",
+    ),
     "child_lock": SHCSwitchEntityDescription(
         key="child_lock",
         device_class=SwitchDeviceClass.SWITCH,
@@ -711,6 +725,14 @@ async def async_setup_entry(  # noqa: C901
                 device=switch,
                 entry_id=config_entry.entry_id,
                 description=SWITCH_TYPES["bypass"],
+            )
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["bypass_infinite"],
+                attr_name="BypassInfinite",
             )
         )
         if isinstance(switch, SHCShutterContact2Plus):

@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Förhandsgranska minljusstyrka"
+      },
+      "reset_energy_summation": {
+        "name": "Återställ energiräknare"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibrera om"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Blixtfördröjning"
+      },
+      "bypass_timeout": {
+        "name": "Tidsgräns för förbikoppling"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Detekteringstestläge"
+      },
+      "next_setpoint_temperature": {
+        "name": "Nästa börvärdestemperatur"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulering pågår till"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulering pågår sedan"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referensrörelsetid (nedifrån och upp)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referensrörelsetid (uppifrån och ned)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Manipulering"
+      },
+      "schedule_override_active": {
+        "name": "Schemaåsidosättning aktiv"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrering krävs"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Förbikoppling av larm"
+      },
+      "bypass_infinite": {
+        "name": "Förbikoppling upphör aldrig"
       }
     },
     "light": {

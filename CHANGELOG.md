@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.10.8 — device-inventory audit: bypass, energy reset, presence simulation, shutter diagnostics
+
+**No breaking changes.** Requires `boschshcpy>=0.4.8`. New read-only sensors
+and action entities across several device families, all found by an
+APK-decompile audit of Thomas's real device inventory (thermostats, contacts,
+power/energy, shutters) and confirmed genuinely reachable in the official
+Bosch Android app before implementation.
+
+**New entities:**
+- Shutter contacts with Bypass support: `switch` "Bypass Never Expires" and
+  `number` "Bypass Timeout" (1–15 minutes, corrected from a previous
+  seconds/minutes mix-up — no OpenAPI spec exists for Bypass, confirmed via
+  decompiled layout XML).
+- Smart plugs (incl. compact): `button` "Reset Energy Counter" —
+  `resetEnergySummation`.
+- Presence simulation: `sensor` "Simulation Running Since"/"Simulation
+  Running Until" (diagnostic).
+- Room climate control: `binary_sensor` "Schedule Override Active" and
+  `sensor` "Next Setpoint Temperature" (diagnostic, with next-change-time and
+  next-operation-mode as attributes).
+- Shutter Control II (BBL, micromodule shutter controls, micromodule
+  blinds): `binary_sensor` "Calibration Required" (diagnostic), `sensor`
+  "Reference Moving Time (Top to Bottom)"/"(Bottom to Top)" (diagnostic), and
+  `button` "Recalibrate" — `resetCalibrationAndOpen`.
+- `HeatingCircuit`'s setpoint slider min/max are now read dynamically from
+  the device's own reported range instead of a hardcoded 5–30 °C, matching
+  the real app's behavior; falls back to 5–30 °C on devices that don't report
+  a range.
+
+All new entity names translated to all 29 non-English languages.
+
 ## 0.10.7 — per-room light groups
 
 **No breaking changes.** New opt-in feature: per-room light groups (#244).

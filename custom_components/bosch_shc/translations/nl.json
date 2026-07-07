@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Voorbeeld minimale helderheid"
+      },
+      "reset_energy_summation": {
+        "name": "Energieteller resetten"
+      },
+      "shutter_recalibrate": {
+        "name": "Opnieuw kalibreren"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Flitsvertraging"
+      },
+      "bypass_timeout": {
+        "name": "Overbruggingstime-out"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Detectietest status"
+      },
+      "next_setpoint_temperature": {
+        "name": "Volgende ingestelde temperatuur"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulatie actief tot"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulatie actief sinds"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referentie beweegtijd (onder naar boven)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referentie beweegtijd (boven naar onder)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Sabotage"
+      },
+      "schedule_override_active": {
+        "name": "Schema-overschrijving actief"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibratie vereist"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Alarm overbruggen"
+      },
+      "bypass_infinite": {
+        "name": "Overbrugging verloopt nooit"
       }
     },
     "light": {

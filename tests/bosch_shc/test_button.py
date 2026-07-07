@@ -19,6 +19,7 @@ from boschshcpy.exceptions import SHCException
 from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.bosch_shc.button import (
+    ResetEnergySummationButton,
     SHCDetectionTestButton,
     SHCDetectionTestStopButton,
     SHCRelayButton,
@@ -28,11 +29,13 @@ from custom_components.bosch_shc.button import (
     SHCTamperResetButton,
     SHCWalkTestButton,
     SHCWalkTestStopButton,
+    ShutterRecalibrateButton,
 )
 
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_device(
     name: str = "Test Device",
@@ -81,8 +84,9 @@ def _collect():
     return collected, add
 
 
-def _run_setup(session: object, options=None, unique_id="test-uid",
-               shc_device=None) -> list:
+def _run_setup(
+    session: object, options=None, unique_id="test-uid", shc_device=None
+) -> list:
     """Drive button.async_setup_entry with fake hass/entry/session."""
     from custom_components.bosch_shc.button import async_setup_entry
 
@@ -99,11 +103,16 @@ def _run_setup(session: object, options=None, unique_id="test-uid",
 # SHCRelayButton
 # ---------------------------------------------------------------------------
 
+
 class TestSHCRelayButton:
     """Unit tests for SHCRelayButton (impulse relay)."""
 
-    def _make(self, attr_name=None, root="64:da:a0:00:00:01",
-              device_id="hdm:HomeMaticIP:relay1") -> SHCRelayButton:
+    def _make(
+        self,
+        attr_name=None,
+        root="64:da:a0:00:00:01",
+        device_id="hdm:HomeMaticIP:relay1",
+    ) -> SHCRelayButton:
         btn = SHCRelayButton.__new__(SHCRelayButton)
         dev = _make_device(device_id=device_id, root_device_id=root)
         btn._device = dev
@@ -156,10 +165,12 @@ class TestSHCRelayButton:
 
     def test_is_button_entity(self):
         from homeassistant.components.button import ButtonEntity
+
         assert issubclass(SHCRelayButton, ButtonEntity)
 
     def test_is_shc_entity(self):
         from custom_components.bosch_shc.entity import SHCEntity
+
         assert issubclass(SHCRelayButton, SHCEntity)
 
     def test_press_wraps_shc_exception_in_home_assistant_error(self):
@@ -222,11 +233,13 @@ class TestSHCRelayButton:
 # SHCSmokeTestButton
 # ---------------------------------------------------------------------------
 
+
 class TestSHCSmokeTestButton:
     """Unit tests for SHCSmokeTestButton (smoke detector + twinguard)."""
 
-    def _make(self, root="64:da:a0:00:00:02",
-              device_id="hdm:ZigBee:smoke1") -> SHCSmokeTestButton:
+    def _make(
+        self, root="64:da:a0:00:00:02", device_id="hdm:ZigBee:smoke1"
+    ) -> SHCSmokeTestButton:
         btn = SHCSmokeTestButton.__new__(SHCSmokeTestButton)
         dev = _make_device(device_id=device_id, root_device_id=root)
         btn._device = dev
@@ -274,6 +287,7 @@ class TestSHCSmokeTestButton:
 
     def test_is_button_entity(self):
         from homeassistant.components.button import ButtonEntity
+
         assert issubclass(SHCSmokeTestButton, ButtonEntity)
 
     # async_setup_entry integration
@@ -332,6 +346,7 @@ class TestSHCSmokeTestButton:
 # ---------------------------------------------------------------------------
 # SHCWalkTestButton + SHCWalkTestStopButton
 # ---------------------------------------------------------------------------
+
 
 class TestSHCWalkTestButtons:
     """Unit tests for SHCWalkTestButton and SHCWalkTestStopButton."""
@@ -405,8 +420,13 @@ class TestSHCWalkTestButtons:
 
     # --- async_setup_entry integration ---
 
-    def _md2_device(self, supports_walk=True, walk_state="STOPPED",
-                    supports_detection=False, has_tamper=True):
+    def _md2_device(
+        self,
+        supports_walk=True,
+        walk_state="STOPPED",
+        supports_detection=False,
+        has_tamper=True,
+    ):
         dev = _make_device(device_id="hdm:ZigBee:md2-walk")
         dev.supports_walk_test = supports_walk
         dev.walk_state = walk_state
@@ -436,11 +456,18 @@ class TestSHCWalkTestButtons:
 
     def test_setup_walk_test_buttons_count(self):
         """One MD2 with walk_test → exactly 2 walk-test buttons (+ 1 tamper)."""
-        dev = self._md2_device(supports_walk=True, walk_state="STOPPED",
-                               supports_detection=False, has_tamper=True)
+        dev = self._md2_device(
+            supports_walk=True,
+            walk_state="STOPPED",
+            supports_detection=False,
+            has_tamper=True,
+        )
         result = _run_setup(self._session([dev]))
-        walk_buttons = [e for e in result
-                        if isinstance(e, (SHCWalkTestButton, SHCWalkTestStopButton))]
+        walk_buttons = [
+            e
+            for e in result
+            if isinstance(e, (SHCWalkTestButton, SHCWalkTestStopButton))
+        ]
         assert len(walk_buttons) == 2
 
     def test_setup_no_walk_test_when_supports_false(self):
@@ -471,6 +498,7 @@ class TestSHCWalkTestButtons:
 # SHCDetectionTestButton + SHCDetectionTestStopButton
 # ---------------------------------------------------------------------------
 
+
 class TestSHCDetectionTestButtons:
     """Unit tests for SHCDetectionTestButton and SHCDetectionTestStopButton."""
 
@@ -479,12 +507,10 @@ class TestSHCDetectionTestButtons:
         dev = _make_device(device_id=device_id, root_device_id=root)
         btn._device = dev
         suffix = (
-            "detection_test" if cls is SHCDetectionTestButton
-            else "detection_test_stop"
+            "detection_test" if cls is SHCDetectionTestButton else "detection_test_stop"
         )
         btn._attr_name = (
-            "Detection Test" if cls is SHCDetectionTestButton
-            else "Detection Test Stop"
+            "Detection Test" if cls is SHCDetectionTestButton else "Detection Test Stop"
         )
         btn._attr_unique_id = f"{root}_{device_id}_{suffix}"
         return btn
@@ -599,6 +625,7 @@ class TestSHCDetectionTestButtons:
 # SHCTamperResetButton
 # ---------------------------------------------------------------------------
 
+
 class TestSHCTamperResetButton:
     """Unit tests for SHCTamperResetButton (LatestTamper service)."""
 
@@ -684,6 +711,7 @@ class TestSHCTamperResetButton:
 # SHCScenarioButton
 # ---------------------------------------------------------------------------
 
+
 class TestSHCScenarioButton:
     """Unit tests for SHCScenarioButton (does not inherit SHCEntity)."""
 
@@ -756,9 +784,7 @@ class TestSHCScenarioButton:
             called.append(True)
 
         scenario.async_trigger = _trig
-        btn = SHCScenarioButton(
-            scenario=scenario, entry_unique_id="uid", entry_id="E1"
-        )
+        btn = SHCScenarioButton(scenario=scenario, entry_unique_id="uid", entry_id="E1")
         asyncio.run(btn.async_press())
         assert called == [True]
 
@@ -770,9 +796,7 @@ class TestSHCScenarioButton:
             raise SHCException("scenario trigger rejected")
 
         scenario.async_trigger = _fail
-        btn = SHCScenarioButton(
-            scenario=scenario, entry_unique_id="uid", entry_id="E1"
-        )
+        btn = SHCScenarioButton(scenario=scenario, entry_unique_id="uid", entry_id="E1")
         with pytest.raises(HomeAssistantError) as exc_info:
             asyncio.run(btn.async_press())
         assert exc_info.value.translation_key == "button_press_failed"
@@ -780,6 +804,7 @@ class TestSHCScenarioButton:
 
     def test_is_button_entity(self):
         from homeassistant.components.button import ButtonEntity
+
         assert issubclass(SHCScenarioButton, ButtonEntity)
 
     # --- async_setup_entry integration ---
@@ -822,9 +847,7 @@ class TestSHCScenarioButton:
 
         sc = SimpleNamespace(id="sc-1", name="Away")
         session = self._session_with_scenarios([sc])
-        result = _run_setup(
-            session, options={OPT_SCENARIOS_AS_BUTTONS: False}
-        )
+        result = _run_setup(session, options={OPT_SCENARIOS_AS_BUTTONS: False})
         assert not any(isinstance(e, SHCScenarioButton) for e in result)
 
     def test_setup_multiple_scenario_buttons(self):
@@ -882,6 +905,7 @@ class TestSHCScenarioButton:
 # SHCSirenTestAlarmButton
 # ---------------------------------------------------------------------------
 
+
 class TestSHCSirenTestAlarmButton:
     """Unit tests for SHCSirenTestAlarmButton (Outdoor Siren #120)."""
 
@@ -915,6 +939,7 @@ class TestSHCSirenTestAlarmButton:
 
     def test_is_button_entity(self):
         from homeassistant.components.button import ButtonEntity
+
         assert issubclass(SHCSirenTestAlarmButton, ButtonEntity)
 
     # --- async_setup_entry integration ---
@@ -944,10 +969,12 @@ class TestSHCSirenTestAlarmButton:
         assert result == []
 
     def test_setup_multiple_sirens(self):
-        session = self._session_with_siren([
-            _make_device(device_id="s1"),
-            _make_device(device_id="s2"),
-        ])
+        session = self._session_with_siren(
+            [
+                _make_device(device_id="s1"),
+                _make_device(device_id="s2"),
+            ]
+        )
         result = _run_setup(session)
         assert len(result) == 2
         assert all(isinstance(e, SHCSirenTestAlarmButton) for e in result)
@@ -962,8 +989,208 @@ class TestSHCSirenTestAlarmButton:
 
 
 # ---------------------------------------------------------------------------
+# ResetEnergySummationButton (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+
+class TestResetEnergySummationButton:
+    """Unit tests for ResetEnergySummationButton (smart plugs, hass#120)."""
+
+    def _make(self, root="root-plug", device_id="hdm:ZigBee:plug1"):
+        btn = ResetEnergySummationButton.__new__(ResetEnergySummationButton)
+        dev = _make_device(device_id=device_id, root_device_id=root)
+        btn._device = dev
+        btn._attr_unique_id = f"{root}_{device_id}_reset_energy_summation"
+        return btn
+
+    def test_unique_id_ends_reset_energy_summation(self):
+        btn = self._make(root="r1", device_id="d1")
+        assert btn._attr_unique_id == "r1_d1_reset_energy_summation"
+
+    def test_translation_key(self):
+        btn = self._make()
+        assert btn._attr_translation_key == "reset_energy_summation"
+
+    def test_press_calls_async_reset_energy_summation(self):
+        btn = self._make()
+        called = []
+
+        async def _reset():
+            called.append(True)
+
+        btn._device.async_reset_energy_summation = _reset
+        asyncio.run(btn.async_press())
+        assert called == [True]
+
+    def test_press_shc_exception_raises_home_assistant_error(self):
+        btn = self._make()
+
+        async def _reset():
+            raise SHCException("rejected")
+
+        btn._device.async_reset_energy_summation = _reset
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(btn.async_press())
+
+    def test_is_button_entity(self):
+        from homeassistant.components.button import ButtonEntity
+
+        assert issubclass(ResetEnergySummationButton, ButtonEntity)
+
+    # --- async_setup_entry integration ---
+
+    def _session_with_plugs(self, smart_plugs=(), smart_plugs_compact=()):
+        return SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[],
+                motion_detectors2=[],
+                outdoor_sirens=[],
+                smart_plugs=list(smart_plugs),
+                smart_plugs_compact=list(smart_plugs_compact),
+            ),
+            scenarios=[],
+        )
+
+    def test_setup_smart_plug_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_plugs(smart_plugs=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ResetEnergySummationButton)
+
+    def test_setup_smart_plug_compact_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_plugs(smart_plugs_compact=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ResetEnergySummationButton)
+
+    def test_setup_no_plugs_yields_nothing(self):
+        session = self._session_with_plugs()
+        result = _run_setup(session)
+        assert result == []
+
+    def test_setup_plug_excluded(self):
+        dev = _make_device(device_id="hdm:excluded-plug")
+        session = self._session_with_plugs(smart_plugs=[dev])
+        result = _run_setup(
+            session, options={"excluded_devices": ["hdm:excluded-plug"]}
+        )
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# ShutterRecalibrateButton (hass audit)
+# ---------------------------------------------------------------------------
+
+
+class TestShutterRecalibrateButton:
+    """Unit tests for ShutterRecalibrateButton (Shutter Control II, hass audit)."""
+
+    def _make(self, root="root-shutter", device_id="hdm:ZigBee:shutter1"):
+        btn = ShutterRecalibrateButton.__new__(ShutterRecalibrateButton)
+        dev = _make_device(device_id=device_id, root_device_id=root)
+        btn._device = dev
+        btn._attr_unique_id = f"{root}_{device_id}_recalibrate"
+        return btn
+
+    def test_unique_id_ends_recalibrate(self):
+        btn = self._make(root="r1", device_id="d1")
+        assert btn._attr_unique_id == "r1_d1_recalibrate"
+
+    def test_translation_key(self):
+        btn = self._make()
+        assert btn._attr_translation_key == "shutter_recalibrate"
+
+    def test_press_calls_async_reset_calibration_and_open(self):
+        btn = self._make()
+        called = []
+
+        async def _recalibrate():
+            called.append(True)
+
+        btn._device.async_reset_calibration_and_open = _recalibrate
+        asyncio.run(btn.async_press())
+        assert called == [True]
+
+    def test_press_shc_exception_raises_home_assistant_error(self):
+        btn = self._make()
+
+        async def _recalibrate():
+            raise SHCException("rejected")
+
+        btn._device.async_reset_calibration_and_open = _recalibrate
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(btn.async_press())
+
+    def test_is_button_entity(self):
+        from homeassistant.components.button import ButtonEntity
+
+        assert issubclass(ShutterRecalibrateButton, ButtonEntity)
+
+    # --- async_setup_entry integration ---
+
+    def _session_with_shutters(
+        self,
+        shutter_controls=(),
+        micromodule_shutter_controls=(),
+        micromodule_blinds=(),
+    ):
+        return SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[],
+                motion_detectors2=[],
+                outdoor_sirens=[],
+                shutter_controls=list(shutter_controls),
+                micromodule_shutter_controls=list(micromodule_shutter_controls),
+                micromodule_blinds=list(micromodule_blinds),
+            ),
+            scenarios=[],
+        )
+
+    def test_setup_shutter_control_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_shutters(shutter_controls=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ShutterRecalibrateButton)
+
+    def test_setup_micromodule_shutter_control_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_shutters(micromodule_shutter_controls=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ShutterRecalibrateButton)
+
+    def test_setup_micromodule_blinds_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_shutters(micromodule_blinds=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ShutterRecalibrateButton)
+
+    def test_setup_no_shutters_yields_nothing(self):
+        session = self._session_with_shutters()
+        result = _run_setup(session)
+        assert result == []
+
+    def test_setup_shutter_excluded(self):
+        dev = _make_device(device_id="hdm:excluded-shutter")
+        session = self._session_with_shutters(shutter_controls=[dev])
+        result = _run_setup(
+            session, options={"excluded_devices": ["hdm:excluded-shutter"]}
+        )
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
 # Mixed async_setup_entry — all device types together
 # ---------------------------------------------------------------------------
+
 
 def test_setup_mixed_all_entity_types():
     """All device buckets populated → one entity per type (plus tamper)."""

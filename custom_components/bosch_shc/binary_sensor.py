@@ -282,6 +282,12 @@ async def async_setup_entry(  # noqa: C901
                 entry_id=config_entry.entry_id,
             )
         )
+        entities.append(
+            ScheduleOverrideActiveSensor(
+                device=climate,
+                entry_id=config_entry.entry_id,
+            )
+        )
 
     for siren in getattr(session.device_helper, "outdoor_sirens", []):
         if device_excluded(siren, config_entry.options):
@@ -310,6 +316,23 @@ async def async_setup_entry(  # noqa: C901
                     device=siren, entry_id=config_entry.entry_id
                 )
             )
+
+    # Shutter Control II diagnostic field (hass audit): surfaces whether the
+    # device still needs its end-position calibration run, mirroring the
+    # app's own "recalibrate" prompt and pairing with the recalibration
+    # button (button.py ShutterRecalibrateButton).
+    for shutter in (
+        list(getattr(session.device_helper, "shutter_controls", []))
+        + list(getattr(session.device_helper, "micromodule_shutter_controls", []))
+        + list(getattr(session.device_helper, "micromodule_blinds", []))
+    ):
+        if device_excluded(shutter, config_entry.options):
+            continue
+        entities.append(
+            ShutterCalibrationRequiredSensor(
+                device=shutter, entry_id=config_entry.entry_id
+            )
+        )
 
     platform = entity_platform.current_platform.get()
 
@@ -349,6 +372,58 @@ class CallForHeatSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     def is_on(self) -> bool:
         """Return True when the room climate control is calling for heat."""
         return bool(getattr(self._device, "has_demand", False))
+
+
+class ScheduleOverrideActiveSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Room-climate schedule-override indicator (hass#120 audit).
+
+    Reads RoomClimateControl.setpoint_temperature_offset_active — the app's
+    "manual override of the schedule is active" indicator
+    (RoomClimateControlSetpointAndCurrentTemperatureFragment.showTemperature
+    OffsetActive / dashboard tile showOffsetApplied), never read before this
+    audit. getattr-guarded so it tolerates an older boschshcpy pin.
+    """
+
+    _attr_translation_key = "schedule_override_active"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a schedule-override-active binary sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_schedule_override_active"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when a manual override of the schedule is active."""
+        return bool(getattr(self._device, "setpoint_temperature_offset_active", False))
+
+
+class ShutterCalibrationRequiredSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Shutter Control II: end-position calibration missing (hass audit).
+
+    Reads ShutterControl.calibrated — the app surfaces an uncalibrated
+    shutter as needing a manual recalibration run (see button.py
+    ShutterRecalibrateButton). Defaults to "no problem" if the attribute is
+    absent (older boschshcpy pin), matching this file's other getattr-guarded
+    audit sensors.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "shutter_calibration_required"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the shutter calibration-required sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_calibration_required"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the shutter has not completed calibration."""
+        return not bool(getattr(self._device, "calibrated", True))
 
 
 class SirenAcousticAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]

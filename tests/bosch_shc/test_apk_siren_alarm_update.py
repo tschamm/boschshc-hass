@@ -10,10 +10,20 @@ from custom_components.bosch_shc.binary_sensor import (
     SirenTamperSensor,
     SirenVisualAlarmSensor,
 )
-from custom_components.bosch_shc.number import _SIREN_ALARM_DELAY, SirenConfigNumber
+from custom_components.bosch_shc.number import (
+    _SIREN_ALARM_DELAY,
+    _SIREN_ALARM_DURATION,
+    _SIREN_FLASH_DURATION,
+    SirenConfigNumber,
+)
 from custom_components.bosch_shc.select import SirenSoundLevelSelect
 from custom_components.bosch_shc.sensor import (
     KeypadTriggerSensor,
+    NextSetpointTemperatureSensor,
+    PresenceSimulationRunningEndSensor,
+    PresenceSimulationRunningStartSensor,
+    ReferenceMovingTimeBottomToTopSensor,
+    ReferenceMovingTimeTopToBottomSensor,
     SirenBatterySensor,
     SirenMainPowerSensor,
     SirenSolarChargingSensor,
@@ -26,6 +36,7 @@ def _new(cls):
 
 
 # --------------------------- #120 binary sensors ---------------------------
+
 
 def test_siren_binary_sensors_read_flags():
     siren = SimpleNamespace(
@@ -45,6 +56,7 @@ def test_siren_binary_sensors_read_flags():
 
 
 # --------------------------- #120 power sensors ----------------------------
+
 
 def test_siren_battery_sensor():
     s = _new(SirenBatterySensor)
@@ -71,6 +83,7 @@ def test_siren_main_power_and_solar_enum_lowercased():
 
 # --------------------------- #120 number (config) --------------------------
 
+
 def test_siren_config_number_reads_and_clamps():
     n = SirenConfigNumber(
         SimpleNamespace(root_device_id="r", id="d", name="Siren"),
@@ -83,7 +96,22 @@ def test_siren_config_number_reads_and_clamps():
     assert n._attr_native_max_value == 180.0
 
 
+def test_siren_duration_bounds_match_app_slider():
+    """hass#120: alarmDuration/flashDuration are 1-15 minutes, confirmed via
+    APK decompile of the real slider widgets (layout_outdoorsiren_alarm_signal
+    _fragment.xml) — NOT 0-60 as previously assumed from the OpenAPI spec."""
+    for cfg in (_SIREN_ALARM_DURATION, _SIREN_FLASH_DURATION):
+        n = SirenConfigNumber(
+            SimpleNamespace(root_device_id="r", id="d", name="Siren"),
+            "entry",
+            *cfg,
+        )
+        assert n._attr_native_min_value == 1.0
+        assert n._attr_native_max_value == 15.0
+
+
 # --------------------------- #120 select -----------------------------------
+
 
 def test_siren_sound_level_current_option():
     sel = _new(SirenSoundLevelSelect)
@@ -95,6 +123,7 @@ def test_siren_sound_level_current_option():
 
 
 # --------------------------- #186 controller update ------------------------
+
 
 def test_controller_update_latest_version_when_available():
     info = SimpleNamespace(
@@ -126,6 +155,7 @@ def test_controller_update_in_progress():
 
 
 # --------------------- per-device SoftwareUpdate entity --------------------
+
 
 def _sw_service(**kw):
     """A stand-in SoftwareUpdate service carrying the real SwUpdateState enum."""
@@ -202,6 +232,7 @@ def test_device_update_no_service_is_safe():
 
 # ----------------------- KeypadTrigger diag sensor -------------------------
 
+
 def test_keypad_trigger_sensor():
     svc = SimpleNamespace(
         switch_type="UNIVERSAL_SWITCH",
@@ -259,3 +290,94 @@ def test_device_update_and_keypad_sensor_drop_attr_name():
     s = KeypadTriggerSensor(device=_FAKE_DEVICE, entry_id="e1")
     assert not hasattr(s, "_attr_name")
     assert s.translation_key == "keypad_trigger"
+
+
+# ---------------------------------------------------------------------------
+# NextSetpointTemperatureSensor (hass#120 audit — ROOM_CLIMATE_CONTROL)
+# ---------------------------------------------------------------------------
+
+
+def test_next_setpoint_temperature_reads_value_and_attributes():
+    from boschshcpy.services_impl import RoomClimateControlService
+
+    s = _new(NextSetpointTemperatureSensor)
+    s._device = SimpleNamespace(
+        next_setpoint_temperature=18.5,
+        next_setpoint_temperature_change="2026-07-07T22:00:00Z",
+        next_operation_mode=RoomClimateControlService.OperationMode.MANUAL,
+    )
+    assert s.native_value == 18.5
+    attrs = s.extra_state_attributes
+    assert attrs["next_change_at"] == "2026-07-07T22:00:00Z"
+    assert attrs["next_operation_mode"] == "MANUAL"
+
+
+def test_next_setpoint_temperature_safe_when_attrs_missing():
+    """Older boschshcpy without these properties -> None, no crash."""
+    s = _new(NextSetpointTemperatureSensor)
+    s._device = SimpleNamespace()
+    assert s.native_value is None
+    attrs = s.extra_state_attributes
+    assert attrs["next_change_at"] is None
+    assert attrs["next_operation_mode"] is None
+
+
+# ---------------------------------------------------------------------------
+# PresenceSimulationRunningStartSensor / RunningEndSensor (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+
+def test_presence_simulation_running_start_reads_value():
+    s = _new(PresenceSimulationRunningStartSensor)
+    s._device = SimpleNamespace(running_start_time="2026-07-07T18:00:00Z")
+    assert s.native_value == "2026-07-07T18:00:00Z"
+
+
+def test_presence_simulation_running_start_none_when_not_running():
+    s = _new(PresenceSimulationRunningStartSensor)
+    s._device = SimpleNamespace(running_start_time=None)
+    assert s.native_value is None
+
+
+def test_presence_simulation_running_end_reads_value():
+    s = _new(PresenceSimulationRunningEndSensor)
+    s._device = SimpleNamespace(running_end_time="2026-07-07T23:00:00Z")
+    assert s.native_value == "2026-07-07T23:00:00Z"
+
+
+def test_presence_simulation_running_end_safe_when_attr_missing():
+    """Older boschshcpy without the property -> None, no crash."""
+    s = _new(PresenceSimulationRunningEndSensor)
+    s._device = SimpleNamespace()
+    assert s.native_value is None
+
+
+# ---------------------------------------------------------------------------
+# ReferenceMovingTimeTopToBottomSensor / BottomToTopSensor (Shutter Control II
+# diagnostics, hass audit)
+# ---------------------------------------------------------------------------
+
+
+def test_reference_moving_time_top_to_bottom_converts_ms_to_seconds():
+    s = _new(ReferenceMovingTimeTopToBottomSensor)
+    s._device = SimpleNamespace(reference_moving_time_top_to_bottom_ms=12500)
+    assert s.native_value == 12.5
+
+
+def test_reference_moving_time_top_to_bottom_none_when_uncalibrated():
+    s = _new(ReferenceMovingTimeTopToBottomSensor)
+    s._device = SimpleNamespace(reference_moving_time_top_to_bottom_ms=None)
+    assert s.native_value is None
+
+
+def test_reference_moving_time_bottom_to_top_converts_ms_to_seconds():
+    s = _new(ReferenceMovingTimeBottomToTopSensor)
+    s._device = SimpleNamespace(reference_moving_time_bottom_to_top_ms=9800)
+    assert s.native_value == 9.8
+
+
+def test_reference_moving_time_bottom_to_top_safe_when_attr_missing():
+    """Older boschshcpy without the property -> None, no crash."""
+    s = _new(ReferenceMovingTimeBottomToTopSensor)
+    s._device = SimpleNamespace()
+    assert s.native_value is None

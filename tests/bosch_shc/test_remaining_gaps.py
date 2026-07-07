@@ -534,8 +534,7 @@ class TestHeatingCircuitSetterAttributeError:
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
-        s._attr_native_min_value = 5.0
-        s._attr_native_max_value = 30.0
+        s._range_attr = "eco_temperature_range"
 
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
             asyncio.run(s.async_set_native_value(20.0))
@@ -555,8 +554,7 @@ class TestHeatingCircuitSetterAttributeError:
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
-        s._attr_native_min_value = 5.0
-        s._attr_native_max_value = 30.0
+        s._range_attr = "eco_temperature_range"
 
         with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
             asyncio.run(s.async_set_native_value(20.0))

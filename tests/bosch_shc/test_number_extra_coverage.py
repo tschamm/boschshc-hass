@@ -220,8 +220,7 @@ class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
-        s._attr_native_min_value = 5.0
-        s._attr_native_max_value = 30.0
+        s._range_attr = "eco_temperature_range"
         return s
 
     def test_set_native_value_with_none_service_logs_warning(self):
@@ -245,8 +244,7 @@ class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
-        s._attr_native_min_value = 5.0
-        s._attr_native_max_value = 30.0
+        s._range_attr = "eco_temperature_range"
 
         # Must not raise; setter is absent so no write occurs.
         with patch("custom_components.bosch_shc.number.LOGGER"):
@@ -267,8 +265,7 @@ class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
         )
         s._getter_name = "setpoint_temperature_eco"
         s._setter_name = "setpoint_temperature_eco"
-        s._attr_native_min_value = 5.0
-        s._attr_native_max_value = 30.0
+        s._range_attr = "eco_temperature_range"
 
         asyncio.run(s.async_set_native_value(20.0))
         mock_setter.assert_awaited_once_with(20.0)

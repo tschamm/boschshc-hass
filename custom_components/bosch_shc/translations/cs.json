@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Náhled minimálního jasu"
+      },
+      "reset_energy_summation": {
+        "name": "Resetovat počítadlo energie"
+      },
+      "shutter_recalibrate": {
+        "name": "Rekalibrovat"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Zpoždění blikání"
+      },
+      "bypass_timeout": {
+        "name": "Časový limit přemostění"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Stav testu detekce"
+      },
+      "next_setpoint_temperature": {
+        "name": "Další požadovaná teplota"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulace běží do"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulace běží od"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referenční doba pohybu (zdola nahoru)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referenční doba pohybu (shora dolů)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Sabotáž"
+      },
+      "schedule_override_active": {
+        "name": "Přepsání plánu aktivní"
+      },
+      "shutter_calibration_required": {
+        "name": "Vyžadována kalibrace"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Přemostění alarmu"
+      },
+      "bypass_infinite": {
+        "name": "Přemostění nikdy nevyprší"
       }
     },
     "light": {

@@ -392,20 +392,23 @@ def test_setup_presence_simulation_absent():
 # ---------------------------------------------------------------------------
 
 
-def test_setup_shutter_contact2_base_one_entity():
+def test_setup_shutter_contact2_base_two_entities():
+    """hass#120 audit: bypass_infinite is now wired in alongside bypass."""
     sw = _fake_shutter2(name="Shutter", dev_id="sh1")
     session = _make_session(shutter_contacts2=[sw])
     entities, _ = _setup(session)
-    assert len(entities) == 1
-    assert entities[0].entity_description.key == "bypass"
+    keys = {e.entity_description.key for e in entities}
+    assert keys == {"bypass", "bypass_infinite"}
 
 
-def test_setup_shutter_contact2plus_two_entities():
+def test_setup_shutter_contact2plus_three_entities():
+    """hass#120 audit: bypass_infinite is now wired in alongside bypass +
+    vibration_enabled."""
     sw = _fake_shutter2plus(name="Shutter+", dev_id="shp1")
     session = _make_session(shutter_contacts2=[sw])
     entities, _ = _setup(session)
     keys = {e.entity_description.key for e in entities}
-    assert keys == {"bypass", "vibration_enabled"}
+    assert keys == {"bypass", "bypass_infinite", "vibration_enabled"}
 
 
 # ---------------------------------------------------------------------------

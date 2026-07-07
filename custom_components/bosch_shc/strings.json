@@ -202,6 +202,12 @@
       },
       "preview_min_brightness": {
         "name": "Preview Min Brightness"
+      },
+      "reset_energy_summation": {
+        "name": "Reset Energy Counter"
+      },
+      "shutter_recalibrate": {
+        "name": "Recalibrate"
       }
     },
     "number": {
@@ -234,6 +240,9 @@
       },
       "siren_flash_delay": {
         "name": "Flash Delay"
+      },
+      "bypass_timeout": {
+        "name": "Bypass Timeout"
       }
     },
     "select": {
@@ -383,6 +392,21 @@
       },
       "keypad_trigger": {
         "name": "Button mapping"
+      },
+      "next_setpoint_temperature": {
+        "name": "Next Setpoint Temperature"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulation Running Since"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulation Running Until"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Reference Moving Time (Top to Bottom)"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Reference Moving Time (Bottom to Top)"
       }
     },
     "binary_sensor": {
@@ -421,6 +445,12 @@
       },
       "siren_primary_power_supply_outage": {
         "name": "Power Supply Outage"
+      },
+      "schedule_override_active": {
+        "name": "Schedule Override Active"
+      },
+      "shutter_calibration_required": {
+        "name": "Calibration Required"
       }
     },
     "light": {
@@ -442,6 +472,9 @@
     "switch": {
       "bypass": {
         "name": "Alarm bypass"
+      },
+      "bypass_infinite": {
+        "name": "Bypass Never Expires"
       }
     }
   },

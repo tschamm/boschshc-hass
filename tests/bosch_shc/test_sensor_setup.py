@@ -28,6 +28,8 @@ from custom_components.bosch_shc.sensor import (
     PowerSensor,
     PurityRatingSensor,
     PuritySensor,
+    ReferenceMovingTimeBottomToTopSensor,
+    ReferenceMovingTimeTopToBottomSensor,
     TemperatureRatingSensor,
     TemperatureSensor,
     TwinguardCombinedRatingSensor,
@@ -68,6 +70,7 @@ ENTRY_ID = "entry-001"
 # async_migrate_to_new_unique_id — stubbed so setup tests don't need HA registry
 # ---------------------------------------------------------------------------
 
+
 async def _noop_migrate(hass, platform, device, attr_name=None, old_unique_id=None):
     return None
 
@@ -85,9 +88,11 @@ def _make_fake_session(
     wallthermostats=(),
     roomthermostats=(),
     twinguards=(),
+    climate_controls=(),
     smart_plugs=(),
     light_switches_bsm=(),
     micromodule_light_controls=(),
+    shutter_controls=(),
     micromodule_shutter_controls=(),
     micromodule_blinds=(),
     smart_plugs_compact=(),
@@ -113,9 +118,11 @@ def _make_fake_session(
             wallthermostats=list(wallthermostats),
             roomthermostats=list(roomthermostats),
             twinguards=list(twinguards),
+            climate_controls=list(climate_controls),
             smart_plugs=list(smart_plugs),
             light_switches_bsm=list(light_switches_bsm),
             micromodule_light_controls=list(micromodule_light_controls),
+            shutter_controls=list(shutter_controls),
             micromodule_shutter_controls=list(micromodule_shutter_controls),
             micromodule_blinds=list(micromodule_blinds),
             smart_plugs_compact=list(smart_plugs_compact),
@@ -131,10 +138,10 @@ def _make_fake_session(
     )
 
 
-def _run_setup(session):
+def _run_setup(session, options=None):
     """Run async_setup_entry with a fake session. Returns list of added entities."""
     hass = SimpleNamespace()
-    config_entry = SimpleNamespace(options={}, entry_id=ENTRY_ID)
+    config_entry = SimpleNamespace(options=options or {}, entry_id=ENTRY_ID)
     config_entry.runtime_data = SimpleNamespace(session=session)
     collected: list = []
 
@@ -260,17 +267,59 @@ class TestAsyncSetupEntryEntityCounts:
         dev = _fake_device(name="MSC1", device_id="hdm:MSC:001")
         session = _make_fake_session(micromodule_shutter_controls=[dev])
         entities = _run_setup(session)
-        assert len(entities) == 3
+        # Power + Energy + 2 reference-moving-time diagnostics (diagnostic
+        # entities default enabled) + EMMA.
+        assert len(entities) == 5
         assert sum(isinstance(e, PowerSensor) for e in entities) == 1
         assert sum(isinstance(e, EnergySensor) for e in entities) == 1
+        assert (
+            sum(isinstance(e, ReferenceMovingTimeTopToBottomSensor) for e in entities)
+            == 1
+        )
+        assert (
+            sum(isinstance(e, ReferenceMovingTimeBottomToTopSensor) for e in entities)
+            == 1
+        )
 
     def test_micromodule_blinds_yields_power_and_energy(self):
         dev = _fake_device(name="MB1", device_id="hdm:MB:001")
         session = _make_fake_session(micromodule_blinds=[dev])
         entities = _run_setup(session)
-        assert len(entities) == 3
+        # Power + Energy + 2 reference-moving-time diagnostics + EMMA.
+        assert len(entities) == 5
         assert sum(isinstance(e, PowerSensor) for e in entities) == 1
         assert sum(isinstance(e, EnergySensor) for e in entities) == 1
+
+    def test_shutter_control_yields_reference_moving_time_diagnostics(self):
+        dev = _fake_device(name="BBL1", device_id="hdm:BBL:001")
+        session = _make_fake_session(shutter_controls=[dev])
+        entities = _run_setup(session)
+        # No power/energy for plain shutter_controls, only the 2 diagnostics + EMMA.
+        assert len(entities) == 3
+        assert (
+            sum(isinstance(e, ReferenceMovingTimeTopToBottomSensor) for e in entities)
+            == 1
+        )
+        assert (
+            sum(isinstance(e, ReferenceMovingTimeBottomToTopSensor) for e in entities)
+            == 1
+        )
+
+    def test_shutter_control_diagnostics_suppressed_when_diagnostic_disabled(self):
+        dev = _fake_device(name="BBL1", device_id="hdm:BBL:001")
+        session = _make_fake_session(shutter_controls=[dev])
+        entities = _run_setup(session, options={"diagnostic_entities": False})
+        assert len(entities) == 1  # only EMMA
+        assert not any(
+            isinstance(
+                e,
+                (
+                    ReferenceMovingTimeTopToBottomSensor,
+                    ReferenceMovingTimeBottomToTopSensor,
+                ),
+            )
+            for e in entities
+        )
 
     def test_smart_plug_compact_yields_power_energy_and_comm_quality(self):
         dev = _fake_device(name="SPC1", device_id="hdm:SPC:001")

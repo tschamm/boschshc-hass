@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Previsualitza la brillantor mínima"
+      },
+      "reset_energy_summation": {
+        "name": "Restableix el comptador d'energia"
+      },
+      "shutter_recalibrate": {
+        "name": "Recalibra"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Retard del flaix"
+      },
+      "bypass_timeout": {
+        "name": "Temps d'espera del bypass"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Estat del test de detecció"
+      },
+      "next_setpoint_temperature": {
+        "name": "Propera temperatura de consigna"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulació en curs fins a"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulació en curs des de"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Temps de referència de moviment (de baix a dalt)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Temps de referència de moviment (de dalt a baix)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Manipulació"
+      },
+      "schedule_override_active": {
+        "name": "Anul·lació d'horari activa"
+      },
+      "shutter_calibration_required": {
+        "name": "Calibratge requerit"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Bypass d'alarma"
+      },
+      "bypass_infinite": {
+        "name": "Bypass sense caducitat"
       }
     },
     "light": {

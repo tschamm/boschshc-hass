@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "최소 밝기 미리보기"
+      },
+      "reset_energy_summation": {
+        "name": "에너지 카운터 초기화"
+      },
+      "shutter_recalibrate": {
+        "name": "재보정"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "플래시 지연"
+      },
+      "bypass_timeout": {
+        "name": "바이패스 제한 시간"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "감지 테스트 상태"
+      },
+      "next_setpoint_temperature": {
+        "name": "다음 설정 온도"
+      },
+      "presence_simulation_running_end": {
+        "name": "시뮬레이션 종료 시간"
+      },
+      "presence_simulation_running_start": {
+        "name": "시뮬레이션 시작 시간"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "기준 이동 시간 (아래에서 위로)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "기준 이동 시간 (위에서 아래로)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "변조"
+      },
+      "schedule_override_active": {
+        "name": "일정 재정의 활성"
+      },
+      "shutter_calibration_required": {
+        "name": "보정 필요"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "알람 바이패스"
+      },
+      "bypass_infinite": {
+        "name": "바이패스 만료 없음"
       }
     },
     "light": {

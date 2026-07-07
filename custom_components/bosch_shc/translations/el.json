@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Προεπισκόπηση Ελάχιστης Φωτεινότητας"
+      },
+      "reset_energy_summation": {
+        "name": "Επαναφορά Μετρητή Ενέργειας"
+      },
+      "shutter_recalibrate": {
+        "name": "Επαναβαθμονόμηση"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Καθυστέρηση αναλαμπής"
+      },
+      "bypass_timeout": {
+        "name": "Χρονικό Όριο Παράκαμψης"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Κατάσταση Δοκιμής Ανίχνευσης"
+      },
+      "next_setpoint_temperature": {
+        "name": "Επόμενη Θερμοκρασία Στόχου"
+      },
+      "presence_simulation_running_end": {
+        "name": "Προσομοίωση σε Εξέλιξη Έως"
+      },
+      "presence_simulation_running_start": {
+        "name": "Προσομοίωση σε Εξέλιξη Από"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Χρόνος Αναφοράς Κίνησης (Ανοδική Πορεία)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Χρόνος Αναφοράς Κίνησης (Καθοδική Πορεία)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Παραβίαση"
+      },
+      "schedule_override_active": {
+        "name": "Παράκαμψη Προγράμματος Ενεργή"
+      },
+      "shutter_calibration_required": {
+        "name": "Απαιτείται Βαθμονόμηση"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Παράκαμψη συναγερμού"
+      },
+      "bypass_infinite": {
+        "name": "Παράκαμψη χωρίς λήξη"
       }
     },
     "light": {

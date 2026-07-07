@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Forhåndsvis minimal lysstyrke"
+      },
+      "reset_energy_summation": {
+        "name": "Nullstill energiteller"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibrer på nytt"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Blitsforsinkelse"
+      },
+      "bypass_timeout": {
+        "name": "Tidsavbrudd for forbikobling"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Deteksjonstest tilstand"
+      },
+      "next_setpoint_temperature": {
+        "name": "Neste innstilte temperatur"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulering kjører til"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulering kjører fra"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referanse bevegelsestid (nedenfra og opp)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referanse bevegelsestid (ovenfra og ned)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Sabotasje"
+      },
+      "schedule_override_active": {
+        "name": "Tidsplanoverstyring aktiv"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrering kreves"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Alarmforbikobling"
+      },
+      "bypass_infinite": {
+        "name": "Forbikobling utløper aldri"
       }
     },
     "light": {

@@ -22,6 +22,8 @@ from custom_components.bosch_shc.binary_sensor import (
     BatterySensor,
     CallForHeatSensor,
     MotionDetectionSensor,
+    ScheduleOverrideActiveSensor,
+    ShutterCalibrationRequiredSensor,
     ShutterContactSensor,
     ShutterContactVibrationSensor,
     SmokeDetectionSystemSensor,
@@ -83,27 +85,19 @@ def _vibration_sensor(state):
 
 class TestShutterContactVibrationSensor:
     def test_vibration_detected_is_on(self):
-        s = _vibration_sensor(
-            VibrationSensorService.State.VIBRATION_DETECTED
-        )
+        s = _vibration_sensor(VibrationSensorService.State.VIBRATION_DETECTED)
         assert s.is_on is True
 
     def test_no_vibration_is_off(self):
-        s = _vibration_sensor(
-            VibrationSensorService.State.NO_VIBRATION
-        )
+        s = _vibration_sensor(VibrationSensorService.State.NO_VIBRATION)
         assert s.is_on is False
 
     def test_unknown_state_is_off(self):
-        s = _vibration_sensor(
-            VibrationSensorService.State.UNKNOWN
-        )
+        s = _vibration_sensor(VibrationSensorService.State.UNKNOWN)
         assert s.is_on is False
 
     def test_device_class_is_vibration(self):
-        s = _vibration_sensor(
-            VibrationSensorService.State.NO_VIBRATION
-        )
+        s = _vibration_sensor(VibrationSensorService.State.NO_VIBRATION)
         assert s._attr_device_class == BinarySensorDeviceClass.VIBRATION
 
 
@@ -136,12 +130,14 @@ class TestMotionDetectionSensor:
 
     def test_is_on_recent_motion(self):
         from datetime import datetime, timedelta, timezone
+
         recent = datetime.now(timezone.utc) - timedelta(seconds=10)
         ts = recent.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         assert _motion_sensor(ts).is_on is True
 
     def test_is_on_old_motion_is_false(self):
         from datetime import datetime, timedelta, timezone
+
         old = datetime.now(timezone.utc) - timedelta(minutes=10)
         ts = old.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         assert _motion_sensor(ts).is_on is False
@@ -176,12 +172,14 @@ class TestMotionDetectionSensorMD2:
 
     def test_is_on_recent_motion(self):
         from datetime import datetime, timedelta, timezone
+
         recent = datetime.now(timezone.utc) - timedelta(seconds=10)
         ts = recent.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         assert _motion_sensor_md2(ts).is_on is True
 
     def test_is_on_old_motion_is_false(self):
         from datetime import datetime, timedelta, timezone
+
         old = datetime.now(timezone.utc) - timedelta(minutes=10)
         ts = old.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         assert _motion_sensor_md2(ts).is_on is False
@@ -427,9 +425,7 @@ class TestBatterySensor:
         assert s.is_on is True
 
     def test_critically_low_battery_is_on(self):
-        s = _battery_sensor(
-            BatteryLevelService.State.CRITICALLY_LOW_BATTERY
-        )
+        s = _battery_sensor(BatteryLevelService.State.CRITICALLY_LOW_BATTERY)
         assert s.is_on is True
 
     def test_not_available_is_on(self):
@@ -464,8 +460,48 @@ class TestCallForHeatSensor:
         # older boschshcpy without has_demand -> degrade to off, no crash
         assert self._sensor().is_on is False
 
-    def test_device_class_running(self):
-        assert (
-            self._sensor(has_demand=True)._attr_device_class
-            == BinarySensorDeviceClass.RUNNING
-        )
+
+# ---------------------------------------------------------------------------
+# ScheduleOverrideActiveSensor (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+
+class TestScheduleOverrideActiveSensor:
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = ScheduleOverrideActiveSensor.__new__(ScheduleOverrideActiveSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_on_when_override_active(self):
+        assert self._sensor(setpoint_temperature_offset_active=True).is_on is True
+
+    def test_off_when_override_inactive(self):
+        assert self._sensor(setpoint_temperature_offset_active=False).is_on is False
+
+    def test_off_when_attr_missing(self):
+        # older boschshcpy without the property -> degrade to off, no crash
+        assert self._sensor().is_on is False
+
+
+# ---------------------------------------------------------------------------
+# ShutterCalibrationRequiredSensor (Shutter Control II diagnostic, hass audit)
+# ---------------------------------------------------------------------------
+
+
+class TestShutterCalibrationRequiredSensor:
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = ShutterCalibrationRequiredSensor.__new__(ShutterCalibrationRequiredSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_off_when_calibrated(self):
+        assert self._sensor(calibrated=True).is_on is False
+
+    def test_on_when_not_calibrated(self):
+        assert self._sensor(calibrated=False).is_on is True
+
+    def test_off_when_attr_missing(self):
+        # older boschshcpy without the property -> degrade to "no problem"
+        assert self._sensor().is_on is False

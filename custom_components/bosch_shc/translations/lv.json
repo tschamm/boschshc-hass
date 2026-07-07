@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Minimālā spilgtuma priekšskatījums"
+      },
+      "reset_energy_summation": {
+        "name": "Atiestatīt enerģijas skaitītāju"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibrēt no jauna"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Mirgošanas aizkave"
+      },
+      "bypass_timeout": {
+        "name": "Apiešanas noildze"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Detektēšanas testa stāvoklis"
+      },
+      "next_setpoint_temperature": {
+        "name": "Nākamā iestatītā temperatūra"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulācijas darbības beigas"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulācijas darbības sākums"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Atskaites kustības laiks (no apakšas uz augšu)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Atskaites kustības laiks (no augšas uz apakšu)"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "Manipulācija"
+      },
+      "schedule_override_active": {
+        "name": "Grafika pārrakstīšana aktīva"
+      },
+      "shutter_calibration_required": {
+        "name": "Nepieciešama kalibrēšana"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "Signalizācijas apiešana"
+      },
+      "bypass_infinite": {
+        "name": "Apiešana nekad nebeidzas"
       }
     },
     "light": {

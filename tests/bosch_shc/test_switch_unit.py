@@ -743,6 +743,7 @@ def test_switch_types_all_keys_present():
         "cameraoutdoorgen2_cameraambientlight",
         "presencesimulation",
         "bypass",
+        "bypass_infinite",
         "child_lock",
         "child_lock_thermostat",
         "pet_immunity_enabled",

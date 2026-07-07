@@ -201,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "最小輝度プレビュー"
+      },
+      "reset_energy_summation": {
+        "name": "エネルギーカウンターリセット"
+      },
+      "shutter_recalibrate": {
+        "name": "再キャリブレーション"
       }
     },
     "number": {
@@ -233,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "フラッシュ遅延"
+      },
+      "bypass_timeout": {
+        "name": "バイパスタイムアウト"
       }
     },
     "select": {
@@ -382,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "検知テスト状態"
+      },
+      "next_setpoint_temperature": {
+        "name": "次回設定温度"
+      },
+      "presence_simulation_running_end": {
+        "name": "シミュレーション終了日時"
+      },
+      "presence_simulation_running_start": {
+        "name": "シミュレーション開始日時"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "基準移動時間（下から上）"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "基準移動時間（上から下）"
       }
     },
     "binary_sensor": {
@@ -420,6 +444,12 @@
       },
       "tamper": {
         "name": "改ざん"
+      },
+      "schedule_override_active": {
+        "name": "スケジュールオーバーライド中"
+      },
+      "shutter_calibration_required": {
+        "name": "要キャリブレーション"
       }
     },
     "update": {
@@ -433,6 +463,9 @@
     "switch": {
       "bypass": {
         "name": "アラームバイパス"
+      },
+      "bypass_infinite": {
+        "name": "バイパス無期限"
       }
     },
     "light": {
