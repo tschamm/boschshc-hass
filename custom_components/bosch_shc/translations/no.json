@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenarioknappefilter",
               "suppress_ledvance_lights": "Skjul LEDVANCE-lys fra Bosch SHC",
               "suppress_motion_indicator_light": "Skjul bevegelsesdetektorens statusindikator",
-              "suppress_camera_switches": "Skjul Bosch-kamerabrytere"
+              "suppress_camera_switches": "Skjul Bosch-kamerabrytere",
+              "room_light_groups": "Aktiver rombaserte lysgrupper"
             },
             "data_description": {
               "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "La stå tomt for knapper for ALLE scenarioer (standard). Velg ett eller flere for å begrense knapper. Gjelder kun når 'Vis scenarioer som knapper' er på.",
               "suppress_ledvance_lights": "Når PÅ: LEDVANCE-lys paret med SHC vises ikke lenger som entiteter. Bruk for å unngå duplikater med LEDVANCE- eller Zigbee-integrasjonen. Standard: av.",
               "suppress_motion_indicator_light": "Når PÅ: entiteten for bevegelsesdetektor II’s statusindikator opprettes ikke. Standard: av.",
-              "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool. Standard: av."
+              "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool. Standard: av.",
+              "room_light_groups": "Når PÅ: opprettes én samlet `light`-entitet per SHC-rom med 2 eller flere dimbare/fargelys (LEDVANCE, Hue, Light/Shutter Control II-dimmere), som lar deg slå av/på alle lysene i et rom fra én entitet — tilsvarende den romvise styringen oppvarming allerede har via Romklimastyring. Kun av/på, ingen aggregering av lysstyrke/farge. Standard: av (ingen nye entiteter)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Bevegelseslys"
+      },
+      "room_light_group": {
+        "name": "Lys"
       }
     }
   },

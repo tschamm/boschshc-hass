@@ -65,6 +65,12 @@ OPT_SUPPRESS_CAMERA_SWITCHES = "suppress_camera_switches"
 OPT_SILENT_MODE_ENABLED = "silent_mode_enabled"
 OPT_SILENT_MODE_START = "silent_mode_start"
 OPT_SILENT_MODE_END = "silent_mode_end"
+# #244: opt-in per-room "all lights" aggregate light entity. Groups the
+# dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers) that
+# share an SHC room into one master on/off control, mirroring the room-level
+# control heating already has via ROOM_CLIMATE_CONTROL. Default False = no new
+# entities (non-breaking). Only rooms with 2+ eligible lights get a group.
+OPT_ROOM_LIGHT_GROUPS = "room_light_groups"
 
 # Camera Tool companion project
 CAMERA_TOOL_URL = (

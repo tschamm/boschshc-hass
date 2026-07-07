@@ -102,7 +102,8 @@
               "scenarios_filter": "סינון לחצני תרחישים",
               "suppress_ledvance_lights": "הסתר נורות LEDVANCE מ-Bosch SHC",
               "suppress_motion_indicator_light": "הסתר נורת חיישן התנועה",
-              "suppress_camera_switches": "הסתר את לחצני המצלמה של Bosch"
+              "suppress_camera_switches": "הסתר את לחצני המצלמה של Bosch",
+              "room_light_groups": "הפעל קבוצות תאורה לפי חדר"
             },
             "data_description": {
               "scenarios_as_buttons": "כאשר מופעל: כל תרחיש Bosch SHC מופיע גם כישות כפתור ב-Home Assistant (בנוסף לשירות trigger_scenario). שימושי לאריחי לוח מחוונים ואוטומציות המפעילות תרחישים ישירות. ברירת מחדל: כבוי.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "השאר ריק ליצירת לחצנים לכל התרחישים (ברירת מחדל). בחר אחד או יותר להגבלה. רלוונטי רק כש 'חשוף תרחישים כלחצנים' מופעל.",
               "suppress_ledvance_lights": "כאשר מופעל: נורות LEDVANCE המשויכות ל-SHC לא יוצגו עוד כישויות. מנע כפילויות עם Zigbee או LEDVANCE. ברירת מחדל: מכובה.",
               "suppress_motion_indicator_light": "כאשר מופעל: ישות נורת ה-LED של חיישן התנועה II לא תיוצר. ברירת מחדל: מכובה.",
-              "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool. ברירת מחדל: מכובה."
+              "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool. ברירת מחדל: מכובה.",
+              "room_light_groups": "כאשר מופעל: נוצרת ישות `light` מצטברת אחת עבור כל חדר ב-SHC שבו יש 2 מנורות הניתנות לעמעום/צבע או יותר (LEDVANCE, Hue, עמעמי Light/Shutter Control II), המאפשרת להדליק או לכבות את כל מנורות החדר מישות אחת בלבד — בדומה לשליטה ברמת החדר שכבר קיימת לחימום דרך Room Climate Control. הפעלה/כיבוי בלבד, ללא צבירת בהירות או צבע. ברירת מחדל: מכובה (לא נוצרות ישויות חדשות)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "אור תנועה"
+      },
+      "room_light_group": {
+        "name": "אור"
       }
     }
   },

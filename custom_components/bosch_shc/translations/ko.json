@@ -102,7 +102,8 @@
               "scenarios_filter": "시나리오 버튼 필터",
               "suppress_ledvance_lights": "Bosch SHC에서 LEDVANCE 조명 숨기기",
               "suppress_motion_indicator_light": "동작 감지기 표시등 숨기기",
-              "suppress_camera_switches": "Bosch 카메라 스위치 숨기기"
+              "suppress_camera_switches": "Bosch 카메라 스위치 숨기기",
+              "room_light_groups": "방별 조명 그룹 활성화"
             },
             "data_description": {
               "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "모든 시나리오에 버튼을 만들려면 비워 두세요(기본값). 하나 이상 선택하면 해당 시나리오로만 제한됩니다. '시나리오를 버튼으로 표시'가 켜진 경우에만 적용됩니다.",
               "suppress_ledvance_lights": "켜짐: SHC에 페어링된 LEDVANCE 조명이 더 이상 엔티티로 노출되지 않습니다. LEDVANCE 또는 Zigbee 통합 시 중복을 방지하려면 사용하세요. 기본값: 꺼짐.",
               "suppress_motion_indicator_light": "켜짐: 동작 감지기 II의 표시등 LED 엔티티가 생성되지 않습니다. 기본값: 꺼짐.",
-              "suppress_camera_switches": "켜짐: Bosch 카메라(Eyes / 360 / Outdoor Gen2)의 개인 정보 보호, 조명 및 알림 스위치 엔티티가 생성되지 않습니다. Bosch Camera Tool과 함께 사용하세요. 기본값: 꺼짐."
+              "suppress_camera_switches": "켜짐: Bosch 카메라(Eyes / 360 / Outdoor Gen2)의 개인 정보 보호, 조명 및 알림 스위치 엔티티가 생성되지 않습니다. Bosch Camera Tool과 함께 사용하세요. 기본값: 꺼짐.",
+              "room_light_groups": "켜짐: 조광/컬러 조명(LEDVANCE, Hue, Light/Shutter Control II 디머)이 2개 이상 있는 SHC 방마다 집계된 `light` 엔티티를 하나씩 생성하여, 하나의 엔티티로 방 전체 조명을 켜고 끌 수 있습니다 — 난방이 Room Climate Control을 통해 이미 제공하는 방 단위 제어와 동일한 방식입니다. 켜기/끄기만 지원하며 밝기·색상은 집계되지 않습니다. 기본값: 꺼짐(새 엔티티 없음)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "모션 조명"
+      },
+      "room_light_group": {
+        "name": "조명"
       }
     }
   },

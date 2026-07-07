@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenarioknoppen filter",
               "suppress_ledvance_lights": "LEDVANCE-lampen van Bosch SHC onderdrukken",
               "suppress_motion_indicator_light": "Statusindicator bewegingsdetector onderdrukken",
-              "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken"
+              "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken",
+              "room_light_groups": "Lichtgroepen per kamer inschakelen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Laat leeg om knoppen voor ALLE scenario's te maken (standaard). Selecteer één of meer om knoppen te beperken. Geldt alleen wanneer 'Scenario's als knoppen tonen' is ingeschakeld.",
               "suppress_ledvance_lights": "Wanneer AAN: LEDVANCE-lampen gekoppeld aan de SHC worden niet meer als entiteiten beschikbaar gesteld. Gebruik dit om duplicaten met de LEDVANCE- of Zigbee-integratie te vermijden. Standaard: uit.",
               "suppress_motion_indicator_light": "Wanneer AAN: de entiteit voor de statusindicator van bewegingsdetectoren II wordt niet aangemaakt. Standaard: uit.",
-              "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool. Standaard: uit."
+              "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool. Standaard: uit.",
+              "room_light_groups": "Wanneer AAN: er wordt per SHC-kamer met 2 of meer dimbare/kleurenlampen (LEDVANCE, Hue, Light/Shutter Control II-dimmers) één gecombineerde `light`-entiteit aangemaakt, waarmee u alle lampen van een kamer met één entiteit aan/uit kunt zetten — vergelijkbaar met de kamergebonden regeling die verwarming al heeft via Kamerklimaat regeling. Alleen aan/uit, geen samenvoeging van helderheid/kleur. Standaard: uit (geen nieuwe entiteiten)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Bewegingslamp"
+      },
+      "room_light_group": {
+        "name": "Lamp"
       }
     }
   },

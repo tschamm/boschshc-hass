@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtre des boutons de scénario",
               "suppress_ledvance_lights": "Supprimer les lumières LEDVANCE du Bosch SHC",
               "suppress_motion_indicator_light": "Supprimer le voyant du détecteur de mouvement",
-              "suppress_camera_switches": "Supprimer les interrupteurs de caméra Bosch"
+              "suppress_camera_switches": "Supprimer les interrupteurs de caméra Bosch",
+              "room_light_groups": "Activer les groupes de lumières par pièce"
             },
             "data_description": {
               "scenarios_as_buttons": "Quand ACTIVÉ : chaque scénario Bosch SHC apparaît également comme entité bouton dans Home Assistant (en plus du service `trigger_scenario`). Utile pour les tuiles de tableau de bord et les automatisations qui déclenchent des scénarios directement. Par défaut : désactivé.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Laissez vide pour des boutons pour TOUS les scénarios (défaut). Sélectionnez-en un ou plusieurs pour restreindre les boutons. S'applique uniquement quand 'Exposer les scénarios comme boutons' est activé.",
               "suppress_ledvance_lights": "Quand ACTIVÉ : les lumières LEDVANCE couplées au SHC ne sont plus exposées comme entités. Utilisez cela pour éviter les doublons avec l'intégration LEDVANCE ou Zigbee. Par défaut : désactivé.",
               "suppress_motion_indicator_light": "Quand ACTIVÉ : l'entité de luminosité de la LED indicatrice des détecteurs de mouvement II n'est pas créée. Par défaut : désactivé.",
-              "suppress_camera_switches": "Quand ACTIVÉ : les interrupteurs de confidentialité, lumière et notification pour les caméras Bosch (Eyes / 360 / Outdoor Gen2) ne sont pas créés. Utilisez cela avec Bosch Camera Tool. Par défaut : désactivé."
+              "suppress_camera_switches": "Quand ACTIVÉ : les interrupteurs de confidentialité, lumière et notification pour les caméras Bosch (Eyes / 360 / Outdoor Gen2) ne sont pas créés. Utilisez cela avec Bosch Camera Tool. Par défaut : désactivé.",
+              "room_light_groups": "Quand ACTIVÉ : crée une entité `light` agrégée par pièce SHC comptant 2 lumières variables/couleur ou plus (LEDVANCE, Hue, variateurs Light/Shutter Control II), permettant d'allumer ou d'éteindre toutes les lumières d'une pièce depuis une seule entité — à l'image du contrôle par pièce déjà disponible pour le chauffage via Room Climate Control. Allumage/extinction uniquement, pas d'agrégation de luminosité ni de couleur. Par défaut : désactivé (aucune nouvelle entité)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Éclairage à détection de mouvement"
+      },
+      "room_light_group": {
+        "name": "Éclairage"
       }
     }
   },

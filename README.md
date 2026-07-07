@@ -163,6 +163,7 @@ Options marked with ★ are shown only when the relevant devices are connected t
 | Suppress MD2 indicator light ★ | off | Hide the orientation-LED entity on Motion Detector II |
 | Expose light relays as `light` ★ | off | Flip all BSM / Light Control II channels from `switch` to `light` domain |
 | Expose selected relays as `light` ★ | (none) | Per-device picker — choose individual channels to expose as `light` |
+| Enable per-room light groups | off | One aggregate `light` entity per SHC room with 2+ dimmable/color lights, to turn a whole room's lights on/off from a single entity — on/off only |
 
 #### Presence & silent mode
 

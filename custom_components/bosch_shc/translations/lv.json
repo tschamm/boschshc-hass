@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenāriju poģu filtrs",
               "suppress_ledvance_lights": "Slēpt LEDVANCE gaismas no Bosch SHC",
               "suppress_motion_indicator_light": "Slēpt kustību detektora indikatora gaismu",
-              "suppress_camera_switches": "Slēpt Bosch kameras slēdžus"
+              "suppress_camera_switches": "Slēpt Bosch kameras slēdžus",
+              "room_light_groups": "Iespējot telpu gaismas grupas"
             },
             "data_description": {
               "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Atklājiet tukšu, lai izveidotu pogas VISIEM scenārijiem (nokluājums). Atlāsīt vienu vai vairākus, lai ierobežotu pogas. Piemērojams tikai tad, kad ir ieslēgts 'Rādīt scenārijus kā pogas'.",
               "suppress_ledvance_lights": "Kad IESĖGSTS: LEDVANCE gaismeļļi, kas savienoti ar SHC, vairs netiek rādīti kā entītijas. Izmantojiet, lai izvairītos no duplikātiem ar LEDVANCE vai Zigbee integrāciju. Nokluājums: izslēgts.",
               "suppress_motion_indicator_light": "Kad IESĖGSTS: kustību detektora II indikatorgaīsmas entītija netiek izveidota. Nokluājums: izslēgts.",
-              "suppress_camera_switches": "Kad IESLĒGTS: Bosch kameru (Eyes / 360 / Outdoor Gen2) privātuma, gaismas un paziņojumu slēdži netiek izveidoti. Izmantojiet ar Bosch Camera Tool. Nokluājums: izslēgts."
+              "suppress_camera_switches": "Kad IESLĒGTS: Bosch kameru (Eyes / 360 / Outdoor Gen2) privātuma, gaismas un paziņojumu slēdži netiek izveidoti. Izmantojiet ar Bosch Camera Tool. Nokluājums: izslēgts.",
+              "room_light_groups": "Kad IESLĒGTS: katrai SHC telpai ar 2 vai vairāk regulējamas spilgtuma/krāsu gaismas ķermeņiem (LEDVANCE, Hue, Light/Shutter Control II dimmeri) tiek izveidota viena apkopota `light` entītija, ļaujot ieslēgt/izslēgt visas telpas gaismas no vienas entītijas — tas atspoguļo telpas līmeņa vadību, kāda apkurei jau ir, izmantojot Room Climate Control. Tikai ieslēgšana/izslēgšana, bez spilgtuma/krāsas apkopošanas. Noklusējums: izslēgts (jaunu entītiju nav)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Kustības gaisma"
+      },
+      "room_light_group": {
+        "name": "Gaisma"
       }
     }
   },

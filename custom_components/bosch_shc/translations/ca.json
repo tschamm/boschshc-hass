@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtre de botons d'escenari",
               "suppress_ledvance_lights": "Suprimeix els llums LEDVANCE del Bosch SHC",
               "suppress_motion_indicator_light": "Suprimeix la llum indicadora del detector de moviment",
-              "suppress_camera_switches": "Suprimeix els interruptors de la càmera Bosch"
+              "suppress_camera_switches": "Suprimeix els interruptors de la càmera Bosch",
+              "room_light_groups": "Activa els grups de llums per habitació"
             },
             "data_description": {
               "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Deixa-ho buit per a botons per a TOTS els escenaris (predeterminat). Selecciona'n un o més per limitar els botons. Aplica només quan 'Exposa escenaris com a botons' està activat.",
               "suppress_ledvance_lights": "Quan està ACTIVAT: els llums LEDVANCE emparellats amb el SHC ja no s'exposen com a entitats. Utilitza-ho per evitar duplicats amb la integració LEDVANCE o Zigbee. Predeterminat: desactivat.",
               "suppress_motion_indicator_light": "Quan està ACTIVAT: l'entitat del LED indicador del detector de moviment II no es crea. Predeterminat: desactivat.",
-              "suppress_camera_switches": "Quan està ACTIVAT: els interruptors de privadesa, llum i notificació per a les càmeres Bosch (Eyes / 360 / Outdoor Gen2) no es creen. Utilitza-ho amb Bosch Camera Tool. Predeterminat: desactivat."
+              "suppress_camera_switches": "Quan està ACTIVAT: els interruptors de privadesa, llum i notificació per a les càmeres Bosch (Eyes / 360 / Outdoor Gen2) no es creen. Utilitza-ho amb Bosch Camera Tool. Predeterminat: desactivat.",
+              "room_light_groups": "Quan està ACTIVAT: crea una entitat `light` agregada per cada habitació del SHC amb 2 o més llums regulables/de color (LEDVANCE, Hue, reguladors Light/Shutter Control II), permetent encendre o apagar tots els llums d'una habitació des d'una sola entitat — reflectint el control per habitació que la calefacció ja té mitjançant Room Climate Control. Només encès/apagat, sense agregació de brillantor/color. Predeterminat: desactivat (sense entitats noves)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Llum de moviment"
+      },
+      "room_light_group": {
+        "name": "Llum"
       }
     }
   },

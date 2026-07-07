@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenarioknappsfilter",
               "suppress_ledvance_lights": "Dölj LEDVANCE-lampor från Bosch SHC",
               "suppress_motion_indicator_light": "Dölj rörelsedektorns statusindikator",
-              "suppress_camera_switches": "Dölj Bosch-kameraomkopplare"
+              "suppress_camera_switches": "Dölj Bosch-kameraomkopplare",
+              "room_light_groups": "Aktivera ljusgrupper per rum"
             },
             "data_description": {
               "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Lämna tomt för knappar för ALLA scenarion (standard). Välj ett eller flera för att begränsa knappar. Gäller bara när 'Exponera scenarion som knappar' är på.",
               "suppress_ledvance_lights": "När PÅ: LEDVANCE-lampor kopplade till SHC skapas inte längre som entiteter. Använd för att undvika dubbletter med LEDVANCE- eller Zigbee-integrationen. Standard: av.",
               "suppress_motion_indicator_light": "När PÅ: entiteten för rörelsedetektor II:s statusindikator skapas inte. Standard: av.",
-              "suppress_camera_switches": "När PÅ: sekretess-, ljus- och aviseringsomkopplare för Bosch-kameror (Eyes / 360 / Outdoor Gen2) skapas inte. Använd med Bosch Camera Tool. Standard: av."
+              "suppress_camera_switches": "När PÅ: sekretess-, ljus- och aviseringsomkopplare för Bosch-kameror (Eyes / 360 / Outdoor Gen2) skapas inte. Använd med Bosch Camera Tool. Standard: av.",
+              "room_light_groups": "När PÅ: skapar en aggregerad `light`-entitet per SHC-rum med 2 eller fler dimbara/färgbara lampor (LEDVANCE-, Hue-, Light/Shutter Control II-dimrar), så att du kan slå på/av alla lampor i ett rum från en enda entitet — på samma sätt som värmen redan har rumsstyrning via Room Climate Control. Endast på/av, ingen aggregering av ljusstyrka eller färg. Standard: av (inga nya entiteter)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Rörelselampa"
+      },
+      "room_light_group": {
+        "name": "Belysning"
       }
     }
   },

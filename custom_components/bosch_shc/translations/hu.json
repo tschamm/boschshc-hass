@@ -102,7 +102,8 @@
               "scenarios_filter": "Forgatókönyv-gombok szűrője",
               "suppress_ledvance_lights": "LEDVANCE-lámpák elrejtése a Bosch SHC-ből",
               "suppress_motion_indicator_light": "Mozgásérzékelő jelzőfény elrejtése",
-              "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése"
+              "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése",
+              "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Hagyd ürösen, ha MINDEN forgatókönyvhez szeretnél gombot (alapértelmezett). Jelölj ki egyet vagy többet a gombok adott forgatókönyvekre való korlátozásához. Csak akkor érvényes, ha a 'Forgatókönyvek megjelenítése gombként' be van kapcsolva.",
               "suppress_ledvance_lights": "Ha BE van kapcsolva: az SHC-hez párosított LEDVANCE-lámpák nem kerülnek entitásként közzé. Használja a LEDVANCE vagy Zigbee integráció esetén a duplikációk elkerüléséhez. Alapértelmezett: ki.",
               "suppress_motion_indicator_light": "Ha BE van kapcsolva: a mozgásérzékelő II jelzőfény-entitása nem jön létre. Alapértelmezett: ki.",
-              "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki."
+              "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki.",
+              "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Mozgásvezérelt lámpa"
+      },
+      "room_light_group": {
+        "name": "Lámpa"
       }
     }
   },

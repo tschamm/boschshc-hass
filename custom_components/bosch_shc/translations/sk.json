@@ -102,7 +102,8 @@
               "scenarios_filter": "Filter tlačidál scenárov",
               "suppress_ledvance_lights": "Skryť svetlá LEDVANCE z Bosch SHC",
               "suppress_motion_indicator_light": "Skryť indikátor pohybového senzora",
-              "suppress_camera_switches": "Skryť prepínače kamery Bosch"
+              "suppress_camera_switches": "Skryť prepínače kamery Bosch",
+              "room_light_groups": "Povoliť skupiny osvetlenia podľa miestností"
             },
             "data_description": {
               "scenarios_as_buttons": "Keď ZAP: každý scenár Bosch SHC sa zobrazí aj ako tlačidlová entita v Home Assistant (okrem služby trigger_scenario). Užitočné pre dlaždice panela a automatizácie, ktoré priamo spúšťajú scenáre. Predvolené: vyp.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Nechajte prázdne pre vytvorenie tlačidál pre VŠETKY scenáre (predvolené). Vyberte jeden alebo viac pre obmedzenie. Platí len keď je zapnuté 'Scenáre ako tlačidā'.",
               "suppress_ledvance_lights": "Keď ZAPNUTÉ: svetlá LEDVANCE spárované so SHC sa nevytvoria ako entity. Použite pre zamedzenie duplikátov s integráciou LEDVANCE alebo Zigbee. Predvolené: vypnuté.",
               "suppress_motion_indicator_light": "Keď ZAPNUTÉ: entita LED indikátora pohybového senzora II sa nevytvorí. Predvolené: vypnuté.",
-              "suppress_camera_switches": "Keď ZAPNUTÉ: prepínače ochrany súkromia, svetla a oznámení pre kamery Bosch (Eyes / 360 / Outdoor Gen2) sa nevytvoria. Použite s Bosch Camera Tool. Predvolené: vypnuté."
+              "suppress_camera_switches": "Keď ZAPNUTÉ: prepínače ochrany súkromia, svetla a oznámení pre kamery Bosch (Eyes / 360 / Outdoor Gen2) sa nevytvoria. Použite s Bosch Camera Tool. Predvolené: vypnuté.",
+              "room_light_groups": "Keď ZAPNUTÉ: vytvorí sa jedna agregovaná entita `light` pre každú miestnosť SHC s 2 a viacerými stmievateľnými/farebnými svetlami (stmievače LEDVANCE, Hue, Light/Shutter Control II), čo umožňuje zapnúť/vypnúť všetky svetlá v miestnosti z jednej entity — podobne ako už funguje riadenie kúrenia na úrovni miestnosti cez Room Climate Control. Iba zapnutie/vypnutie, bez agregácie jasu alebo farby. Predvolené: vypnuté (žiadne nové entity)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Pohybové svetlo"
+      },
+      "room_light_group": {
+        "name": "Svetlo"
       }
     }
   },

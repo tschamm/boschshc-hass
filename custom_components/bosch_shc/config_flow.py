@@ -55,6 +55,7 @@ from .const import (
     OPT_LIGHTS_AS_LIGHT,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
+    OPT_ROOM_LIGHT_GROUPS,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SCENARIOS_FILTER,
     OPT_SILENT_MODE_ENABLED,
@@ -87,6 +88,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
         OPT_SCENARIOS_FILTER,
         OPT_SUPPRESS_CAMERA_SWITCHES,
+        OPT_ROOM_LIGHT_GROUPS,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -674,6 +676,16 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
             vol.Optional(
                 OPT_SUPPRESS_POWER_SENSORS,
                 default=current.get(OPT_SUPPRESS_POWER_SENSORS, False),
+            )
+        ] = BooleanSelector()
+
+        # #244: per-room "all lights" master control. Always offered (like
+        # scenarios_as_buttons/diagnostic_entities above) — a no-op if no room
+        # has 2+ eligible lights, same as those unconditional toggles.
+        features_fields[
+            vol.Optional(
+                OPT_ROOM_LIGHT_GROUPS,
+                default=current.get(OPT_ROOM_LIGHT_GROUPS, False),
             )
         ] = BooleanSelector()
 

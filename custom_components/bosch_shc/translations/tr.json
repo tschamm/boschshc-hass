@@ -102,7 +102,8 @@
               "scenarios_filter": "Senaryo düğmesi filtresi",
               "suppress_ledvance_lights": "Bosch SHC'den LEDVANCE ışıklarını gizle",
               "suppress_motion_indicator_light": "Hareket dedektörü gösterge ışığını gizle",
-              "suppress_camera_switches": "Bosch kamera anahtarlarını gizle"
+              "suppress_camera_switches": "Bosch kamera anahtarlarını gizle",
+              "room_light_groups": "Oda başına ışık gruplarını etkinleştir"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "TÜM senaryolar için düğme oluşturmak üzere boş bırakın (varsayılan). Düğmeleri sınırlamak için bir veya daha fazlasını seçin. Yalnızca 'Senaryoları düğme olarak göster' açıkken geçerlidir.",
               "suppress_ledvance_lights": "AÇIK olduğunda: SHC'ye eşleştirilmiş LEDVANCE ışıkları artık varlık olarak sunulmaz. LEDVANCE veya Zigbee entegrasyonu ile yinelenenleri önlemek için kullanın. Varsayılan: kapalı.",
               "suppress_motion_indicator_light": "AÇIK olduğunda: Hareket Dedektörü II gösterge LED varlığı oluşturulmaz. Varsayılan: kapalı.",
-              "suppress_camera_switches": "AÇIK olduğunda: Bosch kameraları (Eyes / 360 / Outdoor Gen2) için gizlilik, ışık ve bildirim anahtarları oluşturulmaz. Bosch Camera Tool ile birlikte kullanın. Varsayılan: kapalı."
+              "suppress_camera_switches": "AÇIK olduğunda: Bosch kameraları (Eyes / 360 / Outdoor Gen2) için gizlilik, ışık ve bildirim anahtarları oluşturulmaz. Bosch Camera Tool ile birlikte kullanın. Varsayılan: kapalı.",
+              "room_light_groups": "AÇIK olduğunda: 2 veya daha fazla kısılabilir/renkli ışığa sahip (LEDVANCE, Hue, Light/Shutter Control II dimmerleri) her SHC odası için tek bir toplu `light` varlığı oluşturur ve bir odanın tüm ışıklarını tek bir varlıktan açıp kapatmanızı sağlar — ısıtmanın Room Climate Control ile zaten sahip olduğu oda düzeyinde kontrolü yansıtır. Sadece açma/kapama, parlaklık veya renk toplanması yoktur. Varsayılan: kapalı (yeni varlık oluşturulmaz)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Hareket Işığı"
+      },
+      "room_light_group": {
+        "name": "Işık"
       }
     }
   },

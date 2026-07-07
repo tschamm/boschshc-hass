@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenario button filter",
               "suppress_ledvance_lights": "Suppress LEDVANCE lights from Bosch SHC",
               "suppress_motion_indicator_light": "Suppress motion detector indicator light",
-              "suppress_camera_switches": "Suppress Bosch camera switches"
+              "suppress_camera_switches": "Suppress Bosch camera switches",
+              "room_light_groups": "Enable per-room light groups"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Leave empty to create buttons for ALL scenarios (default). Select one or more to limit buttons to only those scenarios. Applies only when 'Expose scenarios as button entities' is on.",
               "suppress_ledvance_lights": "When ON: LEDVANCE lights paired to the SHC are no longer exposed as entities by this integration. Use this to avoid duplicates when the LEDVANCE or Zigbee integration is also active. Default: off.",
               "suppress_motion_indicator_light": "When ON: the indicator-LED brightness entity for Motion Detector II devices is not created. Default: off (entity is shown).",
-              "suppress_camera_switches": "When ON: privacy-mode, light, and notification switch entities for Bosch cameras (Eyes / 360 / Outdoor Gen2) are not created. Use this when the Bosch Camera Tool is also active to avoid duplicate controls. Default: off."
+              "suppress_camera_switches": "When ON: privacy-mode, light, and notification switch entities for Bosch cameras (Eyes / 360 / Outdoor Gen2) are not created. Use this when the Bosch Camera Tool is also active to avoid duplicate controls. Default: off.",
+              "room_light_groups": "When ON: creates one aggregate `light` entity per SHC room with 2+ dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers), letting you turn all of a room's lights on/off from a single entity — mirroring the room-level control heating already has via Room Climate Control. On/off only, no brightness/colour aggregation. Default: off (no new entities)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Motion Light"
+      },
+      "room_light_group": {
+        "name": "Light"
       }
     }
   },

@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtro de botones de escenario",
               "suppress_ledvance_lights": "Suprimir las luces LEDVANCE del Bosch SHC",
               "suppress_motion_indicator_light": "Suprimir el indicador luminoso del detector de movimiento",
-              "suppress_camera_switches": "Suprimir los interruptores de cámara Bosch"
+              "suppress_camera_switches": "Suprimir los interruptores de cámara Bosch",
+              "room_light_groups": "Habilitar grupos de luces por habitación"
             },
             "data_description": {
               "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario de Bosch SHC también aparece como una entidad de botón en Home Assistant (además del servicio trigger_scenario). Útil para paneles y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Déjalo vacío para botones para TODOS los escenarios (predeterminado). Selecciona uno o más para limitar los botones. Solo se aplica cuando 'Exponer escenarios como botones' está activado.",
               "suppress_ledvance_lights": "Cuando está ACTIVADO: las luces LEDVANCE vinculadas al SHC ya no se exponen como entidades. Úsalo para evitar duplicados con la integración LEDVANCE o Zigbee. Predeterminado: desactivado.",
               "suppress_motion_indicator_light": "Cuando está ACTIVADO: la entidad del LED indicador de los detectores de movimiento II no se crea. Predeterminado: desactivado.",
-              "suppress_camera_switches": "Cuando está ACTIVADO: los interruptores de privacidad, luz y notificación para las cámaras Bosch (Eyes / 360 / Outdoor Gen2) no se crean. Úsalo con Bosch Camera Tool. Predeterminado: desactivado."
+              "suppress_camera_switches": "Cuando está ACTIVADO: los interruptores de privacidad, luz y notificación para las cámaras Bosch (Eyes / 360 / Outdoor Gen2) no se crean. Úsalo con Bosch Camera Tool. Predeterminado: desactivado.",
+              "room_light_groups": "Cuando está ACTIVADO: crea una entidad `light` agregada por cada habitación del SHC que tenga 2 o más luces regulables/de color (LEDVANCE, Hue, reguladores Light/Shutter Control II), lo que te permite encender o apagar todas las luces de una habitación desde una sola entidad, igual que el control por habitación que la calefacción ya tiene mediante Room Climate Control. Solo encendido/apagado, sin agregación de brillo ni color. Predeterminado: desactivado (no se crean entidades nuevas)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Luz de movimiento"
+      },
+      "room_light_group": {
+        "name": "Luz"
       }
     }
   },

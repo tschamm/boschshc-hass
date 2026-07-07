@@ -102,7 +102,8 @@
               "scenarios_filter": "场景按鈕筛选器",
               "suppress_ledvance_lights": "隐藏来自 Bosch SHC 的 LEDVANCE 灯",
               "suppress_motion_indicator_light": "隐藏运动探测器指示灯",
-              "suppress_camera_switches": "隐藏 Bosch 摄像头开关"
+              "suppress_camera_switches": "隐藏 Bosch 摄像头开关",
+              "room_light_groups": "启用按房间分组的灯光"
             },
             "data_description": {
               "scenarios_as_buttons": "开启时：每个 Bosch SHC 场景也会在 Home Assistant 中显示为按钮实体（除 `trigger_scenario` 服务外）。适用于直接触发场景的仪表板磁贴和自动化。默认：关闭。",
@@ -115,7 +116,8 @@
               "scenarios_filter": "留空以为所有场景创建按鈕（默认）。选择一个或多个以限制按鈕范围。仅在“将场景作为按鈕公开”开启时生效。",
               "suppress_ledvance_lights": "开启后：与 SHC 配对的 LEDVANCE 灯将不再作为实体公开。可防止与 LEDVANCE 或 Zigbee 集成重复。默认：关闭。",
               "suppress_motion_indicator_light": "开启后：运动探测器 II 的 LED 指示灯实体将不再创建。默认：关闭。",
-              "suppress_camera_switches": "开启后：Bosch 摄像头（Eyes / 360 / Outdoor Gen2）的隐私模式、灯光和通知开关实体不会被创建。与 Bosch Camera Tool一起使用。默认：关闭。"
+              "suppress_camera_switches": "开启后：Bosch 摄像头（Eyes / 360 / Outdoor Gen2）的隐私模式、灯光和通知开关实体不会被创建。与 Bosch Camera Tool一起使用。默认：关闭。",
+              "room_light_groups": "开启后：为每个拥有 2 个及以上可调光/彩色灯具（LEDVANCE、Hue、Light/Shutter Control II 调光器）的 SHC 房间创建一个聚合 `light` 实体，可通过单一实体一次性开关整个房间的所有灯具——效果类似于 Room Climate Control 已提供的房间级供暖控制。仅支持开关，不聚合亮度或颜色。默认：关闭（不会创建新实体）。"
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "动作灯"
+      },
+      "room_light_group": {
+        "name": "灯光"
       }
     }
   },

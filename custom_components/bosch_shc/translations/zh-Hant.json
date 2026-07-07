@@ -102,7 +102,8 @@
               "scenarios_filter": "場景按鈕篩選器",
               "suppress_ledvance_lights": "隱藏來自 Bosch SHC 的 LEDVANCE 燈",
               "suppress_motion_indicator_light": "隱藏動作偵測器指示燈",
-              "suppress_camera_switches": "隱藏 Bosch 攝影機開關"
+              "suppress_camera_switches": "隱藏 Bosch 攝影機開關",
+              "room_light_groups": "啟用依房間分組的燈光"
             },
             "data_description": {
               "scenarios_as_buttons": "開啟時：每個 Bosch SHC 情境也會在 Home Assistant 中顯示為按鈕實體（除了 trigger_scenario 服務之外）。適用於直接觸發情境的儀表板圖塊和自動化。預設：關閉。",
@@ -115,7 +116,8 @@
               "scenarios_filter": "留空以為所有場景建立按鈕（預設）。選擇一個或多個以限制按鈕範圍。僅在「將場景作為按鈕公開」開啟時生效。",
               "suppress_ledvance_lights": "開啟後：與 SHC 配對的 LEDVANCE 燈將不再作為實體公開。可防止與 LEDVANCE 或 Zigbee 整合重複。預設：關閉。",
               "suppress_motion_indicator_light": "開啟後：動作偵測器 II 的 LED 指示燈實體將不再建立。預設：關閉。",
-              "suppress_camera_switches": "開啟後：Bosch 攝影機（Eyes / 360 / Outdoor Gen2）的隱私模式、燈光和通知開關實體不會被建立。與 Bosch Camera Tool一起使用。預設：關閉。"
+              "suppress_camera_switches": "開啟後：Bosch 攝影機（Eyes / 360 / Outdoor Gen2）的隱私模式、燈光和通知開關實體不會被建立。與 Bosch Camera Tool一起使用。預設：關閉。",
+              "room_light_groups": "開啟後：為每個擁有 2 個以上可調光/彩色燈具（LEDVANCE、Hue、Light/Shutter Control II 調光器）的 SHC 房間建立一個彙總 `light` 實體，可透過單一實體一次開關整個房間的所有燈具——效果類似 Room Climate Control 已提供的房間層級暖氣控制。僅支援開關，不彙總亮度或色彩。預設：關閉（不會建立新實體）。"
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "動作燈"
+      },
+      "room_light_group": {
+        "name": "燈光"
       }
     }
   },

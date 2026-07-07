@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtr przycisków scenariuszy",
               "suppress_ledvance_lights": "Ukryj lampki LEDVANCE z Bosch SHC",
               "suppress_motion_indicator_light": "Ukryj wskaźnik LED czujnika ruchu",
-              "suppress_camera_switches": "Ukryj przełączniki kamery Bosch"
+              "suppress_camera_switches": "Ukryj przełączniki kamery Bosch",
+              "room_light_groups": "Włącz grupy świateł dla poszczególnych pomieszczeń"
             },
             "data_description": {
               "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Zostaw puste, aby utworzyć przyciski dla WSZYSTKICH scenariuszy (domyślnie). Wybierz jeden lub więcej, aby ograniczyć przyciski. Dotyczy tylko, gdy włączono 'Eksponuj scenariusze jako przyciski'.",
               "suppress_ledvance_lights": "Gdy WŁĄCZONE: lampki LEDVANCE powiązane z SHC nie są wyświetlane jako encje. Użyj, aby uniknąć duplikatów z integracją LEDVANCE lub Zigbee. Domyślnie: wyłączone.",
               "suppress_motion_indicator_light": "Gdy WŁĄCZONE: encja jasności diody LED czujnika ruchu II nie jest tworzona. Domyślnie: wyłączone.",
-              "suppress_camera_switches": "Gdy WŁĄCZONE: przełączniki trybu prywatności, świateł i powiadomień dla kamer Bosch (Eyes / 360 / Outdoor Gen2) nie są tworzone. Użyj z Bosch Camera Tool. Domyślnie: wyłączone."
+              "suppress_camera_switches": "Gdy WŁĄCZONE: przełączniki trybu prywatności, świateł i powiadomień dla kamer Bosch (Eyes / 360 / Outdoor Gen2) nie są tworzone. Użyj z Bosch Camera Tool. Domyślnie: wyłączone.",
+              "room_light_groups": "Gdy WŁĄCZONE: dla każdego pomieszczenia SHC z 2 lub więcej ściemnialnymi/kolorowymi lampkami (LEDVANCE, Hue, ściemniacze Light/Shutter Control II) tworzona jest jedna zbiorcza encja `light`, dzięki której można włączyć/wyłączyć wszystkie lampki w pomieszczeniu za pomocą jednej encji — podobnie jak ogrzewanie ma już sterowanie na poziomie pomieszczenia dzięki funkcji Sterowanie klimatem pokoju. Tylko włącz/wyłącz, bez agregacji jasności/koloru. Domyślnie: wyłączone (brak nowych encji)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Lampka ruchu"
+      },
+      "room_light_group": {
+        "name": "Lampka"
       }
     }
   },

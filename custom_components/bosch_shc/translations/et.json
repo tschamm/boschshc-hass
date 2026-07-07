@@ -102,7 +102,8 @@
               "scenarios_filter": "Stsenaariumide nuppude filter",
               "suppress_ledvance_lights": "Peida LEDVANCE-tuled Bosch SHC-st",
               "suppress_motion_indicator_light": "Peida liikumisanduri indikaatortuli",
-              "suppress_camera_switches": "Peida Boschi kaamerakapslid"
+              "suppress_camera_switches": "Peida Boschi kaamerakapslid",
+              "room_light_groups": "Luba toapõhised valgusgrupid"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Jäta tühjaks, et luua nupud KÕIGILE stsenaariumidele (vaikimisi). Vali üks või mitu, et piirata nuppe. Rakendub ainult siis, kui 'Eksponeer stsenaariumid nuppudena' on sees.",
               "suppress_ledvance_lights": "Kui SEES: SHC-ga seotud LEDVANCE-tuled ei kuvata enam olemitena. Kasuta duplikaatide vältimiseks LEDVANCE või Zigbee integratsiooniga. Vaikimisi: väljas.",
               "suppress_motion_indicator_light": "Kui SEES: liikumisanduri II indikaatorlehe olemi ei looda. Vaikimisi: väljas.",
-              "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas."
+              "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas.",
+              "room_light_groups": "Kui SEES: loob iga SHC toa kohta, kus on 2 või enam reguleeritavat/värvilist tuld (LEDVANCE, Hue, Light/Shutter Control II dimmerid), ühe koondava `light` olemi, millega saad korraga sisse või välja lülitada kõik toa tuled ühest olemist – sarnaselt sellele, kuidas küttel on juba toapõhine juhtimine Room Climate Control kaudu. Ainult sees/väljas, heledust ega värvi ei koondata. Vaikimisi: väljas (uusi olemeid ei looda)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Liikumisvalgus"
+      },
+      "room_light_group": {
+        "name": "Valgus"
       }
     }
   },

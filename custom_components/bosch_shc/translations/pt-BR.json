@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtro de botões de cenário",
               "suppress_ledvance_lights": "Suprimir luzes LEDVANCE do Bosch SHC",
               "suppress_motion_indicator_light": "Suprimir indicador luminoso do detector de movimento",
-              "suppress_camera_switches": "Suprimir os controles da câmera Bosch"
+              "suppress_camera_switches": "Suprimir os controles da câmera Bosch",
+              "room_light_groups": "Ativar grupos de luz por cômodo"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC também aparece como uma entidade de botão no Home Assistant (além do serviço trigger_scenario). Útil para blocos de painel e automações que acionam cenários diretamente. Padrão: desativado.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Deixe vazio para botões para TODOS os cenários (padrão). Selecione um ou mais para limitar os botões. Aplica-se apenas quando 'Expor cenários como botões' está ativado.",
               "suppress_ledvance_lights": "Quando ATIVADO: as luzes LEDVANCE emparelhadas ao SHC deixam de ser expostas como entidades. Use para evitar duplicatas com a integração LEDVANCE ou Zigbee. Padrão: desativado.",
               "suppress_motion_indicator_light": "Quando ATIVADO: a entidade do LED indicador dos detectores de movimento II não é criada. Padrão: desativado.",
-              "suppress_camera_switches": "Quando ATIVADO: os controles de privacidade, luz e notificação para as câmeras Bosch (Eyes / 360 / Outdoor Gen2) não são criados. Use com o Bosch Camera Tool. Padrão: desativado."
+              "suppress_camera_switches": "Quando ATIVADO: os controles de privacidade, luz e notificação para as câmeras Bosch (Eyes / 360 / Outdoor Gen2) não são criados. Use com o Bosch Camera Tool. Padrão: desativado.",
+              "room_light_groups": "Quando ATIVADO: cria uma entidade `light` agregada por cômodo do SHC que tenha 2 ou mais luzes reguláveis/coloridas (dimmers LEDVANCE, Hue, Light/Shutter Control II), permitindo ligar/desligar todas as luzes de um cômodo a partir de uma única entidade — espelhando o controle por cômodo que o aquecimento já tem através do Room Climate Control. Apenas ligar/desligar, sem agregação de brilho ou cor. Padrão: desativado (nenhuma entidade nova)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Luz de movimento"
+      },
+      "room_light_group": {
+        "name": "Luz"
       }
     }
   },

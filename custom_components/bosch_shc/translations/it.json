@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtro pulsanti scenario",
               "suppress_ledvance_lights": "Sopprimi le luci LEDVANCE dal Bosch SHC",
               "suppress_motion_indicator_light": "Sopprimi la spia del rilevatore di movimento",
-              "suppress_camera_switches": "Sopprimi i controlli della fotocamera Bosch"
+              "suppress_camera_switches": "Sopprimi i controlli della fotocamera Bosch",
+              "room_light_groups": "Abilita gruppi di luci per stanza"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATTIVO: ogni scenario Bosch SHC appare anche come entità pulsante in Home Assistant (oltre al servizio `trigger_scenario`). Utile per riquadri dashboard e automazioni che attivano scenari direttamente. Predefinito: disattivato.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Lascia vuoto per pulsanti per TUTTI gli scenari (predefinito). Selezionane uno o più per limitare i pulsanti. Si applica solo quando 'Esponi scenari come pulsanti' è attivo.",
               "suppress_ledvance_lights": "Quando ATTIVO: le luci LEDVANCE abbinate all'SHC non vengono più esposte come entità. Utile per evitare duplicati con l'integrazione LEDVANCE o Zigbee. Predefinito: disattivato.",
               "suppress_motion_indicator_light": "Quando ATTIVO: l'entità della luminosità del LED del rilevatore di movimento II non viene creata. Predefinito: disattivato.",
-              "suppress_camera_switches": "Quando ATTIVO: i controlli di privacy, luce e notifica per le fotocamere Bosch (Eyes / 360 / Outdoor Gen2) non vengono creati. Usalo con Bosch Camera Tool. Predefinito: disattivato."
+              "suppress_camera_switches": "Quando ATTIVO: i controlli di privacy, luce e notifica per le fotocamere Bosch (Eyes / 360 / Outdoor Gen2) non vengono creati. Usalo con Bosch Camera Tool. Predefinito: disattivato.",
+              "room_light_groups": "Quando ATTIVO: crea un'entità `light` aggregata per ogni stanza SHC con 2 o più luci dimmerabili/a colori (dimmer LEDVANCE, Hue, Light/Shutter Control II), permettendoti di accendere/spegnere tutte le luci di una stanza da un'unica entità — replicando il controllo a livello di stanza che il riscaldamento ha già tramite Room Climate Control. Solo accensione/spegnimento, senza aggregazione di luminosità/colore. Predefinito: disattivato (nessuna nuova entità)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Luce con rilevamento movimento"
+      },
+      "room_light_group": {
+        "name": "Luce"
       }
     }
   },

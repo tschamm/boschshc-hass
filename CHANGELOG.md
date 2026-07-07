@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.7 — per-room light groups
+
+**No breaking changes.** New opt-in feature: per-room light groups (#244).
+
+A new options-flow toggle, "Enable per-room light groups" (default **off**),
+creates one aggregate `light` entity per SHC room that has 2 or more
+dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers),
+letting you turn all of a room's lights on/off from a single entity —
+mirroring the room-level control heating already gets "for free" via
+`ROOM_CLIMATE_CONTROL`. On/off only, no brightness/colour aggregation.
+Rooms with fewer than 2 eligible lights, or with the option off, get no
+group entity (and any previously-created one is cleaned up automatically).
+If a member light is unpaired live from the SHC, the group triggers a
+config-entry reload to rebuild its membership rather than holding a stale
+reference. Translated to all 30 languages.
+
 ## 0.10.6 — consistent entity-action error handling
 
 **No breaking changes.** User-visible improvement: entity actions that fail

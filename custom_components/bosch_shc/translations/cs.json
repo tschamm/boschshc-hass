@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtr tlačítek scénářů",
               "suppress_ledvance_lights": "Skrýt světla LEDVANCE z Bosch SHC",
               "suppress_motion_indicator_light": "Skrýt indikátor pohybového čidla",
-              "suppress_camera_switches": "Skrýt přepínače fotoaparátu Bosch"
+              "suppress_camera_switches": "Skrýt přepínače fotoaparátu Bosch",
+              "room_light_groups": "Povolit skupiny světel podle místnosti"
             },
             "data_description": {
               "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Nechte prázdné, chcete-li vytvořit tlačítka pro VŠECHNY scénáře (výchozí). Vyberte jeden nebo více, chcete-li omezit tlačítka. Platí jen když je zapnuté 'Zobrazovat scénáře jako tlačítka'.",
               "suppress_ledvance_lights": "Pokud ZAPNUTO: světla LEDVANCE spárovaná se SHC se nevytvoří jako entity. Používejte pro zamezení duplikátů s integrací LEDVANCE nebo Zigbee. Výchozí: vypnuto.",
               "suppress_motion_indicator_light": "Pokud ZAPNUTO: entita LED indikátoru pohybového čidla II se nevytvoří. Výchozí: vypnuto.",
-              "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool. Výchozí: vypnuto."
+              "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool. Výchozí: vypnuto.",
+              "room_light_groups": "Pokud ZAPNUTO: vytvoří jednu souhrnnou entitu `light` pro každou místnost SHC se 2 nebo více stmívatelnými/barevnými světly (LEDVANCE, Hue, stmívače Light/Shutter Control II), což umožňuje zapnout/vypnout všechna světla v místnosti z jedné entity — obdoba ovládání vytápění po místnostech, které již existuje díky Room Climate Control. Pouze zapnuto/vypnuto, bez agregace jasu/barvy. Výchozí: vypnuto (žádné nové entity)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Pohybové světlo"
+      },
+      "room_light_group": {
+        "name": "Světlo"
       }
     }
   },

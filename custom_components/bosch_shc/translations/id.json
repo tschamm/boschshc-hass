@@ -102,7 +102,8 @@
               "scenarios_filter": "Filter tombol skenario",
               "suppress_ledvance_lights": "Sembunyikan lampu LEDVANCE dari Bosch SHC",
               "suppress_motion_indicator_light": "Sembunyikan lampu indikator detektor gerak",
-              "suppress_camera_switches": "Sembunyikan sakelar kamera Bosch"
+              "suppress_camera_switches": "Sembunyikan sakelar kamera Bosch",
+              "room_light_groups": "Aktifkan grup lampu per ruangan"
             },
             "data_description": {
               "scenarios_as_buttons": "Jika AKTIF: setiap skenario Bosch SHC juga muncul sebagai entitas tombol di Home Assistant (selain layanan trigger_scenario). Berguna untuk ubin dasbor dan otomasi yang memicu skenario secara langsung. Default: nonaktif.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Biarkan kosong untuk membuat tombol untuk SEMUA skenario (default). Pilih satu atau lebih untuk membatasi tombol. Berlaku hanya saat 'Tampilkan skenario sebagai tombol' aktif.",
               "suppress_ledvance_lights": "Saat AKTIF: lampu LEDVANCE yang dipasangkan ke SHC tidak lagi ditampilkan sebagai entitas. Gunakan untuk menghindari duplikat dengan integrasi LEDVANCE atau Zigbee. Default: nonaktif.",
               "suppress_motion_indicator_light": "Saat AKTIF: entitas LED indikator detektor gerak II tidak dibuat. Default: nonaktif.",
-              "suppress_camera_switches": "Saat AKTIF: sakelar privasi, lampu, dan notifikasi untuk kamera Bosch (Eyes / 360 / Outdoor Gen2) tidak dibuat. Gunakan dengan Bosch Camera Tool. Default: nonaktif."
+              "suppress_camera_switches": "Saat AKTIF: sakelar privasi, lampu, dan notifikasi untuk kamera Bosch (Eyes / 360 / Outdoor Gen2) tidak dibuat. Gunakan dengan Bosch Camera Tool. Default: nonaktif.",
+              "room_light_groups": "Saat AKTIF: membuat satu entitas agregat `light` per ruangan SHC yang memiliki 2 atau lebih lampu dim/warna (dimmer LEDVANCE, Hue, Light/Shutter Control II), sehingga Anda dapat menyalakan/mematikan semua lampu di suatu ruangan dari satu entitas — mencerminkan kontrol tingkat ruangan yang sudah dimiliki pemanas melalui Room Climate Control. Hanya nyala/mati, tanpa agregasi kecerahan/warna. Default: nonaktif (tidak ada entitas baru)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Lampu Gerak"
+      },
+      "room_light_group": {
+        "name": "Lampu"
       }
     }
   },

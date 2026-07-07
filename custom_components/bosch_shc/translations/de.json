@@ -102,7 +102,8 @@
               "scenarios_filter": "Szenario-Schaltflächen-Filter",
               "suppress_ledvance_lights": "LEDVANCE-Leuchten vom Bosch SHC unterdrücken",
               "suppress_motion_indicator_light": "Statusleuchte des Bewegungsmelders unterdrücken",
-              "suppress_camera_switches": "Bosch-Kamera-Schalter unterdrücken"
+              "suppress_camera_switches": "Bosch-Kamera-Schalter unterdrücken",
+              "room_light_groups": "Raum-Lichtgruppen aktivieren"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Leer lassen, um Schaltflächen für ALLE Szenarien zu erstellen (Standard). Wähle ein oder mehrere aus, um die Schaltflächen auf diese Szenarien zu beschränken. Gilt nur, wenn 'Szenarien als Schaltflächen anzeigen' aktiviert ist.",
               "suppress_ledvance_lights": "Wenn AN: LEDVANCE-Leuchten, die am SHC angemeldet sind, werden nicht mehr als Entitäten bereitgestellt. Nützlich bei gleichzeitig aktiver LEDVANCE- oder Zigbee-Integration. Standard: aus.",
               "suppress_motion_indicator_light": "Wenn AN: die Entität zur Steuerung der Statusleuchte von Bewegungsmeldern II wird nicht angelegt. Standard: aus.",
-              "suppress_camera_switches": "Wenn AN: Datenschutz-, Licht- und Benachrichtigungs-Schalter für Bosch-Kameras (Eyes / 360 / Outdoor Gen2) werden nicht angelegt. Nützlich, wenn das Bosch Camera Tool ebenfalls aktiv ist. Standard: aus."
+              "suppress_camera_switches": "Wenn AN: Datenschutz-, Licht- und Benachrichtigungs-Schalter für Bosch-Kameras (Eyes / 360 / Outdoor Gen2) werden nicht angelegt. Nützlich, wenn das Bosch Camera Tool ebenfalls aktiv ist. Standard: aus.",
+              "room_light_groups": "Wenn AN: erstellt für jeden SHC-Raum mit 2 oder mehr dimmbaren/farbigen Lampen (LEDVANCE, Hue, Light/Shutter Control II Dimmer) eine gebündelte `light`-Entität, mit der sich alle Lampen eines Raums über eine einzige Entität ein- und ausschalten lassen – analog zur Raumsteuerung, die die Heizung über die Raumklimasteuerung bereits hat. Nur Ein/Aus, keine Helligkeits-/Farbbündelung. Standard: aus (keine neuen Entitäten)."
             }
           },
           "presence": {
@@ -436,6 +438,9 @@
     "light": {
       "motion_light": {
         "name": "Bewegungslicht"
+      },
+      "room_light_group": {
+        "name": "Licht"
       }
     }
   },
