@@ -570,7 +570,9 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
             "FRENCH_WINDOW": BinarySensorDeviceClass.DOOR,
             "GENERIC": BinarySensorDeviceClass.WINDOW,
         }
-        return switcher.get(self._device.device_class, BinarySensorDeviceClass.WINDOW)
+        return switcher.get(
+            self._device.device_class or "GENERIC", BinarySensorDeviceClass.WINDOW
+        )
 
 
 class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
