@@ -324,15 +324,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
             host = user_input[CONF_HOST]
             zeroconf_instance = await zeroconf.async_get_instance(self.hass)
 
-            # mDNS-probe the target host's identity BEFORE registering new
-            # credentials against it — unlike reconfigure_host, this step
-            # previously wrote whatever host the user typed straight into the
-            # entry with no check it's the same physical SHC (typo, DHCP
-            # reassignment, second controller on the LAN would all silently
-            # repoint an existing entry's cert/token). Kept in its own
-            # try/except: _abort_if_unique_id_mismatch raises AbortFlow, which
-            # must propagate to HA's flow manager, not be swallowed by the
-            # broad `except Exception` in the registration try/except below.
+            # mDNS-probe the target host's identity before registering new
+            # credentials, so a typo/DHCP reassignment can't silently repoint
+            # an existing entry's cert/token onto a different physical SHC.
+            # Kept in its own try/except: AbortFlow must propagate to HA's
+            # flow manager, not be swallowed by the registration except below.
             try:
                 info = await self._get_info(host)
             except SHCConnectionError:

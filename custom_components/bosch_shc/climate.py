@@ -88,30 +88,10 @@ async def async_setup_entry(
 class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     """Representation of a SHC room climate control.
 
-    #334 rework: AUTOMATIC is HVACMode.AUTO so the HA thermostat card renders
-    green (not red) while the schedule is running — matching the HeatingCircuit
-    pattern.  COOL remains gated on supports_cooling (field-presence).
-    Presets are now override-only: boost (if supportsBoostMode) and eco
-    (if supports_low).  AUTO and MANUAL are expressed directly as
-    HVACMode.AUTO / HVACMode.HEAT.
-
-    hvac_mode axis:
-      summer_mode=True                              → OFF
-      supports_cooling=True + cooling_mode=True    → COOL
-      operation_mode=AUTOMATIC                      → AUTO
-      otherwise (MANUAL)                            → HEAT
-
-    preset_mode axis (override states only):
-      boost_mode=True   → "boost"   (only if supportsBoostMode)
-      low=True          → "eco"     (only if supports_low)
-      otherwise         → None / HA default
-
-    hvac_modes exposed:
-      [AUTO, HEAT, (COOL if supports_cooling), OFF]
-
-    preset_modes exposed:
-      [boost] if supports_boost_mode, [eco] if supports_low.
-      If none, PRESET_MODE feature is not advertised.
+    hvac_mode: OFF if summer_mode; COOL if supports_cooling+cooling_mode;
+    AUTO if operation_mode==AUTOMATIC; otherwise HEAT (MANUAL). preset_mode
+    is override-only ("boost" if supportsBoostMode, "eco" if supports_low);
+    COOL/boost/eco are only advertised when the device reports that flag.
     """
 
     _attr_target_temperature_step = 0.5

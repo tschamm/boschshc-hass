@@ -101,11 +101,7 @@ async def async_get_config_entry_diagnostics(
         return diag
 
     info = session.information
-    # This integration only ever constructs SHCSessionAsync (__init__.py), whose
-    # .information is _AsyncSHCInformation — it has no updateState, only a plain
-    # string update_state (see __init__.py's daily cert-check for the same
-    # compat guard). Reading updateState.name here crashed every diagnostics
-    # download unconditionally.
+    # _AsyncSHCInformation has no updateState, only a plain string update_state.
     update_state_enum = getattr(info, "updateState", None)
     update_state = (
         update_state_enum.name

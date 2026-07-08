@@ -948,17 +948,8 @@ class ValveTappetSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
 class IlluminanceLevelSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC illuminance level reporting sensor.
 
-    The Bosch SHC API spec defines illuminance as integer for both Gen1
-    (SHCMotionDetector, model "MD") and Gen2 (SHCMotionDetector2, model "MD2").
-    Gen1 devices report numeric lux values too (e.g. 13, 9, 22) — see #315.
-
-    Metadata (state_class/device_class/unit) is STATIC so it never flip-flops:
-    a previous conditional implementation dropped state_class whenever the
-    value was momentarily None (offline / between polls), which re-raised the
-    very state_class_removed repair this restores (and emitted "unit changed"
-    warnings). Instead the metadata stays put and native_value coerces any
-    non-numeric/qualitative value to None, so a hypothetical string-reporting
-    firmware degrades to "unknown" rather than conflicting with MEASUREMENT.
+    Metadata (state_class/device_class/unit) stays static; native_value alone
+    coerces a non-numeric value to None, so metadata never flip-flops (#315).
     """
 
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -1209,12 +1200,8 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
 class NextSetpointTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Room-climate "next scheduled change" info (hass#120 audit).
 
-    Reads RoomClimateControl.next_setpoint_temperature (the app's "until
-    HH:MM -> X deg" label,
-    RoomClimateControlSetpointAndCurrentTemperatureFragment / UntilTimeText
-    Provider), never read anywhere before this audit. The exact change time
-    and next operation mode are exposed as attributes rather than a second
-    entity, matching the diagnostic-attribute pattern already used by
+    Change time and next operation mode are exposed as attributes rather than
+    a second entity, matching the diagnostic-attribute pattern used by
     KeypadTriggerSensor.
     """
 
