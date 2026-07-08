@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.10.10 — light/cover error handling, event unsubscribe, number JSON-decode guard
+
+**No breaking changes.** Requires `boschshcpy==0.4.9`.
+
+Findings from a full code review, fixed in three passes:
+
+- **`light.py`/`cover.py`:** `LightSwitch`, `MotionDetectorLight`, `RelayLight`
+  (turn on/off) and all four `cover.py` write actions (open/close/set
+  position/stop, including tilt) now catch `SHCException` and raise a
+  translated `HomeAssistantError`, matching the pattern every other
+  write-capable platform already had since 0.10.6. `cover.py`'s optimistic
+  state (`is_opening`/`target_position`) is now only set after the device
+  write succeeds, so a failed write no longer leaves the UI stuck showing a
+  state change that never happened.
+- **`cover.py`:** `ShutterControlCover.current_cover_position` no longer
+  reports a stale HA-side target position while a Shutter-II device is being
+  moved from the Bosch app or a physical switch — it now uses the live
+  device-reported position whenever `operation_state` is `OPENING`/`CLOSING`.
+- **`event.py`:** `UniversalSwitchEvent`, `LightControlButtonEvent`,
+  `SHCScenarioEvent`, `MotionDetectorEvent`, `SmokeDetectionSystemEvent`, and
+  `SmokeDetectorEvent` now unregister their callbacks on entity removal
+  (`async_will_remove_from_hass`) — previously left subscribed indefinitely.
+- **`number.py`:** all setters now catch `json.JSONDecodeError` from a
+  malformed-but-200-OK write response, matching `DimmerConfigNumber`'s
+  existing handling; the remaining `except (SHCException, SHCConnectionError)`
+  tuples across `select.py`/`number.py`/`switch.py`/`binary_sensor.py`/
+  `alarm_control_panel.py`/`__init__.py` are simplified to `except
+  SHCException` (boschshcpy 0.4.9 made `SHCConnectionError` a subclass, see
+  0.10.9's changelog entry).
+- Two copy-paste doc fixes (`logbook.py`, `alarm_control_panel.py`) and a
+  round of comment condensing flagged by the new comment-length CI gate.
+
 ## 0.10.9 — boschshcpy 0.4.9, simplified button error handling
 
 **No breaking changes.** Requires `boschshcpy==0.4.9`.
