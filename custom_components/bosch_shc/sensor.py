@@ -1209,6 +1209,7 @@ class NextSetpointTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[mi
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "next_setpoint_temperature"
+    _unrecorded_attributes = frozenset({"next_change_at"})
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the next-setpoint-temperature sensor."""

@@ -597,6 +597,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
     """Representation of a SHC motion detection sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.MOTION
+    _unrecorded_attributes = frozenset({"last_motion_detected"})
 
     def __init__(self, hass: HomeAssistant, device: SHCDevice, entry_id: str) -> None:
         """Initialize the motion detection device."""
@@ -1336,6 +1337,7 @@ class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[m
 
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
     _attr_translation_key = "occupancy"
+    _unrecorded_attributes = frozenset({"last_occupancy_change"})
 
     def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
         """Initialize the occupancy detection sensor."""
@@ -1364,6 +1366,7 @@ class TamperSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
 
     _attr_device_class = BinarySensorDeviceClass.TAMPER
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unrecorded_attributes = frozenset({"last_tamper_time"})
     _attr_translation_key = "tamper"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
