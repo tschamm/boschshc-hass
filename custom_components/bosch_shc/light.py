@@ -392,7 +392,7 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
         (mirrors SHCSwitch.is_on); return None (unknown) rather than crash.
         """
         try:
-            return bool(self._device.switchstate == PowerSwitchService.State.ON)
+            return bool(self._device.switchstate is PowerSwitchService.State.ON)
         except AttributeError:
             return None
 

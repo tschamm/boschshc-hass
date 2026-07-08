@@ -100,7 +100,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._attr_current_cover_position = self.current_cover_position
         self._current_operation_state = self._device.operation_state
 
-        if self._current_operation_state == ShutterControlService.State.CALIBRATING:
+        if self._current_operation_state is ShutterControlService.State.CALIBRATING:
             # A real, separate operationState (APK ground-truth) entered during
             # an end-position auto-detect run. There is no meaningful open/close
             # direction during calibration, and without this branch the flags
@@ -109,7 +109,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
             self._attr_is_closing = False
             self._attr_is_opening = False
 
-        if self._current_operation_state == ShutterControlService.State.STOPPED:
+        if self._current_operation_state is ShutterControlService.State.STOPPED:
             self._attr_is_closing = False
             self._attr_is_opening = False
             if not self._skip_update:
@@ -134,7 +134,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
             if self._last_position is None:
                 self._last_position = self.current_cover_position
 
-        if self._current_operation_state == ShutterControlService.State.MOVING:
+        if self._current_operation_state is ShutterControlService.State.MOVING:
             if self._device.device_model == "BBL":
                 self._target_position = round(self._device.level * 100.0)
                 if self._last_position is not None:
@@ -201,11 +201,11 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         # here: it is purely additive (handles states that previously fell
         # through) and deliberately does not touch _target_position, so the
         # position-during-move display is unchanged for all models.
-        if self._current_operation_state == ShutterControlService.State.OPENING:
+        if self._current_operation_state is ShutterControlService.State.OPENING:
             self._attr_is_opening = True
             self._attr_is_closing = False
 
-        if self._current_operation_state == ShutterControlService.State.CLOSING:
+        if self._current_operation_state is ShutterControlService.State.CLOSING:
             self._attr_is_closing = True
             self._attr_is_opening = False
 
@@ -222,7 +222,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     def current_cover_position(self) -> int:
         """Return the current or target cover position."""
         if self._device.device_model == "MICROMODULE_SHUTTER":
-            if self._device.operation_state == ShutterControlService.State.STOPPED:
+            if self._device.operation_state is ShutterControlService.State.STOPPED:
                 return round(float(self._device.level) * 100.0)
             # Shutter-II reports OPENING/CLOSING directly, never MOVING, so a
             # move started via the Bosch app or a physical switch (_app_command
@@ -253,7 +253,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     def is_closed(self) -> bool:
         """Return if the cover is closed or not."""
         return bool(
-            self._device.operation_state == ShutterControlService.State.STOPPED
+            self._device.operation_state is ShutterControlService.State.STOPPED
             and self._device.level == 0.0
         )
 

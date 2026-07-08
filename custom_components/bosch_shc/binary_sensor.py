@@ -559,7 +559,7 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     @property
     def is_on(self) -> bool:
         """Return the state of the sensor."""
-        return bool(self._device.state == ShutterContactService.State.OPEN)
+        return bool(self._device.state is ShutterContactService.State.OPEN)
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:
@@ -589,7 +589,7 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):  # type: ign
         """Return the state of the sensor."""
         return bool(
             self._device.vibrationsensor
-            == VibrationSensorService.State.VIBRATION_DETECTED
+            is VibrationSensorService.State.VIBRATION_DETECTED
         )
 
 
@@ -886,7 +886,7 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore
     def is_on(self) -> bool:
         """Return the state of the sensor."""
         return bool(
-            self._device.leakage_state != WaterLeakageSensorService.State.NO_LEAKAGE
+            self._device.leakage_state is not WaterLeakageSensorService.State.NO_LEAKAGE
         )
 
     @property
@@ -1001,7 +1001,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
     @property
     def is_on(self) -> bool:
         """Return the state of the sensor."""
-        return bool(self._device.alarm != SurveillanceAlarmService.State.ALARM_OFF)
+        return bool(self._device.alarm is not SurveillanceAlarmService.State.ALARM_OFF)
 
     @property
     def icon(self) -> str:
