@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "שינוי מצב המתג נכשל."
     },
+    "light_action_failed": {
+      "message": "שינוי מצב האור נכשל."
+    },
+    "cover_action_failed": {
+      "message": "שינוי מצב התריס נכשל."
+    },
     "select_option_failed": {
       "message": "הגדרת האפשרות נכשלה."
     },

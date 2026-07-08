@@ -8,6 +8,7 @@ from typing import Any
 import aiohttp
 from boschshcpy import PowerSwitchService, SHCLight, SHCSession
 from boschshcpy.device import SHCDevice
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
@@ -18,6 +19,7 @@ from homeassistant.components.light import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -270,34 +272,48 @@ class LightSwitch(SHCEntity, LightEntity):  # type: ignore[misc]
         color_temp_kelvin = kwargs.get(ATTR_COLOR_TEMP_KELVIN)
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
-        if brightness is not None and self._device.supports_brightness:
-            # Bosch API does not accept brightness=0; HA uses brightness=0 to
-            # mean "off", which is handled via binarystate. Clamp to 1 so that
-            # a near-zero HA value (e.g. 1/255) never silently turns off.
-            await self._device.async_set_brightness(
-                max(round(brightness * 100 / 255), 1)
-            )
+        try:
+            if brightness is not None and self._device.supports_brightness:
+                # Bosch API does not accept brightness=0; HA uses brightness=0 to
+                # mean "off", which is handled via binarystate. Clamp to 1 so that
+                # a near-zero HA value (e.g. 1/255) never silently turns off.
+                await self._device.async_set_brightness(
+                    max(round(brightness * 100 / 255), 1)
+                )
 
-        if color_temp_kelvin is not None and self._device.supports_color_temp:
-            await self._device.async_set_color(
-                color_util.color_temperature_kelvin_to_mired(color_temp_kelvin)
-            )
-            self._attr_color_mode = ColorMode.COLOR_TEMP
+            if color_temp_kelvin is not None and self._device.supports_color_temp:
+                await self._device.async_set_color(
+                    color_util.color_temperature_kelvin_to_mired(color_temp_kelvin)
+                )
+                self._attr_color_mode = ColorMode.COLOR_TEMP
 
-        if hs_color is not None and self._device.supports_color_hsb:
-            rgb = color_util.color_hs_to_RGB(*hs_color)
-            raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-            await self._device.async_set_rgb(raw_rgb)
-            self._attr_color_mode = ColorMode.HS
+            if hs_color is not None and self._device.supports_color_hsb:
+                rgb = color_util.color_hs_to_RGB(*hs_color)
+                raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+                await self._device.async_set_rgb(raw_rgb)
+                self._attr_color_mode = ColorMode.HS
 
-        if not self.is_on:
-            await self._device.async_set_binarystate(True)
+            if not self.is_on:
+                await self._device.async_set_binarystate(True)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
         self.schedule_update_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self._device.async_set_binarystate(False)
+        try:
+            await self._device.async_set_binarystate(False)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
 
 class MotionDetectorLight(SHCEntity, LightEntity):  # type: ignore[misc]
@@ -328,16 +344,30 @@ class MotionDetectorLight(SHCEntity, LightEntity):  # type: ignore[misc]
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on, optionally setting brightness."""
         brightness = kwargs.get(ATTR_BRIGHTNESS)
-        if brightness is not None:
-            # Clamp to 1 so near-zero HA values don't silently turn the light off.
-            level = max(round(brightness * 100 / 255), 1)
-            await self._device.async_set_multi_level_switch(level)
-        if not self.is_on:
-            await self._device.async_set_binaryswitch(True)
+        try:
+            if brightness is not None:
+                # Clamp to 1 so near-zero HA values don't silently turn the light off.
+                level = max(round(brightness * 100 / 255), 1)
+                await self._device.async_set_multi_level_switch(level)
+            if not self.is_on:
+                await self._device.async_set_binaryswitch(True)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self._device.async_set_binaryswitch(False)
+        try:
+            await self._device.async_set_binaryswitch(False)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
 
 class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
@@ -379,6 +409,12 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
             # Match SHCSwitch: a transient SHC outage must not raise to the
             # service layer (error log / notification) for this relay.
             LOGGER.debug("turn_on failed for %s: %s", self.entity_id, err)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the relay off."""
@@ -391,24 +427,19 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
             )
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             LOGGER.debug("turn_off failed for %s: %s", self.entity_id, err)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
 
 class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
     """Aggregate on/off control for all lights sharing one SHC room (#244).
 
-    Opt-in (``OPT_ROOM_LIGHT_GROUPS``), mirrors the room-level control heating
-    already gets "for free" via the SHC's own ``ROOM_CLIMATE_CONTROL`` virtual
-    device — except here the aggregation happens client-side, since Bosch does
-    not synthesize an equivalent for lights.
-
-    Only groups LEDVANCE/Hue/micromodule-dimmer lights (the ``LightSwitch``
-    devices, all sharing the same ``binarystate``/``async_set_binarystate``
-    write API). Light/Shutter Control II relays opted into the `light` domain
-    via #338 use a different (``switchstate``) API and are intentionally NOT
-    included, keeping the write path uniform for this first pass.
-
-    ON/OFF only — no brightness/colour aggregation. This is a room master
-    switch, not a light-group with per-member fidelity.
+    Opt-in (``OPT_ROOM_LIGHT_GROUPS``); ON/OFF only, groups only the
+    ``binarystate``-based LightSwitch devices, not #338's ``switchstate`` relays.
     """
 
     _attr_has_entity_name = True

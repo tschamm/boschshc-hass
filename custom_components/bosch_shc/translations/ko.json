@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "스위치 상태 변경에 실패했습니다."
     },
+    "light_action_failed": {
+      "message": "조명 상태 변경에 실패했습니다."
+    },
+    "cover_action_failed": {
+      "message": "커버 상태 변경에 실패했습니다."
+    },
     "select_option_failed": {
       "message": "옵션 설정에 실패했습니다."
     },

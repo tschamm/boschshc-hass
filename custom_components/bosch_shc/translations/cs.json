@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Změna stavu přepínače se nezdařila."
     },
+    "light_action_failed": {
+      "message": "Změna stavu světla se nezdařila."
+    },
+    "cover_action_failed": {
+      "message": "Změna stavu rolety se nezdařila."
+    },
     "select_option_failed": {
       "message": "Nastavení možnosti se nezdařilo."
     },

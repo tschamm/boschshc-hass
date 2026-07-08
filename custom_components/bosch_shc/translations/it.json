@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Modifica dello stato dell'interruttore non riuscita."
     },
+    "light_action_failed": {
+      "message": "Modifica dello stato della luce non riuscita."
+    },
+    "cover_action_failed": {
+      "message": "Modifica dello stato della tapparella non riuscita."
+    },
     "select_option_failed": {
       "message": "Impostazione dell'opzione non riuscita."
     },

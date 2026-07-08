@@ -509,6 +509,12 @@
     "switch_action_failed": {
       "message": "Failed to change the switch state."
     },
+    "light_action_failed": {
+      "message": "Failed to change the light state."
+    },
+    "cover_action_failed": {
+      "message": "Failed to change the cover state."
+    },
     "select_option_failed": {
       "message": "Failed to set the option."
     },

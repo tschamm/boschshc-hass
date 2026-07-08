@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "A kapcsoló állapotának megváltoztatása sikertelen."
     },
+    "light_action_failed": {
+      "message": "A fény állapotának megváltoztatása sikertelen."
+    },
+    "cover_action_failed": {
+      "message": "A redőny állapotának megváltoztatása sikertelen."
+    },
     "select_option_failed": {
       "message": "A lehetőség beállítása sikertelen."
     },

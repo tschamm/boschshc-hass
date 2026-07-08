@@ -152,6 +152,13 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
             if service.id == "Keypad":
                 service.register_event(self._key_id, self._event_callback)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister the Keypad event callback (register_event has no public unsubscribe)."""
+        await super().async_will_remove_from_hass()
+        for service in self._device.device_services:
+            if service.id == "Keypad":
+                service._event_callbacks.pop(self._key_id, None)  # noqa: SLF001
+
     def _event_callback(self) -> None:
         # Issue #192: The SHC sometimes delivers a Keypad service update that
         # piggybacks on a battery-level change, replaying the last stale keyName
@@ -222,13 +229,18 @@ class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         await super().async_added_to_hass()
         for service in self._device.device_services:
             if service.id == "Keypad":
-                # Keypad events are dispatched by the reported keyName string
-                # (device_service._process_events). The single-button Light
-                # Control II's keyName is not HW-confirmed, so register the
-                # callback under every KeyState value — whichever the device
-                # reports will resolve.
+                # Single-button Light Control II's keyName is not HW-confirmed,
+                # so register under every KeyState — whichever fires resolves.
                 for key_state in service.KeyState:
                     service.register_event(key_state.value, self._event_callback)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister all Keypad KeyState callbacks (register_event has no public unsubscribe)."""
+        await super().async_will_remove_from_hass()
+        for service in self._device.device_services:
+            if service.id == "Keypad":
+                for key_state in service.KeyState:
+                    service._event_callbacks.pop(key_state.value, None)  # noqa: SLF001
 
     def _event_callback(self) -> None:
         event_type_raw = self._device.eventtype
@@ -315,6 +327,11 @@ class SHCScenarioEvent(EventEntity):  # type: ignore[misc]
             self._scenario.id, self._event_callback
         )
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe from scenario events."""
+        await super().async_will_remove_from_hass()
+        self._session.unsubscribe_scenario_callback(self._scenario.id)
+
     def _event_callback(self, event_data: dict[str, Any]) -> None:
         event_type = "SCENARIO"
         event_attributes = {
@@ -357,6 +374,13 @@ class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         for service in self._device.device_services:
             if service.id == "LatestMotion":
                 service.register_event(self._device.id, self._event_callback)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister the LatestMotion event callback (register_event has no public unsubscribe)."""
+        await super().async_will_remove_from_hass()
+        for service in self._device.device_services:
+            if service.id == "LatestMotion":
+                service._event_callbacks.pop(self._device.id, None)  # noqa: SLF001
 
     def _event_callback(self) -> None:
         ts = self._device.latestmotion or ""
@@ -404,6 +428,13 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
             if service.id == "SurveillanceAlarm":
                 service.register_event(self._device.id, self._event_callback)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister the SurveillanceAlarm event callback (register_event has no public unsubscribe)."""
+        await super().async_will_remove_from_hass()
+        for service in self._device.device_services:
+            if service.id == "SurveillanceAlarm":
+                service._event_callbacks.pop(self._device.id, None)  # noqa: SLF001
+
     def _event_callback(self) -> None:
         try:
             subtype = self._device.alarm.name
@@ -450,6 +481,13 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         for service in self._device.device_services:
             if service.id == "Alarm":
                 service.register_event(self._device.id, self._event_callback)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister the Alarm event callback (register_event has no public unsubscribe)."""
+        await super().async_will_remove_from_hass()
+        for service in self._device.device_services:
+            if service.id == "Alarm":
+                service._event_callbacks.pop(self._device.id, None)  # noqa: SLF001
 
     def _event_callback(self) -> None:
         try:

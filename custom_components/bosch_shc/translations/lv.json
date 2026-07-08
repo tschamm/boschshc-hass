@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Slēdža stāvokļa maiņa neizdevās."
     },
+    "light_action_failed": {
+      "message": "Gaismas stāvokļa maiņa neizdevās."
+    },
+    "cover_action_failed": {
+      "message": "Aizsega stāvokļa maiņa neizdevās."
+    },
     "select_option_failed": {
       "message": "Opcijas iestatīšana neizdevās."
     },

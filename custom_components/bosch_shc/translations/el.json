@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Η αλλαγή της κατάστασης του διακόπτη απέτυχε."
     },
+    "light_action_failed": {
+      "message": "Η αλλαγή της κατάστασης του φωτός απέτυχε."
+    },
+    "cover_action_failed": {
+      "message": "Η αλλαγή της κατάστασης του καλύμματος απέτυχε."
+    },
     "select_option_failed": {
       "message": "Ο ορισμός της επιλογής απέτυχε."
     },

@@ -24,6 +24,8 @@ from custom_components.bosch_shc.cover import BlindsControlCover, ShutterControl
 
 STOPPED = ShutterControlService.State.STOPPED
 MOVING = ShutterControlService.State.MOVING
+OPENING = ShutterControlService.State.OPENING
+CLOSING = ShutterControlService.State.CLOSING
 
 
 # ---------------------------------------------------------------------------
@@ -85,9 +87,10 @@ class TestShutterCurrentCoverPositionFallback:
         assert cover.current_cover_position == 70
 
     def test_moving_returns_target_when_set(self):
-        """MOVING with _target_position set must return target."""
+        """MOVING with _target_position set, HA-initiated, must return target."""
         cover = _make_shutter(level=0.3, operation_state=MOVING)
         cover._target_position = 90
+        cover._app_command = True
         assert cover.current_cover_position == 90
 
     def test_moving_falls_back_to_level_when_target_is_none(self):
@@ -102,6 +105,29 @@ class TestShutterCurrentCoverPositionFallback:
         cover = _make_shutter(device_model="BBL", level=0.6, operation_state=MOVING)
         cover._target_position = None
         assert cover.current_cover_position == 60
+
+    def test_opening_via_ha_returns_target(self):
+        """OPENING triggered by HA (async_open_cover) trusts the HA-side target."""
+        cover = _make_shutter(level=0.3, operation_state=OPENING)
+        cover._target_position = 100
+        cover._app_command = True
+        assert cover.current_cover_position == 100
+
+    def test_opening_via_app_or_switch_uses_live_level(self):
+        """OPENING triggered outside HA (Bosch app / physical switch): a stale
+        _target_position left over from a prior HA move must not be returned —
+        the live device level is authoritative instead."""
+        cover = _make_shutter(level=0.65, operation_state=OPENING)
+        cover._target_position = 0  # stale target from an earlier HA close
+        cover._app_command = False
+        assert cover.current_cover_position == 65
+
+    def test_closing_via_app_or_switch_uses_live_level(self):
+        """CLOSING triggered outside HA must use the live device level too."""
+        cover = _make_shutter(level=0.2, operation_state=CLOSING)
+        cover._target_position = 100  # stale target from an earlier HA open
+        cover._app_command = False
+        assert cover.current_cover_position == 20
 
 
 # ---------------------------------------------------------------------------

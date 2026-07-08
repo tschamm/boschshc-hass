@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Anahtar durumu değiştirilemedi."
     },
+    "light_action_failed": {
+      "message": "Işık durumu değiştirilemedi."
+    },
+    "cover_action_failed": {
+      "message": "Perde durumu değiştirilemedi."
+    },
     "select_option_failed": {
       "message": "Seçenek ayarlanamadı."
     },

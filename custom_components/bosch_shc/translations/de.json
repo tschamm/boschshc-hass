@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Änderung des Schalterzustands fehlgeschlagen."
     },
+    "light_action_failed": {
+      "message": "Änderung des Lichtzustands fehlgeschlagen."
+    },
+    "cover_action_failed": {
+      "message": "Änderung des Rollladenzustands fehlgeschlagen."
+    },
     "select_option_failed": {
       "message": "Festlegen der Option fehlgeschlagen."
     },

@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Wijziging van schakelaarstatus mislukt."
     },
+    "light_action_failed": {
+      "message": "Wijziging van lichtstatus mislukt."
+    },
+    "cover_action_failed": {
+      "message": "Wijziging van rolluikstatus mislukt."
+    },
     "select_option_failed": {
       "message": "Instellen van de optie mislukt."
     },

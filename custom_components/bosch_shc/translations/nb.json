@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Endring av bryterstatus mislyktes."
     },
+    "light_action_failed": {
+      "message": "Endring av lysstatus mislyktes."
+    },
+    "cover_action_failed": {
+      "message": "Endring av persiennestatus mislyktes."
+    },
     "select_option_failed": {
       "message": "Innstilling av alternativ mislyktes."
     },

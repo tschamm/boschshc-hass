@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Nie udało się zmienić stanu przełącznika."
     },
+    "light_action_failed": {
+      "message": "Nie udało się zmienić stanu światła."
+    },
+    "cover_action_failed": {
+      "message": "Nie udało się zmienić stanu rolety."
+    },
     "select_option_failed": {
       "message": "Nie udało się ustawić opcji."
     },

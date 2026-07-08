@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Échec du changement d'état de l'interrupteur."
     },
+    "light_action_failed": {
+      "message": "Échec du changement d'état de la lumière."
+    },
+    "cover_action_failed": {
+      "message": "Échec du changement d'état du volet."
+    },
     "select_option_failed": {
       "message": "Échec de la définition de l'option."
     },

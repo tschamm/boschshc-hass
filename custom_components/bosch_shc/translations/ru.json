@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Не удалось изменить состояние переключателя."
     },
+    "light_action_failed": {
+      "message": "Не удалось изменить состояние света."
+    },
+    "cover_action_failed": {
+      "message": "Не удалось изменить состояние шторы."
+    },
     "select_option_failed": {
       "message": "Не удалось установить параметр."
     },

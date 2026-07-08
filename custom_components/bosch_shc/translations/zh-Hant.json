@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "無法變更開關狀態。"
     },
+    "light_action_failed": {
+      "message": "無法變更燈光狀態。"
+    },
+    "cover_action_failed": {
+      "message": "無法變更窗簾狀態。"
+    },
     "select_option_failed": {
       "message": "無法設定選項。"
     },

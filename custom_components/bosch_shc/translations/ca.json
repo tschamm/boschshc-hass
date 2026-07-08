@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "No s'ha pogut canviar l'estat de l'interruptor."
     },
+    "light_action_failed": {
+      "message": "No s'ha pogut canviar l'estat del llum."
+    },
+    "cover_action_failed": {
+      "message": "No s'ha pogut canviar l'estat de la persiana."
+    },
     "select_option_failed": {
       "message": "No s'ha pogut establir l'opció."
     },

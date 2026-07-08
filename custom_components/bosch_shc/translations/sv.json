@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Det gick inte att ändra brytarens tillstånd."
     },
+    "light_action_failed": {
+      "message": "Det gick inte att ändra ljusets tillstånd."
+    },
+    "cover_action_failed": {
+      "message": "Det gick inte att ändra persiennens tillstånd."
+    },
     "select_option_failed": {
       "message": "Det gick inte att ange alternativet."
     },

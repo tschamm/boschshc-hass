@@ -1,4 +1,4 @@
-"""Describe Shelly logbook events."""
+"""Describe Bosch SHC logbook events."""
 
 from __future__ import annotations
 

@@ -499,24 +499,26 @@ class TestNonStoppedNonMovingStates:
 
 class TestMicromoduleShutterCurrentPositionMovingTargetSet:
     def test_moving_with_target_position_returns_target(self):
-        """MICROMODULE_SHUTTER MOVING + _target_position != None → return _target_position."""
+        """MICROMODULE_SHUTTER MOVING, HA-initiated + _target_position != None → return _target_position."""
         cover = _make_cover(
             device_model="MICROMODULE_SHUTTER",
             level=0.2,
             operation_state=MOVING,
         )
         cover._target_position = 75
+        cover._app_command = True
         result = cover.current_cover_position
         assert result == 75
 
     def test_moving_with_target_position_zero_returns_zero(self):
-        """_target_position=0 is not None → must return 0, not fall back to level."""
+        """_target_position=0, HA-initiated, is not None → must return 0, not fall back to level."""
         cover = _make_cover(
             device_model="MICROMODULE_SHUTTER",
             level=0.9,
             operation_state=MOVING,
         )
         cover._target_position = 0
+        cover._app_command = True
         assert cover.current_cover_position == 0
 
     def test_stopped_ignores_target_uses_level(self):

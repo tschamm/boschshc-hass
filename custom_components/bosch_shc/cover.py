@@ -9,6 +9,7 @@ from boschshcpy import (
     SHCSession,
     ShutterControlService,
 )
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.cover import (
     ATTR_POSITION,
     ATTR_TILT_POSITION,
@@ -19,9 +20,10 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import LOGGER
+from .const import DOMAIN, LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -65,14 +67,7 @@ async def async_setup_entry(
 
 
 class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
-    """Representation of a SHC shutter control device.
-
-    Issue #183 (resolved): State stops refreshing after hours was caused by
-    boschshcpy's long-polling loop not pushing a fresh state snapshot after
-    re-subscribing on poll-ID invalidation (JSONRPCError -32001).  The lib
-    now calls short_poll() on each service immediately after re-subscription,
-    so callbacks are delivered and state is restored without HA-side polling.
-    """
+    """Representation of a SHC shutter control device."""
 
     _attr_supported_features = (
         CoverEntityFeature.OPEN
@@ -229,8 +224,10 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         if self._device.device_model == "MICROMODULE_SHUTTER":
             if self._device.operation_state == ShutterControlService.State.STOPPED:
                 return round(float(self._device.level) * 100.0)
-            # MOVING: use target if set, else fall back to current level reading
-            if self._target_position is not None:
+            # Shutter-II reports OPENING/CLOSING directly, never MOVING, so a
+            # move started via the Bosch app or a physical switch (_app_command
+            # unset) must use the live level, not a stale HA-side target.
+            if self._app_command and self._target_position is not None:
                 return self._target_position
             return round(float(self._device.level) * 100.0)
         # for BBL devices, we can rely on the level attribute to determine the current position, even when moving
@@ -239,9 +236,16 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
         self._micromodule_keypad_switch_off()
+        try:
+            await self._device.async_stop()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to stop {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_opening = False
         self._attr_is_closing = False
-        await self._device.async_stop()
         self._skip_update = True
         self._app_command = True
 
@@ -256,9 +260,16 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
         self._micromodule_keypad_switch_off()
+        try:
+            await self._device.async_set_level(1.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to open {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_opening = True
         self._attr_is_closing = False
-        await self._device.async_set_level(1.0)
         self._target_position = 100
         self._skip_update = True
         self._app_command = True
@@ -266,9 +277,16 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
         self._micromodule_keypad_switch_off()
+        try:
+            await self._device.async_set_level(0.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to close {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_closing = True
         self._attr_is_opening = False
-        await self._device.async_set_level(0.0)
         self._target_position = 0
         self._skip_update = True
         self._app_command = True
@@ -279,8 +297,15 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
             self._micromodule_keypad_switch_off()
             self._last_position = self.current_cover_position
         position = kwargs[ATTR_POSITION]
+        try:
+            await self._device.async_set_level(position / 100.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to set position for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._target_position = position
-        await self._device.async_set_level(position / 100.0)
         self._skip_update = True
         self._app_command = True
 
@@ -309,18 +334,32 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover (lift) via ShutterControl.level."""
+        try:
+            await self._device.async_set_level(1.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to open {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_opening = True
         self._attr_is_closing = False
-        await self._device.async_set_level(1.0)
         self._target_position = 100
         self._skip_update = True
         self._app_command = True
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover (lift) via ShutterControl.level."""
+        try:
+            await self._device.async_set_level(0.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to close {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_closing = True
         self._attr_is_opening = False
-        await self._device.async_set_level(0.0)
         self._target_position = 0
         self._skip_update = True
         self._app_command = True
@@ -328,7 +367,14 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the cover (lift) to a specific position via ShutterControl.level."""
         position = kwargs[ATTR_POSITION]
-        await self._device.async_set_level(position / 100.0)
+        try:
+            await self._device.async_set_level(position / 100.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to set position for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._target_position = position
         self._skip_update = True
         self._app_command = True
@@ -356,24 +402,35 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover using the blind-specific stop endpoint."""
+        try:
+            await self._device.async_stop_blinds()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to stop {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_opening = False
         self._attr_is_closing = False
-        await self._device.async_stop_blinds()
         self._skip_update = True
         self._app_command = True
 
     async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
         """Stop the cover tilt.
 
-        async_stop_blinds() is the same physical stop endpoint used by
-        async_stop_cover() (it halts the lift, not just the tilt motor), so
-        this must clear is_opening/is_closing the same way or a lift that was
-        mid-move keeps reporting movement until an unrelated device push
-        happens to correct it.
+        Same physical endpoint as async_stop_cover() (halts the lift, not
+        just the tilt motor), so it clears is_opening/is_closing the same way.
         """
+        try:
+            await self._device.async_stop_blinds()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to stop {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
         self._attr_is_opening = False
         self._attr_is_closing = False
-        await self._device.async_stop_blinds()
         self._skip_update = True
         self._app_command = True
 
@@ -384,13 +441,34 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
 
     async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
-        await self._device.async_set_target_angle(1.0 - 1.0)
+        try:
+            await self._device.async_set_target_angle(1.0 - 1.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to open tilt for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
 
     async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close cover tilt."""
-        await self._device.async_set_target_angle(1.0 - 0.0)
+        try:
+            await self._device.async_set_target_angle(1.0 - 0.0)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to close tilt for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err
 
     async def async_set_cover_tilt_position(self, **kwargs: Any) -> None:
         """Move the cover tilt to a specific position."""
         tilt_position = kwargs[ATTR_TILT_POSITION]
-        await self._device.async_set_target_angle(1.0 - (tilt_position / 100.0))
+        try:
+            await self._device.async_set_target_angle(1.0 - (tilt_position / 100.0))
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to set tilt position for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="cover_action_failed",
+            ) from err

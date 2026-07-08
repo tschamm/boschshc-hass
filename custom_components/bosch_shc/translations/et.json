@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Lüliti oleku muutmine ebaõnnestus."
     },
+    "light_action_failed": {
+      "message": "Tule oleku muutmine ebaõnnestus."
+    },
+    "cover_action_failed": {
+      "message": "Katte oleku muutmine ebaõnnestus."
+    },
     "select_option_failed": {
       "message": "Valiku määramine ebaõnnestus."
     },

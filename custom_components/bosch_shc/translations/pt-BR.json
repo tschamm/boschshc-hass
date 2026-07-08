@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Falha ao alterar o estado do interruptor."
     },
+    "light_action_failed": {
+      "message": "Falha ao alterar o estado da luz."
+    },
+    "cover_action_failed": {
+      "message": "Falha ao alterar o estado da persiana."
+    },
     "select_option_failed": {
       "message": "Falha ao definir a opção."
     },

@@ -604,6 +604,12 @@
     "switch_action_failed": {
       "message": "Zmena stavu spínača zlyhala."
     },
+    "light_action_failed": {
+      "message": "Zmena stavu svetla zlyhala."
+    },
+    "cover_action_failed": {
+      "message": "Zmena stavu rolety zlyhala."
+    },
     "select_option_failed": {
       "message": "Nastavenie možnosti zlyhalo."
     },
