@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.9 — boschshcpy 0.4.9, simplified button error handling
+
+**No breaking changes.** Requires `boschshcpy==0.4.9`.
+
+boschshcpy 0.4.9 makes `SHCConnectionError` a subclass of `SHCException` and
+consistently wraps `requests` transport errors into it across all read/write
+API calls (previously only some paths wrapped some transport errors — see
+home-assistant/core#174613's review for the motivating discussion). Every
+`button.py` entity's `except (SHCException, SHCConnectionError)` simplified
+to `except SHCException` accordingly — no functional change, the exception
+hierarchy is just unified now.
+
+`SHCScenarioButton` now uses `_attr_translation_key = "scenario"` +
+an `icons.json` entry instead of a hardcoded `_attr_icon`, matching every
+other button entity in this file.
+
 ## 0.10.8 — device-inventory audit: bypass, energy reset, presence simulation, shutter diagnostics
 
 **No breaking changes.** Requires `boschshcpy>=0.4.8`. New read-only sensors
