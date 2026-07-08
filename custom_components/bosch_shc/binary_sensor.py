@@ -24,7 +24,7 @@ from boschshcpy import (
     VibrationSensorService,
     WaterLeakageSensorService,
 )
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -94,12 +94,7 @@ async def async_setup_entry(  # noqa: C901
         )
         async_add_shuttercontact(device=binary_sensor)
 
-    # Register listener for new binary sensors and ensure it is torn down on
-    # config entry unload.  session.subscribe() appends the tuple to
-    # session._subscribers but returns None, so we build the unsubscribe
-    # closure ourselves.  add_update_listener is NOT used here because it
-    # expects an options-update callback (hass, entry) -> None, not the SHC
-    # subscriber tuple.
+    # session.subscribe() returns None, so unsubscribe is built manually below.
     _shutter_subscriber = (SHCShutterContact, async_add_shuttercontact)
     session.subscribe(_shutter_subscriber)
 
@@ -840,7 +835,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         LOGGER.debug("Requesting smoke test on device %s", self._device.name)
         try:
             await self._device.async_smoketest_requested()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Smoke test request failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -854,7 +849,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_alarmstate(command)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Set alarm state failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1277,7 +1272,7 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[
         LOGGER.debug("Requesting smoke test on device %s", self._device.name)
         try:
             await self._device.async_smoketest_requested()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="smoke_test_failed",

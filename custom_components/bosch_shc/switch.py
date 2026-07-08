@@ -25,7 +25,7 @@ from boschshcpy import (
     ThermostatService,
 )
 from boschshcpy.device import SHCDevice
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
@@ -1020,7 +1020,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
                 "turn_on skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn on {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1047,7 +1047,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
                 "turn_off skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn off {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1158,7 +1158,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
                 self._device,
                 f"async_set_{self.entity_description.on_key}",
             )(True)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn on {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1172,7 +1172,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
                 self._device,
                 f"async_set_{self.entity_description.on_key}",
             )(False)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn off {self._device.name}: {err}",
                 translation_domain=DOMAIN,

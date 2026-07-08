@@ -140,7 +140,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                     if scenario.name == name:
                         try:
                             await scenario.async_trigger()
-                        except (SHCException, SHCConnectionError) as err:
+                        except SHCException as err:
                             raise ServiceValidationError(
                                 f"Failed to trigger scenario '{name}': {err}",
                                 translation_domain=DOMAIN,
@@ -272,9 +272,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # NumberSelector yields a float; the SHC long-poll RPC expects an integer
     # number of seconds, so coerce it.
     long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
-    # Async migration (phase 3b): the integration runs SHCSessionAsync — aiohttp
-    # I/O + an asyncio.Task long-poll, no thread, no executor. Construction does
-    # NO network I/O; async_init() enumerates the device model on the loop.
     # TODO(async parity): SHCAPIAsync does not yet honor verify_hostname /
     # ssl_verify (#264 skip-SSL is sync-only) — port those into SHCAPIAsync.
     if entry.options.get(OPT_SSL_SKIP_VERIFY, False):
@@ -282,12 +279,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             "ssl_skip_verify is set but is not yet honored on the async path; "
             "the bundled Bosch CA is still used. Tracked for async parity."
         )
-    # Build the mTLS SSLContext off the event loop — it reads the cert/key/CA
-    # PEM files (blocking I/O) — then hand it to the session so construction on
-    # the loop stays non-blocking. Guard for older libs lacking the kwarg.
-    # HA-managed aiohttp session (Phase 3c inject-websession).
-    # verify_ssl=False: the per-request ssl= kwarg in SHCAPIAsync passes the
-    # mTLS SSLContext, so connector-level SSL verification is not needed.
+    # Build the mTLS SSLContext off the event loop (blocking PEM reads).
+    # verify_ssl=False: the per-request ssl= kwarg already passes the mTLS context.
     websession = async_get_clientsession(hass, verify_ssl=False)
     _session_kwargs = {"long_poll_timeout": long_poll_timeout}
     if "ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters:
@@ -342,11 +335,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
 
     # Daily certificate re-check scheduling
     async def _scheduled_cert_check(_now: Any) -> None:
-        # async_track_time_interval dispatches sync callbacks to a worker
-        # thread, where hass.async_create_task triggers HA 2026.x's escalated
-        # report_non_thread_safe_operation RuntimeError for custom integrations.
-        # Making the callback async makes async_track_time_interval schedule it
-        # directly on the event loop, eliminating both the wrapper and the bug.
+        # Must stay async: a sync callback here gets dispatched off-thread by
+        # async_track_time_interval, triggering HA's non-thread-safe-operation error.
         if not cert_path:
             return  # no cert configured — nothing to check (mirrors startup guard)
         try:
@@ -445,7 +435,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             except (
                 JSONRPCError,
                 SHCException,
-                SHCConnectionError,
                 AttributeError,
                 aiohttp.ClientError,
                 asyncio.TimeoutError,
@@ -564,7 +553,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             except (
                 JSONRPCError,
                 SHCException,
-                SHCConnectionError,
                 AttributeError,
                 aiohttp.ClientError,
                 asyncio.TimeoutError,
@@ -757,17 +745,8 @@ class SwitchDeviceEventListener:
         self._device = device
         self._keypad_service = None
         self.device_id = None
-        # Replay-guard (#336): the Keypad service callback is registered on the
-        # generic subscribe_callback channel, which the lib re-fires with the
-        # *current* state on the ~24 h poll-id resubscribe, on the resubscribe
-        # short-poll refresh, AND as the first long-poll snapshot after every
-        # HA restart / config-entry reload.  Without a guard every switch's last
-        # keypress replays as a fresh bosch_shc.event PRESS_SHORT at once,
-        # re-triggering device-trigger automations (e.g. "all lights on").
-        # Seed from the device's current eventtimestamp (already populated from
-        # the initial GET) so the first re-delivered snapshot is treated as a
-        # baseline and only a genuinely newer press fires — mirrors the lib's
-        # SHCDeviceService._last_event_timestamp seed / _is_replayed_event.
+        # Replay-guard (#336): seed from the current eventtimestamp so a stale
+        # keypress re-delivered on resubscribe/restart doesn't refire an automation.
         seed_ts = device.eventtimestamp
         self._last_fired_timestamp: int = seed_ts if seed_ts is not None else -1
 

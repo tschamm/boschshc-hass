@@ -268,3 +268,15 @@ def test_set_native_value_shc_connection_error_raises_home_assistant_error():
     with pytest.raises(HomeAssistantError) as exc_info:
         asyncio.run(entity.async_set_native_value(2.0))
     assert exc_info.value.translation_key == "number_set_failed"
+
+
+def test_set_native_value_json_decode_error_logged_not_raised():
+    """A malformed-but-200-OK write response (json.loads failure inside
+    boschshcpy's _put_api_or_fail) must be logged, not crash the write call."""
+    import json
+
+    entity = _make_number(offset=0.0, min_offset=-5.0, max_offset=5.0)
+    entity._device.async_set_offset = AsyncMock(
+        side_effect=json.JSONDecodeError("Expecting value", "", 0)
+    )
+    asyncio.run(entity.async_set_native_value(2.0))  # must not raise

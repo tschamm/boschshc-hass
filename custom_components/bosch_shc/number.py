@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 
 import aiohttp
 from boschshcpy import SHCSession, SHCThermostat
 from boschshcpy.device import SHCDevice
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.number import (
     NumberDeviceClass,
     NumberEntity,
@@ -210,11 +211,8 @@ async def async_setup_entry(  # noqa: C901
 
 
 # (field, translation_key, unit, min, max) — siren config numbers (#120).
-# alarmDuration/flashDuration are minutes 1-15; alarmDelay/flashDelay are
-# seconds 0-180 — bounds confirmed via APK decompile of the official app's
-# slider widgets (layout_outdoorsiren_alarm_signal_fragment.xml /
-# layout_outdoorsiren_alarm_delay_fragment.xml), not just the OpenAPI spec
-# (already proven unreliable for this device's write paths, hass#120).
+# Bounds confirmed via APK decompile of the app's slider widgets, not the
+# OpenAPI spec (already proven unreliable for this device's write paths).
 _SIREN_ALARM_DURATION = (
     "alarm_duration",
     "siren_alarm_duration",
@@ -279,7 +277,7 @@ class SirenConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.siren.async_set_configuration(**{self._field: clamped})
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -290,6 +288,7 @@ class SirenConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set %s for %s: %s", self._field, self._device.name, err
@@ -324,7 +323,7 @@ class SHCNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         clamped = max(self.native_min_value, min(self.native_max_value, value))
         try:
             await self._device.async_set_offset(clamped)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -335,6 +334,7 @@ class SHCNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning("Unable to set offset for %s: %s", self._device.name, err)
 
@@ -398,7 +398,7 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_impulse_length(round(clamped * 10))
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -409,6 +409,7 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set impulse length for %s: %s", self._device.name, err
@@ -498,7 +499,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
             return
         try:
             await async_setter(clamped)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -509,6 +510,7 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to write %s for %s: %s",
@@ -551,7 +553,7 @@ class PowerThresholdNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_power_threshold(clamped)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -562,6 +564,7 @@ class PowerThresholdNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set power threshold for %s: %s", self._device.name, err
@@ -605,7 +608,7 @@ class EnterDurationNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_enter_duration_seconds(int(clamped))
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -616,6 +619,7 @@ class EnterDurationNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set enter duration for %s: %s", self._device.name, err
@@ -677,7 +681,7 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         """Set the LED brightness."""
         try:
             await self._device.async_set_led_brightness(round(value))
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -688,6 +692,7 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set LED brightness for %s: %s", self._device.name, err
@@ -745,7 +750,7 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         """Set the display brightness."""
         try:
             await self._device.async_set_display_brightness(round(value))
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -756,6 +761,7 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set display brightness for %s: %s", self._device.name, err
@@ -820,7 +826,7 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         """Set the display on-time."""
         try:
             await self._device.async_set_display_on_time(round(value))
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -831,6 +837,7 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to set display on-time for %s: %s", self._device.name, err
@@ -893,7 +900,7 @@ class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
                 await svc.async_set_brightness_range(max_brightness=clamped)
             else:
                 await svc.async_set_dimming_speed(clamped)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -955,7 +962,7 @@ class BypassTimeoutNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_bypass_timeout(round(clamped))
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
                 translation_domain=DOMAIN,
@@ -966,6 +973,7 @@ class BypassTimeoutNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             KeyError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
                 "Unable to write bypass_timeout for %s: %s",

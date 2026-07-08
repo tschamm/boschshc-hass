@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from boschshcpy import SHCIntrusionSystem, SHCSession
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.alarm_control_panel import AlarmControlPanelEntity
 from homeassistant.components.alarm_control_panel.const import (
     AlarmControlPanelEntityFeature,
@@ -169,7 +169,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
         """Send disarm command."""
         try:
             await self._device.async_disarm()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Disarm failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -180,7 +180,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
         """Send arm away command."""
         try:
             await self._device.async_arm_full_protection()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Arm away failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -191,7 +191,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
         """Send arm home command."""
         try:
             await self._device.async_arm_partial_protection()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Arm home failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -199,10 +199,10 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
             ) from err
 
     async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
-        """Send arm home command."""
+        """Send arm individual protection (custom bypass) command."""
         try:
             await self._device.async_arm_individual_protection()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Arm custom bypass failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -218,7 +218,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
         """
         try:
             await self._device.async_mute()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Mute failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
