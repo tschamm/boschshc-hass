@@ -94,8 +94,33 @@ that returns a time value.
 - Actions/services: `ServiceValidationError` (user error) vs `HomeAssistantError` (device/comms
   error) — don't put raw/stringified library exception text into a translated user-facing
   message; log the detail, translate only the summary.
+- Prefer `try/except/else` over a large `try` block: only the call(s) that can actually raise go
+  in `try`; anything using the result on the happy path goes in `else`.
+- Don't hardcode a unit (e.g. `"°C"`) in a log message or comparison when the domain/device
+  supports more than one — read the real unit off the device/entity instead.
 
-## 7. Before a release
+## 7. Platinum-tier patterns worth adopting (2026-07-08 sample scan)
+
+Sampled a handful of Platinum-quality-scale `ha-core` integrations (androidtv_remote, smlight,
+watts, liebherr) for patterns worth copying here if/when the relevant code path is touched:
+
+- Options flow: `OptionsFlowWithReload` as the base class instead of hand-rolled
+  `add_update_listener` + manual `async_reload()`.
+- Custom entity services: a dedicated `services.py` using
+  `service.async_register_platform_entity_service(...)`, registered once from `async_setup()`
+  (which runs once per process, not per config-entry reload — no "already registered" guard
+  needed).
+- Device/coordinator cleanup ordering: shut a coordinator down *before* unlinking it from the
+  device registry (not after), diff stale devices against the **device registry**, not an
+  in-memory coordinators dict (a device removed while HA was offline never had a coordinator this
+  session), and remember `async_update_device(remove_config_entry_id=...)` only unlinks — the
+  device row itself is removed later, debounced. This integration doesn't use a
+  `DataUpdateCoordinator` (push/long-poll model), so these specific device-cleanup mechanics don't
+  directly apply, but the *ordering* principle (shutdown before unlink, diff against the
+  authoritative registry not a local cache) is general.
+- Full detail + PR citations: `/home/thomas/projects/bosch shc/pr-review-checklist.md` §11–20.
+
+## 8. Before a release
 
 1. `bash scripts/local-ci.sh all` (hass + lib) — must be 100% green.
 2. `manifest.json`'s `"version"` matches the version in the release commit/tag.
