@@ -31,6 +31,17 @@ Findings from a full code review, fixed in three passes:
   0.10.9's changelog entry).
 - Two copy-paste doc fixes (`logbook.py`, `alarm_control_panel.py`) and a
   round of comment condensing flagged by the new comment-length CI gate.
+- **`binary_sensor.py`/`cover.py`/`light.py`:** `*Service.State` enum
+  comparisons switched from `==`/`!=` to `is`/`is not` — matches the
+  identity-comparison convention `ha-core`'s custom mypy plugin enforces on
+  these same platforms there, ahead of eventually migrating them.
+- **`binary_sensor.py`/`sensor.py`:** `MotionDetectionSensor`,
+  `OccupancyDetectionSensor`, `TamperSensor`, and
+  `NextSetpointTemperatureSensor` now declare `_unrecorded_attributes` for
+  their timestamp-valued `extra_state_attributes` (`last_motion_detected`,
+  `last_occupancy_change`, `last_tamper_time`, `next_change_at`) — previously
+  every state write added a new recorder DB row even when nothing
+  user-visible changed, since each of those values is unique per event.
 
 ## 0.10.9 — boschshcpy 0.4.9, simplified button error handling
 
