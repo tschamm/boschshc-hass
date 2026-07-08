@@ -35,6 +35,9 @@ run_hass() {
   _banner "translation completeness"
   if python3 scripts/check-translations.py; then _ok "translation completeness"; else _fail "translation completeness"; fi
 
+  _banner "comment length"
+  if python3 scripts/check-comment-length.py; then _ok "comment length"; else _fail "comment length"; fi
+
   _banner "pytest (hass)"
   if PYTHONPATH="$HASS_DIR:$LIB_DIR" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
       python3 -m pytest tests/bosch_shc/ -q -o addopts="" \

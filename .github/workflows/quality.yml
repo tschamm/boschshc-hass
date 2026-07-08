@@ -95,3 +95,6 @@ jobs:
         # same recursive key set as en.json (no untranslated fall-throughs, no
         # stale keys), and en.json entity section stays in sync with strings.json.
         run: python3 scripts/check-translations.py
+
+      - name: comment length (no design-memo comments)
+        run: python3 scripts/check-comment-length.py
