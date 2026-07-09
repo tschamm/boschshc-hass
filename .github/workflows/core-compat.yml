@@ -1,0 +1,32 @@
+name: Core-compat (advisory)
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ruff-mypy:
+    name: ruff · mypy (advisory, Core-compat)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install tooling
+        run: pip install ruff mypy
+      - name: ruff check (advisory)
+        continue-on-error: true
+        run: ruff check custom_components/bosch_shc
+      - name: ruff format --check (advisory)
+        continue-on-error: true
+        run: ruff format --check custom_components/bosch_shc
+      - name: mypy (advisory)
+        continue-on-error: true
+        run: mypy custom_components/bosch_shc

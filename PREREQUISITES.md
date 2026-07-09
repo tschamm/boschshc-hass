@@ -1,7 +1,7 @@
 # Pre-commit / Pre-release Checklist (boschshc-hass)
 
 Run through this before every commit and before cutting a release. Adapted from the
-`pr-review-checklist.md` built for the sibling `ha-core` PR work — this file is the HACS-side
+`pr-review-checklist-ha-core.md` built for the sibling `ha-core` PR work — this file is the HACS-side
 counterpart. Add a new entry every time something costs a round-trip that this file could have
 prevented; don't let it go stale.
 
@@ -34,7 +34,7 @@ grep '"requirements"' custom_components/bosch_shc/manifest.json
 ```
 
 A clean result against the *wrong* (especially untyped/older) version proves nothing — same
-lesson as `pr-review-checklist.md` §19, generalized to this repo.
+lesson as `pr-review-checklist-ha-core.md` §19, generalized to this repo.
 
 ## 2. Enum comparisons
 
@@ -118,7 +118,7 @@ watts, liebherr) for patterns worth copying here if/when the relevant code path 
   `DataUpdateCoordinator` (push/long-poll model), so these specific device-cleanup mechanics don't
   directly apply, but the *ordering* principle (shutdown before unlink, diff against the
   authoritative registry not a local cache) is general.
-- Full detail + PR citations: `/home/thomas/projects/bosch shc/pr-review-checklist.md` §11–20.
+- Full detail + PR citations: `/home/thomas/projects/bosch shc/pr-review-checklist-ha-core.md` §11–20.
 
 ## 8. Before a release
 
@@ -135,6 +135,6 @@ watts, liebherr) for patterns worth copying here if/when the relevant code path 
 
 ## Meta
 
-- Sibling checklist: `/home/thomas/projects/bosch shc/pr-review-checklist.md` (ha-core PR side).
+- Sibling checklist: `/home/thomas/projects/bosch shc/pr-review-checklist-ha-core.md` (ha-core PR side).
 - This file should be updated any time a review/CI/self-caught issue here would have been
   prevented by knowing something in advance — same standing rule as the ha-core checklist.
