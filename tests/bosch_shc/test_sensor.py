@@ -557,6 +557,27 @@ def _setup_sensors(md2_list):
     return entities
 
 
+
+# ===========================================================================
+# Shared helper: _BadEnum (used by AirQualitySensor/TemperatureRatingSensor/
+# HumidityRatingSensor/PurityRatingSensor/CommunicationQualitySensor error guards)
+# ===========================================================================
+
+
+class _BadEnum:
+    """Simulates an enum whose .name property raises ValueError (or another
+    exception class, configurable)."""
+
+    def __init__(self, exc_class=ValueError, message="unknown"):
+        self._exc_class = exc_class
+        self._message = message
+
+    @property
+    def name(self):
+        raise self._exc_class(self._message)
+
+
+
 # ===========================================================================
 # TemperatureSensor / TerminalTemperatureSensor
 # ===========================================================================
@@ -1099,21 +1120,8 @@ class TestAirQualitySensorComfortZone:
 
 
 # ===========================================================================
-# TemperatureRatingSensor / HumidityRatingSensor / PurityRatingSensor
+# TemperatureRatingSensor
 # ===========================================================================
-
-
-class _BadEnum:
-    """Simulates an enum whose .name property raises ValueError (or another
-    exception class, configurable)."""
-
-    def __init__(self, exc_class=ValueError, message="unknown"):
-        self._exc_class = exc_class
-        self._message = message
-
-    @property
-    def name(self):
-        raise self._exc_class(self._message)
 
 
 def _temp_rating_sensor(rating):
@@ -1155,6 +1163,350 @@ class TestTemperatureRatingSensorErrorGuard:
             name="twinguard-1",
         )
         assert s.native_value == "MEDIUM"
+
+# ===========================================================================
+# CommunicationQualitySensor
+# ===========================================================================
+
+
+def _comm_quality_sensor(state):
+    s = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
+    s._device = SimpleNamespace(communicationquality=state)
+    return s
+
+
+class TestCommunicationQualitySensor:
+    # #339: native_value is now a lowercase, translatable slug.
+    def test_native_value_good(self):
+        state = CommunicationQualityService.State.GOOD
+        assert _comm_quality_sensor(state).native_value == "good"
+
+    def test_native_value_not_supported(self):
+        state = CommunicationQualityService.State.NOT_SUPPORTED
+        assert _comm_quality_sensor(state).native_value == "not_supported"
+
+    def test_native_value_bad(self):
+        state = CommunicationQualityService.State.BAD
+        assert _comm_quality_sensor(state).native_value == "bad"
+
+    def test_native_value_unknown(self):
+        state = CommunicationQualityService.State.UNKNOWN
+        assert _comm_quality_sensor(state).native_value == "unknown"
+
+    def test_native_value_fetching(self):
+        state = CommunicationQualityService.State.FETCHING
+        assert _comm_quality_sensor(state).native_value == "fetching"
+
+    def test_native_value_normal(self):
+        state = CommunicationQualityService.State.NORMAL
+        assert _comm_quality_sensor(state).native_value == "normal"
+
+
+def _make_comm_quality_test_sensor(quality_obj):
+    """Build a CommunicationQualitySensor with a fake device (ValueError/
+    AttributeError guard tests, #339)."""
+    sensor = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
+    sensor._device = SimpleNamespace(
+        id="dev-1",
+        root_device_id="root-1",
+        name="Compact Plug",
+        communicationquality=quality_obj,
+    )
+    sensor._attr_unique_id = "root-1_dev-1_communicationquality"
+    return sensor
+
+
+class _GoodQuality:
+    """Valid quality enum-like — .name works fine."""
+    @property
+    def name(self):
+        return "GOOD"
+
+
+class _BadQuality:
+    """Unknown quality — .name raises ValueError."""
+    @property
+    def name(self):
+        raise ValueError("Unknown quality value 99")
+
+
+class _NoneQuality:
+    """Quality object whose .name raises AttributeError (missing service)."""
+    @property
+    def name(self):
+        raise AttributeError("NoneType has no attribute 'name'")
+
+
+class TestCommunicationQualitySensorValueGuard:
+    """Unit tests for CommunicationQualitySensor.native_value ValueError guard.
+
+    Verifies that unknown communicationquality values return None and log a
+    warning instead of propagating ValueError.
+    """
+
+    def test_valid_quality_returns_slug(self):
+        # #339: native_value is now a lowercase slug (translated for display).
+        sensor = _make_comm_quality_test_sensor(_GoodQuality())
+        assert sensor.native_value == "good"
+
+    def test_value_error_returns_none_and_logs(self):
+        sensor = _make_comm_quality_test_sensor(_BadQuality())
+        with patch("custom_components.bosch_shc.sensor.LOGGER") as mock_log:
+            result = sensor.native_value
+        assert result is None
+        mock_log.warning.assert_called_once()
+
+    def test_attribute_error_returns_none_and_logs(self):
+        sensor = _make_comm_quality_test_sensor(_NoneQuality())
+        with patch("custom_components.bosch_shc.sensor.LOGGER") as mock_log:
+            result = sensor.native_value
+        assert result is None
+        mock_log.warning.assert_called_once()
+
+
+def _comm():
+    return CommunicationQualitySensor.__new__(CommunicationQualitySensor)
+
+
+def test_comm_quality_is_diagnostic_enum():
+    """#339: CommunicationQuality is a Diagnostics-category ENUM sensor whose
+    state is a lowercase, translatable slug (no more raw ALL-CAPS "GOOD"/"BAD")."""
+    s = _comm()
+    assert s.entity_category == EntityCategory.DIAGNOSTIC
+    assert s.device_class == SensorDeviceClass.ENUM
+    assert s.translation_key == "communication_quality"
+    # options are lowercase slugs so HA can translate the displayed label
+    assert all(o == o.lower() for o in s.options)
+
+
+def test_comm_quality_native_value_is_lowercase_slug():
+    s = _comm()
+    s._device = SimpleNamespace(
+        communicationquality=SimpleNamespace(name="GOOD"), name="plug"
+    )
+    assert s.native_value == "good"
+    # the slug must be a declared option (else HA logs an "invalid state" warning)
+    assert s.native_value in s.options
+
+
+def _comm_sensor(comm_quality, name="test-plug"):
+    s = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
+    s._device = SimpleNamespace(communicationquality=comm_quality, name=name)
+    return s
+
+
+class TestCommunicationQualitySensorErrorGuard:
+    def test_value_error_returns_none(self):
+        """ValueError on communicationquality.name must return None."""
+        s = _comm_sensor(_BadEnum(ValueError, "bad value"))
+        assert s.native_value is None
+
+    def test_attribute_error_returns_none(self):
+        """AttributeError (no .name attribute at all) must return None."""
+        s = _comm_sensor(_BadEnum(AttributeError, "no name attr"))
+        assert s.native_value is None
+
+    def test_communicationquality_none_attribute_error_returns_none(self):
+        """If communicationquality itself is None, .name raises AttributeError → None."""
+        s = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
+
+        class _NoName:
+            @property
+            def name(self):
+                raise AttributeError("no such attr")
+
+        s._device = SimpleNamespace(communicationquality=_NoName(), name="plug-1")
+        assert s.native_value is None
+
+
+class TestShutterContact2CommQualitySetup:
+    """CommunicationQuality for shutter_contacts2 (new sensor entity).
+
+    NOTE: The sensor.py hasattr guard checks for 'communicationquality' on
+    the device object. SimpleNamespace devices with the attribute pass; those
+    without do not.
+    """
+
+    def test_shutter_contact2_with_cq_yields_comm_quality_sensor(self):
+        """A shutter_contacts2 device with communicationquality → CommunicationQualitySensor."""
+        dev = _fake_device_ne(
+            device_id="hdm:SC2:001",
+            communicationquality=SimpleNamespace(name="GOOD"),
+        )
+        session = _make_fake_session_ne(shutter_contacts2=[dev])
+        entities = _run_setup_ne(session)
+        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
+        sc2_comm = [e for e in comm_sensors if "hdm:SC2:001" in e._attr_unique_id]
+        assert len(sc2_comm) == 1
+
+    def test_shutter_contact2_without_cq_attr_is_skipped(self):
+        """A shutter_contacts2 device without communicationquality is skipped."""
+        dev = _fake_device_ne(device_id="hdm:SC2:002")
+        # no communicationquality attribute → hasattr returns False
+        session = _make_fake_session_ne(shutter_contacts2=[dev])
+        entities = _run_setup_ne(session)
+        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
+        sc2_comm = [e for e in comm_sensors if "hdm:SC2:002" in e._attr_unique_id]
+        assert len(sc2_comm) == 0
+
+    def test_comm_quality_diagnostic_disabled_skips_shutter_contact(self):
+        """diagnostic_entities=False → no CommunicationQualitySensor for shutter_contacts2."""
+        from custom_components.bosch_shc.const import OPT_DIAGNOSTIC_ENTITIES
+        dev = _fake_device_ne(
+            device_id="hdm:SC2:003",
+            communicationquality=SimpleNamespace(name="GOOD"),
+        )
+        session = _make_fake_session_ne(shutter_contacts2=[dev])
+        # Passing empty options dict means OPT_DIAGNOSTIC_ENTITIES defaults to True
+        # in sensor.py (via config_entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True))
+        # so we must explicitly set it False:
+        entities = _run_setup_ne(session, options={OPT_DIAGNOSTIC_ENTITIES: False})
+        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
+        sc2_comm = [e for e in comm_sensors if "hdm:SC2:003" in e._attr_unique_id]
+        assert len(sc2_comm) == 0
+
+    def test_unique_id_format_for_shutter_contact2(self):
+        """unique_id must end with _communicationquality."""
+        dev = _fake_device_ne(
+            name="SC2 test",
+            device_id="hdm:SC2:uid-test",
+            root_id="root-sc2-uid",
+            communicationquality=SimpleNamespace(name="GOOD"),
+        )
+        session = _make_fake_session_ne(shutter_contacts2=[dev])
+        entities = _run_setup_ne(session)
+        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
+        sc2_comm = [e for e in comm_sensors if "hdm:SC2:uid-test" in e._attr_unique_id]
+        assert len(sc2_comm) == 1
+        assert sc2_comm[0]._attr_unique_id.endswith("_communicationquality")
+
+
+# ===========================================================================
+# KeypadTriggerSensor (diag sensor)
+# ===========================================================================
+
+
+def test_keypad_trigger_sensor():
+    svc = SimpleNamespace(
+        switch_type="UNIVERSAL_SWITCH",
+        scenario_id_associations=[{"keyName": "LOWER_BUTTON", "scenarioId": "x"}],
+        ids_to_trigger=["x"],
+    )
+    s = _new(KeypadTriggerSensor)
+    s._device = SimpleNamespace(keypadtrigger=svc)
+    assert s.native_value == "UNIVERSAL_SWITCH"
+    assert s.extra_state_attributes["ids_to_trigger"] == ["x"]
+
+
+def test_keypad_trigger_sensor_no_service_is_safe():
+    s = _new(KeypadTriggerSensor)
+    s._device = SimpleNamespace(keypadtrigger=None)
+    assert s.native_value is None
+    assert s.extra_state_attributes is None
+
+
+def test_device_update_and_keypad_sensor_drop_attr_name():
+    """#342: translated names actually resolve (SHCEntity._attr_name shadow fix)."""
+    from custom_components.bosch_shc.update import DeviceUpdate
+
+    u = DeviceUpdate(device=_FAKE_DEVICE, entry_id="e1")
+    assert not hasattr(u, "_attr_name")
+    assert u.translation_key == "device_firmware"
+
+    s = KeypadTriggerSensor(device=_FAKE_DEVICE, entry_id="e1")
+    assert not hasattr(s, "_attr_name")
+    assert s.translation_key == "keypad_trigger"
+
+
+class TestSensorKeypadTriggerSetup:
+    """sensor.py lines 462-465: KeypadTriggerSensor setup."""
+
+    def _run_sensor_setup_universal_switches(self, switches, options=None):
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.motion_detectors = []
+        dh.motion_detectors2 = []
+        dh.shutter_contacts = []
+        dh.shutter_contacts2 = []
+        dh.smoke_detectors = []
+        dh.twinguards = []
+        dh.smart_plugs = []
+        dh.smart_plugs_compact = []
+        dh.light_switches_bsm = []
+        dh.micromodule_light_controls = []
+        dh.micromodule_shutter_controls = []
+        dh.micromodule_blinds = []
+        dh.universal_switches = switches
+        dh.water_leakage_detectors = []
+        dh.outdoor_sirens = []
+
+        session = MagicMock()
+        session.device_helper = dh
+        session.emma = _fake_dev("emma1")
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass, options=options or {})
+
+        with patch(_PATCH_MIGRATE, new_callable=AsyncMock):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+        return collected
+
+    def test_keypad_trigger_added_when_supported(self):
+        """Lines 461-469: diagnostic_enabled (default True) + supports_keypadtrigger → added."""
+        sw = _fake_dev("us1", supports_keypadtrigger=True, supports_batterylevel=False)
+        # OPT_DIAGNOSTIC_ENTITIES defaults to True — just pass {} to use default
+        collected = self._run_sensor_setup_universal_switches([sw])
+        types = [type(e).__name__ for e in collected]
+        assert "KeypadTriggerSensor" in types
+
+
+class TestSensorKeypadTriggerExcluded:
+    """sensor.py line 463: excluded universal switch → continue in keypad trigger block."""
+
+    def test_excluded_universal_switch_skipped(self):
+        """Line 463: device_excluded → continue before KeypadTriggerSensor."""
+        sw = _fake_dev("us_excl", supports_keypadtrigger=True, supports_batterylevel=False)
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.motion_detectors = []
+        dh.motion_detectors2 = []
+        dh.shutter_contacts = []
+        dh.shutter_contacts2 = []
+        dh.smoke_detectors = []
+        dh.twinguards = []
+        dh.smart_plugs = []
+        dh.smart_plugs_compact = []
+        dh.light_switches_bsm = []
+        dh.micromodule_light_controls = []
+        dh.micromodule_shutter_controls = []
+        dh.micromodule_blinds = []
+        dh.universal_switches = [sw]
+        dh.water_leakage_detectors = []
+        dh.outdoor_sirens = []
+
+        session = MagicMock()
+        session.device_helper = dh
+        session.emma = _fake_dev("emma1")
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["us_excl"]})
+
+        with patch(_PATCH_MIGRATE, new_callable=AsyncMock):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        assert not any(isinstance(e, KeypadTriggerSensor) for e in collected)
+
+
+# ===========================================================================
+# HumidityRatingSensor
+# ===========================================================================
 
 
 def _humidity_rating_sensor(rating):
@@ -1198,6 +1550,10 @@ class TestHumidityRatingSensorErrorGuard:
         )
         assert s.native_value == "GOOD"
 
+# ===========================================================================
+# PurityRatingSensor
+# ===========================================================================
+
 
 def _purity_rating_sensor(rating):
     s = PurityRatingSensor.__new__(PurityRatingSensor)
@@ -1239,7 +1595,6 @@ class TestPurityRatingSensorErrorGuard:
         )
         assert s.native_value == "BAD"
 
-
 # ===========================================================================
 # PowerSensor / EnergySensor / EnergyYieldSensor / PowerYieldSensor
 # ===========================================================================
@@ -1266,6 +1621,146 @@ class TestPowerSensor:
 
     def test_state_class(self):
         assert _power_sensor(0.0).state_class == SensorStateClass.MEASUREMENT
+
+
+# ===========================================================================
+# EmmaPowerSensor
+# ===========================================================================
+
+
+def _emma_sensor(value=0.0, localized_subtitles="Consumed"):
+    s = EmmaPowerSensor.__new__(EmmaPowerSensor)
+    s._device = SimpleNamespace(
+        value=value,
+        localizedSubtitles=localized_subtitles,
+    )
+    return s
+
+
+class TestEmmaPowerSensor:
+    def test_native_value_positive(self):
+        """Positive value = power fed to grid."""
+        assert _emma_sensor(value=1500.0).native_value == 1500.0
+
+    def test_native_value_negative(self):
+        """Negative value = power consumed from grid."""
+        assert _emma_sensor(value=-800.0).native_value == -800.0
+
+    def test_native_value_zero(self):
+        assert _emma_sensor(value=0.0).native_value == 0.0
+
+    def test_extra_state_attributes_power_flow(self):
+        s = _emma_sensor(localized_subtitles="Feeding")
+        assert s.extra_state_attributes == {"power_flow": "Feeding"}
+
+    def test_extra_state_attributes_key(self):
+        """extra_state_attributes must always have 'power_flow' key."""
+        s = _emma_sensor()
+        assert "power_flow" in s.extra_state_attributes
+
+    def test_device_class_is_power(self):
+        assert _emma_sensor().device_class == SensorDeviceClass.POWER
+
+    def test_unit_is_watt(self):
+        assert _emma_sensor().native_unit_of_measurement == UnitOfPower.WATT
+
+    def test_state_class_is_measurement(self):
+        assert _emma_sensor().state_class == SensorStateClass.MEASUREMENT
+
+    def test_entity_registry_enabled_default_false(self):
+        """EmmaPowerSensor must be disabled by default (opt-in diagnostic).
+
+        HA parent classes shadow _attr_entity_registry_enabled_default with a
+        property, so we access via an instance to read the actual value.
+        """
+        s = _emma_sensor()
+        assert s.entity_registry_enabled_default is False
+
+
+class TestEmmaPowerSensorLifecycle:
+    """Cover async_added_to_hass and async_will_remove_from_hass."""
+
+    def _make_emma(self):
+        callbacks = {}
+        dev = _fake_device(
+            name="EMMA",
+            device_id="com.bosch.tt.emma.applink",
+            root_device_id="shc-mac",
+        )
+        dev.subscribe_callback = lambda eid, fn: callbacks.update({eid: fn})
+        dev.unsubscribe_callback = lambda eid: callbacks.pop(eid, None)
+        dev.device_services = []
+        return dev, callbacks
+
+    def test_async_added_to_hass_subscribes_callback(self):
+        dev, callbacks = self._make_emma()
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        # entity_id is set by HA platform normally; inject a fake one
+        entity.entity_id = "sensor.emma_power"
+        entity.schedule_update_ha_state = MagicMock()
+
+        async def _run():
+            await entity.async_added_to_hass()
+
+        asyncio.run(_run())
+        assert "sensor.emma_power" in callbacks
+
+    def test_async_will_remove_from_hass_unsubscribes(self):
+        dev, callbacks = self._make_emma()
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        entity.entity_id = "sensor.emma_power"
+        entity.schedule_update_ha_state = MagicMock()
+
+        async def _run():
+            await entity.async_added_to_hass()
+            await entity.async_will_remove_from_hass()
+
+        asyncio.run(_run())
+        assert "sensor.emma_power" not in callbacks
+
+    def test_callback_triggers_schedule_update(self):
+        dev, callbacks = self._make_emma()
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        entity.entity_id = "sensor.emma_power"
+        entity.schedule_update_ha_state = MagicMock()
+
+        async def _run():
+            await entity.async_added_to_hass()
+
+        asyncio.run(_run())
+        callbacks["sensor.emma_power"]()  # fire the stored callback
+        entity.schedule_update_ha_state.assert_called_once()
+
+    def test_entity_registry_enabled_default_is_false(self):
+        d = _fake_device(name="EMMA", device_id="com.bosch.tt.emma.applink")
+        s = EmmaPowerSensor(device=d, entry_id=ENTRY_ID)
+        assert s.entity_registry_enabled_default is False
+
+    def test_emma_extra_state_attributes_returns_power_flow(self):
+        dev, _ = self._make_emma()
+        dev.localizedSubtitles = "Grid Supply"
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        attrs = entity.extra_state_attributes
+        assert "power_flow" in attrs
+        assert attrs["power_flow"] == "Grid Supply"
+
+    def test_emma_native_value_returns_device_value(self):
+        dev, _ = self._make_emma()
+        dev.value = -1500.0
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        assert entity.native_value == -1500.0
+
+    def test_emma_native_value_positive(self):
+        dev, _ = self._make_emma()
+        dev.value = 300.0
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        assert entity.native_value == 300.0
+
+    def test_emma_native_value_none(self):
+        dev, _ = self._make_emma()
+        dev.value = None
+        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
+        assert entity.native_value is None
 
 
 def _energy_sensor(energyconsumption_wh):
@@ -1395,230 +1890,6 @@ class TestSensorEnergyYieldSmartPlug:
         types = [type(e).__name__ for e in collected]
         assert "EnergyYieldSensor" in types
         assert "PowerYieldSensor" in types
-
-
-# ===========================================================================
-# CommunicationQualitySensor
-# ===========================================================================
-
-
-def _comm_quality_sensor(state):
-    s = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
-    s._device = SimpleNamespace(communicationquality=state)
-    return s
-
-
-class TestCommunicationQualitySensor:
-    # #339: native_value is now a lowercase, translatable slug.
-    def test_native_value_good(self):
-        state = CommunicationQualityService.State.GOOD
-        assert _comm_quality_sensor(state).native_value == "good"
-
-    def test_native_value_not_supported(self):
-        state = CommunicationQualityService.State.NOT_SUPPORTED
-        assert _comm_quality_sensor(state).native_value == "not_supported"
-
-    def test_native_value_bad(self):
-        state = CommunicationQualityService.State.BAD
-        assert _comm_quality_sensor(state).native_value == "bad"
-
-    def test_native_value_unknown(self):
-        state = CommunicationQualityService.State.UNKNOWN
-        assert _comm_quality_sensor(state).native_value == "unknown"
-
-    def test_native_value_fetching(self):
-        state = CommunicationQualityService.State.FETCHING
-        assert _comm_quality_sensor(state).native_value == "fetching"
-
-    def test_native_value_normal(self):
-        state = CommunicationQualityService.State.NORMAL
-        assert _comm_quality_sensor(state).native_value == "normal"
-
-
-def _make_comm_quality_test_sensor(quality_obj):
-    """Build a CommunicationQualitySensor with a fake device (ValueError/
-    AttributeError guard tests, #339)."""
-    sensor = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
-    sensor._device = SimpleNamespace(
-        id="dev-1",
-        root_device_id="root-1",
-        name="Compact Plug",
-        communicationquality=quality_obj,
-    )
-    sensor._attr_unique_id = "root-1_dev-1_communicationquality"
-    return sensor
-
-
-class _GoodQuality:
-    """Valid quality enum-like — .name works fine."""
-    @property
-    def name(self):
-        return "GOOD"
-
-
-class _BadQuality:
-    """Unknown quality — .name raises ValueError."""
-    @property
-    def name(self):
-        raise ValueError("Unknown quality value 99")
-
-
-class _NoneQuality:
-    """Quality object whose .name raises AttributeError (missing service)."""
-    @property
-    def name(self):
-        raise AttributeError("NoneType has no attribute 'name'")
-
-
-class TestCommunicationQualitySensorValueGuard:
-    """Unit tests for CommunicationQualitySensor.native_value ValueError guard.
-
-    Verifies that unknown communicationquality values return None and log a
-    warning instead of propagating ValueError.
-    """
-
-    def test_valid_quality_returns_slug(self):
-        # #339: native_value is now a lowercase slug (translated for display).
-        sensor = _make_comm_quality_test_sensor(_GoodQuality())
-        assert sensor.native_value == "good"
-
-    def test_value_error_returns_none_and_logs(self):
-        sensor = _make_comm_quality_test_sensor(_BadQuality())
-        with patch("custom_components.bosch_shc.sensor.LOGGER") as mock_log:
-            result = sensor.native_value
-        assert result is None
-        mock_log.warning.assert_called_once()
-
-    def test_attribute_error_returns_none_and_logs(self):
-        sensor = _make_comm_quality_test_sensor(_NoneQuality())
-        with patch("custom_components.bosch_shc.sensor.LOGGER") as mock_log:
-            result = sensor.native_value
-        assert result is None
-        mock_log.warning.assert_called_once()
-
-
-def _comm():
-    return CommunicationQualitySensor.__new__(CommunicationQualitySensor)
-
-
-def test_comm_quality_is_diagnostic_enum():
-    """#339: CommunicationQuality is a Diagnostics-category ENUM sensor whose
-    state is a lowercase, translatable slug (no more raw ALL-CAPS "GOOD"/"BAD")."""
-    s = _comm()
-    assert s.entity_category == EntityCategory.DIAGNOSTIC
-    assert s.device_class == SensorDeviceClass.ENUM
-    assert s.translation_key == "communication_quality"
-    # options are lowercase slugs so HA can translate the displayed label
-    assert all(o == o.lower() for o in s.options)
-
-
-def test_comm_quality_native_value_is_lowercase_slug():
-    s = _comm()
-    s._device = SimpleNamespace(
-        communicationquality=SimpleNamespace(name="GOOD"), name="plug"
-    )
-    assert s.native_value == "good"
-    # the slug must be a declared option (else HA logs an "invalid state" warning)
-    assert s.native_value in s.options
-
-
-def test_battery_level_disabled_by_default():
-    # #339: it duplicates the binary "Battery" sensor → hidden unless opted in.
-    s = BatteryLevelSensor.__new__(BatteryLevelSensor)
-    assert s.entity_registry_enabled_default is False
-    assert s.entity_category == EntityCategory.DIAGNOSTIC
-
-
-def _comm_sensor(comm_quality, name="test-plug"):
-    s = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
-    s._device = SimpleNamespace(communicationquality=comm_quality, name=name)
-    return s
-
-
-class TestCommunicationQualitySensorErrorGuard:
-    def test_value_error_returns_none(self):
-        """ValueError on communicationquality.name must return None."""
-        s = _comm_sensor(_BadEnum(ValueError, "bad value"))
-        assert s.native_value is None
-
-    def test_attribute_error_returns_none(self):
-        """AttributeError (no .name attribute at all) must return None."""
-        s = _comm_sensor(_BadEnum(AttributeError, "no name attr"))
-        assert s.native_value is None
-
-    def test_communicationquality_none_attribute_error_returns_none(self):
-        """If communicationquality itself is None, .name raises AttributeError → None."""
-        s = CommunicationQualitySensor.__new__(CommunicationQualitySensor)
-
-        class _NoName:
-            @property
-            def name(self):
-                raise AttributeError("no such attr")
-
-        s._device = SimpleNamespace(communicationquality=_NoName(), name="plug-1")
-        assert s.native_value is None
-
-
-class TestShutterContact2CommQualitySetup:
-    """CommunicationQuality for shutter_contacts2 (new sensor entity).
-
-    NOTE: The sensor.py hasattr guard checks for 'communicationquality' on
-    the device object. SimpleNamespace devices with the attribute pass; those
-    without do not.
-    """
-
-    def test_shutter_contact2_with_cq_yields_comm_quality_sensor(self):
-        """A shutter_contacts2 device with communicationquality → CommunicationQualitySensor."""
-        dev = _fake_device_ne(
-            device_id="hdm:SC2:001",
-            communicationquality=SimpleNamespace(name="GOOD"),
-        )
-        session = _make_fake_session_ne(shutter_contacts2=[dev])
-        entities = _run_setup_ne(session)
-        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
-        sc2_comm = [e for e in comm_sensors if "hdm:SC2:001" in e._attr_unique_id]
-        assert len(sc2_comm) == 1
-
-    def test_shutter_contact2_without_cq_attr_is_skipped(self):
-        """A shutter_contacts2 device without communicationquality is skipped."""
-        dev = _fake_device_ne(device_id="hdm:SC2:002")
-        # no communicationquality attribute → hasattr returns False
-        session = _make_fake_session_ne(shutter_contacts2=[dev])
-        entities = _run_setup_ne(session)
-        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
-        sc2_comm = [e for e in comm_sensors if "hdm:SC2:002" in e._attr_unique_id]
-        assert len(sc2_comm) == 0
-
-    def test_comm_quality_diagnostic_disabled_skips_shutter_contact(self):
-        """diagnostic_entities=False → no CommunicationQualitySensor for shutter_contacts2."""
-        from custom_components.bosch_shc.const import OPT_DIAGNOSTIC_ENTITIES
-        dev = _fake_device_ne(
-            device_id="hdm:SC2:003",
-            communicationquality=SimpleNamespace(name="GOOD"),
-        )
-        session = _make_fake_session_ne(shutter_contacts2=[dev])
-        # Passing empty options dict means OPT_DIAGNOSTIC_ENTITIES defaults to True
-        # in sensor.py (via config_entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True))
-        # so we must explicitly set it False:
-        entities = _run_setup_ne(session, options={OPT_DIAGNOSTIC_ENTITIES: False})
-        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
-        sc2_comm = [e for e in comm_sensors if "hdm:SC2:003" in e._attr_unique_id]
-        assert len(sc2_comm) == 0
-
-    def test_unique_id_format_for_shutter_contact2(self):
-        """unique_id must end with _communicationquality."""
-        dev = _fake_device_ne(
-            name="SC2 test",
-            device_id="hdm:SC2:uid-test",
-            root_id="root-sc2-uid",
-            communicationquality=SimpleNamespace(name="GOOD"),
-        )
-        session = _make_fake_session_ne(shutter_contacts2=[dev])
-        entities = _run_setup_ne(session)
-        comm_sensors = [e for e in entities if isinstance(e, CommunicationQualitySensor)]
-        sc2_comm = [e for e in comm_sensors if "hdm:SC2:uid-test" in e._attr_unique_id]
-        assert len(sc2_comm) == 1
-        assert sc2_comm[0]._attr_unique_id.endswith("_communicationquality")
 
 
 # ===========================================================================
@@ -2260,144 +2531,11 @@ class TestBatteryLevelSensorCreationRawMock:
         assert sensor._attr_unique_id == "root-456_dev-123_battery_level"
 
 
-# ===========================================================================
-# EmmaPowerSensor
-# ===========================================================================
-
-
-def _emma_sensor(value=0.0, localized_subtitles="Consumed"):
-    s = EmmaPowerSensor.__new__(EmmaPowerSensor)
-    s._device = SimpleNamespace(
-        value=value,
-        localizedSubtitles=localized_subtitles,
-    )
-    return s
-
-
-class TestEmmaPowerSensor:
-    def test_native_value_positive(self):
-        """Positive value = power fed to grid."""
-        assert _emma_sensor(value=1500.0).native_value == 1500.0
-
-    def test_native_value_negative(self):
-        """Negative value = power consumed from grid."""
-        assert _emma_sensor(value=-800.0).native_value == -800.0
-
-    def test_native_value_zero(self):
-        assert _emma_sensor(value=0.0).native_value == 0.0
-
-    def test_extra_state_attributes_power_flow(self):
-        s = _emma_sensor(localized_subtitles="Feeding")
-        assert s.extra_state_attributes == {"power_flow": "Feeding"}
-
-    def test_extra_state_attributes_key(self):
-        """extra_state_attributes must always have 'power_flow' key."""
-        s = _emma_sensor()
-        assert "power_flow" in s.extra_state_attributes
-
-    def test_device_class_is_power(self):
-        assert _emma_sensor().device_class == SensorDeviceClass.POWER
-
-    def test_unit_is_watt(self):
-        assert _emma_sensor().native_unit_of_measurement == UnitOfPower.WATT
-
-    def test_state_class_is_measurement(self):
-        assert _emma_sensor().state_class == SensorStateClass.MEASUREMENT
-
-    def test_entity_registry_enabled_default_false(self):
-        """EmmaPowerSensor must be disabled by default (opt-in diagnostic).
-
-        HA parent classes shadow _attr_entity_registry_enabled_default with a
-        property, so we access via an instance to read the actual value.
-        """
-        s = _emma_sensor()
-        assert s.entity_registry_enabled_default is False
-
-
-class TestEmmaPowerSensorLifecycle:
-    """Cover async_added_to_hass and async_will_remove_from_hass."""
-
-    def _make_emma(self):
-        callbacks = {}
-        dev = _fake_device(
-            name="EMMA",
-            device_id="com.bosch.tt.emma.applink",
-            root_device_id="shc-mac",
-        )
-        dev.subscribe_callback = lambda eid, fn: callbacks.update({eid: fn})
-        dev.unsubscribe_callback = lambda eid: callbacks.pop(eid, None)
-        dev.device_services = []
-        return dev, callbacks
-
-    def test_async_added_to_hass_subscribes_callback(self):
-        dev, callbacks = self._make_emma()
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        # entity_id is set by HA platform normally; inject a fake one
-        entity.entity_id = "sensor.emma_power"
-        entity.schedule_update_ha_state = MagicMock()
-
-        async def _run():
-            await entity.async_added_to_hass()
-
-        asyncio.run(_run())
-        assert "sensor.emma_power" in callbacks
-
-    def test_async_will_remove_from_hass_unsubscribes(self):
-        dev, callbacks = self._make_emma()
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        entity.entity_id = "sensor.emma_power"
-        entity.schedule_update_ha_state = MagicMock()
-
-        async def _run():
-            await entity.async_added_to_hass()
-            await entity.async_will_remove_from_hass()
-
-        asyncio.run(_run())
-        assert "sensor.emma_power" not in callbacks
-
-    def test_callback_triggers_schedule_update(self):
-        dev, callbacks = self._make_emma()
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        entity.entity_id = "sensor.emma_power"
-        entity.schedule_update_ha_state = MagicMock()
-
-        async def _run():
-            await entity.async_added_to_hass()
-
-        asyncio.run(_run())
-        callbacks["sensor.emma_power"]()  # fire the stored callback
-        entity.schedule_update_ha_state.assert_called_once()
-
-    def test_entity_registry_enabled_default_is_false(self):
-        d = _fake_device(name="EMMA", device_id="com.bosch.tt.emma.applink")
-        s = EmmaPowerSensor(device=d, entry_id=ENTRY_ID)
-        assert s.entity_registry_enabled_default is False
-
-    def test_emma_extra_state_attributes_returns_power_flow(self):
-        dev, _ = self._make_emma()
-        dev.localizedSubtitles = "Grid Supply"
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        attrs = entity.extra_state_attributes
-        assert "power_flow" in attrs
-        assert attrs["power_flow"] == "Grid Supply"
-
-    def test_emma_native_value_returns_device_value(self):
-        dev, _ = self._make_emma()
-        dev.value = -1500.0
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        assert entity.native_value == -1500.0
-
-    def test_emma_native_value_positive(self):
-        dev, _ = self._make_emma()
-        dev.value = 300.0
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        assert entity.native_value == 300.0
-
-    def test_emma_native_value_none(self):
-        dev, _ = self._make_emma()
-        dev.value = None
-        entity = EmmaPowerSensor(device=dev, entry_id=ENTRY_ID)
-        assert entity.native_value is None
+def test_battery_level_disabled_by_default():
+    # #339: it duplicates the binary "Battery" sensor → hidden unless opted in.
+    s = BatteryLevelSensor.__new__(BatteryLevelSensor)
+    assert s.entity_registry_enabled_default is False
+    assert s.entity_category == EntityCategory.DIAGNOSTIC
 
 
 # ===========================================================================
@@ -2491,6 +2629,172 @@ class TestTwinguardDescriptionSensor:
             s = self._sensor(desc)
             assert s.native_value == desc
 
+
+# ===========================================================================
+# WalkStateSensor
+# ===========================================================================
+
+
+class TestWalkStateSensor:
+    def _make(self, walk_state_name="UNKNOWN"):
+        from boschshcpy.services_impl import WalkTestService
+        val = WalkTestService.WalkState[walk_state_name]
+        dev = _fake_md2(walk_state=val, supports_walk_test=True)
+        s = WalkStateSensor.__new__(WalkStateSensor)
+        s._device = dev
+        s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_walk_state"
+        s._attr_name = "Walk Test State"
+        return s
+
+    def test_unique_id(self):
+        s = self._make()
+        assert s._attr_unique_id == "root1_md1_walk_state"
+
+    def test_native_value_unknown(self):
+        s = self._make("UNKNOWN")
+        assert s.native_value == "unknown"
+
+    def test_native_value_walk_test_started(self):
+        s = self._make("WALK_TEST_STARTED")
+        assert s.native_value == "walk_test_started"
+
+    def test_native_value_walk_test_stopped(self):
+        s = self._make("WALK_TEST_STOPPED")
+        assert s.native_value == "walk_test_stopped"
+
+    def test_native_value_none_when_walk_state_is_none(self):
+        dev = _fake_md2(walk_state=None)
+        s = WalkStateSensor.__new__(WalkStateSensor)
+        s._device = dev
+        assert s.native_value is None
+
+    def test_native_value_attribute_error_returns_none(self):
+        dev = _fake_md2()  # no walk_state attr
+        s = WalkStateSensor.__new__(WalkStateSensor)
+        s._device = dev
+        assert s.native_value is None
+
+    def test_options_list(self):
+        s = self._make()
+        assert "walk_test_started" in s._attr_options
+        assert "walk_test_stopped" in s._attr_options
+        assert "unknown" in s._attr_options
+
+
+class TestWalkStateSensorSetup:
+    """WalkStateSensor — setup entry (part of sensor.py)."""
+
+    def _run_sensor_setup(self, md2_list):
+        entry_id = "E1"
+        emma = SimpleNamespace(
+            name="EMMA", id="com.bosch.tt.emma.applink",
+            root_device_id="root_emma", serial="EMMA_SER",
+            supports_batterylevel=False,
+        )
+        device_helper = SimpleNamespace(
+            thermostats=[],
+            wallthermostats=[],
+            roomthermostats=[],
+            twinguards=[],
+            smart_plugs=[],
+            light_switches_bsm=[],
+            micromodule_light_controls=[],
+            micromodule_shutter_controls=[],
+            micromodule_blinds=[],
+            smart_plugs_compact=[],
+            motion_detectors=[],
+            motion_detectors2=list(md2_list),
+            shutter_contacts=[],
+            shutter_contacts2=[],
+            smoke_detectors=[],
+            universal_switches=[],
+            water_leakage_detectors=[],
+        )
+        session = SimpleNamespace(device_helper=device_helper, emma=emma)
+        hass = SimpleNamespace()
+        config_entry = SimpleNamespace(
+            options={},
+            entry_id=entry_id,
+            async_on_unload=MagicMock(),
+        )
+        config_entry.runtime_data = SimpleNamespace(
+            session=session,
+            shc_device=SimpleNamespace(
+                name="SHC", id="shc",
+                identifiers={("bosch_shc", "shc")},
+                manufacturer="Bosch", model="SHC",
+            ),
+            title="Test SHC",
+        )
+        entities = []
+
+        def add_entities(new_ents, *args, **kwargs):
+            entities.extend(new_ents)
+
+        with patch(_PATCH_MIGRATE, new=AsyncMock(return_value=None)):
+            asyncio.run(async_setup_entry(hass, config_entry, add_entities))
+
+        return entities
+
+    def test_walk_state_sensor_created_when_walk_state_present(self):
+        from boschshcpy.services_impl import WalkTestService
+        md2 = _fake_md2(walk_state=WalkTestService.WalkState.UNKNOWN, supports_walk_test=True)
+        entities = self._run_sensor_setup([md2])
+        types = [type(e).__name__ for e in entities]
+        assert "WalkStateSensor" in types
+
+    def test_walk_state_sensor_skipped_when_walk_state_none(self):
+        # supports_walk_test=True but walk_state=None -> not created
+        md2 = _fake_md2(walk_state=None, supports_walk_test=True)
+        entities = self._run_sensor_setup([md2])
+        types = [type(e).__name__ for e in entities]
+        assert "WalkStateSensor" not in types
+
+# ===========================================================================
+# DetectionStateSensor
+# ===========================================================================
+
+
+class TestDetectionStateSensor:
+    def _make(self, name="DETECTION_TEST_STOPPED"):
+        from boschshcpy.services_impl import DetectionTestService
+
+        dev = _fake_md2(detection_state=DetectionTestService.DetectionState[name])
+        s = DetectionStateSensor.__new__(DetectionStateSensor)
+        s._device = dev
+        return s
+
+    def test_native_value(self):
+        assert self._make("DETECTION_TEST_STARTED").native_value == (
+            "detection_test_started"
+        )
+
+    def test_native_value_none_when_none(self):
+        dev = _fake_md2(detection_state=None)
+        s = DetectionStateSensor.__new__(DetectionStateSensor)
+        s._device = dev
+        assert s.native_value is None
+
+    def test_native_value_attribute_error(self):
+        dev = _fake_md2()  # no detection_state attr
+        s = DetectionStateSensor.__new__(DetectionStateSensor)
+        s._device = dev
+        assert s.native_value is None
+
+    def test_setup_created_when_supported(self):
+        from boschshcpy.services_impl import DetectionTestService
+
+        md2 = _fake_md2(
+            supports_detection_test=True,
+            detection_state=DetectionTestService.DetectionState.DETECTION_TEST_STOPPED,
+        )
+        types = [type(e).__name__ for e in _setup_sensors([md2])]
+        assert "DetectionStateSensor" in types
+
+    def test_setup_skipped_when_unsupported(self):
+        md2 = _fake_md2(supports_detection_test=False)
+        types = [type(e).__name__ for e in _setup_sensors([md2])]
+        assert "DetectionStateSensor" not in types
 
 # ===========================================================================
 # Siren sensors: SirenBatterySensor / SirenMainPowerSensor / SirenSolarChargingSensor
@@ -2784,129 +3088,6 @@ class TestSensorSirenSetup:
 
 
 # ===========================================================================
-# KeypadTriggerSensor (diag sensor)
-# ===========================================================================
-
-
-def test_keypad_trigger_sensor():
-    svc = SimpleNamespace(
-        switch_type="UNIVERSAL_SWITCH",
-        scenario_id_associations=[{"keyName": "LOWER_BUTTON", "scenarioId": "x"}],
-        ids_to_trigger=["x"],
-    )
-    s = _new(KeypadTriggerSensor)
-    s._device = SimpleNamespace(keypadtrigger=svc)
-    assert s.native_value == "UNIVERSAL_SWITCH"
-    assert s.extra_state_attributes["ids_to_trigger"] == ["x"]
-
-
-def test_keypad_trigger_sensor_no_service_is_safe():
-    s = _new(KeypadTriggerSensor)
-    s._device = SimpleNamespace(keypadtrigger=None)
-    assert s.native_value is None
-    assert s.extra_state_attributes is None
-
-
-def test_device_update_and_keypad_sensor_drop_attr_name():
-    """#342: translated names actually resolve (SHCEntity._attr_name shadow fix)."""
-    from custom_components.bosch_shc.update import DeviceUpdate
-
-    u = DeviceUpdate(device=_FAKE_DEVICE, entry_id="e1")
-    assert not hasattr(u, "_attr_name")
-    assert u.translation_key == "device_firmware"
-
-    s = KeypadTriggerSensor(device=_FAKE_DEVICE, entry_id="e1")
-    assert not hasattr(s, "_attr_name")
-    assert s.translation_key == "keypad_trigger"
-
-
-class TestSensorKeypadTriggerSetup:
-    """sensor.py lines 462-465: KeypadTriggerSensor setup."""
-
-    def _run_sensor_setup_universal_switches(self, switches, options=None):
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.motion_detectors = []
-        dh.motion_detectors2 = []
-        dh.shutter_contacts = []
-        dh.shutter_contacts2 = []
-        dh.smoke_detectors = []
-        dh.twinguards = []
-        dh.smart_plugs = []
-        dh.smart_plugs_compact = []
-        dh.light_switches_bsm = []
-        dh.micromodule_light_controls = []
-        dh.micromodule_shutter_controls = []
-        dh.micromodule_blinds = []
-        dh.universal_switches = switches
-        dh.water_leakage_detectors = []
-        dh.outdoor_sirens = []
-
-        session = MagicMock()
-        session.device_helper = dh
-        session.emma = _fake_dev("emma1")
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options=options or {})
-
-        with patch(_PATCH_MIGRATE, new_callable=AsyncMock):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_keypad_trigger_added_when_supported(self):
-        """Lines 461-469: diagnostic_enabled (default True) + supports_keypadtrigger → added."""
-        sw = _fake_dev("us1", supports_keypadtrigger=True, supports_batterylevel=False)
-        # OPT_DIAGNOSTIC_ENTITIES defaults to True — just pass {} to use default
-        collected = self._run_sensor_setup_universal_switches([sw])
-        types = [type(e).__name__ for e in collected]
-        assert "KeypadTriggerSensor" in types
-
-
-class TestSensorKeypadTriggerExcluded:
-    """sensor.py line 463: excluded universal switch → continue in keypad trigger block."""
-
-    def test_excluded_universal_switch_skipped(self):
-        """Line 463: device_excluded → continue before KeypadTriggerSensor."""
-        sw = _fake_dev("us_excl", supports_keypadtrigger=True, supports_batterylevel=False)
-
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.motion_detectors = []
-        dh.motion_detectors2 = []
-        dh.shutter_contacts = []
-        dh.shutter_contacts2 = []
-        dh.smoke_detectors = []
-        dh.twinguards = []
-        dh.smart_plugs = []
-        dh.smart_plugs_compact = []
-        dh.light_switches_bsm = []
-        dh.micromodule_light_controls = []
-        dh.micromodule_shutter_controls = []
-        dh.micromodule_blinds = []
-        dh.universal_switches = [sw]
-        dh.water_leakage_detectors = []
-        dh.outdoor_sirens = []
-
-        session = MagicMock()
-        session.device_helper = dh
-        session.emma = _fake_dev("emma1")
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["us_excl"]})
-
-        with patch(_PATCH_MIGRATE, new_callable=AsyncMock):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        assert not any(isinstance(e, KeypadTriggerSensor) for e in collected)
-
-
-# ===========================================================================
 # NextSetpointTemperatureSensor / PresenceSimulationRunning* /
 # ReferenceMovingTime* sensors (hass#120 audit — ROOM_CLIMATE_CONTROL / Shutter
 # Control II diagnostics)
@@ -2986,175 +3167,6 @@ def test_reference_moving_time_bottom_to_top_safe_when_attr_missing():
     s = _new(ReferenceMovingTimeBottomToTopSensor)
     s._device = SimpleNamespace()
     assert s.native_value is None
-
-
-# ===========================================================================
-# WalkStateSensor
-# ===========================================================================
-
-
-class TestWalkStateSensor:
-    def _make(self, walk_state_name="UNKNOWN"):
-        from boschshcpy.services_impl import WalkTestService
-        val = WalkTestService.WalkState[walk_state_name]
-        dev = _fake_md2(walk_state=val, supports_walk_test=True)
-        s = WalkStateSensor.__new__(WalkStateSensor)
-        s._device = dev
-        s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_walk_state"
-        s._attr_name = "Walk Test State"
-        return s
-
-    def test_unique_id(self):
-        s = self._make()
-        assert s._attr_unique_id == "root1_md1_walk_state"
-
-    def test_native_value_unknown(self):
-        s = self._make("UNKNOWN")
-        assert s.native_value == "unknown"
-
-    def test_native_value_walk_test_started(self):
-        s = self._make("WALK_TEST_STARTED")
-        assert s.native_value == "walk_test_started"
-
-    def test_native_value_walk_test_stopped(self):
-        s = self._make("WALK_TEST_STOPPED")
-        assert s.native_value == "walk_test_stopped"
-
-    def test_native_value_none_when_walk_state_is_none(self):
-        dev = _fake_md2(walk_state=None)
-        s = WalkStateSensor.__new__(WalkStateSensor)
-        s._device = dev
-        assert s.native_value is None
-
-    def test_native_value_attribute_error_returns_none(self):
-        dev = _fake_md2()  # no walk_state attr
-        s = WalkStateSensor.__new__(WalkStateSensor)
-        s._device = dev
-        assert s.native_value is None
-
-    def test_options_list(self):
-        s = self._make()
-        assert "walk_test_started" in s._attr_options
-        assert "walk_test_stopped" in s._attr_options
-        assert "unknown" in s._attr_options
-
-
-class TestWalkStateSensorSetup:
-    """WalkStateSensor — setup entry (part of sensor.py)."""
-
-    def _run_sensor_setup(self, md2_list):
-        entry_id = "E1"
-        emma = SimpleNamespace(
-            name="EMMA", id="com.bosch.tt.emma.applink",
-            root_device_id="root_emma", serial="EMMA_SER",
-            supports_batterylevel=False,
-        )
-        device_helper = SimpleNamespace(
-            thermostats=[],
-            wallthermostats=[],
-            roomthermostats=[],
-            twinguards=[],
-            smart_plugs=[],
-            light_switches_bsm=[],
-            micromodule_light_controls=[],
-            micromodule_shutter_controls=[],
-            micromodule_blinds=[],
-            smart_plugs_compact=[],
-            motion_detectors=[],
-            motion_detectors2=list(md2_list),
-            shutter_contacts=[],
-            shutter_contacts2=[],
-            smoke_detectors=[],
-            universal_switches=[],
-            water_leakage_detectors=[],
-        )
-        session = SimpleNamespace(device_helper=device_helper, emma=emma)
-        hass = SimpleNamespace()
-        config_entry = SimpleNamespace(
-            options={},
-            entry_id=entry_id,
-            async_on_unload=MagicMock(),
-        )
-        config_entry.runtime_data = SimpleNamespace(
-            session=session,
-            shc_device=SimpleNamespace(
-                name="SHC", id="shc",
-                identifiers={("bosch_shc", "shc")},
-                manufacturer="Bosch", model="SHC",
-            ),
-            title="Test SHC",
-        )
-        entities = []
-
-        def add_entities(new_ents, *args, **kwargs):
-            entities.extend(new_ents)
-
-        with patch(_PATCH_MIGRATE, new=AsyncMock(return_value=None)):
-            asyncio.run(async_setup_entry(hass, config_entry, add_entities))
-
-        return entities
-
-    def test_walk_state_sensor_created_when_walk_state_present(self):
-        from boschshcpy.services_impl import WalkTestService
-        md2 = _fake_md2(walk_state=WalkTestService.WalkState.UNKNOWN, supports_walk_test=True)
-        entities = self._run_sensor_setup([md2])
-        types = [type(e).__name__ for e in entities]
-        assert "WalkStateSensor" in types
-
-    def test_walk_state_sensor_skipped_when_walk_state_none(self):
-        # supports_walk_test=True but walk_state=None -> not created
-        md2 = _fake_md2(walk_state=None, supports_walk_test=True)
-        entities = self._run_sensor_setup([md2])
-        types = [type(e).__name__ for e in entities]
-        assert "WalkStateSensor" not in types
-
-
-# ===========================================================================
-# DetectionStateSensor
-# ===========================================================================
-
-
-class TestDetectionStateSensor:
-    def _make(self, name="DETECTION_TEST_STOPPED"):
-        from boschshcpy.services_impl import DetectionTestService
-
-        dev = _fake_md2(detection_state=DetectionTestService.DetectionState[name])
-        s = DetectionStateSensor.__new__(DetectionStateSensor)
-        s._device = dev
-        return s
-
-    def test_native_value(self):
-        assert self._make("DETECTION_TEST_STARTED").native_value == (
-            "detection_test_started"
-        )
-
-    def test_native_value_none_when_none(self):
-        dev = _fake_md2(detection_state=None)
-        s = DetectionStateSensor.__new__(DetectionStateSensor)
-        s._device = dev
-        assert s.native_value is None
-
-    def test_native_value_attribute_error(self):
-        dev = _fake_md2()  # no detection_state attr
-        s = DetectionStateSensor.__new__(DetectionStateSensor)
-        s._device = dev
-        assert s.native_value is None
-
-    def test_setup_created_when_supported(self):
-        from boschshcpy.services_impl import DetectionTestService
-
-        md2 = _fake_md2(
-            supports_detection_test=True,
-            detection_state=DetectionTestService.DetectionState.DETECTION_TEST_STOPPED,
-        )
-        types = [type(e).__name__ for e in _setup_sensors([md2])]
-        assert "DetectionStateSensor" in types
-
-    def test_setup_skipped_when_unsupported(self):
-        md2 = _fake_md2(supports_detection_test=False)
-        types = [type(e).__name__ for e in _setup_sensors([md2])]
-        assert "DetectionStateSensor" not in types
-
 
 # ===========================================================================
 # async_setup_entry — full entity-count + type tests, and real __init__ chains

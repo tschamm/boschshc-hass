@@ -1477,6 +1477,657 @@ class TestUniversalSwitchEventUnsubscribe:
 
 
 # ===========================================================================
+# LightControlButtonEvent
+# ===========================================================================
+
+
+def _make_light_control_event(
+    eventtype=_PRESS_SHORT,
+    eventtimestamp: int = 1000,
+    last_fired: int = -1,
+):
+    entity = LightControlButtonEvent.__new__(LightControlButtonEvent)
+    entity._device = SimpleNamespace(
+        name="Lichtsteuerung",
+        id="hdm:lc:1",
+        root_device_id="root:1",
+        eventtype=eventtype,
+        eventtimestamp=eventtimestamp,
+        device_services=[],
+        deleted=False,
+        manufacturer="Bosch",
+        device_model="MICROMODULE_LIGHT_ATTACHED",
+        status="AVAILABLE",
+    )
+    entity._last_fired_timestamp = last_fired
+    entity.entity_id = "event.lichtsteuerung_button"
+    entity.hass = _make_hass_sync()
+    entity._trigger_event = MagicMock()
+    entity.schedule_update_ha_state = MagicMock()
+    return entity
+
+
+class TestLightControlButtonEvent:
+    def test_fires_on_press(self):
+        e = _make_light_control_event(eventtype=_PRESS_SHORT, eventtimestamp=42)
+        e._event_callback()
+        e._trigger_event.assert_called_once()
+        args = e._trigger_event.call_args[0]
+        assert args[0] == "PRESS_SHORT"
+        assert args[1][ATTR_LAST_TIME_TRIGGERED] == 42
+
+    def test_switch_on_event_fires(self):
+        e = _make_light_control_event(eventtype=_SWITCH_ON, eventtimestamp=7)
+        e._event_callback()
+        assert e._trigger_event.call_args[0][0] == "SWITCH_ON"
+
+    def test_none_eventtype_no_op(self):
+        e = _make_light_control_event(eventtype=None)
+        e._event_callback()
+        e._trigger_event.assert_not_called()
+
+    def test_unknown_type_ignored(self):
+        e = _make_light_control_event(eventtype=SimpleNamespace(name="MOTION"))
+        e._event_callback()
+        e._trigger_event.assert_not_called()
+
+    def test_duplicate_timestamp_suppressed(self):
+        e = _make_light_control_event(eventtimestamp=99, last_fired=99)
+        e._event_callback()
+        e._trigger_event.assert_not_called()
+
+    def test_advancing_timestamp_updates_guard(self):
+        e = _make_light_control_event(eventtimestamp=5, last_fired=-1)
+        e._event_callback()
+        assert e._last_fired_timestamp == 5
+
+    def test_is_event_entity(self):
+        from homeassistant.components.event import EventEntity
+        assert issubclass(LightControlButtonEvent, EventEntity)
+
+
+class TestLightControlButtonEventCallback:
+    """Lines 226-235: LightControlButtonEvent._event_callback full fire path."""
+
+    def _make_entity(self, event_type_raw, ts, last_ts=-1):
+        ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
+        ent._attr_event_types = [
+            "PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED",
+            "SWITCH_ON", "SWITCH_OFF",
+        ]
+        ent._last_fired_timestamp = last_ts
+        ent._device = SimpleNamespace(
+            eventtype=event_type_raw,
+            eventtimestamp=ts,
+            id="lc1",
+            name="LC",
+        )
+        # device_id is a property from SHCEntity: returns self._device.id
+        # Setting _device is enough - no need to set device_id directly
+        ent.entity_id = "event.lc"
+        ent._dispatch_event = MagicMock()
+        return ent
+
+    def test_event_callback_fires_on_new_timestamp(self):
+        """Lines 237-255: eventtype valid + timestamp advanced -> _dispatch_event called."""
+        et = SimpleNamespace(name="PRESS_SHORT")
+        ent = self._make_entity(et, ts=1000, last_ts=500)
+        ent._event_callback()
+        ent._dispatch_event.assert_called_once()
+        assert ent._last_fired_timestamp == 1000
+
+    def test_event_callback_skips_none_eventtype(self):
+        """_event_callback returns early when eventtype is None."""
+        ent = self._make_entity(None, ts=1000)
+        ent._event_callback()
+        ent._dispatch_event.assert_not_called()
+
+    def test_event_callback_skips_unknown_event_type(self):
+        """_event_callback returns early when event type not in _attr_event_types."""
+        et = SimpleNamespace(name="SWITCH_XXX")
+        ent = self._make_entity(et, ts=1000)
+        ent._event_callback()
+        ent._dispatch_event.assert_not_called()
+
+    def test_event_callback_skips_same_timestamp(self):
+        """_event_callback returns early when timestamp unchanged."""
+        et = SimpleNamespace(name="PRESS_SHORT")
+        ent = self._make_entity(et, ts=1000, last_ts=1000)
+        ent._event_callback()
+        ent._dispatch_event.assert_not_called()
+
+
+class TestLightControlDispatchEventValueError:
+    """Lines 262-264: LightControlButtonEvent._dispatch_event ValueError branch."""
+
+    def test_dispatch_event_value_error_returns_early(self):
+        """Lines 262-264: ValueError in _trigger_event -> warning log, return."""
+        ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
+        ent.entity_id = "event.lc"
+        ent._trigger_event = MagicMock(side_effect=ValueError("bad type"))
+        ent.schedule_update_ha_state = MagicMock()
+
+        ent._dispatch_event("BAD_TYPE", {})
+        ent.schedule_update_ha_state.assert_not_called()
+
+
+class TestEventLightControlAddedToHass:
+    """event.py lines 226-235: LightControlButtonEvent.async_added_to_hass."""
+
+    def test_async_added_to_hass_registers_keypad_events(self):
+        """Lines 226-235: Keypad service -> register_event called for each KeyState."""
+        # Build a fake Keypad service with KeyState enum
+        key_state_1 = SimpleNamespace(value="KEY_1")
+        key_state_2 = SimpleNamespace(value="KEY_2")
+        keypad_service = SimpleNamespace(
+            id="Keypad",
+            KeyState=[key_state_1, key_state_2],
+            register_event=MagicMock(),
+            subscribe_callback=MagicMock(),
+        )
+        non_keypad_service = SimpleNamespace(
+            id="LatestMotion",
+            subscribe_callback=MagicMock(),
+        )
+
+        dev = _fake_dev("lc1", device_services=[keypad_service, non_keypad_service])
+
+        ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
+        ent._device = dev
+        ent._entry_id = "E1"
+        ent._last_fired_timestamp = -1
+        ent._attr_event_types = ["PRESS_SHORT", "PRESS_LONG"]
+        ent.entity_id = "event.lc1_button"
+        ent._attr_unique_id = "root1_lc1_button"
+        # hass isn't needed because Entity.async_added_to_hass() is a no-op
+        ent.hass = MagicMock()
+
+        _run(ent.async_added_to_hass())
+
+        # register_event should have been called once per KeyState
+        assert keypad_service.register_event.call_count == 2
+        keypad_service.register_event.assert_any_call("KEY_1", ent._event_callback)
+        keypad_service.register_event.assert_any_call("KEY_2", ent._event_callback)
+
+
+class TestLightControlButtonEventUnsubscribe:
+    def test_unregisters_all_key_state_callbacks(self):
+        keypad = FakeService("Keypad")
+        keypad.KeyState = KeypadService.KeyState
+        entity = LightControlButtonEvent.__new__(LightControlButtonEvent)
+        entity._device = SimpleNamespace(device_services=[keypad])
+        for key_state in keypad.KeyState:
+            keypad.register_event(key_state.value, entity._event_callback)
+        assert len(keypad._event_callbacks) == len(list(keypad.KeyState))
+
+        with patch(_SHC_ENTITY_WILL_REMOVE, new=AsyncMock(return_value=None)):
+            asyncio.run(entity.async_will_remove_from_hass())
+
+        assert keypad._event_callbacks == {}
+
+
+# ---------------------------------------------------------------------------
+# Fake service double shared by the Unsubscribe suites above (register_event
+# has no matching unregister_event upstream; SHCEntity's
+# async_will_remove_from_hass must clean up the private _event_callbacks dict
+# via subscribe_callback/unsubscribe_callback pairing instead).
+# ---------------------------------------------------------------------------
+
+
+class FakeService:
+    """Minimal stand-in for a boschshcpy SHCDeviceService."""
+
+    def __init__(self, service_id):
+        self.id = service_id
+        self._callbacks = {}
+        self._event_callbacks = {}
+
+    def subscribe_callback(self, entity_id, callback):
+        self._callbacks[entity_id] = callback
+
+    def unsubscribe_callback(self, entity_id):
+        self._callbacks.pop(entity_id, None)
+
+    def register_event(self, event, callback):
+        self._event_callbacks[event] = callback
+
+
+# ===========================================================================
+# SHCScenarioEvent
+# ===========================================================================
+
+
+def _make_scenario_entity(
+    scenario_id: str = "sc-1",
+    scenario_name: str = "Abend",
+    session_unique_id: str = "shc-uid-abc",
+    shc_name: str = "SHC Controller",
+    shc_id: str = "shc-ha-dev-1",
+) -> SHCScenarioEvent:
+    """Build a SHCScenarioEvent without hass.data lookup."""
+    scenario = SimpleNamespace(id=scenario_id, name=scenario_name)
+    session = SimpleNamespace(
+        information=SimpleNamespace(unique_id=session_unique_id),
+        subscribe_scenario_callback=lambda sid, cb: None,
+    )
+    shc_device_entry = SimpleNamespace(
+        id=shc_id,
+        name=shc_name,
+        identifiers={(DOMAIN, shc_id)},
+        manufacturer="Robert Bosch GmbH",
+        model="SHC",
+    )
+
+    # SHCScenarioEvent.__init__ does
+    # hass.config_entries.async_get_entry(entry_id).runtime_data.shc_device
+    entry_id = "entry1"
+    hass = MagicMock(name="hass")
+    hass.config_entries.async_get_entry = MagicMock(
+        return_value=SimpleNamespace(
+            runtime_data=SimpleNamespace(shc_device=shc_device_entry)
+        )
+    )
+
+    entity = SHCScenarioEvent(scenario, session, hass, entry_id=entry_id)
+    entity.hass = _make_hass_direct()
+    entity._trigger_event = MagicMock()
+    entity.schedule_update_ha_state = MagicMock()
+    return entity
+
+
+class TestSHCScenarioEventProperties:
+    """device_name, device_id, device_info must delegate to _shc DeviceEntry."""
+
+    def test_device_name_returns_shc_name(self):
+        entity = _make_scenario_entity(shc_name="My SHC")
+        assert entity.device_name == "My SHC"
+
+    def test_device_id_returns_shc_id(self):
+        entity = _make_scenario_entity(shc_id="ha-dev-xyz")
+        assert entity.device_id == "ha-dev-xyz"
+
+    def test_device_info_identifiers(self):
+        entity = _make_scenario_entity(shc_id="ha-dev-q")
+        info = entity.device_info
+        assert "identifiers" in info
+        assert (DOMAIN, "ha-dev-q") in info["identifiers"]
+
+    def test_device_info_manufacturer(self):
+        entity = _make_scenario_entity()
+        info = entity.device_info
+        assert info["manufacturer"] == "Robert Bosch GmbH"
+
+    def test_device_info_name(self):
+        entity = _make_scenario_entity(shc_name="Controller")
+        info = entity.device_info
+        assert info["name"] == "Controller"
+
+    def test_attr_unique_id_format(self):
+        entity = _make_scenario_entity(session_unique_id="uid-abc", scenario_id="sc-5")
+        assert entity._attr_unique_id == "uid-abc_sc-5"
+
+    def test_attr_name_contains_scenario_name(self):
+        entity = _make_scenario_entity(scenario_name="Guten Morgen")
+        assert "Guten Morgen" in entity._attr_name
+
+    def test_event_types_is_scenario(self):
+        entity = _make_scenario_entity()
+        assert entity._attr_event_types == ["SCENARIO"]
+
+
+class TestSHCScenarioEventCallback:
+    """_event_callback must call _dispatch_event directly, not via call_soon_threadsafe."""
+
+    def _make_entity(self):
+        """Returns entity with capturing hass."""
+        scenario = SimpleNamespace(id="sc-cb", name="Abend")
+        session = SimpleNamespace(
+            information=SimpleNamespace(unique_id="uid-cb"),
+            subscribe_scenario_callback=lambda sid, cb: None,
+        )
+        entry_id = "e1"
+        shc = SimpleNamespace(
+            id="shc-id", name="SHC", identifiers={(DOMAIN, "shc-id")},
+            manufacturer="Bosch", model="SHC",
+        )
+        hass_init = MagicMock(name="hass_init")
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
+        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
+        entity.hass = _make_hass_capturing()
+        entity._trigger_event = MagicMock()
+        entity.schedule_update_ha_state = MagicMock()
+        return entity
+
+    def test_event_callback_calls_dispatch_directly(self):
+        entity = self._make_entity()
+        event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "2026-06-20"}
+        entity._event_callback(event_data)
+        assert not entity.hass.loop.call_soon_threadsafe.called
+        entity._trigger_event.assert_called_once()
+
+    def test_event_callback_event_type_is_scenario(self):
+        entity = self._make_entity()
+        event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "t"}
+        entity._event_callback(event_data)
+        call_args = entity._trigger_event.call_args[0]
+        assert call_args[0] == "SCENARIO"
+
+
+class TestSHCScenarioEventDispatch:
+    """_dispatch_event must call _trigger_event and schedule_update_ha_state."""
+
+    def test_dispatch_calls_trigger_event(self):
+        entity = _make_scenario_entity()
+        entity._dispatch_event("SCENARIO", {ATTR_EVENT_TYPE: "SCENARIO"})
+        entity._trigger_event.assert_called_once()
+
+    def test_dispatch_calls_schedule_update(self):
+        entity = _make_scenario_entity()
+        entity._dispatch_event("SCENARIO", {})
+        entity.schedule_update_ha_state.assert_called_once()
+
+    def test_dispatch_passes_event_type(self):
+        entity = _make_scenario_entity()
+        entity._dispatch_event("SCENARIO", {"key": "val"})
+        call_args = entity._trigger_event.call_args[0]
+        assert call_args[0] == "SCENARIO"
+
+    def test_dispatch_passes_attributes(self):
+        entity = _make_scenario_entity()
+        attrs = {ATTR_EVENT_TYPE: "SCENARIO", ATTR_ID: "sc-1"}
+        entity._dispatch_event("SCENARIO", attrs)
+        call_args = entity._trigger_event.call_args[0]
+        assert call_args[1] == attrs
+
+
+class TestSHCScenarioEventSubscribe:
+    """async_added_to_hass registers _event_callback via subscribe_scenario_callback."""
+
+    def test_subscribe_called_with_scenario_id(self):
+        subscriptions = {}
+        scenario = SimpleNamespace(id="sc-sub", name="Morning")
+        session = SimpleNamespace(
+            information=SimpleNamespace(unique_id="uid-sub"),
+            subscribe_scenario_callback=lambda sid, cb: subscriptions.update({sid: cb}),
+        )
+        entry_id = "e1"
+        shc = SimpleNamespace(
+            id="shc-sub", name="SHC", identifiers={(DOMAIN, "shc-sub")},
+            manufacturer="Bosch", model="SHC",
+        )
+        hass_init = MagicMock()
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
+        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
+        entity.hass = _make_hass_direct()
+        entity._trigger_event = MagicMock()
+        entity.schedule_update_ha_state = MagicMock()
+
+        async def _run_added():
+            with patch(_EVENTENTITY_ADDED, return_value=None):
+                await SHCScenarioEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        assert "sc-sub" in subscriptions
+        assert callable(subscriptions["sc-sub"])
+
+    def test_registered_callback_fires_event(self):
+        subscriptions = {}
+        scenario = SimpleNamespace(id="sc-fire", name="Evening")
+        session = SimpleNamespace(
+            information=SimpleNamespace(unique_id="uid-fire"),
+            subscribe_scenario_callback=lambda sid, cb: subscriptions.update({sid: cb}),
+        )
+        entry_id = "e1"
+        shc = SimpleNamespace(
+            id="shc-fire", name="SHC", identifiers={(DOMAIN, "shc-fire")},
+            manufacturer="Bosch", model="SHC",
+        )
+        hass_init = MagicMock()
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
+        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
+        entity.hass = _make_hass_direct()
+        entity._trigger_event = MagicMock()
+        entity.schedule_update_ha_state = MagicMock()
+
+        async def _run_added():
+            with patch(_EVENTENTITY_ADDED, return_value=None):
+                await SHCScenarioEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        event_data = {"id": "sc-fire", "name": "Evening", "lastTimeTriggered": "2026-06-20"}
+        subscriptions["sc-fire"](event_data)
+        entity._trigger_event.assert_called_once()
+        assert entity._trigger_event.call_args[0][0] == "SCENARIO"
+
+    def test_registered_callback_payload_attributes(self):
+        subscriptions = {}
+        scenario = SimpleNamespace(id="sc-pay", name="Night Mode")
+        session = SimpleNamespace(
+            information=SimpleNamespace(unique_id="uid-pay"),
+            subscribe_scenario_callback=lambda sid, cb: subscriptions.update({sid: cb}),
+        )
+        entry_id = "e1"
+        shc = SimpleNamespace(
+            id="shc-pay", name="SHC", identifiers={(DOMAIN, "shc-pay")},
+            manufacturer="Bosch", model="SHC",
+        )
+        hass_init = MagicMock()
+        hass_init.config_entries.async_get_entry = MagicMock(
+            return_value=SimpleNamespace(
+                runtime_data=SimpleNamespace(shc_device=shc)
+            )
+        )
+        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
+        entity.hass = _make_hass_direct()
+        entity._trigger_event = MagicMock()
+        entity.schedule_update_ha_state = MagicMock()
+
+        async def _run_added():
+            with patch(_EVENTENTITY_ADDED, return_value=None):
+                await SHCScenarioEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        ts = "2026-06-20T12:00:00"
+        subscriptions["sc-pay"]({"id": "sc-pay", "name": "Night Mode", "lastTimeTriggered": ts})
+        attrs = entity._trigger_event.call_args[0][1]
+        assert attrs[ATTR_EVENT_TYPE] == "SCENARIO"
+        assert attrs[ATTR_ID] == "sc-pay"
+        assert attrs[ATTR_NAME] == "Night Mode"
+        assert attrs[ATTR_LAST_TIME_TRIGGERED] == ts
+
+
+def _make_scenario_entity_v2(
+    scenario_name="Night Mode",
+    scenario_id="scn:42",
+    unique_id_suffix="uid-shc-001",
+    shc_name="SHC Hub",
+    shc_device_id="device-shc-entry-1",
+):
+    """Build SHCScenarioEvent bypassing all HA infrastructure.
+
+    Alternate to _make_scenario_entity(): constructs the real __init__ using
+    _make_sync_hass (a synchronous SimpleNamespace-based hass) instead of a
+    MagicMock, and returns (entity, session, shc_entry) for tests that need
+    to assert on the session/shc scaffolding too.
+    """
+    scenario = SimpleNamespace(name=scenario_name, id=scenario_id)
+    session = SimpleNamespace(
+        information=SimpleNamespace(unique_id=unique_id_suffix),
+        subscribe_scenario_callback=MagicMock(),
+    )
+    shc_entry = SimpleNamespace(
+        name=shc_name,
+        id=shc_device_id,
+        identifiers={("bosch_shc", "SHC-SERIAL")},
+        manufacturer="Bosch",
+        model="SHC",
+    )
+    hass = _make_sync_hass(shc_device=shc_entry)
+    entity = SHCScenarioEvent(scenario, session, hass, entry_id="entry1")
+    entity._trigger_event = MagicMock()
+    entity.schedule_update_ha_state = MagicMock()
+    # SHCScenarioEvent inherits EventEntity (not SHCEntity); the HA infrastructure
+    # normally sets entity.hass after async_added_to_hass.  Inject a synchronous
+    # shim so _event_callback tests can call the method directly without a real
+    # event loop.  (hass passed to __init__ is only used for the
+    # runtime_data.shc_device lookup.)
+    entity.hass = _make_sync_hass()
+    return entity, session, shc_entry
+
+
+class TestSHCScenarioEventInit:
+    """SHCScenarioEvent.__init__ wires attributes correctly (lines 180-189)."""
+
+    def test_attr_name_set(self):
+        entity, _, _ = _make_scenario_entity_v2(scenario_name="Away Mode")
+        assert entity._attr_name == "Away Mode Scenario"
+
+    def test_unique_id_uses_session_uid_and_scenario_id(self):
+        entity, _, _ = _make_scenario_entity_v2(
+            unique_id_suffix="SHC-UID-123", scenario_id="scn:99"
+        )
+        assert entity._attr_unique_id == "SHC-UID-123_scn:99"
+
+    def test_shc_device_entry_stored(self):
+        entity, _, shc_entry = _make_scenario_entity_v2()
+        assert entity._shc is shc_entry
+
+
+class TestSHCScenarioEventPropertiesV2:
+    """device_name, device_id, device_info properties (lines 192-208)."""
+
+    def test_device_name_returns_shc_name(self):
+        entity, _, shc_entry = _make_scenario_entity_v2(shc_name="My SHC")
+        assert entity.device_name == "My SHC"
+
+    def test_device_id_returns_shc_id(self):
+        entity, _, shc_entry = _make_scenario_entity_v2(shc_device_id="dev-abc")
+        assert entity.device_id == "dev-abc"
+
+    def test_device_info_identifiers(self):
+        entity, _, shc_entry = _make_scenario_entity_v2()
+        info = entity.device_info
+        assert info["identifiers"] == shc_entry.identifiers
+
+    def test_device_info_name(self):
+        entity, _, _ = _make_scenario_entity_v2(shc_name="Hub XY")
+        assert entity.device_info["name"] == "Hub XY"
+
+    def test_device_info_manufacturer(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        assert entity.device_info["manufacturer"] == "Bosch"
+
+    def test_device_info_model(self):
+        entity, _, shc_entry = _make_scenario_entity_v2()
+        assert entity.device_info["model"] == shc_entry.model
+
+
+class TestSHCScenarioEventAsyncAddedToHass:
+    """async_added_to_hass subscribes scenario callback (lines 211-216)."""
+
+    def test_subscribe_scenario_callback_called_with_scenario_id(self):
+        entity, session, _ = _make_scenario_entity_v2(scenario_id="scn:77")
+
+        async def _run_added():
+            with patch(
+                "homeassistant.components.event.EventEntity.async_added_to_hass",
+                new=AsyncMock(return_value=None),
+            ):
+                await entity.async_added_to_hass()
+
+        asyncio.run(_run_added())
+        session.subscribe_scenario_callback.assert_called_once()
+        call_args = session.subscribe_scenario_callback.call_args[0]
+        assert call_args[0] == "scn:77"
+        assert callable(call_args[1])
+
+    def test_subscribed_callback_is_event_callback(self):
+        """The subscribed callable must be the _event_callback method."""
+        entity, session, _ = _make_scenario_entity_v2(scenario_id="scn:88")
+
+        async def _run_added():
+            with patch(
+                "homeassistant.components.event.EventEntity.async_added_to_hass",
+                new=AsyncMock(return_value=None),
+            ):
+                await entity.async_added_to_hass()
+
+        asyncio.run(_run_added())
+        registered_cb = session.subscribe_scenario_callback.call_args[0][1]
+        # Fire it directly to confirm it's the real _event_callback
+        event_data = {"id": "scn:88", "name": "Night Mode", "lastTimeTriggered": "2026-01-01T00:00:00"}
+        registered_cb(event_data)
+        entity._trigger_event.assert_called_once()
+
+
+class TestSHCScenarioEventCallbackPayload:
+    """_event_callback fires the right event + attributes (lines 219-228)."""
+
+    def test_fires_scenario_event_type(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        entity._event_callback({"id": "scn:1", "name": "Away", "lastTimeTriggered": "ts1"})
+        entity._trigger_event.assert_called_once()
+        assert entity._trigger_event.call_args[0][0] == "SCENARIO"
+
+    def test_callback_payload_event_type_attr(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        entity._event_callback({"id": "scn:2", "name": "Night", "lastTimeTriggered": "ts2"})
+        attrs = entity._trigger_event.call_args[0][1]
+        assert attrs[ATTR_EVENT_TYPE] == "SCENARIO"
+
+    def test_callback_payload_id_attr(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        entity._event_callback({"id": "scn:42", "name": "Night", "lastTimeTriggered": "ts"})
+        attrs = entity._trigger_event.call_args[0][1]
+        assert attrs[ATTR_ID] == "scn:42"
+
+    def test_callback_payload_name_attr(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        entity._event_callback({"id": "scn:3", "name": "Vacation", "lastTimeTriggered": "ts"})
+        attrs = entity._trigger_event.call_args[0][1]
+        assert attrs[ATTR_NAME] == "Vacation"
+
+    def test_callback_payload_last_time_triggered(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        entity._event_callback({"id": "scn:4", "name": "X", "lastTimeTriggered": "2026-06-01T10:00:00"})
+        attrs = entity._trigger_event.call_args[0][1]
+        assert attrs[ATTR_LAST_TIME_TRIGGERED] == "2026-06-01T10:00:00"
+
+    def test_callback_calls_schedule_update(self):
+        entity, _, _ = _make_scenario_entity_v2()
+        entity._event_callback({"id": "scn:5", "name": "Y", "lastTimeTriggered": "ts5"})
+        entity.schedule_update_ha_state.assert_called_once()
+
+
+class TestSHCScenarioEventUnsubscribe:
+    def test_unsubscribes_scenario_callback(self):
+        session = SimpleNamespace(unsubscribe_scenario_callback=MagicMock())
+        entity = SHCScenarioEvent.__new__(SHCScenarioEvent)
+        entity._session = session
+        entity._scenario = SimpleNamespace(id="scn:42")
+
+        with patch(
+            "homeassistant.components.event.EventEntity.async_will_remove_from_hass",
+            new=AsyncMock(return_value=None),
+        ):
+            asyncio.run(entity.async_will_remove_from_hass())
+
+        session.unsubscribe_scenario_callback.assert_called_once_with("scn:42")
+
+
+# ===========================================================================
 # MotionDetectorEvent
 # ===========================================================================
 
@@ -2339,657 +2990,6 @@ class TestSmokeDetectorEventUnsubscribe:
             asyncio.run(entity.async_will_remove_from_hass())
 
         assert "hdm:smoke:d1" not in alarm_service._event_callbacks
-
-
-# ===========================================================================
-# SHCScenarioEvent
-# ===========================================================================
-
-
-def _make_scenario_entity(
-    scenario_id: str = "sc-1",
-    scenario_name: str = "Abend",
-    session_unique_id: str = "shc-uid-abc",
-    shc_name: str = "SHC Controller",
-    shc_id: str = "shc-ha-dev-1",
-) -> SHCScenarioEvent:
-    """Build a SHCScenarioEvent without hass.data lookup."""
-    scenario = SimpleNamespace(id=scenario_id, name=scenario_name)
-    session = SimpleNamespace(
-        information=SimpleNamespace(unique_id=session_unique_id),
-        subscribe_scenario_callback=lambda sid, cb: None,
-    )
-    shc_device_entry = SimpleNamespace(
-        id=shc_id,
-        name=shc_name,
-        identifiers={(DOMAIN, shc_id)},
-        manufacturer="Robert Bosch GmbH",
-        model="SHC",
-    )
-
-    # SHCScenarioEvent.__init__ does
-    # hass.config_entries.async_get_entry(entry_id).runtime_data.shc_device
-    entry_id = "entry1"
-    hass = MagicMock(name="hass")
-    hass.config_entries.async_get_entry = MagicMock(
-        return_value=SimpleNamespace(
-            runtime_data=SimpleNamespace(shc_device=shc_device_entry)
-        )
-    )
-
-    entity = SHCScenarioEvent(scenario, session, hass, entry_id=entry_id)
-    entity.hass = _make_hass_direct()
-    entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
-    return entity
-
-
-class TestSHCScenarioEventProperties:
-    """device_name, device_id, device_info must delegate to _shc DeviceEntry."""
-
-    def test_device_name_returns_shc_name(self):
-        entity = _make_scenario_entity(shc_name="My SHC")
-        assert entity.device_name == "My SHC"
-
-    def test_device_id_returns_shc_id(self):
-        entity = _make_scenario_entity(shc_id="ha-dev-xyz")
-        assert entity.device_id == "ha-dev-xyz"
-
-    def test_device_info_identifiers(self):
-        entity = _make_scenario_entity(shc_id="ha-dev-q")
-        info = entity.device_info
-        assert "identifiers" in info
-        assert (DOMAIN, "ha-dev-q") in info["identifiers"]
-
-    def test_device_info_manufacturer(self):
-        entity = _make_scenario_entity()
-        info = entity.device_info
-        assert info["manufacturer"] == "Robert Bosch GmbH"
-
-    def test_device_info_name(self):
-        entity = _make_scenario_entity(shc_name="Controller")
-        info = entity.device_info
-        assert info["name"] == "Controller"
-
-    def test_attr_unique_id_format(self):
-        entity = _make_scenario_entity(session_unique_id="uid-abc", scenario_id="sc-5")
-        assert entity._attr_unique_id == "uid-abc_sc-5"
-
-    def test_attr_name_contains_scenario_name(self):
-        entity = _make_scenario_entity(scenario_name="Guten Morgen")
-        assert "Guten Morgen" in entity._attr_name
-
-    def test_event_types_is_scenario(self):
-        entity = _make_scenario_entity()
-        assert entity._attr_event_types == ["SCENARIO"]
-
-
-class TestSHCScenarioEventCallback:
-    """_event_callback must call _dispatch_event directly, not via call_soon_threadsafe."""
-
-    def _make_entity(self):
-        """Returns entity with capturing hass."""
-        scenario = SimpleNamespace(id="sc-cb", name="Abend")
-        session = SimpleNamespace(
-            information=SimpleNamespace(unique_id="uid-cb"),
-            subscribe_scenario_callback=lambda sid, cb: None,
-        )
-        entry_id = "e1"
-        shc = SimpleNamespace(
-            id="shc-id", name="SHC", identifiers={(DOMAIN, "shc-id")},
-            manufacturer="Bosch", model="SHC",
-        )
-        hass_init = MagicMock(name="hass_init")
-        hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
-        )
-        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
-        entity.hass = _make_hass_capturing()
-        entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
-        return entity
-
-    def test_event_callback_calls_dispatch_directly(self):
-        entity = self._make_entity()
-        event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "2026-06-20"}
-        entity._event_callback(event_data)
-        assert not entity.hass.loop.call_soon_threadsafe.called
-        entity._trigger_event.assert_called_once()
-
-    def test_event_callback_event_type_is_scenario(self):
-        entity = self._make_entity()
-        event_data = {"id": "sc-cb", "name": "Abend", "lastTimeTriggered": "t"}
-        entity._event_callback(event_data)
-        call_args = entity._trigger_event.call_args[0]
-        assert call_args[0] == "SCENARIO"
-
-
-class TestSHCScenarioEventDispatch:
-    """_dispatch_event must call _trigger_event and schedule_update_ha_state."""
-
-    def test_dispatch_calls_trigger_event(self):
-        entity = _make_scenario_entity()
-        entity._dispatch_event("SCENARIO", {ATTR_EVENT_TYPE: "SCENARIO"})
-        entity._trigger_event.assert_called_once()
-
-    def test_dispatch_calls_schedule_update(self):
-        entity = _make_scenario_entity()
-        entity._dispatch_event("SCENARIO", {})
-        entity.schedule_update_ha_state.assert_called_once()
-
-    def test_dispatch_passes_event_type(self):
-        entity = _make_scenario_entity()
-        entity._dispatch_event("SCENARIO", {"key": "val"})
-        call_args = entity._trigger_event.call_args[0]
-        assert call_args[0] == "SCENARIO"
-
-    def test_dispatch_passes_attributes(self):
-        entity = _make_scenario_entity()
-        attrs = {ATTR_EVENT_TYPE: "SCENARIO", ATTR_ID: "sc-1"}
-        entity._dispatch_event("SCENARIO", attrs)
-        call_args = entity._trigger_event.call_args[0]
-        assert call_args[1] == attrs
-
-
-class TestSHCScenarioEventSubscribe:
-    """async_added_to_hass registers _event_callback via subscribe_scenario_callback."""
-
-    def test_subscribe_called_with_scenario_id(self):
-        subscriptions = {}
-        scenario = SimpleNamespace(id="sc-sub", name="Morning")
-        session = SimpleNamespace(
-            information=SimpleNamespace(unique_id="uid-sub"),
-            subscribe_scenario_callback=lambda sid, cb: subscriptions.update({sid: cb}),
-        )
-        entry_id = "e1"
-        shc = SimpleNamespace(
-            id="shc-sub", name="SHC", identifiers={(DOMAIN, "shc-sub")},
-            manufacturer="Bosch", model="SHC",
-        )
-        hass_init = MagicMock()
-        hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
-        )
-        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
-        entity.hass = _make_hass_direct()
-        entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
-
-        async def _run_added():
-            with patch(_EVENTENTITY_ADDED, return_value=None):
-                await SHCScenarioEvent.async_added_to_hass(entity)
-
-        asyncio.run(_run_added())
-        assert "sc-sub" in subscriptions
-        assert callable(subscriptions["sc-sub"])
-
-    def test_registered_callback_fires_event(self):
-        subscriptions = {}
-        scenario = SimpleNamespace(id="sc-fire", name="Evening")
-        session = SimpleNamespace(
-            information=SimpleNamespace(unique_id="uid-fire"),
-            subscribe_scenario_callback=lambda sid, cb: subscriptions.update({sid: cb}),
-        )
-        entry_id = "e1"
-        shc = SimpleNamespace(
-            id="shc-fire", name="SHC", identifiers={(DOMAIN, "shc-fire")},
-            manufacturer="Bosch", model="SHC",
-        )
-        hass_init = MagicMock()
-        hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
-        )
-        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
-        entity.hass = _make_hass_direct()
-        entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
-
-        async def _run_added():
-            with patch(_EVENTENTITY_ADDED, return_value=None):
-                await SHCScenarioEvent.async_added_to_hass(entity)
-
-        asyncio.run(_run_added())
-        event_data = {"id": "sc-fire", "name": "Evening", "lastTimeTriggered": "2026-06-20"}
-        subscriptions["sc-fire"](event_data)
-        entity._trigger_event.assert_called_once()
-        assert entity._trigger_event.call_args[0][0] == "SCENARIO"
-
-    def test_registered_callback_payload_attributes(self):
-        subscriptions = {}
-        scenario = SimpleNamespace(id="sc-pay", name="Night Mode")
-        session = SimpleNamespace(
-            information=SimpleNamespace(unique_id="uid-pay"),
-            subscribe_scenario_callback=lambda sid, cb: subscriptions.update({sid: cb}),
-        )
-        entry_id = "e1"
-        shc = SimpleNamespace(
-            id="shc-pay", name="SHC", identifiers={(DOMAIN, "shc-pay")},
-            manufacturer="Bosch", model="SHC",
-        )
-        hass_init = MagicMock()
-        hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
-        )
-        entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
-        entity.hass = _make_hass_direct()
-        entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
-
-        async def _run_added():
-            with patch(_EVENTENTITY_ADDED, return_value=None):
-                await SHCScenarioEvent.async_added_to_hass(entity)
-
-        asyncio.run(_run_added())
-        ts = "2026-06-20T12:00:00"
-        subscriptions["sc-pay"]({"id": "sc-pay", "name": "Night Mode", "lastTimeTriggered": ts})
-        attrs = entity._trigger_event.call_args[0][1]
-        assert attrs[ATTR_EVENT_TYPE] == "SCENARIO"
-        assert attrs[ATTR_ID] == "sc-pay"
-        assert attrs[ATTR_NAME] == "Night Mode"
-        assert attrs[ATTR_LAST_TIME_TRIGGERED] == ts
-
-
-def _make_scenario_entity_v2(
-    scenario_name="Night Mode",
-    scenario_id="scn:42",
-    unique_id_suffix="uid-shc-001",
-    shc_name="SHC Hub",
-    shc_device_id="device-shc-entry-1",
-):
-    """Build SHCScenarioEvent bypassing all HA infrastructure.
-
-    Alternate to _make_scenario_entity(): constructs the real __init__ using
-    _make_sync_hass (a synchronous SimpleNamespace-based hass) instead of a
-    MagicMock, and returns (entity, session, shc_entry) for tests that need
-    to assert on the session/shc scaffolding too.
-    """
-    scenario = SimpleNamespace(name=scenario_name, id=scenario_id)
-    session = SimpleNamespace(
-        information=SimpleNamespace(unique_id=unique_id_suffix),
-        subscribe_scenario_callback=MagicMock(),
-    )
-    shc_entry = SimpleNamespace(
-        name=shc_name,
-        id=shc_device_id,
-        identifiers={("bosch_shc", "SHC-SERIAL")},
-        manufacturer="Bosch",
-        model="SHC",
-    )
-    hass = _make_sync_hass(shc_device=shc_entry)
-    entity = SHCScenarioEvent(scenario, session, hass, entry_id="entry1")
-    entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
-    # SHCScenarioEvent inherits EventEntity (not SHCEntity); the HA infrastructure
-    # normally sets entity.hass after async_added_to_hass.  Inject a synchronous
-    # shim so _event_callback tests can call the method directly without a real
-    # event loop.  (hass passed to __init__ is only used for the
-    # runtime_data.shc_device lookup.)
-    entity.hass = _make_sync_hass()
-    return entity, session, shc_entry
-
-
-class TestSHCScenarioEventInit:
-    """SHCScenarioEvent.__init__ wires attributes correctly (lines 180-189)."""
-
-    def test_attr_name_set(self):
-        entity, _, _ = _make_scenario_entity_v2(scenario_name="Away Mode")
-        assert entity._attr_name == "Away Mode Scenario"
-
-    def test_unique_id_uses_session_uid_and_scenario_id(self):
-        entity, _, _ = _make_scenario_entity_v2(
-            unique_id_suffix="SHC-UID-123", scenario_id="scn:99"
-        )
-        assert entity._attr_unique_id == "SHC-UID-123_scn:99"
-
-    def test_shc_device_entry_stored(self):
-        entity, _, shc_entry = _make_scenario_entity_v2()
-        assert entity._shc is shc_entry
-
-
-class TestSHCScenarioEventPropertiesV2:
-    """device_name, device_id, device_info properties (lines 192-208)."""
-
-    def test_device_name_returns_shc_name(self):
-        entity, _, shc_entry = _make_scenario_entity_v2(shc_name="My SHC")
-        assert entity.device_name == "My SHC"
-
-    def test_device_id_returns_shc_id(self):
-        entity, _, shc_entry = _make_scenario_entity_v2(shc_device_id="dev-abc")
-        assert entity.device_id == "dev-abc"
-
-    def test_device_info_identifiers(self):
-        entity, _, shc_entry = _make_scenario_entity_v2()
-        info = entity.device_info
-        assert info["identifiers"] == shc_entry.identifiers
-
-    def test_device_info_name(self):
-        entity, _, _ = _make_scenario_entity_v2(shc_name="Hub XY")
-        assert entity.device_info["name"] == "Hub XY"
-
-    def test_device_info_manufacturer(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        assert entity.device_info["manufacturer"] == "Bosch"
-
-    def test_device_info_model(self):
-        entity, _, shc_entry = _make_scenario_entity_v2()
-        assert entity.device_info["model"] == shc_entry.model
-
-
-class TestSHCScenarioEventAsyncAddedToHass:
-    """async_added_to_hass subscribes scenario callback (lines 211-216)."""
-
-    def test_subscribe_scenario_callback_called_with_scenario_id(self):
-        entity, session, _ = _make_scenario_entity_v2(scenario_id="scn:77")
-
-        async def _run_added():
-            with patch(
-                "homeassistant.components.event.EventEntity.async_added_to_hass",
-                new=AsyncMock(return_value=None),
-            ):
-                await entity.async_added_to_hass()
-
-        asyncio.run(_run_added())
-        session.subscribe_scenario_callback.assert_called_once()
-        call_args = session.subscribe_scenario_callback.call_args[0]
-        assert call_args[0] == "scn:77"
-        assert callable(call_args[1])
-
-    def test_subscribed_callback_is_event_callback(self):
-        """The subscribed callable must be the _event_callback method."""
-        entity, session, _ = _make_scenario_entity_v2(scenario_id="scn:88")
-
-        async def _run_added():
-            with patch(
-                "homeassistant.components.event.EventEntity.async_added_to_hass",
-                new=AsyncMock(return_value=None),
-            ):
-                await entity.async_added_to_hass()
-
-        asyncio.run(_run_added())
-        registered_cb = session.subscribe_scenario_callback.call_args[0][1]
-        # Fire it directly to confirm it's the real _event_callback
-        event_data = {"id": "scn:88", "name": "Night Mode", "lastTimeTriggered": "2026-01-01T00:00:00"}
-        registered_cb(event_data)
-        entity._trigger_event.assert_called_once()
-
-
-class TestSHCScenarioEventCallbackPayload:
-    """_event_callback fires the right event + attributes (lines 219-228)."""
-
-    def test_fires_scenario_event_type(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:1", "name": "Away", "lastTimeTriggered": "ts1"})
-        entity._trigger_event.assert_called_once()
-        assert entity._trigger_event.call_args[0][0] == "SCENARIO"
-
-    def test_callback_payload_event_type_attr(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:2", "name": "Night", "lastTimeTriggered": "ts2"})
-        attrs = entity._trigger_event.call_args[0][1]
-        assert attrs[ATTR_EVENT_TYPE] == "SCENARIO"
-
-    def test_callback_payload_id_attr(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:42", "name": "Night", "lastTimeTriggered": "ts"})
-        attrs = entity._trigger_event.call_args[0][1]
-        assert attrs[ATTR_ID] == "scn:42"
-
-    def test_callback_payload_name_attr(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:3", "name": "Vacation", "lastTimeTriggered": "ts"})
-        attrs = entity._trigger_event.call_args[0][1]
-        assert attrs[ATTR_NAME] == "Vacation"
-
-    def test_callback_payload_last_time_triggered(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:4", "name": "X", "lastTimeTriggered": "2026-06-01T10:00:00"})
-        attrs = entity._trigger_event.call_args[0][1]
-        assert attrs[ATTR_LAST_TIME_TRIGGERED] == "2026-06-01T10:00:00"
-
-    def test_callback_calls_schedule_update(self):
-        entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:5", "name": "Y", "lastTimeTriggered": "ts5"})
-        entity.schedule_update_ha_state.assert_called_once()
-
-
-class TestSHCScenarioEventUnsubscribe:
-    def test_unsubscribes_scenario_callback(self):
-        session = SimpleNamespace(unsubscribe_scenario_callback=MagicMock())
-        entity = SHCScenarioEvent.__new__(SHCScenarioEvent)
-        entity._session = session
-        entity._scenario = SimpleNamespace(id="scn:42")
-
-        with patch(
-            "homeassistant.components.event.EventEntity.async_will_remove_from_hass",
-            new=AsyncMock(return_value=None),
-        ):
-            asyncio.run(entity.async_will_remove_from_hass())
-
-        session.unsubscribe_scenario_callback.assert_called_once_with("scn:42")
-
-
-# ===========================================================================
-# LightControlButtonEvent
-# ===========================================================================
-
-
-def _make_light_control_event(
-    eventtype=_PRESS_SHORT,
-    eventtimestamp: int = 1000,
-    last_fired: int = -1,
-):
-    entity = LightControlButtonEvent.__new__(LightControlButtonEvent)
-    entity._device = SimpleNamespace(
-        name="Lichtsteuerung",
-        id="hdm:lc:1",
-        root_device_id="root:1",
-        eventtype=eventtype,
-        eventtimestamp=eventtimestamp,
-        device_services=[],
-        deleted=False,
-        manufacturer="Bosch",
-        device_model="MICROMODULE_LIGHT_ATTACHED",
-        status="AVAILABLE",
-    )
-    entity._last_fired_timestamp = last_fired
-    entity.entity_id = "event.lichtsteuerung_button"
-    entity.hass = _make_hass_sync()
-    entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
-    return entity
-
-
-class TestLightControlButtonEvent:
-    def test_fires_on_press(self):
-        e = _make_light_control_event(eventtype=_PRESS_SHORT, eventtimestamp=42)
-        e._event_callback()
-        e._trigger_event.assert_called_once()
-        args = e._trigger_event.call_args[0]
-        assert args[0] == "PRESS_SHORT"
-        assert args[1][ATTR_LAST_TIME_TRIGGERED] == 42
-
-    def test_switch_on_event_fires(self):
-        e = _make_light_control_event(eventtype=_SWITCH_ON, eventtimestamp=7)
-        e._event_callback()
-        assert e._trigger_event.call_args[0][0] == "SWITCH_ON"
-
-    def test_none_eventtype_no_op(self):
-        e = _make_light_control_event(eventtype=None)
-        e._event_callback()
-        e._trigger_event.assert_not_called()
-
-    def test_unknown_type_ignored(self):
-        e = _make_light_control_event(eventtype=SimpleNamespace(name="MOTION"))
-        e._event_callback()
-        e._trigger_event.assert_not_called()
-
-    def test_duplicate_timestamp_suppressed(self):
-        e = _make_light_control_event(eventtimestamp=99, last_fired=99)
-        e._event_callback()
-        e._trigger_event.assert_not_called()
-
-    def test_advancing_timestamp_updates_guard(self):
-        e = _make_light_control_event(eventtimestamp=5, last_fired=-1)
-        e._event_callback()
-        assert e._last_fired_timestamp == 5
-
-    def test_is_event_entity(self):
-        from homeassistant.components.event import EventEntity
-        assert issubclass(LightControlButtonEvent, EventEntity)
-
-
-class TestLightControlButtonEventCallback:
-    """Lines 226-235: LightControlButtonEvent._event_callback full fire path."""
-
-    def _make_entity(self, event_type_raw, ts, last_ts=-1):
-        ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
-        ent._attr_event_types = [
-            "PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED",
-            "SWITCH_ON", "SWITCH_OFF",
-        ]
-        ent._last_fired_timestamp = last_ts
-        ent._device = SimpleNamespace(
-            eventtype=event_type_raw,
-            eventtimestamp=ts,
-            id="lc1",
-            name="LC",
-        )
-        # device_id is a property from SHCEntity: returns self._device.id
-        # Setting _device is enough - no need to set device_id directly
-        ent.entity_id = "event.lc"
-        ent._dispatch_event = MagicMock()
-        return ent
-
-    def test_event_callback_fires_on_new_timestamp(self):
-        """Lines 237-255: eventtype valid + timestamp advanced -> _dispatch_event called."""
-        et = SimpleNamespace(name="PRESS_SHORT")
-        ent = self._make_entity(et, ts=1000, last_ts=500)
-        ent._event_callback()
-        ent._dispatch_event.assert_called_once()
-        assert ent._last_fired_timestamp == 1000
-
-    def test_event_callback_skips_none_eventtype(self):
-        """_event_callback returns early when eventtype is None."""
-        ent = self._make_entity(None, ts=1000)
-        ent._event_callback()
-        ent._dispatch_event.assert_not_called()
-
-    def test_event_callback_skips_unknown_event_type(self):
-        """_event_callback returns early when event type not in _attr_event_types."""
-        et = SimpleNamespace(name="SWITCH_XXX")
-        ent = self._make_entity(et, ts=1000)
-        ent._event_callback()
-        ent._dispatch_event.assert_not_called()
-
-    def test_event_callback_skips_same_timestamp(self):
-        """_event_callback returns early when timestamp unchanged."""
-        et = SimpleNamespace(name="PRESS_SHORT")
-        ent = self._make_entity(et, ts=1000, last_ts=1000)
-        ent._event_callback()
-        ent._dispatch_event.assert_not_called()
-
-
-class TestLightControlDispatchEventValueError:
-    """Lines 262-264: LightControlButtonEvent._dispatch_event ValueError branch."""
-
-    def test_dispatch_event_value_error_returns_early(self):
-        """Lines 262-264: ValueError in _trigger_event -> warning log, return."""
-        ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
-        ent.entity_id = "event.lc"
-        ent._trigger_event = MagicMock(side_effect=ValueError("bad type"))
-        ent.schedule_update_ha_state = MagicMock()
-
-        ent._dispatch_event("BAD_TYPE", {})
-        ent.schedule_update_ha_state.assert_not_called()
-
-
-class TestEventLightControlAddedToHass:
-    """event.py lines 226-235: LightControlButtonEvent.async_added_to_hass."""
-
-    def test_async_added_to_hass_registers_keypad_events(self):
-        """Lines 226-235: Keypad service -> register_event called for each KeyState."""
-        # Build a fake Keypad service with KeyState enum
-        key_state_1 = SimpleNamespace(value="KEY_1")
-        key_state_2 = SimpleNamespace(value="KEY_2")
-        keypad_service = SimpleNamespace(
-            id="Keypad",
-            KeyState=[key_state_1, key_state_2],
-            register_event=MagicMock(),
-            subscribe_callback=MagicMock(),
-        )
-        non_keypad_service = SimpleNamespace(
-            id="LatestMotion",
-            subscribe_callback=MagicMock(),
-        )
-
-        dev = _fake_dev("lc1", device_services=[keypad_service, non_keypad_service])
-
-        ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
-        ent._device = dev
-        ent._entry_id = "E1"
-        ent._last_fired_timestamp = -1
-        ent._attr_event_types = ["PRESS_SHORT", "PRESS_LONG"]
-        ent.entity_id = "event.lc1_button"
-        ent._attr_unique_id = "root1_lc1_button"
-        # hass isn't needed because Entity.async_added_to_hass() is a no-op
-        ent.hass = MagicMock()
-
-        _run(ent.async_added_to_hass())
-
-        # register_event should have been called once per KeyState
-        assert keypad_service.register_event.call_count == 2
-        keypad_service.register_event.assert_any_call("KEY_1", ent._event_callback)
-        keypad_service.register_event.assert_any_call("KEY_2", ent._event_callback)
-
-
-class TestLightControlButtonEventUnsubscribe:
-    def test_unregisters_all_key_state_callbacks(self):
-        keypad = FakeService("Keypad")
-        keypad.KeyState = KeypadService.KeyState
-        entity = LightControlButtonEvent.__new__(LightControlButtonEvent)
-        entity._device = SimpleNamespace(device_services=[keypad])
-        for key_state in keypad.KeyState:
-            keypad.register_event(key_state.value, entity._event_callback)
-        assert len(keypad._event_callbacks) == len(list(keypad.KeyState))
-
-        with patch(_SHC_ENTITY_WILL_REMOVE, new=AsyncMock(return_value=None)):
-            asyncio.run(entity.async_will_remove_from_hass())
-
-        assert keypad._event_callbacks == {}
-
-
-# ---------------------------------------------------------------------------
-# Fake service double shared by the Unsubscribe suites above (register_event
-# has no matching unregister_event upstream; SHCEntity's
-# async_will_remove_from_hass must clean up the private _event_callbacks dict
-# via subscribe_callback/unsubscribe_callback pairing instead).
-# ---------------------------------------------------------------------------
-
-
-class FakeService:
-    """Minimal stand-in for a boschshcpy SHCDeviceService."""
-
-    def __init__(self, service_id):
-        self.id = service_id
-        self._callbacks = {}
-        self._event_callbacks = {}
-
-    def subscribe_callback(self, entity_id, callback):
-        self._callbacks[entity_id] = callback
-
-    def unsubscribe_callback(self, entity_id):
-        self._callbacks.pop(entity_id, None)
-
-    def register_event(self, event, callback):
-        self._event_callbacks[event] = callback
 
 
 # ===========================================================================

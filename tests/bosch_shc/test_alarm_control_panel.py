@@ -181,6 +181,342 @@ def _fake_device(
 
 
 # ---------------------------------------------------------------------------
+# async_setup_entry
+# ---------------------------------------------------------------------------
+
+async def _run_setup_entry():
+    """Inner coroutine — called via asyncio.run in the sync test below."""
+    entry_id = "cfg-entry-1"
+    device = _fake_device(root_device_id="r2", device_id="d2")
+
+    session = SimpleNamespace(intrusion_system=device)
+
+    hass = SimpleNamespace()
+
+    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
+    config_entry.runtime_data = SimpleNamespace(session=session)
+
+    added: list = []
+
+    def async_add_entities(entities):
+        added.extend(entities)
+
+    # Patch async_migrate_to_new_unique_id to a coroutine no-op
+    with patch(
+        "custom_components.bosch_shc.alarm_control_panel.async_migrate_to_new_unique_id",
+        new=AsyncMock(return_value=None),
+    ):
+        await async_setup_entry(hass, config_entry, async_add_entities)
+
+    return added, device, entry_id
+
+
+def test_async_setup_entry_adds_one_entity():
+    """async_setup_entry appends exactly one IntrusionSystemAlarmControlPanel."""
+    added, device, entry_id = asyncio.run(_run_setup_entry())
+
+    assert len(added) == 1
+    assert isinstance(added[0], IntrusionSystemAlarmControlPanel)
+
+
+def test_async_setup_entry_entity_uses_correct_device():
+    """The entity's _device is the intrusion_system from the session."""
+    added, device, entry_id = asyncio.run(_run_setup_entry())
+
+    panel = added[0]
+    assert panel._device is device
+
+
+def test_async_setup_entry_entity_uses_correct_entry_id():
+    """The entity's _entry_id matches config_entry.entry_id."""
+    added, device, entry_id = asyncio.run(_run_setup_entry())
+
+    panel = added[0]
+    assert panel._entry_id == entry_id
+
+
+def test_async_setup_entry_calls_migrate_with_old_unique_id():
+    """async_migrate_to_new_unique_id is called with old_unique_id=entry_id_device_id."""
+    entry_id = "cfg-entry-migrate"
+    device = _fake_device(root_device_id="r3", device_id="dev-migrate")
+
+    session = SimpleNamespace(intrusion_system=device)
+    hass = SimpleNamespace()
+    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
+    config_entry.runtime_data = SimpleNamespace(session=session)
+
+    migrate_mock = AsyncMock(return_value=None)
+
+    with patch(
+        "custom_components.bosch_shc.alarm_control_panel.async_migrate_to_new_unique_id",
+        new=migrate_mock,
+    ):
+        asyncio.run(async_setup_entry(hass, config_entry, lambda e: None))
+
+    migrate_mock.assert_awaited_once()
+    kwargs = migrate_mock.call_args
+    assert kwargs.kwargs.get("old_unique_id") == f"{entry_id}_{device.id}"
+    assert kwargs.kwargs.get("device") is device
+    assert kwargs.kwargs.get("attr_name") is None
+
+
+# ---------------------------------------------------------------------------
+# unique_id (set during __init__ — verify via __new__ + manual construction)
+# ---------------------------------------------------------------------------
+
+def test_unique_id_composed_from_root_and_device_id():
+    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
+    panel._device = SimpleNamespace(
+        root_device_id="root-abc",
+        id="dev-xyz",
+        alarm_state=AlarmState.ALARM_OFF,
+        arming_state=ArmingState.SYSTEM_DISARMED,
+        active_configuration_profile=Profile.FULL_PROTECTION,
+        system_availability=True,
+        name="Test",
+        manufacturer="Bosch",
+        device_model="M1",
+    )
+    panel._entry_id = "entry-1"
+    panel._attr_unique_id = f"{panel._device.root_device_id}_{panel._device.id}"
+    assert panel._attr_unique_id == "root-abc_dev-xyz"
+
+
+# ---------------------------------------------------------------------------
+# __init__ (direct construction)
+# ---------------------------------------------------------------------------
+
+def test_init_sets_device_entry_id_and_unique_id():
+    """Direct __init__ — verify attributes are wired correctly."""
+    device = _fake_device(root_device_id="r1", device_id="d1")
+    panel = IntrusionSystemAlarmControlPanel(device=device, entry_id="entry-42")
+
+    assert panel._device is device
+    assert panel._entry_id == "entry-42"
+    assert panel._attr_unique_id == "r1_d1"
+
+
+def test_init_unique_id_uses_root_and_device_id():
+    """unique_id is root_device_id + _ + device.id, not entry_id + device.id."""
+    device = _fake_device(root_device_id="rootXYZ", device_id="devABC")
+    panel = IntrusionSystemAlarmControlPanel(device=device, entry_id="ignored-entry")
+    assert panel._attr_unique_id == "rootXYZ_devABC"
+
+
+# ---------------------------------------------------------------------------
+# Quality Scale: has-entity-name + unique_id preservation
+# ---------------------------------------------------------------------------
+
+def test_unique_id_format_unchanged():
+    """Regression: unique_id must remain f'{root_device_id}_{device_id}' forever.
+
+    Changing this would orphan every user's entity, so this test intentionally
+    pins the exact string format.
+    """
+    panel = _panel(root_device_id="root-abc", device_id="dev-xyz")
+    panel._attr_unique_id = f"{panel._device.root_device_id}_{panel._device.id}"
+    assert panel._attr_unique_id == "root-abc_dev-xyz"
+
+
+# ---------------------------------------------------------------------------
+# async_added_to_hass / async_will_remove_from_hass
+# ---------------------------------------------------------------------------
+
+def test_async_added_to_hass_subscribes_callback():
+    """Subscribes an on_state_changed callback keyed by entity_id."""
+    device = _fake_device()
+    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
+    panel._device = device
+    panel._entry_id = "e1"
+    panel._attr_unique_id = "r1_d1"
+    panel.entity_id = "alarm_control_panel.test"
+    panel.schedule_update_ha_state = MagicMock()
+
+    asyncio.run(panel.async_added_to_hass())
+
+    assert "alarm_control_panel.test" in device._subscriptions
+
+
+def test_async_added_to_hass_callback_calls_schedule_update():
+    """The registered callback must call schedule_update_ha_state."""
+    device = _fake_device()
+    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
+    panel._device = device
+    panel._entry_id = "e1"
+    panel._attr_unique_id = "r1_d1"
+    panel.entity_id = "alarm_control_panel.cb_test"
+    schedule_update = MagicMock()
+    panel.schedule_update_ha_state = schedule_update
+
+    asyncio.run(panel.async_added_to_hass())
+
+    # Fire the callback that was registered
+    device._subscriptions["alarm_control_panel.cb_test"]()
+    assert schedule_update.called
+
+
+def test_async_will_remove_from_hass_unsubscribes():
+    """Unsubscribes the callback keyed by entity_id on removal."""
+    device = _fake_device()
+    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
+    panel._device = device
+    panel._entry_id = "e1"
+    panel._attr_unique_id = "r1_d1"
+    panel.entity_id = "alarm_control_panel.remove_test"
+    panel.schedule_update_ha_state = MagicMock()
+
+    # First subscribe, then remove
+    asyncio.run(panel.async_added_to_hass())
+    assert "alarm_control_panel.remove_test" in device._subscriptions
+
+    asyncio.run(panel.async_will_remove_from_hass())
+    assert "alarm_control_panel.remove_test" not in device._subscriptions
+
+
+def test_async_will_remove_from_hass_tolerates_not_subscribed():
+    """Unsubscribe when never subscribed must not raise."""
+    device = _fake_device()
+    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
+    panel._device = device
+    panel._entry_id = "e1"
+    panel._attr_unique_id = "r1_d1"
+    panel.entity_id = "alarm_control_panel.never_added"
+
+    # Should not raise even without a prior subscribe
+    asyncio.run(panel.async_will_remove_from_hass())
+
+
+# ---------------------------------------------------------------------------
+# name / device_id / manufacturer / device_info / available / should_poll
+# ---------------------------------------------------------------------------
+
+def test_has_entity_name_true():
+    """has_entity_name=True: HA uses the device name; _attr_name must be None (primary entity)."""
+    panel = _panel(name="My Alarm")
+    assert panel._attr_has_entity_name is True
+    assert panel._attr_name is None
+
+
+def test_device_id_delegates_to_device():
+    assert _panel(device_id="shc-alarm-42").device_id == "shc-alarm-42"
+
+
+def test_manufacturer_delegates_to_device():
+    assert _panel(manufacturer="Bosch GmbH").manufacturer == "Bosch GmbH"
+
+
+def test_device_info_structure():
+    panel = _panel(
+        name="Alarm Panel",
+        manufacturer="Bosch",
+        device_model="IDS",
+        root_device_id="root-99",
+        device_id="ids-1",
+    )
+    info = panel.device_info
+    assert ("bosch_shc", "ids-1") in info["identifiers"]
+    assert info["name"] == "Alarm Panel"
+    assert info["manufacturer"] == "Bosch"
+    assert info["model"] == "IDS"
+    assert info["via_device"] == ("bosch_shc", "root-99")
+
+
+def test_available_true_when_system_available():
+    assert _panel(system_availability=True).available is True
+
+
+def test_available_false_when_system_unavailable():
+    assert _panel(system_availability=False).available is False
+
+
+def test_should_poll_is_false():
+    assert _panel().should_poll is False
+
+
+def test_has_entity_name_property_is_true():
+    """has_entity_name returns True (Bronze: has-entity-name).
+
+    Checked via an instance because AlarmControlPanelEntity's base-class property
+    descriptor shadows direct class-attribute access.
+    """
+    assert _panel().has_entity_name is True
+
+
+def test_instance_attr_name_is_none():
+    """_attr_name=None on the instance: HA uses the device name as the entity name."""
+    assert _panel()._attr_name is None
+
+
+class TestAlarmPanelProperties:
+    def test_has_entity_name_true_and_attr_name_none(self):
+        """has_entity_name=True + _attr_name=None: HA displays the device name as entity name."""
+        p = _make_panel(name="My Alarm")
+        assert p._attr_has_entity_name is True
+        assert p._attr_name is None
+
+    def test_device_id_returns_device_id(self):
+        p = _make_panel(device_id="dev-99")
+        assert p.device_id == "dev-99"
+
+    def test_manufacturer_returns_device_manufacturer(self):
+        p = _make_panel(manufacturer="BoschXYZ")
+        assert p.manufacturer == "BoschXYZ"
+
+    def test_available_returns_system_availability(self):
+        p = _make_panel(system_availability=True)
+        assert p.available is True
+
+    def test_available_false_when_unavailable(self):
+        p = _make_panel(system_availability=False)
+        assert p.available is False
+
+    def test_should_poll_returns_false(self):
+        p = _make_panel()
+        assert p.should_poll is False
+
+    def test_code_format_returns_none(self):
+        p = _make_panel()
+        assert p.code_format is None
+
+    def test_code_arm_required_returns_false(self):
+        p = _make_panel()
+        assert p.code_arm_required is False
+
+    def test_supported_features_includes_arm_away(self):
+        p = _make_panel()
+        assert p.supported_features & AlarmControlPanelEntityFeature.ARM_AWAY
+
+    def test_supported_features_includes_arm_home(self):
+        p = _make_panel()
+        assert p.supported_features & AlarmControlPanelEntityFeature.ARM_HOME
+
+    def test_supported_features_includes_arm_custom_bypass(self):
+        p = _make_panel()
+        assert p.supported_features & AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
+
+    def test_device_info_contains_identifiers(self):
+        p = _make_panel(device_id="dev-info")
+        info = p.device_info
+        assert (DOMAIN, "dev-info") in info["identifiers"]
+
+    def test_device_info_contains_name(self):
+        p = _make_panel(name="Info Panel")
+        assert p.device_info["name"] == "Info Panel"
+
+    def test_device_info_contains_manufacturer(self):
+        p = _make_panel(manufacturer="TestMfg")
+        assert p.device_info["manufacturer"] == "TestMfg"
+
+    def test_device_info_contains_model(self):
+        p = _make_panel(device_model="TestModel")
+        assert p.device_info["model"] == "TestModel"
+
+    def test_device_info_via_device_is_root_device_id(self):
+        p = _make_panel(root_device_id="root-via")
+        assert p.device_info["via_device"] == (DOMAIN, "root-via")
+
+
+# ---------------------------------------------------------------------------
 # alarm_state — AlarmState takes priority over ArmingState
 # ---------------------------------------------------------------------------
 
@@ -389,217 +725,6 @@ def test_code_arm_required_is_false():
 
 
 # ---------------------------------------------------------------------------
-# availability
-# ---------------------------------------------------------------------------
-
-def test_available_true_when_system_available():
-    assert _panel(system_availability=True).available is True
-
-
-def test_available_false_when_system_unavailable():
-    assert _panel(system_availability=False).available is False
-
-
-# ---------------------------------------------------------------------------
-# should_poll
-# ---------------------------------------------------------------------------
-
-def test_should_poll_is_false():
-    assert _panel().should_poll is False
-
-
-# ---------------------------------------------------------------------------
-# name / device_id / manufacturer
-# ---------------------------------------------------------------------------
-
-def test_has_entity_name_true():
-    """has_entity_name=True: HA uses the device name; _attr_name must be None (primary entity)."""
-    panel = _panel(name="My Alarm")
-    assert panel._attr_has_entity_name is True
-    assert panel._attr_name is None
-
-
-def test_device_id_delegates_to_device():
-    assert _panel(device_id="shc-alarm-42").device_id == "shc-alarm-42"
-
-
-def test_manufacturer_delegates_to_device():
-    assert _panel(manufacturer="Bosch GmbH").manufacturer == "Bosch GmbH"
-
-
-# ---------------------------------------------------------------------------
-# device_info
-# ---------------------------------------------------------------------------
-
-def test_device_info_structure():
-    panel = _panel(
-        name="Alarm Panel",
-        manufacturer="Bosch",
-        device_model="IDS",
-        root_device_id="root-99",
-        device_id="ids-1",
-    )
-    info = panel.device_info
-    assert ("bosch_shc", "ids-1") in info["identifiers"]
-    assert info["name"] == "Alarm Panel"
-    assert info["manufacturer"] == "Bosch"
-    assert info["model"] == "IDS"
-    assert info["via_device"] == ("bosch_shc", "root-99")
-
-
-class TestAlarmPanelProperties:
-    def test_has_entity_name_true_and_attr_name_none(self):
-        """has_entity_name=True + _attr_name=None: HA displays the device name as entity name."""
-        p = _make_panel(name="My Alarm")
-        assert p._attr_has_entity_name is True
-        assert p._attr_name is None
-
-    def test_device_id_returns_device_id(self):
-        p = _make_panel(device_id="dev-99")
-        assert p.device_id == "dev-99"
-
-    def test_manufacturer_returns_device_manufacturer(self):
-        p = _make_panel(manufacturer="BoschXYZ")
-        assert p.manufacturer == "BoschXYZ"
-
-    def test_available_returns_system_availability(self):
-        p = _make_panel(system_availability=True)
-        assert p.available is True
-
-    def test_available_false_when_unavailable(self):
-        p = _make_panel(system_availability=False)
-        assert p.available is False
-
-    def test_should_poll_returns_false(self):
-        p = _make_panel()
-        assert p.should_poll is False
-
-    def test_code_format_returns_none(self):
-        p = _make_panel()
-        assert p.code_format is None
-
-    def test_code_arm_required_returns_false(self):
-        p = _make_panel()
-        assert p.code_arm_required is False
-
-    def test_supported_features_includes_arm_away(self):
-        p = _make_panel()
-        assert p.supported_features & AlarmControlPanelEntityFeature.ARM_AWAY
-
-    def test_supported_features_includes_arm_home(self):
-        p = _make_panel()
-        assert p.supported_features & AlarmControlPanelEntityFeature.ARM_HOME
-
-    def test_supported_features_includes_arm_custom_bypass(self):
-        p = _make_panel()
-        assert p.supported_features & AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
-
-    def test_device_info_contains_identifiers(self):
-        p = _make_panel(device_id="dev-info")
-        info = p.device_info
-        assert (DOMAIN, "dev-info") in info["identifiers"]
-
-    def test_device_info_contains_name(self):
-        p = _make_panel(name="Info Panel")
-        assert p.device_info["name"] == "Info Panel"
-
-    def test_device_info_contains_manufacturer(self):
-        p = _make_panel(manufacturer="TestMfg")
-        assert p.device_info["manufacturer"] == "TestMfg"
-
-    def test_device_info_contains_model(self):
-        p = _make_panel(device_model="TestModel")
-        assert p.device_info["model"] == "TestModel"
-
-    def test_device_info_via_device_is_root_device_id(self):
-        p = _make_panel(root_device_id="root-via")
-        assert p.device_info["via_device"] == (DOMAIN, "root-via")
-
-
-# ---------------------------------------------------------------------------
-# unique_id (set during __init__ — verify via __new__ + manual construction)
-# ---------------------------------------------------------------------------
-
-def test_unique_id_composed_from_root_and_device_id():
-    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
-    panel._device = SimpleNamespace(
-        root_device_id="root-abc",
-        id="dev-xyz",
-        alarm_state=AlarmState.ALARM_OFF,
-        arming_state=ArmingState.SYSTEM_DISARMED,
-        active_configuration_profile=Profile.FULL_PROTECTION,
-        system_availability=True,
-        name="Test",
-        manufacturer="Bosch",
-        device_model="M1",
-    )
-    panel._entry_id = "entry-1"
-    panel._attr_unique_id = f"{panel._device.root_device_id}_{panel._device.id}"
-    assert panel._attr_unique_id == "root-abc_dev-xyz"
-
-
-# ---------------------------------------------------------------------------
-# extra_state_attributes — incidents, security_gaps, remaining_time_until_armed
-# ---------------------------------------------------------------------------
-
-class TestIDSExtraStateAttributes:
-    def test_incidents_empty_list_by_default(self):
-        dev = _make_ids_device()
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert attrs["incidents"] == []
-
-    def test_incidents_list_returned(self):
-        incidents = [{"type": "ALARM_ON", "deviceId": "dev1"}]
-        dev = _make_ids_device(incidents=incidents)
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert attrs["incidents"] == incidents
-
-    def test_security_gaps_empty_list_by_default(self):
-        dev = _make_ids_device()
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert attrs["security_gaps"] == []
-
-    def test_security_gaps_list_returned(self):
-        gaps = [{"type": "DOOR_OPEN", "deviceId": "dev2"}]
-        dev = _make_ids_device(security_gaps=gaps)
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert attrs["security_gaps"] == gaps
-
-    def test_remaining_time_zero_by_default(self):
-        dev = _make_ids_device()
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert attrs["remaining_time_until_armed"] == 0
-
-    def test_remaining_time_non_zero_when_arming(self):
-        dev = _make_ids_device(remaining_time=30)
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert attrs["remaining_time_until_armed"] == 30
-
-    def test_all_three_keys_present(self):
-        dev = _make_ids_device()
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert "incidents" in attrs
-        assert "security_gaps" in attrs
-        assert "remaining_time_until_armed" in attrs
-
-    def test_multiple_incidents_and_gaps(self):
-        incidents = [{"a": 1}, {"a": 2}]
-        gaps = [{"b": 3}, {"b": 4}, {"b": 5}]
-        dev = _make_ids_device(incidents=incidents, security_gaps=gaps)
-        panel = _make_ids_panel(dev)
-        attrs = panel.extra_state_attributes
-        assert len(attrs["incidents"]) == 2
-        assert len(attrs["security_gaps"]) == 3
-
-
-# ---------------------------------------------------------------------------
 # arm/disarm action delegation
 # ---------------------------------------------------------------------------
 
@@ -718,198 +843,61 @@ def test_alarm_mute_shcexception_raises_homeassistanterror():
 
 
 # ---------------------------------------------------------------------------
-# Quality Scale: has-entity-name + unique_id preservation
+# extra_state_attributes — incidents, security_gaps, remaining_time_until_armed
 # ---------------------------------------------------------------------------
 
-def test_unique_id_format_unchanged():
-    """Regression: unique_id must remain f'{root_device_id}_{device_id}' forever.
+class TestIDSExtraStateAttributes:
+    def test_incidents_empty_list_by_default(self):
+        dev = _make_ids_device()
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert attrs["incidents"] == []
 
-    Changing this would orphan every user's entity, so this test intentionally
-    pins the exact string format.
-    """
-    panel = _panel(root_device_id="root-abc", device_id="dev-xyz")
-    panel._attr_unique_id = f"{panel._device.root_device_id}_{panel._device.id}"
-    assert panel._attr_unique_id == "root-abc_dev-xyz"
+    def test_incidents_list_returned(self):
+        incidents = [{"type": "ALARM_ON", "deviceId": "dev1"}]
+        dev = _make_ids_device(incidents=incidents)
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert attrs["incidents"] == incidents
 
+    def test_security_gaps_empty_list_by_default(self):
+        dev = _make_ids_device()
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert attrs["security_gaps"] == []
 
-def test_has_entity_name_property_is_true():
-    """has_entity_name returns True (Bronze: has-entity-name).
+    def test_security_gaps_list_returned(self):
+        gaps = [{"type": "DOOR_OPEN", "deviceId": "dev2"}]
+        dev = _make_ids_device(security_gaps=gaps)
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert attrs["security_gaps"] == gaps
 
-    Checked via an instance because AlarmControlPanelEntity's base-class property
-    descriptor shadows direct class-attribute access.
-    """
-    assert _panel().has_entity_name is True
+    def test_remaining_time_zero_by_default(self):
+        dev = _make_ids_device()
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert attrs["remaining_time_until_armed"] == 0
 
+    def test_remaining_time_non_zero_when_arming(self):
+        dev = _make_ids_device(remaining_time=30)
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert attrs["remaining_time_until_armed"] == 30
 
-def test_instance_attr_name_is_none():
-    """_attr_name=None on the instance: HA uses the device name as the entity name."""
-    assert _panel()._attr_name is None
+    def test_all_three_keys_present(self):
+        dev = _make_ids_device()
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert "incidents" in attrs
+        assert "security_gaps" in attrs
+        assert "remaining_time_until_armed" in attrs
 
-
-# ---------------------------------------------------------------------------
-# __init__ (direct construction)
-# ---------------------------------------------------------------------------
-
-def test_init_sets_device_entry_id_and_unique_id():
-    """Direct __init__ — verify attributes are wired correctly."""
-    device = _fake_device(root_device_id="r1", device_id="d1")
-    panel = IntrusionSystemAlarmControlPanel(device=device, entry_id="entry-42")
-
-    assert panel._device is device
-    assert panel._entry_id == "entry-42"
-    assert panel._attr_unique_id == "r1_d1"
-
-
-def test_init_unique_id_uses_root_and_device_id():
-    """unique_id is root_device_id + _ + device.id, not entry_id + device.id."""
-    device = _fake_device(root_device_id="rootXYZ", device_id="devABC")
-    panel = IntrusionSystemAlarmControlPanel(device=device, entry_id="ignored-entry")
-    assert panel._attr_unique_id == "rootXYZ_devABC"
-
-
-# ---------------------------------------------------------------------------
-# async_added_to_hass / async_will_remove_from_hass
-# ---------------------------------------------------------------------------
-
-def test_async_added_to_hass_subscribes_callback():
-    """Subscribes an on_state_changed callback keyed by entity_id."""
-    device = _fake_device()
-    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
-    panel._device = device
-    panel._entry_id = "e1"
-    panel._attr_unique_id = "r1_d1"
-    panel.entity_id = "alarm_control_panel.test"
-    panel.schedule_update_ha_state = MagicMock()
-
-    asyncio.run(panel.async_added_to_hass())
-
-    assert "alarm_control_panel.test" in device._subscriptions
-
-
-def test_async_added_to_hass_callback_calls_schedule_update():
-    """The registered callback must call schedule_update_ha_state."""
-    device = _fake_device()
-    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
-    panel._device = device
-    panel._entry_id = "e1"
-    panel._attr_unique_id = "r1_d1"
-    panel.entity_id = "alarm_control_panel.cb_test"
-    schedule_update = MagicMock()
-    panel.schedule_update_ha_state = schedule_update
-
-    asyncio.run(panel.async_added_to_hass())
-
-    # Fire the callback that was registered
-    device._subscriptions["alarm_control_panel.cb_test"]()
-    assert schedule_update.called
-
-
-def test_async_will_remove_from_hass_unsubscribes():
-    """Unsubscribes the callback keyed by entity_id on removal."""
-    device = _fake_device()
-    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
-    panel._device = device
-    panel._entry_id = "e1"
-    panel._attr_unique_id = "r1_d1"
-    panel.entity_id = "alarm_control_panel.remove_test"
-    panel.schedule_update_ha_state = MagicMock()
-
-    # First subscribe, then remove
-    asyncio.run(panel.async_added_to_hass())
-    assert "alarm_control_panel.remove_test" in device._subscriptions
-
-    asyncio.run(panel.async_will_remove_from_hass())
-    assert "alarm_control_panel.remove_test" not in device._subscriptions
-
-
-def test_async_will_remove_from_hass_tolerates_not_subscribed():
-    """Unsubscribe when never subscribed must not raise."""
-    device = _fake_device()
-    panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
-    panel._device = device
-    panel._entry_id = "e1"
-    panel._attr_unique_id = "r1_d1"
-    panel.entity_id = "alarm_control_panel.never_added"
-
-    # Should not raise even without a prior subscribe
-    asyncio.run(panel.async_will_remove_from_hass())
-
-
-# ---------------------------------------------------------------------------
-# async_setup_entry
-# ---------------------------------------------------------------------------
-
-async def _run_setup_entry():
-    """Inner coroutine — called via asyncio.run in the sync test below."""
-    entry_id = "cfg-entry-1"
-    device = _fake_device(root_device_id="r2", device_id="d2")
-
-    session = SimpleNamespace(intrusion_system=device)
-
-    hass = SimpleNamespace()
-
-    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
-    config_entry.runtime_data = SimpleNamespace(session=session)
-
-    added: list = []
-
-    def async_add_entities(entities):
-        added.extend(entities)
-
-    # Patch async_migrate_to_new_unique_id to a coroutine no-op
-    with patch(
-        "custom_components.bosch_shc.alarm_control_panel.async_migrate_to_new_unique_id",
-        new=AsyncMock(return_value=None),
-    ):
-        await async_setup_entry(hass, config_entry, async_add_entities)
-
-    return added, device, entry_id
-
-
-def test_async_setup_entry_adds_one_entity():
-    """async_setup_entry appends exactly one IntrusionSystemAlarmControlPanel."""
-    added, device, entry_id = asyncio.run(_run_setup_entry())
-
-    assert len(added) == 1
-    assert isinstance(added[0], IntrusionSystemAlarmControlPanel)
-
-
-def test_async_setup_entry_entity_uses_correct_device():
-    """The entity's _device is the intrusion_system from the session."""
-    added, device, entry_id = asyncio.run(_run_setup_entry())
-
-    panel = added[0]
-    assert panel._device is device
-
-
-def test_async_setup_entry_entity_uses_correct_entry_id():
-    """The entity's _entry_id matches config_entry.entry_id."""
-    added, device, entry_id = asyncio.run(_run_setup_entry())
-
-    panel = added[0]
-    assert panel._entry_id == entry_id
-
-
-def test_async_setup_entry_calls_migrate_with_old_unique_id():
-    """async_migrate_to_new_unique_id is called with old_unique_id=entry_id_device_id."""
-    entry_id = "cfg-entry-migrate"
-    device = _fake_device(root_device_id="r3", device_id="dev-migrate")
-
-    session = SimpleNamespace(intrusion_system=device)
-    hass = SimpleNamespace()
-    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
-    config_entry.runtime_data = SimpleNamespace(session=session)
-
-    migrate_mock = AsyncMock(return_value=None)
-
-    with patch(
-        "custom_components.bosch_shc.alarm_control_panel.async_migrate_to_new_unique_id",
-        new=migrate_mock,
-    ):
-        asyncio.run(async_setup_entry(hass, config_entry, lambda e: None))
-
-    migrate_mock.assert_awaited_once()
-    kwargs = migrate_mock.call_args
-    assert kwargs.kwargs.get("old_unique_id") == f"{entry_id}_{device.id}"
-    assert kwargs.kwargs.get("device") is device
-    assert kwargs.kwargs.get("attr_name") is None
+    def test_multiple_incidents_and_gaps(self):
+        incidents = [{"a": 1}, {"a": 2}]
+        gaps = [{"b": 3}, {"b": 4}, {"b": 5}]
+        dev = _make_ids_device(incidents=incidents, security_gaps=gaps)
+        panel = _make_ids_panel(dev)
+        attrs = panel.extra_state_attributes
+        assert len(attrs["incidents"]) == 2
+        assert len(attrs["security_gaps"]) == 3

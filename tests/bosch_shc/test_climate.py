@@ -524,6 +524,101 @@ def _make_hc_entity():
 # #273 — BOOST mode: early-return guard (no write at all)
 # ===========================================================================
 
+class TestAsyncSetupEntry:
+    """Drive async_setup_entry with various device combinations."""
+
+    def _setup(self, climate_controls, heating_circuits, rooms, entry_id="entry-1"):
+        session = _make_session(
+            climate_controls=climate_controls,
+            heating_circuits=heating_circuits,
+            rooms=rooms,
+        )
+        hass = _make_hass(session, entry_id)
+        config_entry = _make_config_entry(entry_id, session=session)
+
+        added = []
+        _run(async_setup_entry(hass, config_entry, added.append))
+        return added
+
+    def test_no_devices_adds_nothing(self):
+        """entities list empty → async_add_entities never called."""
+        added = self._setup([], [], {})
+        # async_add_entities receives each entity list (not called means no append)
+        assert added == []
+
+    def test_one_climate_control_added(self):
+        """One climate → one ClimateControl entity appended."""
+        dev = _make_cc_device_full(room_id="r1")
+        rooms = {"r1": _make_room("Kitchen")}
+        added = self._setup([dev], [], rooms)
+        # async_add_entities is called once with the full list
+        assert len(added) == 1
+        entities = added[0]
+        assert len(entities) == 1
+        assert isinstance(entities[0], ClimateControl)
+
+    def test_climate_control_name_uses_room_name(self):
+        """Device name = room name; the entity name comes from the
+        translation_key 'room_climate_control' (#333), so _attr_name is None
+        and the friendly name resolves to '<room> <translated>' — no doubling.
+        """
+        dev = _make_cc_device_full(room_id="r2")
+        rooms = {"r2": _make_room("Bedroom")}
+        added = self._setup([dev], [], rooms)
+        entity = added[0][0]
+        assert entity.device_name == "Bedroom"
+        assert entity._attr_name is None
+        assert entity._attr_translation_key == "room_climate_control"
+
+    def test_one_heating_circuit_added(self):
+        """One heating circuit → one HeatingCircuit entity."""
+        dev = _make_hc_device_full()
+        added = self._setup([], [dev], {})
+        assert len(added) == 1
+        entities = added[0]
+        assert len(entities) == 1
+        assert isinstance(entities[0], HeatingCircuit)
+
+    def test_heating_circuit_name_from_device(self):
+        """HeatingCircuit name = heating_circuit.name."""
+        dev = _make_hc_device_full(name="HC South Wing")
+        added = self._setup([], [dev], {})
+        entity = added[0][0]
+        assert entity.name == "HC South Wing"
+
+    def test_both_climate_and_heating_circuit(self):
+        """Mix of devices → both entity types in one list."""
+        cc_dev = _make_cc_device_full(room_id="r3")
+        hc_dev = _make_hc_device_full()
+        rooms = {"r3": _make_room("Office")}
+        added = self._setup([cc_dev], [hc_dev], rooms)
+        assert len(added) == 1
+        entities = added[0]
+        assert len(entities) == 2
+        types = {type(e) for e in entities}
+        assert ClimateControl in types
+        assert HeatingCircuit in types
+
+    def test_multiple_climate_controls(self):
+        """Two climates → two ClimateControl entities."""
+        dev1 = _make_cc_device_full(root_device_id="r1", id_="d1", room_id="room-a")
+        dev2 = _make_cc_device_full(root_device_id="r2", id_="d2", room_id="room-b")
+        rooms = {
+            "room-a": _make_room("Room A"),
+            "room-b": _make_room("Room B"),
+        }
+        added = self._setup([dev1, dev2], [], rooms)
+        assert len(added[0]) == 2
+
+    def test_entry_id_passed_to_entity(self):
+        """ClimateControl receives the correct entry_id."""
+        dev = _make_cc_device_full(room_id="rx")
+        rooms = {"rx": _make_room("X")}
+        added = self._setup([dev], [], rooms, entry_id="my-entry-99")
+        entity = added[0][0]
+        assert entity._entry_id == "my-entry-99"
+
+
 class TestBoostPresetGuard:
     """When preset_mode == PRESET_BOOST, async_set_temperature must return
     early — the setpoint setter must never be called.
@@ -1019,6 +1114,7 @@ class TestTurnOnOff334:
 # CLIMATE.PY — line 338: supports_cooling=True → async_set_cooling_mode(False)
 # called on AUTO (from test_coverage_gaps.py)
 # ===========================================================================
+
 
 class TestClimateSupportsCoolingAutoMode:
     """Line 338: supports_cooling=True → async_set_cooling_mode(False) called on AUTO."""
@@ -2105,6 +2201,7 @@ class TestHvacAction:
 # in async_set_hvac_mode / async_set_preset_mode, with LOGGER.warning)
 # ===========================================================================
 
+
 class TestClimateControlHvacModeErrors:
     def test_jsonrpc_error_is_caught_and_logged(self):
         """JSONRPCError from async setter must not propagate.
@@ -2198,127 +2295,6 @@ class TestClimateSetupExcluded:
         device_ids = [getattr(e, "_device", SimpleNamespace()).id for e in added]
         assert "clim-keep" in device_ids
         assert "clim-excl" not in device_ids
-
-
-class TestHeatingCircuitSetupExcluded:
-    def test_excluded_heating_circuit_not_added(self):
-        """Excluded heating circuit must not appear in entities."""
-        dev = _make_heating_circuit_device(device_id="excl-hc")
-        hass, entry = _make_hass_and_entry(
-            heating_circuits=[dev],
-            excluded_device_ids=["excl-hc"],
-        )
-        added = _run_setup(hass, entry)
-        assert all(
-            getattr(e, "_device", None) is not dev for e in added
-        ), "Excluded heating circuit should not be added"
-
-    def test_non_excluded_heating_circuit_is_added(self):
-        """Non-excluded heating circuit must appear in entities."""
-        dev = _make_heating_circuit_device(device_id="keep-hc")
-        hass, entry = _make_hass_and_entry(
-            heating_circuits=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
-        assert any(
-            getattr(e, "_device", None) is dev for e in added
-        ), "Non-excluded heating circuit should be added"
-
-
-class TestAsyncSetupEntry:
-    """Drive async_setup_entry with various device combinations."""
-
-    def _setup(self, climate_controls, heating_circuits, rooms, entry_id="entry-1"):
-        session = _make_session(
-            climate_controls=climate_controls,
-            heating_circuits=heating_circuits,
-            rooms=rooms,
-        )
-        hass = _make_hass(session, entry_id)
-        config_entry = _make_config_entry(entry_id, session=session)
-
-        added = []
-        _run(async_setup_entry(hass, config_entry, added.append))
-        return added
-
-    def test_no_devices_adds_nothing(self):
-        """entities list empty → async_add_entities never called."""
-        added = self._setup([], [], {})
-        # async_add_entities receives each entity list (not called means no append)
-        assert added == []
-
-    def test_one_climate_control_added(self):
-        """One climate → one ClimateControl entity appended."""
-        dev = _make_cc_device_full(room_id="r1")
-        rooms = {"r1": _make_room("Kitchen")}
-        added = self._setup([dev], [], rooms)
-        # async_add_entities is called once with the full list
-        assert len(added) == 1
-        entities = added[0]
-        assert len(entities) == 1
-        assert isinstance(entities[0], ClimateControl)
-
-    def test_climate_control_name_uses_room_name(self):
-        """Device name = room name; the entity name comes from the
-        translation_key 'room_climate_control' (#333), so _attr_name is None
-        and the friendly name resolves to '<room> <translated>' — no doubling.
-        """
-        dev = _make_cc_device_full(room_id="r2")
-        rooms = {"r2": _make_room("Bedroom")}
-        added = self._setup([dev], [], rooms)
-        entity = added[0][0]
-        assert entity.device_name == "Bedroom"
-        assert entity._attr_name is None
-        assert entity._attr_translation_key == "room_climate_control"
-
-    def test_one_heating_circuit_added(self):
-        """One heating circuit → one HeatingCircuit entity."""
-        dev = _make_hc_device_full()
-        added = self._setup([], [dev], {})
-        assert len(added) == 1
-        entities = added[0]
-        assert len(entities) == 1
-        assert isinstance(entities[0], HeatingCircuit)
-
-    def test_heating_circuit_name_from_device(self):
-        """HeatingCircuit name = heating_circuit.name."""
-        dev = _make_hc_device_full(name="HC South Wing")
-        added = self._setup([], [dev], {})
-        entity = added[0][0]
-        assert entity.name == "HC South Wing"
-
-    def test_both_climate_and_heating_circuit(self):
-        """Mix of devices → both entity types in one list."""
-        cc_dev = _make_cc_device_full(room_id="r3")
-        hc_dev = _make_hc_device_full()
-        rooms = {"r3": _make_room("Office")}
-        added = self._setup([cc_dev], [hc_dev], rooms)
-        assert len(added) == 1
-        entities = added[0]
-        assert len(entities) == 2
-        types = {type(e) for e in entities}
-        assert ClimateControl in types
-        assert HeatingCircuit in types
-
-    def test_multiple_climate_controls(self):
-        """Two climates → two ClimateControl entities."""
-        dev1 = _make_cc_device_full(root_device_id="r1", id_="d1", room_id="room-a")
-        dev2 = _make_cc_device_full(root_device_id="r2", id_="d2", room_id="room-b")
-        rooms = {
-            "room-a": _make_room("Room A"),
-            "room-b": _make_room("Room B"),
-        }
-        added = self._setup([dev1, dev2], [], rooms)
-        assert len(added[0]) == 2
-
-    def test_entry_id_passed_to_entity(self):
-        """ClimateControl receives the correct entry_id."""
-        dev = _make_cc_device_full(room_id="rx")
-        rooms = {"rx": _make_room("X")}
-        added = self._setup([dev], [], rooms, entry_id="my-entry-99")
-        entity = added[0][0]
-        assert entity._entry_id == "my-entry-99"
 
 
 # ===========================================================================
@@ -2427,6 +2403,32 @@ class TestClimateControlProperties:
     def test_device_name_matches_name(self):
         entity = self._entity()
         assert entity.device_name == entity.name
+
+
+class TestHeatingCircuitSetupExcluded:
+    def test_excluded_heating_circuit_not_added(self):
+        """Excluded heating circuit must not appear in entities."""
+        dev = _make_heating_circuit_device(device_id="excl-hc")
+        hass, entry = _make_hass_and_entry(
+            heating_circuits=[dev],
+            excluded_device_ids=["excl-hc"],
+        )
+        added = _run_setup(hass, entry)
+        assert all(
+            getattr(e, "_device", None) is not dev for e in added
+        ), "Excluded heating circuit should not be added"
+
+    def test_non_excluded_heating_circuit_is_added(self):
+        """Non-excluded heating circuit must appear in entities."""
+        dev = _make_heating_circuit_device(device_id="keep-hc")
+        hass, entry = _make_hass_and_entry(
+            heating_circuits=[dev],
+            excluded_device_ids=[],
+        )
+        added = _run_setup(hass, entry)
+        assert any(
+            getattr(e, "_device", None) is dev for e in added
+        ), "Non-excluded heating circuit should be added"
 
 
 # ===========================================================================

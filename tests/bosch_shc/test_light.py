@@ -1014,256 +1014,6 @@ class TestLightSwitchTurnOff:
         light._device.async_set_binarystate.assert_called_once_with(False)
 
 
-def _make_motion_light(
-    binaryswitch=False,
-    multi_level_switch=80,
-):
-    """Build MotionDetectorLight via __new__ with injected device."""
-    light = MotionDetectorLight.__new__(MotionDetectorLight)
-    light._device = SimpleNamespace(
-        name="Motion Light",
-        id="md-1",
-        root_device_id="root-1",
-        binaryswitch=binaryswitch,
-        multi_level_switch=multi_level_switch,
-        async_set_binaryswitch=AsyncMock(),
-        async_set_multi_level_switch=AsyncMock(),
-    )
-    light._attr_name = "Motion Light"
-    light._attr_unique_id = "root-1_md-1_motionlight"
-    return light
-
-
-class TestMotionDetectorLightClassAttrs:
-    """HA parent classes shadow _attr_supported_color_modes/_attr_color_mode with
-    properties, so read via instance (which returns the underlying _attr value)."""
-
-    def test_supported_color_modes_is_brightness(self):
-        light = _make_motion_light()
-        assert ColorMode.BRIGHTNESS in light.supported_color_modes
-
-    def test_color_mode_is_brightness(self):
-        light = _make_motion_light()
-        assert light.color_mode == ColorMode.BRIGHTNESS
-
-
-class TestMotionDetectorLightIsOn:
-    def test_is_on_true_when_binaryswitch_true(self):
-        light = _make_motion_light(binaryswitch=True)
-        assert light.is_on is True
-
-    def test_is_on_false_when_binaryswitch_false(self):
-        light = _make_motion_light(binaryswitch=False)
-        assert light.is_on is False
-
-
-class TestMotionDetectorLightBrightness:
-    def test_brightness_100_maps_to_255(self):
-        light = _make_motion_light(multi_level_switch=100)
-        assert light.brightness == 255
-
-    def test_brightness_50_scales(self):
-        light = _make_motion_light(multi_level_switch=50)
-        assert light.brightness == round(50 * 255 / 100)
-
-    def test_brightness_zero_level(self):
-        light = _make_motion_light(multi_level_switch=0)
-        assert light.brightness == 0
-
-    def test_brightness_none_returns_zero(self):
-        """None multi_level_switch must return 0, not raise TypeError."""
-        light = _make_motion_light(multi_level_switch=None)
-        assert light.brightness == 0
-
-
-class TestMotionDetectorLightTurnOn:
-    def test_turn_on_without_brightness_sets_binaryswitch_when_off(self):
-        light = _make_motion_light(binaryswitch=False)
-        asyncio.run(light.async_turn_on())
-        light._device.async_set_binaryswitch.assert_called_once_with(True)
-
-    def test_turn_on_without_brightness_does_not_touch_multi_level_switch(self):
-        light = _make_motion_light(binaryswitch=False, multi_level_switch=50)
-        asyncio.run(light.async_turn_on())
-        light._device.async_set_multi_level_switch.assert_not_called()
-
-    def test_turn_on_with_brightness_sets_level(self):
-        """ATTR_BRIGHTNESS=255 must call async_set_multi_level_switch(100)."""
-        light = _make_motion_light(binaryswitch=True)
-        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 255}))
-        light._device.async_set_multi_level_switch.assert_called_once_with(100)
-
-    def test_turn_on_with_brightness_scales_half(self):
-        light = _make_motion_light(binaryswitch=True)
-        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 128}))
-        expected = round(128 * 100 / 255)
-        light._device.async_set_multi_level_switch.assert_called_once_with(expected)
-
-    def test_turn_on_brightness_clamp_to_1_not_zero(self):
-        """brightness=1 would round to 0; must be clamped to 1."""
-        light = _make_motion_light(binaryswitch=True)
-        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 1}))
-        light._device.async_set_multi_level_switch.assert_called_once()
-        assert light._device.async_set_multi_level_switch.call_args[0][0] >= 1
-
-    def test_turn_on_does_not_set_binaryswitch_when_already_on(self):
-        """When already on, async_turn_on must not call async_set_binaryswitch."""
-        light = _make_motion_light(binaryswitch=True)
-        asyncio.run(light.async_turn_on())
-        light._device.async_set_binaryswitch.assert_not_called()
-
-    def test_turn_on_sets_binaryswitch_to_true_when_was_off(self):
-        light = _make_motion_light(binaryswitch=False)
-        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 200}))
-        light._device.async_set_binaryswitch.assert_called_once_with(True)
-
-
-class TestMotionDetectorLightTurnOff:
-    def test_turn_off_sets_binaryswitch_false(self):
-        light = _make_motion_light(binaryswitch=True)
-        asyncio.run(light.async_turn_off())
-        light._device.async_set_binaryswitch.assert_called_once_with(False)
-
-    def test_turn_off_already_off(self):
-        light = _make_motion_light(binaryswitch=False)
-        asyncio.run(light.async_turn_off())
-        light._device.async_set_binaryswitch.assert_called_once_with(False)
-
-    def test_turn_off_accepts_extra_kwargs(self):
-        light = _make_motion_light(binaryswitch=True)
-        asyncio.run(light.async_turn_off(transition=0))
-        light._device.async_set_binaryswitch.assert_called_once_with(False)
-
-
-# ===========================================================================
-# #338: opt-in to expose a Light/Shutter Control II light relay
-# (MICROMODULE_LIGHT_ATTACHED) or a BSM light switch as a HA `light` instead
-# of a `switch`. Covers entity.py helpers (light_switch_devices /
-# light_switch_as_light / light_relay_friendly_model) and RelayLight's ONOFF
-# behaviour.
-# ===========================================================================
-
-def _make_relay_opt_device(**kwargs):
-    defaults = dict(
-        name="Light Control II",
-        root_device_id="root1",
-        id="dev1",
-        switchstate=State.OFF,
-    )
-    defaults.update(kwargs)
-    return SimpleNamespace(**defaults)
-
-
-# ── entity.light_switch_as_light ─────────────────────────────────────────────
-
-def test_opt_in_true_when_id_listed():
-    dev = _make_relay_opt_device(id="abc")
-    assert light_switch_as_light(dev, {OPT_LIGHTS_AS_LIGHT: ["abc"]}) is True
-
-
-def test_opt_in_false_when_id_absent_or_unset():
-    dev = _make_relay_opt_device(id="abc")
-    assert light_switch_as_light(dev, {OPT_LIGHTS_AS_LIGHT: ["other"]}) is False
-    assert light_switch_as_light(dev, {}) is False
-    # Stored option may be explicit None (cleared) — must not raise.
-    assert light_switch_as_light(dev, {OPT_LIGHTS_AS_LIGHT: None}) is False
-
-
-# ── entity.light_switch_devices ──────────────────────────────────────────────
-
-def test_devices_combine_both_buckets_bsm_first():
-    bsm = _make_relay_opt_device(id="bsm1")
-    mm = _make_relay_opt_device(id="mm1")
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            light_switches_bsm=[bsm],
-            micromodule_light_attached=[mm],
-        )
-    )
-    assert light_switch_devices(session) == [bsm, mm]
-
-
-def test_devices_getattr_safe_when_bucket_missing():
-    # An older pinned lib may not expose every bucket → getattr fallback to [].
-    session = SimpleNamespace(device_helper=SimpleNamespace())
-    assert light_switch_devices(session) == []
-
-
-# ── light.RelayLight ─────────────────────────────────────────────────────────
-
-def test_relaylight_is_onoff_light():
-    # HA's entity metaclass turns the class-body _attr_* into property
-    # descriptors, so assert the public color-mode API on an instance.
-    lt = RelayLight.__new__(RelayLight)
-    assert lt.color_mode == ColorMode.ONOFF
-    assert lt.supported_color_modes == {ColorMode.ONOFF}
-
-
-def test_relaylight_is_on_reflects_switchstate():
-    lt = RelayLight.__new__(RelayLight)
-    lt._device = _make_relay_opt_device(switchstate=State.ON)
-    assert lt.is_on is True
-    lt._device = _make_relay_opt_device(switchstate=State.OFF)
-    assert lt.is_on is False
-
-
-def test_relaylight_is_on_none_when_service_unavailable():
-    """A relay with no connected load can raise AttributeError → None, no crash."""
-
-    class _NoService:
-        @property
-        def switchstate(self):
-            raise AttributeError("PowerSwitch service is None")
-
-    lt = RelayLight.__new__(RelayLight)
-    lt._device = _NoService()
-    assert lt.is_on is None
-
-
-def test_relaylight_turn_on_off_invoke_async_setter():
-    calls = []
-
-    async def _fake_set(value):
-        calls.append(value)
-
-    lt = RelayLight.__new__(RelayLight)
-    lt._device = SimpleNamespace(async_set_switchstate=_fake_set)
-    asyncio.run(lt.async_turn_on())
-    asyncio.run(lt.async_turn_off())
-    assert calls == [True, False]
-
-
-# ── #338 refinements: global toggle + friendly model label ───────────────────
-
-def test_global_toggle_overrides_per_device():
-    dev = _make_relay_opt_device(id="not-listed")
-    # global ON → light regardless of the per-device list
-    assert light_switch_as_light(dev, {OPT_ALL_LIGHTS_AS_LIGHT: True}) is True
-    assert light_switch_as_light(
-        dev, {OPT_ALL_LIGHTS_AS_LIGHT: True, OPT_LIGHTS_AS_LIGHT: []}
-    ) is True
-    # global OFF → falls back to the per-device list
-    assert light_switch_as_light(
-        dev, {OPT_ALL_LIGHTS_AS_LIGHT: False, OPT_LIGHTS_AS_LIGHT: ["not-listed"]}
-    ) is True
-    assert light_switch_as_light(dev, {OPT_ALL_LIGHTS_AS_LIGHT: False}) is False
-
-
-def test_friendly_model_label():
-    assert light_relay_friendly_model(
-        _make_relay_opt_device(device_model="MICROMODULE_LIGHT_ATTACHED")
-    ) == "Light/Shutter Control II"
-    assert light_relay_friendly_model(_make_relay_opt_device(device_model="BSM")) == \
-        "In-wall light switch"
-    # unknown model falls back to the raw model string (never crashes/blank)
-    assert light_relay_friendly_model(_make_relay_opt_device(device_model="WHATEVER")) == \
-        "WHATEVER"
-
-
-# ===========================================================================
-# RelayLight error handling + LightSwitch.hs_color None guard
-# ===========================================================================
-
 class TestLightSwitchHsColorNone:
     """LightSwitch.hs_color returns None when rgb_raw is None."""
 
@@ -1271,61 +1021,6 @@ class TestLightSwitchHsColorNone:
         ls = LightSwitch.__new__(LightSwitch)
         ls._device = SimpleNamespace(rgb=None)
         assert ls.hs_color is None
-
-
-class TestRelayLightTurnOnErrors:
-    """RelayLight.async_turn_on AttributeError + ClientError/TimeoutError."""
-
-    def _make_relay_light(self, device):
-        rl = RelayLight.__new__(RelayLight)
-        rl._device = device
-        rl.entity_id = "light.relay_test"
-        return rl
-
-    def test_turn_on_attribute_error(self):
-        """AttributeError in async_set_switchstate → debug log."""
-        dev = MagicMock()
-        dev.async_set_switchstate = AsyncMock(side_effect=AttributeError("no service"))
-        rl = self._make_relay_light(dev)
-        _run(rl.async_turn_on())  # must not raise
-
-    def test_turn_on_client_error(self):
-        """aiohttp.ClientError → debug log, no raise."""
-        dev = MagicMock()
-        dev.async_set_switchstate = AsyncMock(side_effect=aiohttp.ClientError("err"))
-        rl = self._make_relay_light(dev)
-        _run(rl.async_turn_on())  # must not raise
-
-    def test_turn_on_timeout_error(self):
-        """asyncio.TimeoutError → debug log, no raise."""
-        dev = MagicMock()
-        dev.async_set_switchstate = AsyncMock(side_effect=asyncio.TimeoutError())
-        rl = self._make_relay_light(dev)
-        _run(rl.async_turn_on())  # must not raise
-
-
-class TestRelayLightTurnOffErrors:
-    """RelayLight.async_turn_off AttributeError + ClientError."""
-
-    def _make_relay_light(self, device):
-        rl = RelayLight.__new__(RelayLight)
-        rl._device = device
-        rl.entity_id = "light.relay_test"
-        return rl
-
-    def test_turn_off_attribute_error(self):
-        """AttributeError → debug log, no raise."""
-        dev = MagicMock()
-        dev.async_set_switchstate = AsyncMock(side_effect=AttributeError("no service"))
-        rl = self._make_relay_light(dev)
-        _run(rl.async_turn_off())
-
-    def test_turn_off_client_error(self):
-        """aiohttp.ClientError → debug log, no raise."""
-        dev = MagicMock()
-        dev.async_set_switchstate = AsyncMock(side_effect=aiohttp.ClientError())
-        rl = self._make_relay_light(dev)
-        _run(rl.async_turn_off())
 
 
 # ===========================================================================
@@ -1503,6 +1198,412 @@ class TestLightSetupExcluded:
         device_ids = [getattr(e, "_device", SimpleNamespace()).id for e in added]
         assert "keep" in device_ids
         assert "excl" not in device_ids
+
+
+# ===========================================================================
+# async_setup_entry — HUE/Ledvance suppression w/ device registry, RelayLight
+# opt-in, excluded relay device (lines 43-104 of light.py)
+# ===========================================================================
+
+class TestLightSetupHueSuppressWithRegistry:
+    """HUE lights suppressed + dev_registry entry exists → removed."""
+
+    def _run_light_setup(self, options, hue_lights, dev_reg_mock):
+        dh = MagicMock()
+        dh.hue_lights = hue_lights
+        dh.ledvance_lights = []
+        dh.micromodule_dimmers = []
+        dh.motion_detectors2 = []
+        dh.micromodule_light_attached = []
+        dh.light_switches_bsm = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+
+        with patch(
+            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
+        ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                 new_callable=AsyncMock):
+            entry = _fake_entry(hass=hass, options=options)
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+        return collected
+
+    def test_hue_suppress_removes_device_from_registry(self):
+        """When suppress HUE is on, dev_registry entry is removed."""
+        dev = _fake_dev("hue1")
+        dev_entry = SimpleNamespace(id="reg_id_hue1")
+        dr_mock = MagicMock()
+        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
+        dr_mock.async_update_device = MagicMock()
+
+        self._run_light_setup(
+            options={OPT_SUPPRESS_HUE_LIGHTS: True},
+            hue_lights=[dev],
+            dev_reg_mock=dr_mock,
+        )
+        dr_mock.async_update_device.assert_called_once()
+
+    def test_hue_suppress_no_registry_entry(self):
+        """dev_registry returns None → no update_device call."""
+        dev = _fake_dev("hue1")
+        dr_mock = MagicMock()
+        dr_mock.async_get_device = MagicMock(return_value=None)
+        dr_mock.async_update_device = MagicMock()
+
+        self._run_light_setup(
+            options={OPT_SUPPRESS_HUE_LIGHTS: True},
+            hue_lights=[dev],
+            dev_reg_mock=dr_mock,
+        )
+        dr_mock.async_update_device.assert_not_called()
+
+
+class TestLightSetupLedvanceSuppressWithRegistry:
+    """Ledvance lights suppressed + dev_registry entry exists."""
+
+    def _run_light_setup(self, options, ledvance_lights, dev_reg_mock):
+        dh = MagicMock()
+        dh.hue_lights = []
+        dh.ledvance_lights = ledvance_lights
+        dh.micromodule_dimmers = []
+        dh.motion_detectors2 = []
+        dh.micromodule_light_attached = []
+        dh.light_switches_bsm = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+
+        with patch(
+            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
+        ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                 new_callable=AsyncMock):
+            entry = _fake_entry(hass=hass, options=options)
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+        return collected
+
+    def test_ledvance_suppress_removes_device_from_registry(self):
+        """Ledvance suppress removes matching device registry entry."""
+        dev = _fake_dev("led1")
+        dev_entry = SimpleNamespace(id="reg_led1")
+        dr_mock = MagicMock()
+        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
+        dr_mock.async_update_device = MagicMock()
+
+        self._run_light_setup(
+            options={OPT_SUPPRESS_LEDVANCE_LIGHTS: True},
+            ledvance_lights=[dev],
+            dev_reg_mock=dr_mock,
+        )
+        dr_mock.async_update_device.assert_called_once()
+
+    def test_ledvance_suppress_no_registry_entry(self):
+        """dev_registry returns None → no update_device call."""
+        dev = _fake_dev("led1")
+        dr_mock = MagicMock()
+        dr_mock.async_get_device = MagicMock(return_value=None)
+        dr_mock.async_update_device = MagicMock()
+
+        self._run_light_setup(
+            options={OPT_SUPPRESS_LEDVANCE_LIGHTS: True},
+            ledvance_lights=[dev],
+            dev_reg_mock=dr_mock,
+        )
+        dr_mock.async_update_device.assert_not_called()
+
+
+# ===========================================================================
+# async_setup_entry — basic device-bucket wiring (lines 20-36 of light.py)
+# ===========================================================================
+
+class TestLightSetupEntry:
+    """Light async_setup_entry with LightSwitch (BRIGHTNESS mode)."""
+
+    def _run(self, session: object) -> list:
+        hass = _make_hass()
+        entry = _make_config_entry(session)
+        collected, add = _collect()
+
+        async def _run_inner() -> None:
+            await async_setup_entry(hass, entry, add)  # type: ignore[arg-type]
+
+        with patch(
+            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+            new_callable=AsyncMock,
+        ):
+            asyncio.run(_run_inner())
+
+        return collected
+
+    def test_ledvance_lights_produce_light_switch_entities(self) -> None:
+        """ledvance_lights → LightSwitch."""
+        dev = _light_device()
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[dev],
+                micromodule_dimmers=[],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], LightSwitch)
+
+    def test_micromodule_dimmers_produce_light_switch_entities(self) -> None:
+        """micromodule_dimmers → LightSwitch."""
+        dev = _light_device()
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[],
+                micromodule_dimmers=[dev],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], LightSwitch)
+
+    def test_mixed_light_devices_all_collected(self) -> None:
+        """Ledvance + micromodule_dimmer → 2 entities."""
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[_light_device()],
+                micromodule_dimmers=[_light_device()],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 2
+        assert all(isinstance(e, LightSwitch) for e in result)
+
+    def test_no_lights_adds_nothing(self) -> None:
+        """Empty lists → 0 entities."""
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[],
+                micromodule_dimmers=[],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert result == []
+
+    def test_entry_id_set_on_light_entity(self) -> None:
+        """LightSwitch gets the entry_id stored."""
+        dev = _light_device()
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[dev],
+                micromodule_dimmers=[],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert result[0]._entry_id == "E1"
+
+    def test_color_temp_only_device(self) -> None:
+        """A device with only color-temp support → LightSwitch in COLOR_TEMP mode."""
+        dev = _light_device(
+            supports_color_hsb=False,
+            supports_color_temp=True,
+            supports_brightness=False,
+        )
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[dev],
+                micromodule_dimmers=[],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert result[0]._attr_color_mode == ColorMode.COLOR_TEMP
+
+    def test_onoff_only_device(self) -> None:
+        """A device with no color/brightness support → LightSwitch in ONOFF mode."""
+        dev = _light_device(
+            supports_color_hsb=False,
+            supports_color_temp=False,
+            supports_brightness=False,
+        )
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[dev],
+                micromodule_dimmers=[],
+                hue_lights=[],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert result[0]._attr_color_mode == ColorMode.ONOFF
+
+    def test_hue_lights_produce_light_switch_entities(self) -> None:
+        """hue_lights → LightSwitch (ONOFF mode for a BinarySwitch-only device)."""
+        dev = _light_device(
+            supports_color_hsb=False,
+            supports_color_temp=False,
+            supports_brightness=False,
+        )
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[],
+                micromodule_dimmers=[],
+                hue_lights=[dev],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 1
+        assert isinstance(result[0], LightSwitch)
+
+    def test_hue_lights_mixed_with_others_all_collected(self) -> None:
+        """Ledvance + hue → 2 LightSwitch entities."""
+        session = SimpleNamespace(
+            device_helper=SimpleNamespace(
+                ledvance_lights=[_light_device()],
+                micromodule_dimmers=[],
+                hue_lights=[_light_device(supports_color_hsb=False,
+                                          supports_color_temp=False,
+                                          supports_brightness=False)],
+                motion_detectors2=[],
+            )
+        )
+        result = self._run(session)
+        assert len(result) == 2
+        assert all(isinstance(e, LightSwitch) for e in result)
+
+
+def _make_motion_light(
+    binaryswitch=False,
+    multi_level_switch=80,
+):
+    """Build MotionDetectorLight via __new__ with injected device."""
+    light = MotionDetectorLight.__new__(MotionDetectorLight)
+    light._device = SimpleNamespace(
+        name="Motion Light",
+        id="md-1",
+        root_device_id="root-1",
+        binaryswitch=binaryswitch,
+        multi_level_switch=multi_level_switch,
+        async_set_binaryswitch=AsyncMock(),
+        async_set_multi_level_switch=AsyncMock(),
+    )
+    light._attr_name = "Motion Light"
+    light._attr_unique_id = "root-1_md-1_motionlight"
+    return light
+
+
+class TestMotionDetectorLightClassAttrs:
+    """HA parent classes shadow _attr_supported_color_modes/_attr_color_mode with
+    properties, so read via instance (which returns the underlying _attr value)."""
+
+    def test_supported_color_modes_is_brightness(self):
+        light = _make_motion_light()
+        assert ColorMode.BRIGHTNESS in light.supported_color_modes
+
+    def test_color_mode_is_brightness(self):
+        light = _make_motion_light()
+        assert light.color_mode == ColorMode.BRIGHTNESS
+
+
+class TestMotionDetectorLightIsOn:
+    def test_is_on_true_when_binaryswitch_true(self):
+        light = _make_motion_light(binaryswitch=True)
+        assert light.is_on is True
+
+    def test_is_on_false_when_binaryswitch_false(self):
+        light = _make_motion_light(binaryswitch=False)
+        assert light.is_on is False
+
+
+class TestMotionDetectorLightBrightness:
+    def test_brightness_100_maps_to_255(self):
+        light = _make_motion_light(multi_level_switch=100)
+        assert light.brightness == 255
+
+    def test_brightness_50_scales(self):
+        light = _make_motion_light(multi_level_switch=50)
+        assert light.brightness == round(50 * 255 / 100)
+
+    def test_brightness_zero_level(self):
+        light = _make_motion_light(multi_level_switch=0)
+        assert light.brightness == 0
+
+    def test_brightness_none_returns_zero(self):
+        """None multi_level_switch must return 0, not raise TypeError."""
+        light = _make_motion_light(multi_level_switch=None)
+        assert light.brightness == 0
+
+
+class TestMotionDetectorLightTurnOn:
+    def test_turn_on_without_brightness_sets_binaryswitch_when_off(self):
+        light = _make_motion_light(binaryswitch=False)
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_binaryswitch.assert_called_once_with(True)
+
+    def test_turn_on_without_brightness_does_not_touch_multi_level_switch(self):
+        light = _make_motion_light(binaryswitch=False, multi_level_switch=50)
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_multi_level_switch.assert_not_called()
+
+    def test_turn_on_with_brightness_sets_level(self):
+        """ATTR_BRIGHTNESS=255 must call async_set_multi_level_switch(100)."""
+        light = _make_motion_light(binaryswitch=True)
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 255}))
+        light._device.async_set_multi_level_switch.assert_called_once_with(100)
+
+    def test_turn_on_with_brightness_scales_half(self):
+        light = _make_motion_light(binaryswitch=True)
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 128}))
+        expected = round(128 * 100 / 255)
+        light._device.async_set_multi_level_switch.assert_called_once_with(expected)
+
+    def test_turn_on_brightness_clamp_to_1_not_zero(self):
+        """brightness=1 would round to 0; must be clamped to 1."""
+        light = _make_motion_light(binaryswitch=True)
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 1}))
+        light._device.async_set_multi_level_switch.assert_called_once()
+        assert light._device.async_set_multi_level_switch.call_args[0][0] >= 1
+
+    def test_turn_on_does_not_set_binaryswitch_when_already_on(self):
+        """When already on, async_turn_on must not call async_set_binaryswitch."""
+        light = _make_motion_light(binaryswitch=True)
+        asyncio.run(light.async_turn_on())
+        light._device.async_set_binaryswitch.assert_not_called()
+
+    def test_turn_on_sets_binaryswitch_to_true_when_was_off(self):
+        light = _make_motion_light(binaryswitch=False)
+        asyncio.run(light.async_turn_on(**{ATTR_BRIGHTNESS: 200}))
+        light._device.async_set_binaryswitch.assert_called_once_with(True)
+
+
+class TestMotionDetectorLightTurnOff:
+    def test_turn_off_sets_binaryswitch_false(self):
+        light = _make_motion_light(binaryswitch=True)
+        asyncio.run(light.async_turn_off())
+        light._device.async_set_binaryswitch.assert_called_once_with(False)
+
+    def test_turn_off_already_off(self):
+        light = _make_motion_light(binaryswitch=False)
+        asyncio.run(light.async_turn_off())
+        light._device.async_set_binaryswitch.assert_called_once_with(False)
+
+    def test_turn_off_accepts_extra_kwargs(self):
+        light = _make_motion_light(binaryswitch=True)
+        asyncio.run(light.async_turn_off(transition=0))
+        light._device.async_set_binaryswitch.assert_called_once_with(False)
 
 
 class TestMotionDetector2Setup:
@@ -1704,462 +1805,6 @@ class TestMotionDetectorLightBrightnessNoneGuard:
         assert ent.brightness == 0
 
 
-class TestRelayLightOptOutSetup:
-    """#338 light_switch_devices loop: RelayLight opt-out stale-entity cleanup."""
-
-    def test_opted_in_bsm_gets_relaylight(self):
-        dev = _make_light_switch_bsm(device_id="bsm-in")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev], lights_as_light_ids=["bsm-in"]
-        )
-        added = _run_light_extra_setup(hass, entry)
-        assert any(
-            isinstance(e, RelayLight) and e._device is dev for e in added
-        ), "Opted-in BSM should produce a RelayLight entity"
-
-    def test_not_opted_in_bsm_produces_no_relaylight(self):
-        dev = _make_light_switch_bsm(device_id="bsm-out")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev], lights_as_light_ids=[]
-        )
-        added = _run_light_extra_setup(hass, entry)
-        assert all(getattr(e, "_device", None) is not dev for e in added)
-
-    def test_opted_out_bsm_removes_stale_relaylight_entity(self):
-        """Regression: a device previously opted in to "expose as light"
-        (RelayLight created, unique_id = root_device_id_device_id) that gets
-        opted back out must have that entity actively removed — an options
-        change reloads the entry (OptionsFlowWithReload), so simply not
-        re-creating the entity left an orphaned registry entry behind,
-        exactly the failure mode #356 already fixed for MotionDetectorLight."""
-        dev = _make_light_switch_bsm(device_id="was-light")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev], lights_as_light_ids=[]
-        )
-        remove_calls = []
-
-        async def _fake_remove(hass_arg, entity_domain, unique_id):
-            remove_calls.append((entity_domain, unique_id))
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new=AsyncMock(return_value=None),
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                side_effect=_fake_remove,
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert remove_calls == [(Platform.LIGHT, "shc-root_was-light")], (
-            f"Expected one stale-removal call for the opted-out BSM, got {remove_calls}"
-        )
-
-    def test_excluded_bsm_that_was_opted_in_removes_stale_relaylight_entity(self):
-        dev = _make_light_switch_bsm(device_id="excl-was-light")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev],
-            excluded_device_ids=["excl-was-light"],
-            lights_as_light_ids=["excl-was-light"],
-        )
-        remove_calls = []
-
-        async def _fake_remove(hass_arg, entity_domain, unique_id):
-            remove_calls.append((entity_domain, unique_id))
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new=AsyncMock(return_value=None),
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                side_effect=_fake_remove,
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert remove_calls == [(Platform.LIGHT, "shc-root_excl-was-light")], (
-            f"Expected one stale-removal call for the excluded+opted-in BSM, got {remove_calls}"
-        )
-
-
-# ===========================================================================
-# async_setup_entry — HUE/Ledvance suppression w/ device registry, RelayLight
-# opt-in, excluded relay device (lines 43-104 of light.py)
-# ===========================================================================
-
-class TestLightSetupHueSuppressWithRegistry:
-    """HUE lights suppressed + dev_registry entry exists → removed."""
-
-    def _run_light_setup(self, options, hue_lights, dev_reg_mock):
-        dh = MagicMock()
-        dh.hue_lights = hue_lights
-        dh.ledvance_lights = []
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with patch(
-            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
-        ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                 new_callable=AsyncMock):
-            entry = _fake_entry(hass=hass, options=options)
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_hue_suppress_removes_device_from_registry(self):
-        """When suppress HUE is on, dev_registry entry is removed."""
-        dev = _fake_dev("hue1")
-        dev_entry = SimpleNamespace(id="reg_id_hue1")
-        dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
-        dr_mock.async_update_device = MagicMock()
-
-        self._run_light_setup(
-            options={OPT_SUPPRESS_HUE_LIGHTS: True},
-            hue_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
-        dr_mock.async_update_device.assert_called_once()
-
-    def test_hue_suppress_no_registry_entry(self):
-        """dev_registry returns None → no update_device call."""
-        dev = _fake_dev("hue1")
-        dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=None)
-        dr_mock.async_update_device = MagicMock()
-
-        self._run_light_setup(
-            options={OPT_SUPPRESS_HUE_LIGHTS: True},
-            hue_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
-        dr_mock.async_update_device.assert_not_called()
-
-
-class TestLightSetupLedvanceSuppressWithRegistry:
-    """Ledvance lights suppressed + dev_registry entry exists."""
-
-    def _run_light_setup(self, options, ledvance_lights, dev_reg_mock):
-        dh = MagicMock()
-        dh.hue_lights = []
-        dh.ledvance_lights = ledvance_lights
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with patch(
-            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
-        ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                 new_callable=AsyncMock):
-            entry = _fake_entry(hass=hass, options=options)
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_ledvance_suppress_removes_device_from_registry(self):
-        """Ledvance suppress removes matching device registry entry."""
-        dev = _fake_dev("led1")
-        dev_entry = SimpleNamespace(id="reg_led1")
-        dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
-        dr_mock.async_update_device = MagicMock()
-
-        self._run_light_setup(
-            options={OPT_SUPPRESS_LEDVANCE_LIGHTS: True},
-            ledvance_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
-        dr_mock.async_update_device.assert_called_once()
-
-    def test_ledvance_suppress_no_registry_entry(self):
-        """dev_registry returns None → no update_device call."""
-        dev = _fake_dev("led1")
-        dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=None)
-        dr_mock.async_update_device = MagicMock()
-
-        self._run_light_setup(
-            options={OPT_SUPPRESS_LEDVANCE_LIGHTS: True},
-            ledvance_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
-        dr_mock.async_update_device.assert_not_called()
-
-
-class TestLightRelayOptIn:
-    """RelayLight opt-in path in async_setup_entry."""
-
-    def _run_light_setup(self, options, bsm_lights):
-        dh = MagicMock()
-        dh.hue_lights = []
-        dh.ledvance_lights = []
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = bsm_lights
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                new_callable=AsyncMock,
-            ),
-        ):
-            entry = _fake_entry(hass=hass, options=options)
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_relay_not_opted_in_skipped(self):
-        """light_switch_as_light=False → continue, RelayLight not added."""
-        dev = _fake_dev("bsm1")
-        # No opt-in option → light_switch_as_light returns False
-        collected = self._run_light_setup(options={}, bsm_lights=[dev])
-        assert not any(isinstance(e, RelayLight) for e in collected)
-
-    def test_relay_opted_in_added(self):
-        """light_switch_as_light=True → RelayLight added."""
-        dev = _fake_dev("bsm1")
-        # All-opt-in → light_switch_as_light returns True
-        collected = self._run_light_setup(
-            options={OPT_ALL_LIGHTS_AS_LIGHT: True},
-            bsm_lights=[dev],
-        )
-        assert any(isinstance(e, RelayLight) for e in collected)
-
-
-class TestLightExcludedRelayDevice:
-    """light.py: excluded device in relay light loop → continue."""
-
-    def test_excluded_relay_device_skipped(self):
-        """device_excluded → continue before opt-in check."""
-        dev = _fake_dev("bsm_excl")
-        dh = MagicMock()
-        dh.hue_lights = []
-        dh.ledvance_lights = []
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = [dev]
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                new_callable=AsyncMock,
-            ),
-        ):
-            entry = _fake_entry(hass=hass, options={
-                OPT_ALL_LIGHTS_AS_LIGHT: True,
-                OPT_EXCLUDED_DEVICES: ["bsm_excl"],
-            })
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        assert not any(isinstance(e, RelayLight) for e in collected)
-
-
-# ===========================================================================
-# async_setup_entry — basic device-bucket wiring (lines 20-36 of light.py)
-# ===========================================================================
-
-class TestLightSetupEntry:
-    """Light async_setup_entry with LightSwitch (BRIGHTNESS mode)."""
-
-    def _run(self, session: object) -> list:
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected, add = _collect()
-
-        async def _run_inner() -> None:
-            await async_setup_entry(hass, entry, add)  # type: ignore[arg-type]
-
-        with patch(
-            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-            new_callable=AsyncMock,
-        ):
-            asyncio.run(_run_inner())
-
-        return collected
-
-    def test_ledvance_lights_produce_light_switch_entities(self) -> None:
-        """ledvance_lights → LightSwitch."""
-        dev = _light_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 1
-        assert isinstance(result[0], LightSwitch)
-
-    def test_micromodule_dimmers_produce_light_switch_entities(self) -> None:
-        """micromodule_dimmers → LightSwitch."""
-        dev = _light_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[],
-                micromodule_dimmers=[dev],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 1
-        assert isinstance(result[0], LightSwitch)
-
-    def test_mixed_light_devices_all_collected(self) -> None:
-        """Ledvance + micromodule_dimmer → 2 entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[_light_device()],
-                micromodule_dimmers=[_light_device()],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 2
-        assert all(isinstance(e, LightSwitch) for e in result)
-
-    def test_no_lights_adds_nothing(self) -> None:
-        """Empty lists → 0 entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert result == []
-
-    def test_entry_id_set_on_light_entity(self) -> None:
-        """LightSwitch gets the entry_id stored."""
-        dev = _light_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert result[0]._entry_id == "E1"
-
-    def test_color_temp_only_device(self) -> None:
-        """A device with only color-temp support → LightSwitch in COLOR_TEMP mode."""
-        dev = _light_device(
-            supports_color_hsb=False,
-            supports_color_temp=True,
-            supports_brightness=False,
-        )
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 1
-        assert result[0]._attr_color_mode == ColorMode.COLOR_TEMP
-
-    def test_onoff_only_device(self) -> None:
-        """A device with no color/brightness support → LightSwitch in ONOFF mode."""
-        dev = _light_device(
-            supports_color_hsb=False,
-            supports_color_temp=False,
-            supports_brightness=False,
-        )
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 1
-        assert result[0]._attr_color_mode == ColorMode.ONOFF
-
-    def test_hue_lights_produce_light_switch_entities(self) -> None:
-        """hue_lights → LightSwitch (ONOFF mode for a BinarySwitch-only device)."""
-        dev = _light_device(
-            supports_color_hsb=False,
-            supports_color_temp=False,
-            supports_brightness=False,
-        )
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[],
-                micromodule_dimmers=[],
-                hue_lights=[dev],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 1
-        assert isinstance(result[0], LightSwitch)
-
-    def test_hue_lights_mixed_with_others_all_collected(self) -> None:
-        """Ledvance + hue → 2 LightSwitch entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[_light_device()],
-                micromodule_dimmers=[],
-                hue_lights=[_light_device(supports_color_hsb=False,
-                                          supports_color_temp=False,
-                                          supports_brightness=False)],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
-        assert len(result) == 2
-        assert all(isinstance(e, LightSwitch) for e in result)
-
-
 # ===========================================================================
 # MotionDetectorLight — Motion Detector II [+M] indicator light
 # ===========================================================================
@@ -2296,6 +1941,361 @@ class TestMotionDetectorLight:
         light._attr_name = f"{dev.name} Motion Light"
         light._attr_unique_id = f"{dev.root_device_id}_{dev.id}_motionlight"
         assert light._attr_unique_id == "root1_dev1_motionlight"
+
+
+# ===========================================================================
+# #338: opt-in to expose a Light/Shutter Control II light relay
+# (MICROMODULE_LIGHT_ATTACHED) or a BSM light switch as a HA `light` instead
+# of a `switch`. Covers entity.py helpers (light_switch_devices /
+# light_switch_as_light / light_relay_friendly_model) and RelayLight's ONOFF
+# behaviour.
+# ===========================================================================
+
+def _make_relay_opt_device(**kwargs):
+    defaults = dict(
+        name="Light Control II",
+        root_device_id="root1",
+        id="dev1",
+        switchstate=State.OFF,
+    )
+    defaults.update(kwargs)
+    return SimpleNamespace(**defaults)
+
+
+# ── entity.light_switch_as_light ─────────────────────────────────────────────
+
+def test_opt_in_true_when_id_listed():
+    dev = _make_relay_opt_device(id="abc")
+    assert light_switch_as_light(dev, {OPT_LIGHTS_AS_LIGHT: ["abc"]}) is True
+
+
+def test_opt_in_false_when_id_absent_or_unset():
+    dev = _make_relay_opt_device(id="abc")
+    assert light_switch_as_light(dev, {OPT_LIGHTS_AS_LIGHT: ["other"]}) is False
+    assert light_switch_as_light(dev, {}) is False
+    # Stored option may be explicit None (cleared) — must not raise.
+    assert light_switch_as_light(dev, {OPT_LIGHTS_AS_LIGHT: None}) is False
+
+
+# ── entity.light_switch_devices ──────────────────────────────────────────────
+
+def test_devices_combine_both_buckets_bsm_first():
+    bsm = _make_relay_opt_device(id="bsm1")
+    mm = _make_relay_opt_device(id="mm1")
+    session = SimpleNamespace(
+        device_helper=SimpleNamespace(
+            light_switches_bsm=[bsm],
+            micromodule_light_attached=[mm],
+        )
+    )
+    assert light_switch_devices(session) == [bsm, mm]
+
+
+def test_devices_getattr_safe_when_bucket_missing():
+    # An older pinned lib may not expose every bucket → getattr fallback to [].
+    session = SimpleNamespace(device_helper=SimpleNamespace())
+    assert light_switch_devices(session) == []
+
+
+# ── light.RelayLight ─────────────────────────────────────────────────────────
+
+def test_relaylight_is_onoff_light():
+    # HA's entity metaclass turns the class-body _attr_* into property
+    # descriptors, so assert the public color-mode API on an instance.
+    lt = RelayLight.__new__(RelayLight)
+    assert lt.color_mode == ColorMode.ONOFF
+    assert lt.supported_color_modes == {ColorMode.ONOFF}
+
+
+def test_relaylight_is_on_reflects_switchstate():
+    lt = RelayLight.__new__(RelayLight)
+    lt._device = _make_relay_opt_device(switchstate=State.ON)
+    assert lt.is_on is True
+    lt._device = _make_relay_opt_device(switchstate=State.OFF)
+    assert lt.is_on is False
+
+
+def test_relaylight_is_on_none_when_service_unavailable():
+    """A relay with no connected load can raise AttributeError → None, no crash."""
+
+    class _NoService:
+        @property
+        def switchstate(self):
+            raise AttributeError("PowerSwitch service is None")
+
+    lt = RelayLight.__new__(RelayLight)
+    lt._device = _NoService()
+    assert lt.is_on is None
+
+
+def test_relaylight_turn_on_off_invoke_async_setter():
+    calls = []
+
+    async def _fake_set(value):
+        calls.append(value)
+
+    lt = RelayLight.__new__(RelayLight)
+    lt._device = SimpleNamespace(async_set_switchstate=_fake_set)
+    asyncio.run(lt.async_turn_on())
+    asyncio.run(lt.async_turn_off())
+    assert calls == [True, False]
+
+
+# ── #338 refinements: global toggle + friendly model label ───────────────────
+
+def test_global_toggle_overrides_per_device():
+    dev = _make_relay_opt_device(id="not-listed")
+    # global ON → light regardless of the per-device list
+    assert light_switch_as_light(dev, {OPT_ALL_LIGHTS_AS_LIGHT: True}) is True
+    assert light_switch_as_light(
+        dev, {OPT_ALL_LIGHTS_AS_LIGHT: True, OPT_LIGHTS_AS_LIGHT: []}
+    ) is True
+    # global OFF → falls back to the per-device list
+    assert light_switch_as_light(
+        dev, {OPT_ALL_LIGHTS_AS_LIGHT: False, OPT_LIGHTS_AS_LIGHT: ["not-listed"]}
+    ) is True
+    assert light_switch_as_light(dev, {OPT_ALL_LIGHTS_AS_LIGHT: False}) is False
+
+
+def test_friendly_model_label():
+    assert light_relay_friendly_model(
+        _make_relay_opt_device(device_model="MICROMODULE_LIGHT_ATTACHED")
+    ) == "Light/Shutter Control II"
+    assert light_relay_friendly_model(_make_relay_opt_device(device_model="BSM")) == \
+        "In-wall light switch"
+    # unknown model falls back to the raw model string (never crashes/blank)
+    assert light_relay_friendly_model(_make_relay_opt_device(device_model="WHATEVER")) == \
+        "WHATEVER"
+
+
+# ===========================================================================
+# RelayLight error handling + LightSwitch.hs_color None guard
+# ===========================================================================
+
+class TestRelayLightTurnOnErrors:
+    """RelayLight.async_turn_on AttributeError + ClientError/TimeoutError."""
+
+    def _make_relay_light(self, device):
+        rl = RelayLight.__new__(RelayLight)
+        rl._device = device
+        rl.entity_id = "light.relay_test"
+        return rl
+
+    def test_turn_on_attribute_error(self):
+        """AttributeError in async_set_switchstate → debug log."""
+        dev = MagicMock()
+        dev.async_set_switchstate = AsyncMock(side_effect=AttributeError("no service"))
+        rl = self._make_relay_light(dev)
+        _run(rl.async_turn_on())  # must not raise
+
+    def test_turn_on_client_error(self):
+        """aiohttp.ClientError → debug log, no raise."""
+        dev = MagicMock()
+        dev.async_set_switchstate = AsyncMock(side_effect=aiohttp.ClientError("err"))
+        rl = self._make_relay_light(dev)
+        _run(rl.async_turn_on())  # must not raise
+
+    def test_turn_on_timeout_error(self):
+        """asyncio.TimeoutError → debug log, no raise."""
+        dev = MagicMock()
+        dev.async_set_switchstate = AsyncMock(side_effect=asyncio.TimeoutError())
+        rl = self._make_relay_light(dev)
+        _run(rl.async_turn_on())  # must not raise
+
+
+class TestRelayLightTurnOffErrors:
+    """RelayLight.async_turn_off AttributeError + ClientError."""
+
+    def _make_relay_light(self, device):
+        rl = RelayLight.__new__(RelayLight)
+        rl._device = device
+        rl.entity_id = "light.relay_test"
+        return rl
+
+    def test_turn_off_attribute_error(self):
+        """AttributeError → debug log, no raise."""
+        dev = MagicMock()
+        dev.async_set_switchstate = AsyncMock(side_effect=AttributeError("no service"))
+        rl = self._make_relay_light(dev)
+        _run(rl.async_turn_off())
+
+    def test_turn_off_client_error(self):
+        """aiohttp.ClientError → debug log, no raise."""
+        dev = MagicMock()
+        dev.async_set_switchstate = AsyncMock(side_effect=aiohttp.ClientError())
+        rl = self._make_relay_light(dev)
+        _run(rl.async_turn_off())
+
+
+class TestRelayLightOptOutSetup:
+    """#338 light_switch_devices loop: RelayLight opt-out stale-entity cleanup."""
+
+    def test_opted_in_bsm_gets_relaylight(self):
+        dev = _make_light_switch_bsm(device_id="bsm-in")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev], lights_as_light_ids=["bsm-in"]
+        )
+        added = _run_light_extra_setup(hass, entry)
+        assert any(
+            isinstance(e, RelayLight) and e._device is dev for e in added
+        ), "Opted-in BSM should produce a RelayLight entity"
+
+    def test_not_opted_in_bsm_produces_no_relaylight(self):
+        dev = _make_light_switch_bsm(device_id="bsm-out")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev], lights_as_light_ids=[]
+        )
+        added = _run_light_extra_setup(hass, entry)
+        assert all(getattr(e, "_device", None) is not dev for e in added)
+
+    def test_opted_out_bsm_removes_stale_relaylight_entity(self):
+        """Regression: a device previously opted in to "expose as light"
+        (RelayLight created, unique_id = root_device_id_device_id) that gets
+        opted back out must have that entity actively removed — an options
+        change reloads the entry (OptionsFlowWithReload), so simply not
+        re-creating the entity left an orphaned registry entry behind,
+        exactly the failure mode #356 already fixed for MotionDetectorLight."""
+        dev = _make_light_switch_bsm(device_id="was-light")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev], lights_as_light_ids=[]
+        )
+        remove_calls = []
+
+        async def _fake_remove(hass_arg, entity_domain, unique_id):
+            remove_calls.append((entity_domain, unique_id))
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                side_effect=_fake_remove,
+            ),
+        ):
+            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
+
+        assert remove_calls == [(Platform.LIGHT, "shc-root_was-light")], (
+            f"Expected one stale-removal call for the opted-out BSM, got {remove_calls}"
+        )
+
+    def test_excluded_bsm_that_was_opted_in_removes_stale_relaylight_entity(self):
+        dev = _make_light_switch_bsm(device_id="excl-was-light")
+        hass, entry = _make_hass_and_entry(
+            light_switches_bsm=[dev],
+            excluded_device_ids=["excl-was-light"],
+            lights_as_light_ids=["excl-was-light"],
+        )
+        remove_calls = []
+
+        async def _fake_remove(hass_arg, entity_domain, unique_id):
+            remove_calls.append((entity_domain, unique_id))
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                side_effect=_fake_remove,
+            ),
+        ):
+            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
+
+        assert remove_calls == [(Platform.LIGHT, "shc-root_excl-was-light")], (
+            f"Expected one stale-removal call for the excluded+opted-in BSM, got {remove_calls}"
+        )
+
+
+class TestLightRelayOptIn:
+    """RelayLight opt-in path in async_setup_entry."""
+
+    def _run_light_setup(self, options, bsm_lights):
+        dh = MagicMock()
+        dh.hue_lights = []
+        dh.ledvance_lights = []
+        dh.micromodule_dimmers = []
+        dh.motion_detectors2 = []
+        dh.micromodule_light_attached = []
+        dh.light_switches_bsm = bsm_lights
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                new_callable=AsyncMock,
+            ),
+        ):
+            entry = _fake_entry(hass=hass, options=options)
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+        return collected
+
+    def test_relay_not_opted_in_skipped(self):
+        """light_switch_as_light=False → continue, RelayLight not added."""
+        dev = _fake_dev("bsm1")
+        # No opt-in option → light_switch_as_light returns False
+        collected = self._run_light_setup(options={}, bsm_lights=[dev])
+        assert not any(isinstance(e, RelayLight) for e in collected)
+
+    def test_relay_opted_in_added(self):
+        """light_switch_as_light=True → RelayLight added."""
+        dev = _fake_dev("bsm1")
+        # All-opt-in → light_switch_as_light returns True
+        collected = self._run_light_setup(
+            options={OPT_ALL_LIGHTS_AS_LIGHT: True},
+            bsm_lights=[dev],
+        )
+        assert any(isinstance(e, RelayLight) for e in collected)
+
+
+class TestLightExcludedRelayDevice:
+    """light.py: excluded device in relay light loop → continue."""
+
+    def test_excluded_relay_device_skipped(self):
+        """device_excluded → continue before opt-in check."""
+        dev = _fake_dev("bsm_excl")
+        dh = MagicMock()
+        dh.hue_lights = []
+        dh.ledvance_lights = []
+        dh.micromodule_dimmers = []
+        dh.motion_detectors2 = []
+        dh.micromodule_light_attached = []
+        dh.light_switches_bsm = [dev]
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+
+        with (
+            patch(
+                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.bosch_shc.light.async_remove_stale_entity",
+                new_callable=AsyncMock,
+            ),
+        ):
+            entry = _fake_entry(hass=hass, options={
+                OPT_ALL_LIGHTS_AS_LIGHT: True,
+                OPT_EXCLUDED_DEVICES: ["bsm_excl"],
+            })
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        assert not any(isinstance(e, RelayLight) for e in collected)
 
 
 # ===========================================================================

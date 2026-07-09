@@ -79,141 +79,6 @@ def _run(coro):
 
 
 # ===========================================================================
-# Battery reporting coverage contract
-#
-# Guards against silent drift in battery support:
-# 1. Every battery-powered device class in the lib (SHCBatteryDevice subclass)
-#    must be wired into the HA battery entity loops -- otherwise a newly added
-#    battery device would ship with NO battery sensor and nobody would notice.
-# 2. The device_helper accessors used by those loops must actually be present
-#    in both binary_sensor.py and sensor.py (the binary "Battery" + enum
-#    "Battery Level" entities).
-# 3. BatteryLevelService.State must stay exhaustive -- a new Bosch firmware
-#    enum value would otherwise slip through BatterySensor.is_on (`!= OK`)
-#    silently.
-#
-# Pattern: pure inspection + source scan; no HA harness, no live session.
-# ===========================================================================
-
-# Battery-capable lib classes known to be wired into the HA battery loops.
-# device_helper accessor in parentheses (binary_sensor.py:234-244 /
-# sensor.py battery loop). If a NEW battery device is added to the lib, the
-# drift test below fails until it is wired in here AND in both loops.
-KNOWN_BATTERY_DEVICE_CLASSES = {
-    "SHCMotionDetector",       # motion_detectors
-    "SHCMotionDetector2",      # motion_detectors2
-    "SHCShutterContact",       # shutter_contacts
-    "SHCShutterContact2",      # shutter_contacts2
-    "SHCShutterContact2Plus",  # shutter_contacts2
-    "SHCSmokeDetector",        # smoke_detectors
-    "SHCThermostat",           # thermostats
-    "SHCThermostatGen2",       # thermostats (TRV_GEN2 / TRV_GEN2_DUAL, subclass of SHCThermostat)
-    "SHCWallThermostat",       # wallthermostats
-    "SHCRoomThermostat2",      # roomthermostats
-    "SHCTwinguard",            # twinguards
-    "SHCUniversalSwitch",      # universal_switches
-    "SHCUniversalSwitch2",     # universal_switches
-    "SHCWaterLeakageSensor",   # water_leakage_detectors
-    "SHCOutdoorSiren",         # outdoor_sirens (generic battery loop + SirenBatterySensor)
-}
-
-# device_helper accessors the battery loops iterate. Each must appear in BOTH
-# binary_sensor.py (binary "Battery") and sensor.py (enum "Battery Level").
-REQUIRED_BATTERY_ACCESSORS = {
-    "motion_detectors",
-    "motion_detectors2",
-    "shutter_contacts",
-    "shutter_contacts2",
-    "smoke_detectors",
-    "thermostats",
-    "twinguards",
-    "universal_switches",
-    "wallthermostats",
-    "roomthermostats",
-    "water_leakage_detectors",
-}
-
-
-def _lib_battery_subclasses():
-    return {
-        cls.__name__
-        for _, cls in inspect.getmembers(models, inspect.isclass)
-        if issubclass(cls, SHCBatteryDevice) and cls is not SHCBatteryDevice
-    }
-
-
-class TestBatteryDeviceWiring:
-    def test_no_unwired_battery_device(self):
-        """Every SHCBatteryDevice subclass must be accounted for. A new battery
-        device added to the lib fails this until it is wired into the HA battery
-        loops (binary_sensor.py + sensor.py) and listed above.
-        """
-        actual = _lib_battery_subclasses()
-        new = actual - KNOWN_BATTERY_DEVICE_CLASSES
-        assert not new, (
-            f"New battery-powered device class(es) {sorted(new)} in boschshcpy "
-            f"are NOT wired into the HA battery entity loops. Add the device's "
-            f"device_helper accessor to the battery loop in BOTH "
-            f"binary_sensor.py and sensor.py, then add the class name to "
-            f"KNOWN_BATTERY_DEVICE_CLASSES."
-        )
-
-    def test_known_set_has_no_stale_entries(self):
-        """KNOWN set must not reference classes that no longer exist / no longer
-        carry a battery (caught after a lib refactor).
-        """
-        actual = _lib_battery_subclasses()
-        stale = KNOWN_BATTERY_DEVICE_CLASSES - actual
-        assert not stale, (
-            f"KNOWN_BATTERY_DEVICE_CLASSES lists {sorted(stale)} which are no "
-            f"longer SHCBatteryDevice subclasses -- remove them."
-        )
-
-    def test_accessors_present_in_binary_sensor_and_sensor(self):
-        """The battery-loop device_helper accessors must exist in both platform
-        files, so each battery device gets the binary 'Battery' AND the enum
-        'Battery Level' entity.
-        """
-        import custom_components.bosch_shc.binary_sensor as bs
-        import custom_components.bosch_shc.sensor as sn
-
-        for module in (bs, sn):
-            src = inspect.getsource(module)
-            missing = {
-                acc
-                for acc in REQUIRED_BATTERY_ACCESSORS
-                if f"device_helper.{acc}" not in src
-            }
-            assert not missing, (
-                f"{module.__name__} battery loop is missing accessors "
-                f"{sorted(missing)} -- battery entities would not be created for "
-                f"those devices."
-            )
-
-
-class TestBatteryEnumExhaustive:
-    def test_state_members_are_exactly_the_handled_set(self):
-        """BatterySensor.is_on returns `level != OK` after explicit branches for
-        NOT_AVAILABLE / LOW_BATTERY / CRITICAL_LOW / CRITICALLY_LOW_BATTERY. If
-        Bosch firmware adds a new enum value, this fails so the new state is
-        consciously triaged (problem vs benign) in is_on before shipping.
-        """
-        expected = {
-            "OK",
-            "LOW_BATTERY",
-            "CRITICAL_LOW",
-            "CRITICALLY_LOW_BATTERY",
-            "NOT_AVAILABLE",
-        }
-        actual = {m.value for m in BatteryLevelService.State}
-        assert actual == expected, (
-            f"BatteryLevelService.State changed: {sorted(actual ^ expected)}. "
-            f"Update BatterySensor.is_on (binary_sensor.py) and this expected "
-            f"set."
-        )
-
-
-# ===========================================================================
 # Shared test helpers
 #
 # Several source files independently wrote helpers with the same name but
@@ -709,6 +574,215 @@ def _make_alarm_sensor(*, executor_side_effect):
     )
     s._attr_name = "Smoke Detector 1"
     return s
+
+
+# ===========================================================================
+# CallForHeatSensor (#205) / ScheduleOverrideActiveSensor / ShutterCalibrationRequiredSensor
+# ===========================================================================
+
+class TestCallForHeatSensor:
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = CallForHeatSensor.__new__(CallForHeatSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_on_when_demand(self):
+        assert self._sensor(has_demand=True).is_on is True
+
+    def test_off_when_no_demand(self):
+        assert self._sensor(has_demand=False).is_on is False
+
+    def test_off_when_attr_missing(self):
+        # older boschshcpy without has_demand -> degrade to off, no crash
+        assert self._sensor().is_on is False
+
+
+class TestScheduleOverrideActiveSensor:
+    """hass#120 audit."""
+
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = ScheduleOverrideActiveSensor.__new__(ScheduleOverrideActiveSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_on_when_override_active(self):
+        assert self._sensor(setpoint_temperature_offset_active=True).is_on is True
+
+    def test_off_when_override_inactive(self):
+        assert self._sensor(setpoint_temperature_offset_active=False).is_on is False
+
+    def test_off_when_attr_missing(self):
+        # older boschshcpy without the property -> degrade to off, no crash
+        assert self._sensor().is_on is False
+
+
+class TestShutterCalibrationRequiredSensor:
+    """Shutter Control II diagnostic, hass audit."""
+
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = ShutterCalibrationRequiredSensor.__new__(ShutterCalibrationRequiredSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_off_when_calibrated(self):
+        assert self._sensor(calibrated=True).is_on is False
+
+    def test_on_when_not_calibrated(self):
+        assert self._sensor(calibrated=False).is_on is True
+
+    def test_off_when_attr_missing(self):
+        # older boschshcpy without the property -> degrade to "no problem"
+        assert self._sensor().is_on is False
+
+
+# ===========================================================================
+# Siren*Sensor (#120 outdoor siren binary sensors)
+# ===========================================================================
+
+def test_siren_binary_sensors_read_flags():
+    from custom_components.bosch_shc.binary_sensor import (
+        SirenAcousticAlarmSensor,
+        SirenTamperSensor,
+        SirenVisualAlarmSensor,
+    )
+
+    siren = SimpleNamespace(
+        acoustic_alarm_on=True, visual_alarm_on=False, tamper_activated=True
+    )
+    a = _new(SirenAcousticAlarmSensor)
+    a._device = SimpleNamespace(siren=siren)
+    assert a.is_on is True
+
+    v = _new(SirenVisualAlarmSensor)
+    v._device = SimpleNamespace(siren=siren)
+    assert v.is_on is False
+
+    t = _new(SirenTamperSensor)
+    t._device = SimpleNamespace(siren=siren)
+    assert t.is_on is True
+
+
+class TestSirenSensorInits:
+    """Real __init__ construction + async_setup_entry wiring for siren sensors."""
+
+    def _make_siren_dev(self, dev_id="siren1"):
+        return _fake_dev(dev_id, supports_batterylevel=False)
+
+    def test_acoustic_alarm_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import SirenAcousticAlarmSensor
+
+        dev = self._make_siren_dev("s1")
+        sensor = SirenAcousticAlarmSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s1_acoustic_alarm"
+
+    def test_visual_alarm_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import SirenVisualAlarmSensor
+
+        dev = self._make_siren_dev("s2")
+        sensor = SirenVisualAlarmSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s2_visual_alarm"
+
+    def test_tamper_sensor_init(self):
+        from custom_components.bosch_shc.binary_sensor import SirenTamperSensor
+
+        dev = self._make_siren_dev("s3")
+        sensor = SirenTamperSensor(dev, "entry1")
+        assert sensor._attr_unique_id == "root1_s3_tamper"
+
+    def test_binary_sensor_setup_with_sirens(self):
+        """async_setup_entry creates siren binary sensors."""
+        siren = _fake_dev("s1", siren=MagicMock(), supports_batterylevel=False)
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.motion_detectors = []
+        dh.motion_detectors2 = []
+        dh.shutter_contacts = []
+        dh.shutter_contacts2 = []
+        dh.smoke_detectors = []
+        dh.twinguards = []
+        dh.micromodule_shutter_controls = []
+        dh.micromodule_blinds = []
+        dh.outdoor_sirens = [siren]
+        dh.smoke_detection_system = None
+        dh.heating_circuits = []
+        dh.universal_switches = []
+        dh.water_leakage_detectors = []
+        dh.micromodule_dimmers = []
+        dh.micromodule_relays = []
+        dh.micromodule_impulse_relays = []
+        dh.motion_detectors2 = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass)
+
+        platform_mock = MagicMock()
+        platform_mock.async_register_entity_service = MagicMock()
+        with patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id",
+                   new_callable=AsyncMock), \
+             patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp:
+            _cp.get.return_value = platform_mock
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        types = [type(e).__name__ for e in collected]
+        assert "SirenAcousticAlarmSensor" in types
+        assert "SirenVisualAlarmSensor" in types
+        assert "SirenTamperSensor" in types
+
+
+class TestBinarySensorSirenExcluded:
+    """binary_sensor.py: excluded outdoor siren -> continue."""
+
+    def test_excluded_siren_skipped_in_binary_sensor_setup(self):
+        """device_excluded -> continue before creating siren sensors."""
+        from custom_components.bosch_shc.binary_sensor import SirenAcousticAlarmSensor
+
+        siren = _fake_dev("siren_excl", siren=MagicMock(), supports_batterylevel=False)
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.motion_detectors = []
+        dh.motion_detectors2 = []
+        dh.shutter_contacts = []
+        dh.shutter_contacts2 = []
+        dh.smoke_detectors = []
+        dh.twinguards = []
+        dh.micromodule_shutter_controls = []
+        dh.micromodule_blinds = []
+        dh.outdoor_sirens = [siren]
+        dh.smoke_detection_system = None
+        dh.heating_circuits = []
+        dh.universal_switches = []
+        dh.water_leakage_detectors = []
+        dh.micromodule_dimmers = []
+        dh.micromodule_relays = []
+        dh.micromodule_impulse_relays = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
+
+        platform_mock = MagicMock()
+        platform_mock.async_register_entity_service = MagicMock()
+        with patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id",
+                   new_callable=AsyncMock), \
+             patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp:
+            _cp.get.return_value = platform_mock
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        assert not any(isinstance(e, SirenAcousticAlarmSensor) for e in collected)
 
 
 # ===========================================================================
@@ -1222,95 +1296,69 @@ class TestMotionDetectionSensorInit:
 
 
 # ===========================================================================
-# OccupancyDetectionSensor (Motion Detector II)
+# boschshcpy lib setters (unit-level, no HA dependency) -- SHCMotionDetector2
 # ===========================================================================
 
-class TestOccupancyDetectionSensor:
-    def test_device_class_is_occupancy(self):
-        s = OccupancyDetectionSensor.__new__(OccupancyDetectionSensor)
-        assert s._attr_device_class == BinarySensorDeviceClass.OCCUPANCY
+class TestSHCMotionDetector2LibSetters:
+    """Verify that the new public setters on SHCMotionDetector2 call through."""
 
-    def test_is_on_when_occupied(self):
-        s = _make_occupancy_sensor(occupied=True)
-        assert s.is_on is True
+    def test_binaryswitch_setter_calls_put_state_element(self):
+        """Binaryswitch setter must invoke put_state_element('on', bool)."""
+        calls = []
 
-    def test_is_off_when_not_occupied(self):
-        s = _make_occupancy_sensor(occupied=False)
-        assert s.is_on is False
+        class _FakeBinarySwitchService:
+            def put_state_element(self_, key, value):
+                calls.append((key, value))
 
-    def test_extra_state_attributes_contains_timestamp(self):
-        ts = "2026-06-20T12:34:56.789Z"
-        s = _make_occupancy_sensor(last_occupancy_change_time=ts)
-        attrs = s.extra_state_attributes
-        assert "last_occupancy_change" in attrs
-        assert attrs["last_occupancy_change"] == ts
+            @property
+            def value(self_):
+                return False
 
-    def test_unique_id_format(self):
-        dev = _make_md2_device(root_device_id="root-X", id="dev-Y")
-        s = OccupancyDetectionSensor.__new__(OccupancyDetectionSensor)
-        s._device = dev
-        s._attr_name = f"{dev.name} Occupancy"
-        s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_occupancy"
-        assert s._attr_unique_id == "root-X_dev-Y_occupancy"
+        from boschshcpy.models_impl import SHCMotionDetector2
+        dev = SHCMotionDetector2.__new__(SHCMotionDetector2)
+        dev._binaryswitch_service = _FakeBinarySwitchService()
+        dev.binaryswitch = True
+        assert calls == [("on", True)]
 
-    def test_name_format(self):
-        dev = _make_md2_device(name="Flur Bewegungsmelder")
-        s = OccupancyDetectionSensor.__new__(OccupancyDetectionSensor)
-        s._device = dev
-        s._attr_name = f"{dev.name} Occupancy"
-        s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_occupancy"
-        assert s._attr_name == "Flur Bewegungsmelder Occupancy"
+    def test_multi_level_switch_setter_calls_put_state_element(self):
+        """multi_level_switch setter must invoke put_state_element('level', value)."""
+        calls = []
 
+        class _FakeMultiLevelSwitchService:
+            def put_state_element(self_, key, value):
+                calls.append((key, value))
 
-class TestOccupancyDetectionSensorRealInit:
-    """OccupancyDetectionSensor.__init__ sets _attr_name and _attr_unique_id."""
+            @property
+            def value(self_):
+                return 50
 
-    def _make_dev(self, device_id="hdm:md2:1", root_device_id="root-md2",
-                  name="Motion Detector II"):
-        dev = _base_device(device_id=device_id, name=name, root_device_id=root_device_id)
-        dev.occupied = False
-        dev.last_occupancy_change_time = "2026-06-20T12:00:00.000Z"
-        return dev
+        from boschshcpy.models_impl import SHCMotionDetector2
+        dev = SHCMotionDetector2.__new__(SHCMotionDetector2)
+        dev._multi_level_switch_service = _FakeMultiLevelSwitchService()
+        dev.multi_level_switch = 75
+        assert calls == [("level", 75)]
 
-    def test_attr_name_is_occupancy(self):
-        dev = self._make_dev()
-        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
-            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        assert sensor.translation_key == "occupancy"
+    def test_pet_immunity_setter_delegates_to_service(self):
+        """pet_immunity_enabled setter must write to the PetImmunity service."""
+        written = []
 
-    def test_attr_unique_id_format(self):
-        dev = self._make_dev(device_id="devY", root_device_id="rootX")
-        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
-            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        assert sensor._attr_unique_id == "rootX_devY_occupancy"
+        class _FakePetImmunityService:
+            _enabled = False
 
-    def test_device_stored(self):
-        dev = self._make_dev()
-        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
-            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        assert sensor._device is dev
+            @property
+            def enabled(self_):
+                return self_._enabled
 
-    def test_is_on_occupied_true(self):
-        dev = self._make_dev()
-        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
-            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        sensor._device.occupied = True
-        assert sensor.is_on is True
+            @enabled.setter
+            def enabled(self_, v):
+                written.append(v)
+                self_._enabled = v
 
-    def test_is_on_not_occupied_false(self):
-        dev = self._make_dev()
-        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
-            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        sensor._device.occupied = False
-        assert sensor.is_on is False
-
-    def test_extra_state_attributes_key(self):
-        dev = self._make_dev()
-        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
-            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
-        attrs = sensor.extra_state_attributes
-        assert "last_occupancy_change" in attrs
-        assert attrs["last_occupancy_change"] == "2026-06-20T12:00:00.000Z"
+        from boschshcpy.models_impl import SHCMotionDetector2
+        dev = SHCMotionDetector2.__new__(SHCMotionDetector2)
+        dev._petimmunity_service = _FakePetImmunityService()
+        dev.pet_immunity_enabled = True
+        assert written == [True]
 
 
 # ===========================================================================
@@ -1770,6 +1818,66 @@ class TestSmokeDetectorSensorInit:
         sensor._hass = hass
         asyncio.run(sensor.async_request_alarmstate("IDLE_OFF"))
         dev.async_set_alarmstate.assert_called_once_with("IDLE_OFF")
+
+
+# ===========================================================================
+# WaterLeakageDetectorSensor
+# ===========================================================================
+
+class TestWaterLeakageDetectorSensor:
+    def test_leakage_detected_is_on(self):
+        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_ENABLED)
+        assert s.is_on is True
+
+    def test_no_leakage_is_off(self):
+        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
+        assert s.is_on is False
+
+    def test_device_class_is_moisture(self):
+        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
+        assert s._attr_device_class == BinarySensorDeviceClass.MOISTURE
+
+    def test_icon(self):
+        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
+        assert s.icon == "mdi:water-alert"
+
+    def test_extra_state_attributes_enabled(self):
+        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
+        attrs = s.extra_state_attributes
+        assert attrs["push_notification_state"] == "ENABLED"
+        assert attrs["acoustic_signal_state"] == "ENABLED"
+
+    def test_extra_state_attributes_disabled(self):
+        s = _water_sensor(_WL_NONE, _TILT_DISABLED, _TILT_DISABLED)
+        attrs = s.extra_state_attributes
+        assert attrs["push_notification_state"] == "DISABLED"
+        assert attrs["acoustic_signal_state"] == "DISABLED"
+
+    def test_extra_state_attributes_mixed(self):
+        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_DISABLED)
+        attrs = s.extra_state_attributes
+        assert attrs["push_notification_state"] == "ENABLED"
+        assert attrs["acoustic_signal_state"] == "DISABLED"
+
+
+class TestWaterLeakageDetectorSensorLeakageDetectedAttributes:
+    """extra_state_attributes must still return push/acoustic names even during leak."""
+
+    def test_leakage_detected_push_enabled(self):
+        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_ENABLED)
+        attrs = s.extra_state_attributes
+        assert attrs["push_notification_state"] == "ENABLED"
+        assert attrs["acoustic_signal_state"] == "ENABLED"
+
+    def test_leakage_detected_push_disabled(self):
+        s = _water_sensor(_WL_DETECTED, _TILT_DISABLED, _TILT_DISABLED)
+        attrs = s.extra_state_attributes
+        assert attrs["push_notification_state"] == "DISABLED"
+        assert attrs["acoustic_signal_state"] == "DISABLED"
+
+    def test_is_on_when_leakage_detected(self):
+        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_ENABLED)
+        assert s.is_on is True
 
 
 # ===========================================================================
@@ -3276,66 +3384,6 @@ class TestCleanupTrackerBody:
 
 
 # ===========================================================================
-# WaterLeakageDetectorSensor
-# ===========================================================================
-
-class TestWaterLeakageDetectorSensor:
-    def test_leakage_detected_is_on(self):
-        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_ENABLED)
-        assert s.is_on is True
-
-    def test_no_leakage_is_off(self):
-        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
-        assert s.is_on is False
-
-    def test_device_class_is_moisture(self):
-        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
-        assert s._attr_device_class == BinarySensorDeviceClass.MOISTURE
-
-    def test_icon(self):
-        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
-        assert s.icon == "mdi:water-alert"
-
-    def test_extra_state_attributes_enabled(self):
-        s = _water_sensor(_WL_NONE, _TILT_ENABLED, _TILT_ENABLED)
-        attrs = s.extra_state_attributes
-        assert attrs["push_notification_state"] == "ENABLED"
-        assert attrs["acoustic_signal_state"] == "ENABLED"
-
-    def test_extra_state_attributes_disabled(self):
-        s = _water_sensor(_WL_NONE, _TILT_DISABLED, _TILT_DISABLED)
-        attrs = s.extra_state_attributes
-        assert attrs["push_notification_state"] == "DISABLED"
-        assert attrs["acoustic_signal_state"] == "DISABLED"
-
-    def test_extra_state_attributes_mixed(self):
-        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_DISABLED)
-        attrs = s.extra_state_attributes
-        assert attrs["push_notification_state"] == "ENABLED"
-        assert attrs["acoustic_signal_state"] == "DISABLED"
-
-
-class TestWaterLeakageDetectorSensorLeakageDetectedAttributes:
-    """extra_state_attributes must still return push/acoustic names even during leak."""
-
-    def test_leakage_detected_push_enabled(self):
-        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_ENABLED)
-        attrs = s.extra_state_attributes
-        assert attrs["push_notification_state"] == "ENABLED"
-        assert attrs["acoustic_signal_state"] == "ENABLED"
-
-    def test_leakage_detected_push_disabled(self):
-        s = _water_sensor(_WL_DETECTED, _TILT_DISABLED, _TILT_DISABLED)
-        attrs = s.extra_state_attributes
-        assert attrs["push_notification_state"] == "DISABLED"
-        assert attrs["acoustic_signal_state"] == "DISABLED"
-
-    def test_is_on_when_leakage_detected(self):
-        s = _water_sensor(_WL_DETECTED, _TILT_ENABLED, _TILT_ENABLED)
-        assert s.is_on is True
-
-
-# ===========================================================================
 # BatterySensor
 # ===========================================================================
 
@@ -3430,65 +3478,230 @@ class TestBatterySensorInit:
 
 
 # ===========================================================================
-# CallForHeatSensor (#205) / ScheduleOverrideActiveSensor / ShutterCalibrationRequiredSensor
+# Battery reporting coverage contract
+#
+# Guards against silent drift in battery support:
+# 1. Every battery-powered device class in the lib (SHCBatteryDevice subclass)
+#    must be wired into the HA battery entity loops -- otherwise a newly added
+#    battery device would ship with NO battery sensor and nobody would notice.
+# 2. The device_helper accessors used by those loops must actually be present
+#    in both binary_sensor.py and sensor.py (the binary "Battery" + enum
+#    "Battery Level" entities).
+# 3. BatteryLevelService.State must stay exhaustive -- a new Bosch firmware
+#    enum value would otherwise slip through BatterySensor.is_on (`!= OK`)
+#    silently.
+#
+# Pattern: pure inspection + source scan; no HA harness, no live session.
 # ===========================================================================
 
-class TestCallForHeatSensor:
-    @staticmethod
-    def _sensor(**device_attrs):
-        s = CallForHeatSensor.__new__(CallForHeatSensor)
-        s._device = SimpleNamespace(**device_attrs)
-        return s
+# Battery-capable lib classes known to be wired into the HA battery loops.
+# device_helper accessor in parentheses (binary_sensor.py:234-244 /
+# sensor.py battery loop). If a NEW battery device is added to the lib, the
+# drift test below fails until it is wired in here AND in both loops.
+KNOWN_BATTERY_DEVICE_CLASSES = {
+    "SHCMotionDetector",       # motion_detectors
+    "SHCMotionDetector2",      # motion_detectors2
+    "SHCShutterContact",       # shutter_contacts
+    "SHCShutterContact2",      # shutter_contacts2
+    "SHCShutterContact2Plus",  # shutter_contacts2
+    "SHCSmokeDetector",        # smoke_detectors
+    "SHCThermostat",           # thermostats
+    "SHCThermostatGen2",       # thermostats (TRV_GEN2 / TRV_GEN2_DUAL, subclass of SHCThermostat)
+    "SHCWallThermostat",       # wallthermostats
+    "SHCRoomThermostat2",      # roomthermostats
+    "SHCTwinguard",            # twinguards
+    "SHCUniversalSwitch",      # universal_switches
+    "SHCUniversalSwitch2",     # universal_switches
+    "SHCWaterLeakageSensor",   # water_leakage_detectors
+    "SHCOutdoorSiren",         # outdoor_sirens (generic battery loop + SirenBatterySensor)
+}
 
-    def test_on_when_demand(self):
-        assert self._sensor(has_demand=True).is_on is True
-
-    def test_off_when_no_demand(self):
-        assert self._sensor(has_demand=False).is_on is False
-
-    def test_off_when_attr_missing(self):
-        # older boschshcpy without has_demand -> degrade to off, no crash
-        assert self._sensor().is_on is False
-
-
-class TestScheduleOverrideActiveSensor:
-    """hass#120 audit."""
-
-    @staticmethod
-    def _sensor(**device_attrs):
-        s = ScheduleOverrideActiveSensor.__new__(ScheduleOverrideActiveSensor)
-        s._device = SimpleNamespace(**device_attrs)
-        return s
-
-    def test_on_when_override_active(self):
-        assert self._sensor(setpoint_temperature_offset_active=True).is_on is True
-
-    def test_off_when_override_inactive(self):
-        assert self._sensor(setpoint_temperature_offset_active=False).is_on is False
-
-    def test_off_when_attr_missing(self):
-        # older boschshcpy without the property -> degrade to off, no crash
-        assert self._sensor().is_on is False
+# device_helper accessors the battery loops iterate. Each must appear in BOTH
+# binary_sensor.py (binary "Battery") and sensor.py (enum "Battery Level").
+REQUIRED_BATTERY_ACCESSORS = {
+    "motion_detectors",
+    "motion_detectors2",
+    "shutter_contacts",
+    "shutter_contacts2",
+    "smoke_detectors",
+    "thermostats",
+    "twinguards",
+    "universal_switches",
+    "wallthermostats",
+    "roomthermostats",
+    "water_leakage_detectors",
+}
 
 
-class TestShutterCalibrationRequiredSensor:
-    """Shutter Control II diagnostic, hass audit."""
+def _lib_battery_subclasses():
+    return {
+        cls.__name__
+        for _, cls in inspect.getmembers(models, inspect.isclass)
+        if issubclass(cls, SHCBatteryDevice) and cls is not SHCBatteryDevice
+    }
 
-    @staticmethod
-    def _sensor(**device_attrs):
-        s = ShutterCalibrationRequiredSensor.__new__(ShutterCalibrationRequiredSensor)
-        s._device = SimpleNamespace(**device_attrs)
-        return s
 
-    def test_off_when_calibrated(self):
-        assert self._sensor(calibrated=True).is_on is False
+class TestBatteryDeviceWiring:
+    def test_no_unwired_battery_device(self):
+        """Every SHCBatteryDevice subclass must be accounted for. A new battery
+        device added to the lib fails this until it is wired into the HA battery
+        loops (binary_sensor.py + sensor.py) and listed above.
+        """
+        actual = _lib_battery_subclasses()
+        new = actual - KNOWN_BATTERY_DEVICE_CLASSES
+        assert not new, (
+            f"New battery-powered device class(es) {sorted(new)} in boschshcpy "
+            f"are NOT wired into the HA battery entity loops. Add the device's "
+            f"device_helper accessor to the battery loop in BOTH "
+            f"binary_sensor.py and sensor.py, then add the class name to "
+            f"KNOWN_BATTERY_DEVICE_CLASSES."
+        )
 
-    def test_on_when_not_calibrated(self):
-        assert self._sensor(calibrated=False).is_on is True
+    def test_known_set_has_no_stale_entries(self):
+        """KNOWN set must not reference classes that no longer exist / no longer
+        carry a battery (caught after a lib refactor).
+        """
+        actual = _lib_battery_subclasses()
+        stale = KNOWN_BATTERY_DEVICE_CLASSES - actual
+        assert not stale, (
+            f"KNOWN_BATTERY_DEVICE_CLASSES lists {sorted(stale)} which are no "
+            f"longer SHCBatteryDevice subclasses -- remove them."
+        )
 
-    def test_off_when_attr_missing(self):
-        # older boschshcpy without the property -> degrade to "no problem"
-        assert self._sensor().is_on is False
+    def test_accessors_present_in_binary_sensor_and_sensor(self):
+        """The battery-loop device_helper accessors must exist in both platform
+        files, so each battery device gets the binary 'Battery' AND the enum
+        'Battery Level' entity.
+        """
+        import custom_components.bosch_shc.binary_sensor as bs
+        import custom_components.bosch_shc.sensor as sn
+
+        for module in (bs, sn):
+            src = inspect.getsource(module)
+            missing = {
+                acc
+                for acc in REQUIRED_BATTERY_ACCESSORS
+                if f"device_helper.{acc}" not in src
+            }
+            assert not missing, (
+                f"{module.__name__} battery loop is missing accessors "
+                f"{sorted(missing)} -- battery entities would not be created for "
+                f"those devices."
+            )
+
+
+class TestBatteryEnumExhaustive:
+    def test_state_members_are_exactly_the_handled_set(self):
+        """BatterySensor.is_on returns `level != OK` after explicit branches for
+        NOT_AVAILABLE / LOW_BATTERY / CRITICAL_LOW / CRITICALLY_LOW_BATTERY. If
+        Bosch firmware adds a new enum value, this fails so the new state is
+        consciously triaged (problem vs benign) in is_on before shipping.
+        """
+        expected = {
+            "OK",
+            "LOW_BATTERY",
+            "CRITICAL_LOW",
+            "CRITICALLY_LOW_BATTERY",
+            "NOT_AVAILABLE",
+        }
+        actual = {m.value for m in BatteryLevelService.State}
+        assert actual == expected, (
+            f"BatteryLevelService.State changed: {sorted(actual ^ expected)}. "
+            f"Update BatterySensor.is_on (binary_sensor.py) and this expected "
+            f"set."
+        )
+
+
+# ===========================================================================
+# OccupancyDetectionSensor (Motion Detector II)
+# ===========================================================================
+
+class TestOccupancyDetectionSensor:
+    def test_device_class_is_occupancy(self):
+        s = OccupancyDetectionSensor.__new__(OccupancyDetectionSensor)
+        assert s._attr_device_class == BinarySensorDeviceClass.OCCUPANCY
+
+    def test_is_on_when_occupied(self):
+        s = _make_occupancy_sensor(occupied=True)
+        assert s.is_on is True
+
+    def test_is_off_when_not_occupied(self):
+        s = _make_occupancy_sensor(occupied=False)
+        assert s.is_on is False
+
+    def test_extra_state_attributes_contains_timestamp(self):
+        ts = "2026-06-20T12:34:56.789Z"
+        s = _make_occupancy_sensor(last_occupancy_change_time=ts)
+        attrs = s.extra_state_attributes
+        assert "last_occupancy_change" in attrs
+        assert attrs["last_occupancy_change"] == ts
+
+    def test_unique_id_format(self):
+        dev = _make_md2_device(root_device_id="root-X", id="dev-Y")
+        s = OccupancyDetectionSensor.__new__(OccupancyDetectionSensor)
+        s._device = dev
+        s._attr_name = f"{dev.name} Occupancy"
+        s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_occupancy"
+        assert s._attr_unique_id == "root-X_dev-Y_occupancy"
+
+    def test_name_format(self):
+        dev = _make_md2_device(name="Flur Bewegungsmelder")
+        s = OccupancyDetectionSensor.__new__(OccupancyDetectionSensor)
+        s._device = dev
+        s._attr_name = f"{dev.name} Occupancy"
+        s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_occupancy"
+        assert s._attr_name == "Flur Bewegungsmelder Occupancy"
+
+
+class TestOccupancyDetectionSensorRealInit:
+    """OccupancyDetectionSensor.__init__ sets _attr_name and _attr_unique_id."""
+
+    def _make_dev(self, device_id="hdm:md2:1", root_device_id="root-md2",
+                  name="Motion Detector II"):
+        dev = _base_device(device_id=device_id, name=name, root_device_id=root_device_id)
+        dev.occupied = False
+        dev.last_occupancy_change_time = "2026-06-20T12:00:00.000Z"
+        return dev
+
+    def test_attr_name_is_occupancy(self):
+        dev = self._make_dev()
+        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
+            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
+        assert sensor.translation_key == "occupancy"
+
+    def test_attr_unique_id_format(self):
+        dev = self._make_dev(device_id="devY", root_device_id="rootX")
+        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
+            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
+        assert sensor._attr_unique_id == "rootX_devY_occupancy"
+
+    def test_device_stored(self):
+        dev = self._make_dev()
+        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
+            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
+        assert sensor._device is dev
+
+    def test_is_on_occupied_true(self):
+        dev = self._make_dev()
+        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
+            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
+        sensor._device.occupied = True
+        assert sensor.is_on is True
+
+    def test_is_on_not_occupied_false(self):
+        dev = self._make_dev()
+        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
+            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
+        sensor._device.occupied = False
+        assert sensor.is_on is False
+
+    def test_extra_state_attributes_key(self):
+        dev = self._make_dev()
+        with patch.object(OccupancyDetectionSensor, "_update_attr", lambda self: None):
+            sensor = OccupancyDetectionSensor(device=dev, entry_id="E1")
+        attrs = sensor.extra_state_attributes
+        assert "last_occupancy_change" in attrs
+        assert attrs["last_occupancy_change"] == "2026-06-20T12:00:00.000Z"
 
 
 # ===========================================================================
@@ -3567,219 +3780,6 @@ class TestTamperSensorIdentifiers:
     def test_attr_name_is_tamper(self):
         sensor = _make_tamper_sensor()
         assert sensor._attr_name == "Tamper"
-
-
-# ===========================================================================
-# Siren*Sensor (#120 outdoor siren binary sensors)
-# ===========================================================================
-
-def test_siren_binary_sensors_read_flags():
-    from custom_components.bosch_shc.binary_sensor import (
-        SirenAcousticAlarmSensor,
-        SirenTamperSensor,
-        SirenVisualAlarmSensor,
-    )
-
-    siren = SimpleNamespace(
-        acoustic_alarm_on=True, visual_alarm_on=False, tamper_activated=True
-    )
-    a = _new(SirenAcousticAlarmSensor)
-    a._device = SimpleNamespace(siren=siren)
-    assert a.is_on is True
-
-    v = _new(SirenVisualAlarmSensor)
-    v._device = SimpleNamespace(siren=siren)
-    assert v.is_on is False
-
-    t = _new(SirenTamperSensor)
-    t._device = SimpleNamespace(siren=siren)
-    assert t.is_on is True
-
-
-class TestSirenSensorInits:
-    """Real __init__ construction + async_setup_entry wiring for siren sensors."""
-
-    def _make_siren_dev(self, dev_id="siren1"):
-        return _fake_dev(dev_id, supports_batterylevel=False)
-
-    def test_acoustic_alarm_sensor_init(self):
-        from custom_components.bosch_shc.binary_sensor import SirenAcousticAlarmSensor
-
-        dev = self._make_siren_dev("s1")
-        sensor = SirenAcousticAlarmSensor(dev, "entry1")
-        assert sensor._attr_unique_id == "root1_s1_acoustic_alarm"
-
-    def test_visual_alarm_sensor_init(self):
-        from custom_components.bosch_shc.binary_sensor import SirenVisualAlarmSensor
-
-        dev = self._make_siren_dev("s2")
-        sensor = SirenVisualAlarmSensor(dev, "entry1")
-        assert sensor._attr_unique_id == "root1_s2_visual_alarm"
-
-    def test_tamper_sensor_init(self):
-        from custom_components.bosch_shc.binary_sensor import SirenTamperSensor
-
-        dev = self._make_siren_dev("s3")
-        sensor = SirenTamperSensor(dev, "entry1")
-        assert sensor._attr_unique_id == "root1_s3_tamper"
-
-    def test_binary_sensor_setup_with_sirens(self):
-        """async_setup_entry creates siren binary sensors."""
-        siren = _fake_dev("s1", siren=MagicMock(), supports_batterylevel=False)
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.motion_detectors = []
-        dh.motion_detectors2 = []
-        dh.shutter_contacts = []
-        dh.shutter_contacts2 = []
-        dh.smoke_detectors = []
-        dh.twinguards = []
-        dh.micromodule_shutter_controls = []
-        dh.micromodule_blinds = []
-        dh.outdoor_sirens = [siren]
-        dh.smoke_detection_system = None
-        dh.heating_circuits = []
-        dh.universal_switches = []
-        dh.water_leakage_detectors = []
-        dh.micromodule_dimmers = []
-        dh.micromodule_relays = []
-        dh.micromodule_impulse_relays = []
-        dh.motion_detectors2 = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
-
-        platform_mock = MagicMock()
-        platform_mock.async_register_entity_service = MagicMock()
-        with patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock), \
-             patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp:
-            _cp.get.return_value = platform_mock
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        types = [type(e).__name__ for e in collected]
-        assert "SirenAcousticAlarmSensor" in types
-        assert "SirenVisualAlarmSensor" in types
-        assert "SirenTamperSensor" in types
-
-
-class TestBinarySensorSirenExcluded:
-    """binary_sensor.py: excluded outdoor siren -> continue."""
-
-    def test_excluded_siren_skipped_in_binary_sensor_setup(self):
-        """device_excluded -> continue before creating siren sensors."""
-        from custom_components.bosch_shc.binary_sensor import SirenAcousticAlarmSensor
-
-        siren = _fake_dev("siren_excl", siren=MagicMock(), supports_batterylevel=False)
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.motion_detectors = []
-        dh.motion_detectors2 = []
-        dh.shutter_contacts = []
-        dh.shutter_contacts2 = []
-        dh.smoke_detectors = []
-        dh.twinguards = []
-        dh.micromodule_shutter_controls = []
-        dh.micromodule_blinds = []
-        dh.outdoor_sirens = [siren]
-        dh.smoke_detection_system = None
-        dh.heating_circuits = []
-        dh.universal_switches = []
-        dh.water_leakage_detectors = []
-        dh.micromodule_dimmers = []
-        dh.micromodule_relays = []
-        dh.micromodule_impulse_relays = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
-
-        platform_mock = MagicMock()
-        platform_mock.async_register_entity_service = MagicMock()
-        with patch("custom_components.bosch_shc.binary_sensor.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock), \
-             patch("custom_components.bosch_shc.binary_sensor.entity_platform.current_platform") as _cp:
-            _cp.get.return_value = platform_mock
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        assert not any(isinstance(e, SirenAcousticAlarmSensor) for e in collected)
-
-
-# ===========================================================================
-# boschshcpy lib setters (unit-level, no HA dependency) -- SHCMotionDetector2
-# ===========================================================================
-
-class TestSHCMotionDetector2LibSetters:
-    """Verify that the new public setters on SHCMotionDetector2 call through."""
-
-    def test_binaryswitch_setter_calls_put_state_element(self):
-        """Binaryswitch setter must invoke put_state_element('on', bool)."""
-        calls = []
-
-        class _FakeBinarySwitchService:
-            def put_state_element(self_, key, value):
-                calls.append((key, value))
-
-            @property
-            def value(self_):
-                return False
-
-        from boschshcpy.models_impl import SHCMotionDetector2
-        dev = SHCMotionDetector2.__new__(SHCMotionDetector2)
-        dev._binaryswitch_service = _FakeBinarySwitchService()
-        dev.binaryswitch = True
-        assert calls == [("on", True)]
-
-    def test_multi_level_switch_setter_calls_put_state_element(self):
-        """multi_level_switch setter must invoke put_state_element('level', value)."""
-        calls = []
-
-        class _FakeMultiLevelSwitchService:
-            def put_state_element(self_, key, value):
-                calls.append((key, value))
-
-            @property
-            def value(self_):
-                return 50
-
-        from boschshcpy.models_impl import SHCMotionDetector2
-        dev = SHCMotionDetector2.__new__(SHCMotionDetector2)
-        dev._multi_level_switch_service = _FakeMultiLevelSwitchService()
-        dev.multi_level_switch = 75
-        assert calls == [("level", 75)]
-
-    def test_pet_immunity_setter_delegates_to_service(self):
-        """pet_immunity_enabled setter must write to the PetImmunity service."""
-        written = []
-
-        class _FakePetImmunityService:
-            _enabled = False
-
-            @property
-            def enabled(self_):
-                return self_._enabled
-
-            @enabled.setter
-            def enabled(self_, v):
-                written.append(v)
-                self_._enabled = v
-
-        from boschshcpy.models_impl import SHCMotionDetector2
-        dev = SHCMotionDetector2.__new__(SHCMotionDetector2)
-        dev._petimmunity_service = _FakePetImmunityService()
-        dev.pet_immunity_enabled = True
-        assert written == [True]
 
 
 # ===========================================================================

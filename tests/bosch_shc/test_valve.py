@@ -196,214 +196,6 @@ def _valve_device() -> SimpleNamespace:
 
 
 # ---------------------------------------------------------------------------
-# SHCValve.current_valve_position — defensive guards
-# ---------------------------------------------------------------------------
-
-
-class TestSHCValvePosition:
-    """current_valve_position must never propagate ValueError or KeyError."""
-
-    def test_returns_position_normally(self):
-        valve = _make_valve(position_value=35)
-        assert valve.current_valve_position == 35
-
-    def test_returns_none_on_value_error(self):
-        """Simulate firmware sending a value the int() cast rejects."""
-        valve = _make_valve(position_raises=ValueError("unexpected firmware value"))
-        result = valve.current_valve_position
-        assert result is None
-
-    def test_returns_none_on_key_error(self):
-        """Simulate missing 'position' key in service state dict."""
-        valve = _make_valve(position_raises=KeyError("position"))
-        result = valve.current_valve_position
-        assert result is None
-
-    def test_does_not_raise_on_value_error(self):
-        """Explicitly confirm no exception escapes."""
-        valve = _make_valve(position_raises=ValueError("NO_MOTOR_ERROR"))
-        try:
-            valve.current_valve_position
-        except (ValueError, KeyError) as exc:
-            pytest.fail(f"current_valve_position raised {exc!r}")
-
-    def test_returns_zero_position(self):
-        """Zero (fully closed) must not be confused with None."""
-        valve = _make_valve(position_value=0)
-        assert valve.current_valve_position == 0
-
-    def test_returns_hundred_position(self):
-        """100 (fully open) must be returned as-is."""
-        valve = _make_valve(position_value=100)
-        assert valve.current_valve_position == 100
-
-    def test_rounds_fractional_position_instead_of_truncating(self):
-        """Regression: int() truncates toward zero (63.9 -> 63); round() must
-        be used instead, same precision class as the Twinguard fix (#352)."""
-        valve = _make_valve(position_value=63.9)
-        assert valve.current_valve_position == 64
-
-
-class TestSHCValveCurrentPositionErrors:
-    def test_value_error_returns_none(self):
-        valve = _make_valve_with_broken_position(ValueError("bad enum"))
-        result = valve.current_valve_position
-        assert result is None
-
-    def test_key_error_returns_none(self):
-        valve = _make_valve_with_broken_position(KeyError("missing"))
-        result = valve.current_valve_position
-        assert result is None
-
-    def test_attribute_error_returns_none(self):
-        """AttributeError must be caught after the fix (Addresses #243)."""
-        valve = _make_valve_with_broken_position(AttributeError("no position"))
-        result = valve.current_valve_position
-        assert result is None
-
-    def test_valid_position_returned(self):
-        """Normal operation — position returned as-is."""
-        valve = SHCValve.__new__(SHCValve)
-        valve._device = SimpleNamespace(
-            id="dev-1", root_device_id="root-1", name="OK Valve", position=42
-        )
-        valve._attr_name = "Valve"
-        valve._attr_unique_id = "root-1_dev-1_valve"
-        assert valve.current_valve_position == 42
-
-
-# ---------------------------------------------------------------------------
-# ValveTappetSensor.extra_state_attributes — unknown valvestate guard
-# ---------------------------------------------------------------------------
-
-
-class TestValveTappetSensorExtraAttributes:
-    """extra_state_attributes must return None for valve_tappet_state on unknown enum value."""
-
-    def test_returns_state_name_normally(self):
-        sensor = _make_valve_tappet_sensor(valvestate_name="VALVE_ADAPTION_SUCCESSFUL")
-        attrs = sensor.extra_state_attributes
-        assert attrs["valve_tappet_state"] == "VALVE_ADAPTION_SUCCESSFUL"
-
-    def test_returns_none_on_unknown_firmware_value(self):
-        """Issue #243: unknown state enum value must yield None, not raise."""
-        sensor = _make_valve_tappet_sensor(
-            valvestate_raises=ValueError("'NO_MOTOR_ERROR' is not a valid State")
-        )
-        attrs = sensor.extra_state_attributes
-        assert attrs["valve_tappet_state"] is None
-
-    def test_does_not_raise_on_unknown_firmware_value(self):
-        """Explicitly assert no ValueError escapes."""
-        sensor = _make_valve_tappet_sensor(valvestate_raises=ValueError("NO_MOTOR_ERROR"))
-        try:
-            sensor.extra_state_attributes
-        except ValueError as exc:
-            pytest.fail(f"extra_state_attributes raised ValueError: {exc!r}")
-
-    def test_attribute_key_always_present(self):
-        """The key 'valve_tappet_state' must always be present in the dict."""
-        sensor = _make_valve_tappet_sensor(valvestate_raises=ValueError("unknown"))
-        attrs = sensor.extra_state_attributes
-        assert "valve_tappet_state" in attrs
-
-    def test_native_value_unaffected_by_valvestate_error(self):
-        """native_value (position) must still work even when valvestate raises."""
-        sensor = _make_valve_tappet_sensor(
-            valvestate_raises=ValueError("NO_MOTOR_ERROR"),
-            position_value=72,
-        )
-        assert sensor.native_value == 72
-
-    def test_known_state_in_start_position(self):
-        sensor = _make_valve_tappet_sensor(valvestate_name="IN_START_POSITION")
-        assert sensor.extra_state_attributes["valve_tappet_state"] == "IN_START_POSITION"
-
-    def test_known_state_not_available(self):
-        sensor = _make_valve_tappet_sensor(valvestate_name="NOT_AVAILABLE")
-        assert sensor.extra_state_attributes["valve_tappet_state"] == "NOT_AVAILABLE"
-
-
-# ---------------------------------------------------------------------------
-# SHCValve.__init__ and class-level attributes
-# ---------------------------------------------------------------------------
-
-
-class TestSHCValveInit:
-    """Cover SHCValve.__init__ lines 57-66."""
-
-    def test_init_no_attr_name_sets_name_none(self):
-        # With _attr_has_entity_name=True (from SHCEntity), _attr_name=None means
-        # HA uses the device name as the entity name.
-        dev = _fake_device()
-        valve = SHCValve(device=dev, entry_id="test", attr_name=None)
-        assert valve._attr_name is None
-
-    def test_init_no_attr_name_sets_unique_id(self):
-        dev = _fake_device()
-        valve = SHCValve(device=dev, entry_id="test", attr_name=None)
-        assert valve._attr_unique_id == "root1_dev1"
-
-    def test_init_with_attr_name_sets_attr_name(self):
-        # _attr_name stores only the suffix; HA auto-prepends the device name at runtime.
-        dev = _fake_device()
-        valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
-        assert valve._attr_name == "Valve"
-
-    def test_init_with_attr_name_lowercased_in_unique_id(self):
-        dev = _fake_device()
-        valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
-        assert valve._attr_unique_id == "root1_dev1_valve"
-
-    def test_init_device_stored(self):
-        dev = _fake_device()
-        valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
-        assert valve._device is dev
-
-    def test_init_entry_id_stored(self):
-        dev = _fake_device()
-        valve = SHCValve(device=dev, entry_id="myentry", attr_name=None)
-        assert valve._entry_id == "myentry"
-
-    def test_init_attr_name_mixed_case_lowercased_in_unique_id(self):
-        dev = _fake_device(name="my-cam", root_device_id="root2", device_id="dev2")
-        valve = SHCValve(device=dev, entry_id="e", attr_name="ThermoValve")
-        assert valve._attr_unique_id == "root2_dev2_thermovalve"
-        assert valve._attr_name == "ThermoValve"
-
-
-class TestSHCValveClassAttrs:
-    """Cover class-level attribute declarations (lines 46-48).
-
-    Access via instance because HA parent classes shadow some attrs with properties.
-    """
-
-    def _make_valve(self):
-        dev = _fake_device()
-        return SHCValve(device=dev, entry_id="test", attr_name="Valve")
-
-    def test_device_class_is_water(self):
-        valve = self._make_valve()
-        assert valve.device_class == ValveDeviceClass.WATER
-
-    def test_entity_category_is_diagnostic(self):
-        valve = self._make_valve()
-        assert valve.entity_category == EntityCategory.DIAGNOSTIC
-
-    def test_reports_position_is_true(self):
-        valve = self._make_valve()
-        assert valve.reports_position is True
-
-    def test_no_custom_open_close_in_shcvalve(self):
-        """Valve is read-only: SHCValve does not override open_valve / close_valve."""
-        # SHCValve must NOT define open_valve, close_valve, or set_valve_position
-        # in its own __dict__ (i.e. not overriding the parent no-ops).
-        assert "open_valve" not in SHCValve.__dict__
-        assert "close_valve" not in SHCValve.__dict__
-        assert "set_valve_position" not in SHCValve.__dict__
-
-
-# ---------------------------------------------------------------------------
 # valve.py — async_setup_entry  (lines 27-40): thermostats -> SHCValve
 # ---------------------------------------------------------------------------
 
@@ -546,3 +338,214 @@ class TestValveSetupEntryExcluded:
         entry = _make_entry()
         result = _run_setup(session, entry)
         assert result[0]._attr_unique_id == "root-uid_thermo-uid_valve"
+
+
+# ---------------------------------------------------------------------------
+# SHCValve.current_valve_position — defensive guards
+# ---------------------------------------------------------------------------
+
+
+class TestSHCValvePosition:
+    """current_valve_position must never propagate ValueError or KeyError."""
+
+    def test_returns_position_normally(self):
+        valve = _make_valve(position_value=35)
+        assert valve.current_valve_position == 35
+
+    def test_returns_none_on_value_error(self):
+        """Simulate firmware sending a value the int() cast rejects."""
+        valve = _make_valve(position_raises=ValueError("unexpected firmware value"))
+        result = valve.current_valve_position
+        assert result is None
+
+    def test_returns_none_on_key_error(self):
+        """Simulate missing 'position' key in service state dict."""
+        valve = _make_valve(position_raises=KeyError("position"))
+        result = valve.current_valve_position
+        assert result is None
+
+    def test_does_not_raise_on_value_error(self):
+        """Explicitly confirm no exception escapes."""
+        valve = _make_valve(position_raises=ValueError("NO_MOTOR_ERROR"))
+        try:
+            valve.current_valve_position
+        except (ValueError, KeyError) as exc:
+            pytest.fail(f"current_valve_position raised {exc!r}")
+
+    def test_returns_zero_position(self):
+        """Zero (fully closed) must not be confused with None."""
+        valve = _make_valve(position_value=0)
+        assert valve.current_valve_position == 0
+
+    def test_returns_hundred_position(self):
+        """100 (fully open) must be returned as-is."""
+        valve = _make_valve(position_value=100)
+        assert valve.current_valve_position == 100
+
+    def test_rounds_fractional_position_instead_of_truncating(self):
+        """Regression: int() truncates toward zero (63.9 -> 63); round() must
+        be used instead, same precision class as the Twinguard fix (#352)."""
+        valve = _make_valve(position_value=63.9)
+        assert valve.current_valve_position == 64
+
+
+class TestSHCValveCurrentPositionErrors:
+    def test_value_error_returns_none(self):
+        valve = _make_valve_with_broken_position(ValueError("bad enum"))
+        result = valve.current_valve_position
+        assert result is None
+
+    def test_key_error_returns_none(self):
+        valve = _make_valve_with_broken_position(KeyError("missing"))
+        result = valve.current_valve_position
+        assert result is None
+
+    def test_attribute_error_returns_none(self):
+        """AttributeError must be caught after the fix (Addresses #243)."""
+        valve = _make_valve_with_broken_position(AttributeError("no position"))
+        result = valve.current_valve_position
+        assert result is None
+
+    def test_valid_position_returned(self):
+        """Normal operation — position returned as-is."""
+        valve = SHCValve.__new__(SHCValve)
+        valve._device = SimpleNamespace(
+            id="dev-1", root_device_id="root-1", name="OK Valve", position=42
+        )
+        valve._attr_name = "Valve"
+        valve._attr_unique_id = "root-1_dev-1_valve"
+        assert valve.current_valve_position == 42
+
+
+# ---------------------------------------------------------------------------
+# SHCValve.__init__ and class-level attributes
+# ---------------------------------------------------------------------------
+
+
+class TestSHCValveInit:
+    """Cover SHCValve.__init__ lines 57-66."""
+
+    def test_init_no_attr_name_sets_name_none(self):
+        # With _attr_has_entity_name=True (from SHCEntity), _attr_name=None means
+        # HA uses the device name as the entity name.
+        dev = _fake_device()
+        valve = SHCValve(device=dev, entry_id="test", attr_name=None)
+        assert valve._attr_name is None
+
+    def test_init_no_attr_name_sets_unique_id(self):
+        dev = _fake_device()
+        valve = SHCValve(device=dev, entry_id="test", attr_name=None)
+        assert valve._attr_unique_id == "root1_dev1"
+
+    def test_init_with_attr_name_sets_attr_name(self):
+        # _attr_name stores only the suffix; HA auto-prepends the device name at runtime.
+        dev = _fake_device()
+        valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
+        assert valve._attr_name == "Valve"
+
+    def test_init_with_attr_name_lowercased_in_unique_id(self):
+        dev = _fake_device()
+        valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
+        assert valve._attr_unique_id == "root1_dev1_valve"
+
+    def test_init_device_stored(self):
+        dev = _fake_device()
+        valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
+        assert valve._device is dev
+
+    def test_init_entry_id_stored(self):
+        dev = _fake_device()
+        valve = SHCValve(device=dev, entry_id="myentry", attr_name=None)
+        assert valve._entry_id == "myentry"
+
+    def test_init_attr_name_mixed_case_lowercased_in_unique_id(self):
+        dev = _fake_device(name="my-cam", root_device_id="root2", device_id="dev2")
+        valve = SHCValve(device=dev, entry_id="e", attr_name="ThermoValve")
+        assert valve._attr_unique_id == "root2_dev2_thermovalve"
+        assert valve._attr_name == "ThermoValve"
+
+
+class TestSHCValveClassAttrs:
+    """Cover class-level attribute declarations (lines 46-48).
+
+    Access via instance because HA parent classes shadow some attrs with properties.
+    """
+
+    def _make_valve(self):
+        dev = _fake_device()
+        return SHCValve(device=dev, entry_id="test", attr_name="Valve")
+
+    def test_device_class_is_water(self):
+        valve = self._make_valve()
+        assert valve.device_class == ValveDeviceClass.WATER
+
+    def test_entity_category_is_diagnostic(self):
+        valve = self._make_valve()
+        assert valve.entity_category == EntityCategory.DIAGNOSTIC
+
+    def test_reports_position_is_true(self):
+        valve = self._make_valve()
+        assert valve.reports_position is True
+
+    def test_no_custom_open_close_in_shcvalve(self):
+        """Valve is read-only: SHCValve does not override open_valve / close_valve."""
+        # SHCValve must NOT define open_valve, close_valve, or set_valve_position
+        # in its own __dict__ (i.e. not overriding the parent no-ops).
+        assert "open_valve" not in SHCValve.__dict__
+        assert "close_valve" not in SHCValve.__dict__
+        assert "set_valve_position" not in SHCValve.__dict__
+
+
+# ---------------------------------------------------------------------------
+# ValveTappetSensor.extra_state_attributes — unknown valvestate guard
+#
+# ValveTappetSensor lives in sensor.py, not valve.py; grouped here (last) as
+# it doesn't correspond to any entity class defined in this platform file.
+# ---------------------------------------------------------------------------
+
+
+class TestValveTappetSensorExtraAttributes:
+    """extra_state_attributes must return None for valve_tappet_state on unknown enum value."""
+
+    def test_returns_state_name_normally(self):
+        sensor = _make_valve_tappet_sensor(valvestate_name="VALVE_ADAPTION_SUCCESSFUL")
+        attrs = sensor.extra_state_attributes
+        assert attrs["valve_tappet_state"] == "VALVE_ADAPTION_SUCCESSFUL"
+
+    def test_returns_none_on_unknown_firmware_value(self):
+        """Issue #243: unknown state enum value must yield None, not raise."""
+        sensor = _make_valve_tappet_sensor(
+            valvestate_raises=ValueError("'NO_MOTOR_ERROR' is not a valid State")
+        )
+        attrs = sensor.extra_state_attributes
+        assert attrs["valve_tappet_state"] is None
+
+    def test_does_not_raise_on_unknown_firmware_value(self):
+        """Explicitly assert no ValueError escapes."""
+        sensor = _make_valve_tappet_sensor(valvestate_raises=ValueError("NO_MOTOR_ERROR"))
+        try:
+            sensor.extra_state_attributes
+        except ValueError as exc:
+            pytest.fail(f"extra_state_attributes raised ValueError: {exc!r}")
+
+    def test_attribute_key_always_present(self):
+        """The key 'valve_tappet_state' must always be present in the dict."""
+        sensor = _make_valve_tappet_sensor(valvestate_raises=ValueError("unknown"))
+        attrs = sensor.extra_state_attributes
+        assert "valve_tappet_state" in attrs
+
+    def test_native_value_unaffected_by_valvestate_error(self):
+        """native_value (position) must still work even when valvestate raises."""
+        sensor = _make_valve_tappet_sensor(
+            valvestate_raises=ValueError("NO_MOTOR_ERROR"),
+            position_value=72,
+        )
+        assert sensor.native_value == 72
+
+    def test_known_state_in_start_position(self):
+        sensor = _make_valve_tappet_sensor(valvestate_name="IN_START_POSITION")
+        assert sensor.extra_state_attributes["valve_tappet_state"] == "IN_START_POSITION"
+
+    def test_known_state_not_available(self):
+        sensor = _make_valve_tappet_sensor(valvestate_name="NOT_AVAILABLE")
+        assert sensor.extra_state_attributes["valve_tappet_state"] == "NOT_AVAILABLE"

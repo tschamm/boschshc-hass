@@ -356,6 +356,97 @@ class TestGetDeviceFromId:
 
 
 # ===========================================================================
+# 2b. get_device_from_id — additional coverage
+#     (device_trigger.py:59 — device.id != device_id → continue)
+# ===========================================================================
+
+class TestDeviceTriggerGetDeviceFromId:
+    """Tests for device_trigger.get_device_from_id."""
+
+    def _make_hass_with_data(self, shc_devices, intrusion_system=None):
+        """Build a hass mock with a session that has given devices."""
+        session = MagicMock()
+        session.devices = shc_devices
+        session.intrusion_system = intrusion_system
+
+        shc_info = MagicMock()
+        shc_info.unique_id = "shc-serial-001"
+        session.information = shc_info
+        session.scenario_names = []
+
+        entry = SimpleNamespace(entry_id="eid1")
+        entry.runtime_data = SimpleNamespace(
+            session=session, shc_device=None, title="Test SHC"
+        )
+
+        hass = MagicMock()
+        hass.config_entries.async_entries = MagicMock(return_value=[entry])
+        return hass, session
+
+    def test_device_id_mismatch_continues(self):
+        """When dev_registry returns a device with a different id, loop continues."""
+        shc_dev = MagicMock()
+        shc_dev.id = "shc-device-abc"
+        shc_dev.device_model = "WRC2"
+
+        hass, session = self._make_hass_with_data([shc_dev])
+
+        fake_reg_device = MagicMock()
+        fake_reg_device.id = "reg-id-OTHER"  # different from target device_id
+
+        dev_registry = MagicMock()
+        dev_registry.async_get_device = MagicMock(return_value=fake_reg_device)
+
+        with patch(
+            "custom_components.bosch_shc.device_trigger.dr.async_get",
+            return_value=dev_registry,
+        ):
+            device, model = asyncio.run(
+                get_device_from_id(hass, "reg-id-TARGET")  # won't match reg-id-OTHER
+            )
+
+        # None returned because no device matched
+        assert device is None
+        assert model == ""
+
+    def test_device_returns_when_id_matches(self):
+        """When dev_registry device id matches, the shc_device is returned."""
+        shc_dev = MagicMock()
+        shc_dev.id = "shc-device-abc"
+        shc_dev.device_model = "WRC2"
+
+        hass, session = self._make_hass_with_data([shc_dev])
+        session.intrusion_system = None
+
+        fake_reg_device = MagicMock()
+        fake_reg_device.id = "reg-id-TARGET"
+
+        shc_reg_device = MagicMock()
+        shc_reg_device.id = "shc-reg-OTHER"
+
+        def get_device(identifiers, connections):
+            ident = dict(identifiers)
+            if ident.get("bosch_shc") == "shc-device-abc":
+                return fake_reg_device
+            # SHC controller device
+            return shc_reg_device
+
+        dev_registry = MagicMock()
+        dev_registry.async_get_device = MagicMock(side_effect=get_device)
+
+        with patch(
+            "custom_components.bosch_shc.device_trigger.dr.async_get",
+            return_value=dev_registry,
+        ):
+            device, model = asyncio.run(
+                get_device_from_id(hass, "reg-id-TARGET")
+            )
+
+        assert device is shc_dev
+        assert model == "WRC2"
+
+
+# ===========================================================================
 # 3. async_get_triggers
 # ===========================================================================
 
@@ -520,6 +611,107 @@ class TestAsyncGetTriggers:
 
 
 # ===========================================================================
+# 3b. async_get_triggers — SWITCH2 model: verify the default branch is NOT
+#     logged (not reached)
+# ===========================================================================
+
+class TestSwitch2BranchCoverage:
+
+    def test_switch2_all_trigger_subtypes_present(self):
+        """SWITCH2 model has 4 subtypes × 3 types = 12 triggers."""
+        shc_dev = _make_shc_device(device_id="sw2-1", model="SWITCH2")
+        session = _make_session(devices=[shc_dev])
+        hass = _make_hass(sessions=[session])
+
+        ha_device = MagicMock()
+        ha_device.id = "ha-sw2"
+
+        def fake_get_device(identifiers, connections):
+            for _, dev_id in identifiers:
+                if dev_id == "sw2-1":
+                    return ha_device
+            return None
+
+        mock_registry = MagicMock()
+        mock_registry.async_get_device = fake_get_device
+
+        with patch(
+            "custom_components.bosch_shc.device_trigger.dr.async_get",
+            return_value=mock_registry,
+        ):
+            triggers = asyncio.run(async_get_triggers(hass, "ha-sw2"))
+
+        expected_subtypes = {
+            "LOWER_LEFT_BUTTON",
+            "LOWER_RIGHT_BUTTON",
+            "UPPER_LEFT_BUTTON",
+            "UPPER_RIGHT_BUTTON",
+        }
+        found_subtypes = {t[CONF_SUBTYPE] for t in triggers}
+        assert expected_subtypes.issubset(found_subtypes)
+        assert len(triggers) == 12
+
+
+# ===========================================================================
+# 3c. async_get_triggers — device_trigger.py:98-99 — case _: branch (unknown
+#     device type in match)
+# ===========================================================================
+
+class TestGetTriggersMatchDefaultBranch:
+    """Test the case _: branch (lines 98-99) in async_get_triggers."""
+
+    def test_case_default_branch_is_unreachable_dead_code(self):
+        """Verify that device_trigger.py lines 98-99 (case _:) are dead code.
+
+        The match statement at line 91 is guarded by:
+            if dev_type == "WRC2" or dev_type == "SWITCH2":
+        which ensures dev_type can only be "WRC2" or "SWITCH2" when the match
+        runs. The `case _:` branch can therefore never be reached at runtime.
+        We document this intentionally and accept 97% on device_trigger.py.
+        """
+        from custom_components.bosch_shc import device_trigger as dt_mod
+        src = inspect.getsource(dt_mod.async_get_triggers)
+        assert "case _:" in src, "case _: branch exists in source"
+
+
+# ===========================================================================
+# 3d. async_get_triggers — IDS device path (intrusion system): catch-all,
+#     device type matches no branch at all
+# ===========================================================================
+
+class TestIDSDeviceTriggers:
+
+    def test_ids_device_returns_empty_triggers(self):
+        """IDS ('IDS' model) is not WRC2/SWITCH2/MD/SD/SDS/SHC → no triggers."""
+        ids_dev = MagicMock()
+        ids_dev.id = "ids-device-1"
+
+        session = _make_session(devices=[], intrusion_system=ids_dev)
+        hass = _make_hass(sessions=[session])
+
+        ha_ids = MagicMock()
+        ha_ids.id = "ha-ids-1"
+
+        def fake_get_device(identifiers, connections):
+            for _, dev_id in identifiers:
+                if dev_id == "ids-device-1":
+                    return ha_ids
+            return None
+
+        mock_registry = MagicMock()
+        mock_registry.async_get_device = fake_get_device
+
+        with patch(
+            "custom_components.bosch_shc.device_trigger.dr.async_get",
+            return_value=mock_registry,
+        ):
+            triggers = asyncio.run(async_get_triggers(hass, "ha-ids-1"))
+
+        # IDS model is not in any of the trigger type branches
+        assert triggers == []
+
+
+# ===========================================================================
 # 4. async_attach_trigger
 # ===========================================================================
 
@@ -641,192 +833,7 @@ class TestAsyncAttachTrigger:
 
 
 # ===========================================================================
-# 5. IDS device path (intrusion system)
-# ===========================================================================
-
-class TestIDSDeviceTriggers:
-
-    def test_ids_device_returns_empty_triggers(self):
-        """IDS ('IDS' model) is not WRC2/SWITCH2/MD/SD/SDS/SHC → no triggers."""
-        ids_dev = MagicMock()
-        ids_dev.id = "ids-device-1"
-
-        session = _make_session(devices=[], intrusion_system=ids_dev)
-        hass = _make_hass(sessions=[session])
-
-        ha_ids = MagicMock()
-        ha_ids.id = "ha-ids-1"
-
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "ids-device-1":
-                    return ha_ids
-            return None
-
-        mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
-
-        with patch(
-            "custom_components.bosch_shc.device_trigger.dr.async_get",
-            return_value=mock_registry,
-        ):
-            triggers = asyncio.run(async_get_triggers(hass, "ha-ids-1"))
-
-        # IDS model is not in any of the trigger type branches
-        assert triggers == []
-
-
-# ===========================================================================
-# 6. SWITCH2 model: verify the default branch is NOT logged (not reached)
-# ===========================================================================
-
-class TestSwitch2BranchCoverage:
-
-    def test_switch2_all_trigger_subtypes_present(self):
-        """SWITCH2 model has 4 subtypes × 3 types = 12 triggers."""
-        shc_dev = _make_shc_device(device_id="sw2-1", model="SWITCH2")
-        session = _make_session(devices=[shc_dev])
-        hass = _make_hass(sessions=[session])
-
-        ha_device = MagicMock()
-        ha_device.id = "ha-sw2"
-
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "sw2-1":
-                    return ha_device
-            return None
-
-        mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
-
-        with patch(
-            "custom_components.bosch_shc.device_trigger.dr.async_get",
-            return_value=mock_registry,
-        ):
-            triggers = asyncio.run(async_get_triggers(hass, "ha-sw2"))
-
-        expected_subtypes = {
-            "LOWER_LEFT_BUTTON",
-            "LOWER_RIGHT_BUTTON",
-            "UPPER_LEFT_BUTTON",
-            "UPPER_RIGHT_BUTTON",
-        }
-        found_subtypes = {t[CONF_SUBTYPE] for t in triggers}
-        assert expected_subtypes.issubset(found_subtypes)
-        assert len(triggers) == 12
-
-
-# ===========================================================================
-# 7. device_trigger.py:59 — device.id != device_id → continue
-#    device_trigger.py:98-99 — case _: branch (unknown device type in match)
-# ===========================================================================
-
-class TestDeviceTriggerGetDeviceFromId:
-    """Tests for device_trigger.get_device_from_id."""
-
-    def _make_hass_with_data(self, shc_devices, intrusion_system=None):
-        """Build a hass mock with a session that has given devices."""
-        session = MagicMock()
-        session.devices = shc_devices
-        session.intrusion_system = intrusion_system
-
-        shc_info = MagicMock()
-        shc_info.unique_id = "shc-serial-001"
-        session.information = shc_info
-        session.scenario_names = []
-
-        entry = SimpleNamespace(entry_id="eid1")
-        entry.runtime_data = SimpleNamespace(
-            session=session, shc_device=None, title="Test SHC"
-        )
-
-        hass = MagicMock()
-        hass.config_entries.async_entries = MagicMock(return_value=[entry])
-        return hass, session
-
-    def test_device_id_mismatch_continues(self):
-        """When dev_registry returns a device with a different id, loop continues."""
-        shc_dev = MagicMock()
-        shc_dev.id = "shc-device-abc"
-        shc_dev.device_model = "WRC2"
-
-        hass, session = self._make_hass_with_data([shc_dev])
-
-        fake_reg_device = MagicMock()
-        fake_reg_device.id = "reg-id-OTHER"  # different from target device_id
-
-        dev_registry = MagicMock()
-        dev_registry.async_get_device = MagicMock(return_value=fake_reg_device)
-
-        with patch(
-            "custom_components.bosch_shc.device_trigger.dr.async_get",
-            return_value=dev_registry,
-        ):
-            device, model = asyncio.run(
-                get_device_from_id(hass, "reg-id-TARGET")  # won't match reg-id-OTHER
-            )
-
-        # None returned because no device matched
-        assert device is None
-        assert model == ""
-
-    def test_device_returns_when_id_matches(self):
-        """When dev_registry device id matches, the shc_device is returned."""
-        shc_dev = MagicMock()
-        shc_dev.id = "shc-device-abc"
-        shc_dev.device_model = "WRC2"
-
-        hass, session = self._make_hass_with_data([shc_dev])
-        session.intrusion_system = None
-
-        fake_reg_device = MagicMock()
-        fake_reg_device.id = "reg-id-TARGET"
-
-        shc_reg_device = MagicMock()
-        shc_reg_device.id = "shc-reg-OTHER"
-
-        def get_device(identifiers, connections):
-            ident = dict(identifiers)
-            if ident.get("bosch_shc") == "shc-device-abc":
-                return fake_reg_device
-            # SHC controller device
-            return shc_reg_device
-
-        dev_registry = MagicMock()
-        dev_registry.async_get_device = MagicMock(side_effect=get_device)
-
-        with patch(
-            "custom_components.bosch_shc.device_trigger.dr.async_get",
-            return_value=dev_registry,
-        ):
-            device, model = asyncio.run(
-                get_device_from_id(hass, "reg-id-TARGET")
-            )
-
-        assert device is shc_dev
-        assert model == "WRC2"
-
-
-class TestGetTriggersMatchDefaultBranch:
-    """Test the case _: branch (lines 98-99) in async_get_triggers."""
-
-    def test_case_default_branch_is_unreachable_dead_code(self):
-        """Verify that device_trigger.py lines 98-99 (case _:) are dead code.
-
-        The match statement at line 91 is guarded by:
-            if dev_type == "WRC2" or dev_type == "SWITCH2":
-        which ensures dev_type can only be "WRC2" or "SWITCH2" when the match
-        runs. The `case _:` branch can therefore never be reached at runtime.
-        We document this intentionally and accept 97% on device_trigger.py.
-        """
-        from custom_components.bosch_shc import device_trigger as dt_mod
-        src = inspect.getsource(dt_mod.async_get_triggers)
-        assert "case _:" in src, "case _: branch exists in source"
-
-
-# ===========================================================================
-# 8. Legacy HA-harness tests (former test_device_trigger.py).
+# 5. Legacy HA-harness tests (former test_device_trigger.py).
 #
 # NOTE: these two tests need the real HA device-automation test harness
 # (`tests.common`'s MockConfigEntry / mock_device_registry / mock_registry /

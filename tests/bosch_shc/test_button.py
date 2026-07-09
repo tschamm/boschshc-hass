@@ -1035,6 +1035,747 @@ class TestTwinguardExcluded:
         assert len(result) == 1
 
 
+# ---------------------------------------------------------------------------
+# SHCSirenTestAlarmButton
+# ---------------------------------------------------------------------------
+
+
+class TestSHCSirenTestAlarmButton:
+    """Unit tests for SHCSirenTestAlarmButton (Outdoor Siren #120)."""
+
+    def _make(self, root="root-siren", device_id="hdm:ZigBee:siren1"):
+        btn = SHCSirenTestAlarmButton.__new__(SHCSirenTestAlarmButton)
+        dev = _make_device(device_id=device_id, root_device_id=root)
+        btn._device = dev
+        btn._attr_unique_id = f"{root}_{device_id}_test_alarm"
+        return btn
+
+    def test_unique_id_ends_test_alarm(self):
+        btn = self._make(root="r1", device_id="d1")
+        assert btn._attr_unique_id == "r1_d1_test_alarm"
+
+    def test_translation_key(self):
+        # Icon now comes from icons.json keyed by translation_key, not a
+        # hardcoded _attr_icon (icon-translations quality-scale rule).
+        btn = self._make()
+        assert btn._attr_translation_key == "siren_test_alarm"
+
+    def test_press_calls_async_trigger_test_alarm(self):
+        btn = self._make()
+        called = []
+
+        async def _alarm():
+            called.append(True)
+
+        btn._device.async_trigger_test_alarm = _alarm
+        asyncio.run(btn.async_press())
+        assert called == [True]
+
+    def test_is_button_entity(self):
+        assert issubclass(SHCSirenTestAlarmButton, ButtonEntity)
+
+    # --- async_setup_entry integration ---
+
+    def _session_with_siren(self, sirens):
+        return SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[],
+                motion_detectors2=[],
+                outdoor_sirens=sirens,
+            ),
+            scenarios=[],
+        )
+
+    def test_setup_siren_creates_test_alarm_button(self):
+        dev = _make_device()
+        session = self._session_with_siren([dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], SHCSirenTestAlarmButton)
+
+    def test_setup_no_sirens_yields_nothing(self):
+        session = self._session_with_siren([])
+        result = _run_setup(session)
+        assert result == []
+
+    def test_setup_multiple_sirens(self):
+        session = self._session_with_siren(
+            [
+                _make_device(device_id="s1"),
+                _make_device(device_id="s2"),
+            ]
+        )
+        result = _run_setup(session)
+        assert len(result) == 2
+        assert all(isinstance(e, SHCSirenTestAlarmButton) for e in result)
+
+    def test_setup_siren_excluded(self):
+        dev = _make_device(device_id="hdm:excluded-siren")
+        session = self._session_with_siren([dev])
+        result = _run_setup(
+            session, options={"excluded_devices": ["hdm:excluded-siren"]}
+        )
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# ResetEnergySummationButton (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+
+class TestResetEnergySummationButton:
+    """Unit tests for ResetEnergySummationButton (smart plugs, hass#120)."""
+
+    def _make(self, root="root-plug", device_id="hdm:ZigBee:plug1"):
+        btn = ResetEnergySummationButton.__new__(ResetEnergySummationButton)
+        dev = _make_device(device_id=device_id, root_device_id=root)
+        btn._device = dev
+        btn._attr_unique_id = f"{root}_{device_id}_reset_energy_summation"
+        return btn
+
+    def test_unique_id_ends_reset_energy_summation(self):
+        btn = self._make(root="r1", device_id="d1")
+        assert btn._attr_unique_id == "r1_d1_reset_energy_summation"
+
+    def test_translation_key(self):
+        btn = self._make()
+        assert btn._attr_translation_key == "reset_energy_summation"
+
+    def test_press_calls_async_reset_energy_summation(self):
+        btn = self._make()
+        called = []
+
+        async def _reset():
+            called.append(True)
+
+        btn._device.async_reset_energy_summation = _reset
+        asyncio.run(btn.async_press())
+        assert called == [True]
+
+    def test_press_shc_exception_raises_home_assistant_error(self):
+        btn = self._make()
+
+        async def _reset():
+            raise SHCException("rejected")
+
+        btn._device.async_reset_energy_summation = _reset
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(btn.async_press())
+
+    def test_is_button_entity(self):
+        assert issubclass(ResetEnergySummationButton, ButtonEntity)
+
+    # --- async_setup_entry integration ---
+
+    def _session_with_plugs(self, smart_plugs=(), smart_plugs_compact=()):
+        return SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[],
+                motion_detectors2=[],
+                outdoor_sirens=[],
+                smart_plugs=list(smart_plugs),
+                smart_plugs_compact=list(smart_plugs_compact),
+            ),
+            scenarios=[],
+        )
+
+    def test_setup_smart_plug_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_plugs(smart_plugs=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ResetEnergySummationButton)
+
+    def test_setup_smart_plug_compact_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_plugs(smart_plugs_compact=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ResetEnergySummationButton)
+
+    def test_setup_no_plugs_yields_nothing(self):
+        session = self._session_with_plugs()
+        result = _run_setup(session)
+        assert result == []
+
+    def test_setup_plug_excluded(self):
+        dev = _make_device(device_id="hdm:excluded-plug")
+        session = self._session_with_plugs(smart_plugs=[dev])
+        result = _run_setup(
+            session, options={"excluded_devices": ["hdm:excluded-plug"]}
+        )
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# ShutterRecalibrateButton (hass audit)
+# ---------------------------------------------------------------------------
+
+
+class TestShutterRecalibrateButton:
+    """Unit tests for ShutterRecalibrateButton (Shutter Control II, hass audit)."""
+
+    def _make(self, root="root-shutter", device_id="hdm:ZigBee:shutter1"):
+        btn = ShutterRecalibrateButton.__new__(ShutterRecalibrateButton)
+        dev = _make_device(device_id=device_id, root_device_id=root)
+        btn._device = dev
+        btn._attr_unique_id = f"{root}_{device_id}_recalibrate"
+        return btn
+
+    def test_unique_id_ends_recalibrate(self):
+        btn = self._make(root="r1", device_id="d1")
+        assert btn._attr_unique_id == "r1_d1_recalibrate"
+
+    def test_translation_key(self):
+        btn = self._make()
+        assert btn._attr_translation_key == "shutter_recalibrate"
+
+    def test_press_calls_async_reset_calibration_and_open(self):
+        btn = self._make()
+        called = []
+
+        async def _recalibrate():
+            called.append(True)
+
+        btn._device.async_reset_calibration_and_open = _recalibrate
+        asyncio.run(btn.async_press())
+        assert called == [True]
+
+    def test_press_shc_exception_raises_home_assistant_error(self):
+        btn = self._make()
+
+        async def _recalibrate():
+            raise SHCException("rejected")
+
+        btn._device.async_reset_calibration_and_open = _recalibrate
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(btn.async_press())
+
+    def test_is_button_entity(self):
+        assert issubclass(ShutterRecalibrateButton, ButtonEntity)
+
+    # --- async_setup_entry integration ---
+
+    def _session_with_shutters(
+        self,
+        shutter_controls=(),
+        micromodule_shutter_controls=(),
+        micromodule_blinds=(),
+    ):
+        return SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[],
+                motion_detectors2=[],
+                outdoor_sirens=[],
+                shutter_controls=list(shutter_controls),
+                micromodule_shutter_controls=list(micromodule_shutter_controls),
+                micromodule_blinds=list(micromodule_blinds),
+            ),
+            scenarios=[],
+        )
+
+    def test_setup_shutter_control_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_shutters(shutter_controls=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ShutterRecalibrateButton)
+
+    def test_setup_micromodule_shutter_control_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_shutters(micromodule_shutter_controls=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ShutterRecalibrateButton)
+
+    def test_setup_micromodule_blinds_creates_button(self):
+        dev = _make_device()
+        session = self._session_with_shutters(micromodule_blinds=[dev])
+        result = _run_setup(session)
+        assert len(result) == 1
+        assert isinstance(result[0], ShutterRecalibrateButton)
+
+    def test_setup_no_shutters_yields_nothing(self):
+        session = self._session_with_shutters()
+        result = _run_setup(session)
+        assert result == []
+
+    def test_setup_shutter_excluded(self):
+        dev = _make_device(device_id="hdm:excluded-shutter")
+        session = self._session_with_shutters(shutter_controls=[dev])
+        result = _run_setup(
+            session, options={"excluded_devices": ["hdm:excluded-shutter"]}
+        )
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# SHCScenarioButton
+# ---------------------------------------------------------------------------
+
+
+class TestSHCScenarioButton:
+    """Unit tests for SHCScenarioButton (does not inherit SHCEntity)."""
+
+    def _make_scenario(self, scenario_id="sc-1", name="Good Night"):
+        scenario = SimpleNamespace(id=scenario_id, name=name)
+        shc_dev = SimpleNamespace(
+            identifiers={("bosch_shc", "test-uid")},
+            name="SHC Controller",
+            manufacturer="Bosch",
+            model="SmartHomeController",
+        )
+        return SHCScenarioButton(
+            scenario=scenario,
+            entry_unique_id="test-uid",
+            entry_id="E1",
+            shc_device=shc_dev,
+        )
+
+    def test_unique_id_uses_entry_unique_id_prefix(self):
+        btn = self._make_scenario(scenario_id="sc-1")
+        assert btn._attr_unique_id == "test-uid_scenario_sc-1"
+
+    def test_unique_id_falls_back_to_entry_id_when_no_unique_id(self):
+        scenario = SimpleNamespace(id="sc-2", name="Away")
+        btn = SHCScenarioButton(
+            scenario=scenario,
+            entry_unique_id=None,
+            entry_id="E1",
+            shc_device=None,
+        )
+        assert btn._attr_unique_id == "E1_scenario_sc-2"
+
+    def test_attr_name_is_scenario_name(self):
+        btn = self._make_scenario(name="Morning Routine")
+        assert btn._attr_name == "Morning Routine"
+
+    def test_icon(self):
+        # Icon comes from icons.json via translation_key (not a hardcoded
+        # _attr_icon) — same convention as every other button entity here.
+        btn = self._make_scenario()
+        assert btn._attr_translation_key == "scenario"
+
+    def test_should_poll_false(self):
+        btn = self._make_scenario()
+        assert btn._attr_should_poll is False
+
+    def test_has_entity_name(self):
+        btn = self._make_scenario()
+        assert btn._attr_has_entity_name is True
+
+    def test_device_info_contains_identifiers(self):
+        btn = self._make_scenario()
+        info = btn.device_info
+        assert info is not None
+        assert ("bosch_shc", "test-uid") in info["identifiers"]
+
+    def test_device_info_none_when_shc_device_none(self):
+        scenario = SimpleNamespace(id="sc-3", name="Test")
+        btn = SHCScenarioButton(
+            scenario=scenario,
+            entry_unique_id="uid",
+            entry_id="E1",
+            shc_device=None,
+        )
+        assert btn.device_info is None
+
+    def test_press_calls_async_trigger_on_scenario(self):
+        scenario = SimpleNamespace(id="sc-1", name="Goodnight")
+        called = []
+
+        async def _trig():
+            called.append(True)
+
+        scenario.async_trigger = _trig
+        btn = SHCScenarioButton(scenario=scenario, entry_unique_id="uid", entry_id="E1")
+        asyncio.run(btn.async_press())
+        assert called == [True]
+
+    def test_press_wraps_shc_exception_in_home_assistant_error(self):
+        """SHCScenarioButton has no self._device — must use self._scenario.name."""
+        scenario = SimpleNamespace(id="sc-1", name="Goodnight")
+
+        async def _fail():
+            raise SHCException("scenario trigger rejected")
+
+        scenario.async_trigger = _fail
+        btn = SHCScenarioButton(scenario=scenario, entry_unique_id="uid", entry_id="E1")
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(btn.async_press())
+        assert exc_info.value.translation_key == "button_press_failed"
+        assert "Goodnight" in str(exc_info.value)
+
+    def test_is_button_entity(self):
+        assert issubclass(SHCScenarioButton, ButtonEntity)
+
+    # --- async_setup_entry integration ---
+
+    def _session_with_scenarios(self, scenarios):
+        return SimpleNamespace(
+            device_helper=SimpleNamespace(
+                micromodule_impulse_relays=[],
+                smoke_detectors=[],
+                twinguards=[],
+                motion_detectors2=[],
+                outdoor_sirens=[],
+            ),
+            scenarios=scenarios,
+        )
+
+    def test_setup_scenario_buttons_created_when_option_enabled(self):
+        shc_dev = SimpleNamespace(
+            identifiers={("bosch_shc", "uid")},
+            name="SHC",
+            manufacturer="Bosch",
+            model="SmartHomeController",
+        )
+        sc = SimpleNamespace(id="sc-1", name="Away")
+        session = self._session_with_scenarios([sc])
+        result = _run_setup(
+            session,
+            options={OPT_SCENARIOS_AS_BUTTONS: True},
+            unique_id="uid",
+            shc_device=shc_dev,
+        )
+        scenario_buttons = [e for e in result if isinstance(e, SHCScenarioButton)]
+        assert len(scenario_buttons) == 1
+        assert scenario_buttons[0]._attr_name == "Away"
+
+    def test_setup_no_scenario_buttons_when_option_disabled(self):
+        sc = SimpleNamespace(id="sc-1", name="Away")
+        session = self._session_with_scenarios([sc])
+        result = _run_setup(session, options={OPT_SCENARIOS_AS_BUTTONS: False})
+        assert not any(isinstance(e, SHCScenarioButton) for e in result)
+
+    def test_setup_multiple_scenario_buttons(self):
+        shc_dev = SimpleNamespace(
+            identifiers={("bosch_shc", "uid")},
+            name="SHC",
+            manufacturer="Bosch",
+            model="SmartHomeController",
+        )
+        scenarios = [
+            SimpleNamespace(id="s1", name="Morning"),
+            SimpleNamespace(id="s2", name="Evening"),
+        ]
+        session = self._session_with_scenarios(scenarios)
+        result = _run_setup(
+            session,
+            options={OPT_SCENARIOS_AS_BUTTONS: True},
+            unique_id="uid",
+            shc_device=shc_dev,
+        )
+        sb = [e for e in result if isinstance(e, SHCScenarioButton)]
+        assert len(sb) == 2
+
+    def test_setup_bad_scenario_skipped_not_crash(self):
+        """A malformed scenario (missing id/name) must be skipped gracefully."""
+        shc_dev = SimpleNamespace(
+            identifiers={("bosch_shc", "uid")},
+            name="SHC",
+            manufacturer="Bosch",
+            model="SmartHomeController",
+        )
+        # No .id attribute → AttributeError → should be caught and skipped.
+        bad_sc = SimpleNamespace(name="No ID")
+        # SimpleNamespace doesn't set .id here — accessing it raises AttributeError.
+        good_sc = SimpleNamespace(id="ok", name="Good")
+        session = self._session_with_scenarios([bad_sc, good_sc])
+        # This must not raise; the bad scenario is skipped.
+        result = _run_setup(
+            session,
+            options={OPT_SCENARIOS_AS_BUTTONS: True},
+            unique_id="uid",
+            shc_device=shc_dev,
+        )
+        sb = [e for e in result if isinstance(e, SHCScenarioButton)]
+        # Only the good scenario makes it through.
+        assert len(sb) == 1
+        assert sb[0]._attr_name == "Good"
+
+
+class TestScenariosAsButtonsBlock:
+    """OPT_SCENARIOS_AS_BUTTONS=True → scenarios become SHCScenarioButton
+    entities (coverage-gap tests, incl. KeyError/AttributeError skip path)."""
+
+    def test_scenarios_as_buttons_false_by_default(self):
+        """When option is absent / False, no scenario buttons are added."""
+        sc = _good_scenario()
+        session = _make_session(scenarios=[sc])
+        entry = _make_entry()
+        result = _run_setup_with_entry(session, entry)
+        assert result == []
+
+    def test_scenarios_as_buttons_true_adds_button(self):
+        sc = _good_scenario(sid="sc-001", name="Morning")
+        session = _make_session(scenarios=[sc])
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+        result = _run_setup_with_entry(session, entry)
+        assert len(result) == 1
+        assert isinstance(result[0], SHCScenarioButton)
+
+    def test_scenario_unique_id_uses_entry_unique_id(self):
+        sc = _good_scenario(sid="sc-abc")
+        session = _make_session(scenarios=[sc])
+        entry = _make_entry(
+            options={OPT_SCENARIOS_AS_BUTTONS: True}, unique_id="uid-xyz"
+        )
+        result = _run_setup_with_entry(session, entry)
+        assert result[0]._attr_unique_id == "uid-xyz_scenario_sc-abc"
+
+    def test_scenario_name_is_scenario_name(self):
+        sc = _good_scenario(sid="sc-001", name="Evening Scene")
+        session = _make_session(scenarios=[sc])
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+        result = _run_setup_with_entry(session, entry)
+        assert result[0]._attr_name == "Evening Scene"
+
+    def test_multiple_scenarios_all_added(self):
+        scenarios = [
+            _good_scenario(sid="sc-001", name="Scene A"),
+            _good_scenario(sid="sc-002", name="Scene B"),
+            _good_scenario(sid="sc-003", name="Scene C"),
+        ]
+        session = _make_session(scenarios=scenarios)
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+        result = _run_setup_with_entry(session, entry)
+        assert len(result) == 3
+
+    def test_keyerror_on_scenario_logs_warning_and_skips(self):
+        """A scenario whose attribute access raises KeyError is skipped, not fatal."""
+
+        class _BadScenario:
+            @property
+            def id(self):
+                raise KeyError("id missing")
+
+            @property
+            def name(self):
+                return "Bad"
+
+        bad = _BadScenario()
+        good = _good_scenario(sid="sc-good", name="Good")
+        session = _make_session(scenarios=[bad, good])
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+
+        with patch("custom_components.bosch_shc.button.LOGGER") as mock_log:
+            result = _run_setup_with_entry(session, entry)
+
+        mock_log.warning.assert_called_once()
+        assert len(result) == 1
+        assert isinstance(result[0], SHCScenarioButton)
+
+    def test_attribute_error_on_scenario_logs_warning_and_skips(self):
+        """A scenario whose attribute access raises AttributeError is skipped."""
+
+        class _BadScenario:
+            @property
+            def id(self):
+                raise AttributeError("no id attr")
+
+            name = "Bad"
+
+        bad = _BadScenario()
+        good = _good_scenario(sid="sc-good2", name="Good2")
+        session = _make_session(scenarios=[bad, good])
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+
+        with patch("custom_components.bosch_shc.button.LOGGER") as mock_log:
+            result = _run_setup_with_entry(session, entry)
+
+        mock_log.warning.assert_called_once()
+        assert len(result) == 1
+
+    def test_all_bad_scenarios_yields_empty(self):
+        """All malformed scenarios → empty entity list (async_add_entities not called)."""
+
+        class _Bad:
+            @property
+            def id(self):
+                raise KeyError("no id")
+
+            name = "Bad"
+
+        session = _make_session(scenarios=[_Bad(), _Bad()])
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+        result = _run_setup_with_entry(session, entry)
+        assert result == []
+
+
+class TestSHCScenarioButtonInit:
+    """SHCScenarioButton.__init__ with entry_unique_id=None (prefix falls
+    back to entry_id)."""
+
+    def test_prefix_uses_entry_unique_id_when_set(self):
+        """With a real entry_unique_id the unique_id is prefixed by it."""
+        sc = _good_scenario(sid="sc-001")
+        btn = SHCScenarioButton(
+            scenario=sc, entry_unique_id="uid-abc", entry_id="entry-xyz"
+        )
+        assert btn._attr_unique_id == "uid-abc_scenario_sc-001"
+
+    def test_prefix_falls_back_to_entry_id_when_unique_id_none(self):
+        """entry_unique_id=None → prefix is entry_id."""
+        sc = _good_scenario(sid="sc-002")
+        btn = SHCScenarioButton(
+            scenario=sc, entry_unique_id=None, entry_id="fallback-entry"
+        )
+        assert btn._attr_unique_id == "fallback-entry_scenario_sc-002"
+
+    def test_name_set_from_scenario(self):
+        sc = _good_scenario(name="My Scene")
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
+        assert btn._attr_name == "My Scene"
+
+    def test_scenario_stored(self):
+        sc = _good_scenario()
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
+        assert btn._scenario is sc
+
+    def test_icon_is_script_play(self):
+        # Icon comes from icons.json via translation_key (not a hardcoded
+        # _attr_icon) — same convention as every other button entity here.
+        sc = _good_scenario()
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id=None, entry_id="entry-1")
+        assert btn._attr_translation_key == "scenario"
+
+    def test_should_poll_is_false(self):
+        sc = _good_scenario()
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id=None, entry_id="entry-1")
+        assert btn._attr_should_poll is False
+
+
+class TestSHCScenarioButtonPress:
+    """SHCScenarioButton.press() calls scenario.trigger()."""
+
+    def test_press_calls_trigger(self):
+        """async_press() must await self._scenario.async_trigger()."""
+        calls = []
+        sc = _good_scenario()
+
+        async def _trig():
+            calls.append(True)
+
+        sc.async_trigger = _trig
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
+        asyncio.run(btn.async_press())
+        assert calls == [True]
+
+    def test_press_called_twice_triggers_twice(self):
+        calls = []
+        sc = _good_scenario()
+
+        async def _trig():
+            calls.append(1)
+
+        sc.async_trigger = _trig
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id=None, entry_id="entry-1")
+        asyncio.run(btn.async_press())
+        asyncio.run(btn.async_press())
+        assert len(calls) == 2
+
+    def test_press_returns_none(self):
+        sc = _good_scenario()
+
+        async def _trig():
+            return None
+
+        sc.async_trigger = _trig
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
+        assert asyncio.run(btn.async_press()) is None
+
+    def test_setup_scenario_button_press_via_setup_entry(self):
+        """End-to-end: button created via async_setup_entry, then pressed."""
+        trigger_calls = []
+        sc = _good_scenario(sid="sc-e2e", name="E2E Scene")
+
+        async def _trig():
+            trigger_calls.append(True)
+
+        sc.async_trigger = _trig
+
+        session = _make_session(scenarios=[sc])
+        entry = _make_entry(
+            options={OPT_SCENARIOS_AS_BUTTONS: True},
+            unique_id="uid-e2e",
+        )
+        result = _run_setup_with_entry(session, entry)
+        assert len(result) == 1
+        asyncio.run(result[0].async_press())
+        assert trigger_calls == [True]
+
+
+class TestSHCScenarioButtonQualityScale:
+    """Verify Bronze quality-scale rules for SHCScenarioButton."""
+
+    def test_has_entity_name_true(self):
+        """_attr_has_entity_name=True (Bronze: has-entity-name).
+
+        SHCScenarioButton does not inherit a shadowing property from its base,
+        so checking the class attribute directly is reliable.
+        """
+        sc = _good_scenario()
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id="u", entry_id="e")
+        assert btn._attr_has_entity_name is True
+
+    def test_unique_id_format_unchanged_with_entry_unique_id(self):
+        """Regression pin: unique_id = f'{entry_unique_id}_scenario_{scenario.id}'.
+
+        This exact format must never change — changing it orphans existing entities.
+        """
+        sc = _good_scenario(sid="sc-999")
+        btn = SHCScenarioButton(
+            scenario=sc, entry_unique_id="uid-fixed", entry_id="entry-fallback"
+        )
+        assert btn._attr_unique_id == "uid-fixed_scenario_sc-999"
+
+    def test_unique_id_format_unchanged_without_entry_unique_id(self):
+        """Regression pin: fallback to entry_id when entry_unique_id is None."""
+        sc = _good_scenario(sid="sc-888")
+        btn = SHCScenarioButton(
+            scenario=sc, entry_unique_id=None, entry_id="entry-id-fallback"
+        )
+        assert btn._attr_unique_id == "entry-id-fallback_scenario_sc-888"
+
+    def test_device_info_links_to_shc_controller(self):
+        """device_info returns a dict with the SHC controller identifiers."""
+        shc_dev = _fake_shc_device()
+        sc = _good_scenario(sid="sc-di")
+        btn = SHCScenarioButton(
+            scenario=sc, entry_unique_id="uid-1", entry_id="entry-1", shc_device=shc_dev
+        )
+        info = btn.device_info
+        assert info is not None
+        assert info["identifiers"] == shc_dev.identifiers
+        assert info["name"] == shc_dev.name
+        assert info["manufacturer"] == shc_dev.manufacturer
+        assert info["model"] == shc_dev.model
+
+    def test_device_info_none_when_no_shc_device(self):
+        """device_info returns None when shc_device is not provided (graceful fallback)."""
+        sc = _good_scenario(sid="sc-no-dev")
+        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
+        assert btn.device_info is None
+
+    def test_setup_entry_passes_shc_device_to_button(self):
+        """async_setup_entry populates shc_device so device_info is not None."""
+        sc = _good_scenario(sid="sc-wiring", name="Test Wiring")
+        session = _make_session(scenarios=[sc])
+        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True}, unique_id="uid-w")
+        result = _run_setup_with_entry(session, entry)
+        assert len(result) == 1
+        btn = result[0]
+        assert btn.device_info is not None
+        assert btn.device_info["name"] == "Smart Home Controller"
+
+
 class TestButtonMotionDetectors2DeviceExcluded:
     """button.py — device_excluded continue in the motion_detectors2 loop."""
 
@@ -1643,747 +2384,6 @@ class TestTamperResetButton:
         # hardcoded _attr_icon (icon-translations quality-scale rule).
         b = SHCTamperResetButton.__new__(SHCTamperResetButton)
         assert b._attr_translation_key == "reset_tamper"
-
-
-# ---------------------------------------------------------------------------
-# SHCScenarioButton
-# ---------------------------------------------------------------------------
-
-
-class TestSHCScenarioButton:
-    """Unit tests for SHCScenarioButton (does not inherit SHCEntity)."""
-
-    def _make_scenario(self, scenario_id="sc-1", name="Good Night"):
-        scenario = SimpleNamespace(id=scenario_id, name=name)
-        shc_dev = SimpleNamespace(
-            identifiers={("bosch_shc", "test-uid")},
-            name="SHC Controller",
-            manufacturer="Bosch",
-            model="SmartHomeController",
-        )
-        return SHCScenarioButton(
-            scenario=scenario,
-            entry_unique_id="test-uid",
-            entry_id="E1",
-            shc_device=shc_dev,
-        )
-
-    def test_unique_id_uses_entry_unique_id_prefix(self):
-        btn = self._make_scenario(scenario_id="sc-1")
-        assert btn._attr_unique_id == "test-uid_scenario_sc-1"
-
-    def test_unique_id_falls_back_to_entry_id_when_no_unique_id(self):
-        scenario = SimpleNamespace(id="sc-2", name="Away")
-        btn = SHCScenarioButton(
-            scenario=scenario,
-            entry_unique_id=None,
-            entry_id="E1",
-            shc_device=None,
-        )
-        assert btn._attr_unique_id == "E1_scenario_sc-2"
-
-    def test_attr_name_is_scenario_name(self):
-        btn = self._make_scenario(name="Morning Routine")
-        assert btn._attr_name == "Morning Routine"
-
-    def test_icon(self):
-        # Icon comes from icons.json via translation_key (not a hardcoded
-        # _attr_icon) — same convention as every other button entity here.
-        btn = self._make_scenario()
-        assert btn._attr_translation_key == "scenario"
-
-    def test_should_poll_false(self):
-        btn = self._make_scenario()
-        assert btn._attr_should_poll is False
-
-    def test_has_entity_name(self):
-        btn = self._make_scenario()
-        assert btn._attr_has_entity_name is True
-
-    def test_device_info_contains_identifiers(self):
-        btn = self._make_scenario()
-        info = btn.device_info
-        assert info is not None
-        assert ("bosch_shc", "test-uid") in info["identifiers"]
-
-    def test_device_info_none_when_shc_device_none(self):
-        scenario = SimpleNamespace(id="sc-3", name="Test")
-        btn = SHCScenarioButton(
-            scenario=scenario,
-            entry_unique_id="uid",
-            entry_id="E1",
-            shc_device=None,
-        )
-        assert btn.device_info is None
-
-    def test_press_calls_async_trigger_on_scenario(self):
-        scenario = SimpleNamespace(id="sc-1", name="Goodnight")
-        called = []
-
-        async def _trig():
-            called.append(True)
-
-        scenario.async_trigger = _trig
-        btn = SHCScenarioButton(scenario=scenario, entry_unique_id="uid", entry_id="E1")
-        asyncio.run(btn.async_press())
-        assert called == [True]
-
-    def test_press_wraps_shc_exception_in_home_assistant_error(self):
-        """SHCScenarioButton has no self._device — must use self._scenario.name."""
-        scenario = SimpleNamespace(id="sc-1", name="Goodnight")
-
-        async def _fail():
-            raise SHCException("scenario trigger rejected")
-
-        scenario.async_trigger = _fail
-        btn = SHCScenarioButton(scenario=scenario, entry_unique_id="uid", entry_id="E1")
-        with pytest.raises(HomeAssistantError) as exc_info:
-            asyncio.run(btn.async_press())
-        assert exc_info.value.translation_key == "button_press_failed"
-        assert "Goodnight" in str(exc_info.value)
-
-    def test_is_button_entity(self):
-        assert issubclass(SHCScenarioButton, ButtonEntity)
-
-    # --- async_setup_entry integration ---
-
-    def _session_with_scenarios(self, scenarios):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=[],
-            ),
-            scenarios=scenarios,
-        )
-
-    def test_setup_scenario_buttons_created_when_option_enabled(self):
-        shc_dev = SimpleNamespace(
-            identifiers={("bosch_shc", "uid")},
-            name="SHC",
-            manufacturer="Bosch",
-            model="SmartHomeController",
-        )
-        sc = SimpleNamespace(id="sc-1", name="Away")
-        session = self._session_with_scenarios([sc])
-        result = _run_setup(
-            session,
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid",
-            shc_device=shc_dev,
-        )
-        scenario_buttons = [e for e in result if isinstance(e, SHCScenarioButton)]
-        assert len(scenario_buttons) == 1
-        assert scenario_buttons[0]._attr_name == "Away"
-
-    def test_setup_no_scenario_buttons_when_option_disabled(self):
-        sc = SimpleNamespace(id="sc-1", name="Away")
-        session = self._session_with_scenarios([sc])
-        result = _run_setup(session, options={OPT_SCENARIOS_AS_BUTTONS: False})
-        assert not any(isinstance(e, SHCScenarioButton) for e in result)
-
-    def test_setup_multiple_scenario_buttons(self):
-        shc_dev = SimpleNamespace(
-            identifiers={("bosch_shc", "uid")},
-            name="SHC",
-            manufacturer="Bosch",
-            model="SmartHomeController",
-        )
-        scenarios = [
-            SimpleNamespace(id="s1", name="Morning"),
-            SimpleNamespace(id="s2", name="Evening"),
-        ]
-        session = self._session_with_scenarios(scenarios)
-        result = _run_setup(
-            session,
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid",
-            shc_device=shc_dev,
-        )
-        sb = [e for e in result if isinstance(e, SHCScenarioButton)]
-        assert len(sb) == 2
-
-    def test_setup_bad_scenario_skipped_not_crash(self):
-        """A malformed scenario (missing id/name) must be skipped gracefully."""
-        shc_dev = SimpleNamespace(
-            identifiers={("bosch_shc", "uid")},
-            name="SHC",
-            manufacturer="Bosch",
-            model="SmartHomeController",
-        )
-        # No .id attribute → AttributeError → should be caught and skipped.
-        bad_sc = SimpleNamespace(name="No ID")
-        # SimpleNamespace doesn't set .id here — accessing it raises AttributeError.
-        good_sc = SimpleNamespace(id="ok", name="Good")
-        session = self._session_with_scenarios([bad_sc, good_sc])
-        # This must not raise; the bad scenario is skipped.
-        result = _run_setup(
-            session,
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid",
-            shc_device=shc_dev,
-        )
-        sb = [e for e in result if isinstance(e, SHCScenarioButton)]
-        # Only the good scenario makes it through.
-        assert len(sb) == 1
-        assert sb[0]._attr_name == "Good"
-
-
-class TestScenariosAsButtonsBlock:
-    """OPT_SCENARIOS_AS_BUTTONS=True → scenarios become SHCScenarioButton
-    entities (coverage-gap tests, incl. KeyError/AttributeError skip path)."""
-
-    def test_scenarios_as_buttons_false_by_default(self):
-        """When option is absent / False, no scenario buttons are added."""
-        sc = _good_scenario()
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry()
-        result = _run_setup_with_entry(session, entry)
-        assert result == []
-
-    def test_scenarios_as_buttons_true_adds_button(self):
-        sc = _good_scenario(sid="sc-001", name="Morning")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
-        assert len(result) == 1
-        assert isinstance(result[0], SHCScenarioButton)
-
-    def test_scenario_unique_id_uses_entry_unique_id(self):
-        sc = _good_scenario(sid="sc-abc")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(
-            options={OPT_SCENARIOS_AS_BUTTONS: True}, unique_id="uid-xyz"
-        )
-        result = _run_setup_with_entry(session, entry)
-        assert result[0]._attr_unique_id == "uid-xyz_scenario_sc-abc"
-
-    def test_scenario_name_is_scenario_name(self):
-        sc = _good_scenario(sid="sc-001", name="Evening Scene")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
-        assert result[0]._attr_name == "Evening Scene"
-
-    def test_multiple_scenarios_all_added(self):
-        scenarios = [
-            _good_scenario(sid="sc-001", name="Scene A"),
-            _good_scenario(sid="sc-002", name="Scene B"),
-            _good_scenario(sid="sc-003", name="Scene C"),
-        ]
-        session = _make_session(scenarios=scenarios)
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
-        assert len(result) == 3
-
-    def test_keyerror_on_scenario_logs_warning_and_skips(self):
-        """A scenario whose attribute access raises KeyError is skipped, not fatal."""
-
-        class _BadScenario:
-            @property
-            def id(self):
-                raise KeyError("id missing")
-
-            @property
-            def name(self):
-                return "Bad"
-
-        bad = _BadScenario()
-        good = _good_scenario(sid="sc-good", name="Good")
-        session = _make_session(scenarios=[bad, good])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-
-        with patch("custom_components.bosch_shc.button.LOGGER") as mock_log:
-            result = _run_setup_with_entry(session, entry)
-
-        mock_log.warning.assert_called_once()
-        assert len(result) == 1
-        assert isinstance(result[0], SHCScenarioButton)
-
-    def test_attribute_error_on_scenario_logs_warning_and_skips(self):
-        """A scenario whose attribute access raises AttributeError is skipped."""
-
-        class _BadScenario:
-            @property
-            def id(self):
-                raise AttributeError("no id attr")
-
-            name = "Bad"
-
-        bad = _BadScenario()
-        good = _good_scenario(sid="sc-good2", name="Good2")
-        session = _make_session(scenarios=[bad, good])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-
-        with patch("custom_components.bosch_shc.button.LOGGER") as mock_log:
-            result = _run_setup_with_entry(session, entry)
-
-        mock_log.warning.assert_called_once()
-        assert len(result) == 1
-
-    def test_all_bad_scenarios_yields_empty(self):
-        """All malformed scenarios → empty entity list (async_add_entities not called)."""
-
-        class _Bad:
-            @property
-            def id(self):
-                raise KeyError("no id")
-
-            name = "Bad"
-
-        session = _make_session(scenarios=[_Bad(), _Bad()])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
-        assert result == []
-
-
-class TestSHCScenarioButtonInit:
-    """SHCScenarioButton.__init__ with entry_unique_id=None (prefix falls
-    back to entry_id)."""
-
-    def test_prefix_uses_entry_unique_id_when_set(self):
-        """With a real entry_unique_id the unique_id is prefixed by it."""
-        sc = _good_scenario(sid="sc-001")
-        btn = SHCScenarioButton(
-            scenario=sc, entry_unique_id="uid-abc", entry_id="entry-xyz"
-        )
-        assert btn._attr_unique_id == "uid-abc_scenario_sc-001"
-
-    def test_prefix_falls_back_to_entry_id_when_unique_id_none(self):
-        """entry_unique_id=None → prefix is entry_id."""
-        sc = _good_scenario(sid="sc-002")
-        btn = SHCScenarioButton(
-            scenario=sc, entry_unique_id=None, entry_id="fallback-entry"
-        )
-        assert btn._attr_unique_id == "fallback-entry_scenario_sc-002"
-
-    def test_name_set_from_scenario(self):
-        sc = _good_scenario(name="My Scene")
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
-        assert btn._attr_name == "My Scene"
-
-    def test_scenario_stored(self):
-        sc = _good_scenario()
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
-        assert btn._scenario is sc
-
-    def test_icon_is_script_play(self):
-        # Icon comes from icons.json via translation_key (not a hardcoded
-        # _attr_icon) — same convention as every other button entity here.
-        sc = _good_scenario()
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id=None, entry_id="entry-1")
-        assert btn._attr_translation_key == "scenario"
-
-    def test_should_poll_is_false(self):
-        sc = _good_scenario()
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id=None, entry_id="entry-1")
-        assert btn._attr_should_poll is False
-
-
-class TestSHCScenarioButtonPress:
-    """SHCScenarioButton.press() calls scenario.trigger()."""
-
-    def test_press_calls_trigger(self):
-        """async_press() must await self._scenario.async_trigger()."""
-        calls = []
-        sc = _good_scenario()
-
-        async def _trig():
-            calls.append(True)
-
-        sc.async_trigger = _trig
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
-        asyncio.run(btn.async_press())
-        assert calls == [True]
-
-    def test_press_called_twice_triggers_twice(self):
-        calls = []
-        sc = _good_scenario()
-
-        async def _trig():
-            calls.append(1)
-
-        sc.async_trigger = _trig
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id=None, entry_id="entry-1")
-        asyncio.run(btn.async_press())
-        asyncio.run(btn.async_press())
-        assert len(calls) == 2
-
-    def test_press_returns_none(self):
-        sc = _good_scenario()
-
-        async def _trig():
-            return None
-
-        sc.async_trigger = _trig
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
-        assert asyncio.run(btn.async_press()) is None
-
-    def test_setup_scenario_button_press_via_setup_entry(self):
-        """End-to-end: button created via async_setup_entry, then pressed."""
-        trigger_calls = []
-        sc = _good_scenario(sid="sc-e2e", name="E2E Scene")
-
-        async def _trig():
-            trigger_calls.append(True)
-
-        sc.async_trigger = _trig
-
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid-e2e",
-        )
-        result = _run_setup_with_entry(session, entry)
-        assert len(result) == 1
-        asyncio.run(result[0].async_press())
-        assert trigger_calls == [True]
-
-
-class TestSHCScenarioButtonQualityScale:
-    """Verify Bronze quality-scale rules for SHCScenarioButton."""
-
-    def test_has_entity_name_true(self):
-        """_attr_has_entity_name=True (Bronze: has-entity-name).
-
-        SHCScenarioButton does not inherit a shadowing property from its base,
-        so checking the class attribute directly is reliable.
-        """
-        sc = _good_scenario()
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id="u", entry_id="e")
-        assert btn._attr_has_entity_name is True
-
-    def test_unique_id_format_unchanged_with_entry_unique_id(self):
-        """Regression pin: unique_id = f'{entry_unique_id}_scenario_{scenario.id}'.
-
-        This exact format must never change — changing it orphans existing entities.
-        """
-        sc = _good_scenario(sid="sc-999")
-        btn = SHCScenarioButton(
-            scenario=sc, entry_unique_id="uid-fixed", entry_id="entry-fallback"
-        )
-        assert btn._attr_unique_id == "uid-fixed_scenario_sc-999"
-
-    def test_unique_id_format_unchanged_without_entry_unique_id(self):
-        """Regression pin: fallback to entry_id when entry_unique_id is None."""
-        sc = _good_scenario(sid="sc-888")
-        btn = SHCScenarioButton(
-            scenario=sc, entry_unique_id=None, entry_id="entry-id-fallback"
-        )
-        assert btn._attr_unique_id == "entry-id-fallback_scenario_sc-888"
-
-    def test_device_info_links_to_shc_controller(self):
-        """device_info returns a dict with the SHC controller identifiers."""
-        shc_dev = _fake_shc_device()
-        sc = _good_scenario(sid="sc-di")
-        btn = SHCScenarioButton(
-            scenario=sc, entry_unique_id="uid-1", entry_id="entry-1", shc_device=shc_dev
-        )
-        info = btn.device_info
-        assert info is not None
-        assert info["identifiers"] == shc_dev.identifiers
-        assert info["name"] == shc_dev.name
-        assert info["manufacturer"] == shc_dev.manufacturer
-        assert info["model"] == shc_dev.model
-
-    def test_device_info_none_when_no_shc_device(self):
-        """device_info returns None when shc_device is not provided (graceful fallback)."""
-        sc = _good_scenario(sid="sc-no-dev")
-        btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
-        assert btn.device_info is None
-
-    def test_setup_entry_passes_shc_device_to_button(self):
-        """async_setup_entry populates shc_device so device_info is not None."""
-        sc = _good_scenario(sid="sc-wiring", name="Test Wiring")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True}, unique_id="uid-w")
-        result = _run_setup_with_entry(session, entry)
-        assert len(result) == 1
-        btn = result[0]
-        assert btn.device_info is not None
-        assert btn.device_info["name"] == "Smart Home Controller"
-
-
-# ---------------------------------------------------------------------------
-# SHCSirenTestAlarmButton
-# ---------------------------------------------------------------------------
-
-
-class TestSHCSirenTestAlarmButton:
-    """Unit tests for SHCSirenTestAlarmButton (Outdoor Siren #120)."""
-
-    def _make(self, root="root-siren", device_id="hdm:ZigBee:siren1"):
-        btn = SHCSirenTestAlarmButton.__new__(SHCSirenTestAlarmButton)
-        dev = _make_device(device_id=device_id, root_device_id=root)
-        btn._device = dev
-        btn._attr_unique_id = f"{root}_{device_id}_test_alarm"
-        return btn
-
-    def test_unique_id_ends_test_alarm(self):
-        btn = self._make(root="r1", device_id="d1")
-        assert btn._attr_unique_id == "r1_d1_test_alarm"
-
-    def test_translation_key(self):
-        # Icon now comes from icons.json keyed by translation_key, not a
-        # hardcoded _attr_icon (icon-translations quality-scale rule).
-        btn = self._make()
-        assert btn._attr_translation_key == "siren_test_alarm"
-
-    def test_press_calls_async_trigger_test_alarm(self):
-        btn = self._make()
-        called = []
-
-        async def _alarm():
-            called.append(True)
-
-        btn._device.async_trigger_test_alarm = _alarm
-        asyncio.run(btn.async_press())
-        assert called == [True]
-
-    def test_is_button_entity(self):
-        assert issubclass(SHCSirenTestAlarmButton, ButtonEntity)
-
-    # --- async_setup_entry integration ---
-
-    def _session_with_siren(self, sirens):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=sirens,
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_siren_creates_test_alarm_button(self):
-        dev = _make_device()
-        session = self._session_with_siren([dev])
-        result = _run_setup(session)
-        assert len(result) == 1
-        assert isinstance(result[0], SHCSirenTestAlarmButton)
-
-    def test_setup_no_sirens_yields_nothing(self):
-        session = self._session_with_siren([])
-        result = _run_setup(session)
-        assert result == []
-
-    def test_setup_multiple_sirens(self):
-        session = self._session_with_siren(
-            [
-                _make_device(device_id="s1"),
-                _make_device(device_id="s2"),
-            ]
-        )
-        result = _run_setup(session)
-        assert len(result) == 2
-        assert all(isinstance(e, SHCSirenTestAlarmButton) for e in result)
-
-    def test_setup_siren_excluded(self):
-        dev = _make_device(device_id="hdm:excluded-siren")
-        session = self._session_with_siren([dev])
-        result = _run_setup(
-            session, options={"excluded_devices": ["hdm:excluded-siren"]}
-        )
-        assert result == []
-
-
-# ---------------------------------------------------------------------------
-# ResetEnergySummationButton (hass#120 audit)
-# ---------------------------------------------------------------------------
-
-
-class TestResetEnergySummationButton:
-    """Unit tests for ResetEnergySummationButton (smart plugs, hass#120)."""
-
-    def _make(self, root="root-plug", device_id="hdm:ZigBee:plug1"):
-        btn = ResetEnergySummationButton.__new__(ResetEnergySummationButton)
-        dev = _make_device(device_id=device_id, root_device_id=root)
-        btn._device = dev
-        btn._attr_unique_id = f"{root}_{device_id}_reset_energy_summation"
-        return btn
-
-    def test_unique_id_ends_reset_energy_summation(self):
-        btn = self._make(root="r1", device_id="d1")
-        assert btn._attr_unique_id == "r1_d1_reset_energy_summation"
-
-    def test_translation_key(self):
-        btn = self._make()
-        assert btn._attr_translation_key == "reset_energy_summation"
-
-    def test_press_calls_async_reset_energy_summation(self):
-        btn = self._make()
-        called = []
-
-        async def _reset():
-            called.append(True)
-
-        btn._device.async_reset_energy_summation = _reset
-        asyncio.run(btn.async_press())
-        assert called == [True]
-
-    def test_press_shc_exception_raises_home_assistant_error(self):
-        btn = self._make()
-
-        async def _reset():
-            raise SHCException("rejected")
-
-        btn._device.async_reset_energy_summation = _reset
-        with pytest.raises(HomeAssistantError):
-            asyncio.run(btn.async_press())
-
-    def test_is_button_entity(self):
-        assert issubclass(ResetEnergySummationButton, ButtonEntity)
-
-    # --- async_setup_entry integration ---
-
-    def _session_with_plugs(self, smart_plugs=(), smart_plugs_compact=()):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=[],
-                smart_plugs=list(smart_plugs),
-                smart_plugs_compact=list(smart_plugs_compact),
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_smart_plug_creates_button(self):
-        dev = _make_device()
-        session = self._session_with_plugs(smart_plugs=[dev])
-        result = _run_setup(session)
-        assert len(result) == 1
-        assert isinstance(result[0], ResetEnergySummationButton)
-
-    def test_setup_smart_plug_compact_creates_button(self):
-        dev = _make_device()
-        session = self._session_with_plugs(smart_plugs_compact=[dev])
-        result = _run_setup(session)
-        assert len(result) == 1
-        assert isinstance(result[0], ResetEnergySummationButton)
-
-    def test_setup_no_plugs_yields_nothing(self):
-        session = self._session_with_plugs()
-        result = _run_setup(session)
-        assert result == []
-
-    def test_setup_plug_excluded(self):
-        dev = _make_device(device_id="hdm:excluded-plug")
-        session = self._session_with_plugs(smart_plugs=[dev])
-        result = _run_setup(
-            session, options={"excluded_devices": ["hdm:excluded-plug"]}
-        )
-        assert result == []
-
-
-# ---------------------------------------------------------------------------
-# ShutterRecalibrateButton (hass audit)
-# ---------------------------------------------------------------------------
-
-
-class TestShutterRecalibrateButton:
-    """Unit tests for ShutterRecalibrateButton (Shutter Control II, hass audit)."""
-
-    def _make(self, root="root-shutter", device_id="hdm:ZigBee:shutter1"):
-        btn = ShutterRecalibrateButton.__new__(ShutterRecalibrateButton)
-        dev = _make_device(device_id=device_id, root_device_id=root)
-        btn._device = dev
-        btn._attr_unique_id = f"{root}_{device_id}_recalibrate"
-        return btn
-
-    def test_unique_id_ends_recalibrate(self):
-        btn = self._make(root="r1", device_id="d1")
-        assert btn._attr_unique_id == "r1_d1_recalibrate"
-
-    def test_translation_key(self):
-        btn = self._make()
-        assert btn._attr_translation_key == "shutter_recalibrate"
-
-    def test_press_calls_async_reset_calibration_and_open(self):
-        btn = self._make()
-        called = []
-
-        async def _recalibrate():
-            called.append(True)
-
-        btn._device.async_reset_calibration_and_open = _recalibrate
-        asyncio.run(btn.async_press())
-        assert called == [True]
-
-    def test_press_shc_exception_raises_home_assistant_error(self):
-        btn = self._make()
-
-        async def _recalibrate():
-            raise SHCException("rejected")
-
-        btn._device.async_reset_calibration_and_open = _recalibrate
-        with pytest.raises(HomeAssistantError):
-            asyncio.run(btn.async_press())
-
-    def test_is_button_entity(self):
-        assert issubclass(ShutterRecalibrateButton, ButtonEntity)
-
-    # --- async_setup_entry integration ---
-
-    def _session_with_shutters(
-        self,
-        shutter_controls=(),
-        micromodule_shutter_controls=(),
-        micromodule_blinds=(),
-    ):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=[],
-                shutter_controls=list(shutter_controls),
-                micromodule_shutter_controls=list(micromodule_shutter_controls),
-                micromodule_blinds=list(micromodule_blinds),
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_shutter_control_creates_button(self):
-        dev = _make_device()
-        session = self._session_with_shutters(shutter_controls=[dev])
-        result = _run_setup(session)
-        assert len(result) == 1
-        assert isinstance(result[0], ShutterRecalibrateButton)
-
-    def test_setup_micromodule_shutter_control_creates_button(self):
-        dev = _make_device()
-        session = self._session_with_shutters(micromodule_shutter_controls=[dev])
-        result = _run_setup(session)
-        assert len(result) == 1
-        assert isinstance(result[0], ShutterRecalibrateButton)
-
-    def test_setup_micromodule_blinds_creates_button(self):
-        dev = _make_device()
-        session = self._session_with_shutters(micromodule_blinds=[dev])
-        result = _run_setup(session)
-        assert len(result) == 1
-        assert isinstance(result[0], ShutterRecalibrateButton)
-
-    def test_setup_no_shutters_yields_nothing(self):
-        session = self._session_with_shutters()
-        result = _run_setup(session)
-        assert result == []
-
-    def test_setup_shutter_excluded(self):
-        dev = _make_device(device_id="hdm:excluded-shutter")
-        session = self._session_with_shutters(shutter_controls=[dev])
-        result = _run_setup(
-            session, options={"excluded_devices": ["hdm:excluded-shutter"]}
-        )
-        assert result == []
 
 
 # ---------------------------------------------------------------------------

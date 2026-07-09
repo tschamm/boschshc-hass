@@ -413,6 +413,185 @@ def _dimmer_svc(min_b=10, max_b=90, speed=4):
 
 
 # ---------------------------------------------------------------------------
+# SirenConfigNumber (hass#120)
+# ---------------------------------------------------------------------------
+
+
+def test_siren_config_number_reads_and_clamps():
+    n = SirenConfigNumber(
+        SimpleNamespace(root_device_id="r", id="d", name="Siren"),
+        "entry",
+        *_SIREN_ALARM_DELAY,
+    )
+    n._device = SimpleNamespace(siren=SimpleNamespace(alarm_delay=42))
+    assert n.native_value == 42.0
+    assert n._attr_native_min_value == 0.0
+    assert n._attr_native_max_value == 180.0
+
+
+def test_siren_duration_bounds_match_app_slider():
+    """hass#120: alarmDuration/flashDuration are 1-15 minutes, confirmed via
+    APK decompile of the real slider widgets (layout_outdoorsiren_alarm_signal
+    _fragment.xml) — NOT 0-60 as previously assumed from the OpenAPI spec."""
+    for cfg in (_SIREN_ALARM_DURATION, _SIREN_FLASH_DURATION):
+        n = SirenConfigNumber(
+            SimpleNamespace(root_device_id="r", id="d", name="Siren"),
+            "entry",
+            *cfg,
+        )
+        assert n._attr_native_min_value == 1.0
+        assert n._attr_native_max_value == 15.0
+
+
+class TestNumberSirenSetup:
+    """Siren config numbers + dimmer config numbers created in setup."""
+
+    def _run_number_setup(self, sirens=None, dimmers=None, options=None):
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.micromodule_impulse_relays = []
+        dh.heating_circuits = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass, options=options or {})
+
+        collected = []
+        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+        return collected
+
+    def test_siren_config_numbers_created_when_siren_service_present(self):
+        """siren with siren service → SirenConfigNumber entities."""
+
+        siren = _fake_dev("s1", siren=MagicMock())
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.micromodule_impulse_relays = []
+        dh.heating_circuits = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass)
+
+        # Patch the dh to return our siren
+        with patch.object(dh, "outdoor_sirens", [siren], create=True):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        types = [type(e).__name__ for e in collected]
+        assert types.count("SirenConfigNumber") >= 4  # alarm/flash duration+delay
+
+    def test_siren_excluded_skipped_in_number_setup(self):
+        """device_excluded → continue (no SirenConfigNumber added)."""
+
+        siren_excl = _fake_dev("siren_excl", siren=MagicMock())
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.micromodule_impulse_relays = []
+        dh.heating_circuits = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
+
+        with patch.object(dh, "outdoor_sirens", [siren_excl], create=True):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        types = [type(e).__name__ for e in collected]
+        assert "SirenConfigNumber" not in types
+
+    def test_siren_without_siren_service_skipped_in_number_setup(self):
+        """siren with siren=None → continue (no SirenConfigNumber added)."""
+
+        siren_no_svc = _fake_dev("siren_no_svc", siren=None)
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.micromodule_impulse_relays = []
+        dh.heating_circuits = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass)
+
+        with patch.object(dh, "outdoor_sirens", [siren_no_svc], create=True):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        types = [type(e).__name__ for e in collected]
+        assert "SirenConfigNumber" not in types
+
+    def test_dimmer_excluded_skipped_in_number_setup(self):
+        """device_excluded → continue (no DimmerConfigNumber added)."""
+
+        dev_excl = _fake_dev("dim_excl", supports_dimmer_configuration=True)
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.micromodule_impulse_relays = []
+        dh.heating_circuits = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
+
+        with patch.object(dh, "micromodule_dimmers", [dev_excl], create=True):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        types = [type(e).__name__ for e in collected]
+        assert "DimmerConfigNumber" not in types
+
+    def test_dimmer_config_numbers_created_when_supports_dimmer(self):
+        """dimmer with supports_dimmer_configuration → DimmerConfigNumber."""
+
+        dev = _fake_dev("dim1", supports_dimmer_configuration=True)
+
+        dh = MagicMock()
+        dh.thermostats = []
+        dh.roomthermostats = []
+        dh.wallthermostats = []
+        dh.micromodule_impulse_relays = []
+        dh.heating_circuits = []
+
+        session = MagicMock()
+        session.device_helper = dh
+
+        hass = _fake_hass(session=session)
+        entry = _fake_entry(hass=hass)
+
+        with patch.object(dh, "micromodule_dimmers", [dev], create=True):
+            collected = []
+            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+
+        types = [type(e).__name__ for e in collected]
+        assert types.count("DimmerConfigNumber") >= 3  # min/max/speed
+
+
+# ---------------------------------------------------------------------------
 # SHCNumber.__init__ and class-level attributes
 # ---------------------------------------------------------------------------
 
@@ -922,24 +1101,6 @@ class TestNumberSetupExcludedThermostat:
         ids = [getattr(e, "_device", None) and e._device.id for e in entities]
         assert "trv-a" in ids
         assert "trv-b" not in ids
-
-
-class TestNumberSmartPlugCompactDeviceExcluded:
-    """number.py line 95 — device_excluded continue in smart_plugs/compact loop."""
-
-    def test_excluded_compact_plug_not_added(self):
-        plug = _fake_device_cg(id="cp-excl", power_threshold=100.0)
-        session = _make_number_session(smart_plugs_compact=[plug])
-        entities = _run_number_setup(session, options=_excl("cp-excl"))
-        ids = [getattr(getattr(e, "_device", None), "id", None) for e in entities]
-        assert "cp-excl" not in ids
-
-    def test_excluded_smart_plug_not_added(self):
-        plug = _fake_device_cg(id="sp-excl", power_threshold=100.0)
-        session = _make_number_session(smart_plugs=[plug])
-        entities = _run_number_setup(session, options=_excl("sp-excl"))
-        ids = [getattr(getattr(e, "_device", None), "id", None) for e in entities]
-        assert "sp-excl" not in ids
 
 
 # ---------------------------------------------------------------------------
@@ -1600,93 +1761,26 @@ class TestNumberSetupNewEntities:
 
 
 # ---------------------------------------------------------------------------
-# BypassTimeoutNumber (hass#120 audit)
-# ---------------------------------------------------------------------------
-
-
-class TestBypassTimeoutNumberClassAttrs:
-    def test_entity_category_is_config(self):
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        assert num._attr_entity_category == EntityCategory.CONFIG
-
-    def test_native_unit_is_minutes(self):
-        """hass#120: confirmed via APK decompile (bypass_configuration.xml
-        slider, app:quantityUnit="MINUTE") — not seconds as previously
-        assumed (no OpenAPI spec exists for this service)."""
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        assert num._attr_native_unit_of_measurement == UnitOfTime.MINUTES
-
-    def test_native_min_is_1(self):
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        assert num._attr_native_min_value == 1.0
-
-    def test_native_max_is_15(self):
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        assert num._attr_native_max_value == 15.0
-
-
-class TestBypassTimeoutNativeValue:
-    def test_native_value_reads_bypass_timeout(self):
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        num._device = SimpleNamespace(bypass_timeout=7)
-        assert num.native_value == pytest.approx(7.0)
-
-    def test_native_value_none_when_attribute_missing(self):
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        num._device = SimpleNamespace()
-        assert num.native_value is None
-
-
-class TestBypassTimeoutSetNativeValue:
-    def test_set_value_writes_clamped_value(self):
-        dev = SimpleNamespace(
-            name="Shutter Contact",
-            bypass_timeout=5,
-            async_set_bypass_timeout=AsyncMock(),
-        )
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        num._device = dev
-        asyncio.run(num.async_set_native_value(9.0))
-        dev.async_set_bypass_timeout.assert_awaited_once_with(9)
-
-    def test_set_value_clamps_to_max_15(self):
-        dev = SimpleNamespace(
-            name="Shutter Contact",
-            bypass_timeout=5,
-            async_set_bypass_timeout=AsyncMock(),
-        )
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        num._device = dev
-        asyncio.run(num.async_set_native_value(999.0))
-        dev.async_set_bypass_timeout.assert_awaited_once_with(15)
-
-    def test_set_value_clamps_to_min_1(self):
-        dev = SimpleNamespace(
-            name="Shutter Contact",
-            bypass_timeout=5,
-            async_set_bypass_timeout=AsyncMock(),
-        )
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        num._device = dev
-        asyncio.run(num.async_set_native_value(0.0))
-        dev.async_set_bypass_timeout.assert_awaited_once_with(1)
-
-    def test_set_value_shc_exception_raises_home_assistant_error(self):
-        dev = SimpleNamespace(
-            name="Shutter Contact",
-            bypass_timeout=5,
-            async_set_bypass_timeout=AsyncMock(side_effect=SHCException("rejected")),
-        )
-        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
-        num._device = dev
-        with pytest.raises(HomeAssistantError) as exc_info:
-            asyncio.run(num.async_set_native_value(9.0))
-        assert exc_info.value.translation_key == "number_set_failed"
-
-
-# ---------------------------------------------------------------------------
 # PowerThresholdNumber (smart plug / smart plug compact)
 # ---------------------------------------------------------------------------
+
+
+class TestNumberSmartPlugCompactDeviceExcluded:
+    """number.py line 95 — device_excluded continue in smart_plugs/compact loop."""
+
+    def test_excluded_compact_plug_not_added(self):
+        plug = _fake_device_cg(id="cp-excl", power_threshold=100.0)
+        session = _make_number_session(smart_plugs_compact=[plug])
+        entities = _run_number_setup(session, options=_excl("cp-excl"))
+        ids = [getattr(getattr(e, "_device", None), "id", None) for e in entities]
+        assert "cp-excl" not in ids
+
+    def test_excluded_smart_plug_not_added(self):
+        plug = _fake_device_cg(id="sp-excl", power_threshold=100.0)
+        session = _make_number_session(smart_plugs=[plug])
+        entities = _run_number_setup(session, options=_excl("sp-excl"))
+        ids = [getattr(getattr(e, "_device", None), "id", None) for e in entities]
+        assert "sp-excl" not in ids
 
 
 class TestPowerThresholdNumberGuard:
@@ -2286,185 +2380,6 @@ class TestDisplayOnTimeNativeStep:
 
 
 # ---------------------------------------------------------------------------
-# SirenConfigNumber (hass#120)
-# ---------------------------------------------------------------------------
-
-
-def test_siren_config_number_reads_and_clamps():
-    n = SirenConfigNumber(
-        SimpleNamespace(root_device_id="r", id="d", name="Siren"),
-        "entry",
-        *_SIREN_ALARM_DELAY,
-    )
-    n._device = SimpleNamespace(siren=SimpleNamespace(alarm_delay=42))
-    assert n.native_value == 42.0
-    assert n._attr_native_min_value == 0.0
-    assert n._attr_native_max_value == 180.0
-
-
-def test_siren_duration_bounds_match_app_slider():
-    """hass#120: alarmDuration/flashDuration are 1-15 minutes, confirmed via
-    APK decompile of the real slider widgets (layout_outdoorsiren_alarm_signal
-    _fragment.xml) — NOT 0-60 as previously assumed from the OpenAPI spec."""
-    for cfg in (_SIREN_ALARM_DURATION, _SIREN_FLASH_DURATION):
-        n = SirenConfigNumber(
-            SimpleNamespace(root_device_id="r", id="d", name="Siren"),
-            "entry",
-            *cfg,
-        )
-        assert n._attr_native_min_value == 1.0
-        assert n._attr_native_max_value == 15.0
-
-
-class TestNumberSirenSetup:
-    """Siren config numbers + dimmer config numbers created in setup."""
-
-    def _run_number_setup(self, sirens=None, dimmers=None, options=None):
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.micromodule_impulse_relays = []
-        dh.heating_circuits = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options=options or {})
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_siren_config_numbers_created_when_siren_service_present(self):
-        """siren with siren service → SirenConfigNumber entities."""
-
-        siren = _fake_dev("s1", siren=MagicMock())
-
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.micromodule_impulse_relays = []
-        dh.heating_circuits = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
-
-        # Patch the dh to return our siren
-        with patch.object(dh, "outdoor_sirens", [siren], create=True):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        types = [type(e).__name__ for e in collected]
-        assert types.count("SirenConfigNumber") >= 4  # alarm/flash duration+delay
-
-    def test_siren_excluded_skipped_in_number_setup(self):
-        """device_excluded → continue (no SirenConfigNumber added)."""
-
-        siren_excl = _fake_dev("siren_excl", siren=MagicMock())
-
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.micromodule_impulse_relays = []
-        dh.heating_circuits = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["siren_excl"]})
-
-        with patch.object(dh, "outdoor_sirens", [siren_excl], create=True):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        types = [type(e).__name__ for e in collected]
-        assert "SirenConfigNumber" not in types
-
-    def test_siren_without_siren_service_skipped_in_number_setup(self):
-        """siren with siren=None → continue (no SirenConfigNumber added)."""
-
-        siren_no_svc = _fake_dev("siren_no_svc", siren=None)
-
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.micromodule_impulse_relays = []
-        dh.heating_circuits = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
-
-        with patch.object(dh, "outdoor_sirens", [siren_no_svc], create=True):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        types = [type(e).__name__ for e in collected]
-        assert "SirenConfigNumber" not in types
-
-    def test_dimmer_excluded_skipped_in_number_setup(self):
-        """device_excluded → continue (no DimmerConfigNumber added)."""
-
-        dev_excl = _fake_dev("dim_excl", supports_dimmer_configuration=True)
-
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.micromodule_impulse_relays = []
-        dh.heating_circuits = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
-
-        with patch.object(dh, "micromodule_dimmers", [dev_excl], create=True):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        types = [type(e).__name__ for e in collected]
-        assert "DimmerConfigNumber" not in types
-
-    def test_dimmer_config_numbers_created_when_supports_dimmer(self):
-        """dimmer with supports_dimmer_configuration → DimmerConfigNumber."""
-
-        dev = _fake_dev("dim1", supports_dimmer_configuration=True)
-
-        dh = MagicMock()
-        dh.thermostats = []
-        dh.roomthermostats = []
-        dh.wallthermostats = []
-        dh.micromodule_impulse_relays = []
-        dh.heating_circuits = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
-
-        with patch.object(dh, "micromodule_dimmers", [dev], create=True):
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
-        types = [type(e).__name__ for e in collected]
-        assert types.count("DimmerConfigNumber") >= 3  # min/max/speed
-
-
-# ---------------------------------------------------------------------------
 # DimmerConfigNumber (#123)
 # ---------------------------------------------------------------------------
 
@@ -2559,6 +2474,91 @@ def test_dimmer_number_has_correct_names():
 def test_dimmer_number_unique_ids():
     n = DimmerConfigNumber(_FAKE_DEVICE, "e1", "min", 0, 100)
     assert n.unique_id == "root-1_hdm:ZigBee:dimmer1_dimmer_min"
+
+
+# ---------------------------------------------------------------------------
+# BypassTimeoutNumber (hass#120 audit)
+# ---------------------------------------------------------------------------
+
+
+class TestBypassTimeoutNumberClassAttrs:
+    def test_entity_category_is_config(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_entity_category == EntityCategory.CONFIG
+
+    def test_native_unit_is_minutes(self):
+        """hass#120: confirmed via APK decompile (bypass_configuration.xml
+        slider, app:quantityUnit="MINUTE") — not seconds as previously
+        assumed (no OpenAPI spec exists for this service)."""
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_native_unit_of_measurement == UnitOfTime.MINUTES
+
+    def test_native_min_is_1(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_native_min_value == 1.0
+
+    def test_native_max_is_15(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        assert num._attr_native_max_value == 15.0
+
+
+class TestBypassTimeoutNativeValue:
+    def test_native_value_reads_bypass_timeout(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = SimpleNamespace(bypass_timeout=7)
+        assert num.native_value == pytest.approx(7.0)
+
+    def test_native_value_none_when_attribute_missing(self):
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = SimpleNamespace()
+        assert num.native_value is None
+
+
+class TestBypassTimeoutSetNativeValue:
+    def test_set_value_writes_clamped_value(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        asyncio.run(num.async_set_native_value(9.0))
+        dev.async_set_bypass_timeout.assert_awaited_once_with(9)
+
+    def test_set_value_clamps_to_max_15(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        asyncio.run(num.async_set_native_value(999.0))
+        dev.async_set_bypass_timeout.assert_awaited_once_with(15)
+
+    def test_set_value_clamps_to_min_1(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        asyncio.run(num.async_set_native_value(0.0))
+        dev.async_set_bypass_timeout.assert_awaited_once_with(1)
+
+    def test_set_value_shc_exception_raises_home_assistant_error(self):
+        dev = SimpleNamespace(
+            name="Shutter Contact",
+            bypass_timeout=5,
+            async_set_bypass_timeout=AsyncMock(side_effect=SHCException("rejected")),
+        )
+        num = BypassTimeoutNumber.__new__(BypassTimeoutNumber)
+        num._device = dev
+        with pytest.raises(HomeAssistantError) as exc_info:
+            asyncio.run(num.async_set_native_value(9.0))
+        assert exc_info.value.translation_key == "number_set_failed"
 
 
 # ---------------------------------------------------------------------------
