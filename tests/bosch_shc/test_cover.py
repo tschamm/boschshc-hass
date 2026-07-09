@@ -199,7 +199,7 @@ def _cover_device(
     return SimpleNamespace(
         name="Test Cover",
         id="hdm:HomeMaticIP:cover1",
-        root_device_id="aa:bb:cc:00:00:01",
+        root_device_id="aa:bb:cc:dd:ee:ff",
         serial="serial-cover1",
         device_model=device_model,
         level=level,
@@ -220,7 +220,7 @@ def _blinds_device(
     return SimpleNamespace(
         name="Test Blinds",
         id="hdm:HomeMaticIP:blind1",
-        root_device_id="aa:bb:cc:00:00:02",
+        root_device_id="aa:bb:cc:dd:ee:ff",
         serial="serial-blind1",
         device_model="MICROMODULE_BLINDS",
         level=level,
