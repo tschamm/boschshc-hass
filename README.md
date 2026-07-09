@@ -70,7 +70,7 @@ Click the button below, or open **HACS → Integrations**, search for **Bosch SH
 
 **2 — Put the SHC into registration mode**
 
-Press and hold the button on the front of the SHC until the LEDs flash (~10 s).
+**SHC II:** short press. **SHC I / Classic:** press and hold until the LEDs flash (~10 s).
 
 **3 — Add the integration**
 
@@ -124,8 +124,8 @@ Bosch SHC**.
 ### Initial setup
 
 1. Press *Configure* on the discovered entry (or add it manually).
-2. **Confirm host** — before submitting, press the button on the front of the SHC until the LEDs
-   flash. This puts the controller into client-registration mode.
+2. **Confirm host** — before submitting, put the SHC into client-registration mode: a short press
+   on **SHC II**, or press-and-hold until the LEDs flash on **SHC I / Classic**.
 3. **System password** — the password you set when first setting up the SHC.
 4. **Done** — the entry is created and all paired devices are discovered.
 
@@ -319,7 +319,7 @@ change occurs, then responds immediately with the changed values. This gives
 | Error | Cause | Fix |
 |---|---|---|
 | `cannot_connect` | SHC not reachable at the given IP | Check IP, firewall; try ping from HA host |
-| `pairing_failed` | SHC not in registration mode when credentials were submitted | Press the SHC front button until LEDs flash, then retry |
+| `pairing_failed` | SHC not in registration mode when credentials were submitted | Re-enter registration mode (short press on SHC II, press-and-hold until LEDs flash on SHC I/Classic), then retry |
 | `session_error` | Certificate or session rejected | Re-pair via **Reconfigure → Re-pair credentials** |
 | `invalid_auth` | Wrong system password | Re-enter the password set during initial SHC app setup |
 | `RequirementsNotFound: boschshcpy` | PyPI mirror lag after a release | Wait 5–10 min and reload; or manually install the pinned version |
