@@ -274,57 +274,18 @@ class TestUnloadPresenceUnsub:
 
 # ---------------------------------------------------------------------------
 # binary_sensor.py — line 187: _cleanup_tracker body
+#
+# Removed: this file previously had a TestCleanupTrackerBody class here whose
+# two tests bypassed async_setup_entry entirely and only replicated the
+# closure inline (a plain `tracker.teardown()` call from a locally redefined
+# `_cleanup_tracker`). That provided no real coverage of line 187 and
+# duplicated equivalent replica tests in test_final_coverage_gaps.py and
+# test_gaps_coverage2.py. Real coverage of the production closure is
+# provided by test_coverage_gaps_final.py::test_cleanup_tracker_teardown_called,
+# test_final_coverage_gaps.py::test_cleanup_tracker_via_binary_sensor_setup, and
+# test_gaps_coverage2.py::test_cleanup_tracker_teardown_called_via_captured_closure
+# — all three actually import and exercise binary_sensor.async_setup_entry.
 # ---------------------------------------------------------------------------
-
-class TestCleanupTrackerBody:
-    """_cleanup_tracker must call tracker.teardown() (line 187).
-
-    We test this by directly constructing and invoking the closure pattern
-    that binary_sensor.py creates, bypassing async_setup_entry entirely.
-    This isolates the branch without needing a full SHC session setup.
-    """
-
-    def test_cleanup_tracker_calls_teardown(self):
-        """The closure `_cleanup_tracker` must call tracker.teardown()."""
-        teardown_called = []
-
-        class _FakeTracker:
-            def teardown(self):
-                teardown_called.append(True)
-
-        tracker = _FakeTracker()
-
-        # Replicate the exact closure from binary_sensor.py line 186-187
-        def _cleanup_tracker():
-            tracker.teardown()
-
-        _cleanup_tracker()
-
-        assert teardown_called == [True], (
-            "tracker.teardown() was not called by _cleanup_tracker"
-        )
-
-    def test_cleanup_tracker_closure_pattern(self):
-        """Closure correctly captures the tracker binding from outer scope."""
-        teardown_calls = []
-
-        class _Tracker:
-            def __init__(self, name):
-                self.name = name
-
-            def teardown(self):
-                teardown_calls.append(self.name)
-
-        tracker = _Tracker("my_tracker")
-
-        def _cleanup_tracker():
-            tracker.teardown()
-
-        _cleanup_tracker()
-        _cleanup_tracker()  # idempotent in terms of closure call
-
-        assert teardown_calls == ["my_tracker", "my_tracker"]
-
 
 # ---------------------------------------------------------------------------
 # binary_sensor.py — line 795: messageCode name != SMOKE_ALARM continue

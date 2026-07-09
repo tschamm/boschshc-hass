@@ -165,58 +165,16 @@ class TestPresenceStateNoneEntity:
 # ===========================================================================
 
 class TestCleanupTrackerBody:
-    """Test that the _cleanup_tracker closure body (line 187) is exercised."""
+    """Test that the _cleanup_tracker closure body (line 187) is exercised.
 
-    def test_cleanup_tracker_calls_teardown(self):
-        """The _cleanup_tracker() closure must call tracker.teardown().
-
-        The closure is defined in binary_sensor.async_setup_entry:
-            def _cleanup_tracker():
-                tracker.teardown()
-            config_entry.async_on_unload(_cleanup_tracker)
-
-        We replicate the closure here to exercise line 187 directly.
-        """
-        tracker = MagicMock()
-        tracker.teardown = MagicMock()
-
-        # Replicate exactly the closure from binary_sensor.py line 186-187
-        def _cleanup_tracker():
-            tracker.teardown()
-
-        # Call it — exercises the body at line 187
-        _cleanup_tracker()
-
-        tracker.teardown.assert_called_once()
-
-    def test_cleanup_tracker_pattern_mirrors_production(self):
-        """The _cleanup_tracker closure pattern from binary_sensor.py line 186-187.
-
-        This test verifies the unload pattern works end-to-end:
-        tracker is created → closure captures it → closure call invokes teardown.
-        This is the minimal reproduction of the production code path.
-        """
-        tracker = MagicMock()
-        tracker.teardown = MagicMock()
-
-        captured_unloads = []
-
-        def fake_async_on_unload(fn):
-            captured_unloads.append(fn)
-
-        # Simulate the code path from binary_sensor.async_setup_entry lines 186-189:
-        #   def _cleanup_tracker():
-        #       tracker.teardown()
-        #   config_entry.async_on_unload(_cleanup_tracker)
-        def _cleanup_tracker():
-            tracker.teardown()
-
-        fake_async_on_unload(_cleanup_tracker)
-
-        assert captured_unloads, "Cleanup function was not registered"
-        # Call the registered function (simulates config-entry unload)
-        captured_unloads[0]()
-        tracker.teardown.assert_called_once()
+    Note: earlier iterations of this test also included two variants that
+    merely replicated the closure inline (``tracker.teardown()`` called from
+    a locally redefined ``_cleanup_tracker``) without ever importing or
+    calling the real ``binary_sensor.async_setup_entry``. Those provided no
+    actual coverage of line 187 and duplicated each other one-for-one; they
+    were removed as dead test weight. The remaining test below exercises the
+    real production closure end-to-end.
+    """
 
     def test_cleanup_tracker_via_binary_sensor_setup(self):
         """Actually execute _cleanup_tracker() from binary_sensor.async_setup_entry.

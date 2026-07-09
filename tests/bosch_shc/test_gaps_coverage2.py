@@ -354,25 +354,12 @@ class TestCleanupTrackerActualClosure:
         # Calling this must not raise and must exercise line 187
         cleanup_fns[0]()
 
-    def test_cleanup_tracker_teardown_called_once(self):
-        """Repeated calls to the closure must not raise (idempotent teardown)."""
-        teardown_calls = []
-
-        class _FakeTracker:
-            def teardown(self):
-                teardown_calls.append(True)
-
-        tracker = _FakeTracker()
-
-        # Replicate exactly the closure from binary_sensor.py lines 186-187.
-        # Even though this is a local replica, the structure is identical, which
-        # means the REAL closure is already tested by the integration test above.
-        def _cleanup_tracker():
-            tracker.teardown()
-
-        _cleanup_tracker()
-        _cleanup_tracker()
-        assert teardown_calls == [True, True]
+    # Note: an additional test_cleanup_tracker_teardown_called_once() used to
+    # live here. It only replicated the closure inline (its own docstring
+    # admitted "even though this is a local replica... the REAL closure is
+    # already tested by the integration test above") and provided no coverage
+    # beyond test_cleanup_tracker_teardown_called_via_captured_closure() above.
+    # Removed as redundant test weight.
 
 
 # ---------------------------------------------------------------------------
