@@ -73,13 +73,21 @@ This mirrors the GitHub Actions checks (compile, tests, lint, optional build). G
 
 ## Linting
 
-`flake8` is the only enforced linter. Run it with:
+CI enforces `ruff` (lint + format), `pylint`, `mypy`, and `codespell` against
+`custom_components/`. Run the full local gate before opening a PR:
 
 ```bash
-pipx run flake8 --max-line-length=88 --extend-ignore=E501,W503 <files>
+scripts/local-ci.sh hass
 ```
 
-The repo `.flake8` already sets these options, so `pipx run flake8 <files>` also works. Pre-existing F401 warnings in `__init__.py`, `cover.py`, and `sensor.py` are not ours — do not fix unrelated lint in the same PR.
+Or run the linters individually:
+
+```bash
+ruff check custom_components
+ruff format --check custom_components
+pylint --rcfile=pyproject.toml custom_components/bosch_shc
+mypy custom_components/bosch_shc/
+```
 
 ## Running tests
 

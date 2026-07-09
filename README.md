@@ -542,9 +542,9 @@ sequenceDiagram
 
 ## Quality
 
-Targets the [Home Assistant **Gold** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/).
-All Bronze + Silver + Gold rules implemented. Platinum progress tracked in `quality_scale.yaml`
-(`scripts/check-quality-scale.py --tier platinum`).
+Meets the [Home Assistant **Platinum** quality scale](https://developers.home-assistant.io/docs/integration_quality_scale_index/) —
+all Bronze + Silver + Gold + Platinum rules are done or exempt (`quality_scale.yaml`,
+checked by `scripts/check-quality-scale.py --tier platinum`).
 
 - `local_push` IoT class — no cloud, no polling (camera-type devices update on poll only).
 - Config flow with zeroconf discovery, re-auth, reconfigure and options flow.
@@ -554,80 +554,41 @@ All Bronze + Silver + Gold rules implemented. Platinum progress tracked in `qual
 - Entity + icon + exception translations (30 languages); repair issues for certificate expiry.
 - Domain actions (`trigger_scenario`, `trigger_rawscan`) available even if an entry fails to load.
 - Diagnostics download — redacted JSON snapshot of all device states.
-- CI: hassfest + HACS validation, unit tests, ruff/codespell/pip-audit/pylint, CodeQL,
-  secret scan, translation-completeness gate, quality-scale gate (Gold hard / Platinum informational).
+- CI: hassfest + HACS validation, unit tests, ruff/codespell/pip-audit/pylint/mypy, CodeQL,
+  secret scan, translation-completeness gate, quality-scale gate (Platinum, hard).
 
 ---
 
 ## What's new
 
-**0.7.28 — User-Defined States crash fix + SHC I/II/Classic all supported**
+The full version-by-version history lives in [`CHANGELOG.md`](CHANGELOG.md). Recent highlights:
 
-- **switch / lib** — Fix `KeyError: 'deleted'` crash on `SHCUserDefinedStateSwitch.available` when the SHC API omits the `deleted` field (present only when `True`). All User-Defined State switches now load correctly. Fixes #351. Requires boschshcpy 0.3.21.
-- **Docs** — Corrected hardware compatibility: SHC I, SHC II, and SHC Classic all support the local REST API (registration differs: short press for SHC II, hold until LEDs flash for SHC I/Classic).
+**0.10.10 — light/cover error handling, event unsubscribe, number JSON-decode guard**
 
-**0.7.27 — entity_id deprecation fix + CI / docs**
+- `light.py`/`cover.py` write actions now catch `SHCException` and raise a translated
+  `HomeAssistantError` instead of crashing; a failed write no longer leaves the UI stuck
+  showing a state change that never happened.
+- `cover.py` no longer reports a stale target position while a Shutter-II device is moved
+  from the Bosch app or a physical switch.
+- `event.py` entities now unregister their callbacks on removal instead of staying
+  subscribed indefinitely.
 
-- **event / switch** — Remove all manual `self.entity_id` assignments (`SHCUniversalSwitchEvent`, `SHCLightControlButtonEvent`, `SHCScenarioEvent`, `SHCUserDefinedStateSwitch`). HA now generates entity IDs from `unique_id` — the modern, deprecation-safe approach. Existing installs are unaffected (HA persists entity IDs in the registry; the stored value is reused). Addresses #296.
-- **CI** — Fix `homeassistant>=2026.6.4` in `requirements_test.txt` (unavailable on Python 3.13 CI); changed to `>=2026.2.0`. Tests now resolve to the latest Python-3.13-compatible HA version (2026.2.3).
-- **Docs** — README restructured: HACS one-click install button, logical section order (Highlights → Quick start → Install → Config → Reference → Troubleshooting → Architecture → What's new), updated TOC.
+**0.10.8 — device-inventory audit: bypass, energy reset, presence simulation, shutter diagnostics**
 
-**0.7.26 — Bug fixes + coverage gate**
+New read-only sensors and action entities across several device families (shutter-contact
+bypass config, smart-plug energy-counter reset, presence-simulation timing, room-climate
+schedule overrides, Shutter Control II diagnostics), all confirmed reachable in the official
+Bosch Android app before implementation.
 
-Ten targeted bug fixes and CI hardening, paired with **boschshcpy 0.3.20**:
+**0.10.7 — per-room light groups**
 
-- **Climate** — skip `set_temperature` when `hvac_mode=AUTO`; Bosch rejects setpoints in schedule mode (previously caused a silent HTTP 400).
-- **Number** — guard `step_size=None` in `native_step` (was `TypeError` on certain thermostat models).
-- **Binary sensor** — smoke-detector sensors now properly unsubscribe their service callback on unload, and guard against unexpected enum values.
-- **Event** — motion-detector events have a dedup guard (`_last_fired_timestamp`) to suppress phantom events caused by unrelated battery-level polls.
-- **Switch** — `SHCUserDefinedStateSwitch.available` property added; was always `True` even after a user-defined state was deleted from the SHC.
-- **CI** — coverage gate ≥ 95 % (current: **99.28 %**, 2939 tests, 20/22 files at 100 %).
-- **Library** — `boschshcpy 0.3.20`: thread-safety `list()` copies in the long-poll callback loop + ruff CI gate.
+New opt-in feature (off by default): one aggregate `light` entity per room with 2+
+dimmable/color lights.
 
-**0.7.18 — Suppress & filter options**
+**0.9.0 — writable Motion Detector II installation profile**
 
-Six new opt-in suppression toggles keep your entity list tidy. All default to **off** so nothing
-changes for existing setups:
-
-- **Suppress power sensors** — hides the watt + kWh sensors on plugs (Smart Plug, Compact, EMMA).
-- **Suppress camera switches** — hides the privacy / light / notification switches for
-  Camera Eyes, 360, and Outdoor Gen2 (useful when the
-  [Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant) is installed).
-- **Suppress Hue lights** — hides lights paired through the SHC Hue bridge
-  *(shown only when Hue devices are connected)*.
-- **Suppress LEDVANCE lights** — hides LEDVANCE lights paired to the SHC
-  *(shown only when LEDVANCE devices are connected)*.
-- **Suppress MD2 indicator light** — hides the orientation LED entity on Motion Detector II
-  *(shown only when MD2 devices are connected)*.
-- **Scenario filter** — a multi-select allow-list; only the chosen scenarios become button entities
-  (stale IDs are auto-cleared on reload) *(shown only when scenarios exist)*.
-- **Expose light relay as `light`** — per-device picker (and a "flip all" toggle) to expose
-  BSM / Light Control II channels as `light` entities instead of `switch`
-  *(shown only when compatible light-relay devices are connected)*.
-
-CI now enforces translation completeness for all 30 languages.
-
-**0.7.15 — Fully async**
-
-The integration is now event-loop-native — no executor round-trips for writes. This was the final
-phase of a multi-release async migration.
-
-**0.7 — Motion Detector II, climate polish**
-
-- **Motion Detector II [+M] — full configuration parity with the Bosch app:**
-  - **Detection (Walk) Test** — start/stop buttons + a state sensor, for verifying
-    mounting/coverage. Works whether your device exposes the `DetectionTest` *or* the
-    `WalkTest` service (the local API and the app use different names for the same feature).
-  - **Tamper protection** — a switch to enable/disable it, a **Reset Tamper** button to
-    clear an active tamper condition, and the existing tamper state sensor.
-  - **Orientation-light response time** — a select (Long = lower battery use / Short =
-    more responsive), backed by the `PollControl` service.
-  - **Installation profile** — a writable select for the active detection
-    environment (e.g. `GENERIC` / `OUTDOOR`); selecting an option writes the
-    device-level profile via the local API.
-- **Climate display polish** — preset icons (`auto`/`manual`/`eco`/`boost`) and a proper
-  `translation_key`, plus `hvac_modes` ordered `[HEAT, (COOL), OFF]` so cards that hide
-  modes after `OFF` (e.g. Mushroom thermostat) show the COOL button. *(thanks @jumlu)*
+The `[+M]` installation profile (e.g. `GENERIC` / `OUTDOOR`) is now a writable select
+instead of a read-only sensor.
 
 ---
 

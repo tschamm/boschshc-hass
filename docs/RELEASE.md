@@ -3,7 +3,7 @@
 Two repos: `boschshc-hass` (HACS integration) pins `boschshcpy` (PyPI lib) in `manifest.json`.
 
 ## CI (must stay green on master)
-boschshc-hass: `validate.yml` (hassfest + HACS), `quality.yml` (flake8 + codespell + pip-audit, scoped to `custom_components/`), `tests.yml` (pytest unit leg), `codeql.yml` / `dependency-review.yml` / `secret-scan.yml`.
+boschshc-hass: `validate.yml` (hassfest + HACS), `quality.yml` (ruff + pylint + mypy + codespell + pip-audit, scoped to `custom_components/`), `tests.yml` (pytest unit leg), `codeql.yml` / `dependency-review.yml` / `secret-scan.yml`.
 boschshcpy: `tests.yml` (pytest matrix 3.11–3.13), `publish.yml` (OIDC Trusted Publishing, 2-job build→publish, `environment: pypi`, `skip-existing`).
 Local gate (mirrors remote): `scripts/local-ci.sh [lib|hass|all]` — get GREEN before any push/tag/release.
 

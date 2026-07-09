@@ -28,8 +28,10 @@ _Custom integration for [Bosch Smart Home][bosch_smart_home] — local-only, no 
 | `event` | Universal Switch button presses, Scenario events, Motion events, Smoke Detector alarm events |
 | `light` | LEDVANCE lights, Hue lights (via SHC), Micromodule Dimmer, Motion Detector II light |
 | `number` | Thermostat temperature offset |
+| `select` | Installation profile, orientation-light response time, sensitivity/type selects (motion, vibration, smoke, siren sound level, state-after-power-outage, relay/valve/heater/actuator/output-mode configuration) |
 | `sensor` | Temperature, Humidity, CO₂ (Twinguard), Air quality, Energy + Power, Illuminance, EMMA grid power, Battery level (diagnostic) |
 | `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, cameras (privacy/light/notification), Presence Simulation, Child Lock, Pet Immunity, User Defined States |
+| `update` | Controller and device firmware update status |
 | `valve` | Thermostat radiator valve (position) |
 
 {% if not installed %}
