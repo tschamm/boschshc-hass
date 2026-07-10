@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Waktu Pergerakan Referensi (Atas ke Bawah)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Kualitas Routing Zigbee",
+        "state": {
+          "good": "Baik",
+          "medium": "Sedang",
+          "bad": "Buruk",
+          "no_connection": "Tidak Ada Koneksi",
+          "device_not_initialized": "Perangkat Belum Diinisialisasi",
+          "not_supported": "Tidak Didukung",
+          "unknown": "Tidak Diketahui"
+        }
       }
     },
     "binary_sensor": {

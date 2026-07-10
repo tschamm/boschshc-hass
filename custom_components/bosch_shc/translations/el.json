@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Χρόνος Αναφοράς Κίνησης (Καθοδική Πορεία)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Ποιότητα Δρομολόγησης Zigbee",
+        "state": {
+          "good": "Καλή",
+          "medium": "Μέτρια",
+          "bad": "Κακή",
+          "no_connection": "Καμία Σύνδεση",
+          "device_not_initialized": "Η Συσκευή Δεν Έχει Αρχικοποιηθεί",
+          "not_supported": "Δεν Υποστηρίζεται",
+          "unknown": "Άγνωστη"
+        }
       }
     },
     "binary_sensor": {

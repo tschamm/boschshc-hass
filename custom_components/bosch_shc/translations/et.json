@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Kalibreeritud liikumisaeg (ülevalt alla)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee marsruutimise kvaliteet",
+        "state": {
+          "good": "Hea",
+          "medium": "Keskmine",
+          "bad": "Halb",
+          "no_connection": "Ühendus puudub",
+          "device_not_initialized": "Seade lähtestamata",
+          "not_supported": "Ei toetata",
+          "unknown": "Teadmata"
+        }
       }
     },
     "binary_sensor": {

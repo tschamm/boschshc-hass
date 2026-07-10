@@ -26,6 +26,7 @@ from boschshcpy.services_impl import (
     BatteryLevelService,
     ValveTappetService,
 )
+from boschshcpy.zigbee_routing import SHCZigbeeRoutingInfo
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
@@ -37,7 +38,10 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.entity import EntityCategory
 
-from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
+from custom_components.bosch_shc.const import (
+    OPT_DIAGNOSTIC_ENTITIES,
+    OPT_EXCLUDED_DEVICES,
+)
 from custom_components.bosch_shc.sensor import (
     AirQualitySensor,
     BatteryLevelSensor,
@@ -69,6 +73,7 @@ from custom_components.bosch_shc.sensor import (
     TwinguardDescriptionSensor,
     ValveTappetSensor,
     WalkStateSensor,
+    ZigbeeRoutingQualitySensor,
     async_setup_entry,
 )
 
@@ -3741,3 +3746,360 @@ class TestDeviceExcludedContinueBranches:
         )
         assert len(entities) == 1
         assert isinstance(entities[0], EmmaPowerSensor)
+
+
+# ===========================================================================
+# ZigbeeRoutingQualitySensor
+#
+# Ground truth: only devices whose id starts with "hdm:ZigBee:" support
+# SHCSessionAsync.get_zigbee_routing_info. That call is not delivered by the
+# long-poll stream, so this entity is backed by a DataUpdateCoordinator
+# (SHCZigbeeRoutingCoordinator, coordinator.py) per HA's documented pattern
+# for polled data, rather than per-entity should_poll/async_update. The
+# coordinator itself is unit-tested in test_coordinator.py; these tests cover
+# the entity's read side (native_value/extra_state_attributes/available) and
+# async_setup_entry wiring, using a lightweight fake coordinator (fixed
+# `.data` dict) rather than a real DataUpdateCoordinator instance.
+# ===========================================================================
+
+_ZIGBEE_DEVICE_HELPER_LIST_ATTRS = (
+    "thermostats", "wallthermostats", "roomthermostats", "twinguards",
+    "smart_plugs", "light_switches_bsm", "micromodule_light_controls",
+    "micromodule_shutter_controls", "micromodule_blinds", "smart_plugs_compact",
+    "motion_detectors", "motion_detectors2", "shutter_contacts",
+    "shutter_contacts2", "smoke_detectors", "universal_switches",
+    "water_leakage_detectors",
+)
+
+
+def _empty_zigbee_device_helper():
+    """A device_helper exposing every bucket sensor.py accesses directly as [].
+
+    Optional buckets (climate_controls/shutter_controls/outdoor_sirens/
+    presence_simulation_system) are read via getattr(..., default) in
+    sensor.py, so they can be left unset here.
+    """
+    return SimpleNamespace(**{attr: [] for attr in _ZIGBEE_DEVICE_HELPER_LIST_ATTRS})
+
+
+def _fake_coordinator(data=None, last_update_success=True):
+    """A minimal stand-in for SHCZigbeeRoutingCoordinator: fixed `.data`, no
+    actual scheduling/refresh logic (that lives in coordinator.py, tested
+    separately)."""
+    coordinator = MagicMock()
+    coordinator.data = {} if data is None else data
+    coordinator.last_update_success = last_update_success
+    coordinator.async_add_listener = MagicMock(return_value=MagicMock())
+    return coordinator
+
+
+def _run_zigbee_setup(devices, options=None, device_lookup=None, coordinator=None):
+    """Run async_setup_entry with a session exposing `.devices` (the Zigbee loop
+    iterates session.devices directly, not a device_helper bucket) and a
+    zigbee_routing_coordinator wired onto runtime_data, mirroring how
+    __init__.py creates and stores it."""
+    by_id = {d.id: d for d in devices}
+
+    def _default_lookup(device_id):
+        try:
+            return by_id[device_id]
+        except KeyError:
+            raise KeyError(device_id) from None
+
+    session = SimpleNamespace(
+        device_helper=_empty_zigbee_device_helper(),
+        emma=None,
+        devices=devices,
+        device=device_lookup or _default_lookup,
+    )
+    hass = _fake_hass(session=session)
+    entry = _fake_entry(hass=hass, options=options or {})
+    entry.runtime_data.zigbee_routing_coordinator = coordinator or _fake_coordinator()
+
+    with patch(_PATCH_MIGRATE, new_callable=AsyncMock):
+        collected: list = []
+        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+    return collected, session
+
+
+class TestZigbeeRoutingQualitySensorSetup:
+    """async_setup_entry wiring for ZigbeeRoutingQualitySensor."""
+
+    def test_created_only_for_zigbee_devices(self):
+        zb = _fake_dev("hdm:ZigBee:001", name="Router Plug")
+        other = _fake_dev("hdm:SC2:001", name="Contact")
+        collected, _ = _run_zigbee_setup([zb, other])
+        zb_entities = [e for e in collected if isinstance(e, ZigbeeRoutingQualitySensor)]
+        assert len(zb_entities) == 1
+        assert zb_entities[0]._device.id == "hdm:ZigBee:001"
+
+    def test_no_zigbee_devices_yields_no_entity(self):
+        other = _fake_dev("hdm:SC2:002", name="Contact")
+        collected, _ = _run_zigbee_setup([other])
+        assert not any(isinstance(e, ZigbeeRoutingQualitySensor) for e in collected)
+
+    def test_gated_behind_diagnostic_option(self):
+        zb = _fake_dev("hdm:ZigBee:002")
+        collected, _ = _run_zigbee_setup(
+            [zb], options={OPT_DIAGNOSTIC_ENTITIES: False}
+        )
+        assert not any(isinstance(e, ZigbeeRoutingQualitySensor) for e in collected)
+
+    def test_excluded_device_skipped(self):
+        zb = _fake_dev("hdm:ZigBee:003")
+        collected, _ = _run_zigbee_setup(
+            [zb], options={OPT_EXCLUDED_DEVICES: ["hdm:ZigBee:003"]}
+        )
+        assert not any(isinstance(e, ZigbeeRoutingQualitySensor) for e in collected)
+
+    def test_no_devices_attribute_on_session_is_safe(self):
+        """A session without `.devices` (e.g. an older/fake session) must not crash."""
+        session = SimpleNamespace(
+            device_helper=_empty_zigbee_device_helper(), emma=None
+        )
+        hass = SimpleNamespace()
+        config_entry = SimpleNamespace(options={}, entry_id=ENTRY_ID)
+        config_entry.runtime_data = SimpleNamespace(session=session)
+        collected: list = []
+
+        async def _inner():
+            with patch(_PATCH_MIGRATE, side_effect=_noop_migrate):
+                await async_setup_entry(
+                    hass, config_entry, lambda ents: collected.extend(ents)
+                )
+
+        asyncio.run(_inner())
+        assert collected == []
+
+    def test_no_coordinator_on_runtime_data_is_safe(self):
+        """runtime_data without a zigbee_routing_coordinator attribute (e.g. a
+        stale/partial fake in another test) must not crash and must not create
+        the entity."""
+        zb = _fake_dev("hdm:ZigBee:007")
+        session = SimpleNamespace(
+            device_helper=_empty_zigbee_device_helper(), emma=None, devices=[zb]
+        )
+        hass = SimpleNamespace()
+        config_entry = SimpleNamespace(options={}, entry_id=ENTRY_ID)
+        config_entry.runtime_data = SimpleNamespace(session=session)
+        collected: list = []
+
+        async def _inner():
+            with patch(_PATCH_MIGRATE, side_effect=_noop_migrate):
+                await async_setup_entry(
+                    hass, config_entry, lambda ents: collected.extend(ents)
+                )
+
+        asyncio.run(_inner())
+        assert not any(isinstance(e, ZigbeeRoutingQualitySensor) for e in collected)
+
+    def test_unique_id_format(self):
+        zb = _fake_dev("hdm:ZigBee:004", root_id="root9")
+        collected, _ = _run_zigbee_setup([zb])
+        s = next(e for e in collected if isinstance(e, ZigbeeRoutingQualitySensor))
+        assert s._attr_unique_id == "root9_hdm:ZigBee:004_zigbee_routing_quality"
+
+    def test_disabled_by_default_diagnostic_enum(self):
+        zb = _fake_dev("hdm:ZigBee:005")
+        collected, _ = _run_zigbee_setup([zb])
+        s = next(e for e in collected if isinstance(e, ZigbeeRoutingQualitySensor))
+        assert s.entity_category == EntityCategory.DIAGNOSTIC
+        assert s.entity_registry_enabled_default is False
+        assert s.device_class == SensorDeviceClass.ENUM
+        assert s.translation_key == "zigbee_routing_quality"
+        assert set(s.options) == {
+            "good", "medium", "bad", "no_connection",
+            "device_not_initialized", "not_supported", "unknown",
+        }
+
+    def test_should_poll_false(self):
+        """Coordinator entities never poll — the coordinator itself does."""
+        zb = _fake_dev("hdm:ZigBee:006")
+        collected, _ = _run_zigbee_setup([zb])
+        s = next(e for e in collected if isinstance(e, ZigbeeRoutingQualitySensor))
+        assert s.should_poll is False
+
+    def test_coordinator_wired_from_runtime_data(self):
+        zb = _fake_dev("hdm:ZigBee:008")
+        coordinator = _fake_coordinator()
+        collected, _ = _run_zigbee_setup([zb], coordinator=coordinator)
+        s = next(e for e in collected if isinstance(e, ZigbeeRoutingQualitySensor))
+        assert s.coordinator is coordinator
+
+
+class TestZigbeeRoutingQualitySensorState:
+    """native_value / extra_state_attributes / availability, reading from
+    self.coordinator.data instead of a per-entity cached _routing_info."""
+
+    def _sensor(self, session=None, data=None, last_update_success=True, status="AVAILABLE"):
+        s = ZigbeeRoutingQualitySensor.__new__(ZigbeeRoutingQualitySensor)
+        s._device = _fake_dev("hdm:ZigBee:x", name="Router Plug", status=status)
+        s._session = session or MagicMock()
+        s.coordinator = _fake_coordinator(data=data, last_update_success=last_update_success)
+        return s
+
+    def test_native_value_none_when_device_missing_from_coordinator_data(self):
+        s = self._sensor(data={})
+        assert s.native_value is None
+        assert s.extra_state_attributes is None
+
+    def test_native_value_lowercase_slug(self):
+        s = self._sensor(
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="GOOD"), route=[]
+                )
+            }
+        )
+        assert s.native_value == "good"
+        assert s.native_value in s.options
+
+    def test_native_value_unknown_value_error_returns_none(self):
+        class _Bad:
+            @property
+            def name(self):
+                raise ValueError("unrecognized quality")
+
+        s = self._sensor(
+            data={"hdm:ZigBee:x": SimpleNamespace(aggregated_quality=_Bad(), route=[])}
+        )
+        with patch("custom_components.bosch_shc.sensor.LOGGER") as mock_log:
+            assert s.native_value is None
+            mock_log.debug.assert_called_once()
+
+    def test_route_attribute_resolves_object_hops(self):
+        """Documented contract: hop objects exposing .device_id/.quality."""
+        session = MagicMock()
+        session.device.side_effect = lambda did: SimpleNamespace(name=f"Name-{did}")
+        s = self._sensor(
+            session=session,
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="GOOD"),
+                    route=[
+                        SimpleNamespace(device_id="self1", quality=SimpleNamespace(name="GOOD")),
+                        SimpleNamespace(device_id="hop2", quality=SimpleNamespace(name="MEDIUM")),
+                    ],
+                )
+            },
+        )
+        attrs = s.extra_state_attributes
+        assert attrs["route"] == [
+            {"device": "Name-self1", "quality": "good"},
+            {"device": "Name-hop2", "quality": "medium"},
+        ]
+
+    def test_route_attribute_resolves_tuple_hops(self):
+        """Ground-truth example response shape: 2-tuples (device, quality)."""
+        session = MagicMock()
+        session.device.side_effect = lambda did: SimpleNamespace(name=f"Name-{did}")
+        s = self._sensor(
+            session=session,
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="NO_CONNECTION"),
+                    route=[("self1", SimpleNamespace(name="GOOD"))],
+                )
+            },
+        )
+        attrs = s.extra_state_attributes
+        assert attrs["route"] == [{"device": "Name-self1", "quality": "good"}]
+
+    def test_native_value_and_route_attributes_with_real_boschshcpy_objects(self):
+        """Same as test_route_attribute_resolves_object_hops, but feeding a
+        real boschshcpy.zigbee_routing.SHCZigbeeRoutingInfo (built from a raw
+        dict, exactly as boschshcpy's own tests do) instead of a SimpleNamespace
+        fake. Closes a coverage gap: every other test in this class only ever
+        exercises _zigbee_hop_device_and_quality's getattr(...) path via fakes
+        that happen to shape-match; this confirms it also works against the
+        real ZigbeeRoutingHop NamedTuple / ZigbeeRoutingQuality enum shape the
+        coordinator will actually hand it in production.
+        """
+        raw = {
+            "device": "hdm:ZigBee:x",
+            "aggregatedQuality": "GOOD",
+            "route": [
+                {"deviceId": "hdm:ZigBee:x", "quality": "GOOD"},
+                {"deviceId": "hdm:ZigBee:routerplug01", "quality": "MEDIUM"},
+            ],
+        }
+        routing_info = SHCZigbeeRoutingInfo(raw)
+
+        session = MagicMock()
+        session.device.side_effect = lambda did: SimpleNamespace(name=f"Name-{did}")
+        s = self._sensor(session=session, data={"hdm:ZigBee:x": routing_info})
+
+        assert s.native_value == "good"
+        assert s.native_value in s.options
+
+        attrs = s.extra_state_attributes
+        assert attrs["route"] == [
+            {"device": "Name-hdm:ZigBee:x", "quality": "good"},
+            {"device": "Name-hdm:ZigBee:routerplug01", "quality": "medium"},
+        ]
+
+    def test_route_attribute_falls_back_to_raw_id_when_unresolvable(self):
+        """An unknown hop device id (session.device raises) falls back to the raw id."""
+        session = MagicMock()
+        session.device.side_effect = KeyError("unknown")
+        s = self._sensor(
+            session=session,
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="GOOD"),
+                    route=[SimpleNamespace(device_id="ghost", quality=SimpleNamespace(name="BAD"))],
+                )
+            },
+        )
+        attrs = s.extra_state_attributes
+        assert attrs["route"] == [{"device": "ghost", "quality": "bad"}]
+
+    def test_empty_route_on_no_connection(self):
+        s = self._sensor(
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="NO_CONNECTION"), route=[]
+                )
+            }
+        )
+        assert s.native_value == "no_connection"
+        assert s.extra_state_attributes == {"route": []}
+
+    def test_available_true_when_device_present_and_coordinator_healthy(self):
+        s = self._sensor(
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="GOOD"), route=[]
+                )
+            }
+        )
+        assert s.available is True
+
+    def test_available_false_when_device_missing_from_coordinator_data(self):
+        """A per-device fetch failure on the last coordinator refresh cycle
+        omits that device from `.data` — this is how a single offline mesh
+        node goes unavailable without failing every other Zigbee sensor."""
+        s = self._sensor(data={})
+        assert s.available is False
+
+    def test_available_false_when_coordinator_refresh_failed_entirely(self):
+        s = self._sensor(
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="GOOD"), route=[]
+                )
+            },
+            last_update_success=False,
+        )
+        assert s.available is False
+
+    def test_available_false_when_device_itself_unavailable(self):
+        s = self._sensor(
+            data={
+                "hdm:ZigBee:x": SimpleNamespace(
+                    aggregated_quality=SimpleNamespace(name="GOOD"), route=[]
+                )
+            },
+            status="UNAVAILABLE",
+        )
+        assert s.available is False

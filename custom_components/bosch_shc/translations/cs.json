@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Referenční doba pohybu (shora dolů)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Kvalita směrování Zigbee",
+        "state": {
+          "good": "Dobrá",
+          "medium": "Střední",
+          "bad": "Špatná",
+          "no_connection": "Bez připojení",
+          "device_not_initialized": "Zařízení není inicializováno",
+          "not_supported": "Nepodporováno",
+          "unknown": "Neznámá"
+        }
       }
     },
     "binary_sensor": {

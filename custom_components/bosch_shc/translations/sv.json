@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Referensrörelsetid (uppifrån och ned)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee-routningskvalitet",
+        "state": {
+          "good": "Bra",
+          "medium": "Medel",
+          "bad": "Dålig",
+          "no_connection": "Ingen anslutning",
+          "device_not_initialized": "Enheten är inte initierad",
+          "not_supported": "Stöds inte",
+          "unknown": "Okänd"
+        }
       }
     },
     "binary_sensor": {

@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Tempo de Deslocação de Referência (Cima para Baixo)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Qualidade de Encaminhamento Zigbee",
+        "state": {
+          "good": "Boa",
+          "medium": "Média",
+          "bad": "Má",
+          "no_connection": "Sem ligação",
+          "device_not_initialized": "Dispositivo não inicializado",
+          "not_supported": "Não suportado",
+          "unknown": "Desconhecida"
+        }
       }
     },
     "binary_sensor": {

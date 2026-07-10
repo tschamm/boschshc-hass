@@ -80,6 +80,7 @@ from .const import (
     SERVICE_TRIGGER_SCENARIO,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
+from .coordinator import SHCZigbeeRoutingCoordinator
 from .data import SHCData
 
 PLATFORMS = [
@@ -327,11 +328,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         sw_version=shc_info.version,
     )
     device_id = device_entry.id
+
+    # Zigbee routing-quality data isn't delivered by the long-poll stream, so
+    # it gets its own coordinator (sensor.py reads it back via runtime_data).
+    zigbee_routing_coordinator = SHCZigbeeRoutingCoordinator(hass, entry, session)
+
     entry.runtime_data = SHCData(
         session=session,
         shc_device=device_entry,
         title=entry.title,
+        zigbee_routing_coordinator=zigbee_routing_coordinator,
     )
+
+    await zigbee_routing_coordinator.async_config_entry_first_refresh()
 
     # Daily certificate re-check scheduling
     async def _scheduled_cert_check(_now: Any) -> None:

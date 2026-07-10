@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Эталонное время движения (сверху вниз)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Качество маршрутизации Zigbee",
+        "state": {
+          "good": "Хорошее",
+          "medium": "Среднее",
+          "bad": "Плохое",
+          "no_connection": "Нет соединения",
+          "device_not_initialized": "Устройство не инициализировано",
+          "not_supported": "Не поддерживается",
+          "unknown": "Неизвестно"
+        }
       }
     },
     "binary_sensor": {

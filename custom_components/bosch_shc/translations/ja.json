@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "基準移動時間（上から下）"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbeeルーティング品質",
+        "state": {
+          "good": "良好",
+          "medium": "普通",
+          "bad": "不良",
+          "no_connection": "接続なし",
+          "device_not_initialized": "デバイス未初期化",
+          "not_supported": "非対応",
+          "unknown": "不明"
+        }
       }
     },
     "binary_sensor": {

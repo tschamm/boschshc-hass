@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Atskaites kustības laiks (no augšas uz apakšu)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee maršrutēšanas kvalitāte",
+        "state": {
+          "good": "Laba",
+          "medium": "Vidēja",
+          "bad": "Slikta",
+          "no_connection": "Nav savienojuma",
+          "device_not_initialized": "Ierīce nav inicializēta",
+          "not_supported": "Netiek atbalstīts",
+          "unknown": "Nezināma"
+        }
       }
     },
     "binary_sensor": {

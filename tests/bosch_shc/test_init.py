@@ -27,6 +27,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import yaml
 from boschshcpy.exceptions import SHCConnectionError, SHCException
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import (
     ATTR_COMMAND,
     ATTR_DEVICE_ID,
@@ -135,6 +136,10 @@ def _make_fake_entry(entry_id="test_entry_id", title="Test SHC",
     entry.options = options or {}
     entry.add_update_listener = MagicMock(return_value=MagicMock())
     entry.async_on_unload = MagicMock()
+    # SHCZigbeeRoutingCoordinator.async_config_entry_first_refresh (called
+    # during async_setup_entry) requires the entry to report itself as
+    # mid-setup, exactly like a real ConfigEntry does at this point.
+    entry.state = ConfigEntryState.SETUP_IN_PROGRESS
     return entry
 
 
@@ -153,6 +158,11 @@ def _make_fake_session(*, scenarios=None, universal_switches=None,
     dh = MagicMock()
     dh.universal_switches = universal_switches or []
     session.device_helper = dh
+    # SHCZigbeeRoutingCoordinator._async_update_data (run via
+    # async_config_entry_first_refresh during async_setup_entry) iterates
+    # session.devices — empty by default, no Zigbee devices in this fixture.
+    session.devices = []
+    session.get_zigbee_routing_info = AsyncMock()
     # async API object for rawscan dispatch
     api = MagicMock()
     api.get_devices = AsyncMock(return_value=[])
@@ -1927,6 +1937,8 @@ def _make_fake_session_presence(thermostats=None, roomthermostats=None,
     dh.micromodule_dimmers = []
     dh.light_switches_bsm = []
     session.device_helper = dh
+    session.devices = []
+    session.get_zigbee_routing_info = AsyncMock()
     return session
 
 
@@ -2650,6 +2662,8 @@ def _gaps2_make_shc_session():
     session.unsubscribe_scenario_callback = MagicMock()
     session.device_helper = MagicMock()
     session.device_helper.universal_switches = []
+    session.devices = []
+    session.get_zigbee_routing_info = AsyncMock()
     return session
 
 
@@ -2700,6 +2714,7 @@ def _gaps2_run_setup_with_presence(presence_entities, hass_states=None):
         OPT_PRESENCE_ENTITY: presence_entities,
         OPT_CHILD_LOCK_ENABLED: True,
     }
+    entry.state = ConfigEntryState.SETUP_IN_PROGRESS
 
     dr_fake = MagicMock()
     dr_fake.async_get_or_create = MagicMock(return_value=SimpleNamespace(id="dr-001"))
@@ -2798,6 +2813,8 @@ class TestInitParsetime:
         dh.camera_360 = []
         dh.camera_outdoor_gen2 = []
         session.device_helper = dh
+        session.devices = []
+        session.get_zigbee_routing_info = AsyncMock()
         return session
 
     def _make_hass(self):
@@ -2844,6 +2861,7 @@ class TestInitParsetime:
             OPT_SILENT_MODE_START: "22:30",
             OPT_SILENT_MODE_END: "07:00",
         }
+        entry.state = ConfigEntryState.SETUP_IN_PROGRESS
         entry.add_update_listener = MagicMock(return_value=MagicMock())
         entry.async_on_unload = MagicMock()
         return entry
@@ -2904,6 +2922,8 @@ class TestInitCameraToolIssue:
         dh.camera_360 = []
         dh.camera_outdoor_gen2 = []
         session.device_helper = dh
+        session.devices = []
+        session.get_zigbee_routing_info = AsyncMock()
 
         hass = MagicMock()
         hass.data = {}
@@ -2931,6 +2951,7 @@ class TestInitCameraToolIssue:
             "hostname": "192.168.1.1",
         }
         entry.options = {}
+        entry.state = ConfigEntryState.SETUP_IN_PROGRESS
         entry.add_update_listener = MagicMock(return_value=MagicMock())
         entry.async_on_unload = MagicMock()
 
@@ -3131,6 +3152,8 @@ class TestInitParseTimeError:
         dh.camera_360 = []
         dh.camera_outdoor_gen2 = []
         session.device_helper = dh
+        session.devices = []
+        session.get_zigbee_routing_info = AsyncMock()
 
         hass = MagicMock()
         hass.data = {}
@@ -3166,6 +3189,7 @@ class TestInitParseTimeError:
             OPT_SILENT_MODE_START: "not_a_time",
             OPT_SILENT_MODE_END: "also_not",
         }
+        entry.state = ConfigEntryState.SETUP_IN_PROGRESS
         entry.add_update_listener = MagicMock(return_value=MagicMock())
         entry.async_on_unload = MagicMock()
 
@@ -3368,6 +3392,8 @@ class TestEntityIsPresentZoneDomain:
         fake_session.unsubscribe_scenario_callback = MagicMock()
         fake_session.device_helper = MagicMock()
         fake_session.device_helper.universal_switches = []
+        fake_session.devices = []
+        fake_session.get_zigbee_routing_info = AsyncMock()
 
         entry = MagicMock()
         entry.entry_id = "E1"
@@ -3377,6 +3403,7 @@ class TestEntityIsPresentZoneDomain:
             OPT_PRESENCE_ENTITY: ["zone.home"],
             OPT_CHILD_LOCK_ENABLED: True,
         }
+        entry.state = ConfigEntryState.SETUP_IN_PROGRESS
 
         dr_fake = MagicMock()
         dr_fake.async_get_or_create = MagicMock(
@@ -3563,6 +3590,8 @@ class TestPresenceStateNoneEntity:
         dh.micromodule_dimmers = []
         dh.light_switches_bsm = []
         session.device_helper = dh
+        session.devices = []
+        session.get_zigbee_routing_info = AsyncMock()
         return session
 
     def _make_hass(self, states=None):
@@ -3603,6 +3632,7 @@ class TestPresenceStateNoneEntity:
         entry.options = options or {}
         entry.add_update_listener = MagicMock(return_value=MagicMock())
         entry.async_on_unload = MagicMock()
+        entry.state = ConfigEntryState.SETUP_IN_PROGRESS
         return entry
 
     def test_state_none_entity_continues_without_crash(self):

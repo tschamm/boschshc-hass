@@ -64,6 +64,9 @@
       },
       "siren_solar_charging": {
         "default": "mdi:solar-power"
+      },
+      "zigbee_routing_quality": {
+        "default": "mdi:transit-connection-variant"
       }
     },
     "switch": {

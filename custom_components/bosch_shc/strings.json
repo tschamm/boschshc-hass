@@ -407,6 +407,18 @@
       },
       "reference_moving_time_bottom_to_top": {
         "name": "Reference Moving Time (Bottom to Top)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee Routing Quality",
+        "state": {
+          "good": "Good",
+          "medium": "Medium",
+          "bad": "Bad",
+          "no_connection": "No Connection",
+          "device_not_initialized": "Device Not Initialized",
+          "not_supported": "Not Supported",
+          "unknown": "Unknown"
+        }
       }
     },
     "binary_sensor": {

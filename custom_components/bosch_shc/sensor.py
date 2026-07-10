@@ -41,12 +41,14 @@ except ImportError:
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     LOGGER,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_SUPPRESS_POWER_SENSORS,
 )
+from .coordinator import SHCZigbeeRoutingCoordinator
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -518,6 +520,27 @@ async def async_setup_entry(  # noqa: C901
                         entry_id=config_entry.entry_id,
                     )
                 )
+
+    # getattr: some test fixtures use a bare SimpleNamespace runtime_data lacking
+    # this field, and setup must degrade to zero Zigbee entities, not crash.
+    zigbee_routing_coordinator = getattr(
+        config_entry.runtime_data, "zigbee_routing_coordinator", None
+    )
+    if diagnostic_enabled and zigbee_routing_coordinator is not None:
+        for zb_device in getattr(session, "devices", None) or []:
+            zb_id = getattr(zb_device, "id", None)
+            if not zb_id or not zb_id.startswith("hdm:ZigBee:"):
+                continue
+            if device_excluded(zb_device, config_entry.options):
+                continue
+            entities.append(
+                ZigbeeRoutingQualitySensor(
+                    device=zb_device,
+                    session=session,
+                    entry_id=config_entry.entry_id,
+                    coordinator=zigbee_routing_coordinator,
+                )
+            )
 
     if entities:
         async_add_entities(entities)
@@ -1328,3 +1351,126 @@ class ReferenceMovingTimeBottomToTopSensor(SHCEntity, SensorEntity):  # type: ig
         """Return the recorded bottom-to-top moving time in seconds, if known."""
         value_ms = getattr(self._device, "reference_moving_time_bottom_to_top_ms", None)
         return value_ms / 1000 if value_ms is not None else None
+
+
+def _zigbee_hop_device_and_quality(hop: Any) -> tuple[Any, Any]:
+    """Extract (device_id, quality) from one Zigbee routing hop.
+
+    The documented contract is an object exposing .device_id/.quality, but the
+    ground-truth example response ("route hops [(self, GOOD), (router-plug,
+    GOOD)]") reads like a plain 2-tuple — accept either shape defensively.
+    """
+    device_id = getattr(hop, "device_id", None)
+    quality = getattr(hop, "quality", None)
+    if device_id is None and quality is None and isinstance(hop, (tuple, list)):
+        if len(hop) == 2:
+            device_id, quality = hop
+    return device_id, quality
+
+
+class ZigbeeRoutingQualitySensor(  # type: ignore[misc]
+    CoordinatorEntity[SHCZigbeeRoutingCoordinator], SHCEntity, SensorEntity
+):
+    """Zigbee mesh routing quality diagnostic sensor.
+
+    Ground truth from a real SHC: only devices whose id is a Zigbee endpoint
+    (``device.id`` starts with ``hdm:ZigBee:``) support
+    ``SHCSessionAsync.get_zigbee_routing_info``. Unlike almost every other
+    entity in this integration (iot_class local_push, state changes arrive via
+    the long-poll stream), this data is NOT delivered by the long-poll stream
+    at all — it requires an active HTTPS GET. Per HA's documented pattern for
+    polled data (developers.home-assistant.io/docs/
+    integration_fetching_data/), this is backed by a
+    ``SHCZigbeeRoutingCoordinator`` (created once in ``__init__.py``, shared
+    across every Zigbee device's sensor) rather than a per-entity
+    should_poll/async_update — reads its state from
+    ``self.coordinator.data``, keyed by this device's id.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+    _attr_translation_key = "zigbee_routing_quality"
+    _attr_options = [
+        "good",
+        "medium",
+        "bad",
+        "no_connection",
+        "device_not_initialized",
+        "not_supported",
+        "unknown",
+    ]
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        session: SHCSession,
+        entry_id: str,
+        coordinator: SHCZigbeeRoutingCoordinator,
+    ) -> None:
+        """Initialize the Zigbee routing quality sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        SHCEntity.__init__(self, device, entry_id)
+        self._session = session
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_zigbee_routing_quality"
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to both the underlying device's SHC events and the coordinator."""
+        await SHCEntity.async_added_to_hass(self)
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self._handle_coordinator_update)
+        )
+
+    @property
+    def _routing_info(self) -> Any:
+        """This device's routing info from the latest coordinator refresh, if any."""
+        return (self.coordinator.data or {}).get(self._device.id)
+
+    @property
+    def available(self) -> bool:
+        """False if the device is down, or absent from coordinator.data."""
+        return (
+            self.coordinator.last_update_success
+            and SHCEntity.available.fget(self)  # type: ignore[attr-defined]
+            and self._device.id in (self.coordinator.data or {})
+        )
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the aggregated routing quality as a lowercase slug."""
+        routing_info = self._routing_info
+        if routing_info is None:
+            return None
+        try:
+            return str(routing_info.aggregated_quality.name.lower())
+        except (AttributeError, ValueError) as err:
+            LOGGER.debug(
+                "Unknown Zigbee routing quality for %s: %s", self._device.name, err
+            )
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the routing hop list, resolving hop device ids to names."""
+        routing_info = self._routing_info
+        if routing_info is None:
+            return None
+        route = []
+        for hop in getattr(routing_info, "route", None) or []:
+            hop_device_id, hop_quality = _zigbee_hop_device_and_quality(hop)
+            device_name: Any = hop_device_id
+            if hop_device_id is not None:
+                try:
+                    device_name = self._session.device(hop_device_id).name
+                except (KeyError, AttributeError):
+                    device_name = hop_device_id
+            quality_slug = None
+            if hop_quality is not None:
+                try:
+                    quality_slug = str(hop_quality.name.lower())
+                except AttributeError:
+                    quality_slug = str(hop_quality).lower()
+            route.append({"device": device_name, "quality": quality_slug})
+        return {"route": route}

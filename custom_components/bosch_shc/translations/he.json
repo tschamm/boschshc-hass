@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "זמן תנועה מכויל (מלמעלה למטה)"
+      },
+      "zigbee_routing_quality": {
+        "name": "איכות ניתוב Zigbee",
+        "state": {
+          "good": "טובה",
+          "medium": "בינונית",
+          "bad": "גרועה",
+          "no_connection": "אין חיבור",
+          "device_not_initialized": "המכשיר לא אותחל",
+          "not_supported": "לא נתמך",
+          "unknown": "לא ידוע"
+        }
       }
     },
     "binary_sensor": {

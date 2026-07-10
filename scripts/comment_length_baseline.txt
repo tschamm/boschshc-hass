@@ -2,12 +2,12 @@
 # Format: path:line — do NOT add new entries; fix new violations instead.
 # Regenerated 2026-07-08 after fix-group-1/2/3 edits shifted line numbers
 # (and group 3 condensed several of these below the 2-line threshold).
-custom_components/bosch_shc/__init__.py:391
-custom_components/bosch_shc/__init__.py:486
-custom_components/bosch_shc/__init__.py:499
-custom_components/bosch_shc/__init__.py:660
-custom_components/bosch_shc/__init__.py:765
-custom_components/bosch_shc/__init__.py:820
+custom_components/bosch_shc/__init__.py:400
+custom_components/bosch_shc/__init__.py:495
+custom_components/bosch_shc/__init__.py:508
+custom_components/bosch_shc/__init__.py:669
+custom_components/bosch_shc/__init__.py:774
+custom_components/bosch_shc/__init__.py:829
 custom_components/bosch_shc/binary_sensor.py:1064
 custom_components/bosch_shc/binary_sensor.py:1150
 custom_components/bosch_shc/binary_sensor.py:1179
@@ -67,11 +67,11 @@ custom_components/bosch_shc/number.py:916
 custom_components/bosch_shc/select.py:1156
 custom_components/bosch_shc/select.py:347
 custom_components/bosch_shc/select.py:58
-custom_components/bosch_shc/sensor.py:1025
-custom_components/bosch_shc/sensor.py:149
-custom_components/bosch_shc/sensor.py:299
-custom_components/bosch_shc/sensor.py:594
-custom_components/bosch_shc/sensor.py:69
+custom_components/bosch_shc/sensor.py:1048
+custom_components/bosch_shc/sensor.py:151
+custom_components/bosch_shc/sensor.py:301
+custom_components/bosch_shc/sensor.py:617
+custom_components/bosch_shc/sensor.py:71
 custom_components/bosch_shc/switch.py:1096
 custom_components/bosch_shc/switch.py:1122
 custom_components/bosch_shc/switch.py:191

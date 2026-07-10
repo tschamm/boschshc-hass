@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.10.11 — Zigbee routing-quality diagnostic sensor
+
+**No breaking changes.** Requires `boschshcpy==0.4.10`.
+
+- **`sensor.py`:** new opt-in-by-default-off diagnostic `ZigbeeRoutingQuality`
+  sensor, one per device whose id starts with `hdm:ZigBee:` (ENUM: good /
+  medium / bad / no_connection / device_not_initialized / not_supported /
+  unknown), with the resolved hop-by-hop route as a state attribute. Requires
+  `boschshcpy` `SHCSessionAsync.get_zigbee_routing_info` — gated behind
+  `diagnostic_entities` like the other diagnostic sensors in this file.
+  Unlike almost everything else in this push-based integration, this data is
+  not delivered by the long-poll stream at all, so it's backed by a new
+  `SHCZigbeeRoutingCoordinator` (`coordinator.py`) — HA's documented
+  `DataUpdateCoordinator` pattern for polled data — created once in
+  `__init__.py` and shared across every Zigbee device's sensor, polling every
+  5 minutes, fetching all devices concurrently rather than serially so a
+  large Zigbee mesh doesn't delay integration setup. A single device's
+  fetch failure doesn't fail the whole refresh: it's simply omitted from
+  that cycle's data and the corresponding sensor reports unavailable,
+  without affecting any other Zigbee device's sensor. Translated to all 30
+  languages.
+
 ## 0.10.10 — light/cover error handling, event unsubscribe, number JSON-decode guard
 
 **No breaking changes.** Requires `boschshcpy==0.4.9`.

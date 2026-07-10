@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Referentie beweegtijd (boven naar onder)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee-routeringskwaliteit",
+        "state": {
+          "good": "Goed",
+          "medium": "Gemiddeld",
+          "bad": "Slecht",
+          "no_connection": "Geen verbinding",
+          "device_not_initialized": "Apparaat niet geïnitialiseerd",
+          "not_supported": "Niet ondersteund",
+          "unknown": "Onbekend"
+        }
       }
     },
     "binary_sensor": {

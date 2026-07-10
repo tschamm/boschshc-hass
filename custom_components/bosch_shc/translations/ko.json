@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "기준 이동 시간 (위에서 아래로)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee 라우팅 품질",
+        "state": {
+          "good": "좋음",
+          "medium": "보통",
+          "bad": "나쁨",
+          "no_connection": "연결 없음",
+          "device_not_initialized": "장치가 초기화되지 않음",
+          "not_supported": "지원되지 않음",
+          "unknown": "알 수 없음"
+        }
       }
     },
     "binary_sensor": {

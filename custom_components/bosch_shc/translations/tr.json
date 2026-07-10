@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Referans Hareket Süresi (Üstten Alta)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee Yönlendirme Kalitesi",
+        "state": {
+          "good": "İyi",
+          "medium": "Orta",
+          "bad": "Kötü",
+          "no_connection": "Bağlantı Yok",
+          "device_not_initialized": "Cihaz Başlatılmadı",
+          "not_supported": "Desteklenmiyor",
+          "unknown": "Bilinmiyor"
+        }
       }
     },
     "binary_sensor": {

@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Temps de referència de moviment (de dalt a baix)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Qualitat d'encaminament Zigbee",
+        "state": {
+          "good": "Bona",
+          "medium": "Mitjana",
+          "bad": "Dolenta",
+          "no_connection": "Sense connexió",
+          "device_not_initialized": "Dispositiu no inicialitzat",
+          "not_supported": "No compatible",
+          "unknown": "Desconeguda"
+        }
       }
     },
     "binary_sensor": {

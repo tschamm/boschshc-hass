@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Kalibrált mozgásidő (felülről lefelé)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee útválasztás minősége",
+        "state": {
+          "good": "Jó",
+          "medium": "Közepes",
+          "bad": "Rossz",
+          "no_connection": "Nincs kapcsolat",
+          "device_not_initialized": "Eszköz nincs inicializálva",
+          "not_supported": "Nem támogatott",
+          "unknown": "Ismeretlen"
+        }
       }
     },
     "binary_sensor": {

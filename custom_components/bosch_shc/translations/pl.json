@@ -406,6 +406,18 @@
       },
       "reference_moving_time_top_to_bottom": {
         "name": "Referencyjny czas ruchu (z góry do dołu)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Jakość routingu Zigbee",
+        "state": {
+          "good": "Dobra",
+          "medium": "Średnia",
+          "bad": "Zła",
+          "no_connection": "Brak połączenia",
+          "device_not_initialized": "Urządzenie niezainicjowane",
+          "not_supported": "Nieobsługiwane",
+          "unknown": "Nieznana"
+        }
       }
     },
     "binary_sensor": {
