@@ -154,7 +154,7 @@ Options marked with ★ are shown only when the relevant devices are connected t
 |---|---|---|
 | Scenarios as buttons | off | Expose each SHC scenario as a `button` entity |
 | Scenario filter ★ | (all) | Allow-list — only the selected scenarios become buttons; stale IDs are auto-cleared |
-| Diagnostic entities | on | Create battery-level, valve-tappet and comm-quality diagnostic sensors |
+| Diagnostic entities | on | Create battery-level, valve-tappet, comm-quality and Zigbee-routing-quality diagnostic sensors |
 | Rawscan service | on | Register the `bosch_shc.trigger_rawscan` action; turn off to hide it |
 | Suppress power sensors | off | Hide the watt + kWh sensors on Smart Plugs, Compact Plugs, and EMMA |
 | Suppress camera switches ★ | off | Hide the privacy / light / notification switches for Camera Eyes, 360, and Outdoor Gen2 |
@@ -205,7 +205,7 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 | `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options) |
 | `number` | Thermostat temperature offset |
 | `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time, installation profile), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
-| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state, EMMA grid power, Battery level (diagnostic, optional) |
+| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state, EMMA grid power, Battery level (diagnostic, optional), Zigbee routing quality — one per Zigbee device, aggregated link quality + hop-by-hop route as an attribute (diagnostic, optional¹) |
 | `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States |
 | `valve` | Thermostat radiator valve (position, diagnostic) |
 
@@ -562,6 +562,15 @@ checked by `scripts/check-quality-scale.py --tier platinum`).
 ## What's new
 
 The full version-by-version history lives in [`CHANGELOG.md`](CHANGELOG.md). Recent highlights:
+
+**0.10.11 — Zigbee routing-quality diagnostic sensor**
+
+New opt-in-by-default-off `sensor` per Zigbee device (`Zigbee routing quality`), backed by an
+APK-discovered SHC endpoint (`GET /smarthome/zigbee/routinginfo/{deviceId}`, not in the official
+OpenAPI docs). Shows the aggregated link quality and the full hop-by-hop route as an attribute —
+useful for spotting a Zigbee device with no connection, or seeing which mains-powered device
+(Smart Plug Compact, Micromodule) is routing for a battery-powered one. Requires
+`boschshcpy==0.4.10`.
 
 **0.10.10 — light/cover error handling, event unsubscribe, number JSON-decode guard**
 
