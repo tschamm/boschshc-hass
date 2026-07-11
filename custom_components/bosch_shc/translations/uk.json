@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Тривога вторгнення",
       "SECONDARY_ALARM": "Вторинна тривога",
       "PRIMARY_ALARM": "Основна тривога",
+      "INTRUSION_ALARM_ON_REQUESTED": "Тривога вторгнення",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Тривогу вторгнення скинуто",
       "ALARM_OFF": "Тривога вимкнена",
       "ALARM_ON": "Тривога увімкнена",
       "ALARM_MUTED": "Тривога заглушена"

@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Sissetungimisalarm",
       "SECONDARY_ALARM": "Teisene alarm",
       "PRIMARY_ALARM": "Esmane alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Sissetungimisalarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Sissetungimisalarm kustutatud",
       "ALARM_OFF": "Alarm väljas",
       "ALARM_ON": "Alarm sees",
       "ALARM_MUTED": "Alarm vaigistatud"

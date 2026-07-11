@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Intrusion alarm",
       "SECONDARY_ALARM": "Secondary alarm",
       "PRIMARY_ALARM": "Primary alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Intrusion alarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Intrusion alarm cleared",
       "ALARM_OFF": "Alarm off",
       "ALARM_ON": "Alarm on",
       "ALARM_MUTED": "Alarm muted"

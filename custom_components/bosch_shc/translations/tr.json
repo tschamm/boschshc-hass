@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "İzinsiz giriş alarmı",
       "SECONDARY_ALARM": "İkincil alarm",
       "PRIMARY_ALARM": "Birincil alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "İzinsiz giriş alarmı",
+      "INTRUSION_ALARM_OFF_REQUESTED": "İzinsiz giriş alarmı temizlendi",
       "ALARM_OFF": "Alarm kapalı",
       "ALARM_ON": "Alarm açık",
       "ALARM_MUTED": "Alarm sessize alındı"

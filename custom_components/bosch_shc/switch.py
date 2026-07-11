@@ -969,12 +969,13 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        # #342: a description translation_key (e.g. bypass -> "Alarm bypass")
-        # should drive a translated entity name. SHCEntity.__init__ forces
-        # _attr_name=None, and HA's name resolver returns that before ever
-        # consulting the translation_key — so drop it here for the primary
-        # entity to let the translation through, keeping unique_id unchanged.
-        if attr_name is None and description.translation_key:
+        # #342/#362-hunt: a description translation_key (e.g. bypass_infinite
+        # -> "Bypass Never Expires") should drive a translated entity name
+        # regardless of attr_name — attr_name only disambiguates unique_id
+        # for a second entity on the same device. HA's name resolver returns
+        # a literal _attr_name before ever consulting translation_key, so
+        # drop it here whenever a translation_key is present.
+        if description.translation_key:
             del self._attr_name
         self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 

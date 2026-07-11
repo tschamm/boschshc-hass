@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "入侵警報",
       "SECONDARY_ALARM": "次要警報",
       "PRIMARY_ALARM": "主要警報",
+      "INTRUSION_ALARM_ON_REQUESTED": "入侵警報",
+      "INTRUSION_ALARM_OFF_REQUESTED": "入侵警報已清除",
       "ALARM_OFF": "警報關閉",
       "ALARM_ON": "警報開啟",
       "ALARM_MUTED": "警報已靜音"

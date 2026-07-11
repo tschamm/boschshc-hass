@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Poplašné zariadenie proti vlámaniu",
       "SECONDARY_ALARM": "Sekundárny alarm",
       "PRIMARY_ALARM": "Primárny alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Poplašné zariadenie proti vlámaniu",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Poplašné zariadenie proti vlámaniu vymazané",
       "ALARM_OFF": "Alarm VYP",
       "ALARM_ON": "Alarm ZAP",
       "ALARM_MUTED": "Alarm stlmený"

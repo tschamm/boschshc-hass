@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "침입 알람",
       "SECONDARY_ALARM": "보조 알람",
       "PRIMARY_ALARM": "주 알람",
+      "INTRUSION_ALARM_ON_REQUESTED": "침입 알람",
+      "INTRUSION_ALARM_OFF_REQUESTED": "침입 알람 해제됨",
       "ALARM_OFF": "알람 꺼짐",
       "ALARM_ON": "알람 켜짐",
       "ALARM_MUTED": "알람 음소거"

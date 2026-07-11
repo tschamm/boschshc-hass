@@ -40,6 +40,7 @@ from homeassistant.setup import async_setup_component
 
 from custom_components.bosch_shc.const import (
     ALARM_EVENTS_SUBTYPES_SD,
+    ALARM_EVENTS_SUBTYPES_SD2,
     ALARM_EVENTS_SUBTYPES_SDS,
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
@@ -525,12 +526,20 @@ class TestAsyncGetTriggers:
         identical ALARM bus event as SD via the same SmokeDetectorSensor
         class (binary_sensor.py), but async_get_triggers only matched the
         literal "SD" model string — SD II owners got zero device-trigger
-        options."""
+        options.
+
+        Bug-hunt (2026-07-11): SD II's boschshcpy AlarmService.State actually
+        reports IDLE_OFF/INTRUSION_ALARM_ON_REQUESTED/OFF_REQUESTED, not gen-1
+        SD's INTRUSION_ALARM/SECONDARY_ALARM/PRIMARY_ALARM — so SD II must get
+        its own subtype set (ALARM_EVENTS_SUBTYPES_SD2), not SD's.
+        """
         triggers = self._run_get_triggers("ha-sd2", "SMOKE_DETECTOR2")
         types = {t[CONF_TYPE] for t in triggers}
         subtypes = {t[CONF_SUBTYPE] for t in triggers}
         assert types == {"ALARM"}
-        assert ALARM_EVENTS_SUBTYPES_SD.issubset(subtypes)
+        assert ALARM_EVENTS_SUBTYPES_SD2.issubset(subtypes)
+        # SD II never reports gen-1-only subtypes (SECONDARY_ALARM/PRIMARY_ALARM)
+        assert not (ALARM_EVENTS_SUBTYPES_SD - ALARM_EVENTS_SUBTYPES_SD2) & subtypes
 
     def test_smoke_detection_system_returns_alarm_triggers(self):
         triggers = self._run_get_triggers("ha-sds", "SMOKE_DETECTION_SYSTEM")

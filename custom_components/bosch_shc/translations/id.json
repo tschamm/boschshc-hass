@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Alarm penyusupan",
       "SECONDARY_ALARM": "Alarm sekunder",
       "PRIMARY_ALARM": "Alarm utama",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarm penyusupan",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarm penyusupan dihapus",
       "ALARM_OFF": "Alarm mati",
       "ALARM_ON": "Alarm aktif",
       "ALARM_MUTED": "Alarm dimatikan sementara"

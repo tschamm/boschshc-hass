@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Συναγερμός εισβολής",
       "SECONDARY_ALARM": "Δευτερεύων συναγερμός",
       "PRIMARY_ALARM": "Κύριος συναγερμός",
+      "INTRUSION_ALARM_ON_REQUESTED": "Συναγερμός εισβολής",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Ο συναγερμός εισβολής εκκαθαρίστηκε",
       "ALARM_OFF": "Συναγερμός off",
       "ALARM_ON": "Συναγερμός on",
       "ALARM_MUTED": "Συναγερμός σε σίγαση"

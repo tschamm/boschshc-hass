@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.10.13 — bug-hunt round: bypass_infinite naming, SD II device triggers
+
+**No breaking changes.** Requires `boschshcpy==0.4.11`.
+
+Findings from a broad bug-hunt round across the integration and the
+`boschshcpy` library it depends on:
+
+- **`switch.py`:** the `bypass_infinite` switch (Shutter Contact II) never
+  showed its translated name ("Bypass Never Expires") — it displayed the raw
+  internal `attr_name` ("BypassInfinite") instead. The translation-key guard
+  added for `bypass` (#342) only applied when the switch had no `attr_name`
+  disambiguator; `bypass_infinite` has both a `translation_key` and an
+  `attr_name` (needed to distinguish its unique_id from the sibling `bypass`
+  switch on the same device), so it fell through the guard. Fixed so the
+  translation applies whenever a `translation_key` is present, independent
+  of `attr_name`.
+- **`device_trigger.py`:** Smoke Detector II's device-trigger subtype list
+  in the Automations UI reused gen-1 Smoke Detector's subtypes
+  (`INTRUSION_ALARM`/`SECONDARY_ALARM`/`PRIMARY_ALARM`), but SD II's
+  `AlarmService.State` actually reports
+  `INTRUSION_ALARM_ON_REQUESTED`/`INTRUSION_ALARM_OFF_REQUESTED` — the real
+  "alarm triggered" subtype was never selectable from the UI trigger picker
+  for SD II owners (hand-written YAML using the correct string still
+  worked). New `ALARM_EVENTS_SUBTYPES_SD2` constant, translated to all 30
+  languages.
+- **`boschshcpy` 0.4.11:** `ChildProtectionService.childLockActive` crash on
+  a partial poll snapshot omitting the field, and an async request timeout
+  not wrapping into `SHCConnectionError` — see that project's own changelog.
+
 ## 0.10.12 — fix stuck setup from 0.10.11's Zigbee routing coordinator (#362)
 
 **No breaking changes.** No `boschshcpy` pin change.

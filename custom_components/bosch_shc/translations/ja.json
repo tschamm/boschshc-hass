@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "侵入アラーム",
       "SECONDARY_ALARM": "セカンダリアラーム",
       "PRIMARY_ALARM": "プライマリアラーム",
+      "INTRUSION_ALARM_ON_REQUESTED": "侵入アラーム",
+      "INTRUSION_ALARM_OFF_REQUESTED": "侵入アラーム解除",
       "ALARM_OFF": "アラームオフ",
       "ALARM_ON": "アラームオン",
       "ALARM_MUTED": "アラームミュート"

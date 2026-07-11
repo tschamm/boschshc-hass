@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "אזעקת פריצה",
       "SECONDARY_ALARM": "אזעקה משנית",
       "PRIMARY_ALARM": "אזעקה ראשית",
+      "INTRUSION_ALARM_ON_REQUESTED": "אזעקת פריצה",
+      "INTRUSION_ALARM_OFF_REQUESTED": "אזעקת הפריצה נוקתה",
       "ALARM_OFF": "אזעקה כבויה",
       "ALARM_ON": "אזעקה פעילה",
       "ALARM_MUTED": "אזעקה מושתקת"

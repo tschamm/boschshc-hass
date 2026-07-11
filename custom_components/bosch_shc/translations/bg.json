@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Аларма при проникване",
       "SECONDARY_ALARM": "Вторична аларма",
       "PRIMARY_ALARM": "Основна аларма",
+      "INTRUSION_ALARM_ON_REQUESTED": "Аларма при проникване",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Алармата при проникване е изчистена",
       "ALARM_OFF": "Алармата е изключена",
       "ALARM_ON": "Алармата е включена",
       "ALARM_MUTED": "Алармата е заглушена"

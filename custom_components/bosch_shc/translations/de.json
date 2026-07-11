@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Einbruchalarm",
       "SECONDARY_ALARM": "Sekundäralarm",
       "PRIMARY_ALARM": "Primäralarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Einbruchalarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Einbruchalarm zurückgesetzt",
       "ALARM_OFF": "Alarm aus",
       "ALARM_ON": "Alarm an",
       "ALARM_MUTED": "Alarm stummgeschaltet"

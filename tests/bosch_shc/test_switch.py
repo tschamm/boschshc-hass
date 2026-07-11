@@ -1697,6 +1697,27 @@ def test_bypass_switch_uses_translation_key_not_device_name():
     assert sw.unique_id == "root-1_hdm:ZigBee:dev1"
 
 
+def test_bypass_infinite_switch_uses_translation_key_despite_attr_name():
+    """Bug-hunt (2026-07-11): bypass_infinite has both attr_name and a
+    translation_key. The del-guard used to only fire when attr_name is None,
+    so this secondary entity kept the literal "BypassInfinite" as its name
+    instead of the translated "Bypass Never Expires" — attr_name only needs
+    to affect unique_id, not whether translation_key gets a chance to apply.
+    """
+    from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
+
+    sw = SHCSwitch(
+        device=_FAKE_DEVICE,
+        entry_id="e1",
+        description=SWITCH_TYPES["bypass_infinite"],
+        attr_name="BypassInfinite",
+    )
+    assert not hasattr(sw, "_attr_name")
+    assert sw.translation_key == "bypass_infinite"
+    # unique_id still gets the attr_name suffix (distinguishes it from bypass)
+    assert sw.unique_id == "root-1_hdm:ZigBee:dev1_bypassinfinite"
+
+
 
 
 # ---------------------------------------------------------------------------

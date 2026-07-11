@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Inbraakalarm",
       "SECONDARY_ALARM": "Secundair alarm",
       "PRIMARY_ALARM": "Primair alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Inbraakalarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Inbraakalarm gewist",
       "ALARM_OFF": "Alarm uit",
       "ALARM_ON": "Alarm aan",
       "ALARM_MUTED": "Alarm gedempt"

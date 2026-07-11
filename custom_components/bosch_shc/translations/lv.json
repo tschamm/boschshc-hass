@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Ielaušanās trauksme",
       "SECONDARY_ALARM": "Sekundārā trauksme",
       "PRIMARY_ALARM": "Primārā trauksme",
+      "INTRUSION_ALARM_ON_REQUESTED": "Ielaušanās trauksme",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Ielaušanās trauksme notīrīta",
       "ALARM_OFF": "Trauksme izslēgta",
       "ALARM_ON": "Trauksme ieslēgta",
       "ALARM_MUTED": "Trauksme apklusināta"

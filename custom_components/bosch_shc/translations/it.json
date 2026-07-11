@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Allarme intrusione",
       "SECONDARY_ALARM": "Allarme secondario",
       "PRIMARY_ALARM": "Allarme principale",
+      "INTRUSION_ALARM_ON_REQUESTED": "Allarme intrusione",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Allarme intrusione cancellato",
       "ALARM_OFF": "Allarme disattivato",
       "ALARM_ON": "Allarme attivato",
       "ALARM_MUTED": "Allarme silenziato"

@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Alarm narušení",
       "SECONDARY_ALARM": "Sekundární alarm",
       "PRIMARY_ALARM": "Primární alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarm narušení",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarm narušení zrušen",
       "ALARM_OFF": "Alarm vypnut",
       "ALARM_ON": "Alarm zapnut",
       "ALARM_MUTED": "Alarm ztlumen"

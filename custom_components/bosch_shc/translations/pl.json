@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Alarm włamania",
       "SECONDARY_ALARM": "Alarm pomocniczy",
       "PRIMARY_ALARM": "Alarm główny",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarm włamania",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarm włamania wyczyszczony",
       "ALARM_OFF": "Alarm wyłączony",
       "ALARM_ON": "Alarm włączony",
       "ALARM_MUTED": "Alarm wyciszony"

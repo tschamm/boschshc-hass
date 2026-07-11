@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Alarma d'intrusió",
       "SECONDARY_ALARM": "Alarma secundària",
       "PRIMARY_ALARM": "Alarma primària",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarma d'intrusió",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarma d'intrusió esborrada",
       "ALARM_OFF": "Alarma desactivada",
       "ALARM_ON": "Alarma activada",
       "ALARM_MUTED": "Alarma silenciada"

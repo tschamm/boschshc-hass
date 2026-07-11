@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Inbrottslarm",
       "SECONDARY_ALARM": "Sekundärlarm",
       "PRIMARY_ALARM": "Primärlarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Inbrottslarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Inbrottslarm rensat",
       "ALARM_OFF": "Larm av",
       "ALARM_ON": "Larm på",
       "ALARM_MUTED": "Larm tystat"

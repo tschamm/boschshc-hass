@@ -501,6 +501,8 @@
       "INTRUSION_ALARM": "Behatolási riasztás",
       "SECONDARY_ALARM": "Másodlagos riasztás",
       "PRIMARY_ALARM": "Elsődleges riasztás",
+      "INTRUSION_ALARM_ON_REQUESTED": "Behatolási riasztás",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Behatolási riasztás törölve",
       "ALARM_OFF": "Riasztás kikapcsolva",
       "ALARM_ON": "Riasztás bekapcsolva",
       "ALARM_MUTED": "Riasztás elnémítva"
