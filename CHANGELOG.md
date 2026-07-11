@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.10.14 — device_trigger.py refactor, session.py thread-safety fix
+
+**No breaking changes.** Requires `boschshcpy==0.4.12`.
 
 - **`device_trigger.py`:** refactored `async_get_triggers` to a table-driven
   `DEVICE_TRIGGER_TABLE` (`dev_type -> (CONF_TYPE, subtypes)`) for MD/MD2/SD/
@@ -8,9 +10,13 @@
   dict-literal-construction blocks with one generic loop. Pure clarity
   refactor — behavior-preserving (verified against every existing test),
   WRC2/SWITCH2 and the SHC scenario-trigger block deliberately left as-is
-  (different shape, don't fit the table). Requires `boschshcpy==0.4.12` for
-  the accompanying `session.py` thread-safety fix (see that project's own
-  changelog) once both ship together.
+  (different shape, don't fit the table).
+- **`boschshcpy` 0.4.12:** fixed a thread-safety race in `session.py`
+  between the polling thread and cross-thread readers of the device list
+  (`RuntimeError: dictionary changed size during iteration`) — see that
+  project's own changelog. Live-tested on production hardware before this
+  release (unreleased lib code deployed directly, HA restarted, long-poll
+  stream verified error-free) prior to being published to PyPI.
 
 ## 0.10.13 — bug-hunt round: bypass_infinite naming, SD II device triggers
 
