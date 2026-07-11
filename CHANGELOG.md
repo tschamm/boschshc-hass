@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **`device_trigger.py`:** refactored `async_get_triggers` to a table-driven
+  `DEVICE_TRIGGER_TABLE` (`dev_type -> (CONF_TYPE, subtypes)`) for MD/MD2/SD/
+  SMOKE_DETECTOR2/SMOKE_DETECTION_SYSTEM, replacing five near-identical
+  dict-literal-construction blocks with one generic loop. Pure clarity
+  refactor — behavior-preserving (verified against every existing test),
+  WRC2/SWITCH2 and the SHC scenario-trigger block deliberately left as-is
+  (different shape, don't fit the table). Requires `boschshcpy==0.4.12` for
+  the accompanying `session.py` thread-safety fix (see that project's own
+  changelog) once both ship together.
+
 ## 0.10.13 — bug-hunt round: bypass_infinite naming, SD II device triggers
 
 **No breaking changes.** Requires `boschshcpy==0.4.11`.

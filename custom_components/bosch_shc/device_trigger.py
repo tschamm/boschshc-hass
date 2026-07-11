@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 
 import voluptuous as vol
@@ -45,6 +46,15 @@ TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
         vol.Required(CONF_SUBTYPE): str,
     }
 )
+
+# dev_type -> static (CONF_TYPE, subtypes). WRC2/SWITCH2/SHC don't fit this shape.
+DEVICE_TRIGGER_TABLE: dict[str, tuple[str, Iterable[str]]] = {
+    "MD": ("MOTION", ("",)),
+    "MD2": ("MOTION", ("",)),
+    "SD": ("ALARM", ALARM_EVENTS_SUBTYPES_SD),
+    "SMOKE_DETECTOR2": ("ALARM", ALARM_EVENTS_SUBTYPES_SD2),
+    "SMOKE_DETECTION_SYSTEM": ("ALARM", ALARM_EVENTS_SUBTYPES_SDS),
+}
 
 
 async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, str]:
@@ -129,44 +139,17 @@ async def async_get_triggers(
                 }
             )
 
-    if dev_type in ("MD", "MD2"):
-        triggers.append(
-            {
-                CONF_PLATFORM: "device",
-                CONF_DEVICE_ID: device_id,
-                CONF_DOMAIN: DOMAIN,
-                CONF_TYPE: "MOTION",
-                CONF_SUBTYPE: "",
-            }
-        )
-
-    if dev_type in ("SD", "SMOKE_DETECTOR2"):
-        subtypes = (
-            ALARM_EVENTS_SUBTYPES_SD2
-            if dev_type == "SMOKE_DETECTOR2"
-            else ALARM_EVENTS_SUBTYPES_SD
-        )
+    if dev_type in DEVICE_TRIGGER_TABLE:
+        trigger_type, subtypes = DEVICE_TRIGGER_TABLE[dev_type]
         triggers.extend(
             {
                 CONF_PLATFORM: "device",
                 CONF_DEVICE_ID: device_id,
                 CONF_DOMAIN: DOMAIN,
-                CONF_TYPE: "ALARM",
+                CONF_TYPE: trigger_type,
                 CONF_SUBTYPE: subtype,
             }
             for subtype in subtypes
-        )
-
-    if dev_type == "SMOKE_DETECTION_SYSTEM":
-        triggers.extend(
-            {
-                CONF_PLATFORM: "device",
-                CONF_DEVICE_ID: device_id,
-                CONF_DOMAIN: DOMAIN,
-                CONF_TYPE: "ALARM",
-                CONF_SUBTYPE: subtype,
-            }
-            for subtype in ALARM_EVENTS_SUBTYPES_SDS
         )
 
     if dev_type == "SHC":
