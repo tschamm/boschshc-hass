@@ -3296,6 +3296,45 @@ class TestPresenceStateContinueOnNone:
 # __init__.py — line 155: rawscan continue when no runtime_data
 # ---------------------------------------------------------------------------
 
+class TestZigbeeCoordinatorFailureDoesNotBlockSetup:
+    """#362: a Zigbee-routing coordinator failure must not fail the entry.
+
+    async_setup_entry must use async_refresh() (not
+    async_config_entry_first_refresh()) so a failing/timing-out Zigbee poll
+    on setup can't raise ConfigEntryNotReady and get the whole integration
+    stuck retrying, over a disabled-by-default diagnostic sensor.
+    """
+
+    def test_setup_succeeds_when_zigbee_routing_fetch_fails(self):
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        session = _make_fake_session()
+        # A plain TimeoutError (not SHCException/SHCConnectionError) isn't
+        # swallowed per-device by the coordinator's own isolation — it
+        # propagates out of _async_update_data, the scenario that actually
+        # reproduces #362 (a per-device SHC error is already isolated and
+        # never reaches async_setup_entry at all).
+        session.devices = [SimpleNamespace(id="hdm:ZigBee:abc")]
+        session.get_zigbee_routing_info = AsyncMock(side_effect=TimeoutError)
+
+        hass = _make_fake_hass()
+        entry = _make_fake_entry()
+        dr_mock = _make_fake_device_registry()
+        track_unsub = MagicMock()
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
+        ):
+            result = _run(async_setup_entry(hass, entry))
+
+        assert result is True
+        coordinator = entry.runtime_data.zigbee_routing_coordinator
+        assert coordinator.last_update_success is False
+
+
 class TestRawscanNoRuntimeData:
     """rawscan_service_call must skip entries lacking runtime_data (line 155)."""
 

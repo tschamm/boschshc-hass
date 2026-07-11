@@ -340,7 +340,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         zigbee_routing_coordinator=zigbee_routing_coordinator,
     )
 
-    await zigbee_routing_coordinator.async_config_entry_first_refresh()
+    # async_refresh(), not async_config_entry_first_refresh(): this backs an
+    # opt-in diagnostic sensor and must not fail the whole entry on a hiccup.
+    await zigbee_routing_coordinator.async_refresh()
 
     # Daily certificate re-check scheduling
     async def _scheduled_cert_check(_now: Any) -> None:

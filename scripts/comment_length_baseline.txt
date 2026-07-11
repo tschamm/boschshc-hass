@@ -2,12 +2,12 @@
 # Format: path:line — do NOT add new entries; fix new violations instead.
 # Regenerated 2026-07-08 after fix-group-1/2/3 edits shifted line numbers
 # (and group 3 condensed several of these below the 2-line threshold).
-custom_components/bosch_shc/__init__.py:400
-custom_components/bosch_shc/__init__.py:495
-custom_components/bosch_shc/__init__.py:508
-custom_components/bosch_shc/__init__.py:669
-custom_components/bosch_shc/__init__.py:774
-custom_components/bosch_shc/__init__.py:829
+custom_components/bosch_shc/__init__.py:402
+custom_components/bosch_shc/__init__.py:497
+custom_components/bosch_shc/__init__.py:510
+custom_components/bosch_shc/__init__.py:671
+custom_components/bosch_shc/__init__.py:776
+custom_components/bosch_shc/__init__.py:831
 custom_components/bosch_shc/binary_sensor.py:1064
 custom_components/bosch_shc/binary_sensor.py:1150
 custom_components/bosch_shc/binary_sensor.py:1179

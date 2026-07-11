@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.10.12 — fix stuck setup from 0.10.11's Zigbee routing coordinator (#362)
+
+**No breaking changes.** No `boschshcpy` pin change.
+
+- **`__init__.py`:** 0.10.11 introduced `SHCZigbeeRoutingCoordinator` and
+  awaited its `async_config_entry_first_refresh()` unconditionally during
+  setup. That method raises `ConfigEntryNotReady` on any failure of the
+  coordinator's update — so a Zigbee-routing fetch hiccup (unreachable SHC,
+  unsupported firmware endpoint, timeout) failed the *entire* integration
+  setup, even though the coordinator only backs one diagnostic sensor that
+  is disabled by default. Reported as the integration getting stuck
+  flapping between "setup error, retrying" and "initializing". Switched to
+  `async_refresh()`, which never raises: a failed first fetch just leaves
+  the coordinator's `last_update_success` false and the sensor unavailable
+  until its next 5-minute poll succeeds, without blocking anything else.
+- **`manifest.json`:** the 0.10.11 release commit bumped the `boschshcpy`
+  requirements pin but left the integration's own `"version"` field at
+  `0.10.10` — exactly matching the report that the Integrations page showed
+  "Version 0.10.10" after updating to 0.10.11. Fixed.
+
 ## 0.10.11 — Zigbee routing-quality diagnostic sensor
 
 **No breaking changes.** Requires `boschshcpy==0.4.10`.
