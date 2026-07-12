@@ -2534,14 +2534,18 @@ class TestSHCEnableAllDiagnosticsButtonSetup:
         )
 
     def test_unique_id_scoped_to_config_entry(self) -> None:
-        button = SHCEnableAllDiagnosticsButton(entry_id="entry123")
+        button = SHCEnableAllDiagnosticsButton(
+            entry_unique_id=None, entry_id="entry123"
+        )
         assert button.unique_id == "entry123_enable_all_diagnostics"
 
     def test_entity_category_is_config_not_diagnostic(self) -> None:
         """Must stay visible/enabled by default — it's the button that
         enables the (hidden-by-default) diagnostic entities, so it can't be
         one itself."""
-        button = SHCEnableAllDiagnosticsButton(entry_id="entry123")
+        button = SHCEnableAllDiagnosticsButton(
+            entry_unique_id=None, entry_id="entry123"
+        )
         assert button.entity_category == EntityCategory.CONFIG
 
 

@@ -3,13 +3,15 @@
 # Regenerated 2026-07-08 after fix-group-1/2/3 edits shifted line numbers
 # (and group 3 condensed several of these below the 2-line threshold).
 # __init__.py/button.py/const.py entries re-shifted 2026-07-12 for the
-# Zigbee topology export service + enable-all-diagnostics button.
-custom_components/bosch_shc/__init__.py:511
-custom_components/bosch_shc/__init__.py:606
-custom_components/bosch_shc/__init__.py:619
-custom_components/bosch_shc/__init__.py:780
-custom_components/bosch_shc/__init__.py:897
-custom_components/bosch_shc/__init__.py:952
+# Zigbee topology export service + enable-all-diagnostics button, and
+# again same day after the getattr(runtime.session, "devices", ...)
+# defensive-fallback removal shifted every later line up by one.
+custom_components/bosch_shc/__init__.py:510
+custom_components/bosch_shc/__init__.py:605
+custom_components/bosch_shc/__init__.py:618
+custom_components/bosch_shc/__init__.py:779
+custom_components/bosch_shc/__init__.py:896
+custom_components/bosch_shc/__init__.py:951
 custom_components/bosch_shc/binary_sensor.py:1092
 custom_components/bosch_shc/binary_sensor.py:1178
 custom_components/bosch_shc/binary_sensor.py:1207

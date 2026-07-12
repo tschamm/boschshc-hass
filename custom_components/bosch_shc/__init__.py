@@ -262,8 +262,7 @@ def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
                     translation_key="zigbee_topology_no_data",
                 )
             device_names = {
-                device.id: device.name
-                for device in getattr(runtime.session, "devices", None) or []
+                device.id: device.name for device in runtime.session.devices
             }
             graph = build_topology_graph(
                 coordinator.data, device_names, runtime.shc_device.name or runtime.title

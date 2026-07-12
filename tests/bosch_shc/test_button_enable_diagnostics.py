@@ -28,7 +28,7 @@ def _entity_entry(entity_id, category, disabled_by):
 
 
 def _button() -> SHCEnableAllDiagnosticsButton:
-    button = SHCEnableAllDiagnosticsButton(entry_id="entry1")
+    button = SHCEnableAllDiagnosticsButton(entry_unique_id="uid1", entry_id="entry1")
     button.hass = MagicMock()
     button.hass.config_entries.async_reload = AsyncMock()
     return button
@@ -95,7 +95,9 @@ def test_device_info_links_to_shc_controller_device() -> None:
         manufacturer="Bosch",
         model="SmartHomeController",
     )
-    button = SHCEnableAllDiagnosticsButton(entry_id="entry1", shc_device=shc_device)
+    button = SHCEnableAllDiagnosticsButton(
+        entry_unique_id="uid1", entry_id="entry1", shc_device=shc_device
+    )
 
     assert button.device_info == {
         "identifiers": shc_device.identifiers,
@@ -106,6 +108,55 @@ def test_device_info_links_to_shc_controller_device() -> None:
 
 
 def test_device_info_none_without_shc_device() -> None:
-    button = SHCEnableAllDiagnosticsButton(entry_id="entry1")
+    button = SHCEnableAllDiagnosticsButton(entry_unique_id="uid1", entry_id="entry1")
 
     assert button.device_info is None
+
+
+def test_unique_id_uses_entry_unique_id_prefix() -> None:
+    button = SHCEnableAllDiagnosticsButton(entry_unique_id="uid1", entry_id="entry1")
+
+    assert button._attr_unique_id == "uid1_enable_all_diagnostics"
+
+
+def test_unique_id_falls_back_to_entry_id_when_no_unique_id() -> None:
+    button = SHCEnableAllDiagnosticsButton(entry_unique_id=None, entry_id="entry1")
+
+    assert button._attr_unique_id == "entry1_enable_all_diagnostics"
+
+
+def test_concurrent_press_does_not_reload_twice() -> None:
+    """A reload already in flight must not be triggered again by an overlapping press."""
+    entries = [
+        _entity_entry("sensor.diag1", EntityCategory.DIAGNOSTIC, RegistryEntryDisabler.INTEGRATION),
+    ]
+    registry = MagicMock()
+    button = _button()
+    reload_started = asyncio.Event()
+    release_reload = asyncio.Event()
+
+    async def _slow_reload(entry_id: str) -> None:
+        reload_started.set()
+        await release_reload.wait()
+
+    button.hass.config_entries.async_reload = AsyncMock(side_effect=_slow_reload)
+
+    async def _run_overlapping() -> None:
+        with (
+            patch("custom_components.bosch_shc.button.er.async_get", return_value=registry),
+            patch(
+                "custom_components.bosch_shc.button.er.async_entries_for_config_entry",
+                return_value=entries,
+            ),
+        ):
+            first_press = asyncio.ensure_future(button.async_press())
+            await reload_started.wait()
+            assert button._reload_in_progress is True
+            await button.async_press()  # overlapping press: must no-op, not reload again
+            release_reload.set()
+            await first_press
+
+    _run(_run_overlapping())
+
+    button.hass.config_entries.async_reload.assert_awaited_once_with("entry1")
+    assert button._reload_in_progress is False

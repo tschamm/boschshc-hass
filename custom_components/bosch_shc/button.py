@@ -201,6 +201,7 @@ async def async_setup_entry(  # noqa: C901
     # diagnostic entity for this SHC in one click instead of opening each one.
     entities.append(
         SHCEnableAllDiagnosticsButton(
+            entry_unique_id=config_entry.unique_id,
             entry_id=config_entry.entry_id,
             shc_device=config_entry.runtime_data.shc_device,
         )
@@ -592,11 +593,18 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_should_poll = False
 
-    def __init__(self, entry_id: str, shc_device: DeviceEntry | None = None) -> None:
+    def __init__(
+        self,
+        entry_unique_id: str | None,
+        entry_id: str,
+        shc_device: DeviceEntry | None = None,
+    ) -> None:
         """Initialize the enable-all-diagnostics button."""
         self._entry_id = entry_id
         self._shc_device = shc_device
-        self._attr_unique_id = f"{entry_id}_enable_all_diagnostics"
+        prefix = entry_unique_id or entry_id
+        self._attr_unique_id = f"{prefix}_enable_all_diagnostics"
+        self._reload_in_progress = False
 
     @property
     def device_info(self) -> dict[str, Any] | None:
@@ -612,6 +620,8 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
 
     async def async_press(self) -> None:
         """Clear disabled_by=INTEGRATION on every diagnostic entity of this entry."""
+        if self._reload_in_progress:
+            return
         registry = er.async_get(self.hass)
         to_enable = [
             entity_entry.entity_id
@@ -625,4 +635,9 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
             registry.async_update_entity(entity_id, disabled_by=None)
         if to_enable:
             # Newly-enabled entities only actually start after a reload.
-            await self.hass.config_entries.async_reload(self._entry_id)
+            # Guarded above against overlapping reloads from a rapid double-press.
+            self._reload_in_progress = True
+            try:
+                await self.hass.config_entries.async_reload(self._entry_id)
+            finally:
+                self._reload_in_progress = False

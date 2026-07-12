@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **`__init__.py`:** dropped an unnecessary defensive `getattr(runtime.session,
+  "devices", None) or []` in the Zigbee topology export service —
+  `SHCData.session.devices` is a non-Optional, always-present property, so
+  the fallback only masked a would-be-loud `AttributeError`.
+- **`button.py`:** `SHCEnableAllDiagnosticsButton` (new in 0.10.15) now
+  prefers the config entry's `unique_id` over its `entry_id` for its own
+  `unique_id`, matching `SHCScenarioButton`'s existing convention; and
+  guards `async_press` against an overlapping config-entry reload when the
+  button is pressed twice in quick succession.
+
 ## 0.10.15 — Zigbee topology export, bulk-diagnostics button, ShutterContactSensor refactor
 
 **No breaking changes.**
