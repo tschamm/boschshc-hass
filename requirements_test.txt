@@ -1,5 +1,5 @@
 # Test + runtime deps for the bosch_shc integration test suite.
-# homeassistant>=2026.7.0 required: pins to the latest stable HA release so we
+# homeassistant>=2026.7.2 required: pins to the latest stable HA release so we
 # test against (and support) the new purpose-specific trigger/condition
 # platform (e.g. event.received) — see CHANGELOG. HA 2026.7.0 requires
 # Python >=3.14.2, so CI now runs on Python 3.14 (bumped from 3.13).
@@ -9,7 +9,7 @@
 pytest
 pytest-timeout
 pytest-cov
-homeassistant>=2026.7.0
+homeassistant>=2026.7.2
 # Runtime dependency of the integration — pinned to the manifest version so the
 # unit gate tests against the exact released lib (an unpinned spec let CI install
 # a stale cached wheel and miss new lib APIs).
