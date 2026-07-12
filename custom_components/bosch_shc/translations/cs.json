@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Rekalibrovat"
+      },
+      "enable_all_diagnostics": {
+        "name": "Povolit všechny diagnostiky"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Řetězec příkazu, který má být odeslán kouřovému detektoru."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exportovat topologii Zigbee",
+      "description": "Vytvoří graf topologie sítě Zigbee (kvalita spojení pro každý skok) z poslední kontroly směrování a uloží jej jako JSON a zobrazitelnou HTML stránku do www/bosch_shc/. Graf je také vrácen jako JSON a jako text diagramu Mermaid v odpovědi služby.",
+      "fields": {
+        "title": {
+          "name": "Název SHC",
+          "description": "Název SHC. Ponechte prázdné pro použití prvního nakonfigurovaného SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -602,6 +615,15 @@
     },
     "rawscan_entry_not_found": {
       "message": "Nenalezen žádný načtený záznam Bosch SHC s tímto názvem."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Pro tento SHC controller zatím nejsou k dispozici žádná data o směrování Zigbee (nejsou spárována žádná zařízení Zigbee, nebo první 5minutové dotazování ještě nebylo dokončeno od spuštění Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nenalezen žádný načtený záznam Bosch SHC s tímto názvem."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Nepodařilo se zapsat export topologie Zigbee do www/bosch_shc/."
     },
     "scenario_not_found": {
       "message": "Scénář nenalezen."

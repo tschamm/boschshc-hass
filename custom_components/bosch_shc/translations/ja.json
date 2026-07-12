@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "再キャリブレーション"
+      },
+      "enable_all_diagnostics": {
+        "name": "すべての診断を有効化"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "煙感知器に送信するコマンド文字列。"
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee トポロジーのエクスポート",
+      "description": "直近のルーティングポーリング結果から Zigbee メッシュトポロジーグラフ（ホップごとのリンク品質）を作成し、www/bosch_shc/ 以下に JSON と閲覧可能な HTML ページとして書き出します。サービスの応答にはグラフの JSON データと Mermaid 図のテキストも含まれます。",
+      "fields": {
+        "title": {
+          "name": "SHC名",
+          "description": "SHCのタイトル。空欄の場合、最初に設定された SHC が使用されます。"
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "値の設定に失敗しました。"
+    },
+    "zigbee_topology_no_data": {
+      "message": "このSHCコントローラーではまだZigbeeルーティングデータが利用できません（Zigbeeデバイスがペアリングされていないか、Home Assistant起動後の最初の5分間ポーリングがまだ完了していません）。"
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "そのタイトルで読み込まれた Bosch SHC エントリが見つかりません。"
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Zigbeeトポロジーのエクスポートをwww/bosch_shc/に書き込めませんでした。"
     }
   }
 }

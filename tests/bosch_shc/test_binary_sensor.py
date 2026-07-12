@@ -458,8 +458,11 @@ def _battery_sensor(battery_level):
 
 
 def _shutter_sensor(state, device_class="GENERIC"):
+    from custom_components.bosch_shc.binary_sensor import SHUTTER_CONTACT_DESCRIPTION
+
     s = ShutterContactSensor.__new__(ShutterContactSensor)
     s._device = SimpleNamespace(state=state, device_class=device_class)
+    s.entity_description = SHUTTER_CONTACT_DESCRIPTION
     return s
 
 

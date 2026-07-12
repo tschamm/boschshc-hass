@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Recalibra"
+      },
+      "enable_all_diagnostics": {
+        "name": "Activa tots els diagnòstics"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Cadena d'ordre a enviar al detector de fum."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exporta la topologia Zigbee",
+      "description": "Construeix un graf de la topologia de la xarxa mesh Zigbee (qualitat de l'enllaç per salt) a partir de l'última consulta d'encaminament i l'escriu com a JSON i una pàgina HTML visualitzable a www/bosch_shc/. També retorna el graf com a JSON i com a text de diagrama Mermaid a la resposta del servei.",
+      "fields": {
+        "title": {
+          "name": "Nom del SHC",
+          "description": "Títol del SHC. Deixeu-ho buit per utilitzar el primer SHC configurat."
+        }
+      }
     }
   },
   "issues": {
@@ -602,6 +615,15 @@
     },
     "rawscan_entry_not_found": {
       "message": "No s'ha trobat cap entrada de Bosch SHC carregada amb aquest títol."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Encara no hi ha dades d'encaminament Zigbee disponibles per a aquest controlador SHC (no hi ha dispositius Zigbee aparellats, o l'última consulta de 5 minuts encara no s'ha completat des que es va iniciar Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "No s'ha trobat cap entrada de Bosch SHC carregada amb aquest títol."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "No s'ha pogut escriure l'exportació de la topologia Zigbee a www/bosch_shc/."
     },
     "scenario_not_found": {
       "message": "Escenari no trobat."

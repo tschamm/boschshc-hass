@@ -28,6 +28,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.components.button import ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import EntityCategory
 
 from boschshcpy.exceptions import SHCException
 from custom_components.bosch_shc.button import (
@@ -36,6 +37,7 @@ from custom_components.bosch_shc.button import (
     ResetEnergySummationButton,
     SHCDetectionTestButton,
     SHCDetectionTestStopButton,
+    SHCEnableAllDiagnosticsButton,
     SHCRelayButton,
     SHCScenarioButton,
     SHCSirenTestAlarmButton,
@@ -94,6 +96,18 @@ def _make_config_entry(
     return entry
 
 
+def _without_diagnostics_button(entities: list) -> list:
+    """Strip the always-created SHCEnableAllDiagnosticsButton from a result list.
+
+    That button is a single hub-level entity created unconditionally by
+    async_setup_entry, orthogonal to every per-device-bucket test in this
+    file — those tests assert on device-specific entity creation and were
+    written before the button existed, so filter it out here rather than
+    editing dozens of individual assertions.
+    """
+    return [e for e in entities if not isinstance(e, SHCEnableAllDiagnosticsButton)]
+
+
 def _collect():
     """Return (collected_list, async_add_entities callable)."""
     collected: list = []
@@ -114,7 +128,7 @@ def _run_setup(
     )
     collected, add = _collect()
     asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
-    return collected
+    return _without_diagnostics_button(collected)
 
 
 def _button_device() -> SimpleNamespace:
@@ -194,7 +208,7 @@ def _run_setup_with_entry(session, entry) -> list:
         collected.extend(entities)
 
     asyncio.run(async_setup_entry(hass, entry, add))
-    return collected
+    return _without_diagnostics_button(collected)
 
 
 def _make_session(
@@ -277,7 +291,7 @@ def _run_button_setup(session, options=None):
         collected.extend(ents)
 
     asyncio.run(async_setup_entry(hass, config_entry, _add))
-    return collected
+    return _without_diagnostics_button(collected)
 
 
 # ---------------------------------------------------------------------------
@@ -341,7 +355,7 @@ def _setup_buttons(session):
         await async_setup_entry(hass, entry, lambda e, *a, **k: entities.extend(e))
 
     asyncio.run(_run())
-    return entities
+    return _without_diagnostics_button(entities)
 
 
 # ---------------------------------------------------------------------------
@@ -728,7 +742,7 @@ class TestButtonSetupEntry:
         collected, add = _collect()
 
         asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
-        return collected
+        return _without_diagnostics_button(collected)
 
     def test_impulse_relays_produce_relay_button_entities(self) -> None:
         """micromodule_impulse_relays → SHCRelayButton."""
@@ -2409,7 +2423,7 @@ class TestButtonDimmerSetup:
 
         collected = []
         _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
+        return _without_diagnostics_button(collected)
 
     def test_dimmer_with_dimmer_configuration_adds_preview_buttons(self):
         """Dimmer with supports_dimmer_configuration=True → both preview buttons."""
@@ -2501,6 +2515,34 @@ def test_dimmer_preview_min_calls_service():
     btn._device = SimpleNamespace(dimmer_configuration=svc)
     asyncio.run(btn.async_press())
     svc.async_preview_min_brightness.assert_awaited_once()
+
+
+class TestSHCEnableAllDiagnosticsButtonSetup:
+    """The hub-level diagnostics-enable button is created unconditionally,
+    unlike every other button here (all gated by device buckets/options)."""
+
+    def test_button_always_created_even_with_no_other_entities(self) -> None:
+        session = SimpleNamespace(device_helper=SimpleNamespace())
+        hass = _make_hass()
+        entry = _make_config_entry(session)
+        collected, add = _collect()
+
+        asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
+
+        assert any(
+            isinstance(e, SHCEnableAllDiagnosticsButton) for e in collected
+        )
+
+    def test_unique_id_scoped_to_config_entry(self) -> None:
+        button = SHCEnableAllDiagnosticsButton(entry_id="entry123")
+        assert button.unique_id == "entry123_enable_all_diagnostics"
+
+    def test_entity_category_is_config_not_diagnostic(self) -> None:
+        """Must stay visible/enabled by default — it's the button that
+        enables the (hidden-by-default) diagnostic entities, so it can't be
+        one itself."""
+        button = SHCEnableAllDiagnosticsButton(entry_id="entry123")
+        assert button.entity_category == EntityCategory.CONFIG
 
 
 def test_dimmer_preview_buttons_safe_without_service():

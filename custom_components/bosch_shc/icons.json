@@ -47,6 +47,9 @@
       },
       "scenario": {
         "default": "mdi:script-text-play"
+      },
+      "enable_all_diagnostics": {
+        "default": "mdi:radar"
       }
     },
     "sensor": {

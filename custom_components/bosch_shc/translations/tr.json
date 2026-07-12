@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Yeniden Kalibre Et"
+      },
+      "enable_all_diagnostics": {
+        "name": "Tüm Tanılamaları Etkinleştir"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Duman dedektörüne gönderilecek komut dizesi."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee Topolojisini Dışa Aktar",
+      "description": "Son yönlendirme taramasından bir Zigbee mesh topoloji grafiği (atlama başına bağlantı kalitesi) oluşturur ve bunu www/bosch_shc/ altında JSON ve görüntülenebilir bir HTML sayfası olarak yazar. Ayrıca grafiği hizmet yanıtında JSON ve Mermaid diyagram metni olarak döndürür.",
+      "fields": {
+        "title": {
+          "name": "SHC adı",
+          "description": "SHC'nin başlığı. İlk yapılandırılmış SHC'yi kullanmak için boş bırakın."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Değer ayarlanamadı."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Bu SHC denetleyicisi için henüz kullanılabilir Zigbee yönlendirme verisi yok (eşleştirilmiş Zigbee cihazı yok veya Home Assistant başladığından beri ilk 5 dakikalık tarama tamamlanmadı)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Bu başlıkla yüklenmiş bir Bosch SHC girişi bulunamadı."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Zigbee topoloji dışa aktarımı www/bosch_shc/ konumuna yazılamadı."
     }
   }
 }

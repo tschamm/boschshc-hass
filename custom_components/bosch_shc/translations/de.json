@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Neu kalibrieren"
+      },
+      "enable_all_diagnostics": {
+        "name": "Alle Diagnosen aktivieren"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Befehl, der an den Rauchmelder gesendet werden soll."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee-Topologie exportieren",
+      "description": "Erstellt aus den zuletzt abgefragten Routing-Daten eine Zigbee-Mesh-Topologie (Verbindungsqualität pro Hop) als JSON + eine anzeigbare HTML-Seite unter www/bosch_shc/. Liefert den Graphen zusätzlich als JSON und als Mermaid-Diagrammtext in der Serviceantwort.",
+      "fields": {
+        "title": {
+          "name": "SHC Name",
+          "description": "Name des SHC. Leer lassen, um den ersten konfigurierten SHC zu verwenden."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Festlegen des Werts fehlgeschlagen."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Für diesen SHC-Controller liegen noch keine Zigbee-Routing-Daten vor (keine Zigbee-Geräte gekoppelt, oder die erste 5-Minuten-Abfrage seit dem Start von Home Assistant ist noch nicht abgeschlossen)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Kein geladener Bosch SHC-Eintrag mit diesem Titel gefunden."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Der Zigbee-Topologie-Export konnte nicht unter www/bosch_shc/ gespeichert werden."
     }
   }
 }

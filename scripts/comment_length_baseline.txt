@@ -2,26 +2,28 @@
 # Format: path:line — do NOT add new entries; fix new violations instead.
 # Regenerated 2026-07-08 after fix-group-1/2/3 edits shifted line numbers
 # (and group 3 condensed several of these below the 2-line threshold).
-custom_components/bosch_shc/__init__.py:402
-custom_components/bosch_shc/__init__.py:497
-custom_components/bosch_shc/__init__.py:510
-custom_components/bosch_shc/__init__.py:671
-custom_components/bosch_shc/__init__.py:776
-custom_components/bosch_shc/__init__.py:831
-custom_components/bosch_shc/binary_sensor.py:1064
-custom_components/bosch_shc/binary_sensor.py:1150
-custom_components/bosch_shc/binary_sensor.py:1179
-custom_components/bosch_shc/binary_sensor.py:176
-custom_components/bosch_shc/binary_sensor.py:315
-custom_components/bosch_shc/binary_sensor.py:609
-custom_components/bosch_shc/binary_sensor.py:616
-custom_components/bosch_shc/binary_sensor.py:696
-custom_components/bosch_shc/binary_sensor.py:738
-custom_components/bosch_shc/binary_sensor.py:817
-custom_components/bosch_shc/binary_sensor.py:928
-custom_components/bosch_shc/button.py:115
-custom_components/bosch_shc/button.py:173
-custom_components/bosch_shc/button.py:95
+# __init__.py/button.py/const.py entries re-shifted 2026-07-12 for the
+# Zigbee topology export service + enable-all-diagnostics button.
+custom_components/bosch_shc/__init__.py:511
+custom_components/bosch_shc/__init__.py:606
+custom_components/bosch_shc/__init__.py:619
+custom_components/bosch_shc/__init__.py:780
+custom_components/bosch_shc/__init__.py:897
+custom_components/bosch_shc/__init__.py:952
+custom_components/bosch_shc/binary_sensor.py:1092
+custom_components/bosch_shc/binary_sensor.py:1178
+custom_components/bosch_shc/binary_sensor.py:1207
+custom_components/bosch_shc/binary_sensor.py:179
+custom_components/bosch_shc/binary_sensor.py:318
+custom_components/bosch_shc/binary_sensor.py:637
+custom_components/bosch_shc/binary_sensor.py:644
+custom_components/bosch_shc/binary_sensor.py:724
+custom_components/bosch_shc/binary_sensor.py:766
+custom_components/bosch_shc/binary_sensor.py:845
+custom_components/bosch_shc/binary_sensor.py:956
+custom_components/bosch_shc/button.py:116
+custom_components/bosch_shc/button.py:174
+custom_components/bosch_shc/button.py:96
 custom_components/bosch_shc/climate.py:109
 custom_components/bosch_shc/climate.py:224
 custom_components/bosch_shc/climate.py:282
@@ -39,8 +41,8 @@ custom_components/bosch_shc/config_flow.py:594
 custom_components/bosch_shc/config_flow.py:641
 custom_components/bosch_shc/config_flow.py:678
 custom_components/bosch_shc/config_flow.py:74
-custom_components/bosch_shc/const.py:40
-custom_components/bosch_shc/const.py:68
+custom_components/bosch_shc/const.py:41
+custom_components/bosch_shc/const.py:69
 custom_components/bosch_shc/cover.py:104
 custom_components/bosch_shc/cover.py:116
 custom_components/bosch_shc/cover.py:193

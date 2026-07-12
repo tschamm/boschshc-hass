@@ -208,6 +208,9 @@
       },
       "shutter_recalibrate": {
         "name": "Recalibrate"
+      },
+      "enable_all_diagnostics": {
+        "name": "Enable All Diagnostics"
       }
     },
     "number": {
@@ -532,6 +535,15 @@
     },
     "number_set_failed": {
       "message": "Failed to set the value."
+    },
+    "zigbee_topology_no_data": {
+      "message": "No Zigbee routing data available yet for this SHC controller (no Zigbee devices paired, or the first 5-minute poll hasn't completed since Home Assistant started)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "No loaded Bosch SHC entry with that title found."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Could not write the Zigbee topology export to www/bosch_shc/."
     }
   },
   "device_automation": {
@@ -618,6 +630,16 @@
         "command": {
           "name": "Custom command",
           "description": "Command string to send to the smoke detector."
+        }
+      }
+    },
+    "export_zigbee_topology": {
+      "name": "Export Zigbee Topology",
+      "description": "Builds a Zigbee mesh topology graph (per-hop link quality) from the last routing poll and writes it as JSON + a viewable HTML page under www/bosch_shc/. Also returns the graph as JSON and as Mermaid diagram text in the service response.",
+      "fields": {
+        "title": {
+          "name": "SHC name",
+          "description": "Title of the SHC. Leave empty to use the first configured SHC."
         }
       }
     }

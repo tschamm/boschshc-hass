@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 from datetime import time as dt_time
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import aiohttp
@@ -50,6 +52,7 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 from homeassistant.util import dt as dt_util
+from homeassistant.util import slugify
 
 from .certificate import parse_certificate
 from .const import (
@@ -76,12 +79,18 @@ from .const import (
     OPT_SILENT_MODE_END,
     OPT_SILENT_MODE_START,
     OPT_SSL_SKIP_VERIFY,
+    SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
 from .coordinator import SHCZigbeeRoutingCoordinator
 from .data import SHCData
+from .zigbee_topology import (
+    build_topology_graph,
+    topology_to_html,
+    topology_to_mermaid,
+)
 
 PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
@@ -113,6 +122,12 @@ RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
         vol.Required(ATTR_COMMAND): cv.string,
         vol.Optional(ATTR_DEVICE_ID, default=""): cv.string,
         vol.Optional(ATTR_SERVICE_ID, default=""): cv.string,
+    }
+)
+
+EXPORT_ZIGBEE_TOPOLOGY_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_TITLE, default=""): cv.string,
     }
 )
 
@@ -215,6 +230,100 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
         SERVICE_TRIGGER_RAWSCAN,
         rawscan_service_call,
         schema=RAWSCAN_TRIGGER_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+
+def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
+    """Register the export_zigbee_topology service if not already registered.
+
+    Always-on (unlike rawscan, this reads only already-polled diagnostic
+    data, no live SHC round-trip, no sensitive commands).
+    """
+    if hass.services.has_service(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY):
+        return
+
+    async def export_topology_service_call(call: ServiceCall) -> ServiceResponse:
+        """Build a Zigbee mesh topology graph from the last routing poll."""
+        title = call.data[ATTR_TITLE]
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            if not hasattr(config_entry, "runtime_data"):
+                continue
+            runtime: SHCData = config_entry.runtime_data
+            if title not in ("", runtime.title):
+                continue
+            coordinator = runtime.zigbee_routing_coordinator
+            if coordinator is None or not coordinator.data:
+                raise ServiceValidationError(
+                    "No Zigbee routing data available yet for this SHC "
+                    "controller (no Zigbee devices paired, or the first "
+                    "5-minute poll hasn't completed since HA started).",
+                    translation_domain=DOMAIN,
+                    translation_key="zigbee_topology_no_data",
+                )
+            device_names = {
+                device.id: device.name
+                for device in getattr(runtime.session, "devices", None) or []
+            }
+            graph = build_topology_graph(
+                coordinator.data, device_names, runtime.shc_device.name or runtime.title
+            )
+            mermaid = topology_to_mermaid(graph)
+            html = topology_to_html(graph, f"Zigbee topology — {runtime.title}")
+
+            def _write_files(
+                entry_title: str,
+                entry_id: str,
+                graph_data: dict[str, Any],
+                html_content: str,
+            ) -> str:
+                """Write JSON + HTML under www/bosch_shc/ (blocking I/O).
+
+                Takes the per-entry values as arguments (not a closure over
+                the loop's `runtime`/`graph`/`html`) so it can't ever observe
+                a later loop iteration's values. The filename includes a
+                short entry_id suffix so two entries whose titles normalize
+                to the same slug (e.g. "SHC Downstairs" / "shc-downstairs")
+                can't silently overwrite each other's export.
+                """
+                www_dir = Path(hass.config.path("www", "bosch_shc"))
+                www_dir.mkdir(parents=True, exist_ok=True)
+                base_name = f"{slugify(entry_title)}_{entry_id[:8]}_zigbee_topology"
+                (www_dir / f"{base_name}.json").write_text(
+                    json.dumps(graph_data, indent=2), encoding="utf-8"
+                )
+                (www_dir / f"{base_name}.html").write_text(
+                    html_content, encoding="utf-8"
+                )
+                return f"{base_name}.html"
+
+            try:
+                html_filename = await hass.async_add_executor_job(
+                    _write_files, runtime.title, config_entry.entry_id, graph, html
+                )
+            except OSError as err:
+                raise ServiceValidationError(
+                    f"Could not write the Zigbee topology export to "
+                    f"www/bosch_shc/: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="zigbee_topology_write_failed",
+                ) from err
+            return {
+                "graph": graph,
+                "mermaid": mermaid,
+                "url": f"/local/bosch_shc/{html_filename}",
+            }
+        raise ServiceValidationError(
+            f"No loaded Bosch SHC entry with title '{title}' found.",
+            translation_domain=DOMAIN,
+            translation_key="zigbee_topology_entry_not_found",
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
+        export_topology_service_call,
+        schema=EXPORT_ZIGBEE_TOPOLOGY_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
 
@@ -673,6 +782,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # entry enables it; unregister when the last enabling entry is unloaded.
     if entry.options.get(OPT_ENABLE_RAWSCAN, True):
         _register_rawscan_service(hass)
+    _register_export_zigbee_topology_service(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -740,6 +850,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ]
         if not remaining:
             hass.services.async_remove(DOMAIN, SERVICE_TRIGGER_RAWSCAN)
+
+    # Remove export_zigbee_topology service if no loaded entries remain at all
+    # (always-on, unlike rawscan — no per-entry option gates it).
+    if hass.services.has_service(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY):
+        remaining_any = [
+            e
+            for e in hass.config_entries.async_entries(DOMAIN)
+            if e.entry_id != entry.entry_id and e.state is ConfigEntryState.LOADED
+        ]
+        if not remaining_any:
+            hass.services.async_remove(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY)
 
     return unload_ok
 

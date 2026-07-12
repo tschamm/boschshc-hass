@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "כיול מחדש"
+      },
+      "enable_all_diagnostics": {
+        "name": "הפעלת כל האבחונים"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "מחרוזת הפקודה לשליחה לגלאי העשן."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "ייצוא טופולוגיית Zigbee",
+      "description": "בונה גרף טופולוגיה של רשת Zigbee (איכות קישור לכל קפיצה) מתוך סריקת הניתוב האחרונה, וכותב אותו כ-JSON וכעמוד HTML הניתן לצפייה תחת www/bosch_shc/. מחזיר גם את הגרף כ-JSON וכטקסט תרשים Mermaid בתגובת השירות.",
+      "fields": {
+        "title": {
+          "name": "שם SHC",
+          "description": "כותרת ה-SHC. השאירו ריק כדי להשתמש ב-SHC המוגדר הראשון."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "הגדרת הערך נכשלה."
+    },
+    "zigbee_topology_no_data": {
+      "message": "אין עדיין נתוני ניתוב Zigbee זמינים עבור בקר SHC זה (לא צומדו התקני Zigbee, או שסריקת חמש הדקות הראשונה טרם הושלמה מאז הפעלת Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "לא נמצאה רשומת Bosch SHC טעונה עם כותרת זו."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "לא ניתן היה לכתוב את ייצוא טופולוגיית ה-Zigbee לתיקייה www/bosch_shc/."
     }
   }
 }

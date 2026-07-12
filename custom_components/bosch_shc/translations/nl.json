@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Opnieuw kalibreren"
+      },
+      "enable_all_diagnostics": {
+        "name": "Alle diagnostiek inschakelen"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Opdrachtstring te sturen naar de rookmelder."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee-topologie exporteren",
+      "description": "Bouwt een Zigbee-meshtopologiegrafiek (linkkwaliteit per hop) op basis van de laatste routeringspolling en schrijft deze als JSON en een bekijkbare HTML-pagina onder www/bosch_shc/. Geeft de grafiek ook terug als JSON en als Mermaid-diagramtekst in het serviceantwoord.",
+      "fields": {
+        "title": {
+          "name": "SHC-naam",
+          "description": "Titel van de SHC. Laat leeg om de eerst geconfigureerde SHC te gebruiken."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Instellen van de waarde mislukt."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Er zijn nog geen Zigbee-routeringsgegevens beschikbaar voor deze SHC-controller (er zijn geen Zigbee-apparaten gekoppeld, of de eerste polling van 5 minuten is nog niet voltooid sinds Home Assistant is gestart)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Geen geladen Bosch SHC-vermelding met die titel gevonden."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Kon de Zigbee-topologie-export niet naar www/bosch_shc/ schrijven."
     }
   }
 }

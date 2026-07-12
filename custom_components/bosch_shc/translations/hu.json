@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Újrakalibrálás"
+      },
+      "enable_all_diagnostics": {
+        "name": "Összes diagnosztika engedélyezése"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "A füstérzékelőnek küldendő parancsszöveg."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee topológia exportálása",
+      "description": "Zigbee hálós topológia gráfot épít (ugrásonkénti kapcsolatminőséggel) az utolsó útválasztási lekérdezés alapján, és JSON formátumban, valamint megtekinthető HTML oldalként írja ki a www/bosch_shc/ mappába. A szolgáltatás válaszában a gráfot JSON és Mermaid diagram szövegként is visszaadja.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC megnevezése. Hagyja üresen az első beállított SHC használatához."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Az érték beállítása sikertelen."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Ehhez az SHC vezérlőhöz még nem áll rendelkezésre Zigbee útválasztási adat (nincs párosított Zigbee eszköz, vagy az első 5 perces lekérdezés még nem fejeződött be a Home Assistant indítása óta)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nem található ilyen nevű betöltött Bosch SHC bejegyzés."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Nem sikerült kiírni a Zigbee topológia exportot a www/bosch_shc/ mappába."
     }
   }
 }

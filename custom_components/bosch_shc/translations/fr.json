@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Recalibrer"
+      },
+      "enable_all_diagnostics": {
+        "name": "Activer tous les diagnostics"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Chaîne de commande à envoyer au détecteur de fumée."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exporter la topologie Zigbee",
+      "description": "Construit un graphe de topologie du maillage Zigbee (qualité de liaison par saut) à partir du dernier relevé de routage et l'écrit au format JSON ainsi que sous forme de page HTML consultable dans www/bosch_shc/. Renvoie également le graphe au format JSON et sous forme de diagramme Mermaid dans la réponse du service.",
+      "fields": {
+        "title": {
+          "name": "Nom du SHC",
+          "description": "Titre du SHC. Laisser vide pour utiliser le premier SHC configuré."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Échec de la définition de la valeur."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Aucune donnée de routage Zigbee n'est encore disponible pour ce contrôleur SHC (aucun appareil Zigbee appairé, ou le premier relevé de 5 minutes n'est pas encore terminé depuis le démarrage de Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Aucune entrée Bosch SHC chargée avec ce titre n'a été trouvée."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Impossible d'écrire l'export de la topologie Zigbee dans www/bosch_shc/."
     }
   }
 }

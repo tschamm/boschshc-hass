@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "재보정"
+      },
+      "enable_all_diagnostics": {
+        "name": "모든 진단 활성화"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "연기 감지기에 전송할 명령 문자열입니다."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee 토폴로지 내보내기",
+      "description": "최근 라우팅 폴링 결과를 기반으로 Zigbee 메시 토폴로지 그래프(홉별 링크 품질)를 생성하여 www/bosch_shc/ 아래에 JSON 및 확인 가능한 HTML 페이지로 저장합니다. 서비스 응답에도 그래프의 JSON 데이터와 Mermaid 다이어그램 텍스트가 포함됩니다.",
+      "fields": {
+        "title": {
+          "name": "SHC 이름",
+          "description": "SHC의 타이틀. 비워두면 처음 구성된 SHC가 사용됩니다."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "값 설정에 실패했습니다."
+    },
+    "zigbee_topology_no_data": {
+      "message": "이 SHC 컨트롤러에 대한 Zigbee 라우팅 데이터가 아직 없습니다(Zigbee 장치가 페어링되지 않았거나, Home Assistant 시작 이후 첫 5분 폴링이 아직 완료되지 않았습니다)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "해당 제목으로 로드된 Bosch SHC 항목을 찾을 수 없습니다."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Zigbee 토폴로지 내보내기를 www/bosch_shc/에 쓸 수 없습니다."
     }
   }
 }

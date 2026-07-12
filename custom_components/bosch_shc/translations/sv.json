@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Kalibrera om"
+      },
+      "enable_all_diagnostics": {
+        "name": "Aktivera all diagnostik"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Kommandosträng att skicka till brandvarnaren."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exportera Zigbee-topologi",
+      "description": "Bygger en Zigbee-mesh-topologigraf (länkkvalitet per hopp) från den senaste routningsavsökningen och skriver den som JSON och en visningsbar HTML-sida under www/bosch_shc/. Returnerar även grafen som JSON och som Mermaid-diagramtext i tjänstsvaret.",
+      "fields": {
+        "title": {
+          "name": "SHC-namn",
+          "description": "Titel på SHC. Lämna tomt för att använda den första konfigurerade SHC:n."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Det gick inte att ange värdet."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Det finns ännu ingen Zigbee-routningsdata för denna SHC-styrenhet (inga Zigbee-enheter parkopplade, eller så har den första 5-minutersavsökningen inte slutförts sedan Home Assistant startade)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Ingen inläst Bosch SHC-post med den titeln hittades."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Kunde inte skriva Zigbee-topologiexporten till www/bosch_shc/."
     }
   }
 }

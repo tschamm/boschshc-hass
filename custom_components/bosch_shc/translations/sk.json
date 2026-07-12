@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Rekalibrovať"
+      },
+      "enable_all_diagnostics": {
+        "name": "Povoliť všetku diagnostiku"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Príkazový reťazec na odoslanie do detektora dymu."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exportovať topológiu Zigbee",
+      "description": "Zostaví graf topológie siete Zigbee (kvalita spojenia pre jednotlivé skoky) z posledného zisťovania smerovania a zapíše ho ako JSON a zobraziteľnú HTML stránku do www/bosch_shc/. Graf tiež vráti ako JSON a ako text diagramu Mermaid v odpovedi služby.",
+      "fields": {
+        "title": {
+          "name": "SHC názov",
+          "description": "Názov pre SHC. Ak necháte prázdne, použije sa prvý nakonfigurovaný SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Nastavenie hodnoty zlyhalo."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Pre tento SHC ovládač zatiaľ nie sú dostupné žiadne údaje o smerovaní Zigbee (nie je spárované žiadne zariadenie Zigbee, alebo prvé 5-minútové zisťovanie ešte nebolo dokončené od spustenia Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nenašiel sa žiadny načítaný záznam Bosch SHC s týmto názvom."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Export topológie Zigbee sa nepodarilo zapísať do www/bosch_shc/."
     }
   }
 }

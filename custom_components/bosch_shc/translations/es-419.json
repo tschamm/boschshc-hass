@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Recalibrar"
+      },
+      "enable_all_diagnostics": {
+        "name": "Activar todos los diagnósticos"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Cadena de comando a enviar al detector de humo."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exportar topología Zigbee",
+      "description": "Genera un gráfico de topología de malla Zigbee (calidad de enlace por salto) a partir del último sondeo de enrutamiento y lo guarda como JSON y una página HTML visualizable en www/bosch_shc/. También devuelve el gráfico como JSON y como texto de diagrama Mermaid en la respuesta del servicio.",
+      "fields": {
+        "title": {
+          "name": "Nombre del SHC",
+          "description": "Título del SHC. Déjelo vacío para usar el primer SHC configurado."
+        }
+      }
     }
   },
   "issues": {
@@ -602,6 +615,15 @@
     },
     "rawscan_entry_not_found": {
       "message": "No se encontró ninguna entrada de Bosch SHC cargada con ese título."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Todavía no hay datos de enrutamiento Zigbee disponibles para este controlador SHC (no hay dispositivos Zigbee emparejados, o el primer sondeo de 5 minutos aún no se ha completado desde que se inició Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "No se encontró ninguna entrada de Bosch SHC cargada con ese título."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "No se pudo escribir la exportación de la topología Zigbee en www/bosch_shc/."
     },
     "scenario_not_found": {
       "message": "Escenario no encontrado."

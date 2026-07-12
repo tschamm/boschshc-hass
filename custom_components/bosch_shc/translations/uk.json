@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Перекалібрувати"
+      },
+      "enable_all_diagnostics": {
+        "name": "Увімкнути всю діагностику"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Рядок команди для надсилання димовому датчику."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Експортувати топологію Zigbee",
+      "description": "Створює граф топології mesh-мережі Zigbee (якість зв'язку для кожного вузла) на основі останнього опитування маршрутизації та записує його як JSON і переглядувану HTML-сторінку в www/bosch_shc/. Також повертає граф як JSON і як текст діаграми Mermaid у відповіді служби.",
+      "fields": {
+        "title": {
+          "name": "Назва SHC",
+          "description": "Заголовок SHC. Залиште порожнім, щоб використати перший налаштований SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Не вдалося встановити значення."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Для цього контролера SHC ще немає даних маршрутизації Zigbee (не з'єднано жодного пристрою Zigbee, або перше 5-хвилинне опитування ще не завершилося з моменту запуску Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Не знайдено завантаженого запису Bosch SHC із такою назвою."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Не вдалося записати експорт топології Zigbee до www/bosch_shc/."
     }
   }
 }

@@ -51,3 +51,12 @@ smokedetector_alarmstate:
       required: true
       selector:
         text:
+
+export_zigbee_topology:
+  fields:
+    title:
+      example: "shc012345"
+      required: false
+      description: "Optional. The SHC controller name (hostname). Leave empty to use the first configured SHC. Find it in HA under Settings → Devices & Services → Bosch SHC (the entry title), or in the Bosch Smart Home app under Smart Home Controller settings."
+      selector:
+        text:

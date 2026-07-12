@@ -26,6 +26,7 @@ SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
+SERVICE_EXPORT_ZIGBEE_TOPOLOGY = "export_zigbee_topology"
 
 # Options flow keys
 OPT_SCENARIOS_AS_BUTTONS = "scenarios_as_buttons"

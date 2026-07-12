@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Kalibreeri uuesti"
+      },
+      "enable_all_diagnostics": {
+        "name": "Luba kõik diagnostikad"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Suitsuandurile saadetav käsustring."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Ekspordi Zigbee topoloogia",
+      "description": "Loob viimase marsruutimisskaneeringu põhjal Zigbee võrgu topoloogiagraafi (hüppetevahelise ühenduse kvaliteediga) ning kirjutab selle JSON-ina ja vaadatava HTML-lehena kataloogi www/bosch_shc/. Tagastab graafi ka JSON-ina ja Mermaid-diagrammi tekstina teenuse vastuses.",
+      "fields": {
+        "title": {
+          "name": "SHC nimi",
+          "description": "SHC pealkiri. Jäta tühjaks, et kasutada esimest seadistatud SHC-d."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Väärtuse määramine ebaõnnestus."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Selle SHC kontrolleri jaoks pole veel Zigbee marsruutimisandmeid saadaval (Zigbee-seadmeid pole lisatud või esimest 5-minutilist skaneeringut pole pärast Home Assistanti käivitamist veel lõpetatud)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Selle pealkirjaga laaditud Bosch SHC kirjet ei leitud."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Zigbee topoloogia eksporti kataloogi www/bosch_shc/ ei õnnestunud kirjutada."
     }
   }
 }

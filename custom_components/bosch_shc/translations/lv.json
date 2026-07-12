@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Kalibrēt no jauna"
+      },
+      "enable_all_diagnostics": {
+        "name": "Iespējot visu diagnostiku"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Dūmu detektoram nosūtāmā komandas virkne."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Eksportēt Zigbee topoloģiju",
+      "description": "Izveido Zigbee tīkla topoloģijas grafu (saites kvalitāte katram posmam) no pēdējās maršrutēšanas aptaujas un saglabā to kā JSON un skatāmu HTML lapu mapē www/bosch_shc/. Pakalpojuma atbildē tiek atgriezts arī grafs JSON formātā un Mermaid diagrammas teksts.",
+      "fields": {
+        "title": {
+          "name": "SHC nosaukums",
+          "description": "SHC virsraksts. Atstājiet tukšu, lai izmantotu pirmo konfigurēto SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Vērtības iestatīšana neizdevās."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Šim SHC kontrolierim vēl nav pieejami Zigbee maršrutēšanas dati (nav pievienota neviena Zigbee ierīce, vai kopš Home Assistant palaišanas vēl nav pabeigta pirmā 5 minūšu aptauja)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nav atrasts ielādēts Bosch SHC ieraksts ar šādu nosaukumu."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Neizdevās ierakstīt Zigbee topoloģijas eksportu mapē www/bosch_shc/."
     }
   }
 }

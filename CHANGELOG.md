@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.10.15 — Zigbee topology export, bulk-diagnostics button, ShutterContactSensor refactor
+
+**No breaking changes.**
+
+- **New service `bosch_shc.export_zigbee_topology`:** builds a Zigbee mesh
+  topology graph from the last routing poll (`SHCZigbeeRoutingCoordinator`,
+  already polling every 5 minutes) — per-hop link quality
+  (good/medium/bad/no_connection/...) stitched from each device's own
+  reported hop chain back to the controller. Returns the graph as JSON and
+  as Mermaid diagram text in the service response, and additionally writes
+  a JSON file + a self-contained, offline-viewable HTML/SVG page under
+  `www/bosch_shc/<slug>_<entry_id>_zigbee_topology.html` (no external JS/CDN,
+  no new dependency). Prompted by a routing-quality complaint in the
+  community forum — there was previously no way to see *which* device is
+  routing through *which* other device, only an aggregate per-device
+  quality enum. Note the SHC's API only ever reports each device's own path
+  back to the controller (no neighbor/routing table like Zigbee2MQTT/ZHA
+  get via a coordinator-side Mgmt_Lqi_req scan), so this is a tree, not a
+  full mesh graph with cross-links — and quality is categorical, not a
+  numeric LQI/RSSI.
+- **New button "Enable All Diagnostics"** (one per SHC controller, always
+  created): bulk-enables every disabled-by-default diagnostic entity
+  (Zigbee routing quality, communication quality, etc.) for that entry in
+  one click, instead of opening each one individually in
+  Settings > Devices & Services > Entities. Only touches entities HA itself
+  disabled by default (`disabled_by: integration`) — an entity a user
+  explicitly disabled is left alone. Triggers a config-entry reload so the
+  newly-enabled entities actually start.
+- **`binary_sensor.py`:** refactored `ShutterContactSensor` to the
+  entity-description pattern (`SHCShutterContactSensorEntityDescription`
+  with an `is_on_fn` callable), ported from the equivalent home-assistant/core
+  refactor to keep the HACS fork and ha-core's `bosch_shc` in sync. Pure
+  clarity refactor — behavior-preserving, `BatterySensor` and everything
+  else in the file untouched.
+- **`manifest.json`:** added `@mosandlt` to `codeowners`, mirroring
+  home-assistant/core PR #174563 (merged) — an audit of every merged
+  ha-core `bosch_shc` PR found this was the only gap; the other merged PR
+  (#174550, `boschshcpy` pin bump to 0.3.5) is a no-op here since this fork
+  is already far ahead on `0.4.12`.
+
 ## 0.10.14 — device_trigger.py refactor, session.py thread-safety fix
 
 **No breaking changes.** Requires `boschshcpy==0.4.12`.

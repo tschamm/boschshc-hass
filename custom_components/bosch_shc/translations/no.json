@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Kalibrer på nytt"
+      },
+      "enable_all_diagnostics": {
+        "name": "Aktiver all diagnostikk"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Kommandostreng som skal sendes til røykdetektoren."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Eksporter Zigbee-topologi",
+      "description": "Bygger en Zigbee-mesh-topologigraf (lenkekvalitet per hopp) fra siste rutingavlesning og skriver den som JSON og en visbar HTML-side under www/bosch_shc/. Returnerer også grafen som JSON og som Mermaid-diagramtekst i tjenestesvaret.",
+      "fields": {
+        "title": {
+          "name": "SHC-navn",
+          "description": "SHC-ens tittel. La stå tomt for å bruke den første konfigurerte SHC-en."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Kunne ikke angi verdien."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Ingen Zigbee-rutingdata er tilgjengelig ennå for denne SHC-kontrolleren (ingen Zigbee-enheter er paret, eller den første 5-minutters avlesningen er ikke fullført siden Home Assistant startet)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Fant ingen lastet Bosch SHC-oppføring med den tittelen."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Kunne ikke skrive Zigbee-topologieksporten til www/bosch_shc/."
     }
   }
 }

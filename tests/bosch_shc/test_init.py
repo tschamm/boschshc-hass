@@ -48,6 +48,7 @@ from custom_components.bosch_shc.const import (
     OPT_CHILD_LOCK_ENABLED,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
+    SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
 )
@@ -833,6 +834,69 @@ class TestServiceHandlers:
             ATTR_DEVICE_ID: "",
             "service_id": "",
         })
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
+
+    # -- export_zigbee_topology service --
+
+    def test_export_zigbee_topology_writes_json_and_html(self, tmp_path):
+        """Full round trip: routing data -> graph in the response + files on disk."""
+        from boschshcpy.zigbee_routing import SHCZigbeeRoutingInfo
+
+        device = SimpleNamespace(id="hdm:ZigBee:aaa", name="Plug A")
+        session = _make_fake_session()
+        session.devices = [device]
+        session.get_zigbee_routing_info = AsyncMock(
+            return_value=SHCZigbeeRoutingInfo(
+                {
+                    "device": "hdm:ZigBee:aaa",
+                    "aggregatedQuality": "GOOD",
+                    "route": [{"deviceId": "hdm:ZigBee:aaa", "quality": "GOOD"}],
+                }
+            )
+        )
+
+        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        hass.config.path = MagicMock(
+            side_effect=lambda *parts: str(tmp_path.joinpath(*parts))
+        )
+        # _make_fake_device_registry's fixture DeviceEntry only sets .id — real
+        # HA DeviceEntry objects always have .name, set it here for this test.
+        entry.runtime_data.shc_device.name = "Test SHC"
+        handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
+
+        call_obj = self._make_service_call(title="")
+        result = _run(handler(call_obj))
+
+        assert result["graph"]["edges"] == [
+            {"from": "hdm:ZigBee:aaa", "to": "controller", "quality": "good"}
+        ]
+        assert "graph TD" in result["mermaid"]
+        assert result["url"].endswith("_zigbee_topology.html")
+        assert list(tmp_path.glob("www/bosch_shc/*_zigbee_topology.json"))
+        assert list(tmp_path.glob("www/bosch_shc/*_zigbee_topology.html"))
+
+    def test_export_zigbee_topology_no_data_raises(self):
+        """No Zigbee devices polled yet -> ServiceValidationError, not an empty graph."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = _make_fake_session()  # devices=[] by default -> coordinator.data == {}
+        handlers, hass, entry, _ = self._setup_with_session(session)
+        handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
+
+        call_obj = self._make_service_call(title="")
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
+
+    def test_export_zigbee_topology_filters_by_title(self):
+        """Title mismatch -> ServiceValidationError (no matching entry)."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = _make_fake_session()
+        handlers, hass, entry, _ = self._setup_with_session(session)
+        handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
+
+        call_obj = self._make_service_call(title="WrongTitle")
         with pytest.raises(ServiceValidationError):
             _run(handler(call_obj))
 

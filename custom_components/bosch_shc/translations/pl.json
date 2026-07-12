@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Kalibruj ponownie"
+      },
+      "enable_all_diagnostics": {
+        "name": "Włącz wszystkie diagnostyki"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "Ciąg polecenia do wysłania do czujnika dymu."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Eksportuj topologię Zigbee",
+      "description": "Buduje graf topologii sieci mesh Zigbee (jakość łącza dla każdego przeskoku) na podstawie ostatniego odpytania routingu i zapisuje go jako JSON oraz stronę HTML do podglądu w www/bosch_shc/. Zwraca również graf jako JSON oraz jako tekst diagramu Mermaid w odpowiedzi usługi.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Tytuł SHC. Pozostaw puste, aby użyć pierwszego skonfigurowanego SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Nie udało się ustawić wartości."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Brak jeszcze dostępnych danych routingu Zigbee dla tego kontrolera SHC (nie sparowano żadnych urządzeń Zigbee lub pierwsze 5-minutowe odpytanie nie zostało jeszcze zakończone od uruchomienia Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nie znaleziono załadowanego wpisu Bosch SHC o tej nazwie."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Nie udało się zapisać eksportu topologii Zigbee do www/bosch_shc/."
     }
   }
 }

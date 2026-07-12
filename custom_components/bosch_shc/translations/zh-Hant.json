@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "重新校準"
+      },
+      "enable_all_diagnostics": {
+        "name": "啟用所有診斷"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "要傳送至煙霧偵測器的指令字串。"
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "匯出 Zigbee 拓撲",
+      "description": "根據最近一次路由輪詢建立 Zigbee 網狀拓撲圖（逐躍點連線品質），並將其寫入 www/bosch_shc/ 目錄下的 JSON 檔案與可檢視的 HTML 頁面。服務回應中也會傳回該拓撲圖的 JSON 與 Mermaid 圖表文字。",
+      "fields": {
+        "title": {
+          "name": "SHC 名稱",
+          "description": "SHC 的標題。留空則使用第一個已設定的 SHC。"
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "無法設定數值。"
+    },
+    "zigbee_topology_no_data": {
+      "message": "此 SHC 控制器目前尚無可用的 Zigbee 路由資料（未配對任何 Zigbee 裝置，或自 Home Assistant 啟動以來第一次 5 分鐘輪詢尚未完成）。"
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "找不到具有該標題的已載入 Bosch SHC 項目。"
+    },
+    "zigbee_topology_write_failed": {
+      "message": "無法將 Zigbee 拓撲匯出寫入 www/bosch_shc/。"
     }
   }
 }

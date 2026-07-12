@@ -54,7 +54,7 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
   presence-based child lock and thermostat silent mode, device/room filter, and connection tuning —
   all with safe defaults (existing setups are never changed).
 - 🌍 **30 languages** for the configuration UI.
-- 🏅 **Home Assistant Gold** quality scale (Platinum in progress).
+- 🏅 **Home Assistant Platinum** quality scale — all Bronze/Silver/Gold/Platinum rules done or exempt.
 
 ---
 
@@ -154,7 +154,7 @@ Options marked with ★ are shown only when the relevant devices are connected t
 |---|---|---|
 | Scenarios as buttons | off | Expose each SHC scenario as a `button` entity |
 | Scenario filter ★ | (all) | Allow-list — only the selected scenarios become buttons; stale IDs are auto-cleared |
-| Diagnostic entities | on | Create battery-level, valve-tappet, comm-quality and Zigbee-routing-quality diagnostic sensors |
+| Diagnostic entities | on | Create battery-level, valve-tappet, comm-quality and Zigbee-routing-quality diagnostic sensors — they're disabled by default in the entity registry regardless; press the **Enable All Diagnostics** button to enable every one for this SHC at once |
 | Rawscan service | on | Register the `bosch_shc.trigger_rawscan` action; turn off to hide it |
 | Suppress power sensors | off | Hide the watt + kWh sensors on Smart Plugs, Compact Plugs, and EMMA |
 | Suppress camera switches ★ | off | Hide the privacy / light / notification switches for Camera Eyes, 360, and Outdoor Gen2 |
@@ -198,7 +198,7 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 |---|---|
 | `alarm_control_panel` | Intrusion Detection System |
 | `binary_sensor` | Shutter Contact (Gen 1 + Gen 2), Motion Detector (Gen 1 + Gen 2 [+M]), Smoke Detector (Gen 1 + Gen 2), Smoke Detection System, Water Leakage Sensor, Shutter Contact 2 Plus (vibration), Twinguard smoke alarm, Battery state (all battery devices) |
-| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper |
+| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper, Enable All Diagnostics (one per SHC controller) |
 | `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
 | `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
 | `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
@@ -265,7 +265,8 @@ not yet implemented in this integration).
 | User-Defined States | `switch` (one per user-defined state) |
 | Intrusion Detection System | `alarm_control_panel` |
 
-> ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**.
+> ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**,
+> or press the **Enable All Diagnostics** button to enable every diagnostic entity for this SHC at once.
 >
 > ² The Smoke Detector II **intrusion alarm** switch writes `INTRUSION_ALARM_ON_REQUESTED`
 > to that single device. Verified on hardware: it sounds (and silences) **only that one
@@ -288,9 +289,60 @@ not yet implemented in this integration).
 | `bosch_shc.trigger_rawscan` | Dump raw JSON from the SHC (devices, services, rooms, scenarios, …) — see [Creating a rawscan](#creating-a-rawscan-for-bug-reports) |
 | `bosch_shc.smokedetector_check` | Trigger a self-test on a Smoke Detector entity |
 | `bosch_shc.smokedetector_alarmstate` | Set the alarm state on a Smoke Detector entity |
+| `bosch_shc.export_zigbee_topology` | Export a Zigbee mesh topology graph (JSON + Mermaid + a viewable HTML page) — see [Visualizing your Zigbee mesh](#visualizing-your-zigbee-mesh) |
 
 Events are fired on the `bosch_shc.event` bus — button presses (Universal Switch: lower/upper,
 short/long), scenario triggers, motion events, and smoke-detector alarms.
+
+---
+
+## Visualizing your Zigbee mesh
+
+The SHC has no built-in network map, and no way to see which device is routing through which
+other device — only a per-device "communication quality" enum, with no routing context. The
+`bosch_shc.export_zigbee_topology` action fills that gap using the last routing poll (the same
+`SHCZigbeeRoutingCoordinator` that backs the disabled-by-default Zigbee routing quality diagnostic
+sensor, refreshed every 5 minutes).
+
+### Easiest path — just look at it, no YAML
+
+1. **Settings → Devices & Services → Bosch SHC**, or **Developer Tools → Actions**, search for
+   **"Export Zigbee Topology"** and select it.
+2. Leave the **SHC name** field empty (unless you run more than one controller) and click
+   **Perform action**.
+3. Open the response panel and click the **`url`** value (or copy it into your browser):
+   `http://<your-ha-ip>:8123/local/bosch_shc/<name>_zigbee_topology.html`. That page is a
+   ready-made diagram — colored lines for link quality, no setup, works offline.
+
+### For automations, dashboards, or your own tooling
+
+```yaml
+action: bosch_shc.export_zigbee_topology
+```
+
+The response contains:
+
+- **`graph`** — plain JSON: `{"nodes": [{"id", "name"}], "edges": [{"from", "to", "quality"}]}`.
+  Render this yourself with any graph library (e.g. [vis.js](https://visjs.org/),
+  [d3-force](https://d3js.org/d3-force), [networkx](https://networkx.org/) + matplotlib) — the
+  shape is intentionally minimal so it drops straight into whatever tool you already use.
+- **`mermaid`** — ready-to-paste [Mermaid](https://mermaid.js.org/) flowchart text. Paste it into
+  <https://mermaid.live>, a GitHub/GitLab Markdown code block, Obsidian, or any Mermaid-capable
+  renderer to get an instant diagram — no setup required.
+- **`url`** — the same self-contained HTML/SVG page from step 3 above (no external JS/CDN, works
+  fully offline), written to `www/bosch_shc/` so it's also reachable any time without re-running
+  the action.
+
+**What it can and can't show:** each Zigbee device reports only its own hop chain back to the
+controller — the SHC does not expose a global neighbor/routing table the way a Zigbee coordinator
+does for Zigbee2MQTT's or ZHA's network maps (both get theirs via a `Mgmt_Lqi_req` scan). This
+export stitches those per-device chains into a tree, which is enough to see *who routes through
+whom* and *which links are weak* — but it's not a full mesh with cross-links, and link quality is
+the SHC's own categorical `good`/`medium`/`bad`/`no_connection` (color-coded green/yellow/red/grey
+in both renderers), not a numeric LQI/RSSI value.
+
+Multiple SHC controllers configured? Pass `title:` (same as `bosch_shc.trigger_rawscan`) to target
+one of them; omitted, the first loaded entry is used.
 
 ---
 
@@ -562,6 +614,25 @@ checked by `scripts/check-quality-scale.py --tier platinum`).
 ## What's new
 
 The full version-by-version history lives in [`CHANGELOG.md`](CHANGELOG.md). Recent highlights:
+
+**0.10.14 — device_trigger.py refactor, boschshcpy thread-safety fix**
+
+Requires `boschshcpy==0.4.12`, which fixes a thread-safety race that could raise an unhandled
+error from the integration's background polling thread. No user-visible behavior change.
+
+**0.10.13 — bug-hunt round: bypass switch naming, Smoke Detector II triggers**
+
+- The `Bypass Never Expires` switch (Shutter Contact II) now shows its proper translated name
+  instead of a raw internal string.
+- Smoke Detector II's device-trigger picker (Automations UI) now offers the subtype it
+  actually reports, instead of gen-1 Smoke Detector's subtypes.
+
+**0.10.12 — fix integration getting stuck at setup (#362)**
+
+A hiccup in the opt-in, disabled-by-default Zigbee-routing diagnostic sensor introduced in
+0.10.11 could block the *entire* integration from loading, flapping between "setup error,
+retrying" and "initializing". Fixed so that sensor's own issues never affect anything else.
+Also fixed the Integrations page showing the wrong version number after updating to 0.10.11.
 
 **0.10.11 — Zigbee routing-quality diagnostic sensor**
 

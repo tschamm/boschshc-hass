@@ -207,6 +207,9 @@
       },
       "shutter_recalibrate": {
         "name": "Kalibrasi Ulang"
+      },
+      "enable_all_diagnostics": {
+        "name": "Aktifkan Semua Diagnostik"
       }
     },
     "number": {
@@ -575,6 +578,16 @@
           "description": "String perintah yang akan dikirim ke detektor asap."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Ekspor Topologi Zigbee",
+      "description": "Membangun grafik topologi mesh Zigbee (kualitas tautan per-hop) dari polling routing terakhir dan menulisnya sebagai JSON serta halaman HTML yang dapat dilihat di www/bosch_shc/. Juga mengembalikan grafik tersebut sebagai JSON dan teks diagram Mermaid dalam respons layanan.",
+      "fields": {
+        "title": {
+          "name": "Nama SHC",
+          "description": "Judul SHC. Biarkan kosong untuk menggunakan SHC pertama yang dikonfigurasi."
+        }
+      }
     }
   },
   "issues": {
@@ -629,6 +642,15 @@
     },
     "number_set_failed": {
       "message": "Gagal menyetel nilai."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Belum ada data routing Zigbee yang tersedia untuk kontroler SHC ini (tidak ada perangkat Zigbee yang dipasangkan, atau polling 5 menit pertama belum selesai sejak Home Assistant dimulai)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Tidak ada entri Bosch SHC yang dimuat dengan judul tersebut."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Tidak dapat menulis ekspor topologi Zigbee ke www/bosch_shc/."
     }
   }
 }

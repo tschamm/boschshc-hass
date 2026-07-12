@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
@@ -28,6 +29,7 @@ from boschshcpy.exceptions import SHCException
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
+    BinarySensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -81,6 +83,7 @@ async def async_setup_entry(  # noqa: C901
         binary_sensor = ShutterContactSensor(
             device=device,
             entry_id=config_entry.entry_id,
+            entity_description=SHUTTER_CONTACT_DESCRIPTION,
         )
         async_add_entities([binary_sensor])
 
@@ -553,13 +556,38 @@ class SirenPrimaryPowerSupplyOutageSensor(SHCEntity, BinarySensorEntity):  # typ
         )
 
 
+@dataclass(frozen=True, kw_only=True)
+class SHCShutterContactSensorEntityDescription(BinarySensorEntityDescription):
+    """Describes a SHC shutter contact binary sensor."""
+
+    is_on_fn: Callable[[SHCShutterContact], bool]
+
+
+SHUTTER_CONTACT_DESCRIPTION = SHCShutterContactSensorEntityDescription(
+    key="shutter_contact",
+    is_on_fn=lambda device: bool(device.state is ShutterContactService.State.OPEN),
+)
+
+
 class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     """Representation of a SHC shutter contact sensor."""
+
+    entity_description: SHCShutterContactSensorEntityDescription
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        entry_id: str,
+        entity_description: SHCShutterContactSensorEntityDescription,
+    ) -> None:
+        """Initialize an SHC shutter contact sensor."""
+        self.entity_description = entity_description
+        super().__init__(device, entry_id)
 
     @property
     def is_on(self) -> bool:
         """Return the state of the sensor."""
-        return bool(self._device.state is ShutterContactService.State.OPEN)
+        return self.entity_description.is_on_fn(self._device)
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:
