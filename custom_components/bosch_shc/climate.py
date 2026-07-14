@@ -308,19 +308,6 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
             )
             return
 
-        if requested_hvac_mode == HVACMode.AUTO and hvac_mode_write_succeeded:
-            # Bosch rejects a setpoint write while in AUTOMATIC (schedule) mode.
-            # When the caller explicitly requested AUTO and that write
-            # succeeded, honour the mode change and return — the schedule
-            # controls the temperature. Deliberately keyed on the REQUESTED
-            # mode (not effective_hvac_mode) and gated on success: a bare
-            # temperature call (no explicit hvac_mode) on a device that's
-            # currently AUTOMATIC must still fall through to the
-            # AUTOMATIC→MANUAL-then-write logic below, not bail out here; and
-            # a failed AUTO write must not silently drop the temperature
-            # request either.
-            return
-
         if self.preset_mode == PRESET_BOOST:
             LOGGER.warning(
                 "Cannot set temperature on device %s while in BOOST mode "
@@ -342,14 +329,8 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
                 if getattr(self._device, "low", False):
                     await self._device.async_set_low(False)
 
-                # SHC rejects a setpoint write while operationMode=AUTOMATIC
-                # (HTTP 400 WRONG_THERMOSTAT_GROUP_MODE).  For a bare
-                # set_temperature (no hvac_mode given, e.g. from a script) drop
-                # to MANUAL first — matching the Bosch app.  Gated on no explicit
-                # hvac_mode so a combined set_temperature(hvac_mode=auto) is not
-                # overridden; kept inside the try + range branch so a failed mode
-                # write is caught and an out-of-range value can't cancel the
-                # schedule. #73 #180
+                # #180's MANUAL-first switch for a bare call; #369 showed the
+                # app itself never does this for an explicit hvac_mode=auto.
                 if (
                     kwargs.get(ATTR_HVAC_MODE) is None
                     and self._device.operation_mode

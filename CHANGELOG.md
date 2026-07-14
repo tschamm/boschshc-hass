@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 0.11.1 — climate auto-mode temperature fix, Zigbee mesh-view rework
+
+**No breaking changes.**
+
+- **`climate.py`:** `climate.set_temperature(temperature=X, hvac_mode="auto")`
+  on a RoomClimateControl already in `AUTOMATIC` no longer silently drops the
+  temperature change (#369). A 0.7.26 guard assumed the SHC always rejects a
+  setpoint write while `operationMode=AUTOMATIC`; a reporter's before/after
+  rawscan of the official app doing exactly this showed `setpointTemperature`
+  written directly with `operationMode` staying `AUTOMATIC` — the schedule
+  resumes on its own via the existing `nextChange` fields. The separate
+  bare-call (no `hvac_mode` given) switch-to-`MANUAL`-first behavior (#180) is
+  unchanged.
+- **`zigbee_topology.py` (mesh view):** the topology graph now uses every hop
+  in each device's full route, not just its own first hop, so a router that
+  doesn't answer its own routing-info query (excluded, offline, never polled)
+  still shows up connected if some other device's longer route passes through
+  it. Visual refresh: fixed status palette (validated for contrast on light
+  and dark), automatic dark mode, rounded label chips, native hover tooltips.
+
 ## 0.11.0 — mypy strict-typing cleanup, EntityDescription core-prep, test-fixture consolidation
 
 **No breaking changes — internal refactor only, no entity/behavior changes.**

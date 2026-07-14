@@ -1464,6 +1464,26 @@ class TestClimateSetTemperatureManualSwitch:
                 "With explicit ATTR_HVAC_MODE, should NOT switch to MANUAL"
             )
 
+    def test_set_temperature_explicit_auto_still_writes_setpoint(self):
+        """Regression hass#369: set_temperature(temperature=X, hvac_mode="auto")
+        on a device already in AUTOMATIC must actually write the setpoint,
+        not silently drop it. A before/after rawscan from the reporter showed
+        the official app writing setpointTemperature directly while
+        operationMode stays AUTOMATIC — the schedule resumes on its own via
+        nextChange, so there is nothing here that should block the write.
+        """
+        ent = self._make_entity(operation_mode=_AUTO)
+
+        asyncio.run(ent.async_set_temperature(
+            **{ATTR_TEMPERATURE: 20.0, ATTR_HVAC_MODE: HVACMode.AUTO}
+        ))
+
+        ent._device.async_set_setpoint_temperature.assert_awaited_with(20.0)
+        # operationMode is (re-)written to AUTOMATIC (harmless, already the
+        # current mode) but never to MANUAL.
+        for c in ent._device.async_set_operation_mode.await_args_list:
+            assert c != call(_MANUAL)
+
     def test_set_temperature_manual_mode_skips_manual_switch(self):
         """When operation_mode is already MANUAL, no extra mode switch call."""
         ent = self._make_entity(operation_mode=_MANUAL)

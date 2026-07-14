@@ -73,8 +73,45 @@ def test_multi_hop_route_builds_chain_of_edges() -> None:
         "to": CONTROLLER_NODE_ID,
         "quality": "good",
     } in graph["edges"]
-    # Exactly one edge per polled device — no duplicate/derived edge for the
-    # router's own uplink inferred from the leaf's longer route.
+    # Exactly one edge per polled device — router1's own self-reported edge
+    # wins over the same hop inferred from the leaf's longer route, so
+    # there's no duplicate.
+    assert len(graph["edges"]) == 2
+
+
+def test_intermediate_hop_with_no_own_entry_is_filled_from_a_longer_route() -> None:
+    """A router that never answers its own routinginfo query (excluded,
+    offline, or just never separately polled) is otherwise invisible — but
+    still shows up connected if some other device's full route passes
+    through it."""
+    routing_data = {
+        "hdm:ZigBee:leaf": _routing_info(
+            "hdm:ZigBee:leaf",
+            [
+                ("hdm:ZigBee:leaf", "MEDIUM"),
+                ("hdm:ZigBee:ghost_router", "GOOD"),
+            ],
+        ),
+        # Note: "hdm:ZigBee:ghost_router" has no entry of its own here.
+    }
+    graph = build_topology_graph(
+        routing_data,
+        {"hdm:ZigBee:leaf": "Leaf", "hdm:ZigBee:ghost_router": "Ghost Router"},
+        controller_name="SHC",
+    )
+
+    assert {
+        "from": "hdm:ZigBee:leaf",
+        "to": "hdm:ZigBee:ghost_router",
+        "quality": "medium",
+    } in graph["edges"]
+    # Inferred from the leaf's own full route: the ghost router's onward
+    # hop to the controller, quality carried on its own route entry.
+    assert {
+        "from": "hdm:ZigBee:ghost_router",
+        "to": CONTROLLER_NODE_ID,
+        "quality": "good",
+    } in graph["edges"]
     assert len(graph["edges"]) == 2
 
 
