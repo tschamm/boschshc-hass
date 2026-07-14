@@ -14,6 +14,7 @@ from typing import Any
 
 from boschshcpy import SHCSession
 from boschshcpy.device import SHCDevice
+from boschshcpy.services_impl import SoftwareUpdateService
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -135,13 +136,17 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
     @property
     def installed_version(self) -> str | None:
         """Return the currently installed firmware version."""
-        service = self._device.software_update
+        # SHCDevice.software_update is typed as the generic SHCDeviceService
+        # base; the "SoftwareUpdate" service id always resolves to a
+        # SoftwareUpdateService instance (see boschshcpy's SERVICE_MAP), so
+        # this is a real narrowing, not a suppression.
+        service: SoftwareUpdateService | None = self._device.software_update  # type: ignore[assignment]
         return service.sw_installed_version if service is not None else None
 
     @property
     def latest_version(self) -> str | None:
         """Return the latest available firmware version."""
-        service = self._device.software_update
+        service: SoftwareUpdateService | None = self._device.software_update  # type: ignore[assignment]
         if service is None:
             return None
         # Surface the available version whenever an update is offered OR an
@@ -164,13 +169,13 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
             service.sw_update_state in offered_or_running
             and service.sw_update_available_version
         ):
-            return service.sw_update_available_version  # type: ignore[no-any-return]
-        return service.sw_installed_version  # type: ignore[no-any-return]
+            return service.sw_update_available_version
+        return service.sw_installed_version
 
     @property
     def in_progress(self) -> bool:
         """Return True if a firmware update is currently in progress."""
-        service = self._device.software_update
+        service: SoftwareUpdateService | None = self._device.software_update  # type: ignore[assignment]
         if service is None:
             return False
         return service.sw_update_state in (

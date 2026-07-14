@@ -32,6 +32,8 @@ from custom_components.bosch_shc.const import (
 from custom_components.bosch_shc.sensor import ValveTappetSensor
 from custom_components.bosch_shc.valve import SHCValve, async_setup_entry
 
+from .conftest import run_setup_entry
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -80,7 +82,9 @@ def _make_valve_with_broken_position(exc):
 
 
 def _make_valve_tappet_sensor(
-    valvestate_raises=None, valvestate_name="VALVE_ADAPTION_SUCCESSFUL", position_value=42
+    valvestate_raises=None,
+    valvestate_name="VALVE_ADAPTION_SUCCESSFUL",
+    position_value=42,
 ):
     """Build a ValveTappetSensor bypassing SHCEntity.__init__."""
     sensor = ValveTappetSensor.__new__(ValveTappetSensor)
@@ -121,7 +125,9 @@ def _fake_device(name="test-valve", root_device_id="root1", device_id="dev1"):
     )
 
 
-def _fake_thermostat(dev_id="thermo-001", room_id=None, position=50, root_id="root-thermo"):
+def _fake_thermostat(
+    dev_id="thermo-001", room_id=None, position=50, root_id="root-thermo"
+):
     """Minimal thermostat double compatible with device_excluded() and SHCValve."""
     return SimpleNamespace(
         name="Thermostat 1",
@@ -135,48 +141,6 @@ def _fake_thermostat(dev_id="thermo-001", room_id=None, position=50, root_id="ro
         deleted=False,
         position=position,
     )
-
-
-def _make_entry(options=None, entry_id="E1", session=None):
-    entry = SimpleNamespace(options=options or {}, entry_id=entry_id)
-    entry.runtime_data = SimpleNamespace(session=session)
-    return entry
-
-
-def _run_setup(session, entry):
-    entry.runtime_data.session = session
-    hass = SimpleNamespace()
-    collected = []
-
-    def add(entities):
-        collected.extend(entities)
-
-    asyncio.run(async_setup_entry(hass, entry, add))
-    return collected
-
-
-def _session(thermostats):
-    return SimpleNamespace(device_helper=SimpleNamespace(thermostats=thermostats))
-
-
-def _make_hass() -> SimpleNamespace:
-    return SimpleNamespace()
-
-
-def _make_config_entry(session: object) -> SimpleNamespace:
-    entry = SimpleNamespace(options={}, entry_id="E1")
-    entry.runtime_data = SimpleNamespace(session=session)
-    return entry
-
-
-def _collect() -> tuple[list, callable]:
-    """Return (collected_list, async_add_entities callable)."""
-    collected: list = []
-
-    def add(entities: list) -> None:
-        collected.extend(entities)
-
-    return collected, add
 
 
 def _valve_device() -> SimpleNamespace:
@@ -203,59 +167,67 @@ def _valve_device() -> SimpleNamespace:
 class TestValveSetupEntry:
     """Valve async_setup_entry: thermostats → SHCValve."""
 
-    def _run(self, session: object) -> list:
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected, add = _collect()
+    def _run(self, mock_config_entry, mock_session) -> list:
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
 
-        asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
-        return collected
-
-    def test_thermostats_produce_shc_valve_entities(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets", [{"thermostats": [_valve_device()]}], indirect=True
+    )
+    def test_thermostats_produce_shc_valve_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """session.device_helper.thermostats → SHCValve."""
-        dev = _valve_device()
-        session = SimpleNamespace(device_helper=SimpleNamespace(thermostats=[dev]))
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCValve)
 
-    def test_no_thermostats_adds_nothing(self) -> None:
+    def test_no_thermostats_adds_nothing(self, mock_config_entry, mock_session) -> None:
         """No thermostats → nothing added."""
-        session = SimpleNamespace(device_helper=SimpleNamespace(thermostats=[]))
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_attr_name_valve_applied(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets", [{"thermostats": [_valve_device()]}], indirect=True
+    )
+    def test_attr_name_valve_applied(self, mock_config_entry, mock_session) -> None:
         """async_setup_entry always passes attr_name='Valve'.
 
         With _attr_has_entity_name=True, _attr_name holds only the feature
         label; HA prepends the device name for display ('Test Valve Valve').
         """
-        dev = _valve_device()
-        session = SimpleNamespace(device_helper=SimpleNamespace(thermostats=[dev]))
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._attr_name == "Valve"
 
-    def test_unique_id_includes_valve_suffix(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets", [{"thermostats": [_valve_device()]}], indirect=True
+    )
+    def test_unique_id_includes_valve_suffix(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """unique_id ends in '_valve'."""
-        dev = _valve_device()
-        session = SimpleNamespace(device_helper=SimpleNamespace(thermostats=[dev]))
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._attr_unique_id.endswith("_valve")
 
-    def test_multiple_thermostats_all_collected(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"thermostats": [_valve_device(), _valve_device()]}],
+        indirect=True,
+    )
+    def test_multiple_thermostats_all_collected(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Two thermostats → two SHCValve entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(thermostats=[_valve_device(), _valve_device()])
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, SHCValve) for e in result)
 
-    def test_entry_id_stored(self) -> None:
-        dev = _valve_device()
-        session = SimpleNamespace(device_helper=SimpleNamespace(thermostats=[dev]))
-        result = self._run(session)
+    @pytest.mark.parametrize(
+        "device_buckets", [{"thermostats": [_valve_device()]}], indirect=True
+    )
+    def test_entry_id_stored(self, mock_config_entry, mock_session) -> None:
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._entry_id == "E1"
 
 
@@ -265,78 +237,125 @@ class TestValveSetupEntry:
 
 
 class TestValveSetupEntryExcluded:
-    def test_excluded_device_not_added(self):
+    def _run(self, mock_config_entry, mock_session) -> list:
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"thermostats": [_fake_thermostat(dev_id="thermo-excl")]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["thermo-excl"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_device_not_added(self, mock_config_entry, mock_session):
         """Thermostat in OPT_EXCLUDED_DEVICES → continue → not in entities."""
-        thermo = _fake_thermostat(dev_id="thermo-excl")
-        session = _session([thermo])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["thermo-excl"]})
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_non_excluded_device_is_added(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"thermostats": [_fake_thermostat(dev_id="thermo-ok")]}],
+        indirect=True,
+    )
+    def test_non_excluded_device_is_added(self, mock_config_entry, mock_session):
         """Sanity: thermostat NOT excluded → SHCValve entity is created."""
-        thermo = _fake_thermostat(dev_id="thermo-ok")
-        session = _session([thermo])
-        entry = _make_entry()
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCValve)
 
-    def test_mixed_one_excluded_one_not(self):
+    def test_mixed_one_excluded_one_not(self, mock_config_entry, mock_session):
         """One excluded, one not → only the non-excluded ends up in entities."""
         excl = _fake_thermostat(dev_id="thermo-excl")
         ok = _fake_thermostat(dev_id="thermo-ok")
-        session = _session([excl, ok])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["thermo-excl"]})
-        result = _run_setup(session, entry)
+        mock_session.device_helper.thermostats = [excl, ok]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["thermo-excl"]}
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert result[0]._device is ok
 
-    def test_excluded_by_room_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {
+                    "thermostats": [
+                        _fake_thermostat(dev_id="thermo-room", room_id="room-99")
+                    ]
+                },
+                {"options": {OPT_EXCLUDED_ROOMS: ["room-99"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_by_room_not_added(self, mock_config_entry, mock_session):
         """Room-level exclusion also hits the continue on line 34."""
-        thermo = _fake_thermostat(dev_id="thermo-room", room_id="room-99")
-        session = _session([thermo])
-        entry = _make_entry(options={OPT_EXCLUDED_ROOMS: ["room-99"]})
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_all_excluded_yields_empty(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {
+                    "thermostats": [
+                        _fake_thermostat(dev_id="t1"),
+                        _fake_thermostat(dev_id="t2"),
+                    ]
+                },
+                {"options": {OPT_EXCLUDED_DEVICES: ["t1", "t2"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_all_excluded_yields_empty(self, mock_config_entry, mock_session):
         """All thermostats excluded → async_add_entities never called."""
-        t1 = _fake_thermostat(dev_id="t1")
-        t2 = _fake_thermostat(dev_id="t2")
-        session = _session([t1, t2])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["t1", "t2"]})
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_no_thermostats_yields_empty(self):
+    def test_no_thermostats_yields_empty(self, mock_config_entry, mock_session):
         """No thermostats at all → empty result (async_add_entities not called)."""
-        session = _session([])
-        entry = _make_entry()
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_valve_entry_id_set_correctly(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"thermostats": [_fake_thermostat(dev_id="thermo-id-check")]},
+                {"entry_id": "myentry"},
+            )
+        ],
+        indirect=True,
+    )
+    def test_valve_entry_id_set_correctly(self, mock_config_entry, mock_session):
         """The SHCValve entity's _entry_id matches the config entry's entry_id."""
-        thermo = _fake_thermostat(dev_id="thermo-id-check")
-        session = _session([thermo])
-        entry = _make_entry(entry_id="myentry")
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._entry_id == "myentry"
 
-    def test_valve_attr_name_is_valve(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"thermostats": [_fake_thermostat(dev_id="thermo-name")]}],
+        indirect=True,
+    )
+    def test_valve_attr_name_is_valve(self, mock_config_entry, mock_session):
         """async_setup_entry passes attr_name='Valve' to SHCValve."""
-        thermo = _fake_thermostat(dev_id="thermo-name")
-        session = _session([thermo])
-        entry = _make_entry()
-        result = _run_setup(session, entry)
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._attr_name == "Valve"
 
-    def test_valve_unique_id_includes_valve_suffix(self):
-        thermo = _fake_thermostat(dev_id="thermo-uid", root_id="root-uid")
-        session = _session([thermo])
-        entry = _make_entry()
-        result = _run_setup(session, entry)
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"thermostats": [_fake_thermostat(dev_id="thermo-uid", root_id="root-uid")]}],
+        indirect=True,
+    )
+    def test_valve_unique_id_includes_valve_suffix(
+        self, mock_config_entry, mock_session
+    ):
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._attr_unique_id == "root-uid_thermo-uid_valve"
 
 
@@ -522,7 +541,9 @@ class TestValveTappetSensorExtraAttributes:
 
     def test_does_not_raise_on_unknown_firmware_value(self):
         """Explicitly assert no ValueError escapes."""
-        sensor = _make_valve_tappet_sensor(valvestate_raises=ValueError("NO_MOTOR_ERROR"))
+        sensor = _make_valve_tappet_sensor(
+            valvestate_raises=ValueError("NO_MOTOR_ERROR")
+        )
         try:
             sensor.extra_state_attributes
         except ValueError as exc:
@@ -544,7 +565,9 @@ class TestValveTappetSensorExtraAttributes:
 
     def test_known_state_in_start_position(self):
         sensor = _make_valve_tappet_sensor(valvestate_name="IN_START_POSITION")
-        assert sensor.extra_state_attributes["valve_tappet_state"] == "IN_START_POSITION"
+        assert (
+            sensor.extra_state_attributes["valve_tappet_state"] == "IN_START_POSITION"
+        )
 
     def test_known_state_not_available(self):
         sensor = _make_valve_tappet_sensor(valvestate_name="NOT_AVAILABLE")

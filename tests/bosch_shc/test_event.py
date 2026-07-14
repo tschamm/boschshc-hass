@@ -163,47 +163,6 @@ def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
     return SimpleNamespace(**base)
 
 
-def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
-    """Minimal hass. session/shc are cached so a paired _fake_entry(hass=...)
-    call can wire them onto entry.runtime_data (the modern storage location -
-    this integration no longer uses hass.data[DOMAIN])."""
-    shc_obj = shc or SimpleNamespace(
-        identifiers={("bosch_shc", "shc")},
-        name="SHC", manufacturer="Bosch", model="SHC", id="shc1",
-    )
-    h = MagicMock()
-    h.data = {}
-    h._fake_session = session
-    h._fake_shc = shc_obj
-
-    async def _executor_job(fn, *args):
-        return fn(*args)
-
-    h.async_add_executor_job = _executor_job
-    h.config_entries = MagicMock()
-    h.bus = MagicMock()
-    h.bus.async_listen_once = MagicMock(return_value=MagicMock())
-    h.async_create_task = MagicMock()
-    return h
-
-
-def _fake_entry(entry_id="E1", title="Test SHC", options=None, hass=None):
-    """Build a fake config entry with runtime_data wired from `hass` (as
-    produced by _fake_hass) when provided."""
-    entry = MagicMock()
-    entry.entry_id = entry_id
-    entry.title = title
-    entry.options = options or {}
-    entry.unique_id = "uid1"
-    entry.async_on_unload = MagicMock()
-    entry.runtime_data = SimpleNamespace(
-        session=getattr(hass, "_fake_session", None) if hass is not None else None,
-        shc_device=getattr(hass, "_fake_shc", None) if hass is not None else None,
-        title=title,
-    )
-    return entry
-
-
 # ===========================================================================
 # async_setup_entry — entity creation
 # ===========================================================================
@@ -273,33 +232,6 @@ def _make_fake_scenario(name="Night Mode", scenario_id="scn:1"):
     return SimpleNamespace(name=name, id=scenario_id)
 
 
-def _make_session(
-    switches=None,
-    scenarios=None,
-    motion_detectors=None,
-    motion_detectors2=None,
-    smoke_detection_system=None,
-    smoke_detectors=None,
-):
-    """Build a fake SHCSession-like object.
-
-    motion_detectors2 must be present in device_helper because event.py
-    async_setup_entry iterates (motion_detectors + motion_detectors2).
-    """
-    return SimpleNamespace(
-        device_helper=SimpleNamespace(
-            universal_switches=switches or [],
-            motion_detectors=motion_detectors or [],
-            motion_detectors2=motion_detectors2 or [],
-            smoke_detection_system=smoke_detection_system,
-            smoke_detectors=smoke_detectors or [],
-        ),
-        scenarios=scenarios or [],
-        information=SimpleNamespace(unique_id="uid-shc-001"),
-        subscribe_scenario_callback=MagicMock(),
-    )
-
-
 def _make_fake_shc_device_entry():
     """Fake DeviceEntry for SHCScenarioEvent._shc."""
     return SimpleNamespace(
@@ -311,248 +243,174 @@ def _make_fake_shc_device_entry():
     )
 
 
-def _make_setup_hass(shc_entry=None, entry_id="entry1"):
-    """Return a fake hass whose config_entries.async_get_entry(entry_id)
-    resolves to runtime_data.shc_device - read by SHCScenarioEvent.__init__
-    when async_setup_entry creates scenario entities."""
-    shc = shc_entry or _make_fake_shc_device_entry()
-    fake_lookup_entry = SimpleNamespace(runtime_data=SimpleNamespace(shc_device=shc))
+def _wire_event_setup(mock_config_entry, mock_session, shc_device=None):
+    """Wire the shared mock_config_entry/mock_session fixtures for event.py's
+    async_setup_entry, plus the extra bits this platform needs that the
+    generic conftest.run_setup_entry doesn't provide:
+
+    - session.scenarios / subscribe_scenario_callback / unsubscribe_scenario_callback:
+      event.py's async_setup_entry unconditionally iterates session.scenarios
+      (not a device_helper bucket, so the shared mock_session doesn't set it),
+      and SHCScenarioEvent (un)subscribes via the pub/sub callbacks.
+    - hass.config_entries.async_get_entry(entry_id).runtime_data.shc_device:
+      SHCScenarioEvent.__init__ reads this directly from hass *during*
+      async_setup_entry (not just entry.runtime_data.session like every
+      other platform), so the bare SimpleNamespace() hass conftest's
+      run_setup_entry builds is not enough here.
+
+    Returns the fake hass to pass into async_setup_entry.
+    """
+    if not hasattr(mock_session, "scenarios"):
+        mock_session.scenarios = []
+    if not hasattr(mock_session, "subscribe_scenario_callback"):
+        mock_session.subscribe_scenario_callback = MagicMock()
+    if not hasattr(mock_session, "unsubscribe_scenario_callback"):
+        mock_session.unsubscribe_scenario_callback = MagicMock()
+
+    mock_config_entry.runtime_data.session = mock_session
+    mock_config_entry.runtime_data.shc_device = shc_device or _make_fake_shc_device_entry()
+
     return SimpleNamespace(
-        config_entries=SimpleNamespace(
-            async_get_entry=lambda eid: fake_lookup_entry
-        )
+        config_entries=SimpleNamespace(async_get_entry=lambda eid: mock_config_entry)
     )
 
 
-def _make_entry(session, entry_id="entry1", shc_entry=None):
-    """Build a fake config entry with runtime_data.session - read directly
-    by event.py's async_setup_entry (not via hass.data)."""
-    shc = shc_entry or _make_fake_shc_device_entry()
-    return SimpleNamespace(
-        options={},
-        entry_id=entry_id,
-        runtime_data=SimpleNamespace(session=session, shc_device=shc, title="Test SHC"),
-    )
+def _run_event_setup(mock_config_entry, mock_session, shc_device=None):
+    """Run event.py's async_setup_entry(hass, entry, async_add_entities) with
+    the wiring from _wire_event_setup, returning the collected entities."""
+    hass = _wire_event_setup(mock_config_entry, mock_session, shc_device)
+    collected: list = []
 
-
-def _collecting_add_fn():
-    """Return a (callable, list) pair. callable accepts (entities, update_before_add)."""
-    collected = []
-
-    def add_fn(entities, update_before_add=False):
+    def add(entities, update_before_add=False):
         collected.extend(entities)
 
-    return add_fn, collected
+    asyncio.run(async_setup_entry(hass, mock_config_entry, add))
+    return collected
 
 
 class TestAsyncSetupEntryUniversalSwitch:
     """async_setup_entry creates UniversalSwitchEvent per keystate."""
 
-    def test_one_switch_two_keystates_produces_two_entities(self):
-        sw = _make_fake_switch(keystates=["UPPER_BUTTON", "LOWER_BUTTON"])
-        session = _make_session(switches=[sw])
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            with patch(
-                "custom_components.bosch_shc.event.SHCEntity.__init__",
-                lambda self, device, entry_id: _patch_shc_init(self, device, entry_id),
-            ):
-                await async_setup_entry(hass, entry, add_fn)
-
-        def _patch_shc_init(self, device, entry_id):
-            self._device = device
-            self._entry_id = entry_id
-            self._attr_name = device.name
-            self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-
-        asyncio.run(_run_setup())
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "universal_switches": [
+                    _make_fake_switch(keystates=["UPPER_BUTTON", "LOWER_BUTTON"])
+                ]
+            }
+        ],
+        indirect=True,
+    )
+    def test_one_switch_two_keystates_produces_two_entities(
+        self, mock_config_entry, mock_session
+    ):
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert len(collected) == 2
         assert all(isinstance(e, UniversalSwitchEvent) for e in collected)
 
-    def test_switch_entity_key_ids_match_keystates(self):
-        sw = _make_fake_switch(keystates=["UPPER_BUTTON", "LOWER_BUTTON"])
-        session = _make_session(switches=[sw])
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            with patch(
-                "custom_components.bosch_shc.event.SHCEntity.__init__",
-                lambda self, device, entry_id: _patch_shc_init(self, device, entry_id),
-            ):
-                await async_setup_entry(hass, entry, add_fn)
-
-        def _patch_shc_init(self, device, entry_id):
-            self._device = device
-            self._entry_id = entry_id
-            self._attr_name = device.name
-            self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-
-        asyncio.run(_run_setup())
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "universal_switches": [
+                    _make_fake_switch(keystates=["UPPER_BUTTON", "LOWER_BUTTON"])
+                ]
+            }
+        ],
+        indirect=True,
+    )
+    def test_switch_entity_key_ids_match_keystates(
+        self, mock_config_entry, mock_session
+    ):
+        collected = _run_event_setup(mock_config_entry, mock_session)
         key_ids = {e._key_id for e in collected}
         assert key_ids == {"UPPER_BUTTON", "LOWER_BUTTON"}
 
-    def test_no_switches_produces_no_switch_entities(self):
-        session = _make_session()
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            await async_setup_entry(hass, entry, add_fn)
-
-        asyncio.run(_run_setup())
+    def test_no_switches_produces_no_switch_entities(
+        self, mock_config_entry, mock_session
+    ):
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert len([e for e in collected if isinstance(e, UniversalSwitchEvent)]) == 0
 
 
 class TestAsyncSetupEntryScenario:
-    """async_setup_entry creates SHCScenarioEvent per scenario."""
+    """async_setup_entry creates SHCScenarioEvent per scenario.
 
-    def test_scenario_entity_created(self):
+    session.scenarios isn't a device_helper bucket, so it can't be driven via
+    the shared device_buckets fixture -- set directly on mock_session instead
+    (same pattern as test_valve.py's non-bucket-fitting overrides).
+    """
+
+    def test_scenario_entity_created(self, mock_config_entry, mock_session):
         scn = _make_fake_scenario(name="Night Mode", scenario_id="scn:1")
-        session = _make_session(scenarios=[scn])
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            await async_setup_entry(hass, entry, add_fn)
-
-        asyncio.run(_run_setup())
+        mock_session.scenarios = [scn]
+        collected = _run_event_setup(mock_config_entry, mock_session)
         scenario_entities = [e for e in collected if isinstance(e, SHCScenarioEvent)]
         assert len(scenario_entities) == 1
 
-    def test_scenario_entity_name_set(self):
+    def test_scenario_entity_name_set(self, mock_config_entry, mock_session):
         scn = _make_fake_scenario(name="Away Mode")
-        session = _make_session(scenarios=[scn])
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            await async_setup_entry(hass, entry, add_fn)
-
-        asyncio.run(_run_setup())
+        mock_session.scenarios = [scn]
+        collected = _run_event_setup(mock_config_entry, mock_session)
         e = collected[0]
         assert e._attr_name == "Away Mode Scenario"
 
-    def test_two_scenarios_two_entities(self):
+    def test_two_scenarios_two_entities(self, mock_config_entry, mock_session):
         scns = [_make_fake_scenario("A", "scn:A"), _make_fake_scenario("B", "scn:B")]
-        session = _make_session(scenarios=scns)
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            await async_setup_entry(hass, entry, add_fn)
-
-        asyncio.run(_run_setup())
+        mock_session.scenarios = scns
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert len(collected) == 2
 
 
 class TestAsyncSetupEntryMotionAndSmoke:
     """async_setup_entry creates motion / smoke entities."""
 
-    def test_motion_detector_entity_created(self):
-        md = _make_fake_motion()
-        session = _make_session(motion_detectors=[md])
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            with patch(
-                "custom_components.bosch_shc.event.SHCEntity.__init__",
-                lambda self, device, entry_id: _patch_shc_init(self, device, entry_id),
-            ):
-                await async_setup_entry(hass, entry, add_fn)
-
-        def _patch_shc_init(self, device, entry_id):
-            self._device = device
-            self._entry_id = entry_id
-            self._attr_name = device.name
-            self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-
-        asyncio.run(_run_setup())
+    @pytest.mark.parametrize(
+        "device_buckets", [{"motion_detectors": [_make_fake_motion()]}], indirect=True
+    )
+    def test_motion_detector_entity_created(self, mock_config_entry, mock_session):
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, MotionDetectorEvent) for e in collected)
 
-    def test_smoke_detection_system_entity_created_when_present(self):
-        sys_dev = _make_fake_smoke_system()
-        session = _make_session(smoke_detection_system=sys_dev)
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            with patch(
-                "custom_components.bosch_shc.event.SHCEntity.__init__",
-                lambda self, device, entry_id: _patch_shc_init(self, device, entry_id),
-            ):
-                await async_setup_entry(hass, entry, add_fn)
-
-        def _patch_shc_init(self, device, entry_id):
-            self._device = device
-            self._entry_id = entry_id
-            self._attr_name = device.name
-            self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-
-        asyncio.run(_run_setup())
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"smoke_detection_system": _make_fake_smoke_system()}],
+        indirect=True,
+    )
+    def test_smoke_detection_system_entity_created_when_present(
+        self, mock_config_entry, mock_session
+    ):
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, SmokeDetectionSystemEvent) for e in collected)
 
-    def test_no_smoke_detection_system_when_none(self):
-        """Falsy smoke_detection_system -> no SmokeDetectionSystemEvent."""
-        session = _make_session(smoke_detection_system=None)
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            await async_setup_entry(hass, entry, add_fn)
-
-        asyncio.run(_run_setup())
+    def test_no_smoke_detection_system_when_none(
+        self, mock_config_entry, mock_session
+    ):
+        """Falsy smoke_detection_system (the fixture default) -> no SmokeDetectionSystemEvent."""
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SmokeDetectionSystemEvent) for e in collected)
 
-    def test_smoke_detector_entity_created(self):
-        sd = _make_fake_smoke_detector()
-        session = _make_session(smoke_detectors=[sd])
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
-        add_fn, collected = _collecting_add_fn()
-
-        async def _run_setup():
-            with patch(
-                "custom_components.bosch_shc.event.SHCEntity.__init__",
-                lambda self, device, entry_id: _patch_shc_init(self, device, entry_id),
-            ):
-                await async_setup_entry(hass, entry, add_fn)
-
-        def _patch_shc_init(self, device, entry_id):
-            self._device = device
-            self._entry_id = entry_id
-            self._attr_name = device.name
-            self._attr_unique_id = f"{device.root_device_id}_{device.id}"
-
-        asyncio.run(_run_setup())
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"smoke_detectors": [_make_fake_smoke_detector()]}],
+        indirect=True,
+    )
+    def test_smoke_detector_entity_created(self, mock_config_entry, mock_session):
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, SmokeDetectorEvent) for e in collected)
 
-    def test_async_add_entities_called_with_update_before_add_true(self):
+    def test_async_add_entities_called_with_update_before_add_true(
+        self, mock_config_entry, mock_session
+    ):
         """async_setup_entry passes True as update_before_add to async_add_entities."""
-        session = _make_session()
-        hass = _make_setup_hass()
-        entry = _make_entry(session)
+        hass = _wire_event_setup(mock_config_entry, mock_session)
         calls = []
 
         def capturing_add(entities, update_before_add=False):
             calls.append((list(entities), update_before_add))
 
-        async def _run_setup():
-            await async_setup_entry(hass, entry, capturing_add)
-
-        asyncio.run(_run_setup())
+        asyncio.run(async_setup_entry(hass, mock_config_entry, capturing_add))
         assert calls, "async_add_entities was never called"
         assert calls[0][1] is True
 
@@ -617,213 +475,173 @@ def _make_smoke_detector(device_id="sd-1", room_id="room-3"):
     )
 
 
-def _make_hass_and_entry(
-    universal_switches=None,
-    motion_detectors=None,
-    motion_detectors2=None,
-    smoke_detectors=None,
-    smoke_detection_system=None,
-    scenarios=None,
-    excluded_device_ids=None,
-):
-    """Return (hass, config_entry) with a faked session and options."""
-    universal_switches = universal_switches or []
-    motion_detectors = motion_detectors or []
-    motion_detectors2 = motion_detectors2 or []
-    smoke_detectors = smoke_detectors or []
-    scenarios = scenarios or []
-    excluded = excluded_device_ids or []
-
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            universal_switches=universal_switches,
-            motion_detectors=motion_detectors,
-            motion_detectors2=motion_detectors2,
-            smoke_detectors=smoke_detectors,
-            smoke_detection_system=smoke_detection_system,
-        ),
-        scenarios=scenarios,
-    )
-
-    entry_id = "entry-event"
-    options = {OPT_EXCLUDED_DEVICES: excluded}
-    hass = SimpleNamespace()
-    config_entry = SimpleNamespace(entry_id=entry_id, options=options)
-    config_entry.runtime_data = SimpleNamespace(session=session, shc_device=None, title="Test SHC")
-    return hass, config_entry
-
-
-def _run_setup(hass, config_entry):
-    """Run async_setup_entry synchronously, return the entities list."""
-    added = []
-
-    def _add(entities, update_before_add=False):
-        added.extend(entities)
-
-    asyncio.run(async_setup_entry(hass, config_entry, _add))
-    return added
-
-
 class TestUniversalSwitchExcluded:
-    def test_excluded_switch_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {
+                    "universal_switches": [
+                        _make_switch_device(device_id="excl-sw", keystates=["KEY1", "KEY2"])
+                    ]
+                },
+                {"options": {OPT_EXCLUDED_DEVICES: ["excl-sw"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_switch_not_added(self, mock_config_entry, mock_session):
         """Excluded switch device (line 57) must not produce any UniversalSwitchEvent."""
-        dev = _make_switch_device(device_id="excl-sw", keystates=["KEY1", "KEY2"])
-        hass, entry = _make_hass_and_entry(
-            universal_switches=[dev],
-            excluded_device_ids=["excl-sw"],
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sw_events = [e for e in collected if isinstance(e, UniversalSwitchEvent)]
+        assert sw_events == [], (
+            "Excluded switch should not produce UniversalSwitchEvent entities"
         )
-        added = _run_setup(hass, entry)
-        sw_events = [e for e in added if isinstance(e, UniversalSwitchEvent)]
-        # No events for the excluded device
-        assert all(
-            e._device is not dev for e in sw_events
-        ), "Excluded switch should not produce UniversalSwitchEvent entities"
 
-    def test_non_excluded_switch_produces_events(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"universal_switches": [_make_switch_device(device_id="keep-sw", keystates=["KEY1", "KEY2"])]}],
+        indirect=True,
+    )
+    def test_non_excluded_switch_produces_events(self, mock_config_entry, mock_session):
         """Non-excluded switch must produce one UniversalSwitchEvent per keystate."""
-        dev = _make_switch_device(device_id="keep-sw", keystates=["KEY1", "KEY2"])
-        hass, entry = _make_hass_and_entry(
-            universal_switches=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
-        sw_events = [e for e in added if isinstance(e, UniversalSwitchEvent)]
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sw_events = [e for e in collected if isinstance(e, UniversalSwitchEvent)]
         assert len(sw_events) == 2, (
             f"Expected 2 UniversalSwitchEvent (one per keystate), got {len(sw_events)}"
         )
 
-    def test_mixed_switches_only_excluded_is_skipped(self):
+    def test_mixed_switches_only_excluded_is_skipped(self, mock_config_entry, mock_session):
         """One excluded switch + one non-excluded: only non-excluded events appear."""
         keep = _make_switch_device(device_id="sw-keep", keystates=["K1"])
         excl = _make_switch_device(device_id="sw-excl", keystates=["K1"])
-        hass, entry = _make_hass_and_entry(
-            universal_switches=[keep, excl],
-            excluded_device_ids=["sw-excl"],
-        )
-        added = _run_setup(hass, entry)
-        sw_events = [e for e in added if isinstance(e, UniversalSwitchEvent)]
+        mock_session.device_helper.universal_switches = [keep, excl]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["sw-excl"]}
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sw_events = [e for e in collected if isinstance(e, UniversalSwitchEvent)]
         assert all(e._device is not excl for e in sw_events)
         assert any(e._device is keep for e in sw_events)
 
 
 class TestMotionDetectorExcluded:
-    def test_excluded_motion_detector_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"motion_detectors": [_make_motion_device(device_id="excl-md")]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["excl-md"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_motion_detector_not_added(self, mock_config_entry, mock_session):
         """Excluded motion detector (line 83) must not produce a MotionDetectorEvent."""
-        dev = _make_motion_device(device_id="excl-md")
-        hass, entry = _make_hass_and_entry(
-            motion_detectors=[dev],
-            excluded_device_ids=["excl-md"],
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
+        assert md_events == [], (
+            "Excluded motion detector should not produce MotionDetectorEvent"
         )
-        added = _run_setup(hass, entry)
-        md_events = [e for e in added if isinstance(e, MotionDetectorEvent)]
-        assert all(
-            e._device is not dev for e in md_events
-        ), "Excluded motion detector should not produce MotionDetectorEvent"
 
-    def test_non_excluded_motion_detector_is_added(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"motion_detectors": [_make_motion_device(device_id="keep-md")]}],
+        indirect=True,
+    )
+    def test_non_excluded_motion_detector_is_added(self, mock_config_entry, mock_session):
         """Non-excluded motion detector must produce a MotionDetectorEvent."""
-        dev = _make_motion_device(device_id="keep-md")
-        hass, entry = _make_hass_and_entry(
-            motion_detectors=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
-        md_events = [e for e in added if isinstance(e, MotionDetectorEvent)]
-        assert any(
-            e._device is dev for e in md_events
-        ), "Non-excluded motion detector should produce a MotionDetectorEvent"
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
+        assert len(md_events) == 1
 
-    def test_excluded_motion_detector2_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"motion_detectors2": [_make_motion_device(device_id="excl-md2")]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["excl-md2"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_motion_detector2_not_added(self, mock_config_entry, mock_session):
         """Excluded MD2 (also covered by line 83 via combined list) must be skipped."""
-        dev = _make_motion_device(device_id="excl-md2")
-        hass, entry = _make_hass_and_entry(
-            motion_detectors2=[dev],
-            excluded_device_ids=["excl-md2"],
-        )
-        added = _run_setup(hass, entry)
-        md_events = [e for e in added if isinstance(e, MotionDetectorEvent)]
-        assert all(
-            e._device is not dev for e in md_events
-        ), "Excluded MD2 should not produce a MotionDetectorEvent"
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
+        assert md_events == [], "Excluded MD2 should not produce a MotionDetectorEvent"
 
-    def test_non_excluded_motion_detector2_is_added(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"motion_detectors2": [_make_motion_device(device_id="keep-md2")]}],
+        indirect=True,
+    )
+    def test_non_excluded_motion_detector2_is_added(self, mock_config_entry, mock_session):
         """Non-excluded MD2 must produce a MotionDetectorEvent."""
-        dev = _make_motion_device(device_id="keep-md2")
-        hass, entry = _make_hass_and_entry(
-            motion_detectors2=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
-        md_events = [e for e in added if isinstance(e, MotionDetectorEvent)]
-        assert any(
-            e._device is dev for e in md_events
-        ), "Non-excluded MD2 should produce a MotionDetectorEvent"
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
+        assert len(md_events) == 1
 
-    def test_mixed_motion_detectors_only_excluded_skipped(self):
+    def test_mixed_motion_detectors_only_excluded_skipped(self, mock_config_entry, mock_session):
         """One excluded + one non-excluded MD: only non-excluded appears."""
         keep = _make_motion_device(device_id="md-keep")
         excl = _make_motion_device(device_id="md-excl")
-        hass, entry = _make_hass_and_entry(
-            motion_detectors=[keep, excl],
-            excluded_device_ids=["md-excl"],
-        )
-        added = _run_setup(hass, entry)
-        md_events = [e for e in added if isinstance(e, MotionDetectorEvent)]
+        mock_session.device_helper.motion_detectors = [keep, excl]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["md-excl"]}
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
         assert all(e._device is not excl for e in md_events)
         assert any(e._device is keep for e in md_events)
 
 
 class TestSmokeDetectorExcluded:
-    def test_excluded_smoke_detector_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"smoke_detectors": [_make_smoke_detector(device_id="excl-sd")]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["excl-sd"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_smoke_detector_not_added(self, mock_config_entry, mock_session):
         """Excluded smoke detector (line 104) must not produce a SmokeDetectorEvent."""
-        dev = _make_smoke_detector(device_id="excl-sd")
-        hass, entry = _make_hass_and_entry(
-            smoke_detectors=[dev],
-            excluded_device_ids=["excl-sd"],
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sd_events = [e for e in collected if isinstance(e, SmokeDetectorEvent)]
+        assert sd_events == [], (
+            "Excluded smoke detector should not produce SmokeDetectorEvent"
         )
-        added = _run_setup(hass, entry)
-        sd_events = [e for e in added if isinstance(e, SmokeDetectorEvent)]
-        assert all(
-            e._device is not dev for e in sd_events
-        ), "Excluded smoke detector should not produce SmokeDetectorEvent"
 
-    def test_non_excluded_smoke_detector_is_added(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"smoke_detectors": [_make_smoke_detector(device_id="keep-sd")]}],
+        indirect=True,
+    )
+    def test_non_excluded_smoke_detector_is_added(self, mock_config_entry, mock_session):
         """Non-excluded smoke detector must produce a SmokeDetectorEvent."""
-        dev = _make_smoke_detector(device_id="keep-sd")
-        hass, entry = _make_hass_and_entry(
-            smoke_detectors=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
-        sd_events = [e for e in added if isinstance(e, SmokeDetectorEvent)]
-        assert any(
-            e._device is dev for e in sd_events
-        ), "Non-excluded smoke detector should produce a SmokeDetectorEvent"
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sd_events = [e for e in collected if isinstance(e, SmokeDetectorEvent)]
+        assert len(sd_events) == 1
 
-    def test_mixed_smoke_detectors_only_excluded_skipped(self):
+    def test_mixed_smoke_detectors_only_excluded_skipped(self, mock_config_entry, mock_session):
         """One excluded + one non-excluded SD: only non-excluded appears."""
         keep = _make_smoke_detector(device_id="sd-keep")
         excl = _make_smoke_detector(device_id="sd-excl")
-        hass, entry = _make_hass_and_entry(
-            smoke_detectors=[keep, excl],
-            excluded_device_ids=["sd-excl"],
-        )
-        added = _run_setup(hass, entry)
-        sd_events = [e for e in added if isinstance(e, SmokeDetectorEvent)]
+        mock_session.device_helper.smoke_detectors = [keep, excl]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["sd-excl"]}
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sd_events = [e for e in collected if isinstance(e, SmokeDetectorEvent)]
         assert all(e._device is not excl for e in sd_events)
         assert any(e._device is keep for e in sd_events)
 
-    def test_excluded_smoke_detector_alongside_non_excluded(self):
+    def test_excluded_smoke_detector_alongside_non_excluded(self, mock_config_entry, mock_session):
         """Regression: excluding one SD must not affect the other in the same list."""
         keep1 = _make_smoke_detector(device_id="sd-a")
         keep2 = _make_smoke_detector(device_id="sd-b")
         excl = _make_smoke_detector(device_id="sd-excl")
-        hass, entry = _make_hass_and_entry(
-            smoke_detectors=[keep1, excl, keep2],
-            excluded_device_ids=["sd-excl"],
-        )
-        added = _run_setup(hass, entry)
-        sd_events = [e for e in added if isinstance(e, SmokeDetectorEvent)]
+        mock_session.device_helper.smoke_detectors = [keep1, excl, keep2]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["sd-excl"]}
+        collected = _run_event_setup(mock_config_entry, mock_session)
+        sd_events = [e for e in collected if isinstance(e, SmokeDetectorEvent)]
         device_ids = {e._device.id for e in sd_events}
         assert "sd-a" in device_ids
         assert "sd-b" in device_ids
@@ -838,47 +656,36 @@ class TestSmokeDetectorExcluded:
 class TestEventSetupLightControls:
     """Lines 82-86: micromodule_light_controls loop - excluded and no-keypad branches."""
 
-    def _run_event_setup(self, light_controls, options=None):
-        dh = MagicMock()
-        dh.universal_switches = []
-        dh.motion_detectors = []
-        dh.motion_detectors2 = []
-        dh.smoke_detectors = []
-        dh.micromodule_light_controls = light_controls
-
-        session = MagicMock()
-        session.device_helper = dh
-        session.scenarios = []
-        session.device_helper.smoke_detection_system = None
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options=options or {})
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, *a, **kw: collected.extend(ents)))
-        return collected
-
-    def test_light_control_excluded(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"micromodule_light_controls": [_fake_dev("lc1", has_keypad=True)]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["lc1"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_light_control_excluded(self, mock_config_entry, mock_session):
         """Line 82-83: device_excluded=True -> continue."""
-        dev = _fake_dev("lc1", has_keypad=True)
-        collected = self._run_event_setup(
-            light_controls=[dev],
-            options={OPT_EXCLUDED_DEVICES: ["lc1"]},
-        )
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert len(collected) == 0
 
-    def test_light_control_no_keypad(self):
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"micromodule_light_controls": [_fake_dev("lc1")]}],
+        indirect=True,
+    )
+    def test_light_control_no_keypad(self, mock_config_entry, mock_session):
         """Lines 84-85: has_keypad=False -> continue."""
-        dev = _fake_dev("lc1")  # no has_keypad attr -> getattr returns False
-        collected = self._run_event_setup(light_controls=[dev])
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert len(collected) == 0
 
-    def test_light_control_with_keypad_added(self):
+    def test_light_control_with_keypad_added(self, mock_config_entry, mock_session):
         """Lines 86-90: has_keypad=True -> LightControlButtonEvent added."""
-        dev = _fake_dev("lc1", has_keypad=True)
-        dev.root_device_id = "root1"
-        dev.name = "LightControl"
-        collected = self._run_event_setup(light_controls=[dev])
+        dev = _fake_dev("lc1", has_keypad=True, root_device_id="root1", name="LightControl")
+        mock_session.device_helper.micromodule_light_controls = [dev]
+        collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, LightControlButtonEvent) for e in collected)
 
 

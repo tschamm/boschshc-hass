@@ -6,7 +6,15 @@ from typing import Any
 
 from boschshcpy import (
     SHCDevice,
+    SHCMicromoduleRelay,
+    SHCMotionDetector2,
+    SHCOutdoorSiren,
     SHCSession,
+    SHCShutterControl,
+    SHCSmartPlug,
+    SHCSmartPlugCompact,
+    SHCSmokeDetector,
+    SHCTwinguard,
 )
 from boschshcpy.exceptions import SHCException
 from boschshcpy.services_impl import DetectionTestService, WalkTestService
@@ -17,7 +25,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -228,6 +236,7 @@ class SHCRelayButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
+        self._device: SHCMicromoduleRelay = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Trigger the relay impulse (awaited — the session is async; #336)."""
@@ -250,6 +259,10 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the smoke-test button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_test"
+        # Wired to both smoke_detectors and twinguards (async_setup_entry) —
+        # unrelated sibling classes that each independently implement this
+        # method, not a shared mixin, hence the union narrowing.
+        self._device: SHCSmokeDetector | SHCTwinguard = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Trigger the device self-test (awaited — the session is async; #336)."""
@@ -272,6 +285,7 @@ class SHCSirenTestAlarmButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the siren test-alarm button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_test_alarm"
+        self._device: SHCOutdoorSiren = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Trigger a short test alarm at the configured sound level."""
@@ -303,6 +317,10 @@ class ResetEnergySummationButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_reset_energy_summation"
         )
+        # Wired to both smart_plugs and smart_plugs_compact (async_setup_entry);
+        # both share the (private, unexported) _PowerMeter mixin that defines
+        # this method, hence the union narrowing over the two public classes.
+        self._device: SHCSmartPlug | SHCSmartPlugCompact = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Reset the accumulated energy counter."""
@@ -333,6 +351,10 @@ class ShutterRecalibrateButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the shutter-recalibrate button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_recalibrate"
+        # Wired to shutter_controls, micromodule_shutter_controls and
+        # micromodule_blinds (async_setup_entry) — all subclass
+        # SHCShutterControl, which defines this method directly.
+        self._device: SHCShutterControl = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Trigger the end-position (re)calibration run."""
@@ -373,16 +395,16 @@ class SHCScenarioButton(ButtonEntity):  # type: ignore[misc]
         self._attr_name = scenario.name
 
     @property
-    def device_info(self) -> dict[str, Any] | None:
+    def device_info(self) -> DeviceInfo | None:
         """Return the device info (links this button to the SHC controller device)."""
         if self._shc_device is None:
             return None
-        return {
-            "identifiers": self._shc_device.identifiers,
-            "name": self._shc_device.name,
-            "manufacturer": self._shc_device.manufacturer,
-            "model": self._shc_device.model,
-        }
+        return DeviceInfo(
+            identifiers=self._shc_device.identifiers,
+            name=self._shc_device.name,
+            manufacturer=self._shc_device.manufacturer,
+            model=self._shc_device.model,
+        )
 
     async def async_press(self) -> None:
         """Trigger the scenario (awaited — the session is async; #336)."""
@@ -410,6 +432,7 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the walk-test start button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_test"
+        self._device: SHCMotionDetector2 = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Send WALK_STATE_START request to the WalkTest service."""
@@ -438,6 +461,7 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the walk-test stop button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_test_stop"
+        self._device: SHCMotionDetector2 = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Send WALK_STATE_STOP request to the WalkTest service."""
@@ -466,6 +490,7 @@ class SHCDetectionTestButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the detection-test start button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_test"
+        self._device: SHCMotionDetector2 = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Send DETECTION_STATE_START to the DetectionTest service."""
@@ -492,6 +517,7 @@ class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_detection_test_stop"
         )
+        self._device: SHCMotionDetector2 = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """Send DETECTION_STATE_STOP to the DetectionTest service."""
@@ -516,6 +542,7 @@ class SHCTamperResetButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
         """Initialize the tamper-reset button."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_reset_tamper"
+        self._device: SHCMotionDetector2 = device  # type: ignore[assignment]
 
     async def async_press(self) -> None:
         """POST resetTamperedState to confirm the device is back in place."""
@@ -607,16 +634,16 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
         self._reload_in_progress = False
 
     @property
-    def device_info(self) -> dict[str, Any] | None:
+    def device_info(self) -> DeviceInfo | None:
         """Return the device info (links this button to the SHC controller device)."""
         if self._shc_device is None:
             return None
-        return {
-            "identifiers": self._shc_device.identifiers,
-            "name": self._shc_device.name,
-            "manufacturer": self._shc_device.manufacturer,
-            "model": self._shc_device.model,
-        }
+        return DeviceInfo(
+            identifiers=self._shc_device.identifiers,
+            name=self._shc_device.name,
+            manufacturer=self._shc_device.manufacturer,
+            model=self._shc_device.model,
+        )
 
     async def async_press(self) -> None:
         """Clear disabled_by=INTEGRATION on every diagnostic entity of this entry."""

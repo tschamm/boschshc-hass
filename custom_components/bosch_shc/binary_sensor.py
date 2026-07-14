@@ -13,13 +13,20 @@ import voluptuous as vol
 from boschshcpy import (
     AlarmService,
     BatteryLevelService,
+    SHCBatteryDevice,
+    SHCClimateControl,
     SHCDevice,
+    SHCMotionDetector,
     SHCMotionDetector2,
+    SHCOutdoorSiren,
     SHCSession,
     SHCShutterContact,
     SHCShutterContact2Plus,
+    SHCShutterControl,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
+    SHCTwinguard,
+    SHCWaterLeakageSensor,
     ShutterContactService,
     SurveillanceAlarmService,
     VibrationSensorService,
@@ -72,7 +79,7 @@ async def async_setup_entry(  # noqa: C901
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the SHC binary sensor platform."""
-    entities = []
+    entities: list[BinarySensorEntity] = []
     session: SHCSession = config_entry.runtime_data.session
 
     @callback  # type: ignore[untyped-decorator]
@@ -87,15 +94,15 @@ async def async_setup_entry(  # noqa: C901
         )
         async_add_entities([binary_sensor])
 
-    for binary_sensor in list(session.device_helper.shutter_contacts) + list(
+    for shutter_device in list(session.device_helper.shutter_contacts) + list(
         session.device_helper.shutter_contacts2
     ):
-        if device_excluded(binary_sensor, config_entry.options):
+        if device_excluded(shutter_device, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor
+            hass, Platform.BINARY_SENSOR, device=shutter_device
         )
-        async_add_shuttercontact(device=binary_sensor)
+        async_add_shuttercontact(device=shutter_device)
 
     # session.subscribe() returns None, so unsubscribe is built manually below.
     _shutter_subscriber = (SHCShutterContact, async_add_shuttercontact)
@@ -107,58 +114,58 @@ async def async_setup_entry(  # noqa: C901
 
     config_entry.async_on_unload(_unsubscribe_shutter)
 
-    for binary_sensor in session.device_helper.motion_detectors:
-        if device_excluded(binary_sensor, config_entry.options):
+    for motion_device in session.device_helper.motion_detectors:
+        if device_excluded(motion_device, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor
+            hass, Platform.BINARY_SENSOR, device=motion_device
         )
         entities.append(
             MotionDetectionSensor(
                 hass=hass,
-                device=binary_sensor,
+                device=motion_device,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binary_sensor in session.device_helper.motion_detectors2:
-        if device_excluded(binary_sensor, config_entry.options):
+    for motion2_device in session.device_helper.motion_detectors2:
+        if device_excluded(motion2_device, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor
+            hass, Platform.BINARY_SENSOR, device=motion2_device
         )
         entities.append(
             MotionDetectionSensor(
                 hass=hass,
-                device=binary_sensor,
+                device=motion2_device,
                 entry_id=config_entry.entry_id,
             )
         )
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor, attr_name="Occupancy"
+            hass, Platform.BINARY_SENSOR, device=motion2_device, attr_name="Occupancy"
         )
         entities.append(
             OccupancyDetectionSensor(
-                device=binary_sensor,
+                device=motion2_device,
                 entry_id=config_entry.entry_id,
             )
         )
         entities.append(
             TamperSensor(
-                device=binary_sensor,
+                device=motion2_device,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binary_sensor in session.device_helper.smoke_detectors:
-        if device_excluded(binary_sensor, config_entry.options):
+    for smoke_device in session.device_helper.smoke_detectors:
+        if device_excluded(smoke_device, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor
+            hass, Platform.BINARY_SENSOR, device=smoke_device
         )
         entities.append(
             SmokeDetectorSensor(
-                device=binary_sensor,
+                device=smoke_device,
                 hass=hass,
                 entry_id=config_entry.entry_id,
             )
@@ -207,42 +214,42 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-            for binary_sensor in twinguards:
-                if device_excluded(binary_sensor, config_entry.options):
+            for twinguard_device in twinguards:
+                if device_excluded(twinguard_device, config_entry.options):
                     continue
                 entities.append(
                     TwinguardSmokeAlarmSensor(
-                        device=binary_sensor,
+                        device=twinguard_device,
                         entry_id=config_entry.entry_id,
                         tracker=tracker,
                     )
                 )
 
-    for binary_sensor in session.device_helper.water_leakage_detectors:
-        if device_excluded(binary_sensor, config_entry.options):
+    for water_leak_device in session.device_helper.water_leakage_detectors:
+        if device_excluded(water_leak_device, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor
+            hass, Platform.BINARY_SENSOR, device=water_leak_device
         )
         entities.append(
             WaterLeakageDetectorSensor(
-                device=binary_sensor,
+                device=water_leak_device,
                 entry_id=config_entry.entry_id,
             )
         )
 
-    for binary_sensor in session.device_helper.shutter_contacts2:
-        if device_excluded(binary_sensor, config_entry.options):
+    for shutter2_device in session.device_helper.shutter_contacts2:
+        if device_excluded(shutter2_device, config_entry.options):
             continue
-        if isinstance(binary_sensor, SHCShutterContact2Plus):
+        if isinstance(shutter2_device, SHCShutterContact2Plus):
             entities.append(
                 ShutterContactVibrationSensor(
-                    device=binary_sensor,
+                    device=shutter2_device,
                     entry_id=config_entry.entry_id,
                 )
             )
 
-    for binary_sensor in (
+    for battery_device in (
         list(session.device_helper.motion_detectors)
         + list(session.device_helper.motion_detectors2)
         + list(session.device_helper.shutter_contacts)
@@ -256,15 +263,15 @@ async def async_setup_entry(  # noqa: C901
         + list(session.device_helper.water_leakage_detectors)
         + list(getattr(session.device_helper, "outdoor_sirens", []))
     ):
-        if device_excluded(binary_sensor, config_entry.options):
+        if device_excluded(battery_device, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
-            hass, Platform.BINARY_SENSOR, device=binary_sensor, attr_name="Battery"
+            hass, Platform.BINARY_SENSOR, device=battery_device, attr_name="Battery"
         )
-        if binary_sensor.supports_batterylevel:
+        if battery_device.supports_batterylevel:
             entities.append(
                 BatterySensor(
-                    device=binary_sensor,
+                    device=battery_device,
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -333,7 +340,10 @@ async def async_setup_entry(  # noqa: C901
         )
 
     platform = entity_platform.current_platform.get()
-
+    # current_platform is only unset outside of an active platform setup context,
+    # which cannot happen here — this function only ever runs as the platform's
+    # own async_setup_entry, so the context var is always populated.
+    assert platform is not None
     platform.async_register_entity_service(
         SERVICE_SMOKEDETECTOR_CHECK,
         {},
@@ -351,7 +361,71 @@ async def async_setup_entry(  # noqa: C901
         async_add_entities(entities)
 
 
-class CallForHeatSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+@dataclass(frozen=True, kw_only=True)
+class SHCBinarySensorEntityDescription[_DeviceT: SHCDevice](
+    BinarySensorEntityDescription
+):
+    """Describes a plain, read-only SHC binary sensor.
+
+    Core-prep note: this is the shared shape every simple (non-event,
+    non-stateful) binary sensor class below is expressed through --
+    subclasses assign ``entity_description`` as a CLASS attribute (not a
+    constructor argument) so each class keeps its own name/identity (needed
+    for existing isinstance()/direct-construction test coverage and for
+    unambiguous entity-registry history), while the actual varying
+    is_on/attribute-read logic lives in one place. ``unique_id_suffix=None``
+    keeps the SHCEntity-default ``{root}_{id}`` unique_id (only
+    WaterLeakageDetectorSensor relies on that, matching pre-refactor
+    behavior).
+
+    Generic over ``_DeviceT`` (PEP 695) so each concrete description instance
+    can be parametrized with the actual boschshcpy device/model subtype its
+    ``is_on_fn``/``attributes_fn`` lambdas rely on, instead of every lambda
+    body reaching for subtype-specific attributes through the generic
+    ``SHCDevice`` base (mypy-strict core-prep).
+    """
+
+    is_on_fn: Callable[[_DeviceT], bool]
+    attributes_fn: Callable[[_DeviceT], dict[str, Any]] | None = None
+    unique_id_suffix: str | None = None
+
+
+class SHCBinarySensor[_DeviceT: SHCDevice](SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Base for a plain read-only SHC binary sensor driven by entity_description."""
+
+    entity_description: SHCBinarySensorEntityDescription[_DeviceT]
+    _device: _DeviceT
+
+    def __init__(self, device: _DeviceT, entry_id: str) -> None:
+        """Initialize, deriving unique_id from entity_description.unique_id_suffix."""
+        super().__init__(device, entry_id)
+        if self.entity_description.unique_id_suffix is not None:
+            self._attr_unique_id = (
+                f"{device.root_device_id}_{device.id}_"
+                f"{self.entity_description.unique_id_suffix}"
+            )
+
+    @property
+    def is_on(self) -> bool:
+        """Return the state of the sensor."""
+        return self.entity_description.is_on_fn(self._device)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the state attributes, if this sensor defines any."""
+        if self.entity_description.attributes_fn is None:
+            return None
+        return self.entity_description.attributes_fn(self._device)
+
+
+_CALL_FOR_HEAT_DESCRIPTION = SHCBinarySensorEntityDescription[SHCClimateControl](
+    key="call_for_heat",
+    is_on_fn=lambda device: bool(getattr(device, "has_demand", False)),
+    unique_id_suffix="callforheat",
+)
+
+
+class CallForHeatSensor(SHCBinarySensor[SHCClimateControl]):  # type: ignore[misc]
     """Room-climate 'call for heat' sensor — on when the room requests heat.
 
     Reads RoomClimateControl.has_demand (#205). getattr-guarded so it tolerates
@@ -360,19 +434,21 @@ class CallForHeatSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
 
     _attr_device_class = BinarySensorDeviceClass.RUNNING
     _attr_translation_key = "call_for_heat"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize a call-for-heat binary sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_callforheat"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the room climate control is calling for heat."""
-        return bool(getattr(self._device, "has_demand", False))
+    entity_description = _CALL_FOR_HEAT_DESCRIPTION
 
 
-class ScheduleOverrideActiveSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SCHEDULE_OVERRIDE_ACTIVE_DESCRIPTION = SHCBinarySensorEntityDescription[
+    SHCClimateControl
+](
+    key="schedule_override_active",
+    is_on_fn=lambda device: bool(
+        getattr(device, "setpoint_temperature_offset_active", False)
+    ),
+    unique_id_suffix="schedule_override_active",
+)
+
+
+class ScheduleOverrideActiveSensor(SHCBinarySensor[SHCClimateControl]):  # type: ignore[misc]
     """Room-climate schedule-override indicator (hass#120 audit).
 
     Reads RoomClimateControl.setpoint_temperature_offset_active — the app's
@@ -383,21 +459,19 @@ class ScheduleOverrideActiveSensor(SHCEntity, BinarySensorEntity):  # type: igno
     """
 
     _attr_translation_key = "schedule_override_active"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize a schedule-override-active binary sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_schedule_override_active"
-        )
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when a manual override of the schedule is active."""
-        return bool(getattr(self._device, "setpoint_temperature_offset_active", False))
+    entity_description = _SCHEDULE_OVERRIDE_ACTIVE_DESCRIPTION
 
 
-class ShutterCalibrationRequiredSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SHUTTER_CALIBRATION_REQUIRED_DESCRIPTION = SHCBinarySensorEntityDescription[
+    SHCShutterControl
+](
+    key="shutter_calibration_required",
+    is_on_fn=lambda device: not bool(getattr(device, "calibrated", True)),
+    unique_id_suffix="calibration_required",
+)
+
+
+class ShutterCalibrationRequiredSensor(SHCBinarySensor[SHCShutterControl]):  # type: ignore[misc]
     """Shutter Control II: end-position calibration missing (hass audit).
 
     Reads ShutterControl.calibrated — the app surfaces an uncalibrated
@@ -410,150 +484,129 @@ class ShutterCalibrationRequiredSensor(SHCEntity, BinarySensorEntity):  # type: 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "shutter_calibration_required"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the shutter calibration-required sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_calibration_required"
-        )
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the shutter has not completed calibration."""
-        return not bool(getattr(self._device, "calibrated", True))
+    entity_description = _SHUTTER_CALIBRATION_REQUIRED_DESCRIPTION
 
 
-class SirenAcousticAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_ACOUSTIC_ALARM_DESCRIPTION = SHCBinarySensorEntityDescription[SHCOutdoorSiren](
+    key="siren_acoustic_alarm",
+    is_on_fn=lambda device: bool(getattr(device.siren, "acoustic_alarm_on", False)),
+    unique_id_suffix="acoustic_alarm",
+)
+
+
+class SirenAcousticAlarmSensor(SHCBinarySensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren: acoustic alarm active (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.SOUND
     _attr_translation_key = "siren_acoustic_alarm"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren acoustic alarm sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_acoustic_alarm"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the acoustic alarm is active."""
-        return bool(getattr(self._device.siren, "acoustic_alarm_on", False))
+    entity_description = _SIREN_ACOUSTIC_ALARM_DESCRIPTION
 
 
-class SirenVisualAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_VISUAL_ALARM_DESCRIPTION = SHCBinarySensorEntityDescription[SHCOutdoorSiren](
+    key="siren_visual_alarm",
+    is_on_fn=lambda device: bool(getattr(device.siren, "visual_alarm_on", False)),
+    unique_id_suffix="visual_alarm",
+)
+
+
+class SirenVisualAlarmSensor(SHCBinarySensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren: visual (flash) alarm active (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.LIGHT
     _attr_translation_key = "siren_visual_alarm"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren visual alarm sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_visual_alarm"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the visual alarm is active."""
-        return bool(getattr(self._device.siren, "visual_alarm_on", False))
+    entity_description = _SIREN_VISUAL_ALARM_DESCRIPTION
 
 
-class SirenTamperSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_TAMPER_DESCRIPTION = SHCBinarySensorEntityDescription[SHCOutdoorSiren](
+    key="siren_tamper",
+    is_on_fn=lambda device: bool(getattr(device.siren, "tamper_activated", False)),
+    unique_id_suffix="tamper",
+)
+
+
+class SirenTamperSensor(SHCBinarySensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren: tamper detected (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.TAMPER
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_tamper"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren tamper sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_tamper"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when a tamper event is active."""
-        return bool(getattr(self._device.siren, "tamper_activated", False))
+    entity_description = _SIREN_TAMPER_DESCRIPTION
 
 
-class SirenAcDcErrorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_AC_DC_ERROR_DESCRIPTION = SHCBinarySensorEntityDescription[SHCOutdoorSiren](
+    key="siren_ac_dc_error",
+    is_on_fn=lambda device: bool(getattr(device.power_supply, "ac_dc_error", False)),
+    unique_id_suffix="ac_dc_error",
+)
+
+
+class SirenAcDcErrorSensor(SHCBinarySensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren: AC/DC power-supply fault (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_ac_dc_error"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren AC/DC error sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_ac_dc_error"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the power supply reports an AC/DC fault."""
-        return bool(getattr(self._device.power_supply, "ac_dc_error", False))
+    entity_description = _SIREN_AC_DC_ERROR_DESCRIPTION
 
 
-class SirenBatteryDefectSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_BATTERY_DEFECT_DESCRIPTION = SHCBinarySensorEntityDescription[SHCOutdoorSiren](
+    key="siren_battery_defect",
+    is_on_fn=lambda device: bool(getattr(device.power_supply, "battery_defect", False)),
+    unique_id_suffix="battery_defect",
+)
+
+
+class SirenBatteryDefectSensor(SHCBinarySensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren: battery defect (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_battery_defect"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren battery defect sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery_defect"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the power supply reports a defective battery."""
-        return bool(getattr(self._device.power_supply, "battery_defect", False))
+    entity_description = _SIREN_BATTERY_DEFECT_DESCRIPTION
 
 
-class SirenBatteryTemperatureAbnormalSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_BATTERY_TEMPERATURE_ABNORMAL_DESCRIPTION = SHCBinarySensorEntityDescription[
+    SHCOutdoorSiren
+](
+    key="siren_battery_temperature_abnormal",
+    is_on_fn=lambda device: bool(
+        getattr(device.power_supply, "battery_temperature_abnormal", False)
+    ),
+    unique_id_suffix="battery_temperature_abnormal",
+)
+
+
+class SirenBatteryTemperatureAbnormalSensor(  # type: ignore[misc]
+    SHCBinarySensor[SHCOutdoorSiren]
+):
     """Outdoor Siren: battery temperature abnormal (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_battery_temperature_abnormal"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren battery temperature abnormal sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_battery_temperature_abnormal"
-        )
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the battery temperature is reported abnormal."""
-        return bool(
-            getattr(self._device.power_supply, "battery_temperature_abnormal", False)
-        )
+    entity_description = _SIREN_BATTERY_TEMPERATURE_ABNORMAL_DESCRIPTION
 
 
-class SirenPrimaryPowerSupplyOutageSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_SIREN_PRIMARY_POWER_SUPPLY_OUTAGE_DESCRIPTION = SHCBinarySensorEntityDescription[
+    SHCOutdoorSiren
+](
+    key="siren_primary_power_supply_outage",
+    is_on_fn=lambda device: bool(
+        getattr(device.power_supply, "primary_power_supply_outage", False)
+    ),
+    unique_id_suffix="primary_power_supply_outage",
+)
+
+
+class SirenPrimaryPowerSupplyOutageSensor(  # type: ignore[misc]
+    SHCBinarySensor[SHCOutdoorSiren]
+):
     """Outdoor Siren: primary (mains) power supply outage (read-only, #120)."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "siren_primary_power_supply_outage"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren primary power supply outage sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_primary_power_supply_outage"
-        )
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the primary (mains) power supply is out."""
-        return bool(
-            getattr(self._device.power_supply, "primary_power_supply_outage", False)
-        )
+    entity_description = _SIREN_PRIMARY_POWER_SUPPLY_OUTAGE_DESCRIPTION
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -573,10 +626,11 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     """Representation of a SHC shutter contact sensor."""
 
     entity_description: SHCShutterContactSensorEntityDescription
+    _device: SHCShutterContact
 
     def __init__(
         self,
-        device: SHCDevice,
+        device: SHCShutterContact,
         entry_id: str,
         entity_description: SHCShutterContactSensorEntityDescription,
     ) -> None:
@@ -603,24 +657,21 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         )
 
 
-class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_VIBRATION_DESCRIPTION = SHCBinarySensorEntityDescription[SHCShutterContact2Plus](
+    key="vibration",
+    is_on_fn=lambda device: bool(
+        device.vibrationsensor is VibrationSensorService.State.VIBRATION_DETECTED
+    ),
+    unique_id_suffix="vibration",
+)
+
+
+class ShutterContactVibrationSensor(SHCBinarySensor[SHCShutterContact2Plus]):  # type: ignore[misc]
     """Representation of a SHC shutter contact vibration sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.VIBRATION
     _attr_translation_key = "vibration"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize an SHC temperature reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_vibration"
-
-    @property
-    def is_on(self) -> bool:
-        """Return the state of the sensor."""
-        return bool(
-            self._device.vibrationsensor
-            is VibrationSensorService.State.VIBRATION_DETECTED
-        )
+    entity_description = _VIBRATION_DESCRIPTION
 
 
 class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
@@ -628,8 +679,14 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
 
     _attr_device_class = BinarySensorDeviceClass.MOTION
     _unrecorded_attributes = frozenset({"last_motion_detected"})
+    _device: SHCMotionDetector | SHCMotionDetector2
 
-    def __init__(self, hass: HomeAssistant, device: SHCDevice, entry_id: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        device: SHCMotionDetector | SHCMotionDetector2,
+        entry_id: str,
+    ) -> None:
         """Initialize the motion detection device."""
         self.hass = hass
         self._service = None
@@ -640,6 +697,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
         # skip the event when the timestamp is unchanged (replay), fire when it
         # advances (genuine new motion).
         self._last_fired_latestmotion: str | None = None
+        self._ha_stop_unsub: Callable[[], None] | None = None
         super().__init__(device=device, entry_id=entry_id)
         # Seed from current state so the first snapshot re-delivered after an HA
         # restart / config-entry reload is a baseline, not a phantom MOTION (the
@@ -763,6 +821,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         # last alarmstate name we fired on and skip when it is unchanged.
         self._last_fired_alarmstate: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        self._device: SHCSmokeDetector = device  # type: ignore[assignment]
         # Seed from current state so the first snapshot re-delivered after an HA
         # restart / config-entry reload is a baseline, not a phantom ALARM event
         # (the restart counterpart of the 24 h resubscribe replay, #336).
@@ -776,7 +835,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
                 self._service = service
                 break
 
-        self._ha_stop_unsub = hass.bus.async_listen_once(
+        self._ha_stop_unsub: Callable[[], None] | None = hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
         )
 
@@ -908,30 +967,26 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         }
 
 
-class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_WATER_LEAKAGE_DESCRIPTION = SHCBinarySensorEntityDescription[SHCWaterLeakageSensor](
+    key="water_leakage",
+    is_on_fn=lambda device: bool(
+        device.leakage_state is not WaterLeakageSensorService.State.NO_LEAKAGE
+    ),
+    attributes_fn=lambda device: {
+        "push_notification_state": device.push_notification_state.name,
+        "acoustic_signal_state": device.acoustic_signal_state.name,
+    },
+    # unique_id_suffix intentionally omitted: keeps the pre-refactor default
+    # SHCEntity unique_id (`{root}_{id}`, no suffix).
+)
+
+
+class WaterLeakageDetectorSensor(SHCBinarySensor[SHCWaterLeakageSensor]):  # type: ignore[misc]
     """Representation of a SHC water leakage detector sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.MOISTURE
-
-    @property
-    def is_on(self) -> bool:
-        """Return the state of the sensor."""
-        return bool(
-            self._device.leakage_state is not WaterLeakageSensorService.State.NO_LEAKAGE
-        )
-
-    @property
-    def icon(self) -> str:
-        """Return the icon of the sensor."""
-        return "mdi:water-alert"
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        return {
-            "push_notification_state": self._device.push_notification_state.name,
-            "acoustic_signal_state": self._device.acoustic_signal_state.name,
-        }
+    _attr_icon = "mdi:water-alert"
+    entity_description = _WATER_LEAKAGE_DESCRIPTION
 
 
 class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
@@ -953,6 +1008,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
         # last SurveillanceAlarm state name we fired on and skip when unchanged.
         self._last_fired_alarm: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        self._device: SHCSmokeDetectionSystem = device  # type: ignore[assignment]
         # Seed from current state so the first snapshot re-delivered after an HA
         # restart / config-entry reload is a baseline, not a phantom ALARM event
         # (the restart counterpart of the 24 h resubscribe replay, #336).
@@ -966,7 +1022,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
                 self._service = service
                 break
 
-        self._ha_stop_unsub = hass.bus.async_listen_once(
+        self._ha_stop_unsub: Callable[[], None] | None = hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
         )
 
@@ -1269,6 +1325,7 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[
     ) -> None:
         """Initialize the Twinguard smoke alarm sensor."""
         super().__init__(device=device, entry_id=entry_id)
+        self._device: SHCTwinguard = device  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke"
         self._tracker = tracker
         self._tracker_listener = self._handle_tracker_update
@@ -1317,77 +1374,78 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[
         }
 
 
-class BatterySensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+def _battery_sensor_is_on(device: SHCBatteryDevice) -> bool:
+    """Return the state of a battery sensor for the given device.
+
+    Returns True (battery problem) only for LOW_BATTERY, CRITICAL_LOW, and
+    CRITICALLY_LOW_BATTERY.  NOT_AVAILABLE means the device has not yet
+    reported battery state — this must NOT be treated as a low-battery
+    condition.
+    """
+    level = device.batterylevel
+    battery_state = BatteryLevelService.State
+
+    if level == battery_state.NOT_AVAILABLE:
+        LOGGER.debug("Battery state of device %s is not available", device.name)
+        return False
+
+    if level == battery_state.CRITICAL_LOW:
+        LOGGER.warning("Battery state of device %s is critical low", device.name)
+
+    if level == battery_state.CRITICALLY_LOW_BATTERY:
+        LOGGER.warning("Battery state of device %s is critically low", device.name)
+
+    if level == battery_state.LOW_BATTERY:
+        LOGGER.warning("Battery state of device %s is low", device.name)
+
+    return bool(level != battery_state.OK)
+
+
+_BATTERY_DESCRIPTION = SHCBinarySensorEntityDescription[SHCBatteryDevice](
+    key="battery",
+    is_on_fn=_battery_sensor_is_on,
+    unique_id_suffix="battery",
+)
+
+
+class BatterySensor(SHCBinarySensor[SHCBatteryDevice]):  # type: ignore[misc]
     """Representation of a SHC battery reporting sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.BATTERY
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize an SHC temperature reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery"
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    @property
-    def is_on(self) -> bool:
-        """Return the state of the sensor.
-
-        Returns True (battery problem) only for LOW_BATTERY, CRITICAL_LOW, and
-        CRITICALLY_LOW_BATTERY.  NOT_AVAILABLE means the device has not yet
-        reported battery state — this must NOT be treated as a low-battery
-        condition.
-        """
-        level = self._device.batterylevel
-        battery_state = BatteryLevelService.State
-
-        if level == battery_state.NOT_AVAILABLE:
-            LOGGER.debug(
-                "Battery state of device %s is not available", self._device.name
-            )
-            return False
-
-        if level == battery_state.CRITICAL_LOW:
-            LOGGER.warning(
-                "Battery state of device %s is critical low", self._device.name
-            )
-
-        if level == battery_state.CRITICALLY_LOW_BATTERY:
-            LOGGER.warning(
-                "Battery state of device %s is critically low", self._device.name
-            )
-
-        if level == battery_state.LOW_BATTERY:
-            LOGGER.warning("Battery state of device %s is low", self._device.name)
-
-        return bool(level != battery_state.OK)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    entity_description = _BATTERY_DESCRIPTION
 
 
-class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_OCCUPANCY_DESCRIPTION = SHCBinarySensorEntityDescription[SHCMotionDetector2](
+    key="occupancy",
+    is_on_fn=lambda device: bool(device.occupied),
+    attributes_fn=lambda device: {
+        "last_occupancy_change": device.last_occupancy_change_time,
+    },
+    unique_id_suffix="occupancy",
+)
+
+
+class OccupancyDetectionSensor(SHCBinarySensor[SHCMotionDetector2]):  # type: ignore[misc]
     """Representation of a SHC Motion Detector II [+M] occupancy sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
     _attr_translation_key = "occupancy"
     _unrecorded_attributes = frozenset({"last_occupancy_change"})
-
-    def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
-        """Initialize the occupancy detection sensor."""
-        super().__init__(device=device, entry_id=entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_occupancy"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the zone is occupied."""
-        return bool(self._device.occupied)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return last occupancy change time as an extra attribute."""
-        return {
-            "last_occupancy_change": self._device.last_occupancy_change_time,
-        }
+    entity_description = _OCCUPANCY_DESCRIPTION
 
 
-class TamperSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+_TAMPER_DESCRIPTION = SHCBinarySensorEntityDescription[SHCMotionDetector2](
+    key="tamper",
+    is_on_fn=lambda device: bool(getattr(device, "was_tampered", False)),
+    attributes_fn=lambda device: {
+        "last_tamper_time": getattr(device, "last_tamper_time", None),
+    },
+    unique_id_suffix="tamper",
+)
+
+
+class TamperSensor(SHCBinarySensor[SHCMotionDetector2]):  # type: ignore[misc]
     """Representation of a SHC Motion Detector II [+M] tamper sensor.
 
     Reports True when the device housing was opened/tampered with.
@@ -1398,20 +1456,4 @@ class TamperSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _unrecorded_attributes = frozenset({"last_tamper_time"})
     _attr_translation_key = "tamper"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the tamper sensor."""
-        super().__init__(device=device, entry_id=entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_tamper"
-
-    @property
-    def is_on(self) -> bool:
-        """Return True when the device has been tampered with."""
-        return bool(getattr(self._device, "was_tampered", False))
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the last tamper time as an extra attribute."""
-        return {
-            "last_tamper_time": getattr(self._device, "last_tamper_time", None),
-        }
+    entity_description = _TAMPER_DESCRIPTION

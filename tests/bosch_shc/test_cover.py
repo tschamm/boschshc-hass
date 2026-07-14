@@ -37,6 +37,8 @@ from custom_components.bosch_shc.cover import (
     async_setup_entry,
 )
 
+from .conftest import run_setup_entry
+
 STOPPED = ShutterControlService.State.STOPPED
 MOVING = ShutterControlService.State.MOVING
 OPENING = ShutterControlService.State.OPENING
@@ -170,26 +172,6 @@ def pytest_approx(value, rel=1e-6):
 
 # ---- helpers for async_setup_entry tests -----------------------------------
 
-def _make_hass() -> SimpleNamespace:
-    return SimpleNamespace()
-
-
-def _make_config_entry(session: object) -> SimpleNamespace:
-    entry = SimpleNamespace(options={}, entry_id="E1")
-    entry.runtime_data = SimpleNamespace(session=session)
-    return entry
-
-
-def _collect() -> tuple[list, callable]:
-    """Return (collected_list, async_add_entities callable)."""
-    collected: list = []
-
-    def add(entities: list) -> None:
-        collected.extend(entities)
-
-    return collected, add
-
-
 def _cover_device(
     device_model: str = "BBL",
     level: float = 0.5,
@@ -238,117 +220,116 @@ def _blinds_device(
 # async_setup_entry (lines 34-59): shutter/micromodule-shutter/blinds discovery
 # ---------------------------------------------------------------------------
 
+def _fake_cover_device(device_id="cov-001"):
+    """Minimal excludable device double (id/model only, no level/state)."""
+    return SimpleNamespace(
+        id=device_id,
+        name="Cover",
+        root_device_id="root",
+        serial="SER",
+        manufacturer="Bosch",
+        device_model="BBL",
+        device_services=[],
+    )
+
+
 class TestCoverSetupEntry:
     """Cover async_setup_entry with ShutterControlCover and BlindsControlCover."""
 
-    def _run(self, session: object) -> list:
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected, add = _collect()
-
-        async def _run_inner() -> None:
-            await async_setup_entry(hass, entry, add)  # type: ignore[arg-type]
-
+    def _run(self, mock_config_entry, mock_session) -> list:
         with patch(
             "custom_components.bosch_shc.cover.async_migrate_to_new_unique_id",
             new_callable=AsyncMock,
         ):
-            asyncio.run(_run_inner())
+            return asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+            )
 
-        return collected
-
-    def test_shutter_controls_produce_shutter_cover_entities(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets", [{"shutter_controls": [_cover_device()]}], indirect=True
+    )
+    def test_shutter_controls_produce_shutter_cover_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """shutter_controls → ShutterControlCover, one per device."""
-        dev = _cover_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[dev],
-                micromodule_shutter_controls=[],
-                micromodule_blinds=[],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ShutterControlCover)
 
-    def test_micromodule_shutter_controls_produce_shutter_cover_entities(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"micromodule_shutter_controls": [_cover_device(device_model="MICROMODULE_SHUTTER", level=0.0)]}],
+        indirect=True,
+    )
+    def test_micromodule_shutter_controls_produce_shutter_cover_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """micromodule_shutter_controls → ShutterControlCover."""
-        dev = _cover_device(device_model="MICROMODULE_SHUTTER", level=0.0)
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[],
-                micromodule_shutter_controls=[dev],
-                micromodule_blinds=[],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ShutterControlCover)
 
-    def test_micromodule_blinds_produce_blinds_cover_entities(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets", [{"micromodule_blinds": [_blinds_device()]}], indirect=True
+    )
+    def test_micromodule_blinds_produce_blinds_cover_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """micromodule_blinds → BlindsControlCover."""
-        dev = _blinds_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[],
-                micromodule_shutter_controls=[],
-                micromodule_blinds=[dev],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], BlindsControlCover)
 
-    def test_mixed_devices_all_collected(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "shutter_controls": [_cover_device()],
+                "micromodule_shutter_controls": [
+                    _cover_device(device_model="MICROMODULE_SHUTTER")
+                ],
+                "micromodule_blinds": [_blinds_device()],
+            }
+        ],
+        indirect=True,
+    )
+    def test_mixed_devices_all_collected(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Shutter + micromodule_shutter + blinds → 3 entities total."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[_cover_device()],
-                micromodule_shutter_controls=[_cover_device(device_model="MICROMODULE_SHUTTER")],
-                micromodule_blinds=[_blinds_device()],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 3
         assert isinstance(result[0], ShutterControlCover)
         assert isinstance(result[1], ShutterControlCover)
         assert isinstance(result[2], BlindsControlCover)
 
-    def test_no_devices_adds_nothing(self) -> None:
+    def test_no_devices_adds_nothing(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Empty lists → async_add_entities never called → 0 collected."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[],
-                micromodule_shutter_controls=[],
-                micromodule_blinds=[],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_entry_id_set_on_entities(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets", [{"shutter_controls": [_cover_device()]}], indirect=True
+    )
+    def test_entry_id_set_on_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Entities get the config_entry entry_id stored as _entry_id."""
-        dev = _cover_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[dev],
-                micromodule_shutter_controls=[],
-                micromodule_blinds=[],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._entry_id == "E1"
 
-    def test_multiple_shutter_controls(self) -> None:
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"shutter_controls": [_cover_device(), _cover_device()]}],
+        indirect=True,
+    )
+    def test_multiple_shutter_controls(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Two shutter_controls → two ShutterControlCover entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=[_cover_device(), _cover_device()],
-                micromodule_shutter_controls=[],
-                micromodule_blinds=[],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, ShutterControlCover) for e in result)
 
@@ -356,78 +337,73 @@ class TestCoverSetupEntry:
 class TestCoverDeviceExcluded:
     """device_excluded continue for shutter/blind cover paths."""
 
-    async def _run_setup(self, session, options):
-        hass = SimpleNamespace()
-        config_entry = SimpleNamespace(entry_id="E1", options=options)
-        config_entry.runtime_data = SimpleNamespace(session=session)
-        collected = []
-
-        def add_entities(entities):
-            collected.extend(entities)
-
+    def _run(self, mock_config_entry, mock_session) -> list:
         with patch(
             "custom_components.bosch_shc.cover.async_migrate_to_new_unique_id",
             new=AsyncMock(return_value=None),
         ):
-            await async_setup_entry(hass, config_entry, add_entities)
-
-        return collected
-
-    def _fake_cover(self, device_id="cov-001"):
-        return SimpleNamespace(
-            id=device_id,
-            name="Cover",
-            root_device_id="root",
-            serial="SER",
-            manufacturer="Bosch",
-            device_model="BBL",
-            device_services=[],
-        )
-
-    def _make_session(self, shutter_controls=None, micromodule_shutter_controls=None,
-                      micromodule_blinds=None):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                shutter_controls=shutter_controls or [],
-                micromodule_shutter_controls=micromodule_shutter_controls or [],
-                micromodule_blinds=micromodule_blinds or [],
+            return asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
             )
-        )
 
-    def test_excluded_shutter_control_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"shutter_controls": [_fake_cover_device("sc-excl")]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["sc-excl"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_shutter_control_not_added(
+        self, mock_config_entry, mock_session
+    ):
         """Excluded shutter control must be skipped (line 43)."""
-        dev = self._fake_cover("sc-excl")
-        session = self._make_session(shutter_controls=[dev])
-        result = asyncio.run(
-            self._run_setup(session, {OPT_EXCLUDED_DEVICES: ["sc-excl"]})
-        )
+        result = self._run(mock_config_entry, mock_session)
         assert not any(
             getattr(e, "_device", None) and e._device.id == "sc-excl"
             for e in result
         )
 
-    def test_excluded_micromodule_blind_not_added(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {"micromodule_blinds": [_fake_cover_device("blind-excl")]},
+                {"options": {OPT_EXCLUDED_DEVICES: ["blind-excl"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_excluded_micromodule_blind_not_added(
+        self, mock_config_entry, mock_session
+    ):
         """Excluded micromodule blind must be skipped (line 54)."""
-        dev = self._fake_cover("blind-excl")
-        session = self._make_session(micromodule_blinds=[dev])
-        result = asyncio.run(
-            self._run_setup(session, {OPT_EXCLUDED_DEVICES: ["blind-excl"]})
-        )
+        result = self._run(mock_config_entry, mock_session)
         assert not any(
             getattr(e, "_device", None) and e._device.id == "blind-excl"
             for e in result
         )
 
-    def test_both_excluded_yields_empty_list(self):
+    @pytest.mark.parametrize(
+        ("device_buckets", "mock_config_entry"),
+        [
+            (
+                {
+                    "shutter_controls": [_fake_cover_device("sc-excl2")],
+                    "micromodule_blinds": [_fake_cover_device("blind-excl2")],
+                },
+                {"options": {OPT_EXCLUDED_DEVICES: ["sc-excl2", "blind-excl2"]}},
+            )
+        ],
+        indirect=True,
+    )
+    def test_both_excluded_yields_empty_list(
+        self, mock_config_entry, mock_session
+    ):
         """When both shutter and blind devices are excluded, result is empty."""
-        sc = self._fake_cover("sc-excl2")
-        bl = self._fake_cover("blind-excl2")
-        session = self._make_session(
-            shutter_controls=[sc], micromodule_blinds=[bl]
-        )
-        result = asyncio.run(
-            self._run_setup(session, {OPT_EXCLUDED_DEVICES: ["sc-excl2", "blind-excl2"]})
-        )
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
 

@@ -3511,7 +3511,7 @@ class TestDiagnosticEntitiesOption:
         asyncio.run(run())
 
         # Both ValveTappetSensor and CommunicationQualitySensor now use translation_key
-        entity_tkeys = [getattr(e, "_attr_translation_key", None) for e in added]
+        entity_tkeys = [e.translation_key for e in added]
         assert "valve_tappet" in entity_tkeys
         assert "communication_quality" in entity_tkeys
 

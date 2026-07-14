@@ -191,6 +191,44 @@ def _make_fake_device_registry():
 
 
 # ---------------------------------------------------------------------------
+# Fixtures: fake_hass / fake_entry / fake_session
+#
+# Local to this file (this file's bootstrap-test shape -- heavy
+# MagicMock(spec=...), ConfigEntryState, a whole api.* dispatch surface --
+# doesn't fit the shared conftest.py platform fixtures, which are
+# SimpleNamespace-based around device_helper buckets). Each fixture wraps the
+# equivalent _make_fake_* builder above and supports overrides two ways:
+#   - indirect parametrize: @pytest.mark.parametrize("fake_entry",
+#     [{"cert_path": "/x"}], indirect=True)
+#   - direct mutation in the test body after requesting the fixture, e.g.
+#     ``entry = fake_entry; entry.options = {...}`` -- used where a call
+#     site's override doesn't fit a static parametrize table (matches the
+#     pattern used elsewhere in this migration).
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def fake_hass(request: pytest.FixtureRequest):
+    """Fake HomeAssistant-like object. See _make_fake_hass for the shape."""
+    overrides = getattr(request, "param", {}) or {}
+    return _make_fake_hass(**overrides)
+
+
+@pytest.fixture
+def fake_entry(request: pytest.FixtureRequest):
+    """Fake config entry. See _make_fake_entry for the shape."""
+    overrides = getattr(request, "param", {}) or {}
+    return _make_fake_entry(**overrides)
+
+
+@pytest.fixture
+def fake_session(request: pytest.FixtureRequest):
+    """Fake SHCSessionAsync. See _make_fake_session for the shape."""
+    overrides = getattr(request, "param", {}) or {}
+    return _make_fake_session(**overrides)
+
+
+# ---------------------------------------------------------------------------
 # Patch context: patch all external boundaries before importing __init__ funcs
 # ---------------------------------------------------------------------------
 
@@ -213,16 +251,16 @@ def _run(coro):
 class TestAsyncSetupEntryHappyPath:
     """Baseline setup with no certificate configured."""
 
-    def _do_setup(self, fake_session, *, shc_info=None):
+    def _do_setup(self, fake_hass, fake_entry, session_obj, *, shc_info=None):
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
         track_unsub = MagicMock()
 
         with (
-            patch(PATCH_SESSION, return_value=fake_session) as session_cls,
+            patch(PATCH_SESSION, return_value=session_obj) as session_cls,
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
@@ -231,69 +269,60 @@ class TestAsyncSetupEntryHappyPath:
 
         return result, hass, entry, session_cls
 
-    def test_returns_true(self):
-        session = _make_fake_session()
-        result, _, _, _ = self._do_setup(session)
+    def test_returns_true(self, fake_hass, fake_entry, fake_session):
+        result, _, _, _ = self._do_setup(fake_hass, fake_entry, fake_session)
         assert result is True
 
-    def test_runtime_data_populated(self):
-        session = _make_fake_session()
-        _, hass, entry, _ = self._do_setup(session)
-        assert entry.runtime_data.session is session
+    def test_runtime_data_populated(self, fake_hass, fake_entry, fake_session):
+        _, hass, entry, _ = self._do_setup(fake_hass, fake_entry, fake_session)
+        assert entry.runtime_data.session is fake_session
         assert entry.runtime_data.shc_device is not None
         assert entry.runtime_data.title == entry.title
 
-    def test_platforms_forwarded(self):
-        session = _make_fake_session()
-        _, hass, entry, _ = self._do_setup(session)
+    def test_platforms_forwarded(self, fake_hass, fake_entry, fake_session):
+        _, hass, entry, _ = self._do_setup(fake_hass, fake_entry, fake_session)
         hass.config_entries.async_forward_entry_setups.assert_called_once()
         fwd_args = hass.config_entries.async_forward_entry_setups.call_args
         assert fwd_args[0][0] is entry  # first positional arg = entry
 
-    def test_services_registered(self):
+    def test_services_registered(self, fake_hass, fake_entry, fake_session):
         """Services are registered in async_setup (module-level Bronze action); test
         must call async_setup first so the handlers exist.
         """
         from custom_components.bosch_shc.__init__ import async_setup
-        session = _make_fake_session()
-        _, hass, _, _ = self._do_setup(session)
+        _, hass, _, _ = self._do_setup(fake_hass, fake_entry, fake_session)
         # Run module-level setup so domain services are registered
         _run(async_setup(hass, {}))
         calls = [c.args[1] for c in hass.services.async_register.call_args_list]
         assert SERVICE_TRIGGER_SCENARIO in calls
         assert SERVICE_TRIGGER_RAWSCAN in calls
 
-    def test_start_polling_called(self):
-        session = _make_fake_session()
-        _, _, _, _ = self._do_setup(session)
-        session.start_polling.assert_awaited_once()
+    def test_start_polling_called(self, fake_hass, fake_entry, fake_session):
+        _, _, _, _ = self._do_setup(fake_hass, fake_entry, fake_session)
+        fake_session.start_polling.assert_awaited_once()
 
-    def test_stop_listener_registered(self):
+    def test_stop_listener_registered(self, fake_hass, fake_entry, fake_session):
         """bus.async_listen_once called with EVENT_HOMEASSISTANT_STOP."""
-        session = _make_fake_session()
-        _, hass, _, _ = self._do_setup(session)
+        _, hass, _, _ = self._do_setup(fake_hass, fake_entry, fake_session)
         listen_args = [c.args[0] for c in hass.bus.async_listen_once.call_args_list]
         assert EVENT_HOMEASSISTANT_STOP in listen_args
 
-    def test_update_listener_not_registered(self):
+    def test_update_listener_not_registered(self, fake_hass, fake_entry, fake_session):
         """B2: add_update_listener must NOT be called — HA auto-reloads on options_flow
         async_create_entry; registering an extra reload listener caused a double-reload
         and a DeprecationWarning in HA 2026.6 (hard error in 2026.12).
         """
-        session = _make_fake_session()
-        _, _, entry, _ = self._do_setup(session)
+        _, _, entry, _ = self._do_setup(fake_hass, fake_entry, fake_session)
         entry.add_update_listener.assert_not_called()
 
-    def test_cert_check_unsub_stored(self):
-        session = _make_fake_session()
-        _, hass, entry, _ = self._do_setup(session)
+    def test_cert_check_unsub_stored(self, fake_hass, fake_entry, fake_session):
+        _, hass, entry, _ = self._do_setup(fake_hass, fake_entry, fake_session)
         assert entry.runtime_data.cert_check_unsub is not None
 
-    def test_async_init_awaited(self):
+    def test_async_init_awaited(self, fake_hass, fake_entry, fake_session):
         """async_init() must be awaited during setup (replaces executor SHCSession)."""
-        session = _make_fake_session()
-        _, _, _, _ = self._do_setup(session)
-        session.async_init.assert_awaited_once()
+        _, _, _, _ = self._do_setup(fake_hass, fake_entry, fake_session)
+        fake_session.async_init.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------
@@ -301,14 +330,15 @@ class TestAsyncSetupEntryHappyPath:
 # ---------------------------------------------------------------------------
 
 class TestSetupUpdateAvailable:
-    def test_update_available_logs_warning(self):
+    def test_update_available_logs_warning(self, fake_hass, fake_entry, fake_session):
         """When SHC reports UPDATE_AVAILABLE a LOGGER.warning is emitted — no exception."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
         shc_info = _make_shc_info(update_state="UPDATE_AVAILABLE")
-        session = _make_fake_session(shc_info=shc_info)
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        session = fake_session
+        session.information = shc_info
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -327,12 +357,13 @@ class TestSetupUpdateAvailable:
 # ---------------------------------------------------------------------------
 
 class TestSetupCertBranches:
-    def _setup_with_cert_info(self, cert_info_obj):
+    def _setup_with_cert_info(self, fake_hass, fake_entry, fake_session, cert_info_obj):
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(cert_path="/fake/cert.pem")
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = "/fake/cert.pem"
         dr_mock = _make_fake_device_registry()
         pn_create_mock = MagicMock()
 
@@ -347,37 +378,44 @@ class TestSetupCertBranches:
 
         return result, pn_create_mock
 
-    def test_valid_cert_no_warning(self):
+    def test_valid_cert_no_warning(self, fake_hass, fake_entry, fake_session):
         """Cert with 60 days remaining: setup succeeds, no notification."""
         cert_info = _make_cert_info(60)
-        result, pn_create_mock = self._setup_with_cert_info(cert_info)
+        result, pn_create_mock = self._setup_with_cert_info(
+            fake_hass, fake_entry, fake_session, cert_info
+        )
         assert result is True
         pn_create_mock.assert_not_called()
 
-    def test_expiring_cert_triggers_notification(self):
+    def test_expiring_cert_triggers_notification(self, fake_hass, fake_entry, fake_session):
         """Cert expiring in 10 days: setup succeeds + ir.async_create_issue called."""
         cert_info = _make_cert_info(10)
-        result, pn_create_mock = self._setup_with_cert_info(cert_info)
+        result, pn_create_mock = self._setup_with_cert_info(
+            fake_hass, fake_entry, fake_session, cert_info
+        )
         assert result is True
         pn_create_mock.assert_called_once()
 
-    def test_expiring_cert_at_warning_boundary(self):
+    def test_expiring_cert_at_warning_boundary(self, fake_hass, fake_entry, fake_session):
         """Cert at exactly CERT_EXPIRY_WARNING_DAYS (30): notification triggered."""
         from custom_components.bosch_shc.const import CERT_EXPIRY_WARNING_DAYS
         cert_info = _make_cert_info(CERT_EXPIRY_WARNING_DAYS)
-        result, pn_create_mock = self._setup_with_cert_info(cert_info)
+        result, pn_create_mock = self._setup_with_cert_info(
+            fake_hass, fake_entry, fake_session, cert_info
+        )
         assert result is True
         pn_create_mock.assert_called_once()
 
-    def test_expired_cert_raises_auth_failed(self):
+    def test_expired_cert_raises_auth_failed(self, fake_hass, fake_entry, fake_session):
         """Expired cert raises ConfigEntryAuthFailed."""
         from homeassistant.exceptions import ConfigEntryAuthFailed
         cert_info = _make_cert_info(-5)
 
         from custom_components.bosch_shc.__init__ import async_setup_entry
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(cert_path="/fake/cert.pem")
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = "/fake/cert.pem"
 
         with (
             patch(PATCH_SESSION, return_value=session),
@@ -388,13 +426,14 @@ class TestSetupCertBranches:
             with pytest.raises(ConfigEntryAuthFailed):
                 _run(async_setup_entry(hass, entry))
 
-    def test_cert_parse_exception_continues(self):
+    def test_cert_parse_exception_continues(self, fake_hass, fake_entry, fake_session):
         """parse_certificate raising an exception is caught and setup continues."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(cert_path="/bad/cert.pem")
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = "/bad/cert.pem"
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -413,15 +452,15 @@ class TestSetupCertBranches:
 # ---------------------------------------------------------------------------
 
 class TestSetupConnectionErrors:
-    def _setup_raising(self, exc_class):
+    def _setup_raising(self, fake_hass, fake_entry, fake_session, exc_class):
         """Setup where async_init raises the given exception."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
+        session = fake_session
         # Make async_init raise the exception
         session.async_init = AsyncMock(side_effect=exc_class)
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
 
         with (
             patch(PATCH_SESSION, return_value=session),
@@ -431,19 +470,23 @@ class TestSetupConnectionErrors:
         ):
             return _run(async_setup_entry(hass, entry))
 
-    def test_auth_error_raises_config_entry_auth_failed(self):
+    def test_auth_error_raises_config_entry_auth_failed(
+        self, fake_hass, fake_entry, fake_session
+    ):
         from boschshcpy.exceptions import SHCAuthenticationError
         from homeassistant.exceptions import ConfigEntryAuthFailed
 
         with pytest.raises(ConfigEntryAuthFailed):
-            self._setup_raising(SHCAuthenticationError)
+            self._setup_raising(fake_hass, fake_entry, fake_session, SHCAuthenticationError)
 
-    def test_connection_error_raises_config_entry_not_ready(self):
+    def test_connection_error_raises_config_entry_not_ready(
+        self, fake_hass, fake_entry, fake_session
+    ):
         from boschshcpy.exceptions import SHCConnectionError
         from homeassistant.exceptions import ConfigEntryNotReady
 
         with pytest.raises(ConfigEntryNotReady):
-            self._setup_raising(SHCConnectionError)
+            self._setup_raising(fake_hass, fake_entry, fake_session, SHCConnectionError)
 
 
 # ---------------------------------------------------------------------------
@@ -451,16 +494,19 @@ class TestSetupConnectionErrors:
 # ---------------------------------------------------------------------------
 
 class TestScenarioSubscription:
-    def test_scenario_callback_subscribed_with_no_scenarios(self):
+    def test_scenario_callback_subscribed_with_no_scenarios(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Regression (Bug 1): subscribe_scenario_callback must be called ONCE even
         when the SHC has NO scenarios — otherwise scenario-triggered automations
         never fire on a controller that starts with an empty scenario list.
         """
-        session = _make_fake_session(scenarios=[])
+        session = fake_session
+        session.scenarios = []
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -473,7 +519,9 @@ class TestScenarioSubscription:
 
         session.subscribe_scenario_callback.assert_called_once_with("shc", ANY_callable)
 
-    def test_scenario_callback_subscribed_once_even_with_multiple_scenarios(self):
+    def test_scenario_callback_subscribed_once_even_with_multiple_scenarios(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Regression (Bug 1): when multiple scenarios exist, subscribe_scenario_callback
         must still only be called ONCE — the old loop caused N duplicate registrations.
         """
@@ -482,11 +530,12 @@ class TestScenarioSubscription:
             SimpleNamespace(name="Evening", id="s2"),
             SimpleNamespace(name="Night", id="s3"),
         ]
-        session = _make_fake_session(scenarios=scenarios)
+        session = fake_session
+        session.scenarios = scenarios
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -499,14 +548,15 @@ class TestScenarioSubscription:
 
         session.subscribe_scenario_callback.assert_called_once_with("shc", ANY_callable)
 
-    def test_scenario_callback_subscribed(self):
+    def test_scenario_callback_subscribed(self, fake_hass, fake_entry, fake_session):
         """subscribe_scenario_callback called once per scenario in the list."""
         fake_scenario = SimpleNamespace(name="Guten Morgen", id="s1")
-        session = _make_fake_session(scenarios=[fake_scenario])
+        session = fake_session
+        session.scenarios = [fake_scenario]
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -519,10 +569,11 @@ class TestScenarioSubscription:
 
         session.subscribe_scenario_callback.assert_called_once_with("shc", ANY_callable)
 
-    def test_scenario_fire_event(self):
+    def test_scenario_fire_event(self, fake_hass, fake_entry, fake_session):
         """_scenario_trigger callback fires a bosch_shc event on the bus via async_fire."""
         fake_scenario = SimpleNamespace(name="Away", id="sc1")
-        session = _make_fake_session(scenarios=[fake_scenario])
+        session = fake_session
+        session.scenarios = [fake_scenario]
 
         captured_callbacks = []
 
@@ -533,8 +584,8 @@ class TestScenarioSubscription:
 
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -574,15 +625,15 @@ ANY_callable = _AnyCallable()
 # ---------------------------------------------------------------------------
 
 class TestAsyncUnloadEntry:
-    def _setup_and_unload(self):
+    def _setup_and_unload(self, fake_hass, fake_entry, fake_session):
         from custom_components.bosch_shc.__init__ import (
             async_setup_entry,
             async_unload_entry,
         )
 
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
         track_unsub = MagicMock(return_value=None)  # unsub callable
         poll_handler = MagicMock(return_value=None)
@@ -600,31 +651,31 @@ class TestAsyncUnloadEntry:
         result = _run(async_unload_entry(hass, entry))
         return result, hass, entry, session, track_unsub
 
-    def test_unload_returns_true(self):
-        result, _, _, _, _ = self._setup_and_unload()
+    def test_unload_returns_true(self, fake_hass, fake_entry, fake_session):
+        result, _, _, _, _ = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         assert result is True
 
-    def test_unload_calls_unsubscribe_scenario(self):
-        _, _, _, session, _ = self._setup_and_unload()
+    def test_unload_calls_unsubscribe_scenario(self, fake_hass, fake_entry, fake_session):
+        _, _, _, session, _ = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         session.unsubscribe_scenario_callback.assert_called_with("shc")
 
-    def test_unload_calls_stop_polling(self):
-        _, _, _, session, _ = self._setup_and_unload()
+    def test_unload_calls_stop_polling(self, fake_hass, fake_entry, fake_session):
+        _, _, _, session, _ = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         # stop_polling called at least once (once during unload)
         assert session.stop_polling.await_count >= 1
 
-    def test_unload_calls_cert_check_unsub(self):
-        _, _, _, _, track_unsub = self._setup_and_unload()
+    def test_unload_calls_cert_check_unsub(self, fake_hass, fake_entry, fake_session):
+        _, _, _, _, track_unsub = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         track_unsub.assert_called()
 
-    def test_unload_clears_switch_event_listeners(self):
+    def test_unload_clears_switch_event_listeners(self, fake_hass, fake_entry, fake_session):
         """Runtime data now lives on the config entry (not hass.data), so unload
         is verified via its own teardown bookkeeping instead of a hass.data pop."""
-        _, hass, entry, _, _ = self._setup_and_unload()
+        _, hass, entry, _, _ = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         assert entry.runtime_data.switch_event_listeners == []
 
-    def test_platforms_unloaded(self):
-        _, hass, entry, _, _ = self._setup_and_unload()
+    def test_platforms_unloaded(self, fake_hass, fake_entry, fake_session):
+        _, hass, entry, _, _ = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         hass.config_entries.async_unload_platforms.assert_called_once()
 
 
@@ -648,13 +699,15 @@ class TestB2NoUpdateListener:
             "async_update_options was removed (B2 fix) but still present"
         )
 
-    def test_add_update_listener_not_called_during_setup(self):
+    def test_add_update_listener_not_called_during_setup(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Setup must not register an add_update_listener (B2 fix)."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -675,11 +728,11 @@ class TestB2NoUpdateListener:
 class TestServiceHandlers:
     """Test that registered service handlers call session methods correctly."""
 
-    def _setup_with_session(self, session):
+    def _setup_with_session(self, fake_hass, fake_entry, session):
         from custom_components.bosch_shc.__init__ import async_setup, async_setup_entry
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         with (
@@ -709,54 +762,66 @@ class TestServiceHandlers:
 
     # -- scenario service --
 
-    def test_scenario_service_triggers_matching_scenario(self):
+    def test_scenario_service_triggers_matching_scenario(
+        self, fake_hass, fake_entry, fake_session
+    ):
         fake_scenario = MagicMock()
         fake_scenario.name = "Night Mode"
         fake_scenario.async_trigger = AsyncMock()
-        session = _make_fake_session(scenarios=[fake_scenario])
+        session = fake_session
+        session.scenarios = [fake_scenario]
 
-        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
         handler = handlers[SERVICE_TRIGGER_SCENARIO]
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": ""})
         _run(handler(call_obj))
         fake_scenario.async_trigger.assert_awaited_once()
 
-    def test_scenario_service_skips_nonmatching_name(self):
+    def test_scenario_service_skips_nonmatching_name(
+        self, fake_hass, fake_entry, fake_session
+    ):
         fake_scenario = MagicMock()
         fake_scenario.name = "Away"
         fake_scenario.async_trigger = AsyncMock()
-        session = _make_fake_session(scenarios=[fake_scenario])
+        session = fake_session
+        session.scenarios = [fake_scenario]
 
-        handlers, hass, entry, _ = self._setup_with_session(session)
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
         handler = handlers[SERVICE_TRIGGER_SCENARIO]
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": ""})
         _run(handler(call_obj))
         fake_scenario.async_trigger.assert_not_called()
 
-    def test_scenario_service_filters_by_title(self):
+    def test_scenario_service_filters_by_title(self, fake_hass, fake_entry, fake_session):
         """When title doesn't match DATA_TITLE, skip that controller."""
         fake_scenario = MagicMock()
         fake_scenario.name = "Night Mode"
         fake_scenario.async_trigger = AsyncMock()
-        session = _make_fake_session(scenarios=[fake_scenario])
+        session = fake_session
+        session.scenarios = [fake_scenario]
 
-        handlers, hass, entry, _ = self._setup_with_session(session)
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
         handler = handlers[SERVICE_TRIGGER_SCENARIO]
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": "OtherSHC"})
         _run(handler(call_obj))
         fake_scenario.async_trigger.assert_not_called()
 
-    def test_scenario_service_empty_title_matches_all(self):
+    def test_scenario_service_empty_title_matches_all(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Empty title string matches any controller (default)."""
         fake_scenario = MagicMock()
         fake_scenario.name = "Night Mode"
         fake_scenario.async_trigger = AsyncMock()
-        session = _make_fake_session(scenarios=[fake_scenario])
+        session = fake_session
+        session.scenarios = [fake_scenario]
 
-        handlers, hass, entry, _ = self._setup_with_session(session)
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
         handler = handlers[SERVICE_TRIGGER_SCENARIO]
 
         call_obj = self._make_service_call(**{ATTR_NAME: "Night Mode", "title": ""})
@@ -765,12 +830,14 @@ class TestServiceHandlers:
 
     # -- rawscan service --
 
-    def test_rawscan_service_calls_api_get_devices(self):
+    def test_rawscan_service_calls_api_get_devices(self, fake_hass, fake_entry, fake_session):
         """'devices' command dispatches to api.get_devices()."""
-        session = _make_fake_session()
+        session = fake_session
         session.api.get_devices = AsyncMock(return_value={"devices": "ok"})
 
-        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
 
         call_obj = self._make_service_call(**{
@@ -783,12 +850,16 @@ class TestServiceHandlers:
         session_obj.api.get_devices.assert_awaited_once()
         assert result == {"devices": {"devices": "ok"}}
 
-    def test_rawscan_service_calls_api_get_information(self):
+    def test_rawscan_service_calls_api_get_information(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """'info' command dispatches to api.get_information()."""
-        session = _make_fake_session()
+        session = fake_session
         session.api.get_information = AsyncMock(return_value={"version": "9.0"})
 
-        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
 
         call_obj = self._make_service_call(**{
@@ -801,13 +872,15 @@ class TestServiceHandlers:
         session_obj.api.get_information.assert_awaited_once()
         assert result == {"info": {"version": "9.0"}}
 
-    def test_rawscan_service_filters_by_title(self):
+    def test_rawscan_service_filters_by_title(self, fake_hass, fake_entry, fake_session):
         """Title mismatch → ServiceValidationError (no matching entry)."""
         from homeassistant.exceptions import ServiceValidationError
 
-        session = _make_fake_session()
+        session = fake_session
 
-        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
 
         call_obj = self._make_service_call(**{
@@ -820,12 +893,16 @@ class TestServiceHandlers:
             _run(handler(call_obj))
         session_obj.api.get_devices.assert_not_awaited()
 
-    def test_rawscan_service_unknown_command_raises(self):
+    def test_rawscan_service_unknown_command_raises(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Unknown rawscan command raises ServiceValidationError."""
         from homeassistant.exceptions import ServiceValidationError
-        session = _make_fake_session()
+        session = fake_session
 
-        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
         handler = handlers[SERVICE_TRIGGER_RAWSCAN]
 
         call_obj = self._make_service_call(**{
@@ -839,12 +916,14 @@ class TestServiceHandlers:
 
     # -- export_zigbee_topology service --
 
-    def test_export_zigbee_topology_writes_json_and_html(self, tmp_path):
+    def test_export_zigbee_topology_writes_json_and_html(
+        self, fake_hass, fake_entry, fake_session, tmp_path
+    ):
         """Full round trip: routing data -> graph in the response + files on disk."""
         from boschshcpy.zigbee_routing import SHCZigbeeRoutingInfo
 
         device = SimpleNamespace(id="hdm:ZigBee:aaa", name="Plug A")
-        session = _make_fake_session()
+        session = fake_session
         session.devices = [device]
         session.get_zigbee_routing_info = AsyncMock(
             return_value=SHCZigbeeRoutingInfo(
@@ -856,7 +935,9 @@ class TestServiceHandlers:
             )
         )
 
-        handlers, hass, entry, session_obj = self._setup_with_session(session)
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
         hass.config.path = MagicMock(
             side_effect=lambda *parts: str(tmp_path.joinpath(*parts))
         )
@@ -876,24 +957,26 @@ class TestServiceHandlers:
         assert list(tmp_path.glob("www/bosch_shc/*_zigbee_topology.json"))
         assert list(tmp_path.glob("www/bosch_shc/*_zigbee_topology.html"))
 
-    def test_export_zigbee_topology_no_data_raises(self):
+    def test_export_zigbee_topology_no_data_raises(self, fake_hass, fake_entry, fake_session):
         """No Zigbee devices polled yet -> ServiceValidationError, not an empty graph."""
         from homeassistant.exceptions import ServiceValidationError
 
-        session = _make_fake_session()  # devices=[] by default -> coordinator.data == {}
-        handlers, hass, entry, _ = self._setup_with_session(session)
+        session = fake_session  # devices=[] by default -> coordinator.data == {}
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
         handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
 
         call_obj = self._make_service_call(title="")
         with pytest.raises(ServiceValidationError):
             _run(handler(call_obj))
 
-    def test_export_zigbee_topology_filters_by_title(self):
+    def test_export_zigbee_topology_filters_by_title(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Title mismatch -> ServiceValidationError (no matching entry)."""
         from homeassistant.exceptions import ServiceValidationError
 
-        session = _make_fake_session()
-        handlers, hass, entry, _ = self._setup_with_session(session)
+        session = fake_session
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
         handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
 
         call_obj = self._make_service_call(title="WrongTitle")
@@ -931,29 +1014,29 @@ class TestSwitchDeviceEventListener:
         dev.keyname = SimpleNamespace(name="UPPER_BUTTON")
         return dev
 
-    def test_init_does_not_subscribe_keypad_before_setup(self):
+    def test_init_does_not_subscribe_keypad_before_setup(self, fake_hass, fake_entry):
         """Regression (Bug 2): subscribe_callback must NOT be called in __init__ —
         device_id is None at that point, so events fired before async_setup() would
         carry ATTR_DEVICE_ID=None and never match device-trigger automations.
         """
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks)
 
         SwitchDeviceEventListener(hass, entry, dev)
         ks.subscribe_callback.assert_not_called()
 
-    def test_async_setup_subscribes_keypad_after_device_id_set(self):
+    def test_async_setup_subscribes_keypad_after_device_id_set(self, fake_hass, fake_entry):
         """Regression (Bug 2): subscribe_callback is called in async_setup(), after
         self.device_id is populated — guaranteeing events carry a valid device_id.
         """
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks)
 
@@ -973,13 +1056,13 @@ class TestSwitchDeviceEventListener:
         ks.subscribe_callback.assert_called_once_with(dev.id, listener._input_events_handler)
         assert listener.device_id == "reg-dev-id-999"
 
-    def test_input_events_handler_new_press_fires_bus_event(self):
+    def test_input_events_handler_new_press_fires_bus_event(self, fake_hass, fake_entry):
         """A genuinely new press (eventtimestamp advanced past the construction
         baseline) fires via hass.bus.async_fire (async session)."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks, supported_event=True)
 
@@ -1000,14 +1083,14 @@ class TestSwitchDeviceEventListener:
         assert event_data[ATTR_LAST_TIME_TRIGGERED] == 100000
         assert event_data[ATTR_DEVICE_ID] == "hass-device-id-123"
 
-    def test_input_events_handler_restart_replay_no_fire(self):
+    def test_input_events_handler_restart_replay_no_fire(self, fake_hass, fake_entry):
         """Replay-guard (#336): on restart the first re-delivered Keypad snapshot
         carries the last (stale) press; seeding _last_fired_timestamp from the
         device at construction means it must NOT fire as a phantom."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks, supported_event=True)
 
@@ -1018,13 +1101,13 @@ class TestSwitchDeviceEventListener:
         listener._input_events_handler()
         hass.bus.async_fire.assert_not_called()
 
-    def test_input_events_handler_resubscribe_replay_no_fire(self):
+    def test_input_events_handler_resubscribe_replay_no_fire(self, fake_hass, fake_entry):
         """Replay-guard (#336): after a real press, a re-delivered state with an
         unchanged eventtimestamp (24 h poll-id resubscribe) must NOT re-fire."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks, supported_event=True)
 
@@ -1039,13 +1122,13 @@ class TestSwitchDeviceEventListener:
         listener._input_events_handler()
         assert hass.bus.async_fire.call_count == 1
 
-    def test_input_events_handler_advanced_timestamp_fires_again(self):
+    def test_input_events_handler_advanced_timestamp_fires_again(self, fake_hass, fake_entry):
         """Replay-guard (#336): a genuinely new press (advanced eventtimestamp)
         after a replay still fires."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks, supported_event=True)
 
@@ -1061,11 +1144,11 @@ class TestSwitchDeviceEventListener:
         assert hass.bus.async_fire.call_count == 2
         assert hass.bus.async_fire.call_args.args[1][ATTR_LAST_TIME_TRIGGERED] == 100001
 
-    def test_input_events_handler_unsupported_event_no_fire(self):
+    def test_input_events_handler_unsupported_event_no_fire(self, fake_hass, fake_entry):
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks, supported_event=False)
 
@@ -1075,11 +1158,11 @@ class TestSwitchDeviceEventListener:
 
         hass.bus.async_fire.assert_not_called()
 
-    def test_shutdown_unsubscribes_keypad(self):
+    def test_shutdown_unsubscribes_keypad(self, fake_hass, fake_entry):
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks)
 
@@ -1087,23 +1170,23 @@ class TestSwitchDeviceEventListener:
         listener.shutdown()
         ks.unsubscribe_callback.assert_called_once_with(dev.id)
 
-    def test_no_keypad_service_no_subscribe(self):
+    def test_no_keypad_service_no_subscribe(self, fake_hass, fake_entry):
         """Device with no 'Keypad' service: no subscribe_callback called."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dev = self._make_switch_device(keypad_service=None)
 
         listener = SwitchDeviceEventListener(hass, entry, dev)
         assert listener._keypad_service is None
 
-    def test_async_setup_sets_device_id(self):
+    def test_async_setup_sets_device_id(self, fake_hass, fake_entry):
         """async_setup populates self.device_id from device registry."""
         from custom_components.bosch_shc.__init__ import SwitchDeviceEventListener
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         ks = self._make_keypad_service()
         dev = self._make_switch_device(keypad_service=ks)
 
@@ -1123,7 +1206,9 @@ class TestSwitchDeviceEventListener:
 # ---------------------------------------------------------------------------
 
 class TestSetupUniversalSwitches:
-    def test_switch_device_event_listener_setup_called(self):
+    def test_switch_device_event_listener_setup_called(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Each universal switch device gets a SwitchDeviceEventListener."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
@@ -1139,9 +1224,10 @@ class TestSetupUniversalSwitches:
         dev.root_device_id = "root-001"
         dev.device_services = [ks]
 
-        session = _make_fake_session(universal_switches=[dev])
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        session = fake_session
+        session.device_helper.universal_switches = [dev]
+        hass = fake_hass
+        entry = fake_entry
 
         fake_dr = _make_fake_device_registry()
 
@@ -1171,13 +1257,16 @@ class TestScheduledCertCheck:
     inside a single patch context block (using a nested-async helper).
     """
 
-    def _run_with_cert_check(self, cert_info_for_check, *, raise_on_check=False):
+    def _run_with_cert_check(
+        self, fake_hass, fake_entry, fake_session, cert_info_for_check, *, raise_on_check=False
+    ):
         """Setup, capture the daily cert-check callback, call it, return (hass, pn_mock)."""
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(cert_path="/fake/cert.pem")
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = "/fake/cert.pem"
         dr_mock = _make_fake_device_registry()
         pn_create_mock = MagicMock()
         captured = {}
@@ -1214,21 +1303,25 @@ class TestScheduledCertCheck:
 
         return hass, pn_create_mock
 
-    def test_expired_cert_triggers_reload(self):
+    def test_expired_cert_triggers_reload(self, fake_hass, fake_entry, fake_session):
         """Daily check with expired cert creates an async reload task."""
         cert_info = _make_cert_info(-1)
-        hass, _ = self._run_with_cert_check(cert_info)
+        hass, _ = self._run_with_cert_check(fake_hass, fake_entry, fake_session, cert_info)
         hass.async_create_task.assert_called_once()
 
-    def test_expiring_cert_creates_notification(self):
+    def test_expiring_cert_creates_notification(self, fake_hass, fake_entry, fake_session):
         """Daily check with expiring cert calls ir.async_create_issue."""
         cert_info = _make_cert_info(10)
-        _, pn_create_mock = self._run_with_cert_check(cert_info)
+        _, pn_create_mock = self._run_with_cert_check(
+            fake_hass, fake_entry, fake_session, cert_info
+        )
         assert pn_create_mock.call_count >= 1
 
-    def test_parse_exception_in_check_silently_returns(self):
+    def test_parse_exception_in_check_silently_returns(self, fake_hass, fake_entry, fake_session):
         """parse_certificate raising inside daily check → silently return, no crash."""
-        hass, _ = self._run_with_cert_check(None, raise_on_check=True)
+        hass, _ = self._run_with_cert_check(
+            fake_hass, fake_entry, fake_session, None, raise_on_check=True
+        )
         hass.async_create_task.assert_not_called()
 
 
@@ -1255,12 +1348,12 @@ class TestPlatformValveGuard:
 class TestStopPollingListener:
     """Verify that the stop_polling listener actually calls session.stop_polling."""
 
-    def test_stop_polling_inner_fn_calls_session(self):
+    def test_stop_polling_inner_fn_calls_session(self, fake_hass, fake_entry, fake_session):
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        session = fake_session
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
 
         captured_listeners = {}
@@ -1354,11 +1447,11 @@ def _full_setup(*, fake_session=None, hass=None, entry=None, cert_return=None,
 class TestScenarioServiceCallSkipsNoRuntimeData:
     """scenario_service_call must skip config entries that have no runtime_data."""
 
-    def test_entry_without_runtime_data_is_skipped(self):
+    def test_entry_without_runtime_data_is_skipped(self, fake_hass):
         """An entry missing runtime_data must not crash the service handler."""
         from custom_components.bosch_shc import async_setup
 
-        hass = _make_fake_hass()
+        hass = fake_hass
 
         # Build a fake entry WITHOUT runtime_data attribute
         entry_no_rt = SimpleNamespace(
@@ -1387,11 +1480,11 @@ class TestScenarioServiceCallSkipsNoRuntimeData:
         # This must NOT raise even though the entry has no runtime_data
         _run(scenario_call(fake_call))
 
-    def test_entry_with_runtime_data_is_processed(self):
+    def test_entry_with_runtime_data_is_processed(self, fake_hass):
         """Entries that DO have runtime_data are processed (not skipped)."""
         from custom_components.bosch_shc import async_setup
 
-        hass = _make_fake_hass()
+        hass = fake_hass
 
         triggered = []
 
@@ -1441,10 +1534,10 @@ class TestScenarioServiceCallSkipsNoRuntimeData:
 class TestRegisterRawscanServiceIdempotent:
     """_register_rawscan_service must return early if the service already exists."""
 
-    def test_second_call_returns_early_no_double_register(self):
+    def test_second_call_returns_early_no_double_register(self, fake_hass):
         from custom_components.bosch_shc import _register_rawscan_service
 
-        hass = _make_fake_hass()
+        hass = fake_hass
         # First call: service not yet registered
         hass.services.has_service = MagicMock(return_value=False)
         _register_rawscan_service(hass)
@@ -1460,10 +1553,10 @@ class TestRegisterRawscanServiceIdempotent:
             f"extra time(s) on repeat call"
         )
 
-    def test_first_call_registers_service(self):
+    def test_first_call_registers_service(self, fake_hass):
         from custom_components.bosch_shc import _register_rawscan_service
 
-        hass = _make_fake_hass()
+        hass = fake_hass
         hass.services.has_service = MagicMock(return_value=False)
         _register_rawscan_service(hass)
         # The rawscan service must be registered
@@ -1487,12 +1580,12 @@ class TestRawscanBadCommand:
         assert rawscan_calls, "rawscan service was not registered"
         return rawscan_calls[0].args[2]
 
-    def test_unknown_command_raises_service_validation_error(self):
+    def test_unknown_command_raises_service_validation_error(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """Command not in the async API dispatch map raises ServiceValidationError."""
-        fake_session = _make_fake_session()
-
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         hass.services.has_service = MagicMock(return_value=False)
 
         _, hass, entry = _full_setup(fake_session=fake_session, hass=hass, entry=entry)
@@ -1521,13 +1614,12 @@ class TestRawscanBadCommand:
         with pytest.raises(ServiceValidationError):
             _run(handler(bad_call))
 
-    def test_valid_command_does_not_raise(self):
+    def test_valid_command_does_not_raise(self, fake_hass, fake_entry, fake_session):
         """A valid command must NOT raise ServiceValidationError."""
-        fake_session = _make_fake_session()
         fake_session.api.get_devices = AsyncMock(return_value={"devices": []})
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         hass.services.has_service = MagicMock(return_value=False)
 
         _, hass, entry = _full_setup(fake_session=fake_session, hass=hass, entry=entry)
@@ -1570,14 +1662,14 @@ class TestSessionKwargsConditional:
     SHCSessionAsync always accepts long_poll_timeout as a keyword arg directly.
     """
 
-    def test_long_poll_timeout_kwarg_forwarded(self):
+    def test_long_poll_timeout_kwarg_forwarded(self, fake_hass, fake_entry, fake_session):
         """long_poll_timeout option is passed directly to SHCSessionAsync constructor."""
         from custom_components.bosch_shc import async_setup_entry
 
-        fake_session = _make_fake_session()
         dr_mock = _make_dr_mock()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(options={OPT_LONG_POLL_TIMEOUT: 30})
+        hass = fake_hass
+        entry = fake_entry
+        entry.options = {OPT_LONG_POLL_TIMEOUT: 30}
 
         captured_kwargs = {}
 
@@ -1597,14 +1689,16 @@ class TestSessionKwargsConditional:
         assert result is True
         assert captured_kwargs.get("long_poll_timeout") == 30
 
-    def test_default_long_poll_timeout_when_not_in_options(self):
+    def test_default_long_poll_timeout_when_not_in_options(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """When OPT_LONG_POLL_TIMEOUT is absent, default 10 is used."""
         from custom_components.bosch_shc import async_setup_entry
 
-        fake_session = _make_fake_session()
         dr_mock = _make_dr_mock()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(options={})  # no timeout option
+        hass = fake_hass
+        entry = fake_entry
+        entry.options = {}  # no timeout option
 
         captured_kwargs = {}
 
@@ -1632,13 +1726,13 @@ class TestSessionKwargsConditional:
 class TestScheduledCertCheckNoCertPath:
     """_scheduled_cert_check must return immediately when cert_path is empty."""
 
-    def _capture_cert_check_fn(self):
+    def _capture_cert_check_fn(self, fake_hass, fake_entry, fake_session):
         """Run async_setup_entry without cert and capture the scheduled check fn."""
         from custom_components.bosch_shc import async_setup_entry
 
-        fake_session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(cert_path="")  # no cert
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = ""  # no cert
         dr_mock = _make_dr_mock()
         captured_fn = []
 
@@ -1658,9 +1752,9 @@ class TestScheduledCertCheckNoCertPath:
         assert captured_fn, "async_track_time_interval was not called"
         return captured_fn[0], hass
 
-    def test_no_cert_check_fn_returns_early(self):
+    def test_no_cert_check_fn_returns_early(self, fake_hass, fake_entry, fake_session):
         """When cert_path='', _scheduled_cert_check must return without calling parse."""
-        check_fn, hass = self._capture_cert_check_fn()
+        check_fn, hass = self._capture_cert_check_fn(fake_hass, fake_entry, fake_session)
 
         parse_called = []
 
@@ -1688,13 +1782,13 @@ class TestScheduledCertCheckWarningBranch:
     ir.async_create_issue must be called in the daily scheduled check.
     """
 
-    def _capture_cert_check_fn_with_cert(self, cert_return):
+    def _capture_cert_check_fn_with_cert(self, fake_hass, fake_entry, fake_session, cert_return):
         """Run async_setup_entry WITH a cert and capture the scheduled check fn."""
         from custom_components.bosch_shc import async_setup_entry
 
-        fake_session = _make_fake_session()
-        hass = _make_fake_hass()
-        entry = _make_fake_entry(cert_path="/fake/cert.pem")
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = "/fake/cert.pem"
         dr_mock = _make_dr_mock()
         captured_fn = []
         ir_mock = MagicMock()
@@ -1715,7 +1809,9 @@ class TestScheduledCertCheckWarningBranch:
         assert captured_fn, "async_track_time_interval was not called"
         return captured_fn[0], hass, ir_mock
 
-    def test_warning_notification_sent_when_cert_expiring_soon(self):
+    def test_warning_notification_sent_when_cert_expiring_soon(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """days_remaining == CERT_EXPIRY_WARNING_DAYS triggers ir.async_create_issue."""
         days = CERT_EXPIRY_WARNING_DAYS
         not_after = datetime.now(timezone.utc) + timedelta(days=days)
@@ -1724,7 +1820,9 @@ class TestScheduledCertCheckWarningBranch:
             not_after=not_after,
         )
 
-        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(warn_cert)
+        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(
+            fake_hass, fake_entry, fake_session, warn_cert
+        )
 
         ir_mock_daily = MagicMock()
 
@@ -1746,7 +1844,9 @@ class TestScheduledCertCheckWarningBranch:
         )
         assert "expir" in translation_key.lower()
 
-    def test_no_notification_when_cert_has_plenty_of_time(self):
+    def test_no_notification_when_cert_has_plenty_of_time(
+        self, fake_hass, fake_entry, fake_session
+    ):
         """days_remaining > CERT_EXPIRY_WARNING_DAYS -> no ir.async_create_issue in daily check."""
         days = CERT_EXPIRY_WARNING_DAYS + 10
         not_after = datetime.now(timezone.utc) + timedelta(days=days)
@@ -1755,7 +1855,9 @@ class TestScheduledCertCheckWarningBranch:
             not_after=not_after,
         )
 
-        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(ok_cert)
+        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(
+            fake_hass, fake_entry, fake_session, ok_cert
+        )
 
         ir_mock_daily = MagicMock()
 
@@ -1771,14 +1873,16 @@ class TestScheduledCertCheckWarningBranch:
             "ir.async_create_issue must NOT be called when cert is not near expiry"
         )
 
-    def test_reload_triggered_when_cert_expired(self):
+    def test_reload_triggered_when_cert_expired(self, fake_hass, fake_entry, fake_session):
         """days_remaining < 0 -> hass.async_create_task called with reload."""
         days_startup = CERT_EXPIRY_WARNING_DAYS + 5
         startup_cert = SimpleNamespace(
             days_remaining=days_startup,
             not_after=datetime.now(timezone.utc) + timedelta(days=days_startup),
         )
-        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(startup_cert)
+        check_fn, hass, _ = self._capture_cert_check_fn_with_cert(
+            fake_hass, fake_entry, fake_session, startup_cert
+        )
 
         days_expired = -1
         expired_cert = SimpleNamespace(
@@ -1804,10 +1908,9 @@ class TestScheduledCertCheckWarningBranch:
 class TestAsyncUnloadEntryPresenceUnsub:
     """async_unload_entry must call runtime.presence_unsub() when it is not None."""
 
-    def _make_runtime(self, *, presence_unsub=None, polling_handler=None,
+    def _make_runtime(self, fake_session, *, presence_unsub=None, polling_handler=None,
                       cert_check_unsub=None):
         from custom_components.bosch_shc.data import SHCData
-        fake_session = _make_fake_session()
         fake_dev_entry = SimpleNamespace(id="dr-001")
         runtime = SHCData(
             session=fake_session,
@@ -1819,17 +1922,17 @@ class TestAsyncUnloadEntryPresenceUnsub:
         runtime.presence_unsub = presence_unsub
         return runtime, fake_session
 
-    def test_presence_unsub_called_when_not_none(self):
+    def test_presence_unsub_called_when_not_none(self, fake_hass, fake_entry, fake_session):
         """runtime.presence_unsub() must be called during async_unload_entry."""
         from custom_components.bosch_shc import async_unload_entry
 
         presence_unsub_called = []
         presence_unsub = MagicMock(side_effect=lambda: presence_unsub_called.append(True))
 
-        runtime, fake_session = self._make_runtime(presence_unsub=presence_unsub)
+        runtime, _ = self._make_runtime(fake_session, presence_unsub=presence_unsub)
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         entry.runtime_data = runtime
         hass.services.has_service = MagicMock(return_value=False)
         hass.config_entries.async_entries = MagicMock(return_value=[])
@@ -1840,14 +1943,14 @@ class TestAsyncUnloadEntryPresenceUnsub:
             "runtime.presence_unsub() was not called during async_unload_entry"
         )
 
-    def test_no_presence_unsub_when_none(self):
+    def test_no_presence_unsub_when_none(self, fake_hass, fake_entry, fake_session):
         """When runtime.presence_unsub is None, unload must not crash."""
         from custom_components.bosch_shc import async_unload_entry
 
-        runtime, fake_session = self._make_runtime(presence_unsub=None)
+        runtime, _ = self._make_runtime(fake_session, presence_unsub=None)
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         entry.runtime_data = runtime
         hass.services.has_service = MagicMock(return_value=False)
         hass.config_entries.async_entries = MagicMock(return_value=[])
@@ -1855,7 +1958,7 @@ class TestAsyncUnloadEntryPresenceUnsub:
         # Must not raise
         _run(async_unload_entry(hass, entry))
 
-    def test_polling_handler_called_when_not_none(self):
+    def test_polling_handler_called_when_not_none(self, fake_hass, fake_entry, fake_session):
         """polling_handler() is also called during unload."""
         from custom_components.bosch_shc import async_unload_entry
 
@@ -1864,10 +1967,10 @@ class TestAsyncUnloadEntryPresenceUnsub:
             side_effect=lambda: polling_handler_called.append(True)
         )
 
-        runtime, _ = self._make_runtime(polling_handler=polling_handler)
+        runtime, _ = self._make_runtime(fake_session, polling_handler=polling_handler)
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         entry.runtime_data = runtime
         hass.services.has_service = MagicMock(return_value=False)
         hass.config_entries.async_entries = MagicMock(return_value=[])
@@ -1876,17 +1979,17 @@ class TestAsyncUnloadEntryPresenceUnsub:
 
         assert polling_handler_called == [True]
 
-    def test_cert_check_unsub_called_when_not_none(self):
+    def test_cert_check_unsub_called_when_not_none(self, fake_hass, fake_entry, fake_session):
         """cert_check_unsub() is called during unload."""
         from custom_components.bosch_shc import async_unload_entry
 
         cert_unsub_called = []
         cert_unsub = MagicMock(side_effect=lambda: cert_unsub_called.append(True))
 
-        runtime, _ = self._make_runtime(cert_check_unsub=cert_unsub)
+        runtime, _ = self._make_runtime(fake_session, cert_check_unsub=cert_unsub)
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         entry.runtime_data = runtime
         hass.services.has_service = MagicMock(return_value=False)
         hass.config_entries.async_entries = MagicMock(return_value=[])
@@ -2006,6 +2109,31 @@ def _make_fake_session_presence(thermostats=None, roomthermostats=None,
     return session
 
 
+# ---------------------------------------------------------------------------
+# Fixtures: fake_hass_presence / fake_session_presence
+#
+# Thin local wrappers around the builders above, matching the fake_hass /
+# fake_entry / fake_session fixture pattern near the top of this file.
+# fake_entry (already a fixture) is reused as-is for this section — its
+# .options are set directly in test bodies (or via _do_setup below) since the
+# presence tests vary options per-call, not per-fixture-instantiation.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def fake_hass_presence(request: pytest.FixtureRequest):
+    """Fake hass mock for presence/child-lock tests. See _make_fake_hass_presence."""
+    overrides = getattr(request, "param", {}) or {}
+    return _make_fake_hass_presence(**overrides)
+
+
+@pytest.fixture
+def fake_session_presence(request: pytest.FixtureRequest):
+    """Fake SHCSessionAsync for presence tests. See _make_fake_session_presence."""
+    overrides = getattr(request, "param", {}) or {}
+    return _make_fake_session_presence(**overrides)
+
+
 def _state_event(new_state_str, old_state_str=None):
     """Build a fake state-change event data dict."""
     new_state = SimpleNamespace(state=new_state_str)
@@ -2019,16 +2147,19 @@ def _state_event(new_state_str, old_state_str=None):
 # Setup helper
 # ---------------------------------------------------------------------------
 
-def _do_setup(session, options, *, capture_state_cb=False, hass_states=None):
-    """Run async_setup_entry with given options.
+def _do_setup(hass, entry, session, options, *, capture_state_cb=False, hass_states=None):
+    """Run async_setup_entry against pre-built fake_hass_presence/fake_entry fixtures.
 
     Returns (hass, entry, captured_state_cb).
-    hass_states: dict of entity_id -> state string pre-populated in hass.states.
+    hass_states: dict of entity_id -> state string pre-populated in hass.states
+    (applied onto the given hass via its _set_state helper).
     """
     from custom_components.bosch_shc.__init__ import async_setup_entry
 
-    hass = _make_fake_hass_presence(states=hass_states)
-    entry = _make_fake_entry(options=options)
+    entry.options = options
+    for entity_id, val in (hass_states or {}).items():
+        hass._set_state(entity_id, val)
+
     dr_mock = _make_fake_device_registry()
     track_unsub = MagicMock()
     captured = {}
@@ -2062,39 +2193,52 @@ def _do_setup(session, options, *, capture_state_cb=False, hass_states=None):
 # ---------------------------------------------------------------------------
 
 class TestPresenceDisabled:
-    def test_no_state_tracker_when_empty_list(self):
+    def test_no_state_tracker_when_empty_list(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """When OPT_PRESENCE_ENTITY is [], async_track_state_change_event is NOT called."""
-        session = _make_fake_session_presence()
         with patch(PATCH_TRACK_STATE) as mock_track:
-            _do_setup(session, options={OPT_PRESENCE_ENTITY: []})
+            _do_setup(
+                fake_hass_presence, fake_entry, fake_session_presence,
+                options={OPT_PRESENCE_ENTITY: []},
+            )
             mock_track.assert_not_called()
 
-    def test_no_state_tracker_when_missing(self):
-        session = _make_fake_session_presence()
+    def test_no_state_tracker_when_missing(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         with patch(PATCH_TRACK_STATE) as mock_track:
-            _do_setup(session, options={})
+            _do_setup(fake_hass_presence, fake_entry, fake_session_presence, options={})
             mock_track.assert_not_called()
 
-    def test_no_state_tracker_when_entity_is_empty_string(self):
+    def test_no_state_tracker_when_entity_is_empty_string(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Backward compat: old str "" stored -> treated as disabled."""
-        session = _make_fake_session_presence()
         with patch(PATCH_TRACK_STATE) as mock_track:
-            _do_setup(session, options={OPT_PRESENCE_ENTITY: ""})
+            _do_setup(
+                fake_hass_presence, fake_entry, fake_session_presence,
+                options={OPT_PRESENCE_ENTITY: ""},
+            )
             mock_track.assert_not_called()
 
-    def test_presence_unsub_is_none_when_disabled(self):
-        session = _make_fake_session_presence()
-        hass, entry, _ = _do_setup(session, options={})
+    def test_presence_unsub_is_none_when_disabled(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
+        hass, entry, _ = _do_setup(
+            fake_hass_presence, fake_entry, fake_session_presence, options={}
+        )
         assert entry.runtime_data.presence_unsub is None
 
-    def test_master_toggle_off_disables_even_with_entities(self):
+    def test_master_toggle_off_disables_even_with_entities(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """child_lock_enabled=False must suppress the feature even when
         presence entities are configured (explicit off switch).
         """
-        session = _make_fake_session_presence()
         with patch(PATCH_TRACK_STATE) as mock_track:
             hass, entry, _ = _do_setup(
-                session,
+                fake_hass_presence, fake_entry, fake_session_presence,
                 options={
                     OPT_CHILD_LOCK_ENABLED: False,
                     OPT_PRESENCE_ENTITY: ["person.felix"],
@@ -2103,13 +2247,14 @@ class TestPresenceDisabled:
             mock_track.assert_not_called()
             assert entry.runtime_data.presence_unsub is None
 
-    def test_master_toggle_on_with_entities_registers_tracker(self):
+    def test_master_toggle_on_with_entities_registers_tracker(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """child_lock_enabled=True + entities -> tracker registered."""
-        session = _make_fake_session_presence()
         with patch(PATCH_TRACK_STATE) as mock_track:
             mock_track.return_value = MagicMock()
             _do_setup(
-                session,
+                fake_hass_presence, fake_entry, fake_session_presence,
                 options={
                     OPT_CHILD_LOCK_ENABLED: True,
                     OPT_PRESENCE_ENTITY: ["person.felix"],
@@ -2123,39 +2268,37 @@ class TestPresenceDisabled:
 # ---------------------------------------------------------------------------
 
 class TestBackwardCompatStr:
-    def test_single_str_treated_as_one_entity_list(self):
+    def test_single_str_treated_as_one_entity_list(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Old config stores a bare string; must register a listener on it."""
-        session = _make_fake_session_presence()
-        opts = {OPT_PRESENCE_ENTITY: "person.felix"}
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        fake_entry.options = {OPT_PRESENCE_ENTITY: "person.felix"}
         with patch(PATCH_TRACK_STATE) as mock_track:
             mock_track.return_value = MagicMock()
-
-            def _inner():
-                from custom_components.bosch_shc.__init__ import async_setup_entry
-                hass = _make_fake_hass_presence()
-                entry = _make_fake_entry(options=opts)
-                with (
-                    patch(PATCH_SESSION, return_value=session),
-                    patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
-                    patch(PATCH_PARSE_CERT, return_value=None),
-                    patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
-                ):
-                    _run(async_setup_entry(hass, entry))
-                return entry
-
-            _inner()
+            with (
+                patch(PATCH_SESSION, return_value=fake_session_presence),
+                patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+                patch(PATCH_PARSE_CERT, return_value=None),
+                patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+            ):
+                _run(async_setup_entry(fake_hass_presence, fake_entry))
 
         mock_track.assert_called_once()
         entity_ids = mock_track.call_args[0][1]
         assert "person.felix" in entity_ids
 
-    def test_single_str_lock_on_when_entity_home(self):
+    def test_single_str_lock_on_when_entity_home(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Backward compat str: entering present_state still locks devices."""
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {OPT_PRESENCE_ENTITY: "person.felix"}
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "home"},
         )
         assert state_cb is not None
@@ -2165,14 +2308,17 @@ class TestBackwardCompatStr:
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(True)
 
-    def test_single_str_lock_off_when_entity_leaves(self):
+    def test_single_str_lock_off_when_entity_leaves(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Backward compat str: leaving present_state unlocks devices."""
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {OPT_PRESENCE_ENTITY: "person.felix"}
         # Simulate entity now away
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "not_home"},
         )
         state_cb(_state_event("not_home", "home"))
@@ -2186,38 +2332,39 @@ class TestBackwardCompatStr:
 # ---------------------------------------------------------------------------
 
 class TestPresenceEnabled:
-    def test_state_tracker_registered_with_list(self):
+    def test_state_tracker_registered_with_list(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """async_track_state_change_event called with all configured entities."""
-        session = _make_fake_session_presence()
-        opts = {OPT_PRESENCE_ENTITY: ["person.felix", "device_tracker.phone"]}
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        fake_entry.options = {
+            OPT_PRESENCE_ENTITY: ["person.felix", "device_tracker.phone"]
+        }
 
         with patch(PATCH_TRACK_STATE) as mock_track:
             mock_track.return_value = MagicMock()
-
-            def _inner():
-                from custom_components.bosch_shc.__init__ import async_setup_entry
-                hass = _make_fake_hass_presence()
-                entry = _make_fake_entry(options=opts)
-                with (
-                    patch(PATCH_SESSION, return_value=session),
-                    patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
-                    patch(PATCH_PARSE_CERT, return_value=None),
-                    patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
-                ):
-                    _run(async_setup_entry(hass, entry))
-                return entry
-
-            _inner()
+            with (
+                patch(PATCH_SESSION, return_value=fake_session_presence),
+                patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+                patch(PATCH_PARSE_CERT, return_value=None),
+                patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+            ):
+                _run(async_setup_entry(fake_hass_presence, fake_entry))
 
         mock_track.assert_called_once()
         entity_ids = mock_track.call_args[0][1]
         assert "person.felix" in entity_ids
         assert "device_tracker.phone" in entity_ids
 
-    def test_presence_unsub_stored_on_runtime_data(self):
-        session = _make_fake_session_presence()
+    def test_presence_unsub_stored_on_runtime_data(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
-        hass, entry, _ = _do_setup(session, options=opts, capture_state_cb=True)
+        hass, entry, _ = _do_setup(
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
+        )
         assert entry.runtime_data.presence_unsub is not None
 
 
@@ -2226,26 +2373,29 @@ class TestPresenceEnabled:
 # ---------------------------------------------------------------------------
 
 class TestChildLockOn:
-    def _setup_with_devices(self, thermostat=None, bool_dev=None,
+    def _setup_with_devices(self, fake_hass_presence, fake_entry, fake_session_presence,
+                            thermostat=None, bool_dev=None,
                             opts=None, hass_states=None):
         therm = thermostat or _make_device("therm-1")
         booldev = bool_dev or _make_device("bool-1")
-        session = _make_fake_session_presence(
-            thermostats=[therm],
-            bool_devices=[booldev],
-        )
+        fake_session_presence.device_helper.thermostats = [therm]
+        fake_session_presence.device_helper.micromodule_shutter_controls = [booldev]
         if opts is None:
             opts = {
                 OPT_PRESENCE_ENTITY: ["person.felix"],
             }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states=hass_states,
         )
         return hass, state_cb, therm, booldev
 
-    def test_entering_present_state_sets_child_lock_true_on_thermostat(self):
+    def test_entering_present_state_sets_child_lock_true_on_thermostat(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         hass, state_cb, therm, booldev = self._setup_with_devices(
+            fake_hass_presence, fake_entry, fake_session_presence,
             hass_states={"person.felix": "home"},
         )
         assert state_cb is not None
@@ -2257,8 +2407,11 @@ class TestChildLockOn:
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(True)
 
-    def test_entering_present_state_sets_child_lock_true_on_bool_device(self):
+    def test_entering_present_state_sets_child_lock_true_on_bool_device(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         hass, state_cb, therm, booldev = self._setup_with_devices(
+            fake_hass_presence, fake_entry, fake_session_presence,
             hass_states={"person.felix": "home"},
         )
         state_cb(_state_event("home", "not_home"))
@@ -2266,14 +2419,17 @@ class TestChildLockOn:
         _run(task_coro)
         booldev.async_set_child_lock.assert_awaited_once_with(True)
 
-    def test_custom_present_state_triggers_lock(self):
+    def test_custom_present_state_triggers_lock(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {
             OPT_PRESENCE_ENTITY: ["input_boolean.guests"],
         }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"input_boolean.guests": "on"},
         )
 
@@ -2288,21 +2444,26 @@ class TestChildLockOn:
 # ---------------------------------------------------------------------------
 
 class TestChildLockOff:
-    def _setup_with_therm(self):
+    def _setup_with_therm(self, fake_hass_presence, fake_entry, fake_session_presence):
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
         }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             # Entity is now away
             hass_states={"person.felix": "not_home"},
         )
         return hass, state_cb, therm
 
-    def test_leaving_present_state_sets_child_lock_false(self):
-        hass, state_cb, therm = self._setup_with_therm()
+    def test_leaving_present_state_sets_child_lock_false(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
+        hass, state_cb, therm = self._setup_with_therm(
+            fake_hass_presence, fake_entry, fake_session_presence
+        )
         state_cb(_state_event("not_home", "home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
@@ -2316,42 +2477,52 @@ class TestChildLockOff:
 class TestMultiEntityAnyHome:
     """Verify ANY-home-ON / ALL-away-OFF logic with two entities."""
 
-    def _setup_multi(self, hass_states):
+    def _setup_multi(self, fake_hass_presence, fake_entry, fake_session_presence, hass_states):
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {
             OPT_PRESENCE_ENTITY: ["person.alice", "person.bob"],
         }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states=hass_states,
         )
         return hass, state_cb, therm
 
-    def test_any_entity_home_turns_lock_on(self):
+    def test_any_entity_home_turns_lock_on(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """alice=home, bob=not_home -> lock ON when alice arrives."""
         hass, state_cb, therm = self._setup_multi(
-            {"person.alice": "home", "person.bob": "not_home"}
+            fake_hass_presence, fake_entry, fake_session_presence,
+            {"person.alice": "home", "person.bob": "not_home"},
         )
         state_cb(_state_event("home", "not_home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(True)
 
-    def test_all_away_turns_lock_off(self):
+    def test_all_away_turns_lock_off(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """alice=not_home, bob=not_home -> lock OFF when last one leaves."""
         hass, state_cb, therm = self._setup_multi(
-            {"person.alice": "not_home", "person.bob": "not_home"}
+            fake_hass_presence, fake_entry, fake_session_presence,
+            {"person.alice": "not_home", "person.bob": "not_home"},
         )
         state_cb(_state_event("not_home", "home"))
         task_coro = hass.async_create_task.call_args[0][0]
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(False)
 
-    def test_one_away_other_still_home_lock_stays_on(self):
+    def test_one_away_other_still_home_lock_stays_on(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """alice=home, bob leaves -> aggregate still ANY-home -> NO API call."""
         hass, state_cb, therm = self._setup_multi(
-            {"person.alice": "home", "person.bob": "not_home"}
+            fake_hass_presence, fake_entry, fake_session_presence,
+            {"person.alice": "home", "person.bob": "not_home"},
         )
         # Simulate the handler was already called once (lock ON, _last_lock_state=True)
         # by having alice arrive first:
@@ -2368,38 +2539,37 @@ class TestMultiEntityAnyHome:
         # No second API call because _last_lock_state already True
         hass.async_create_task.assert_not_called()
 
-    def test_both_entities_registered_as_listeners(self):
+    def test_both_entities_registered_as_listeners(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """async_track_state_change_event receives both entity IDs."""
-        session = _make_fake_session_presence()
-        opts = {
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        fake_entry.options = {
             OPT_PRESENCE_ENTITY: ["person.alice", "person.bob"],
         }
         with patch(PATCH_TRACK_STATE) as mock_track:
             mock_track.return_value = MagicMock()
-
-            def _inner():
-                from custom_components.bosch_shc.__init__ import async_setup_entry
-                hass = _make_fake_hass_presence()
-                entry = _make_fake_entry(options=opts)
-                with (
-                    patch(PATCH_SESSION, return_value=session),
-                    patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
-                    patch(PATCH_PARSE_CERT, return_value=None),
-                    patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
-                ):
-                    _run(async_setup_entry(hass, entry))
-
-            _inner()
+            with (
+                patch(PATCH_SESSION, return_value=fake_session_presence),
+                patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+                patch(PATCH_PARSE_CERT, return_value=None),
+                patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+            ):
+                _run(async_setup_entry(fake_hass_presence, fake_entry))
 
         mock_track.assert_called_once()
         registered = mock_track.call_args[0][1]
         assert "person.alice" in registered
         assert "person.bob" in registered
 
-    def test_redundant_write_suppressed_both_already_home(self):
+    def test_redundant_write_suppressed_both_already_home(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """If aggregate is already True and another home event arrives -> no second write."""
         hass, state_cb, therm = self._setup_multi(
-            {"person.alice": "home", "person.bob": "home"}
+            fake_hass_presence, fake_entry, fake_session_presence,
+            {"person.alice": "home", "person.bob": "home"},
         )
         # First arrival
         state_cb(_state_event("home", "not_home"))
@@ -2418,39 +2588,52 @@ class TestMultiEntityAnyHome:
 # ---------------------------------------------------------------------------
 
 class TestNoOp:
-    def _setup(self):
+    def _setup(self, fake_hass_presence, fake_entry, fake_session_presence):
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
         }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "not_home"},
         )
         return hass, state_cb, therm
 
-    def test_no_task_when_new_state_is_unavailable(self):
+    def test_no_task_when_new_state_is_unavailable(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """_evaluate_child_lock() re-reads live state via hass.states.get()
         rather than the event payload, so the skip logic must be exercised by
         mutating the backing hass.states dict — not by varying an event
         argument that the function never actually reads."""
-        hass, state_cb, therm = self._setup()
+        hass, state_cb, therm = self._setup(
+            fake_hass_presence, fake_entry, fake_session_presence
+        )
         hass.async_create_task.reset_mock()
         hass._set_state("person.felix", "unavailable")
         state_cb(_state_event("unavailable", "home"))
         hass.async_create_task.assert_not_called()
 
-    def test_no_task_when_new_state_is_unknown(self):
-        hass, state_cb, therm = self._setup()
+    def test_no_task_when_new_state_is_unknown(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
+        hass, state_cb, therm = self._setup(
+            fake_hass_presence, fake_entry, fake_session_presence
+        )
         hass.async_create_task.reset_mock()
         hass._set_state("person.felix", "unknown")
         state_cb(_state_event("unknown", "home"))
         hass.async_create_task.assert_not_called()
 
-    def test_no_task_when_new_state_is_none(self):
+    def test_no_task_when_new_state_is_none(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Entity removed from hass.states entirely: ignore."""
-        hass, state_cb, therm = self._setup()
+        hass, state_cb, therm = self._setup(
+            fake_hass_presence, fake_entry, fake_session_presence
+        )
         hass.async_create_task.reset_mock()
         hass._del_state("person.felix")
         event = SimpleNamespace(
@@ -2462,16 +2645,19 @@ class TestNoOp:
         state_cb(event)
         hass.async_create_task.assert_not_called()
 
-    def test_absent_entity_skipped_but_other_tracked_entity_still_detected(self):
+    def test_absent_entity_skipped_but_other_tracked_entity_still_detected(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Regression: a tracked entity that is unavailable/not-yet-restored
         must not short-circuit the whole aggregate — a DIFFERENT tracked
         entity that's genuinely home must still lock. Proves the per-entity
         skip is a `continue`, not an early return."""
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {OPT_PRESENCE_ENTITY: ["person.felix", "person.anna"]}
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.anna": "home"},  # person.felix absent entirely
         )
 
@@ -2480,14 +2666,17 @@ class TestNoOp:
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(True)
 
-    def test_unavailable_transition_unlocks_after_being_home(self):
+    def test_unavailable_transition_unlocks_after_being_home(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """A tracked person going home -> unavailable must be treated as
         absent (not "still home"), unlocking the device."""
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "home"},
         )
         # Startup locked it (drain that call).
@@ -2502,9 +2691,13 @@ class TestNoOp:
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(False)
 
-    def test_no_task_when_aggregate_unchanged_away(self):
+    def test_no_task_when_aggregate_unchanged_away(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Transition between two non-present states: aggregate stays False -> no write."""
-        hass, state_cb, therm = self._setup()
+        hass, state_cb, therm = self._setup(
+            fake_hass_presence, fake_entry, fake_session_presence
+        )
         # person.felix is not_home (hass_states); any transition to another
         # non-home state must not trigger a write.
         # First ensure _last_lock_state is primed to False by an initial away event:
@@ -2525,7 +2718,9 @@ class TestNoOp:
 # ---------------------------------------------------------------------------
 
 class TestErrorHandling:
-    def test_jsonrpc_error_caught_no_crash(self):
+    def test_jsonrpc_error_caught_no_crash(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         from boschshcpy.api import JSONRPCError
 
         therm = MagicMock()
@@ -2534,12 +2729,13 @@ class TestErrorHandling:
             side_effect=JSONRPCError(-1, "network error")
         )
 
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
         }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "home"},
         )
 
@@ -2548,7 +2744,9 @@ class TestErrorHandling:
         # Must NOT raise
         _run(task_coro)
 
-    def test_shc_exception_caught_no_crash(self):
+    def test_shc_exception_caught_no_crash(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         from boschshcpy.exceptions import SHCException
 
         booldev = MagicMock()
@@ -2557,12 +2755,13 @@ class TestErrorHandling:
             side_effect=SHCException("timeout")
         )
 
-        session = _make_fake_session_presence(bool_devices=[booldev])
+        fake_session_presence.device_helper.micromodule_shutter_controls = [booldev]
         opts = {
             OPT_PRESENCE_ENTITY: ["person.felix"],
         }
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "home"},
         )
 
@@ -2576,14 +2775,17 @@ class TestErrorHandling:
 # ---------------------------------------------------------------------------
 
 class TestInitialStateAppliedAtStartup:
-    def test_lock_applied_at_setup_when_person_already_home(self):
+    def test_lock_applied_at_setup_when_person_already_home(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """A person already 'home' across a restart/reload must be locked
         immediately at setup — not only on their next state-change event."""
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "home"},
         )
 
@@ -2592,15 +2794,18 @@ class TestInitialStateAppliedAtStartup:
         _run(task_coro)
         therm.async_set_child_lock.assert_awaited_once_with(True)
 
-    def test_no_lock_applied_at_setup_when_nobody_home(self):
+    def test_no_lock_applied_at_setup_when_nobody_home(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """Nobody home at setup: aggregate is False, matching the initial
         sentinel semantics for 'off' — a task still fires once to make sure
         devices aren't left locked from a prior session, then settles."""
         therm = _make_device("therm-1")
-        session = _make_fake_session_presence(thermostats=[therm])
+        fake_session_presence.device_helper.thermostats = [therm]
         opts = {OPT_PRESENCE_ENTITY: ["person.felix"]}
         hass, entry, state_cb = _do_setup(
-            session, options=opts, capture_state_cb=True,
+            fake_hass_presence, fake_entry, fake_session_presence, opts,
+            capture_state_cb=True,
             hass_states={"person.felix": "not_home"},
         )
 
@@ -2615,15 +2820,15 @@ class TestInitialStateAppliedAtStartup:
 # ---------------------------------------------------------------------------
 
 class TestUnloadCleansUp:
-    def test_presence_unsub_called_on_unload(self):
+    def test_presence_unsub_called_on_unload(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         from custom_components.bosch_shc.__init__ import (
             async_setup_entry,
             async_unload_entry,
         )
 
-        session = _make_fake_session_presence()
-        hass = _make_fake_hass_presence()
-        entry = _make_fake_entry(options={OPT_PRESENCE_ENTITY: ["person.felix"]})
+        fake_entry.options = {OPT_PRESENCE_ENTITY: ["person.felix"]}
         dr_mock = _make_fake_device_registry()
         presence_unsub_mock = MagicMock()
 
@@ -2631,39 +2836,40 @@ class TestUnloadCleansUp:
             return presence_unsub_mock
 
         with (
-            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_SESSION, return_value=fake_session_presence),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
             patch(PATCH_TRACK_STATE, side_effect=_capture_track_state),
         ):
-            _run(async_setup_entry(hass, entry))
-            _run(async_unload_entry(hass, entry))
+            _run(async_setup_entry(fake_hass_presence, fake_entry))
+            _run(async_unload_entry(fake_hass_presence, fake_entry))
 
         presence_unsub_mock.assert_called_once()
 
-    def test_no_unsub_called_when_presence_disabled(self):
+    def test_no_unsub_called_when_presence_disabled(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
         """presence_unsub is None when feature is off; unload must not crash."""
         from custom_components.bosch_shc.__init__ import (
             async_setup_entry,
             async_unload_entry,
         )
 
-        session = _make_fake_session_presence()
-        hass = _make_fake_hass_presence()
-        entry = _make_fake_entry(options={})
+        fake_entry.options = {}
         dr_mock = _make_fake_device_registry()
 
         with (
-            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_SESSION, return_value=fake_session_presence),
             patch(PATCH_DR_GET, return_value=dr_mock),
             patch(PATCH_PARSE_CERT, return_value=None),
             patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
         ):
-            _run(async_setup_entry(hass, entry))
-            result = _run(async_unload_entry(hass, entry))
+            _run(async_setup_entry(fake_hass_presence, fake_entry))
+            result = _run(async_unload_entry(fake_hass_presence, fake_entry))
 
         assert result is True
+
 
 
 # ---------------------------------------------------------------------------
@@ -3369,10 +3575,12 @@ class TestZigbeeCoordinatorFailureDoesNotBlockSetup:
     stuck retrying, over a disabled-by-default diagnostic sensor.
     """
 
-    def test_setup_succeeds_when_zigbee_routing_fetch_fails(self):
+    def test_setup_succeeds_when_zigbee_routing_fetch_fails(
+        self, fake_hass, fake_entry, fake_session
+    ):
         from custom_components.bosch_shc.__init__ import async_setup_entry
 
-        session = _make_fake_session()
+        session = fake_session
         # A plain TimeoutError (not SHCException/SHCConnectionError) isn't
         # swallowed per-device by the coordinator's own isolation — it
         # propagates out of _async_update_data, the scenario that actually
@@ -3381,8 +3589,8 @@ class TestZigbeeCoordinatorFailureDoesNotBlockSetup:
         session.devices = [SimpleNamespace(id="hdm:ZigBee:abc")]
         session.get_zigbee_routing_info = AsyncMock(side_effect=TimeoutError)
 
-        hass = _make_fake_hass()
-        entry = _make_fake_entry()
+        hass = fake_hass
+        entry = fake_entry
         dr_mock = _make_fake_device_registry()
         track_unsub = MagicMock()
 

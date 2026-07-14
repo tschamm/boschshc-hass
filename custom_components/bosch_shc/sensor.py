@@ -2,13 +2,36 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, cast
 
-from boschshcpy import SHCEmma, SHCSession
+from boschshcpy import (
+    SHCBatteryDevice,
+    SHCClimateControl,
+    SHCEmma,
+    SHCLightControl,
+    SHCLightSwitchBSM,
+    SHCMicromoduleShutterControl,
+    SHCMotionDetector,
+    SHCMotionDetector2,
+    SHCOutdoorSiren,
+    SHCPresenceSimulationSystem,
+    SHCSession,
+    SHCShutterContact2,
+    SHCShutterControl,
+    SHCSmartPlug,
+    SHCSmartPlugCompact,
+    SHCThermostat,
+    SHCTwinguard,
+    SHCUniversalSwitch,
+    SHCWallThermostat,
+)
 from boschshcpy.device import SHCDevice
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -41,6 +64,7 @@ except ImportError:
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -485,10 +509,10 @@ async def async_setup_entry(  # noqa: C901
         ):
             if device_excluded(sensor, config_entry.options):
                 continue
-            if sensor.supports_batterylevel:
+            if getattr(sensor, "supports_batterylevel", False):
                 entities.append(
                     BatteryLevelSensor(
-                        device=sensor,
+                        device=cast(SHCBatteryDevice, sensor),
                         entry_id=config_entry.entry_id,
                     )
                 )
@@ -546,26 +570,665 @@ async def async_setup_entry(  # noqa: C901
         async_add_entities(entities)
 
 
-class TemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Representation of an SHC temperature reporting sensor."""
+# ===========================================================================
+# EntityDescription-driven core (CORE-PREP: mirrors home-assistant/core's own
+# bosch_shc/sensor.py shape, so a future upstream port only has to delete the
+# thin per-sensor-type subclasses below and reference SENSOR_DESCRIPTIONS
+# directly from async_setup_entry). Guard/error-handling logic that used to
+# live in each class's own native_value/extra_state_attributes property now
+# lives in the small helper functions referenced by value_fn/attributes_fn —
+# behavior is unchanged, only where the logic is defined.
+# ===========================================================================
 
-    _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 1
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize an SHC temperature reporting sensor."""
+# Device-type unions used to parametrize SHCSensorEntityDescription[_DeviceT]
+# below. Each alias covers exactly the concrete device classes the
+# corresponding value_fn/attributes_fn is actually called with, per
+# device_helper's per-collection return types (see async_setup_entry above) —
+# kept as named aliases for readability and reuse across a description entry,
+# its leaf entity class, and any dedicated value_fn helper function.
+type _TemperatureDevice = (
+    SHCThermostat | SHCWallThermostat | SHCTwinguard | SHCMotionDetector2
+)
+type _HumidityDevice = SHCWallThermostat | SHCTwinguard
+type _CommunicationQualityDevice = (
+    SHCSmartPlugCompact | SHCShutterContact2 | SHCMotionDetector2
+)
+type _PowerMeterDevice = (
+    SHCSmartPlug
+    | SHCLightSwitchBSM
+    | SHCLightControl
+    | SHCMicromoduleShutterControl
+    | SHCSmartPlugCompact
+)
+type _IlluminanceDevice = SHCMotionDetector | SHCMotionDetector2
+
+
+@dataclass(frozen=True, kw_only=True)
+class SHCSensorEntityDescription[_DeviceT: SHCDevice](SensorEntityDescription):
+    """Describes a SHC sensor."""
+
+    value_fn: Callable[[_DeviceT], StateType]
+    attributes_fn: Callable[[_DeviceT], dict[str, Any] | None] | None = None
+
+
+TEMPERATURE_SENSOR = "temperature"
+TERMINAL_TEMPERATURE_SENSOR = "terminal_temperature"
+HUMIDITY_SENSOR = "humidity"
+PURITY_SENSOR = "purity"
+AIR_QUALITY_SENSOR = "airquality"
+TEMPERATURE_RATING_SENSOR = "temperaturerating"
+HUMIDITY_RATING_SENSOR = "humidityrating"
+PURITY_RATING_SENSOR = "purityrating"
+COMMUNICATION_QUALITY_SENSOR = "communicationquality"
+KEYPAD_TRIGGER_SENSOR = "keypadtrigger"
+POWER_SENSOR = "power"
+ENERGY_SENSOR = "energy"
+ENERGY_YIELD_SENSOR = "energy_yield"
+POWER_YIELD_SENSOR = "power_yield"
+VALVE_TAPPET_SENSOR = "valvetappet"
+ILLUMINANCE_SENSOR = "illuminance"
+BATTERY_LEVEL_SENSOR = "battery_level"
+COMBINED_RATING_SENSOR = "combined_rating"
+AIR_QUALITY_DESCRIPTION_SENSOR = "description"
+WALK_STATE_SENSOR = "walk_state"
+DETECTION_STATE_SENSOR = "detection_state"
+SIREN_BATTERY_SENSOR = "siren_battery"
+SIREN_MAIN_POWER_SENSOR = "siren_main_power"
+SIREN_SOLAR_CHARGING_SENSOR = "siren_solar_charging"
+NEXT_SETPOINT_TEMPERATURE_SENSOR = "next_setpoint_temperature"
+PRESENCE_SIMULATION_RUNNING_START_SENSOR = "running_start"
+PRESENCE_SIMULATION_RUNNING_END_SENSOR = "running_end"
+REFERENCE_MOVING_TIME_TTB_SENSOR = "reference_moving_time_ttb"
+REFERENCE_MOVING_TIME_BTT_SENSOR = "reference_moving_time_btt"
+
+
+def _air_quality_value(device: SHCTwinguard) -> str | None:
+    """Return the Twinguard combined air-quality rating name."""
+    try:
+        return str(device.combined_rating.name)
+    except ValueError as err:
+        LOGGER.warning("Unknown combined rating for %s: %s", device.name, err)
+        return None
+
+
+def _air_quality_attributes(device: SHCTwinguard) -> dict[str, Any]:
+    """Return rating_description (+ comfort_zone when available).
+
+    comfort_zone is read from the AirQualityLevelService via a service-level
+    accessor (_airqualitylevel_service.comfortZone). The SHCTwinguard model
+    does not expose a model-level comfort_zone property, so we access the
+    underlying service directly and fall back to omitting it when unavailable.
+    """
+    comfort_zone = None
+    try:
+        service = getattr(device, "_airqualitylevel_service", None)
+        if service is not None:
+            comfort_zone = service.comfortZone
+    except (AttributeError, KeyError):
+        pass
+    attrs: dict[str, Any] = {"rating_description": device.description}
+    if comfort_zone is not None:
+        attrs["comfort_zone"] = comfort_zone
+    return attrs
+
+
+def _temperature_rating_value(device: SHCTwinguard) -> str | None:
+    """Return the Twinguard temperature rating name."""
+    try:
+        return str(device.temperature_rating.name)
+    except ValueError as err:
+        LOGGER.warning("Unknown temperature rating for %s: %s", device.name, err)
+        return None
+
+
+def _humidity_rating_value(device: SHCTwinguard) -> str | None:
+    """Return the Twinguard humidity rating name."""
+    try:
+        return str(device.humidity_rating.name)
+    except ValueError as err:
+        LOGGER.warning("Unknown humidity rating for %s: %s", device.name, err)
+        return None
+
+
+def _purity_rating_value(device: SHCTwinguard) -> str | None:
+    """Return the Twinguard purity rating name."""
+    try:
+        return str(device.purity_rating.name)
+    except ValueError as err:
+        LOGGER.warning("Unknown purity rating for %s: %s", device.name, err)
+        return None
+
+
+def _communication_quality_value(device: _CommunicationQualityDevice) -> str | None:
+    """Return the communication quality as a lowercase, translatable slug."""
+    try:
+        return str(device.communicationquality.name.lower())
+    except (ValueError, AttributeError) as err:
+        LOGGER.warning("Unknown communication quality for %s: %s", device.name, err)
+        return None
+
+
+def _keypad_trigger_attributes(device: SHCUniversalSwitch) -> dict[str, Any] | None:
+    """Return scenario association state attributes."""
+    service = device.keypadtrigger
+    if service is None:
+        return None
+    return {
+        "scenario_id_associations": service.scenario_id_associations,
+        "ids_to_trigger": service.ids_to_trigger,
+    }
+
+
+def _energy_yield_value(device: _PowerMeterDevice) -> float | None:
+    """Return the PV energy yield (kWh), or None when unreported."""
+    value = device.energy_yield
+    return None if value is None else value / 1000.0
+
+
+def _power_yield_value(device: _PowerMeterDevice) -> float | None:
+    """Return positive PV power (W); 0 while net-consuming."""
+    consumption = device.powerconsumption
+    if consumption is None:
+        return None
+    return -consumption if consumption < 0 else 0.0
+
+
+def _valve_tappet_attributes(device: SHCThermostat) -> dict[str, Any]:
+    """Return the valve tappet state attribute."""
+    try:
+        valve_tappet_state = device.valvestate.name
+    except ValueError as err:
+        LOGGER.warning("Unknown valve tappet state for %s: %s", device.name, err)
+        valve_tappet_state = None
+    return {"valve_tappet_state": valve_tappet_state}
+
+
+def _illuminance_value(device: _IlluminanceDevice) -> float | None:
+    """Return the numeric lux value, or None for non-numeric values (#315)."""
+    value = device.illuminance
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return value
+    return None
+
+
+def _battery_level_value(device: SHCBatteryDevice) -> str | None:
+    """Return the battery level state string, or None on unknown value."""
+    try:
+        return str(device.batterylevel.value.lower())
+    except (ValueError, AttributeError) as err:
+        LOGGER.warning("Unknown battery level for %s: %s", device.name, err)
+        return None
+
+
+def _combined_rating_value(device: SHCTwinguard) -> str | None:
+    """Return the combined rating enum name, or None on unknown value."""
+    try:
+        return str(device.combined_rating.name.lower())
+    except (ValueError, AttributeError) as err:
+        LOGGER.warning("Unknown combined rating for %s: %s", device.name, err)
+        return None
+
+
+def _walk_state_value(device: SHCMotionDetector2) -> str | None:
+    """Return the current walk state as its enum name."""
+    try:
+        val = device.walk_state
+        if val is None:
+            return None
+        return str(val.name.lower())
+    except (AttributeError, ValueError):
+        return None
+
+
+def _detection_state_value(device: SHCMotionDetector2) -> str | None:
+    """Return the current detection-test state as its enum name."""
+    try:
+        val = device.detection_state
+        if val is None:
+            return None
+        return str(val.name.lower())
+    except (AttributeError, ValueError):
+        return None
+
+
+def _siren_main_power_value(device: SHCOutdoorSiren) -> str | None:
+    """Return the active power source as a lowercase slug."""
+    power_supply = device.power_supply
+    if power_supply is None:
+        return None
+    try:
+        return str(power_supply.main_power_supply.name.lower())
+    except AttributeError:
+        return None
+
+
+def _siren_solar_charging_value(device: SHCOutdoorSiren) -> str | None:
+    """Return the solar charging score as a lowercase slug."""
+    power_supply = device.power_supply
+    if power_supply is None:
+        return None
+    try:
+        return str(power_supply.solar_charging_score.name.lower())
+    except AttributeError:
+        return None
+
+
+def _next_setpoint_temperature_attributes(device: SHCClimateControl) -> dict[str, Any]:
+    """Return the next change time and operation mode as attributes."""
+    next_mode = getattr(device, "next_operation_mode", None)
+    return {
+        "next_change_at": getattr(device, "next_setpoint_temperature_change", None),
+        "next_operation_mode": next_mode.value if next_mode is not None else None,
+    }
+
+
+def _reference_moving_time_top_to_bottom_value(
+    device: SHCShutterControl,
+) -> float | None:
+    """Return the recorded top-to-bottom moving time in seconds, if known."""
+    value_ms = getattr(device, "reference_moving_time_top_to_bottom_ms", None)
+    return value_ms / 1000 if value_ms is not None else None
+
+
+def _reference_moving_time_bottom_to_top_value(
+    device: SHCShutterControl,
+) -> float | None:
+    """Return the recorded bottom-to-top moving time in seconds, if known."""
+    value_ms = getattr(device, "reference_moving_time_bottom_to_top_ms", None)
+    return value_ms / 1000 if value_ms is not None else None
+
+
+SENSOR_DESCRIPTIONS: dict[str, SHCSensorEntityDescription[Any]] = {
+    TEMPERATURE_SENSOR: SHCSensorEntityDescription[_TemperatureDevice](
+        key=TEMPERATURE_SENSOR,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda device: device.temperature,
+    ),
+    TERMINAL_TEMPERATURE_SENSOR: SHCSensorEntityDescription[SHCWallThermostat](
+        key=TERMINAL_TEMPERATURE_SENSOR,
+        translation_key="floor_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        # Only SHCRoomThermostat2 (a SHCWallThermostat subtype) actually
+        # defines terminal_temperature; async_setup_entry only constructs
+        # this entity when getattr(sensor, "terminal_temperature", None) is
+        # not None, so this mirrors that same defensive-getattr access
+        # instead of requiring a device param narrower than what's actually
+        # passed at the (shared wallthermostats+roomthermostats) call site.
+        value_fn=lambda device: getattr(device, "terminal_temperature", None),
+    ),
+    HUMIDITY_SENSOR: SHCSensorEntityDescription[_HumidityDevice](
+        key=HUMIDITY_SENSOR,
+        device_class=SensorDeviceClass.HUMIDITY,
+        native_unit_of_measurement=UnitOfRatio.PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value_fn=lambda device: device.humidity,
+    ),
+    PURITY_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        key=PURITY_SENSOR,
+        # Bosch "purity" is an air-purity/VOC ppm value, NOT CO2. HA Core's own
+        # bosch_shc integration assigns no device_class here either; a
+        # previous SensorDeviceClass.CO2 mis-classified the reading. #204
+        translation_key="purity",
+        native_unit_of_measurement=UnitOfRatio.PARTS_PER_MILLION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value_fn=lambda device: device.purity,
+    ),
+    AIR_QUALITY_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        key=AIR_QUALITY_SENSOR,
+        translation_key="air_quality",
+        value_fn=_air_quality_value,
+        attributes_fn=_air_quality_attributes,
+    ),
+    TEMPERATURE_RATING_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        key=TEMPERATURE_RATING_SENSOR,
+        translation_key="temperature_rating",
+        value_fn=_temperature_rating_value,
+    ),
+    HUMIDITY_RATING_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        key=HUMIDITY_RATING_SENSOR,
+        translation_key="humidity_rating",
+        value_fn=_humidity_rating_value,
+    ),
+    PURITY_RATING_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        key=PURITY_RATING_SENSOR,
+        translation_key="purity_rating",
+        value_fn=_purity_rating_value,
+    ),
+    COMMUNICATION_QUALITY_SENSOR: SHCSensorEntityDescription[
+        _CommunicationQualityDevice
+    ](
+        # #339: a pure diagnostic (Diagnostics category) ENUM sensor; state
+        # values are lowercase slugs so HA can translate them.
+        key=COMMUNICATION_QUALITY_SENSOR,
+        translation_key="communication_quality",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        options=["good", "normal", "not_supported", "bad", "unknown", "fetching"],
+        value_fn=_communication_quality_value,
+    ),
+    KEYPAD_TRIGGER_SENSOR: SHCSensorEntityDescription[SHCUniversalSwitch](
+        # Diagnostic: Universal Switch II button->scenario mapping
+        # (spec-grounded). Reports the switchType; the scenario associations
+        # are exposed as state attributes. Informational only — the actual
+        # press events arrive via the Keypad service / device triggers, not
+        # this sensor.
+        key=KEYPAD_TRIGGER_SENSOR,
+        translation_key="keypad_trigger",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: (
+            device.keypadtrigger.switch_type
+            if device.keypadtrigger is not None
+            else None
+        ),
+        attributes_fn=_keypad_trigger_attributes,
+    ),
+    POWER_SENSOR: SHCSensorEntityDescription[_PowerMeterDevice](
+        key=POWER_SENSOR,
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda device: device.powerconsumption,
+    ),
+    ENERGY_SENSOR: SHCSensorEntityDescription[_PowerMeterDevice](
+        key=ENERGY_SENSOR,
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=2,
+        value_fn=lambda device: device.energyconsumption / 1000.0,
+    ),
+    ENERGY_YIELD_SENSOR: SHCSensorEntityDescription[_PowerMeterDevice](
+        # PV energy yield of a Smart Plug [+M] in Mini-PV mode (#331).
+        key=ENERGY_YIELD_SENSOR,
+        translation_key="energy_yield",
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=2,
+        value_fn=_energy_yield_value,
+    ),
+    POWER_YIELD_SENSOR: SHCSensorEntityDescription[_PowerMeterDevice](
+        # PV power yield of a Smart Plug [+M] as a positive value (#331). The
+        # PowerMeter reports negative powerConsumption while feeding in; this
+        # sensor exposes that production as a positive number (0 W while
+        # consuming), so it can be added directly to the HA Energy dashboard.
+        key=POWER_YIELD_SENSOR,
+        translation_key="power_yield",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=_power_yield_value,
+    ),
+    VALVE_TAPPET_SENSOR: SHCSensorEntityDescription[SHCThermostat](
+        key=VALVE_TAPPET_SENSOR,
+        translation_key="valve_tappet",
+        native_unit_of_measurement=UnitOfRatio.PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        suggested_display_precision=0,
+        value_fn=lambda device: device.position,
+        attributes_fn=_valve_tappet_attributes,
+    ),
+    ILLUMINANCE_SENSOR: SHCSensorEntityDescription[_IlluminanceDevice](
+        # Metadata (state_class/device_class/unit) stays static; native_value
+        # alone coerces a non-numeric value to None, so metadata never
+        # flip-flops (#315).
+        key=ILLUMINANCE_SENSOR,
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.ILLUMINANCE,
+        native_unit_of_measurement=LIGHT_LUX,
+        suggested_display_precision=0,
+        value_fn=_illuminance_value,
+    ),
+    BATTERY_LEVEL_SENSOR: SHCSensorEntityDescription[SHCBatteryDevice](
+        # Granular battery-level diagnostic sensor (ENUM, all 5
+        # BatteryLevelService states). Complements the binary BatterySensor
+        # (binary_sensor.py) which only signals OK vs. not-OK. #339: this
+        # duplicates the binary "Battery" sensor for most users, so it is
+        # disabled by default (power users can enable it per-entity).
+        key=BATTERY_LEVEL_SENSOR,
+        translation_key="battery_level",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        options=[
+            "ok",
+            "low_battery",
+            "critical_low",
+            "critically_low_battery",
+            "not_available",
+        ],
+        value_fn=_battery_level_value,
+    ),
+    COMBINED_RATING_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        # Diagnostic ENUM sensor for Twinguard overall combined air-quality
+        # rating. Surfaces the combinedRating field from
+        # AirQualityLevelService (CAT-3e gap). Distinct from AirQualitySensor
+        # which exposes the same value as its primary state — this entity is
+        # diagnostic-only so it does not clutter the default device view.
+        key=COMBINED_RATING_SENSOR,
+        translation_key="combined_rating",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        # "unknown" is a real RatingState member (boschshcpy falls back to it
+        # on a missing/unrecognized combinedRating value, not just a
+        # hypothetical) — omitting it made HA's SensorEntity.state raise
+        # ValueError instead of showing "unknown" whenever that fallback fired.
+        options=["good", "medium", "bad", "unknown"],
+        value_fn=_combined_rating_value,
+    ),
+    AIR_QUALITY_DESCRIPTION_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
+        # Diagnostic sensor for Twinguard air-quality text description.
+        # Surfaces the description field from AirQualityLevelService (CAT-3e
+        # gap).
+        key=AIR_QUALITY_DESCRIPTION_SENSOR,
+        translation_key="air_quality_description",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: device.description,
+    ),
+    WALK_STATE_SENSOR: SHCSensorEntityDescription[SHCMotionDetector2](
+        # Sensor for the Motion Detector II walk-test state. Reports the
+        # current WalkTest walkState enum name (WALK_TEST_STARTED / STOPPED /
+        # UNKNOWN). The WalkTest service is optional on MD2 hardware; this
+        # sensor is only created when walk_state is not None.
+        key=WALK_STATE_SENSOR,
+        translation_key="walk_test_state",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        options=["walk_test_started", "walk_test_stopped", "unknown"],
+        value_fn=_walk_state_value,
+    ),
+    DETECTION_STATE_SENSOR: SHCSensorEntityDescription[SHCMotionDetector2](
+        # Sensor for the Motion Detector II detection-test state. Reports the
+        # DetectionTest detectionState enum name (DETECTION_TEST_STARTED /
+        # STOPPED / UNKNOWN). The DetectionTest service is the local-API
+        # equivalent of the APK WalkTest service; created only when the
+        # device carries it.
+        key=DETECTION_STATE_SENSOR,
+        translation_key="detection_test_state",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        options=[
+            "detection_test_started",
+            "detection_test_stopped",
+            "detection_test_unknown",
+        ],
+        value_fn=_detection_state_value,
+    ),
+    SIREN_BATTERY_SENSOR: SHCSensorEntityDescription[SHCOutdoorSiren](
+        # Outdoor Siren battery charge (#120).
+        key=SIREN_BATTERY_SENSOR,
+        translation_key="siren_battery",
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement=UnitOfRatio.PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: getattr(
+            device.power_supply, "battery_percentage_remaining", None
+        ),
+    ),
+    SIREN_MAIN_POWER_SENSOR: SHCSensorEntityDescription[SHCOutdoorSiren](
+        # Outdoor Siren active power source (#120).
+        key=SIREN_MAIN_POWER_SENSOR,
+        translation_key="siren_main_power",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        options=["battery", "solar", "v12", "v230", "unknown"],
+        value_fn=_siren_main_power_value,
+    ),
+    SIREN_SOLAR_CHARGING_SENSOR: SHCSensorEntityDescription[SHCOutdoorSiren](
+        # Outdoor Siren solar-charging quality (#120).
+        key=SIREN_SOLAR_CHARGING_SENSOR,
+        translation_key="siren_solar_charging",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        options=["bad", "medium", "good", "unknown"],
+        value_fn=_siren_solar_charging_value,
+    ),
+    NEXT_SETPOINT_TEMPERATURE_SENSOR: SHCSensorEntityDescription[SHCClimateControl](
+        # Room-climate "next scheduled change" info (hass#120 audit). Change
+        # time and next operation mode are exposed as attributes rather than
+        # a second entity, matching the diagnostic-attribute pattern used by
+        # the keypad-trigger sensor.
+        key=NEXT_SETPOINT_TEMPERATURE_SENSOR,
+        translation_key="next_setpoint_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: getattr(device, "next_setpoint_temperature", None),
+        attributes_fn=_next_setpoint_temperature_attributes,
+    ),
+    PRESENCE_SIMULATION_RUNNING_START_SENSOR: SHCSensorEntityDescription[
+        SHCPresenceSimulationSystem
+    ](
+        # When the current presence-simulation session started (hass#120
+        # audit). Fully modeled in boschshcpy (PresenceSimulationConfiguration
+        # Service.running_start_time) but never wired into an HA entity.
+        # None whenever no simulation session is currently running (the
+        # app's own NO_TIME_SET sentinel, "-", already normalizes to None in
+        # the library).
+        key=PRESENCE_SIMULATION_RUNNING_START_SENSOR,
+        translation_key="presence_simulation_running_start",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: getattr(device, "running_start_time", None),
+    ),
+    PRESENCE_SIMULATION_RUNNING_END_SENSOR: SHCSensorEntityDescription[
+        SHCPresenceSimulationSystem
+    ](
+        # When the current presence-simulation session will end (hass#120
+        # audit). See the running-start description above for details.
+        key=PRESENCE_SIMULATION_RUNNING_END_SENSOR,
+        translation_key="presence_simulation_running_end",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: getattr(device, "running_end_time", None),
+    ),
+    REFERENCE_MOVING_TIME_TTB_SENSOR: SHCSensorEntityDescription[SHCShutterControl](
+        # Shutter Control II: recorded top-to-bottom reference moving time.
+        # Reads ShutterControl.reference_moving_time_top_to_bottom_ms,
+        # recorded by the device's own end-position calibration run (hass
+        # audit). Exposed in seconds; None on devices that have never
+        # completed a calibration run.
+        key=REFERENCE_MOVING_TIME_TTB_SENSOR,
+        translation_key="reference_moving_time_top_to_bottom",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_reference_moving_time_top_to_bottom_value,
+    ),
+    REFERENCE_MOVING_TIME_BTT_SENSOR: SHCSensorEntityDescription[SHCShutterControl](
+        # Shutter Control II: recorded bottom-to-top reference moving time.
+        # See the top-to-bottom description above for details.
+        key=REFERENCE_MOVING_TIME_BTT_SENSOR,
+        translation_key="reference_moving_time_bottom_to_top",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_reference_moving_time_bottom_to_top_value,
+    ),
+}
+
+
+class SHCSensor[_DeviceT: SHCDevice](SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Representation of a SHC sensor driven by a SHCSensorEntityDescription.
+
+    Every plain (non-coordinator, non-callback-subscribing) sensor kind in
+    this platform is expressed as one entry in SENSOR_DESCRIPTIONS and built
+    through this single class — matching the pattern home-assistant/core's
+    own (smaller-scope) bosch_shc/sensor.py port already uses. The per-kind
+    subclasses below exist only so existing call sites/tests can keep
+    constructing e.g. ``TemperatureSensor(device, entry_id)`` directly; each
+    one is a one-line binding of a SENSOR_DESCRIPTIONS entry and contributes
+    no behavior of its own.
+
+    Generic over the concrete device type _DeviceT so entity_description's
+    value_fn/attributes_fn can be typed against the actual boschshcpy model
+    class each sensor kind reads from, instead of the generic SHCDevice base
+    (core-prep: matches the "narrow self._device per leaf class" pattern
+    already established elsewhere in this codebase for the same reason).
+    """
+
+    entity_description: SHCSensorEntityDescription[_DeviceT]
+
+    def __init__(
+        self,
+        device: _DeviceT,
+        entity_description: SHCSensorEntityDescription[_DeviceT],
+        entry_id: str,
+    ) -> None:
+        """Initialize the sensor."""
         super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_temperature"
+        self._device: _DeviceT = device
+        self.entity_description = entity_description
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_{entity_description.key}"
+        )
+        # A description translation_key should drive a translated entity name
+        # even though this class has no class-level _attr_translation_key for
+        # SHCEntity.__init__ to detect (same pattern as switch.py's SHCSwitch).
+        if entity_description.translation_key:
+            del self._attr_name
 
     @property
-    def native_value(self) -> Any:
+    def native_value(self) -> StateType:
         """Return the state of the sensor."""
-        return self._device.temperature
+        return self.entity_description.value_fn(self._device)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the state attributes."""
+        if self.entity_description.attributes_fn is not None:
+            return self.entity_description.attributes_fn(self._device)
+        return None
 
 
-class TerminalTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class TemperatureSensor(SHCSensor[_TemperatureDevice]):  # type: ignore[misc]
+    """Representation of an SHC temperature reporting sensor."""
+
+    entity_description = SENSOR_DESCRIPTIONS[TEMPERATURE_SENSOR]
+
+    def __init__(self, device: _TemperatureDevice, entry_id: str) -> None:
+        """Initialize an SHC temperature reporting sensor."""
+        super().__init__(device, self.entity_description, entry_id)
+
+
+class TerminalTemperatureSensor(SHCSensor[SHCWallThermostat]):  # type: ignore[misc]
     """External floor/terminal sensor temperature of a Room Thermostat II 230V.
 
     #198 / #330: RTH2_230 with a floor sensor wired to its terminal reports a
@@ -573,165 +1236,69 @@ class TerminalTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     TemperatureLevel). Only created when a sensor is actually connected.
     """
 
-    _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 1
-    _attr_translation_key = "floor_temperature"
+    entity_description = SENSOR_DESCRIPTIONS[TERMINAL_TEMPERATURE_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCWallThermostat, entry_id: str) -> None:
         """Initialize the terminal (floor) temperature sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_terminal_temperature"
-        )
-
-    @property
-    def native_value(self) -> Any:
-        """Return the external floor/terminal sensor temperature."""
-        return self._device.terminal_temperature
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class HumiditySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class HumiditySensor(SHCSensor[_HumidityDevice]):  # type: ignore[misc]
     """Representation of an SHC humidity reporting sensor."""
 
-    _attr_device_class = SensorDeviceClass.HUMIDITY
-    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 0
+    entity_description = SENSOR_DESCRIPTIONS[HUMIDITY_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _HumidityDevice, entry_id: str) -> None:
         """Initialize an SHC humidity reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_humidity"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        return self._device.humidity
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class PuritySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class PuritySensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
     """Representation of an SHC purity reporting sensor."""
 
-    # Bosch "purity" is an air-purity/VOC ppm value, NOT CO2.  HA Core's own
-    # bosch_shc integration assigns no device_class here either; the previous
-    # SensorDeviceClass.CO2 mis-classified the reading (and pulled in HA's CO2
-    # safety thresholds / statistics handling). #204
-    _attr_native_unit_of_measurement = UnitOfRatio.PARTS_PER_MILLION
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 0
-    _attr_translation_key = "purity"
+    entity_description = SENSOR_DESCRIPTIONS[PURITY_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize an SHC purity reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_purity"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        return self._device.purity
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class AirQualitySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class AirQualitySensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
     """Representation of an SHC airquality reporting sensor."""
 
-    _attr_translation_key = "air_quality"
+    entity_description = SENSOR_DESCRIPTIONS[AIR_QUALITY_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize an SHC airquality reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_airquality"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the state of the sensor."""
-        try:
-            return str(self._device.combined_rating.name)
-        except ValueError as err:
-            LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
-            return None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes.
-
-        comfort_zone is read from the AirQualityLevelService via a service-level
-        accessor (_airqualitylevel_service.comfortZone). The SHCTwinguard model
-        does not expose a model-level comfort_zone property, so we access the
-        underlying service directly and fall back to None when unavailable.
-        """
-        comfort_zone = None
-        try:
-            service = getattr(self._device, "_airqualitylevel_service", None)
-            if service is not None:
-                comfort_zone = service.comfortZone
-        except (AttributeError, KeyError):
-            pass
-        attrs = {
-            "rating_description": self._device.description,
-        }
-        if comfort_zone is not None:
-            attrs["comfort_zone"] = comfort_zone
-        return attrs
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class TemperatureRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class TemperatureRatingSensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
     """Representation of an SHC temperature rating sensor."""
 
-    _attr_translation_key = "temperature_rating"
+    entity_description = SENSOR_DESCRIPTIONS[TEMPERATURE_RATING_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize an SHC temperature rating sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_temperaturerating"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the state of the sensor."""
-        try:
-            return str(self._device.temperature_rating.name)
-        except ValueError as err:
-            LOGGER.warning(
-                "Unknown temperature rating for %s: %s", self._device.name, err
-            )
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class CommunicationQualitySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class CommunicationQualitySensor(SHCSensor[_CommunicationQualityDevice]):  # type: ignore[misc]
     """Representation of an SHC communication quality reporting sensor.
 
-    #339: a pure diagnostic (Diagnostics category) ENUM sensor; state values are
-    lowercase slugs so HA can translate them (no more raw ALL-CAPS "GOOD"/"BAD").
+    #339: a pure diagnostic (Diagnostics category) ENUM sensor; state values
+    are lowercase slugs so HA can translate them (no more raw ALL-CAPS
+    "GOOD"/"BAD").
     """
 
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_translation_key = "communication_quality"
-    _attr_options = ["good", "normal", "not_supported", "bad", "unknown", "fetching"]
+    entity_description = SENSOR_DESCRIPTIONS[COMMUNICATION_QUALITY_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _CommunicationQualityDevice, entry_id: str) -> None:
         """Initialize an SHC communication quality reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_communicationquality"
-        )
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the quality as a lowercase slug (translated for display)."""
-        try:
-            return str(self._device.communicationquality.name.lower())
-        except (ValueError, AttributeError) as err:
-            LOGGER.warning(
-                "Unknown communication quality for %s: %s", self._device.name, err
-            )
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class KeypadTriggerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class KeypadTriggerSensor(SHCSensor[SHCUniversalSwitch]):  # type: ignore[misc]
     """Diagnostic: Universal Switch II button->scenario mapping (spec-grounded).
 
     Reports the switchType; the scenario associations are exposed as state
@@ -739,93 +1306,52 @@ class KeypadTriggerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     Keypad service / device triggers, not this sensor.
     """
 
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "keypad_trigger"
+    entity_description = SENSOR_DESCRIPTIONS[KEYPAD_TRIGGER_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCUniversalSwitch, entry_id: str) -> None:
         """Initialize a SHC keypad-trigger mapping sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_keypadtrigger"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the switch type of the keypad trigger service."""
-        service = self._device.keypadtrigger
-        return service.switch_type if service is not None else None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return scenario association state attributes."""
-        service = self._device.keypadtrigger
-        if service is None:
-            return None
-        return {
-            "scenario_id_associations": service.scenario_id_associations,
-            "ids_to_trigger": service.ids_to_trigger,
-        }
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class HumidityRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class HumidityRatingSensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
     """Representation of an SHC humidity rating sensor."""
 
-    _attr_translation_key = "humidity_rating"
+    entity_description = SENSOR_DESCRIPTIONS[HUMIDITY_RATING_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize an SHC humidity rating sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_humidityrating"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the state of the sensor."""
-        try:
-            return str(self._device.humidity_rating.name)
-        except ValueError as err:
-            LOGGER.warning("Unknown humidity rating for %s: %s", self._device.name, err)
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class PurityRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class PurityRatingSensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
     """Representation of an SHC purity rating sensor."""
 
-    _attr_translation_key = "purity_rating"
+    entity_description = SENSOR_DESCRIPTIONS[PURITY_RATING_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize an SHC purity rating sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_purityrating"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the state of the sensor."""
-        try:
-            return str(self._device.purity_rating.name)
-        except ValueError as err:
-            LOGGER.warning("Unknown purity rating for %s: %s", self._device.name, err)
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class PowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class PowerSensor(SHCSensor[_PowerMeterDevice]):  # type: ignore[misc]
     """Representation of an SHC power reporting sensor."""
 
-    _attr_device_class = SensorDeviceClass.POWER
-    _attr_native_unit_of_measurement = UnitOfPower.WATT
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 1
+    entity_description = SENSOR_DESCRIPTIONS[POWER_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _PowerMeterDevice, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        return self._device.powerconsumption
+        super().__init__(device, self.entity_description, entry_id)
 
 
 class EmmaPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Representation of an SHC power reporting sensor."""
+    """Representation of an SHC power reporting sensor.
+
+    Not description-driven like the rest of this file: EMMA delivers its
+    updates via a direct per-entity subscribe_callback/unsubscribe_callback
+    pair (async_added_to_hass/async_will_remove_from_hass below) rather than
+    through SHCEntity's own generic device-service subscription, so it keeps
+    its own dedicated class.
+    """
 
     _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.POWER
@@ -836,6 +1362,7 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     def __init__(self, device: SHCEmma, entry_id: str) -> None:
         """Initialize an SHC power reporting sensor."""
         super().__init__(device, entry_id)
+        self._device: SHCEmma = device  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
 
     async def async_added_to_hass(self) -> None:
@@ -865,492 +1392,185 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
         }
 
 
-class EnergySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class EnergySensor(SHCSensor[_PowerMeterDevice]):  # type: ignore[misc]
     """Representation of an SHC energy reporting sensor."""
 
-    _attr_device_class = SensorDeviceClass.ENERGY
-    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
-    _attr_suggested_display_precision = 2
+    entity_description = SENSOR_DESCRIPTIONS[ENERGY_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _PowerMeterDevice, entry_id: str) -> None:
         """Initialize an SHC energy reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        return self._device.energyconsumption / 1000.0
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class EnergyYieldSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class EnergyYieldSensor(SHCSensor[_PowerMeterDevice]):  # type: ignore[misc]
     """PV energy yield of a Smart Plug [+M] in Mini-PV mode (#331)."""
 
-    _attr_device_class = SensorDeviceClass.ENERGY
-    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
-    _attr_suggested_display_precision = 2
-    _attr_translation_key = "energy_yield"
+    entity_description = SENSOR_DESCRIPTIONS[ENERGY_YIELD_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _PowerMeterDevice, entry_id: str) -> None:
         """Initialize the energy yield sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy_yield"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the PV energy yield (kWh), or None when unreported."""
-        value = self._device.energy_yield
-        return None if value is None else value / 1000.0
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class PowerYieldSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """PV power yield of a Smart Plug [+M] as a positive value (#331).
+class PowerYieldSensor(SHCSensor[_PowerMeterDevice]):  # type: ignore[misc]
+    """PV power yield of a Smart Plug [+M] as a positive value (#331)."""
 
-    The PowerMeter reports negative powerConsumption while feeding in. This
-    sensor exposes that production as a positive number (0 W while consuming),
-    so it can be added directly to the HA Energy dashboard.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[POWER_YIELD_SENSOR]
 
-    _attr_device_class = SensorDeviceClass.POWER
-    _attr_native_unit_of_measurement = UnitOfPower.WATT
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 1
-    _attr_translation_key = "power_yield"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _PowerMeterDevice, entry_id: str) -> None:
         """Initialize the power yield sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_power_yield"
-
-    @property
-    def native_value(self) -> Any:
-        """Return positive PV power (W); 0 while net-consuming."""
-        consumption = self._device.powerconsumption
-        if consumption is None:
-            return None
-        return -consumption if consumption < 0 else 0.0
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class ValveTappetSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class ValveTappetSensor(SHCSensor[SHCThermostat]):  # type: ignore[misc]
     """Representation of an SHC valve tappet reporting sensor."""
 
-    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    _attr_suggested_display_precision = 0
-    _attr_translation_key = "valve_tappet"
+    entity_description = SENSOR_DESCRIPTIONS[VALVE_TAPPET_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCThermostat, entry_id: str) -> None:
         """Initialize an SHC valve tappet reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_valvetappet"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        return self._device.position
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        try:
-            valve_tappet_state = self._device.valvestate.name
-        except ValueError as err:
-            LOGGER.warning(
-                "Unknown valve tappet state for %s: %s", self._device.name, err
-            )
-            valve_tappet_state = None
-        return {
-            "valve_tappet_state": valve_tappet_state,
-        }
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class IlluminanceLevelSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Representation of an SHC illuminance level reporting sensor.
+class IlluminanceLevelSensor(SHCSensor[_IlluminanceDevice]):  # type: ignore[misc]
+    """Representation of an SHC illuminance level reporting sensor."""
 
-    Metadata (state_class/device_class/unit) stays static; native_value alone
-    coerces a non-numeric value to None, so metadata never flip-flops (#315).
-    """
+    entity_description = SENSOR_DESCRIPTIONS[ILLUMINANCE_SENSOR]
 
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_device_class = SensorDeviceClass.ILLUMINANCE
-    _attr_native_unit_of_measurement = LIGHT_LUX
-    _attr_suggested_display_precision = 0
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: _IlluminanceDevice, entry_id: str) -> None:
         """Initialize an SHC illuminance level reporting sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_illuminance"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the numeric lux value, or None for non-numeric values."""
-        value = self._device.illuminance
-        if isinstance(value, bool):
-            return None
-        if isinstance(value, (int, float)):
-            return value
-        return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class BatteryLevelSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Granular battery-level diagnostic sensor (ENUM, all 5 BatteryLevelService states).
+class BatteryLevelSensor(SHCSensor[SHCBatteryDevice]):  # type: ignore[misc]
+    """Granular battery-level diagnostic sensor (ENUM, all 5 BatteryLevelService states)."""
 
-    Complements the binary BatterySensor (binary_sensor.py) which only signals
-    OK vs. not-OK.  This sensor exposes the raw enum value so automations can
-    distinguish LOW_BATTERY from CRITICALLY_LOW_BATTERY.
+    entity_description = SENSOR_DESCRIPTIONS[BATTERY_LEVEL_SENSOR]
 
-    #339: this duplicates the binary "Battery" sensor for most users, so it is
-    disabled by default (power users can enable it per-entity).
-    """
-
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    _attr_options = [
-        "ok",
-        "low_battery",
-        "critical_low",
-        "critically_low_battery",
-        "not_available",
-    ]
-    _attr_translation_key = "battery_level"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCBatteryDevice, entry_id: str) -> None:
         """Initialize a battery-level sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery_level"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the battery level state string, or None on unknown value."""
-        try:
-            return str(self._device.batterylevel.value.lower())
-        except (ValueError, AttributeError) as err:
-            LOGGER.warning("Unknown battery level for %s: %s", self._device.name, err)
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Diagnostic ENUM sensor for Twinguard overall combined air-quality rating.
+class TwinguardCombinedRatingSensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
+    """Diagnostic ENUM sensor for Twinguard overall combined air-quality rating."""
 
-    Surfaces the combinedRating field from AirQualityLevelService (CAT-3e gap).
-    Distinct from AirQualitySensor which exposes the same value as its primary
-    state — this entity is diagnostic-only so it does not clutter the default
-    device view.  net-new unique_id suffix _combined_rating; no migration needed.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[COMBINED_RATING_SENSOR]
 
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    # "unknown" is a real RatingState member (boschshcpy falls back to it on a
-    # missing/unrecognized combinedRating value, not just a hypothetical) —
-    # omitting it made HA's SensorEntity.state raise ValueError instead of
-    # showing "unknown" whenever that fallback fired.
-    _attr_options = ["good", "medium", "bad", "unknown"]
-    _attr_translation_key = "combined_rating"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize a Twinguard combined-rating diagnostic sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_combined_rating"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the combined rating enum name, or None on unknown value."""
-        try:
-            return str(self._device.combined_rating.name.lower())
-        except (ValueError, AttributeError) as err:
-            LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class TwinguardDescriptionSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Diagnostic sensor for Twinguard air-quality text description.
+class TwinguardDescriptionSensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
+    """Diagnostic sensor for Twinguard air-quality text description."""
 
-    Surfaces the description field from AirQualityLevelService (CAT-3e gap).
-    net-new unique_id suffix _description; no migration needed.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[AIR_QUALITY_DESCRIPTION_SENSOR]
 
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "air_quality_description"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize a Twinguard air-quality description diagnostic sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_description"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the air quality description string."""
-        return self._device.description
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class WalkStateSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Sensor for the Motion Detector II walk-test state.
+class WalkStateSensor(SHCSensor[SHCMotionDetector2]):  # type: ignore[misc]
+    """Sensor for the Motion Detector II walk-test state."""
 
-    Reports the current WalkTest walkState enum name (WALK_TEST_STARTED /
-    STOPPED / UNKNOWN).  The WalkTest service is optional on MD2 hardware;
-    this sensor is only created when walk_state is not None.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[WALK_STATE_SENSOR]
 
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    _attr_options = ["walk_test_started", "walk_test_stopped", "unknown"]
-    _attr_translation_key = "walk_test_state"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
         """Initialize the walk-state sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_state"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the current walk state as its enum name."""
-        try:
-            val = self._device.walk_state
-            if val is None:
-                return None
-            return str(val.name.lower())
-        except (AttributeError, ValueError):
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class DetectionStateSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Sensor for the Motion Detector II detection-test state.
+class DetectionStateSensor(SHCSensor[SHCMotionDetector2]):  # type: ignore[misc]
+    """Sensor for the Motion Detector II detection-test state."""
 
-    Reports the DetectionTest detectionState enum name (DETECTION_TEST_STARTED
-    / STOPPED / UNKNOWN). The DetectionTest service is the local-API equivalent
-    of the APK WalkTest service; created only when the device carries it.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[DETECTION_STATE_SENSOR]
 
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    _attr_options = [
-        "detection_test_started",
-        "detection_test_stopped",
-        "detection_test_unknown",
-    ]
-    _attr_translation_key = "detection_test_state"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
         """Initialize the detection-state sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_state"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the current detection-test state as its enum name."""
-        try:
-            val = self._device.detection_state
-            if val is None:
-                return None
-            return str(val.name.lower())
-        except (AttributeError, ValueError):
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class SirenBatterySensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class SirenBatterySensor(SHCSensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren battery charge (#120)."""
 
-    _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_native_unit_of_measurement = UnitOfRatio.PERCENTAGE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "siren_battery"
+    entity_description = SENSOR_DESCRIPTIONS[SIREN_BATTERY_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCOutdoorSiren, entry_id: str) -> None:
         """Initialize the outdoor siren battery sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_battery"
-
-    @property
-    def native_value(self) -> Any:
-        """Return the remaining battery percentage."""
-        return getattr(self._device.power_supply, "battery_percentage_remaining", None)
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class SirenMainPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class SirenMainPowerSensor(SHCSensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren active power source (#120)."""
 
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "siren_main_power"
-    _attr_options = ["battery", "solar", "v12", "v230", "unknown"]
+    entity_description = SENSOR_DESCRIPTIONS[SIREN_MAIN_POWER_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCOutdoorSiren, entry_id: str) -> None:
         """Initialize the outdoor siren main power source sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_main_power"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the active power source as a lowercase slug."""
-        try:
-            return str(self._device.power_supply.main_power_supply.name.lower())
-        except AttributeError:
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class SirenSolarChargingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+class SirenSolarChargingSensor(SHCSensor[SHCOutdoorSiren]):  # type: ignore[misc]
     """Outdoor Siren solar-charging quality (#120)."""
 
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "siren_solar_charging"
-    _attr_options = ["bad", "medium", "good", "unknown"]
+    entity_description = SENSOR_DESCRIPTIONS[SIREN_SOLAR_CHARGING_SENSOR]
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCOutdoorSiren, entry_id: str) -> None:
         """Initialize the outdoor siren solar charging quality sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_siren_solar_charging"
-        )
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the solar charging score as a lowercase slug."""
-        try:
-            return str(self._device.power_supply.solar_charging_score.name.lower())
-        except AttributeError:
-            return None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class NextSetpointTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Room-climate "next scheduled change" info (hass#120 audit).
+class NextSetpointTemperatureSensor(SHCSensor[SHCClimateControl]):  # type: ignore[misc]
+    """Room-climate "next scheduled change" info (hass#120 audit)."""
 
-    Change time and next operation mode are exposed as attributes rather than
-    a second entity, matching the diagnostic-attribute pattern used by
-    KeypadTriggerSensor.
-    """
-
-    _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "next_setpoint_temperature"
+    entity_description = SENSOR_DESCRIPTIONS[NEXT_SETPOINT_TEMPERATURE_SENSOR]
     _unrecorded_attributes = frozenset({"next_change_at"})
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCClimateControl, entry_id: str) -> None:
         """Initialize the next-setpoint-temperature sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_next_setpoint_temperature"
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the next scheduled setpoint temperature, if known."""
-        return getattr(self._device, "next_setpoint_temperature", None)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the next change time and operation mode as attributes."""
-        next_mode = getattr(self._device, "next_operation_mode", None)
-        return {
-            "next_change_at": getattr(
-                self._device, "next_setpoint_temperature_change", None
-            ),
-            "next_operation_mode": next_mode.value if next_mode is not None else None,
-        }
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class PresenceSimulationRunningStartSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """When the current presence-simulation session started (hass#120 audit).
+class PresenceSimulationRunningStartSensor(SHCSensor[SHCPresenceSimulationSystem]):  # type: ignore[misc]
+    """When the current presence-simulation session started (hass#120 audit)."""
 
-    Fully modeled in boschshcpy (PresenceSimulationConfigurationService.
-    running_start_time) but never wired into an HA entity. None whenever no
-    simulation session is currently running (the app's own NO_TIME_SET
-    sentinel, "-", already normalizes to None in the library).
-    """
+    entity_description = SENSOR_DESCRIPTIONS[PRESENCE_SIMULATION_RUNNING_START_SENSOR]
 
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "presence_simulation_running_start"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCPresenceSimulationSystem, entry_id: str) -> None:
         """Initialize the presence-simulation running-start sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_running_start"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return when the current simulation session started, if running."""
-        return getattr(self._device, "running_start_time", None)
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class PresenceSimulationRunningEndSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """When the current presence-simulation session will end (hass#120 audit).
+class PresenceSimulationRunningEndSensor(SHCSensor[SHCPresenceSimulationSystem]):  # type: ignore[misc]
+    """When the current presence-simulation session will end (hass#120 audit)."""
 
-    See PresenceSimulationRunningStartSensor for details.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[PRESENCE_SIMULATION_RUNNING_END_SENSOR]
 
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "presence_simulation_running_end"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCPresenceSimulationSystem, entry_id: str) -> None:
         """Initialize the presence-simulation running-end sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_running_end"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return when the current simulation session will end, if running."""
-        return getattr(self._device, "running_end_time", None)
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class ReferenceMovingTimeTopToBottomSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Shutter Control II: recorded top-to-bottom reference moving time.
+class ReferenceMovingTimeTopToBottomSensor(SHCSensor[SHCShutterControl]):  # type: ignore[misc]
+    """Shutter Control II: recorded top-to-bottom reference moving time."""
 
-    Reads ShutterControl.reference_moving_time_top_to_bottom_ms, recorded by
-    the device's own end-position calibration run (hass audit). Exposed in
-    seconds; None on devices that have never completed a calibration run.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[REFERENCE_MOVING_TIME_TTB_SENSOR]
 
-    _attr_device_class = SensorDeviceClass.DURATION
-    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "reference_moving_time_top_to_bottom"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCShutterControl, entry_id: str) -> None:
         """Initialize the top-to-bottom reference moving time sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_reference_moving_time_ttb"
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the recorded top-to-bottom moving time in seconds, if known."""
-        value_ms = getattr(self._device, "reference_moving_time_top_to_bottom_ms", None)
-        return value_ms / 1000 if value_ms is not None else None
+        super().__init__(device, self.entity_description, entry_id)
 
 
-class ReferenceMovingTimeBottomToTopSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
-    """Shutter Control II: recorded bottom-to-top reference moving time.
+class ReferenceMovingTimeBottomToTopSensor(SHCSensor[SHCShutterControl]):  # type: ignore[misc]
+    """Shutter Control II: recorded bottom-to-top reference moving time."""
 
-    See ReferenceMovingTimeTopToBottomSensor for details.
-    """
+    entity_description = SENSOR_DESCRIPTIONS[REFERENCE_MOVING_TIME_BTT_SENSOR]
 
-    _attr_device_class = SensorDeviceClass.DURATION
-    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "reference_moving_time_bottom_to_top"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+    def __init__(self, device: SHCShutterControl, entry_id: str) -> None:
         """Initialize the bottom-to-top reference moving time sensor."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_reference_moving_time_btt"
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the recorded bottom-to-top moving time in seconds, if known."""
-        value_ms = getattr(self._device, "reference_moving_time_bottom_to_top_ms", None)
-        return value_ms / 1000 if value_ms is not None else None
+        super().__init__(device, self.entity_description, entry_id)
 
 
 def _zigbee_hop_device_and_quality(hop: Any) -> tuple[Any, Any]:
@@ -1385,6 +1605,10 @@ class ZigbeeRoutingQualitySensor(  # type: ignore[misc]
     across every Zigbee device's sensor) rather than a per-entity
     should_poll/async_update — reads its state from
     ``self.coordinator.data``, keyed by this device's id.
+
+    Not description-driven like the rest of this file: this class needs a
+    coordinator + session reference the generic SHCSensor constructor does
+    not accept, and mixes in CoordinatorEntity.
     """
 
     _attr_device_class = SensorDeviceClass.ENUM

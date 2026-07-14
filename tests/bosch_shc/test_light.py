@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import aiohttp
+import pytest
 
 from boschshcpy import PowerSwitchService
 from homeassistant.components.light import (
@@ -52,6 +53,8 @@ from custom_components.bosch_shc.light import (
     async_setup_entry,
 )
 
+from .conftest import run_setup_entry
+
 State = PowerSwitchService.State
 
 
@@ -82,65 +85,83 @@ def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
     return SimpleNamespace(**base)
 
 
-def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
-    """Minimal hass. session/shc are cached so a paired _fake_entry(hass=...)
-    call can wire them onto entry.runtime_data (the modern storage location —
-    this integration no longer uses hass.data[DOMAIN])."""
-    shc_obj = shc or SimpleNamespace(
-        identifiers={("bosch_shc", "shc")},
-        name="SHC", manufacturer="Bosch", model="SHC", id="shc1",
-    )
-    h = MagicMock()
-    h.data = {}
-    h._fake_session = session
-    h._fake_shc = shc_obj
-
-    async def _executor_job(fn, *args):
-        return fn(*args)
-
-    h.async_add_executor_job = _executor_job
-    h.config_entries = MagicMock()
-    h.bus = MagicMock()
-    h.bus.async_listen_once = MagicMock(return_value=MagicMock())
-    h.async_create_task = MagicMock()
-    return h
+def _run_light_setup(mock_config_entry, mock_session) -> list:
+    """Run light.async_setup_entry via the shared run_setup_entry helper, with
+    async_migrate_to_new_unique_id/async_remove_stale_entity patched to AsyncMock
+    (their side effects aren't under test here)."""
+    with (
+        patch(
+            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.bosch_shc.light.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ),
+    ):
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
 
 
-def _fake_entry(entry_id="E1", title="Test SHC", options=None, hass=None):
-    """Build a fake config entry with runtime_data wired from `hass` (as
-    produced by _fake_hass) when provided."""
-    entry = MagicMock()
-    entry.entry_id = entry_id
-    entry.title = title
-    entry.options = options or {}
-    entry.unique_id = "uid1"
-    entry.async_on_unload = MagicMock()
-    entry.runtime_data = SimpleNamespace(
-        session=getattr(hass, "_fake_session", None) if hass is not None else None,
-        shc_device=getattr(hass, "_fake_shc", None) if hass is not None else None,
-        title=title,
-    )
-    return entry
+def _run_light_setup_with_remove_mock(mock_config_entry, mock_session) -> tuple[list, AsyncMock]:
+    """Same as _run_light_setup, but returns the async_remove_stale_entity mock
+    too, so a test can assert on stale-entity cleanup calls/args."""
+    with (
+        patch(
+            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.bosch_shc.light.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ) as remove_mock,
+    ):
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+    return entities, remove_mock
 
 
-def _make_hass() -> SimpleNamespace:
-    return SimpleNamespace()
+def _run_light_setup_track_migrate(mock_config_entry, mock_session) -> tuple[list, list]:
+    """Same as _run_light_setup, but records each async_migrate_to_new_unique_id
+    call as (platform, device, attr_name) so a test can assert on migrate args."""
+    migrate_calls: list = []
+
+    async def _fake_migrate(hass_arg, platform, device, attr_name=None, **kw):
+        migrate_calls.append((platform, device, attr_name))
+
+    with (
+        patch(
+            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+            side_effect=_fake_migrate,
+        ),
+        patch(
+            "custom_components.bosch_shc.light.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ),
+    ):
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+    return entities, migrate_calls
 
 
-def _make_config_entry(session: object) -> SimpleNamespace:
-    entry = SimpleNamespace(options={}, entry_id="E1")
-    entry.runtime_data = SimpleNamespace(session=session)
-    return entry
-
-
-def _collect() -> tuple[list, callable]:
-    """Return (collected_list, async_add_entities callable)."""
-    collected: list = []
-
-    def add(entities: list) -> None:
-        collected.extend(entities)
-
-    return collected, add
+def _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dev_reg_mock) -> list:
+    """Same as _run_light_setup, but also patches get_dev_reg (HUE/Ledvance
+    suppress paths look the device up in the entity/device registry)."""
+    with (
+        patch(
+            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
+        ),
+        patch(
+            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
+            new_callable=AsyncMock,
+        ),
+    ):
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
 
 
 def _light_device(
@@ -1098,103 +1119,35 @@ def _make_light_switch_bsm(device_id="bsm-1", room_id="room-3"):
     )
 
 
-def _make_hass_and_entry(
-    ledvance=None,
-    motion2=None,
-    light_switches_bsm=None,
-    excluded_device_ids=None,
-    lights_as_light_ids=None,
-):
-    """Return (hass, config_entry) with faked session and options."""
-    ledvance = ledvance or []
-    motion2 = motion2 or []
-    light_switches_bsm = light_switches_bsm or []
-    excluded = excluded_device_ids or []
-
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            ledvance_lights=ledvance,
-            micromodule_dimmers=[],
-            hue_lights=[],
-            motion_detectors2=motion2,
-            light_switches_bsm=light_switches_bsm,
-        ),
-    )
-
-    entry_id = "entry-test"
-    options = {OPT_EXCLUDED_DEVICES: excluded}
-    if lights_as_light_ids is not None:
-        options[OPT_LIGHTS_AS_LIGHT] = lights_as_light_ids
-
-    hass = SimpleNamespace()
-    config_entry = SimpleNamespace(
-        entry_id=entry_id,
-        options=options,
-    )
-    config_entry.runtime_data = SimpleNamespace(
-        session=session, shc_device=None, title="Test SHC"
-    )
-    return hass, config_entry
-
-
-def _run_light_extra_setup(hass, config_entry):
-    """Run async_setup_entry synchronously, return list passed to async_add_entities."""
-    added = []
-
-    def _sync_add(entities):
-        added.extend(entities)
-
-    with (
-        patch(
-            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-            new=AsyncMock(return_value=None),
-        ),
-        patch(
-            "custom_components.bosch_shc.light.async_remove_stale_entity",
-            new=AsyncMock(return_value=None),
-        ),
-    ):
-        asyncio.run(async_setup_entry(hass, config_entry, _sync_add))
-
-    return added
-
-
 class TestLightSetupExcluded:
     """device_excluded in first for-loop (ledvance/dimmer/hue)."""
 
-    def test_excluded_ledvance_light_not_added(self):
+    def test_excluded_ledvance_light_not_added(self, mock_config_entry, mock_session):
         """Excluded ledvance light must not appear in entities."""
         dev = _make_ledvance_light_device(device_id="excl-light")
-        hass, entry = _make_hass_and_entry(
-            ledvance=[dev],
-            excluded_device_ids=["excl-light"],
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.ledvance_lights = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl-light"]}
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert all(getattr(e, "_device", None) is not dev for e in added), (
             "Excluded ledvance light should not be added"
         )
 
-    def test_non_excluded_ledvance_light_is_added(self):
+    def test_non_excluded_ledvance_light_is_added(self, mock_config_entry, mock_session):
         """Non-excluded ledvance light must appear in entities."""
         dev = _make_ledvance_light_device(device_id="keep-light")
-        hass, entry = _make_hass_and_entry(
-            ledvance=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.ledvance_lights = [dev]
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert any(getattr(e, "_device", None) is dev for e in added), (
             "Non-excluded ledvance light should be added"
         )
 
-    def test_mixed_lights_only_excluded_is_skipped(self):
+    def test_mixed_lights_only_excluded_is_skipped(self, mock_config_entry, mock_session):
         """When one of two lights is excluded, only the non-excluded one is added."""
         keep = _make_ledvance_light_device(device_id="keep")
         excl = _make_ledvance_light_device(device_id="excl")
-        hass, entry = _make_hass_and_entry(
-            ledvance=[keep, excl],
-            excluded_device_ids=["excl"],
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.ledvance_lights = [keep, excl]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl"]}
+        added = _run_light_setup(mock_config_entry, mock_session)
         device_ids = [getattr(e, "_device", SimpleNamespace()).id for e in added]
         assert "keep" in device_ids
         assert "excl" not in device_ids
@@ -1208,112 +1161,70 @@ class TestLightSetupExcluded:
 class TestLightSetupHueSuppressWithRegistry:
     """HUE lights suppressed + dev_registry entry exists → removed."""
 
-    def _run_light_setup(self, options, hue_lights, dev_reg_mock):
-        dh = MagicMock()
-        dh.hue_lights = hue_lights
-        dh.ledvance_lights = []
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with patch(
-            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
-        ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                 new_callable=AsyncMock):
-            entry = _fake_entry(hass=hass, options=options)
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_hue_suppress_removes_device_from_registry(self):
+    @pytest.mark.parametrize(
+        "mock_config_entry", [{"options": {OPT_SUPPRESS_HUE_LIGHTS: True}}], indirect=True
+    )
+    def test_hue_suppress_removes_device_from_registry(
+        self, mock_config_entry, mock_session
+    ):
         """When suppress HUE is on, dev_registry entry is removed."""
         dev = _fake_dev("hue1")
+        mock_session.device_helper.hue_lights = [dev]
         dev_entry = SimpleNamespace(id="reg_id_hue1")
         dr_mock = MagicMock()
         dr_mock.async_get_device = MagicMock(return_value=dev_entry)
         dr_mock.async_update_device = MagicMock()
 
-        self._run_light_setup(
-            options={OPT_SUPPRESS_HUE_LIGHTS: True},
-            hue_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
+        _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
         dr_mock.async_update_device.assert_called_once()
 
-    def test_hue_suppress_no_registry_entry(self):
+    @pytest.mark.parametrize(
+        "mock_config_entry", [{"options": {OPT_SUPPRESS_HUE_LIGHTS: True}}], indirect=True
+    )
+    def test_hue_suppress_no_registry_entry(self, mock_config_entry, mock_session):
         """dev_registry returns None → no update_device call."""
         dev = _fake_dev("hue1")
+        mock_session.device_helper.hue_lights = [dev]
         dr_mock = MagicMock()
         dr_mock.async_get_device = MagicMock(return_value=None)
         dr_mock.async_update_device = MagicMock()
 
-        self._run_light_setup(
-            options={OPT_SUPPRESS_HUE_LIGHTS: True},
-            hue_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
+        _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
         dr_mock.async_update_device.assert_not_called()
 
 
 class TestLightSetupLedvanceSuppressWithRegistry:
     """Ledvance lights suppressed + dev_registry entry exists."""
 
-    def _run_light_setup(self, options, ledvance_lights, dev_reg_mock):
-        dh = MagicMock()
-        dh.hue_lights = []
-        dh.ledvance_lights = ledvance_lights
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = []
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with patch(
-            "custom_components.bosch_shc.light.get_dev_reg", return_value=dev_reg_mock
-        ), patch("custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                 new_callable=AsyncMock):
-            entry = _fake_entry(hass=hass, options=options)
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_ledvance_suppress_removes_device_from_registry(self):
+    @pytest.mark.parametrize(
+        "mock_config_entry", [{"options": {OPT_SUPPRESS_LEDVANCE_LIGHTS: True}}], indirect=True
+    )
+    def test_ledvance_suppress_removes_device_from_registry(
+        self, mock_config_entry, mock_session
+    ):
         """Ledvance suppress removes matching device registry entry."""
         dev = _fake_dev("led1")
+        mock_session.device_helper.ledvance_lights = [dev]
         dev_entry = SimpleNamespace(id="reg_led1")
         dr_mock = MagicMock()
         dr_mock.async_get_device = MagicMock(return_value=dev_entry)
         dr_mock.async_update_device = MagicMock()
 
-        self._run_light_setup(
-            options={OPT_SUPPRESS_LEDVANCE_LIGHTS: True},
-            ledvance_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
+        _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
         dr_mock.async_update_device.assert_called_once()
 
-    def test_ledvance_suppress_no_registry_entry(self):
+    @pytest.mark.parametrize(
+        "mock_config_entry", [{"options": {OPT_SUPPRESS_LEDVANCE_LIGHTS: True}}], indirect=True
+    )
+    def test_ledvance_suppress_no_registry_entry(self, mock_config_entry, mock_session):
         """dev_registry returns None → no update_device call."""
         dev = _fake_dev("led1")
+        mock_session.device_helper.ledvance_lights = [dev]
         dr_mock = MagicMock()
         dr_mock.async_get_device = MagicMock(return_value=None)
         dr_mock.async_update_device = MagicMock()
 
-        self._run_light_setup(
-            options={OPT_SUPPRESS_LEDVANCE_LIGHTS: True},
-            ledvance_lights=[dev],
-            dev_reg_mock=dr_mock,
-        )
+        _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
         dr_mock.async_update_device.assert_not_called()
 
 
@@ -1324,163 +1235,104 @@ class TestLightSetupLedvanceSuppressWithRegistry:
 class TestLightSetupEntry:
     """Light async_setup_entry with LightSwitch (BRIGHTNESS mode)."""
 
-    def _run(self, session: object) -> list:
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected, add = _collect()
+    def _run(self, mock_config_entry, mock_session) -> list:
+        return _run_light_setup(mock_config_entry, mock_session)
 
-        async def _run_inner() -> None:
-            await async_setup_entry(hass, entry, add)  # type: ignore[arg-type]
-
-        with patch(
-            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-            new_callable=AsyncMock,
-        ):
-            asyncio.run(_run_inner())
-
-        return collected
-
-    def test_ledvance_lights_produce_light_switch_entities(self) -> None:
+    def test_ledvance_lights_produce_light_switch_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """ledvance_lights → LightSwitch."""
         dev = _light_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.ledvance_lights = [dev]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], LightSwitch)
 
-    def test_micromodule_dimmers_produce_light_switch_entities(self) -> None:
+    def test_micromodule_dimmers_produce_light_switch_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """micromodule_dimmers → LightSwitch."""
         dev = _light_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[],
-                micromodule_dimmers=[dev],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.micromodule_dimmers = [dev]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], LightSwitch)
 
-    def test_mixed_light_devices_all_collected(self) -> None:
+    def test_mixed_light_devices_all_collected(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Ledvance + micromodule_dimmer → 2 entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[_light_device()],
-                micromodule_dimmers=[_light_device()],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.ledvance_lights = [_light_device()]
+        mock_session.device_helper.micromodule_dimmers = [_light_device()]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, LightSwitch) for e in result)
 
-    def test_no_lights_adds_nothing(self) -> None:
+    def test_no_lights_adds_nothing(self, mock_config_entry, mock_session) -> None:
         """Empty lists → 0 entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        result = self._run(mock_config_entry, mock_session)
         assert result == []
 
-    def test_entry_id_set_on_light_entity(self) -> None:
+    def test_entry_id_set_on_light_entity(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """LightSwitch gets the entry_id stored."""
         dev = _light_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.ledvance_lights = [dev]
+        result = self._run(mock_config_entry, mock_session)
         assert result[0]._entry_id == "E1"
 
-    def test_color_temp_only_device(self) -> None:
+    def test_color_temp_only_device(self, mock_config_entry, mock_session) -> None:
         """A device with only color-temp support → LightSwitch in COLOR_TEMP mode."""
         dev = _light_device(
             supports_color_hsb=False,
             supports_color_temp=True,
             supports_brightness=False,
         )
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.ledvance_lights = [dev]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert result[0]._attr_color_mode == ColorMode.COLOR_TEMP
 
-    def test_onoff_only_device(self) -> None:
+    def test_onoff_only_device(self, mock_config_entry, mock_session) -> None:
         """A device with no color/brightness support → LightSwitch in ONOFF mode."""
         dev = _light_device(
             supports_color_hsb=False,
             supports_color_temp=False,
             supports_brightness=False,
         )
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[dev],
-                micromodule_dimmers=[],
-                hue_lights=[],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.ledvance_lights = [dev]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert result[0]._attr_color_mode == ColorMode.ONOFF
 
-    def test_hue_lights_produce_light_switch_entities(self) -> None:
+    def test_hue_lights_produce_light_switch_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """hue_lights → LightSwitch (ONOFF mode for a BinarySwitch-only device)."""
         dev = _light_device(
             supports_color_hsb=False,
             supports_color_temp=False,
             supports_brightness=False,
         )
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[],
-                micromodule_dimmers=[],
-                hue_lights=[dev],
-                motion_detectors2=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.hue_lights = [dev]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], LightSwitch)
 
-    def test_hue_lights_mixed_with_others_all_collected(self) -> None:
+    def test_hue_lights_mixed_with_others_all_collected(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """Ledvance + hue → 2 LightSwitch entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                ledvance_lights=[_light_device()],
-                micromodule_dimmers=[],
-                hue_lights=[_light_device(supports_color_hsb=False,
-                                          supports_color_temp=False,
-                                          supports_brightness=False)],
-                motion_detectors2=[],
+        mock_session.device_helper.ledvance_lights = [_light_device()]
+        mock_session.device_helper.hue_lights = [
+            _light_device(
+                supports_color_hsb=False,
+                supports_color_temp=False,
+                supports_brightness=False,
             )
-        )
-        result = self._run(session)
+        ]
+        result = self._run(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, LightSwitch) for e in result)
 
@@ -1609,152 +1461,86 @@ class TestMotionDetectorLightTurnOff:
 class TestMotionDetector2Setup:
     """motion_detectors2 loop."""
 
-    def test_excluded_motion_detector2_not_added(self):
+    def test_excluded_motion_detector2_not_added(self, mock_config_entry, mock_session):
         """Excluded MD2 must not appear in entities."""
         dev = _make_motion_detector2(device_id="excl-md2")
-        hass, entry = _make_hass_and_entry(
-            motion2=[dev],
-            excluded_device_ids=["excl-md2"],
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.motion_detectors2 = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl-md2"]}
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert all(getattr(e, "_device", None) is not dev for e in added), (
             "Excluded motion_detector2 should not be added"
         )
 
-    def test_non_excluded_motion_detector2_is_added(self):
+    def test_non_excluded_motion_detector2_is_added(self, mock_config_entry, mock_session):
         """Non-excluded MD2 must result in a MotionDetectorLight entity."""
         dev = _make_motion_detector2(device_id="keep-md2")
-        hass, entry = _make_hass_and_entry(
-            motion2=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.motion_detectors2 = [dev]
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert any(
             isinstance(e, MotionDetectorLight) and e._device is dev for e in added
         ), "Non-excluded MD2 should produce a MotionDetectorLight entity"
 
-    def test_base_profile_motion_detector2_skipped_no_light_services(self):
+    def test_base_profile_motion_detector2_skipped_no_light_services(
+        self, mock_config_entry, mock_session
+    ):
         """Regression: a base/GENERIC profile MD2 (supports_light=False, no
         BinarySwitch/MultiLevelSwitch services) must NOT get a
         MotionDetectorLight entity — previously this crashed on every state
         read/write with AttributeError on the None service (#325/#303)."""
         dev = _make_motion_detector2(device_id="base-md2", supports_light=False)
-        hass, entry = _make_hass_and_entry(
-            motion2=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.motion_detectors2 = [dev]
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert all(getattr(e, "_device", None) is not dev for e in added), (
             "Base-profile MD2 (no [+M] light services) must not get a MotionDetectorLight"
         )
 
-    def test_unsupported_profile_motion_detector2_removes_stale_entity(self):
+    def test_unsupported_profile_motion_detector2_removes_stale_entity(
+        self, mock_config_entry, mock_session
+    ):
         """#356: a MD2 whose profile no longer supports the light (e.g. after
         switching [+M] -> GENERIC via select.installation_profile) must have
         any previously-registered MotionDetectorLight entity actively removed,
         not just skipped on this setup pass."""
         dev = _make_motion_detector2(device_id="was-plusm-md2", supports_light=False)
-        hass, entry = _make_hass_and_entry(motion2=[dev], excluded_device_ids=[])
-        remove_calls = []
-
-        async def _fake_remove(hass_arg, entity_domain, unique_id):
-            remove_calls.append((entity_domain, unique_id))
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new=AsyncMock(return_value=None),
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                side_effect=_fake_remove,
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert remove_calls == [
-            (Platform.LIGHT, "shc-root_was-plusm-md2_motionlight")
-        ], (
-            f"Expected one stale-removal call for the unsupported MD2, got {remove_calls}"
+        mock_session.device_helper.motion_detectors2 = [dev]
+        _, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
+        remove_mock.assert_awaited_once_with(
+            ANY, Platform.LIGHT, "shc-root_was-plusm-md2_motionlight"
         )
 
-    def test_excluded_motion_detector2_removes_stale_entity(self):
+    def test_excluded_motion_detector2_removes_stale_entity(
+        self, mock_config_entry, mock_session
+    ):
         """#356: excluding a device that previously had a light entity must
         also clean up the stale registry entry, not just skip creation."""
         dev = _make_motion_detector2(device_id="excl-had-light", supports_light=True)
-        hass, entry = _make_hass_and_entry(
-            motion2=[dev], excluded_device_ids=["excl-had-light"]
+        mock_session.device_helper.motion_detectors2 = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl-had-light"]}
+        _, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
+        remove_mock.assert_awaited_once_with(
+            ANY, Platform.LIGHT, "shc-root_excl-had-light_motionlight"
         )
-        remove_calls = []
 
-        async def _fake_remove(hass_arg, entity_domain, unique_id):
-            remove_calls.append((entity_domain, unique_id))
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new=AsyncMock(return_value=None),
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                side_effect=_fake_remove,
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert remove_calls == [
-            (Platform.LIGHT, "shc-root_excl-had-light_motionlight")
-        ], f"Expected one stale-removal call for the excluded MD2, got {remove_calls}"
-
-    def test_async_migrate_called_for_motion_detector2(self):
+    def test_async_migrate_called_for_motion_detector2(
+        self, mock_config_entry, mock_session
+    ):
         """async_migrate_to_new_unique_id must be called with attr_name='MotionLight'."""
         dev = _make_motion_detector2(device_id="md2-migrate")
-        hass, entry = _make_hass_and_entry(motion2=[dev])
-        migrate_calls = []
-
-        async def _fake_migrate(hass_arg, platform, device, attr_name=None, **kw):
-            migrate_calls.append((platform, device, attr_name))
-
-        with patch(
-            "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-            side_effect=_fake_migrate,
-        ):
-            added = []
-
-            def _add(entities):
-                added.extend(entities)
-
-            asyncio.run(async_setup_entry(hass, entry, _add))
-
+        mock_session.device_helper.motion_detectors2 = [dev]
+        _, migrate_calls = _run_light_setup_track_migrate(mock_config_entry, mock_session)
         assert any(
             call[1] is dev and call[2] == "MotionLight" for call in migrate_calls
         ), f"Expected migrate call with attr_name='MotionLight', got: {migrate_calls}"
 
-    def test_excluded_motion_detector2_skips_migrate(self):
+    def test_excluded_motion_detector2_skips_migrate(
+        self, mock_config_entry, mock_session
+    ):
         """async_migrate must NOT be called for excluded MD2 devices."""
         dev = _make_motion_detector2(device_id="excl-migrate")
-        hass, entry = _make_hass_and_entry(
-            motion2=[dev],
-            excluded_device_ids=["excl-migrate"],
-        )
-        migrate_calls = []
-
-        async def _fake_migrate(hass_arg, platform, device, **kw):
-            migrate_calls.append(device)
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                side_effect=_fake_migrate,
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                new=AsyncMock(return_value=None),
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert not any(c is dev for c in migrate_calls), (
+        mock_session.device_helper.motion_detectors2 = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl-migrate"]}
+        _, migrate_calls = _run_light_setup_track_migrate(mock_config_entry, mock_session)
+        assert not any(c[1] is dev for c in migrate_calls), (
             "Excluded MD2 must not trigger async_migrate_to_new_unique_id"
         )
 
@@ -2130,25 +1916,25 @@ class TestRelayLightTurnOffErrors:
 class TestRelayLightOptOutSetup:
     """#338 light_switch_devices loop: RelayLight opt-out stale-entity cleanup."""
 
-    def test_opted_in_bsm_gets_relaylight(self):
+    def test_opted_in_bsm_gets_relaylight(self, mock_config_entry, mock_session):
         dev = _make_light_switch_bsm(device_id="bsm-in")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev], lights_as_light_ids=["bsm-in"]
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.light_switches_bsm = [dev]
+        mock_config_entry.options = {OPT_LIGHTS_AS_LIGHT: ["bsm-in"]}
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert any(
             isinstance(e, RelayLight) and e._device is dev for e in added
         ), "Opted-in BSM should produce a RelayLight entity"
 
-    def test_not_opted_in_bsm_produces_no_relaylight(self):
+    def test_not_opted_in_bsm_produces_no_relaylight(self, mock_config_entry, mock_session):
         dev = _make_light_switch_bsm(device_id="bsm-out")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev], lights_as_light_ids=[]
-        )
-        added = _run_light_extra_setup(hass, entry)
+        mock_session.device_helper.light_switches_bsm = [dev]
+        mock_config_entry.options = {OPT_LIGHTS_AS_LIGHT: []}
+        added = _run_light_setup(mock_config_entry, mock_session)
         assert all(getattr(e, "_device", None) is not dev for e in added)
 
-    def test_opted_out_bsm_removes_stale_relaylight_entity(self):
+    def test_opted_out_bsm_removes_stale_relaylight_entity(
+        self, mock_config_entry, mock_session
+    ):
         """Regression: a device previously opted in to "expose as light"
         (RelayLight created, unique_id = root_device_id_device_id) that gets
         opted back out must have that entity actively removed — an options
@@ -2156,145 +1942,59 @@ class TestRelayLightOptOutSetup:
         re-creating the entity left an orphaned registry entry behind,
         exactly the failure mode #356 already fixed for MotionDetectorLight."""
         dev = _make_light_switch_bsm(device_id="was-light")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev], lights_as_light_ids=[]
-        )
-        remove_calls = []
+        mock_session.device_helper.light_switches_bsm = [dev]
+        mock_config_entry.options = {OPT_LIGHTS_AS_LIGHT: []}
+        _, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
+        remove_mock.assert_awaited_once_with(ANY, Platform.LIGHT, "shc-root_was-light")
 
-        async def _fake_remove(hass_arg, entity_domain, unique_id):
-            remove_calls.append((entity_domain, unique_id))
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new=AsyncMock(return_value=None),
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                side_effect=_fake_remove,
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert remove_calls == [(Platform.LIGHT, "shc-root_was-light")], (
-            f"Expected one stale-removal call for the opted-out BSM, got {remove_calls}"
-        )
-
-    def test_excluded_bsm_that_was_opted_in_removes_stale_relaylight_entity(self):
+    def test_excluded_bsm_that_was_opted_in_removes_stale_relaylight_entity(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_light_switch_bsm(device_id="excl-was-light")
-        hass, entry = _make_hass_and_entry(
-            light_switches_bsm=[dev],
-            excluded_device_ids=["excl-was-light"],
-            lights_as_light_ids=["excl-was-light"],
-        )
-        remove_calls = []
-
-        async def _fake_remove(hass_arg, entity_domain, unique_id):
-            remove_calls.append((entity_domain, unique_id))
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new=AsyncMock(return_value=None),
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                side_effect=_fake_remove,
-            ),
-        ):
-            asyncio.run(async_setup_entry(hass, entry, lambda entities: None))
-
-        assert remove_calls == [(Platform.LIGHT, "shc-root_excl-was-light")], (
-            f"Expected one stale-removal call for the excluded+opted-in BSM, got {remove_calls}"
+        mock_session.device_helper.light_switches_bsm = [dev]
+        mock_config_entry.options = {
+            OPT_EXCLUDED_DEVICES: ["excl-was-light"],
+            OPT_LIGHTS_AS_LIGHT: ["excl-was-light"],
+        }
+        _, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
+        remove_mock.assert_awaited_once_with(
+            ANY, Platform.LIGHT, "shc-root_excl-was-light"
         )
 
 
 class TestLightRelayOptIn:
     """RelayLight opt-in path in async_setup_entry."""
 
-    def _run_light_setup(self, options, bsm_lights):
-        dh = MagicMock()
-        dh.hue_lights = []
-        dh.ledvance_lights = []
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = bsm_lights
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                new_callable=AsyncMock,
-            ),
-        ):
-            entry = _fake_entry(hass=hass, options=options)
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return collected
-
-    def test_relay_not_opted_in_skipped(self):
+    def test_relay_not_opted_in_skipped(self, mock_config_entry, mock_session):
         """light_switch_as_light=False → continue, RelayLight not added."""
         dev = _fake_dev("bsm1")
         # No opt-in option → light_switch_as_light returns False
-        collected = self._run_light_setup(options={}, bsm_lights=[dev])
+        mock_session.device_helper.light_switches_bsm = [dev]
+        collected = _run_light_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, RelayLight) for e in collected)
 
-    def test_relay_opted_in_added(self):
+    def test_relay_opted_in_added(self, mock_config_entry, mock_session):
         """light_switch_as_light=True → RelayLight added."""
         dev = _fake_dev("bsm1")
         # All-opt-in → light_switch_as_light returns True
-        collected = self._run_light_setup(
-            options={OPT_ALL_LIGHTS_AS_LIGHT: True},
-            bsm_lights=[dev],
-        )
+        mock_session.device_helper.light_switches_bsm = [dev]
+        mock_config_entry.options = {OPT_ALL_LIGHTS_AS_LIGHT: True}
+        collected = _run_light_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, RelayLight) for e in collected)
 
 
 class TestLightExcludedRelayDevice:
     """light.py: excluded device in relay light loop → continue."""
 
-    def test_excluded_relay_device_skipped(self):
+    def test_excluded_relay_device_skipped(self, mock_config_entry, mock_session):
         """device_excluded → continue before opt-in check."""
         dev = _fake_dev("bsm_excl")
-        dh = MagicMock()
-        dh.hue_lights = []
-        dh.ledvance_lights = []
-        dh.micromodule_dimmers = []
-        dh.motion_detectors2 = []
-        dh.micromodule_light_attached = []
-        dh.light_switches_bsm = [dev]
-
-        session = MagicMock()
-        session.device_helper = dh
-
-        hass = _fake_hass(session=session)
-
-        with (
-            patch(
-                "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.bosch_shc.light.async_remove_stale_entity",
-                new_callable=AsyncMock,
-            ),
-        ):
-            entry = _fake_entry(hass=hass, options={
-                OPT_ALL_LIGHTS_AS_LIGHT: True,
-                OPT_EXCLUDED_DEVICES: ["bsm_excl"],
-            })
-            collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-
+        mock_session.device_helper.light_switches_bsm = [dev]
+        mock_config_entry.options = {
+            OPT_ALL_LIGHTS_AS_LIGHT: True,
+            OPT_EXCLUDED_DEVICES: ["bsm_excl"],
+        }
+        collected = _run_light_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, RelayLight) for e in collected)
 
 
@@ -2536,106 +2236,69 @@ def test_device_change_without_deletion_just_refreshes_state():
 
 # ── light.py async_setup_entry: room-grouping wiring ─────────────────────────
 
-def _make_room_config_entry(session: object, room_light_groups: bool) -> SimpleNamespace:
-    entry = SimpleNamespace(
-        options={OPT_ROOM_LIGHT_GROUPS: room_light_groups}, entry_id="E1"
-    )
-    entry.runtime_data = SimpleNamespace(session=session)
-    return entry
-
-
-def _run_room_group_setup(session: object, room_light_groups: bool) -> list:
-    hass = SimpleNamespace()
-    entry = _make_room_config_entry(session, room_light_groups)
-    collected, add = _collect()
-
-    async def _run_inner() -> None:
-        with patch(
-            "custom_components.bosch_shc.light.async_remove_stale_entity",
-            new_callable=AsyncMock,
-        ) as remove_mock:
-            await async_setup_entry(hass, entry, add)  # type: ignore[arg-type]
-            return remove_mock
-
-    with patch(
-        "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
-        new_callable=AsyncMock,
-    ):
-        remove_mock = asyncio.run(_run_inner())
-
-    return collected, remove_mock
-
-
-def _make_session(devices: list, rooms: list) -> SimpleNamespace:
-    return SimpleNamespace(
-        device_helper=SimpleNamespace(
-            ledvance_lights=devices,
-            micromodule_dimmers=[],
-            hue_lights=[],
-            motion_detectors2=[],
-        ),
-        rooms=rooms,
-    )
-
-
-def test_option_disabled_creates_no_group():
+def test_option_disabled_creates_no_group(mock_config_entry, mock_session):
     devices = [
         _make_room_light_device(device_id="d1", room_id="hz_1"),
         _make_room_light_device(device_id="d2", room_id="hz_1"),
     ]
-    session = _make_session(devices, [_make_room("hz_1", "Wohnzimmer")])
-    entities, remove_mock = _run_room_group_setup(session, room_light_groups=False)
+    mock_session.device_helper.ledvance_lights = devices
+    mock_session.rooms = [_make_room("hz_1", "Wohnzimmer")]
+    mock_config_entry.options = {OPT_ROOM_LIGHT_GROUPS: False}
+    entities, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
     assert not any(isinstance(e, SHCRoomLightGroup) for e in entities)
     assert len(entities) == 2  # the 2 LightSwitch entities only
     # Option off -> cleanup path runs once, for the one room that has devices.
     assert remove_mock.await_count == 1
-    assert remove_mock.await_args.args[1:] == ("light", "room_hz_1_light_group")
+    assert remove_mock.await_args.args[1:] == (Platform.LIGHT, "room_hz_1_light_group")
 
 
-def test_option_enabled_two_lights_same_room_creates_group():
+def test_option_enabled_two_lights_same_room_creates_group(mock_config_entry, mock_session):
     devices = [
         _make_room_light_device(device_id="d1", room_id="hz_1"),
         _make_room_light_device(device_id="d2", room_id="hz_1"),
     ]
-    session = _make_session(devices, [_make_room("hz_1", "Wohnzimmer")])
-    entities, remove_mock = _run_room_group_setup(session, room_light_groups=True)
+    mock_session.device_helper.ledvance_lights = devices
+    mock_session.rooms = [_make_room("hz_1", "Wohnzimmer")]
+    mock_config_entry.options = {OPT_ROOM_LIGHT_GROUPS: True}
+    entities, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
     groups = [e for e in entities if isinstance(e, SHCRoomLightGroup)]
     assert len(groups) == 1
     assert groups[0].unique_id == "room_hz_1_light_group"
     assert remove_mock.await_count == 0
 
 
-def test_option_enabled_single_light_in_room_creates_no_group():
+def test_option_enabled_single_light_in_room_creates_no_group(mock_config_entry, mock_session):
     devices = [_make_room_light_device(device_id="d1", room_id="hz_1")]
-    session = _make_session(devices, [_make_room("hz_1", "Wohnzimmer")])
-    entities, remove_mock = _run_room_group_setup(session, room_light_groups=True)
+    mock_session.device_helper.ledvance_lights = devices
+    mock_session.rooms = [_make_room("hz_1", "Wohnzimmer")]
+    mock_config_entry.options = {OPT_ROOM_LIGHT_GROUPS: True}
+    entities, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
     assert not any(isinstance(e, SHCRoomLightGroup) for e in entities)
     assert remove_mock.await_count == 1
 
 
-def test_option_enabled_lights_in_different_rooms_create_no_group():
+def test_option_enabled_lights_in_different_rooms_create_no_group(
+    mock_config_entry, mock_session
+):
     devices = [
         _make_room_light_device(device_id="d1", room_id="hz_1"),
         _make_room_light_device(device_id="d2", room_id="hz_2"),
     ]
-    rooms = [_make_room("hz_1", "Wohnzimmer"), _make_room("hz_2", "Küche")]
-    session = _make_session(devices, rooms)
-    entities, remove_mock = _run_room_group_setup(session, room_light_groups=True)
+    mock_session.device_helper.ledvance_lights = devices
+    mock_session.rooms = [_make_room("hz_1", "Wohnzimmer"), _make_room("hz_2", "Küche")]
+    mock_config_entry.options = {OPT_ROOM_LIGHT_GROUPS: True}
+    entities, remove_mock = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
     assert not any(isinstance(e, SHCRoomLightGroup) for e in entities)
     assert remove_mock.await_count == 2
 
 
-def test_missing_rooms_attribute_does_not_crash():
+def test_missing_rooms_attribute_does_not_crash(mock_config_entry, mock_session):
     """Older/fake sessions without `.rooms` must not break setup (getattr-safe)."""
     devices = [_make_room_light_device(device_id="d1", room_id="hz_1")]
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            ledvance_lights=devices,
-            micromodule_dimmers=[],
-            hue_lights=[],
-            motion_detectors2=[],
-        )
-    )
-    entities, _ = _run_room_group_setup(session, room_light_groups=True)
+    mock_session.device_helper.ledvance_lights = devices
+    # deliberately NOT setting mock_session.rooms -- mimics an older/fake
+    # session without that attribute (getattr(..., "rooms", []) fallback).
+    mock_config_entry.options = {OPT_ROOM_LIGHT_GROUPS: True}
+    entities, _ = _run_light_setup_with_remove_mock(mock_config_entry, mock_session)
     assert len(entities) == 1
     assert isinstance(entities[0], LightSwitch)

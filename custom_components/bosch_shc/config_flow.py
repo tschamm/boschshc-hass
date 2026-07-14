@@ -17,8 +17,9 @@ from boschshcpy.exceptions import (
 )
 from homeassistant import config_entries, core
 from homeassistant.components import zeroconf
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_TOKEN
-from homeassistant.data_entry_flow import FlowResult, section
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
     BooleanSelector,
     EntitySelector,
@@ -26,6 +27,8 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
+    Selector,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -236,13 +239,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_reauth(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Perform reauth upon an API authentication error."""
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Dialog that informs the user that reauth is required."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -272,7 +275,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Show a menu: change host only, or re-pair (regenerate certificate)."""
         return self.async_show_menu(
             step_id="reconfigure",
@@ -281,7 +284,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_reconfigure_host(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Allow the user to change the SHC host/IP without re-pairing."""
         entry = self._get_reconfigure_entry()
         errors = {}
@@ -316,7 +319,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_repair_credentials(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Re-pair: regenerate the client certificate/key for this SHC entry."""
         entry = self._get_reconfigure_entry()
         errors = {}
@@ -410,7 +413,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
@@ -433,16 +436,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_credentials(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the credentials step."""
         errors = {}
         if user_input is not None:
             zeroconf_instance = await zeroconf.async_get_instance(self.hass)
+            _host = self.host
+            assert _host is not None
             try:
                 result = await self.hass.async_add_executor_job(
                     create_credentials_and_validate,
                     self.hass,
-                    self.host,
+                    _host,
                     user_input,
                     zeroconf_instance,
                 )
@@ -508,7 +513,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle zeroconf discovery."""
         if not discovery_info.name.startswith("Bosch SHC"):
             return self.async_abort(reason="not_bosch_shc")
@@ -531,17 +536,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     async def async_step_confirm_discovery(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle discovery confirm."""
         errors: dict[str, str] = {}
         if user_input is not None:
             return await self.async_step_credentials()
 
+        _host = self.host
+        assert _host is not None
         return self.async_show_form(
             step_id="confirm_discovery",
             description_placeholders={
                 "model": "Bosch SHC",
-                "host": self.host,
+                "host": _host,
             },
             errors=errors,
         )
@@ -563,7 +570,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the options."""
         current = self.config_entry.options
 
@@ -600,15 +607,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
             _presence_default = [_presence_default] if _presence_default else []
 
         # Build device/room option lists from the live session.
-        device_options = []
-        room_options = []
-        light_switch_options = []
+        device_options: list[SelectOptionDict] = []
+        room_options: list[SelectOptionDict] = []
+        light_switch_options: list[SelectOptionDict] = []
         _has_cameras = False
         _camera_tool_installed = False
         _has_hue_lights = False
         _has_ledvance_lights = False
         _has_md2 = False
-        _scenario_options = []
+        _scenario_options: list[SelectOptionDict] = []
         try:
             _camera_tool_installed = bool(
                 self.hass.config_entries.async_entries(CAMERA_TOOL_DOMAIN)
@@ -653,7 +660,7 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
         ):
             LOGGER.debug("Could not build device/room filter options", exc_info=True)
 
-        features_fields = {
+        features_fields: dict[Any, Selector[Any]] = {
             vol.Optional(
                 OPT_SCENARIOS_AS_BUTTONS,
                 default=current.get(OPT_SCENARIOS_AS_BUTTONS, False),

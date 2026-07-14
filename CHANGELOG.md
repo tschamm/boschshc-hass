@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.11.0 — mypy strict-typing cleanup, EntityDescription core-prep, test-fixture consolidation
+
+**No breaking changes — internal refactor only, no entity/behavior changes.**
+
+- Bumped `boschshcpy` pin to **0.4.13** — long-poll message-shape guards
+  found via a chaos-engineering test round (`session.py`/`device_service.py`,
+  no live incident, no HA-visible behavior change).
 - **`__init__.py`:** dropped an unnecessary defensive `getattr(runtime.session,
   "devices", None) or []` in the Zigbee topology export service —
   `SHCData.session.devices` is a non-Optional, always-present property, so
@@ -11,6 +18,30 @@
   `unique_id`, matching `SHCScenarioButton`'s existing convention; and
   guards `async_press` against an overlapping config-entry reload when the
   button is pressed twice in quick succession.
+- **mypy strict-typing cleanup (the main change in this release):**
+  `mypy.ini`'s `disable_error_code` line (which had masked 291 real errors)
+  was removed entirely after fixing every one of them. Two recurring fix
+  shapes account for nearly all of them: a local `self._device: <ConcreteType>`
+  narrowing in `__init__` for classes extending `SHCEntity` directly, and a
+  PEP-695 generic `EntityDescription` (`class SHCXEntityDescription[_DeviceT:
+  SHCDevice](XEntityDescription)`) for platforms with many near-identical
+  device-specific classes. `mypy custom_components/bosch_shc/` (CI's exact
+  gate command) is now genuinely clean with no suppressions.
+- **EntityDescription-dataclass refactor** (the ha-core Platinum-tier
+  convention, prepping this codebase for an easier future upstream port):
+  applied to `switch.py`, `sensor.py` (~27 classes → one generic driver),
+  `select.py`, `binary_sensor.py`, and `number.py`. `climate.py`/`cover.py`/
+  `light.py`/`button.py`/`update.py`/`event.py` were checked and deliberately
+  left as direct classes — each is genuinely device-distinct or too small a
+  set to benefit from the pattern.
+- **Test-fixture consolidation:** introduced shared `mock_config_entry`/
+  `device_buckets`/`mock_session`/`run_setup_entry` fixtures in
+  `tests/bosch_shc/conftest.py`, replacing bespoke duplicated per-file mock
+  helpers across 13 test files.
+- `scripts/comment_length_baseline.txt` regenerated — the refactor shifted
+  line numbers throughout and carried forward existing per-device hardware/
+  API documentation comments into the new `EntityDescription` entries; same
+  content, no new prose.
 
 ## 0.10.15 — Zigbee topology export, bulk-diagnostics button, ShutterContactSensor refactor
 

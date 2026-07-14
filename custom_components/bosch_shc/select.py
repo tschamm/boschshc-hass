@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable, Coroutine, Sequence
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 from boschshcpy import (
+    SHCMicromoduleDimmer,
+    SHCMotionDetector2,
+    SHCOutdoorSiren,
     SHCSession,
     SHCShutterContact2Plus,
 )
@@ -25,7 +32,7 @@ from boschshcpy.services_impl import (
     VibrationSensorService,
     WallThermostatConfiguration,
 )
-from homeassistant.components.select import SelectEntity
+from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -38,6 +45,32 @@ from .entity import SHCEntity, device_excluded
 LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
+
+
+@dataclass(frozen=True, kw_only=True)
+class SHCSelectEntityDescription[_DeviceT: SHCDevice](SelectEntityDescription):
+    """Describes a SHC select entity.
+
+    ``current_option_fn``/``select_option_fn`` capture the per-select-type
+    variation (which device attribute/service to read, which enum to look
+    values up in, which async setter to await) so a single generic entity
+    class (`SHCSelect`) can drive every select type. ``current_option_fn``
+    receives the entity's current ``options`` list so it can validate the
+    read-back value the same way the original per-class implementations did
+    (some filter unknown values against the options list, some don't —
+    behavior is preserved exactly per type).
+
+    Generic over the concrete device type _DeviceT (core-prep) so
+    current_option_fn/select_option_fn can be typed against the actual
+    boschshcpy model class a given select kind reads/writes, instead of the
+    generic SHCDevice base.
+    """
+
+    unique_id_suffix: str
+    current_option_fn: Callable[[_DeviceT, Sequence[str] | None], str | None]
+    select_option_fn: Callable[[_DeviceT, str], Coroutine[Any, Any, None]]
+    reload_after_select: bool = False
+
 
 # Motion sensitivity: exclude UNKNOWN from user-visible options.
 _MOTION_SENSITIVITY_OPTIONS = [
@@ -147,6 +180,364 @@ _SMART_SENSITIVITY_OPTIONS = [
     SmartSensitivityControlService.MotionSensitivity.MIDDLE.name,
     SmartSensitivityControlService.MotionSensitivity.LOW.name,
 ]
+
+_SIREN_SOUND_LEVEL_OPTIONS = ["low", "medium", "high"]
+
+_DIMMER_PHASE_CONTROL_OPTIONS = ["TRAILING", "LEADING"]
+
+
+# ---------------------------------------------------------------------------
+# Reusable description-field factories.
+#
+# Most select types share one shape: read an enum-valued device attribute,
+# return its (validated) `.name`, and write it back via `async_set_<x>` after
+# looking the option string up in the matching enum. The few types that
+# genuinely deviate (siren/dimmer's KeyError-swallowing lookup, the
+# SmartSensitivity context-keyed dict read, the dynamically-scoped
+# InstallationProfile options) get their own dedicated functions below
+# instead of being forced through these factories.
+# ---------------------------------------------------------------------------
+
+
+def _enum_attr_current_option_fn(
+    attr: str, warn_label: str
+) -> Callable[[SHCDevice, Sequence[str] | None], str | None]:
+    """Build a current_option_fn reading `device.<attr>.name`, options-checked."""
+
+    def _current_option(device: SHCDevice, options: Sequence[str] | None) -> str | None:
+        try:
+            val = getattr(device, attr)
+            if val is None:
+                return None
+            name = str(val.name)
+            if options is not None and name not in options:
+                return None
+            return name
+        except (AttributeError, ValueError) as err:
+            LOGGER.warning("Unknown %s for %s: %s", warn_label, device.name, err)
+            return None
+
+    return _current_option
+
+
+def _enum_attr_select_option_fn(
+    setter: str, enum_cls: type[Enum]
+) -> Callable[[SHCDevice, str], Coroutine[Any, Any, None]]:
+    """Build a select_option_fn calling `device.<setter>(enum_cls[option])`."""
+
+    async def _select_option(device: SHCDevice, option: str) -> None:
+        await getattr(device, setter)(enum_cls[option])
+
+    return _select_option
+
+
+def _siren_current_option(
+    device: SHCOutdoorSiren, options: Sequence[str] | None
+) -> str | None:
+    """Read the Outdoor Siren's current sound level (already lowercased)."""
+    try:
+        return str(device.siren.sound_level.name.lower())
+    except (AttributeError, ValueError):
+        return None
+
+
+async def _siren_select_option(device: SHCOutdoorSiren, option: str) -> None:
+    """Write the Outdoor Siren's sound level."""
+    try:
+        level = OutdoorSirenService.SoundLevel[option.upper()]
+    except KeyError:
+        return
+    await device.siren.async_set_configuration(sound_level=level)
+
+
+def _dimmer_current_option(
+    device: SHCMicromoduleDimmer, options: Sequence[str] | None
+) -> str | None:
+    """Read the micromodule dimmer's edge phase-control mode."""
+    service = device.dimmer_configuration
+    if service is None:
+        return None
+    try:
+        name = service.edge_phase_control_mode.name
+        return name if options is None or name in options else None
+    except (AttributeError, ValueError):
+        return None
+
+
+async def _dimmer_select_option(device: SHCMicromoduleDimmer, option: str) -> None:
+    """Write the micromodule dimmer's edge phase-control mode."""
+    service = device.dimmer_configuration
+    if service is None:
+        return
+    try:
+        mode = DimmerConfigurationService.EdgePhaseControlMode[option]
+    except KeyError:
+        return
+    await service.async_set_edge_phase_control_mode(mode)
+
+
+def _smart_sensitivity_current_option_fn(
+    context: Any,
+) -> Callable[[SHCMotionDetector2, Sequence[str] | None], str | None]:
+    """Build a current_option_fn for one SmartSensitivityControl context."""
+
+    def _current_option(
+        device: SHCMotionDetector2, options: Sequence[str] | None
+    ) -> str | None:
+        sensitivity = device.get_smart_sensitivity(context)
+        if sensitivity is None:
+            return None
+        level = sensitivity.get("manualLevel")
+        if level is None:
+            return None
+        # level may be an enum or a string
+        name = level.name if hasattr(level, "name") else str(level)
+        if options is not None and name not in options:
+            return None
+        return name
+
+    return _current_option
+
+
+def _smart_sensitivity_select_option_fn(
+    context: Any,
+) -> Callable[[SHCMotionDetector2, str], Coroutine[Any, Any, None]]:
+    """Build a select_option_fn for one SmartSensitivityControl context."""
+
+    async def _select_option(device: SHCMotionDetector2, option: str) -> None:
+        level = SmartSensitivityControlService.MotionSensitivity[option]
+        await device.async_set_smart_sensitivity_manual_level(context, level)
+
+    return _select_option
+
+
+def _installation_profile_current_option(
+    device: SHCDevice, options: Sequence[str] | None
+) -> str | None:
+    """Return the current installation profile (lowercased).
+
+    Guarded: a profile not in the advertised options (e.g. after a firmware
+    vocabulary change) returns None instead of an invalid option.
+    """
+    val = getattr(device, "profile", None)
+    if val is None:
+        return None
+    val_lower = str(val).lower()
+    if val_lower not in (options or []):
+        return None
+    return val_lower
+
+
+async def _installation_profile_select_option(device: SHCDevice, option: str) -> None:
+    """Write the installation profile (uppercased back to the API value)."""
+    await device.async_set_profile(option.upper())
+
+
+SIREN_SOUND_LEVEL = "siren_sound_level"
+MOTION_SENSITIVITY = "motion_sensitivity"
+ORIENTATION_LIGHT_RESPONSE = "orientation_light_response_time"
+VIBRATION_SENSITIVITY = "vibration_sensitivity"
+STATE_AFTER_POWER_OUTAGE = "state_after_power_outage"
+SMOKE_SENSITIVITY = "smoke_sensitivity"
+DISPLAY_DIRECTION = "display_direction"
+DISPLAYED_TEMPERATURE = "displayed_temperature"
+TERMINAL_TYPE = "terminal_type"
+VALVE_TYPE = "valve_type"
+HEATER_TYPE = "heater_type"
+SWITCH_TYPE = "switch_type"
+ACTUATOR_TYPE = "actuator_type"
+OUTPUT_MODE = "output_mode"
+SMART_SENSITIVITY_SECURITY_LEVEL = "smart_sensitivity_security_level"
+SMART_SENSITIVITY_COMFORT_LEVEL = "smart_sensitivity_comfort_level"
+DIMMER_PHASE_CONTROL = "dimmer_phase_control"
+INSTALLATION_PROFILE = "installation_profile"
+
+
+SELECT_DESCRIPTIONS: dict[str, SHCSelectEntityDescription[Any]] = {
+    SIREN_SOUND_LEVEL: SHCSelectEntityDescription[SHCOutdoorSiren](
+        key=SIREN_SOUND_LEVEL,
+        translation_key=SIREN_SOUND_LEVEL,
+        unique_id_suffix="sound_level",
+        current_option_fn=_siren_current_option,
+        select_option_fn=_siren_select_option,
+    ),
+    MOTION_SENSITIVITY: SHCSelectEntityDescription(
+        key=MOTION_SENSITIVITY,
+        translation_key=MOTION_SENSITIVITY,
+        unique_id_suffix=MOTION_SENSITIVITY,
+        current_option_fn=_enum_attr_current_option_fn(
+            "motion_sensitivity", "motion_sensitivity"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_motion_sensitivity",
+            PirSensorConfigurationService.MotionSensitivity,
+        ),
+    ),
+    ORIENTATION_LIGHT_RESPONSE: SHCSelectEntityDescription(
+        key=ORIENTATION_LIGHT_RESPONSE,
+        translation_key=ORIENTATION_LIGHT_RESPONSE,
+        unique_id_suffix="orientation_light_response",
+        current_option_fn=_enum_attr_current_option_fn(
+            "long_poll_interval", "long_poll_interval"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_long_poll_interval", PollControlService.PollControlState
+        ),
+    ),
+    VIBRATION_SENSITIVITY: SHCSelectEntityDescription(
+        key=VIBRATION_SENSITIVITY,
+        translation_key=VIBRATION_SENSITIVITY,
+        unique_id_suffix=VIBRATION_SENSITIVITY,
+        current_option_fn=_enum_attr_current_option_fn(
+            "sensitivity", "vibration sensitivity"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_sensitivity", VibrationSensorService.SensitivityState
+        ),
+    ),
+    STATE_AFTER_POWER_OUTAGE: SHCSelectEntityDescription(
+        key=STATE_AFTER_POWER_OUTAGE,
+        translation_key=STATE_AFTER_POWER_OUTAGE,
+        unique_id_suffix=STATE_AFTER_POWER_OUTAGE,
+        current_option_fn=_enum_attr_current_option_fn(
+            "state_after_power_outage", "state_after_power_outage"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_state_after_power_outage",
+            PowerSwitchConfigurationService.StateAfterPowerOutage,
+        ),
+    ),
+    SMOKE_SENSITIVITY: SHCSelectEntityDescription(
+        key=SMOKE_SENSITIVITY,
+        translation_key=SMOKE_SENSITIVITY,
+        unique_id_suffix=SMOKE_SENSITIVITY,
+        current_option_fn=_enum_attr_current_option_fn(
+            "smoke_sensitivity", "smoke_sensitivity"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_smoke_sensitivity",
+            SmokeSensitivityService.SmokeSensitivityLevel,
+        ),
+    ),
+    DISPLAY_DIRECTION: SHCSelectEntityDescription(
+        key=DISPLAY_DIRECTION,
+        translation_key=DISPLAY_DIRECTION,
+        unique_id_suffix=DISPLAY_DIRECTION,
+        current_option_fn=_enum_attr_current_option_fn(
+            "display_direction", "display_direction"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_display_direction", DisplayDirection.Direction
+        ),
+    ),
+    DISPLAYED_TEMPERATURE: SHCSelectEntityDescription(
+        key=DISPLAYED_TEMPERATURE,
+        translation_key=DISPLAYED_TEMPERATURE,
+        unique_id_suffix=DISPLAYED_TEMPERATURE,
+        current_option_fn=_enum_attr_current_option_fn(
+            "displayed_temperature", "displayed_temperature"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_displayed_temperature",
+            DisplayedTemperatureConfiguration.DisplayedTemperature,
+        ),
+    ),
+    TERMINAL_TYPE: SHCSelectEntityDescription(
+        key=TERMINAL_TYPE,
+        translation_key=TERMINAL_TYPE,
+        unique_id_suffix=TERMINAL_TYPE,
+        current_option_fn=_enum_attr_current_option_fn(
+            "terminal_type", "terminal_type"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_terminal_type", TerminalConfiguration.Type
+        ),
+    ),
+    VALVE_TYPE: SHCSelectEntityDescription(
+        key=VALVE_TYPE,
+        translation_key=VALVE_TYPE,
+        unique_id_suffix=VALVE_TYPE,
+        current_option_fn=_enum_attr_current_option_fn("valve_type", "valve_type"),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_valve_type", WallThermostatConfiguration.ValveType
+        ),
+    ),
+    HEATER_TYPE: SHCSelectEntityDescription(
+        key=HEATER_TYPE,
+        translation_key=HEATER_TYPE,
+        unique_id_suffix=HEATER_TYPE,
+        current_option_fn=_enum_attr_current_option_fn("heater_type", "heater_type"),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_heater_type", WallThermostatConfiguration.HeaterType
+        ),
+    ),
+    SWITCH_TYPE: SHCSelectEntityDescription(
+        key=SWITCH_TYPE,
+        translation_key=SWITCH_TYPE,
+        unique_id_suffix=SWITCH_TYPE,
+        current_option_fn=_enum_attr_current_option_fn("switch_type", "switch_type"),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_switch_type", SwitchConfiguration.SwitchType
+        ),
+    ),
+    ACTUATOR_TYPE: SHCSelectEntityDescription(
+        key=ACTUATOR_TYPE,
+        translation_key=ACTUATOR_TYPE,
+        unique_id_suffix=ACTUATOR_TYPE,
+        current_option_fn=_enum_attr_current_option_fn(
+            "actuator_type", "actuator_type"
+        ),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_actuator_type", SwitchConfiguration.ActuatorType
+        ),
+    ),
+    OUTPUT_MODE: SHCSelectEntityDescription(
+        key=OUTPUT_MODE,
+        translation_key=OUTPUT_MODE,
+        unique_id_suffix=OUTPUT_MODE,
+        current_option_fn=_enum_attr_current_option_fn("output_mode", "output_mode"),
+        select_option_fn=_enum_attr_select_option_fn(
+            "async_set_output_mode", SwitchConfiguration.OutputMode
+        ),
+    ),
+    SMART_SENSITIVITY_SECURITY_LEVEL: SHCSelectEntityDescription[SHCMotionDetector2](
+        key=SMART_SENSITIVITY_SECURITY_LEVEL,
+        translation_key=SMART_SENSITIVITY_SECURITY_LEVEL,
+        unique_id_suffix="smart_sensitivity_security",
+        current_option_fn=_smart_sensitivity_current_option_fn(
+            SmartSensitivityControlService.SmartSensitivityContext.SECURITY
+        ),
+        select_option_fn=_smart_sensitivity_select_option_fn(
+            SmartSensitivityControlService.SmartSensitivityContext.SECURITY
+        ),
+    ),
+    SMART_SENSITIVITY_COMFORT_LEVEL: SHCSelectEntityDescription[SHCMotionDetector2](
+        key=SMART_SENSITIVITY_COMFORT_LEVEL,
+        translation_key=SMART_SENSITIVITY_COMFORT_LEVEL,
+        unique_id_suffix="smart_sensitivity_comfort",
+        current_option_fn=_smart_sensitivity_current_option_fn(
+            SmartSensitivityControlService.SmartSensitivityContext.COMFORT
+        ),
+        select_option_fn=_smart_sensitivity_select_option_fn(
+            SmartSensitivityControlService.SmartSensitivityContext.COMFORT
+        ),
+    ),
+    DIMMER_PHASE_CONTROL: SHCSelectEntityDescription[SHCMicromoduleDimmer](
+        key=DIMMER_PHASE_CONTROL,
+        translation_key=DIMMER_PHASE_CONTROL,
+        unique_id_suffix=DIMMER_PHASE_CONTROL,
+        current_option_fn=_dimmer_current_option,
+        select_option_fn=_dimmer_select_option,
+    ),
+    INSTALLATION_PROFILE: SHCSelectEntityDescription(
+        key=INSTALLATION_PROFILE,
+        translation_key=INSTALLATION_PROFILE,
+        unique_id_suffix=INSTALLATION_PROFILE,
+        current_option_fn=_installation_profile_current_option,
+        select_option_fn=_installation_profile_select_option,
+        reload_after_select=True,
+    ),
+}
 
 
 async def async_setup_entry(  # noqa: C901
@@ -391,583 +782,185 @@ async def async_setup_entry(  # noqa: C901
         async_add_entities(entities)
 
 
-_SIREN_SOUND_LEVEL_OPTIONS = ["low", "medium", "high"]
+class SHCSelect[_DeviceT: SHCDevice](SHCEntity, SelectEntity):  # type: ignore[misc]
+    """Generic SHC select entity, driven by a SHCSelectEntityDescription.
+
+    `current_option`/`async_select_option` delegate to the description's
+    `current_option_fn`/`select_option_fn`, so a single class covers every
+    select type — the per-type behavior (which attribute to read, which enum
+    to look values up in, which async setter to call) lives in the
+    description, not in a dedicated subclass.
+    """
+
+    entity_description: SHCSelectEntityDescription[_DeviceT]
+
+    def __init__(self, device: _DeviceT, entry_id: str) -> None:
+        """Initialize the select entity."""
+        super().__init__(device, entry_id)
+        self._device: _DeviceT = device
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_"
+            f"{self.entity_description.unique_id_suffix}"
+        )
+
+    @property
+    def current_option(self) -> str | None:
+        """Return the current option."""
+        return self.entity_description.current_option_fn(
+            self._device, self._attr_options
+        )
+
+    async def async_select_option(self, option: str) -> None:
+        """Select an option, writing it to the device."""
+        try:
+            await self.entity_description.select_option_fn(self._device, option)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {option}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err
+        if self.entity_description.reload_after_select:
+            # #356: switching e.g. the profile can add/remove capability-gated
+            # entities (the Motion Detector II [+M] indicator light) — reload
+            # so the entity list reflects the change immediately, instead of
+            # only after the user manually reloads the integration/restarts.
+            self.hass.async_create_task(
+                self.hass.config_entries.async_reload(self._entry_id)
+            )
 
 
-class SirenSoundLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class SirenSoundLevelSelect(SHCSelect):
     """Select entity for the Outdoor Siren sound level (#120)."""
 
+    entity_description = SELECT_DESCRIPTIONS[SIREN_SOUND_LEVEL]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "siren_sound_level"
     _attr_options = _SIREN_SOUND_LEVEL_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the siren sound level select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_sound_level"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return the current sound level option."""
-        try:
-            return str(self._device.siren.sound_level.name.lower())
-        except (AttributeError, ValueError):
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the sound level."""
-        try:
-            level = OutdoorSirenService.SoundLevel[option.upper()]
-        except KeyError:
-            return
-        try:
-            await self._device.siren.async_set_configuration(sound_level=level)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class MotionSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class MotionSensitivitySelect(SHCSelect):
     """Select entity for Motion Detector II [+M] motion sensitivity."""
 
+    entity_description = SELECT_DESCRIPTIONS[MOTION_SENSITIVITY]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "motion_sensitivity"
     _attr_options = _MOTION_SENSITIVITY_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the motion sensitivity select entity."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_motion_sensitivity"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return the current sensitivity option."""
-        try:
-            return str(self._device.motion_sensitivity.name)
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown motion_sensitivity for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the motion sensitivity."""
-        motion_sensitivity = PirSensorConfigurationService.MotionSensitivity
-        try:
-            await self._device.async_set_motion_sensitivity(motion_sensitivity[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class OrientationLightResponseSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class OrientationLightResponseSelect(SHCSelect):
     """Select for the Motion Detector II orientation-light response time.
 
     Backed by the PollControl service (longPollInterval): LONG = lower battery
     consumption / slower response, SHORT = faster response / higher battery use.
     """
 
+    entity_description = SELECT_DESCRIPTIONS[ORIENTATION_LIGHT_RESPONSE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "orientation_light_response_time"
     _attr_options = _POLL_CONTROL_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the orientation-light response-time select entity."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_orientation_light_response"
-        )
 
-    @property
-    def current_option(self) -> str | None:
-        """Return the current poll-interval option."""
-        try:
-            val = self._device.long_poll_interval
-            if val is None or val.name not in self._attr_options:
-                return None
-            return str(val.name)
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown long_poll_interval for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the orientation-light response time (poll interval)."""
-        state = PollControlService.PollControlState[option]
-        try:
-            await self._device.async_set_long_poll_interval(state)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class VibrationSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class VibrationSensitivitySelect(SHCSelect):
     """Select entity for ShutterContact2Plus vibration sensitivity."""
 
+    entity_description = SELECT_DESCRIPTIONS[VIBRATION_SENSITIVITY]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "vibration_sensitivity"
     _attr_options = _VIBRATION_SENSITIVITY_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the vibration sensitivity select entity."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_vibration_sensitivity"
-        )
 
-    @property
-    def current_option(self) -> str | None:
-        """Return the current sensitivity option."""
-        try:
-            return str(self._device.sensitivity.name)
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown vibration sensitivity for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the vibration sensitivity."""
-        sensitivity_state = VibrationSensorService.SensitivityState
-        try:
-            await self._device.async_set_sensitivity(sensitivity_state[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class StateAfterPowerOutageSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class StateAfterPowerOutageSelect(SHCSelect):
     """Select entity for smart plug power-loss behaviour."""
 
+    entity_description = SELECT_DESCRIPTIONS[STATE_AFTER_POWER_OUTAGE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "state_after_power_outage"
     _attr_options = _STATE_AFTER_POWER_OUTAGE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the state-after-power-outage select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_state_after_power_outage"
-        )
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current option name, None if unknown."""
-        try:
-            val = self._device.state_after_power_outage
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown state_after_power_outage for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the state-after-power-outage."""
-        state_after_power_outage = PowerSwitchConfigurationService.StateAfterPowerOutage
-        try:
-            await self._device.async_set_state_after_power_outage(
-                state_after_power_outage[option]
-            )
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class SmokeSensitivitySelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class SmokeSensitivitySelect(SHCSelect):
     """Select entity for smoke detector / twinguard smoke sensitivity."""
 
+    entity_description = SELECT_DESCRIPTIONS[SMOKE_SENSITIVITY]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "smoke_sensitivity"
     _attr_options = _SMOKE_SENSITIVITY_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the smoke sensitivity select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_sensitivity"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current sensitivity level name."""
-        try:
-            val = self._device.smoke_sensitivity
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown smoke_sensitivity for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the smoke sensitivity level."""
-        smoke_sensitivity_level = SmokeSensitivityService.SmokeSensitivityLevel
-        try:
-            await self._device.async_set_smoke_sensitivity(
-                smoke_sensitivity_level[option]
-            )
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class DisplayDirectionSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class DisplayDirectionSelect(SHCSelect):
     """Select entity for thermostat display orientation."""
 
+    entity_description = SELECT_DESCRIPTIONS[DISPLAY_DIRECTION]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "display_direction"
     _attr_options = _DISPLAY_DIRECTION_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the display direction select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_display_direction"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current direction."""
-        try:
-            val = self._device.display_direction
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown display_direction for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the display direction."""
-        direction = DisplayDirection.Direction
-        try:
-            await self._device.async_set_display_direction(direction[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class DisplayedTemperatureSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class DisplayedTemperatureSelect(SHCSelect):
     """Select entity for which temperature value the thermostat display shows."""
 
+    entity_description = SELECT_DESCRIPTIONS[DISPLAYED_TEMPERATURE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "displayed_temperature"
     _attr_options = _DISPLAYED_TEMPERATURE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the displayed-temperature select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_displayed_temperature"
-        )
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current option."""
-        try:
-            val = self._device.displayed_temperature
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning(
-                "Unknown displayed_temperature for %s: %s", self._device.name, err
-            )
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the displayed-temperature type."""
-        displayed_temperature = DisplayedTemperatureConfiguration.DisplayedTemperature
-        try:
-            await self._device.async_set_displayed_temperature(
-                displayed_temperature[option]
-            )
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class TerminalTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class TerminalTypeSelect(SHCSelect):
     """Select entity for RoomThermostat2 terminal (external sensor) type."""
 
+    entity_description = SELECT_DESCRIPTIONS[TERMINAL_TYPE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "terminal_type"
     _attr_options = _TERMINAL_TYPE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the terminal type select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_terminal_type"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current terminal type."""
-        try:
-            val = self._device.terminal_type
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning("Unknown terminal_type for %s: %s", self._device.name, err)
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the terminal type."""
-        terminal_type = TerminalConfiguration.Type
-        try:
-            await self._device.async_set_terminal_type(terminal_type[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class ValveTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class ValveTypeSelect(SHCSelect):
     """Select entity for ThermostatGen2 valve type (normally open/close)."""
 
+    entity_description = SELECT_DESCRIPTIONS[VALVE_TYPE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "valve_type"
     _attr_options = _VALVE_TYPE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the valve type select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_valve_type"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current valve type."""
-        try:
-            val = self._device.valve_type
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning("Unknown valve_type for %s: %s", self._device.name, err)
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the valve type."""
-        valve_type = WallThermostatConfiguration.ValveType
-        try:
-            await self._device.async_set_valve_type(valve_type[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class HeaterTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class HeaterTypeSelect(SHCSelect):
     """Select entity for ThermostatGen2 heater type."""
 
+    entity_description = SELECT_DESCRIPTIONS[HEATER_TYPE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "heater_type"
     _attr_options = _HEATER_TYPE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the heater type select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_heater_type"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current heater type."""
-        try:
-            val = self._device.heater_type
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning("Unknown heater_type for %s: %s", self._device.name, err)
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the heater type."""
-        heater_type = WallThermostatConfiguration.HeaterType
-        try:
-            await self._device.async_set_heater_type(heater_type[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class SwitchTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class SwitchTypeSelect(SHCSelect):
     """Select entity for SwitchConfiguration switch type."""
 
+    entity_description = SELECT_DESCRIPTIONS[SWITCH_TYPE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "switch_type"
     _attr_options = _SWITCH_TYPE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the switch type select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_switch_type"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current switch type."""
-        try:
-            val = self._device.switch_type
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning("Unknown switch_type for %s: %s", self._device.name, err)
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the switch type."""
-        switch_type = SwitchConfiguration.SwitchType
-        try:
-            await self._device.async_set_switch_type(switch_type[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class ActuatorTypeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class ActuatorTypeSelect(SHCSelect):
     """Select entity for SwitchConfiguration actuator type."""
 
+    entity_description = SELECT_DESCRIPTIONS[ACTUATOR_TYPE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "actuator_type"
     _attr_options = _ACTUATOR_TYPE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the actuator type select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_actuator_type"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current actuator type."""
-        try:
-            val = self._device.actuator_type
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning("Unknown actuator_type for %s: %s", self._device.name, err)
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the actuator type."""
-        actuator_type = SwitchConfiguration.ActuatorType
-        try:
-            await self._device.async_set_actuator_type(actuator_type[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class OutputModeSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class OutputModeSelect(SHCSelect):
     """Select entity for SwitchConfiguration output mode."""
 
+    entity_description = SELECT_DESCRIPTIONS[OUTPUT_MODE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "output_mode"
     _attr_options = _OUTPUT_MODE_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the output mode select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_output_mode"
 
-    @property
-    def current_option(self) -> str | None:
-        """Return current output mode."""
-        try:
-            val = self._device.output_mode
-            if val is None:
-                return None
-            name: str = str(val.name)
-            if name not in self._attr_options:
-                return None
-            return name
-        except (AttributeError, ValueError) as err:
-            LOGGER.warning("Unknown output_mode for %s: %s", self._device.name, err)
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the output mode."""
-        output_mode = SwitchConfiguration.OutputMode
-        try:
-            await self._device.async_set_output_mode(output_mode[option])
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class SmartSensitivitySecurityLevelSelect(SHCSelect):
     """Select entity for SmartSensitivityControl manual level — SECURITY context.
 
     The MD2 SmartSensitivityControl service stores a per-context manualLevel
@@ -975,137 +968,31 @@ class SmartSensitivitySecurityLevelSelect(SHCEntity, SelectEntity):  # type: ign
     get_smart_sensitivity is available on the device.
     """
 
+    entity_description = SELECT_DESCRIPTIONS[SMART_SENSITIVITY_SECURITY_LEVEL]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "smart_sensitivity_security_level"
     _attr_options = _SMART_SENSITIVITY_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the security sensitivity level select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_smart_sensitivity_security"
-        )
 
-    @property
-    def current_option(self) -> str | None:
-        """Return the current manual level for the SECURITY context."""
-        ctx = SmartSensitivityControlService.SmartSensitivityContext.SECURITY
-        sensitivity = self._device.get_smart_sensitivity(ctx)
-        if sensitivity is None:
-            return None
-        level = sensitivity.get("manualLevel")
-        if level is None:
-            return None
-        # level may be an enum or a string
-        name = level.name if hasattr(level, "name") else str(level)
-        if name not in self._attr_options:
-            return None
-        return name
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the manual level for the SECURITY context."""
-        ctx = SmartSensitivityControlService.SmartSensitivityContext.SECURITY
-        level = SmartSensitivityControlService.MotionSensitivity[option]
-        try:
-            await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class SmartSensitivityComfortLevelSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class SmartSensitivityComfortLevelSelect(SHCSelect):
     """Select entity for SmartSensitivityControl manual level — COMFORT context."""
 
+    entity_description = SELECT_DESCRIPTIONS[SMART_SENSITIVITY_COMFORT_LEVEL]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "smart_sensitivity_comfort_level"
     _attr_options = _SMART_SENSITIVITY_OPTIONS
 
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the comfort sensitivity level select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_smart_sensitivity_comfort"
-        )
 
-    @property
-    def current_option(self) -> str | None:
-        """Return the current manual level for the COMFORT context."""
-        ctx = SmartSensitivityControlService.SmartSensitivityContext.COMFORT
-        sensitivity = self._device.get_smart_sensitivity(ctx)
-        if sensitivity is None:
-            return None
-        level = sensitivity.get("manualLevel")
-        if level is None:
-            return None
-        # level may be an enum or a string
-        name = level.name if hasattr(level, "name") else str(level)
-        if name not in self._attr_options:
-            return None
-        return name
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the manual level for the COMFORT context."""
-        ctx = SmartSensitivityControlService.SmartSensitivityContext.COMFORT
-        level = SmartSensitivityControlService.MotionSensitivity[option]
-        try:
-            await self._device.async_set_smart_sensitivity_manual_level(ctx, level)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-
-
-class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class DimmerPhaseControlSelect(SHCSelect):
     """Select entity for micromodule dimmer phase-control mode (#123)."""
 
+    entity_description = SELECT_DESCRIPTIONS[DIMMER_PHASE_CONTROL]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "dimmer_phase_control"
-    _attr_options = ["TRAILING", "LEADING"]
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the dimmer phase-control select."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_dimmer_phase_control"
-        )
-
-    @property
-    def current_option(self) -> str | None:
-        """Return the current phase-control mode name, None if unknown."""
-        service = self._device.dimmer_configuration
-        if service is None:
-            return None
-        try:
-            name = service.edge_phase_control_mode.name
-            return name if name in self._attr_options else None
-        except (AttributeError, ValueError):
-            return None
-
-    async def async_select_option(self, option: str) -> None:
-        """Set the phase-control mode (TRAILING/LEADING)."""
-        service = self._device.dimmer_configuration
-        if service is None:
-            return
-        try:
-            mode = DimmerConfigurationService.EdgePhaseControlMode[option]
-        except KeyError:
-            return
-        try:
-            await service.async_set_edge_phase_control_mode(mode)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
+    _attr_options = _DIMMER_PHASE_CONTROL_OPTIONS
 
 
-class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+class InstallationProfileSelect(SHCSelect):
     """Writable select for the device installation profile (#353).
 
     Replaces the former read-only InstallationProfileSensor. Options are taken
@@ -1115,48 +1002,13 @@ class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     state keys, mirroring the previous sensor's ENUM convention.
     """
 
+    entity_description = SELECT_DESCRIPTIONS[INSTALLATION_PROFILE]
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "installation_profile"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the installation-profile select."""
         super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_installation_profile"
-        )
         self._attr_options = [
             p.lower() for p in (getattr(device, "supported_profiles", []) or [])
         ]
-
-    @property
-    def current_option(self) -> str | None:
-        """Return the current installation profile (lowercased).
-
-        Guarded: a profile not in the advertised options (e.g. after a firmware
-        vocabulary change) returns None instead of an invalid option.
-        """
-        val = getattr(self._device, "profile", None)
-        if val is None:
-            return None
-        val_lower = str(val).lower()
-        if val_lower not in (self._attr_options or []):
-            return None
-        return val_lower
-
-    async def async_select_option(self, option: str) -> None:
-        """Write the installation profile (uppercased back to the API value)."""
-        try:
-            await self._device.async_set_profile(option.upper())
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {option}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="select_option_failed",
-            ) from err
-        # #356: switching the profile can add/remove capability-gated entities
-        # (e.g. the Motion Detector II [+M] indicator light) — reload so the
-        # entity list reflects the new profile immediately, instead of only
-        # after the user manually reloads the integration or restarts HA.
-        self.hass.async_create_task(
-            self.hass.config_entries.async_reload(self._entry_id)
-        )

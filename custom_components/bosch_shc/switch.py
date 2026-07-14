@@ -35,7 +35,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceInfo
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -54,22 +54,13 @@ LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 1
 
 
-@dataclass
-class SHCSwitchRequiredKeysMixin:
-    """Mixin for SHC switch required keys."""
+@dataclass(frozen=True, kw_only=True)
+class SHCSwitchEntityDescription(SwitchEntityDescription):
+    """Class describing SHC switch entities."""
 
-    key: str
     on_key: str
     on_value: Any
     should_poll: bool
-    device_class: SwitchDeviceClass | None = None
-    icon: str | None = None
-    entity_category: EntityCategory | None = None
-
-
-@dataclass
-class SHCSwitchEntityDescription(SwitchEntityDescription, SHCSwitchRequiredKeysMixin):  # type: ignore[misc]
-    """Class describing SHC switch entities."""
 
 
 SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
@@ -745,13 +736,13 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in session.device_helper.thermostats:  # type: ignore[assignment]
-        if device_excluded(switch, config_entry.options):
+    for thermostat_switch in session.device_helper.thermostats:
+        if device_excluded(thermostat_switch, config_entry.options):
             continue
-        if switch.supports_silentmode:
+        if thermostat_switch.supports_silentmode:
             entities.append(
                 SHCSwitch(
-                    device=switch,
+                    device=thermostat_switch,
                     entry_id=config_entry.entry_id,
                     description=SWITCH_TYPES["silent_mode"],
                     attr_name="SilentMode",
@@ -1192,9 +1183,14 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
         state under SHCSessionAsync (TypeError, #335) — use the async refresh.
         """
         if self._has_async_update:  # [S3] cached at init
-            await self._device.async_update()
+            # SHCUserDefinedState is a standalone class, not an SHCDevice
+            # subclass -- async_update/update are only present on lib
+            # versions the runtime hasattr() check above has already probed.
+            await self._device.async_update()  # type: ignore[attr-defined]
         else:
-            await self.hass.async_add_executor_job(self._device.update)
+            await self.hass.async_add_executor_job(
+                self._device.update  # type: ignore[attr-defined]
+            )
 
     @property
     def device_name(self) -> str | None:
@@ -1207,11 +1203,11 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
         return self._shc.id  # type: ignore[no-any-return]
 
     @property
-    def device_info(self) -> dict[str, Any]:
+    def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return {
-            "identifiers": self._shc.identifiers,
-            "name": self._shc.name,
-            "manufacturer": self._shc.manufacturer,
-            "model": self._shc.model,
-        }
+        return DeviceInfo(
+            identifiers=self._shc.identifiers,
+            name=self._shc.name,
+            manufacturer=self._shc.manufacturer,
+            model=self._shc.model,
+        )

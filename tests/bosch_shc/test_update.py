@@ -10,8 +10,16 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
+
 from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
-from custom_components.bosch_shc.update import ControllerUpdate, DeviceUpdate
+from custom_components.bosch_shc.update import (
+    ControllerUpdate,
+    DeviceUpdate,
+    async_setup_entry,
+)
+
+from .conftest import run_setup_entry
 
 
 def _new(cls):
@@ -46,47 +54,6 @@ def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
     )
     base.update(kw)
     return SimpleNamespace(**base)
-
-
-def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
-    """Minimal hass. session/shc are cached so a paired _fake_entry(hass=...)
-    call can wire them onto entry.runtime_data (the modern storage location —
-    this integration no longer uses hass.data[DOMAIN])."""
-    shc_obj = shc or SimpleNamespace(
-        identifiers={("bosch_shc", "shc")},
-        name="SHC", manufacturer="Bosch", model="SHC", id="shc1",
-    )
-    h = MagicMock()
-    h.data = {}
-    h._fake_session = session
-    h._fake_shc = shc_obj
-
-    async def _executor_job(fn, *args):
-        return fn(*args)
-
-    h.async_add_executor_job = _executor_job
-    h.config_entries = MagicMock()
-    h.bus = MagicMock()
-    h.bus.async_listen_once = MagicMock(return_value=MagicMock())
-    h.async_create_task = MagicMock()
-    return h
-
-
-def _fake_entry(entry_id="E1", title="Test SHC", options=None, hass=None):
-    """Build a fake config entry with runtime_data wired from `hass` (as
-    produced by _fake_hass) when provided."""
-    entry = MagicMock()
-    entry.entry_id = entry_id
-    entry.title = title
-    entry.options = options or {}
-    entry.unique_id = "uid1"
-    entry.async_on_unload = MagicMock()
-    entry.runtime_data = SimpleNamespace(
-        session=getattr(hass, "_fake_session", None) if hass is not None else None,
-        shc_device=getattr(hass, "_fake_shc", None) if hass is not None else None,
-        title=title,
-    )
-    return entry
 
 
 # --------------------------- #186 controller update -------------------------
@@ -235,71 +202,58 @@ def test_device_update_no_service_is_safe():
 class TestUpdateAsyncSetupEntry:
     """Cover update.py async_setup_entry body (lines 41-60)."""
 
-    def _make_session(self, info=None, devices=None):
-        session = MagicMock()
-        session.information = info or SimpleNamespace(
-            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+    def _run(self, mock_config_entry, mock_session) -> list:
+        # update.py's async_setup_entry reads config_entry.title (unlike the
+        # device_helper-bucket platforms the shared fixture was built for);
+        # the shared mock_config_entry fixture doesn't set it, so wire it here.
+        mock_config_entry.title = "Test SHC"
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
-        session.devices = devices or []
-        return session
 
-    def test_setup_entry_with_information_and_no_devices(self):
+    def test_setup_entry_with_information_and_no_devices(
+        self, mock_config_entry, mock_session
+    ):
         """Lines 44-48, 54-60: controller entity created, empty device list."""
-        from custom_components.bosch_shc.update import async_setup_entry
+        mock_session.devices = []
+        result = self._run(mock_config_entry, mock_session)
+        assert any(e._information for e in result)
 
-        session = self._make_session()
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        assert any(e._information for e in collected)
-
-    def test_setup_entry_device_with_software_update(self):
+    def test_setup_entry_device_with_software_update(
+        self, mock_config_entry, mock_session
+    ):
         """Lines 54-58: device with supports_software_update=True adds DeviceUpdate."""
-        from custom_components.bosch_shc.update import async_setup_entry
-
         dev = _fake_dev(supports_software_update=True)
-        session = self._make_session(devices=[dev])
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
+        mock_session.devices = [dev]
+        result = self._run(mock_config_entry, mock_session)
+        assert any(isinstance(e, DeviceUpdate) for e in result)
 
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        assert any(isinstance(e, DeviceUpdate) for e in collected)
-
-    def test_setup_entry_device_without_software_update(self):
+    def test_setup_entry_device_without_software_update(
+        self, mock_config_entry, mock_session
+    ):
         """Line 57: device without supports_software_update is skipped."""
-        from custom_components.bosch_shc.update import async_setup_entry
-
         dev = _fake_dev()  # no supports_software_update
-        session = self._make_session(devices=[dev])
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass)
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        assert not any(isinstance(e, DeviceUpdate) for e in collected)
+        mock_session.devices = [dev]
+        result = self._run(mock_config_entry, mock_session)
+        assert not any(isinstance(e, DeviceUpdate) for e in result)
 
 
 class TestUpdateExcludedDevice:
     """update.py line 56: device_excluded in setup loop → continue."""
 
-    def test_excluded_device_skipped_in_update_setup(self):
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_EXCLUDED_DEVICES: ["excl1"]}}],
+        indirect=True,
+    )
+    def test_excluded_device_skipped_in_update_setup(
+        self, mock_config_entry, mock_session
+    ):
         """Line 56: device in OPT_EXCLUDED_DEVICES → continue (no DeviceUpdate added)."""
-        from custom_components.bosch_shc.update import async_setup_entry
-
         dev = _fake_dev("excl1", supports_software_update=True)
-        session = MagicMock()
-        session.information = SimpleNamespace(
-            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+        mock_session.devices = [dev]
+        mock_config_entry.title = "Test SHC"
+        result = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
-        session.devices = [dev]
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["excl1"]})
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        assert not any(isinstance(e, DeviceUpdate) for e in collected)
-
+        assert not any(isinstance(e, DeviceUpdate) for e in result)

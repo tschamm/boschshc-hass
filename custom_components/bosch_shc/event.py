@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from boschshcpy import (
+    KeypadService,
     SHCLightControl,
     SHCMotionDetector,
     SHCMotionDetector2,
@@ -24,7 +25,7 @@ from homeassistant.const import (
     ATTR_NAME,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -134,7 +135,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         """Initialize the Universal Switch device."""
         super().__init__(device, entry_id)
 
-        self._device = device
+        self._device: SHCUniversalSwitch = device  # type: ignore[assignment]
         self._key_id = key_id
         # Guard against phantom events: track the last event timestamp we fired
         # on so a battery-level long-poll that re-delivers a stale Keypad state
@@ -218,7 +219,7 @@ class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     def __init__(self, device: SHCLightControl, entry_id: str) -> None:
         """Initialize the Light Control button event entity."""
         super().__init__(device, entry_id)
-        self._device = device
+        self._device: SHCLightControl = device  # type: ignore[assignment]
         # Guard against phantom events: a Keypad update piggybacking on another
         # state change can replay the last eventTimestamp (cf. #192).
         self._last_fired_timestamp: int = -1
@@ -229,18 +230,20 @@ class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         await super().async_added_to_hass()
         for service in self._device.device_services:
             if service.id == "Keypad":
+                keypad = cast(KeypadService, service)
                 # Single-button Light Control II's keyName is not HW-confirmed,
                 # so register under every KeyState — whichever fires resolves.
-                for key_state in service.KeyState:
-                    service.register_event(key_state.value, self._event_callback)
+                for key_state in keypad.KeyState:
+                    keypad.register_event(key_state.value, self._event_callback)
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister all Keypad KeyState callbacks (register_event has no public unsubscribe)."""
         await super().async_will_remove_from_hass()
         for service in self._device.device_services:
             if service.id == "Keypad":
-                for key_state in service.KeyState:
-                    service._event_callbacks.pop(key_state.value, None)  # noqa: SLF001
+                keypad = cast(KeypadService, service)
+                for key_state in keypad.KeyState:
+                    keypad._event_callbacks.pop(key_state.value, None)  # noqa: SLF001
 
     def _event_callback(self) -> None:
         event_type_raw = self._device.eventtype
@@ -310,14 +313,14 @@ class SHCScenarioEvent(EventEntity):  # type: ignore[misc]
         return self._shc.id  # type: ignore[no-any-return]
 
     @property
-    def device_info(self) -> dict[str, Any]:
+    def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return {
-            "identifiers": self._shc.identifiers,
-            "name": self._shc.name,
-            "manufacturer": self._shc.manufacturer,
-            "model": self._shc.model,
-        }
+        return DeviceInfo(
+            identifiers=self._shc.identifiers,
+            name=self._shc.name,
+            manufacturer=self._shc.manufacturer,
+            model=self._shc.model,
+        )
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added to hass."""
@@ -362,7 +365,7 @@ class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     ) -> None:
         """Initialize the Universal Switch device."""
         super().__init__(device, entry_id)
-        self._device = device
+        self._device: SHCMotionDetector | SHCMotionDetector2 = device  # type: ignore[assignment]
         # Dedup guard (#192): phantom events replay the last latestmotion
         # timestamp on unrelated long-poll updates (e.g. battery level).
         self._last_fired_timestamp: str = ""
@@ -418,6 +421,7 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     ):
         """Initialize the smoke detection system device."""
         super().__init__(device=device, entry_id=entry_id)
+        self._device: SHCSmokeDetectionSystem = device  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     async def async_added_to_hass(self) -> None:
@@ -472,6 +476,7 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     ):
         """Initialize the smoke detection system device."""
         super().__init__(device=device, entry_id=entry_id)
+        self._device: SHCSmokeDetector = device  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
 
     async def async_added_to_hass(self) -> None:

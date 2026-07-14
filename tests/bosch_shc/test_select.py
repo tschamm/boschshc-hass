@@ -61,6 +61,8 @@ from custom_components.bosch_shc.select import (
     async_setup_entry,
 )
 
+from .conftest import _EMPTY_DEVICE_BUCKETS, run_setup_entry
+
 # ---------------------------------------------------------------------------
 # Shared helpers
 #
@@ -83,10 +85,6 @@ def _new(cls):
 
 def _run(coro):
     return asyncio.run(coro)
-
-
-def _make_hass():
-    return SimpleNamespace()
 
 
 def _fake_device(**kwargs):
@@ -127,23 +125,13 @@ def _excl(*ids):
 
 
 def _make_session(**helper_lists):
-    """Session double exposing every device_helper list select.py's
-    async_setup_entry reads from (all empty by default; override per-test).
+    """Session double exposing every device_helper bucket select.py's
+    async_setup_entry (or any other platform) might read from (all empty/None
+    by default per conftest's canonical `_EMPTY_DEVICE_BUCKETS`; override
+    per-test via keyword args).
     """
-    defaults = dict(
-        motion_detectors2=[],
-        shutter_contacts2=[],
-        smart_plugs=[],
-        smart_plugs_compact=[],
-        smoke_detectors=[],
-        twinguards=[],
-        thermostats=[],
-        roomthermostats=[],
-        micromodule_relays=[],
-        micromodule_light_controls=[],
-    )
-    defaults.update(helper_lists)
-    device_helper = SimpleNamespace(**defaults)
+    buckets = {**_EMPTY_DEVICE_BUCKETS, **helper_lists}
+    device_helper = SimpleNamespace(**buckets)
     return SimpleNamespace(device_helper=device_helper)
 
 
@@ -151,36 +139,9 @@ def _make_excluded_session(device_list_name, device):
     return _make_session(**{device_list_name: [device]})
 
 
-def _make_hass_and_entry(session, options=None):
-    entry_id = "E1"
-    hass = SimpleNamespace()
-    config_entry = SimpleNamespace(
-        options=options or {},
-        entry_id=entry_id,
-        unique_id="UID1",
-        async_on_unload=MagicMock(),
-    )
-    config_entry.runtime_data = SimpleNamespace(session=session)
-    return hass, config_entry
-
-
-async def _async_setup(session, options=None):
-    hass, config_entry = _make_hass_and_entry(session, options)
-    entities = []
-
-    def add_entities(new_ents, *args, **kwargs):
-        entities.extend(new_ents)
-
-    with patch(
-        "custom_components.bosch_shc.select.SHCShutterContact2Plus",
-        new=type("SHCShutterContact2Plus", (), {}),
-    ):
-        await async_setup_entry(hass, config_entry, add_entities)
-    return entities
-
-
 def _setup(session, options=None):
-    return asyncio.run(_async_setup(session, options))
+    entry = _make_entry(options)
+    return asyncio.run(run_setup_entry(async_setup_entry, entry, session))
 
 
 def _run_setup_with_exclusion(session, excluded_id):
@@ -399,19 +360,13 @@ class TestSirenSoundLevelSelectAsyncSelect:
 # ===========================================================================
 
 def _make_entry(options=None, entry_id="E1"):
-    return SimpleNamespace(options=options or {}, entry_id=entry_id)
+    entry = SimpleNamespace(options=options or {}, entry_id=entry_id)
+    entry.runtime_data = SimpleNamespace(session=None)
+    return entry
 
 
 def _run_setup(session, entry):
-    hass = _make_hass()
-    entry.runtime_data = SimpleNamespace(session=session)
-    collected = []
-
-    def add(entities):
-        collected.extend(entities)
-
-    asyncio.run(async_setup_entry(hass, entry, add))
-    return collected
+    return asyncio.run(run_setup_entry(async_setup_entry, entry, session))
 
 
 def _good_md2_device(dev_id="md2-001"):
@@ -524,12 +479,6 @@ class TestMotionDetectorAttrRaisesAttributeError:
 # ===========================================================================
 # MotionSensitivitySelect / VibrationSensitivitySelect — unit tests + setup
 # ===========================================================================
-
-def _make_config_entry(session):
-    entry = SimpleNamespace(options={}, entry_id="E1")
-    entry.runtime_data = SimpleNamespace(session=session)
-    return entry
-
 
 def _ms_device(sensitivity_name="HIGH", **kwargs):
     """Minimal SHCMotionDetector2-like device for MotionSensitivitySelect."""
@@ -3714,15 +3663,7 @@ class TestSelectSetupEntry:
     """select.py async_setup_entry produces the right entities."""
 
     def _run(self, session):
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected = []
-
-        def add(entities):
-            collected.extend(entities)
-
-        asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
-        return collected
+        return _run_setup(session, _make_entry())
 
     def _md2_session(self, devices, shutter_contacts2=None):
         return SimpleNamespace(

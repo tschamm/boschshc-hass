@@ -5,14 +5,31 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
+from typing import Any
 
 import aiohttp
-from boschshcpy import SHCSession, SHCThermostat
+from boschshcpy import (
+    SHCHeatingCircuit,
+    SHCMicromoduleDimmer,
+    SHCMicromoduleRelay,
+    SHCOutdoorSiren,
+    SHCRoomThermostat2,
+    SHCSession,
+    SHCShutterContact2,
+    SHCSmartPlug,
+    SHCSmartPlugCompact,
+    SHCThermostat,
+    SHCThermostatGen2,
+    SHCWallThermostat,
+)
 from boschshcpy.device import SHCDevice
 from boschshcpy.exceptions import SHCException
 from homeassistant.components.number import (
     NumberDeviceClass,
     NumberEntity,
+    NumberEntityDescription,
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -28,6 +45,553 @@ from .entity import SHCEntity, device_excluded
 LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
+
+
+# Device-type unions used to parametrize SHCNumberEntityDescription[_DeviceT]
+# below, mirroring sensor.py's core-prep pattern. Each alias covers exactly
+# the concrete device classes the corresponding value_fn/set_value_fn is
+# actually called with, per device_helper's per-collection return types (see
+# async_setup_entry below).
+type _TemperatureOffsetDevice = SHCThermostat | SHCWallThermostat | SHCRoomThermostat2
+type _EnergySavingDevice = SHCSmartPlug | SHCSmartPlugCompact
+type _DisplayConfigDevice = SHCThermostatGen2 | SHCRoomThermostat2
+
+
+@dataclass(frozen=True, kw_only=True)
+class SHCNumberEntityDescription[_DeviceT: SHCDevice](NumberEntityDescription):
+    """Describes a SHC number entity.
+
+    ``min_value_fn``/``max_value_fn``/``step_fn`` are only needed when the
+    bound is read dynamically from the device/service at runtime (e.g. the
+    heating-circuit setpoint range or a *ConfigurationService's reported
+    min/max/step) — when absent, ``NumberEntity`` falls back to this
+    description's own static ``native_min_value``/``native_max_value``/
+    ``native_step`` fields.
+    """
+
+    value_fn: Callable[[_DeviceT], float | None]
+    set_value_fn: Callable[[_DeviceT, float], Coroutine[Any, Any, None]]
+    min_value_fn: Callable[[_DeviceT], float] | None = None
+    max_value_fn: Callable[[_DeviceT], float] | None = None
+    step_fn: Callable[[_DeviceT], float] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Value/setter factories for number types with per-instance variation (siren
+# config fields, dimmer calibration fields, heating circuit eco/comfort).
+# ---------------------------------------------------------------------------
+
+
+def _siren_value_fn(field: str) -> Callable[[SHCOutdoorSiren], float | None]:
+    """Return a value_fn reading one field off the device's siren service."""
+
+    def _fn(device: SHCOutdoorSiren) -> float | None:
+        val = getattr(device.siren, field, None)
+        return None if val is None else float(val)
+
+    return _fn
+
+
+def _siren_set_value_fn(
+    field: str,
+) -> Callable[[SHCOutdoorSiren, float], Coroutine[Any, Any, None]]:
+    """Return a set_value_fn writing one field of the siren configuration.
+
+    The lib re-sends the full config block on write (Bosch requires all 5
+    fields together).
+    """
+
+    async def _fn(device: SHCOutdoorSiren, value: float) -> None:
+        # async_set_configuration's keyword-only params have per-field types
+        # (SoundLevel|None for sound_level, float|None for the rest); `field`
+        # is only known at runtime, so the single-entry kwargs dict can't be
+        # narrower than dict[str, Any] without lying about it.
+        kwargs: dict[str, Any] = {field: int(value)}
+        await device.siren.async_set_configuration(**kwargs)
+
+    return _fn
+
+
+def _dimmer_value_fn(field: str) -> Callable[[SHCMicromoduleDimmer], float | None]:
+    """Return a value_fn reading one DimmerConfiguration calibration field."""
+
+    def _fn(device: SHCMicromoduleDimmer) -> float | None:
+        svc = getattr(device, "dimmer_configuration", None)
+        if svc is None:
+            return None
+        if field == "min":
+            return float(svc.min_brightness)
+        if field == "max":
+            return float(svc.max_brightness)
+        return float(svc.dimming_speed)
+
+    return _fn
+
+
+def _dimmer_set_value_fn(
+    field: str,
+) -> Callable[[SHCMicromoduleDimmer, float], Coroutine[Any, Any, None]]:
+    """Return a set_value_fn writing one DimmerConfiguration calibration field."""
+
+    async def _fn(device: SHCMicromoduleDimmer, value: float) -> None:
+        svc = getattr(device, "dimmer_configuration", None)
+        if svc is None:
+            return
+        ivalue = int(value)
+        if field == "min":
+            await svc.async_set_brightness_range(min_brightness=ivalue)
+        elif field == "max":
+            await svc.async_set_brightness_range(max_brightness=ivalue)
+        else:
+            await svc.async_set_dimming_speed(ivalue)
+
+    return _fn
+
+
+def _heating_circuit_value_fn(
+    getter_name: str,
+) -> Callable[[SHCHeatingCircuit], float | None]:
+    """Return a value_fn reading a HeatingCircuitService eco/comfort setpoint.
+
+    setpoint_temperature_eco/_comfort are typed float | None: a heating
+    circuit that never had that preset configured legitimately returns None
+    here, not an AttributeError.
+    """
+
+    def _fn(device: SHCHeatingCircuit) -> float | None:
+        svc = getattr(device, "_heating_circuit_service", None)
+        if svc is None:
+            return None
+        try:
+            value = getattr(svc, getter_name)
+            return None if value is None else float(value)
+        except (AttributeError, KeyError) as err:
+            LOGGER.warning(
+                "Unable to read %s for %s: %s", getter_name, device.name, err
+            )
+            return None
+
+    return _fn
+
+
+def _heating_circuit_set_value_fn(
+    setter_name: str,
+) -> Callable[[SHCHeatingCircuit, float], Coroutine[Any, Any, None]]:
+    """Return a set_value_fn writing a HeatingCircuitService eco/comfort setpoint."""
+
+    async def _fn(device: SHCHeatingCircuit, value: float) -> None:
+        setter = getattr(device, f"async_set_{setter_name}", None)
+        if setter is None:
+            LOGGER.warning(
+                "Async setter async_set_%s unavailable for %s",
+                setter_name,
+                device.name,
+            )
+            return
+        await setter(value)
+
+    return _fn
+
+
+def _heating_circuit_min_fn(range_attr: str) -> Callable[[SHCHeatingCircuit], float]:
+    """Return a min_value_fn reading a HeatingCircuit's eco/comfort temperature range.
+
+    The app reads a per-device range (hass#120 audit) rather than a fixed
+    constant, falling back to the previous 5-30 °C constant until the SHC
+    has reported it.
+    """
+
+    def _fn(device: SHCHeatingCircuit) -> float:
+        rng = getattr(device, range_attr, None)
+        return rng[0] if rng is not None else 5.0
+
+    return _fn
+
+
+def _heating_circuit_max_fn(range_attr: str) -> Callable[[SHCHeatingCircuit], float]:
+    def _fn(device: SHCHeatingCircuit) -> float:
+        rng = getattr(device, range_attr, None)
+        return rng[1] if rng is not None else 30.0
+
+    return _fn
+
+
+def _service_bound_fn[_DeviceT: SHCDevice](
+    service_attr: str, field: str, default: float
+) -> Callable[[_DeviceT], float]:
+    """Return a min/max/step_fn reading a bound off a device's config service.
+
+    Shared by LedBrightnessNumber/DisplayBrightnessNumber/DisplayOnTimeNumber
+    — each reads its bounds from a *ConfigurationService, falling back to a
+    static default when the service or field is not yet populated. Generic
+    over the caller's concrete device type since it's reused across
+    unrelated device unions (_EnergySavingDevice, _DisplayConfigDevice).
+    """
+
+    def _fn(device: _DeviceT) -> float:
+        svc = getattr(device, service_attr, None)
+        if svc is not None:
+            val = getattr(svc, field, None)
+            if val is not None:
+                return float(val)
+        return default
+
+    return _fn
+
+
+# ---------------------------------------------------------------------------
+# Description keys
+# ---------------------------------------------------------------------------
+
+OFFSET = "offset"
+IMPULSE_LENGTH = "impulse_length"
+HEATING_CIRCUIT_SETPOINT_ECO = "setpointeco"
+HEATING_CIRCUIT_SETPOINT_COMFORT = "setpointcomfort"
+POWER_THRESHOLD = "power_threshold"
+ENTER_DURATION = "enter_duration_seconds"
+LED_BRIGHTNESS = "led_brightness"
+DISPLAY_BRIGHTNESS = "display_brightness"
+DISPLAY_ON_TIME = "display_on_time"
+DIMMER_MIN = "dimmer_min"
+DIMMER_MAX = "dimmer_max"
+DIMMER_SPEED = "dimmer_speed"
+BYPASS_TIMEOUT = "bypass_timeout"
+SIREN_ALARM_DURATION = "alarm_duration"
+SIREN_FLASH_DURATION = "flash_duration"
+SIREN_ALARM_DELAY = "alarm_delay"
+SIREN_FLASH_DELAY = "flash_delay"
+
+
+def _offset_value_fn(device: _TemperatureOffsetDevice) -> float | None:
+    offset = device.offset
+    return float(offset) if offset is not None else None
+
+
+async def _offset_set_value_fn(device: _TemperatureOffsetDevice, value: float) -> None:
+    await device.async_set_offset(value)
+
+
+def _offset_min_fn(device: _TemperatureOffsetDevice) -> float:
+    return float(device.min_offset)
+
+
+def _offset_max_fn(device: _TemperatureOffsetDevice) -> float:
+    return float(device.max_offset)
+
+
+def _offset_step_fn(device: _TemperatureOffsetDevice) -> float:
+    step = device.step_size
+    return step if step is not None and step > 0 else 0.5
+
+
+def _impulse_length_value_fn(device: SHCMicromoduleRelay) -> float | None:
+    raw = getattr(device, "impulse_length", None)
+    if raw is None:
+        return None
+    # lib stores in tenths of seconds → divide by 10
+    return float(raw) / 10.0
+
+
+async def _impulse_length_set_value_fn(
+    device: SHCMicromoduleRelay, value: float
+) -> None:
+    await device.async_set_impulse_length(round(value * 10))
+
+
+def _power_threshold_value_fn(device: _EnergySavingDevice) -> float | None:
+    return getattr(device, "power_threshold", None)
+
+
+async def _power_threshold_set_value_fn(
+    device: _EnergySavingDevice, value: float
+) -> None:
+    await device.async_set_power_threshold(value)
+
+
+def _enter_duration_value_fn(device: _EnergySavingDevice) -> float | None:
+    val = getattr(device, "enter_duration_seconds", None)
+    return None if val is None else float(val)
+
+
+async def _enter_duration_set_value_fn(
+    device: _EnergySavingDevice, value: float
+) -> None:
+    await device.async_set_enter_duration_seconds(int(value))
+
+
+def _led_brightness_value_fn(device: _EnergySavingDevice) -> float | None:
+    return getattr(device, "led_brightness", None)
+
+
+async def _led_brightness_set_value_fn(
+    device: _EnergySavingDevice, value: float
+) -> None:
+    await device.async_set_led_brightness(round(value))
+
+
+def _display_brightness_value_fn(device: _DisplayConfigDevice) -> float | None:
+    return getattr(device, "display_brightness", None)
+
+
+async def _display_brightness_set_value_fn(
+    device: _DisplayConfigDevice, value: float
+) -> None:
+    await device.async_set_display_brightness(round(value))
+
+
+def _display_on_time_value_fn(device: _DisplayConfigDevice) -> float | None:
+    val = getattr(device, "display_on_time", None)
+    return None if val is None else float(val)
+
+
+async def _display_on_time_set_value_fn(
+    device: _DisplayConfigDevice, value: float
+) -> None:
+    await device.async_set_display_on_time(round(value))
+
+
+def _bypass_timeout_value_fn(device: SHCShutterContact2) -> float | None:
+    raw = getattr(device, "bypass_timeout", None)
+    return None if raw is None else float(raw)
+
+
+async def _bypass_timeout_set_value_fn(
+    device: SHCShutterContact2, value: float
+) -> None:
+    await device.async_set_bypass_timeout(round(value))
+
+
+NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
+    OFFSET: SHCNumberEntityDescription[_TemperatureOffsetDevice](
+        key=OFFSET,
+        name="Offset",
+        device_class=NumberDeviceClass.TEMPERATURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        value_fn=_offset_value_fn,
+        set_value_fn=_offset_set_value_fn,
+        min_value_fn=_offset_min_fn,
+        max_value_fn=_offset_max_fn,
+        step_fn=_offset_step_fn,
+    ),
+    IMPULSE_LENGTH: SHCNumberEntityDescription[SHCMicromoduleRelay](
+        key=IMPULSE_LENGTH,
+        translation_key=IMPULSE_LENGTH,
+        entity_category=EntityCategory.CONFIG,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_min_value=0.1,
+        native_max_value=60.0,
+        native_step=0.1,
+        mode=NumberMode.BOX,
+        value_fn=_impulse_length_value_fn,
+        set_value_fn=_impulse_length_set_value_fn,
+    ),
+    HEATING_CIRCUIT_SETPOINT_ECO: SHCNumberEntityDescription[SHCHeatingCircuit](
+        key=HEATING_CIRCUIT_SETPOINT_ECO,
+        name="Setpoint Eco Temperature",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        native_step=0.5,
+        mode=NumberMode.BOX,
+        value_fn=_heating_circuit_value_fn("setpoint_temperature_eco"),
+        set_value_fn=_heating_circuit_set_value_fn("setpoint_temperature_eco"),
+        min_value_fn=_heating_circuit_min_fn("eco_temperature_range"),
+        max_value_fn=_heating_circuit_max_fn("eco_temperature_range"),
+    ),
+    HEATING_CIRCUIT_SETPOINT_COMFORT: SHCNumberEntityDescription[SHCHeatingCircuit](
+        key=HEATING_CIRCUIT_SETPOINT_COMFORT,
+        name="Setpoint Comfort Temperature",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        native_step=0.5,
+        mode=NumberMode.BOX,
+        value_fn=_heating_circuit_value_fn("setpoint_temperature_comfort"),
+        set_value_fn=_heating_circuit_set_value_fn("setpoint_temperature_comfort"),
+        min_value_fn=_heating_circuit_min_fn("comfort_temperature_range"),
+        max_value_fn=_heating_circuit_max_fn("comfort_temperature_range"),
+    ),
+    POWER_THRESHOLD: SHCNumberEntityDescription[_EnergySavingDevice](
+        key=POWER_THRESHOLD,
+        translation_key="energy_saving_power_threshold",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        native_min_value=0.0,
+        native_max_value=3680.0,
+        native_step=1.0,
+        mode=NumberMode.BOX,
+        value_fn=_power_threshold_value_fn,
+        set_value_fn=_power_threshold_set_value_fn,
+    ),
+    ENTER_DURATION: SHCNumberEntityDescription[_EnergySavingDevice](
+        key=ENTER_DURATION,
+        translation_key="energy_saving_enter_duration",
+        entity_category=EntityCategory.CONFIG,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_min_value=1.0,
+        native_max_value=3600.0,
+        native_step=1.0,
+        mode=NumberMode.BOX,
+        value_fn=_enter_duration_value_fn,
+        set_value_fn=_enter_duration_set_value_fn,
+    ),
+    LED_BRIGHTNESS: SHCNumberEntityDescription[_EnergySavingDevice](
+        key=LED_BRIGHTNESS,
+        translation_key=LED_BRIGHTNESS,
+        entity_category=EntityCategory.CONFIG,
+        mode=NumberMode.SLIDER,
+        value_fn=_led_brightness_value_fn,
+        set_value_fn=_led_brightness_set_value_fn,
+        min_value_fn=_service_bound_fn(
+            "_led_brightness_configuration_service", "min_brightness", 0.0
+        ),
+        max_value_fn=_service_bound_fn(
+            "_led_brightness_configuration_service", "max_brightness", 100.0
+        ),
+        step_fn=_service_bound_fn(
+            "_led_brightness_configuration_service", "step_size", 1.0
+        ),
+    ),
+    DISPLAY_BRIGHTNESS: SHCNumberEntityDescription[_DisplayConfigDevice](
+        key=DISPLAY_BRIGHTNESS,
+        translation_key=DISPLAY_BRIGHTNESS,
+        entity_category=EntityCategory.CONFIG,
+        mode=NumberMode.SLIDER,
+        value_fn=_display_brightness_value_fn,
+        set_value_fn=_display_brightness_set_value_fn,
+        min_value_fn=_service_bound_fn(
+            "_display_config_service", "display_brightness_min", 0.0
+        ),
+        max_value_fn=_service_bound_fn(
+            "_display_config_service", "display_brightness_max", 100.0
+        ),
+        step_fn=_service_bound_fn(
+            "_display_config_service", "display_brightness_step_size", 1.0
+        ),
+    ),
+    DISPLAY_ON_TIME: SHCNumberEntityDescription[_DisplayConfigDevice](
+        key=DISPLAY_ON_TIME,
+        translation_key=DISPLAY_ON_TIME,
+        entity_category=EntityCategory.CONFIG,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        mode=NumberMode.BOX,
+        value_fn=_display_on_time_value_fn,
+        set_value_fn=_display_on_time_set_value_fn,
+        min_value_fn=_service_bound_fn(
+            "_display_config_service", "display_on_time_min", 0.0
+        ),
+        max_value_fn=_service_bound_fn(
+            "_display_config_service", "display_on_time_max", 3600.0
+        ),
+        step_fn=_service_bound_fn(
+            "_display_config_service", "display_on_time_step_size", 1.0
+        ),
+    ),
+    DIMMER_MIN: SHCNumberEntityDescription[SHCMicromoduleDimmer](
+        key=DIMMER_MIN,
+        name="Dimmer Min Brightness",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=0.0,
+        native_max_value=100.0,
+        native_step=1.0,
+        mode=NumberMode.SLIDER,
+        value_fn=_dimmer_value_fn("min"),
+        set_value_fn=_dimmer_set_value_fn("min"),
+    ),
+    DIMMER_MAX: SHCNumberEntityDescription[SHCMicromoduleDimmer](
+        key=DIMMER_MAX,
+        name="Dimmer Max Brightness",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=0.0,
+        native_max_value=100.0,
+        native_step=1.0,
+        mode=NumberMode.SLIDER,
+        value_fn=_dimmer_value_fn("max"),
+        set_value_fn=_dimmer_set_value_fn("max"),
+    ),
+    DIMMER_SPEED: SHCNumberEntityDescription[SHCMicromoduleDimmer](
+        key=DIMMER_SPEED,
+        name="Dimming Speed",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=1.0,
+        native_max_value=10.0,
+        native_step=1.0,
+        mode=NumberMode.BOX,
+        value_fn=_dimmer_value_fn("speed"),
+        set_value_fn=_dimmer_set_value_fn("speed"),
+    ),
+    BYPASS_TIMEOUT: SHCNumberEntityDescription[SHCShutterContact2](
+        key=BYPASS_TIMEOUT,
+        translation_key=BYPASS_TIMEOUT,
+        entity_category=EntityCategory.CONFIG,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        native_min_value=1.0,
+        native_max_value=15.0,
+        native_step=1.0,
+        mode=NumberMode.BOX,
+        value_fn=_bypass_timeout_value_fn,
+        set_value_fn=_bypass_timeout_set_value_fn,
+    ),
+}
+
+# Siren config numbers (#120). Bounds confirmed via APK decompile of the
+# app's slider widgets, not the OpenAPI spec (already proven unreliable for
+# this device's write paths).
+_SIREN_ALARM_DURATION = SHCNumberEntityDescription[SHCOutdoorSiren](
+    key=SIREN_ALARM_DURATION,
+    translation_key="siren_alarm_duration",
+    entity_category=EntityCategory.CONFIG,
+    native_unit_of_measurement=UnitOfTime.MINUTES,
+    native_min_value=1.0,
+    native_max_value=15.0,
+    native_step=1.0,
+    mode=NumberMode.BOX,
+    value_fn=_siren_value_fn(SIREN_ALARM_DURATION),
+    set_value_fn=_siren_set_value_fn(SIREN_ALARM_DURATION),
+)
+_SIREN_FLASH_DURATION = SHCNumberEntityDescription[SHCOutdoorSiren](
+    key=SIREN_FLASH_DURATION,
+    translation_key="siren_flash_duration",
+    entity_category=EntityCategory.CONFIG,
+    native_unit_of_measurement=UnitOfTime.MINUTES,
+    native_min_value=1.0,
+    native_max_value=15.0,
+    native_step=1.0,
+    mode=NumberMode.BOX,
+    value_fn=_siren_value_fn(SIREN_FLASH_DURATION),
+    set_value_fn=_siren_set_value_fn(SIREN_FLASH_DURATION),
+)
+_SIREN_ALARM_DELAY = SHCNumberEntityDescription[SHCOutdoorSiren](
+    key=SIREN_ALARM_DELAY,
+    translation_key="siren_alarm_delay",
+    entity_category=EntityCategory.CONFIG,
+    native_unit_of_measurement=UnitOfTime.SECONDS,
+    native_min_value=0.0,
+    native_max_value=180.0,
+    native_step=1.0,
+    mode=NumberMode.BOX,
+    value_fn=_siren_value_fn(SIREN_ALARM_DELAY),
+    set_value_fn=_siren_set_value_fn(SIREN_ALARM_DELAY),
+)
+_SIREN_FLASH_DELAY = SHCNumberEntityDescription[SHCOutdoorSiren](
+    key=SIREN_FLASH_DELAY,
+    translation_key="siren_flash_delay",
+    entity_category=EntityCategory.CONFIG,
+    native_unit_of_measurement=UnitOfTime.SECONDS,
+    native_min_value=0.0,
+    native_max_value=180.0,
+    native_step=1.0,
+    mode=NumberMode.BOX,
+    value_fn=_siren_value_fn(SIREN_FLASH_DELAY),
+    set_value_fn=_siren_set_value_fn(SIREN_FLASH_DELAY),
+)
+
+NUMBER_DESCRIPTIONS[SIREN_ALARM_DURATION] = _SIREN_ALARM_DURATION
+NUMBER_DESCRIPTIONS[SIREN_FLASH_DURATION] = _SIREN_FLASH_DURATION
+NUMBER_DESCRIPTIONS[SIREN_ALARM_DELAY] = _SIREN_ALARM_DELAY
+NUMBER_DESCRIPTIONS[SIREN_FLASH_DELAY] = _SIREN_FLASH_DELAY
 
 
 async def async_setup_entry(  # noqa: C901
@@ -51,8 +615,8 @@ async def async_setup_entry(  # noqa: C901
         entities.append(
             SHCNumber(
                 device=number,
+                entity_description=NUMBER_DESCRIPTIONS[OFFSET],
                 entry_id=config_entry.entry_id,
-                attr_name="Offset",
             )
         )
 
@@ -64,8 +628,9 @@ async def async_setup_entry(  # noqa: C901
         if device.impulse_length is None:
             continue
         entities.append(
-            ImpulseLengthNumber(
+            SHCNumber(
                 device=device,
+                entity_description=NUMBER_DESCRIPTIONS[IMPULSE_LENGTH],
                 entry_id=config_entry.entry_id,
             )
         )
@@ -74,25 +639,19 @@ async def async_setup_entry(  # noqa: C901
         if device_excluded(device, config_entry.options):
             continue
         entities.append(
-            HeatingCircuitSetpointNumber(
+            SHCNumber(
                 device=device,
+                entity_description=NUMBER_DESCRIPTIONS[HEATING_CIRCUIT_SETPOINT_ECO],
                 entry_id=config_entry.entry_id,
-                attr_name="SetpointEco",
-                label="Setpoint Eco Temperature",
-                getter_name="setpoint_temperature_eco",
-                setter_name="setpoint_temperature_eco",
-                range_attr="eco_temperature_range",
             )
         )
         entities.append(
-            HeatingCircuitSetpointNumber(
+            SHCNumber(
                 device=device,
+                entity_description=NUMBER_DESCRIPTIONS[
+                    HEATING_CIRCUIT_SETPOINT_COMFORT
+                ],
                 entry_id=config_entry.entry_id,
-                attr_name="SetpointComfort",
-                label="Setpoint Comfort Temperature",
-                getter_name="setpoint_temperature_comfort",
-                setter_name="setpoint_temperature_comfort",
-                range_attr="comfort_temperature_range",
             )
         )
 
@@ -102,8 +661,9 @@ async def async_setup_entry(  # noqa: C901
         if device_excluded(device, config_entry.options):
             continue
         entities.append(
-            BypassTimeoutNumber(
+            SHCNumber(
                 device=device,
+                entity_description=NUMBER_DESCRIPTIONS[BYPASS_TIMEOUT],
                 entry_id=config_entry.entry_id,
             )
         )
@@ -119,8 +679,9 @@ async def async_setup_entry(  # noqa: C901
             and getattr(device, "power_threshold", None) is not None
         ):
             entities.append(
-                PowerThresholdNumber(
+                SHCNumber(
                     device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[POWER_THRESHOLD],
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -129,8 +690,9 @@ async def async_setup_entry(  # noqa: C901
             and getattr(device, "enter_duration_seconds", None) is not None
         ):
             entities.append(
-                EnterDurationNumber(
+                SHCNumber(
                     device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[ENTER_DURATION],
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -139,8 +701,9 @@ async def async_setup_entry(  # noqa: C901
             and getattr(device, "led_brightness", None) is not None
         ):
             entities.append(
-                LedBrightnessNumber(
+                SHCNumber(
                     device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[LED_BRIGHTNESS],
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -157,8 +720,9 @@ async def async_setup_entry(  # noqa: C901
             and getattr(device, "display_brightness", None) is not None
         ):
             entities.append(
-                DisplayBrightnessNumber(
+                SHCNumber(
                     device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[DISPLAY_BRIGHTNESS],
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -167,8 +731,9 @@ async def async_setup_entry(  # noqa: C901
             and getattr(device, "display_on_time", None) is not None
         ):
             entities.append(
-                DisplayOnTimeNumber(
+                SHCNumber(
                     device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[DISPLAY_ON_TIME],
                     entry_id=config_entry.entry_id,
                 )
             )
@@ -179,16 +744,32 @@ async def async_setup_entry(  # noqa: C901
         if getattr(siren, "siren", None) is None:
             continue
         entities.append(
-            SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_ALARM_DURATION)
+            SHCNumber(
+                device=siren,
+                entity_description=NUMBER_DESCRIPTIONS[SIREN_ALARM_DURATION],
+                entry_id=config_entry.entry_id,
+            )
         )
         entities.append(
-            SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_FLASH_DURATION)
+            SHCNumber(
+                device=siren,
+                entity_description=NUMBER_DESCRIPTIONS[SIREN_FLASH_DURATION],
+                entry_id=config_entry.entry_id,
+            )
         )
         entities.append(
-            SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_ALARM_DELAY)
+            SHCNumber(
+                device=siren,
+                entity_description=NUMBER_DESCRIPTIONS[SIREN_ALARM_DELAY],
+                entry_id=config_entry.entry_id,
+            )
         )
         entities.append(
-            SirenConfigNumber(siren, config_entry.entry_id, *_SIREN_FLASH_DELAY)
+            SHCNumber(
+                device=siren,
+                entity_description=NUMBER_DESCRIPTIONS[SIREN_FLASH_DELAY],
+                entry_id=config_entry.entry_id,
+            )
         )
 
     # DimmerConfiguration calibration numbers (micromodule dimmer, #123).
@@ -197,709 +778,94 @@ async def async_setup_entry(  # noqa: C901
             continue
         if getattr(device, "supports_dimmer_configuration", False):
             entities.append(
-                DimmerConfigNumber(device, config_entry.entry_id, "min", 0, 100)
+                SHCNumber(
+                    device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[DIMMER_MIN],
+                    entry_id=config_entry.entry_id,
+                )
             )
             entities.append(
-                DimmerConfigNumber(device, config_entry.entry_id, "max", 0, 100)
+                SHCNumber(
+                    device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[DIMMER_MAX],
+                    entry_id=config_entry.entry_id,
+                )
             )
             entities.append(
-                DimmerConfigNumber(device, config_entry.entry_id, "speed", 1, 10)
+                SHCNumber(
+                    device=device,
+                    entity_description=NUMBER_DESCRIPTIONS[DIMMER_SPEED],
+                    entry_id=config_entry.entry_id,
+                )
             )
 
     if entities:
         async_add_entities(entities)
 
 
-# (field, translation_key, unit, min, max) — siren config numbers (#120).
-# Bounds confirmed via APK decompile of the app's slider widgets, not the
-# OpenAPI spec (already proven unreliable for this device's write paths).
-_SIREN_ALARM_DURATION = (
-    "alarm_duration",
-    "siren_alarm_duration",
-    UnitOfTime.MINUTES,
-    1,
-    15,
-)
-_SIREN_FLASH_DURATION = (
-    "flash_duration",
-    "siren_flash_duration",
-    UnitOfTime.MINUTES,
-    1,
-    15,
-)
-_SIREN_ALARM_DELAY = ("alarm_delay", "siren_alarm_delay", UnitOfTime.SECONDS, 0, 180)
-_SIREN_FLASH_DELAY = ("flash_delay", "siren_flash_delay", UnitOfTime.SECONDS, 0, 180)
+class SHCNumber[_DeviceT: SHCDevice](SHCEntity, NumberEntity):  # type: ignore[misc]
+    """Representation of a SHC number, driven by a SHCNumberEntityDescription.
 
-
-class SirenConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """Configurable Outdoor Siren duration/delay (#120).
-
-    Each field maps to one key of outdoorSirenConfiguration; the lib re-sends the
-    full config block on write (Bosch requires all 5 fields together).
+    Generic over the concrete device type _DeviceT so entity_description's
+    value_fn/set_value_fn/min_value_fn/max_value_fn/step_fn can be typed
+    against the actual boschshcpy model class each number kind reads from
+    and writes to, instead of the generic SHCDevice base (core-prep: mirrors
+    sensor.py's SHCSensor[_DeviceT] pattern).
     """
 
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_step = 1.0
-    _attr_mode = NumberMode.BOX
+    entity_description: SHCNumberEntityDescription[_DeviceT]
 
     def __init__(
         self,
-        device: SHCDevice,
+        device: _DeviceT,
+        entity_description: SHCNumberEntityDescription[_DeviceT],
         entry_id: str,
-        field: str,
-        translation_key: str,
-        unit: str,
-        lo: int,
-        hi: int,
-    ) -> None:
-        """Initialize the siren configuration number."""
-        super().__init__(device, entry_id)
-        self._field = field
-        self._attr_translation_key = translation_key
-        del (
-            self._attr_name
-        )  # dynamic translation_key; remove None set by SHCEntity.__init__
-        self._attr_native_unit_of_measurement = unit
-        self._attr_native_min_value = float(lo)
-        self._attr_native_max_value = float(hi)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_{field}"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the current value of the siren configuration field."""
-        val = getattr(self._device.siren, self._field, None)
-        return None if val is None else float(val)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the siren configuration field, clamped to valid range."""
-        clamped = int(
-            max(self._attr_native_min_value, min(self._attr_native_max_value, value))
-        )
-        try:
-            await self._device.siren.async_set_configuration(**{self._field: clamped})
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set %s for %s: %s", self._field, self._device.name, err
-            )
-
-
-class SHCNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """Representation of a SHC number."""
-
-    _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-
-    def __init__(
-        self,
-        device: SHCDevice,
-        entry_id: str,
-        attr_name: str | None = None,
     ) -> None:
         """Initialize a SHC number."""
         super().__init__(device, entry_id)
-        self._attr_name = attr_name  # type: ignore[assignment]
+        self._device: _DeviceT = device
+        self.entity_description = entity_description
+        if entity_description.translation_key is not None:
+            # dynamic translation_key; remove the None SHCEntity.__init__ set,
+            # so HA falls back to the translation lookup instead of shadowing it.
+            del self._attr_name
+        else:
+            self._attr_name = entity_description.name  # type: ignore[assignment]
         self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}"
-            if attr_name is None
-            else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
+            f"{device.root_device_id}_{device.id}_{entity_description.key}"
         )
-        self._device: SHCThermostat = device  # type: ignore[assignment]
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the value of the number."""
+        return self.entity_description.value_fn(self._device)
+
+    @property
+    def native_min_value(self) -> float:
+        """Return the min value of the number."""
+        if self.entity_description.min_value_fn is not None:
+            return self.entity_description.min_value_fn(self._device)
+        return super().native_min_value
+
+    @property
+    def native_max_value(self) -> float:
+        """Return the max value of the number."""
+        if self.entity_description.max_value_fn is not None:
+            return self.entity_description.max_value_fn(self._device)
+        return super().native_max_value
+
+    @property
+    def native_step(self) -> float | None:
+        """Return the step of the number."""
+        if self.entity_description.step_fn is not None:
+            return self.entity_description.step_fn(self._device)
+        return super().native_step
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value, clamped to [native_min_value, native_max_value]."""
         clamped = max(self.native_min_value, min(self.native_max_value, value))
         try:
-            await self._device.async_set_offset(clamped)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning("Unable to set offset for %s: %s", self._device.name, err)
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the value of the number."""
-        offset = self._device.offset
-        return float(offset) if offset is not None else None
-
-    @property
-    def native_step(self) -> float:
-        """Return the step of the number."""
-        step = self._device.step_size
-        return step if step is not None and step > 0 else 0.5
-
-    @property
-    def native_min_value(self) -> float:
-        """Return the min value of the number."""
-        return float(self._device.min_offset)
-
-    @property
-    def native_max_value(self) -> float:
-        """Return the max value of the number."""
-        return float(self._device.max_offset)
-
-
-class ImpulseLengthNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for the impulse length of a MicromoduleImpulseRelay.
-
-    The lib stores impulse_length in tenths of seconds (integer units of 100 ms).
-    We expose it in seconds for a user-friendly display.
-    Range 1-60 s (lib range: 10-600 tenths). Step 0.1 s.
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_native_min_value = 0.1
-    _attr_native_max_value = 60.0
-    _attr_native_step = 0.1
-    _attr_mode = NumberMode.BOX
-    _attr_translation_key = "impulse_length"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the impulse length number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_impulse_length"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the impulse length in seconds."""
-        raw = getattr(self._device, "impulse_length", None)
-        if raw is None:
-            return None
-        # lib stores in tenths of seconds → divide by 10
-        return float(raw) / 10.0
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the impulse length; convert seconds → tenths of seconds (int)."""
-        clamped = max(
-            self._attr_native_min_value, min(self._attr_native_max_value, value)
-        )
-        try:
-            await self._device.async_set_impulse_length(round(clamped * 10))
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set impulse length for %s: %s", self._device.name, err
-            )
-
-
-class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for HeatingCircuit eco/comfort setpoint temperatures.
-
-    The HeatingCircuitService exposes setpoint_temperature_eco and
-    setpoint_temperature_comfort as read/write float properties. Step 0.5 °C
-    (Bosch app convention); min/max are read from the device's own
-    eco_temperature_range/comfort_temperature_range (hass#120 audit — the app
-    reads a per-device range rather than a fixed constant), falling back to
-    the previous 5-30 °C constant until the SHC has reported it.
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_native_step = 0.5
-    _attr_mode = NumberMode.BOX
-
-    def __init__(
-        self,
-        device: SHCDevice,
-        entry_id: str,
-        attr_name: str,
-        label: str,
-        getter_name: str,
-        setter_name: str,
-        range_attr: str,
-    ) -> None:
-        """Initialize the heating circuit setpoint number."""
-        super().__init__(device, entry_id)
-        self._attr_name = label  # type: ignore[assignment]
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
-        )
-        self._getter_name = getter_name
-        self._setter_name = setter_name
-        self._range_attr = range_attr
-
-    @property
-    def native_min_value(self) -> float:
-        """Return the minimum settable temperature for this preset."""
-        rng = getattr(self._device, self._range_attr, None)
-        return rng[0] if rng is not None else 5.0
-
-    @property
-    def native_max_value(self) -> float:
-        """Return the maximum settable temperature for this preset."""
-        rng = getattr(self._device, self._range_attr, None)
-        return rng[1] if rng is not None else 30.0
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the setpoint temperature."""
-        try:
-            svc = getattr(self._device, "_heating_circuit_service", None)
-            if svc is None:
-                return None
-            value = getattr(svc, self._getter_name)
-            # setpoint_temperature_eco/_comfort are typed float | None: a
-            # heating circuit that never had that preset configured
-            # legitimately returns None here, not an AttributeError.
-            return None if value is None else float(value)
-        except (AttributeError, KeyError) as err:
-            LOGGER.warning(
-                "Unable to read %s for %s: %s",
-                self._getter_name,
-                self._device.name,
-                err,
-            )
-            return None
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Write the setpoint temperature, clamped to valid range."""
-        clamped = max(self.native_min_value, min(self.native_max_value, value))
-        async_setter = getattr(self._device, f"async_set_{self._setter_name}", None)
-        if async_setter is None:
-            LOGGER.warning(
-                "Async setter async_set_%s unavailable for %s",
-                self._setter_name,
-                self._device.name,
-            )
-            return
-        try:
-            await async_setter(clamped)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to write %s for %s: %s",
-                self._setter_name,
-                self._device.name,
-                err,
-            )
-
-
-class PowerThresholdNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for the energy-saving power threshold of a smart plug.
-
-    When the plug draws less than this value for enterDurationSeconds, energy
-    saving mode turns the outlet off.  Watt range 0-3680 W (16 A socket), step 1 W.
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_device_class = NumberDeviceClass.POWER
-    _attr_native_unit_of_measurement = UnitOfPower.WATT
-    _attr_native_min_value = 0.0
-    _attr_native_max_value = 3680.0
-    _attr_native_step = 1.0
-    _attr_mode = NumberMode.BOX
-    _attr_translation_key = "energy_saving_power_threshold"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the power threshold number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_power_threshold"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the power threshold in watts."""
-        return getattr(self._device, "power_threshold", None)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the power threshold, clamped to valid range."""
-        clamped = max(
-            self._attr_native_min_value, min(self._attr_native_max_value, value)
-        )
-        try:
-            await self._device.async_set_power_threshold(clamped)
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set power threshold for %s: %s", self._device.name, err
-            )
-
-
-class EnterDurationNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for the energy-saving enter duration of a smart plug.
-
-    Number of seconds the plug must draw below the threshold before turning off.
-    Range 1-3600 s, step 1 s.
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_native_min_value = 1.0
-    _attr_native_max_value = 3600.0
-    _attr_native_step = 1.0
-    _attr_mode = NumberMode.BOX
-    _attr_translation_key = "energy_saving_enter_duration"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the enter duration number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_enter_duration_seconds"
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the enter duration in seconds."""
-        val = getattr(self._device, "enter_duration_seconds", None)
-        if val is None:
-            return None
-        return float(val)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the enter duration, clamped to valid range."""
-        clamped = max(
-            self._attr_native_min_value, min(self._attr_native_max_value, value)
-        )
-        try:
-            await self._device.async_set_enter_duration_seconds(int(clamped))
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set enter duration for %s: %s", self._device.name, err
-            )
-
-
-class LedBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for the LED brightness of a smart plug.
-
-    Bounds are read from the lib service (min/max/step from device state).
-    Falls back to 0-100 if not yet populated.
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_mode = NumberMode.SLIDER
-    _attr_translation_key = "led_brightness"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the LED brightness number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_led_brightness"
-
-    @property
-    def native_min_value(self) -> float:
-        """Return min brightness from device service, fallback 0."""
-        svc = getattr(self._device, "_led_brightness_configuration_service", None)
-        if svc is not None:
-            v = getattr(svc, "min_brightness", None)
-            if v is not None:
-                return float(v)
-        return 0.0
-
-    @property
-    def native_max_value(self) -> float:
-        """Return max brightness from device service, fallback 100."""
-        svc = getattr(self._device, "_led_brightness_configuration_service", None)
-        if svc is not None:
-            v = getattr(svc, "max_brightness", None)
-            if v is not None:
-                return float(v)
-        return 100.0
-
-    @property
-    def native_step(self) -> float:
-        """Return step size from device service, fallback 1."""
-        svc = getattr(self._device, "_led_brightness_configuration_service", None)
-        if svc is not None:
-            v = getattr(svc, "step_size", None)
-            if v is not None:
-                return float(v)
-        return 1.0
-
-    @property
-    def native_value(self) -> float | None:
-        """Return current LED brightness."""
-        return getattr(self._device, "led_brightness", None)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the LED brightness."""
-        try:
-            await self._device.async_set_led_brightness(round(value))
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set LED brightness for %s: %s", self._device.name, err
-            )
-
-
-class DisplayBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for the display brightness of ThermostatGen2 / RoomThermostat2."""
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_mode = NumberMode.SLIDER
-    _attr_translation_key = "display_brightness"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the display brightness number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_display_brightness"
-
-    @property
-    def native_min_value(self) -> float:
-        """Return min brightness from device service, fallback 0."""
-        svc = getattr(self._device, "_display_config_service", None)
-        if svc is not None:
-            v = getattr(svc, "display_brightness_min", None)
-            if v is not None:
-                return float(v)
-        return 0.0
-
-    @property
-    def native_max_value(self) -> float:
-        """Return max brightness from device service, fallback 100."""
-        svc = getattr(self._device, "_display_config_service", None)
-        if svc is not None:
-            v = getattr(svc, "display_brightness_max", None)
-            if v is not None:
-                return float(v)
-        return 100.0
-
-    @property
-    def native_step(self) -> float:
-        """Return step size from device service, fallback 1."""
-        svc = getattr(self._device, "_display_config_service", None)
-        if svc is not None:
-            v = getattr(svc, "display_brightness_step_size", None)
-            if v is not None:
-                return float(v)
-        return 1.0
-
-    @property
-    def native_value(self) -> float | None:
-        """Return current display brightness."""
-        return getattr(self._device, "display_brightness", None)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the display brightness."""
-        try:
-            await self._device.async_set_display_brightness(round(value))
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set display brightness for %s: %s", self._device.name, err
-            )
-
-
-class DisplayOnTimeNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for the display on-time of ThermostatGen2 / RoomThermostat2.
-
-    Display stays lit for this many seconds after interaction. Range from device.
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_mode = NumberMode.BOX
-    _attr_translation_key = "display_on_time"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the display on-time number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_display_on_time"
-
-    @property
-    def native_min_value(self) -> float:
-        """Return min on-time from device service, fallback 0."""
-        svc = getattr(self._device, "_display_config_service", None)
-        if svc is not None:
-            v = getattr(svc, "display_on_time_min", None)
-            if v is not None:
-                return float(v)
-        return 0.0
-
-    @property
-    def native_max_value(self) -> float:
-        """Return max on-time from device service, fallback 3600."""
-        svc = getattr(self._device, "_display_config_service", None)
-        if svc is not None:
-            v = getattr(svc, "display_on_time_max", None)
-            if v is not None:
-                return float(v)
-        return 3600.0
-
-    @property
-    def native_step(self) -> float:
-        """Return step size from device service, fallback 1."""
-        svc = getattr(self._device, "_display_config_service", None)
-        if svc is not None:
-            v = getattr(svc, "display_on_time_step_size", None)
-            if v is not None:
-                return float(v)
-        return 1.0
-
-    @property
-    def native_value(self) -> float | None:
-        """Return current display on-time in seconds."""
-        val = getattr(self._device, "display_on_time", None)
-        if val is None:
-            return None
-        return float(val)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the display on-time."""
-        try:
-            await self._device.async_set_display_on_time(round(value))
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-            json.JSONDecodeError,
-        ) as err:
-            LOGGER.warning(
-                "Unable to set display on-time for %s: %s", self._device.name, err
-            )
-
-
-class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """NumberEntity for DimmerConfiguration calibration values (#123).
-
-    field="min": calibrated minimum brightness (0-100).
-    field="max": calibrated maximum brightness (0-100).
-    field="speed": dimming speed 1 (fastest) to 10 (slowest).
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_step = 1.0
-
-    _NAMES = {
-        "min": "Dimmer Min Brightness",
-        "max": "Dimmer Max Brightness",
-        "speed": "Dimming Speed",
-    }
-
-    def __init__(
-        self, device: SHCDevice, entry_id: str, field: str, lo: float, hi: float
-    ) -> None:
-        """Initialize the dimmer configuration number."""
-        super().__init__(device, entry_id)
-        self._field = field
-        self._attr_name = self._NAMES[field]  # type: ignore[assignment]
-        self._attr_native_min_value = float(lo)
-        self._attr_native_max_value = float(hi)
-        self._attr_mode = NumberMode.BOX if field == "speed" else NumberMode.SLIDER
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_dimmer_{field}"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the current dimmer calibration value."""
-        svc = getattr(self._device, "dimmer_configuration", None)
-        if svc is None:
-            return None
-        if self._field == "min":
-            return float(svc.min_brightness)
-        if self._field == "max":
-            return float(svc.max_brightness)
-        return float(svc.dimming_speed)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the dimmer calibration value, clamped to valid range."""
-        svc = getattr(self._device, "dimmer_configuration", None)
-        if svc is None:
-            return
-        clamped = int(
-            max(self._attr_native_min_value, min(self._attr_native_max_value, value))
-        )
-        try:
-            if self._field == "min":
-                await svc.async_set_brightness_range(min_brightness=clamped)
-            elif self._field == "max":
-                await svc.async_set_brightness_range(max_brightness=clamped)
-            else:
-                await svc.async_set_dimming_speed(clamped)
+            await self.entity_description.set_value_fn(self._device, clamped)
         except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to set {self._device.name} to {value}: {err}",
@@ -912,71 +878,11 @@ class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
             ValueError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
-        ) as err:
-            # ValueError: async_set_brightness_range() rejects an inverted
-            # range (min >= max) — min/max are independent HA number
-            # entities, so setting one past the other's cached value is a
-            # realistic user action, not a programming error.
-            LOGGER.warning(
-                "Unable to set dimmer %s for %s: %s",
-                self._field,
-                self._device.name,
-                err,
-            )
-
-
-class BypassTimeoutNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
-    """Bypass auto-expiry timeout for a door/window contact (hass#120 audit).
-
-    Fully modeled in boschshcpy (BypassService.timeout /
-    SHCShutterContact2.bypass_timeout) but never wired into an HA entity.
-    Unit/bounds (1-15 minutes) confirmed via APK decompile of the official
-    app's bypass_configuration.xml slider (app:quantityUnit="MINUTE") — the
-    library previously assumed seconds (no OpenAPI spec exists for this
-    service to confirm either way).
-    """
-
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
-    _attr_native_min_value = 1.0
-    _attr_native_max_value = 15.0
-    _attr_native_step = 1.0
-    _attr_mode = NumberMode.BOX
-    _attr_translation_key = "bypass_timeout"
-
-    def __init__(self, device: SHCDevice, entry_id: str) -> None:
-        """Initialize the bypass timeout number."""
-        super().__init__(device, entry_id)
-        self._attr_unique_id = f"{device.root_device_id}_{device.id}_bypass_timeout"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the bypass auto-expiry timeout in minutes."""
-        raw = getattr(self._device, "bypass_timeout", None)
-        return None if raw is None else float(raw)
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Set the bypass auto-expiry timeout, clamped to 1-15 minutes."""
-        clamped = max(
-            self._attr_native_min_value, min(self._attr_native_max_value, value)
-        )
-        try:
-            await self._device.async_set_bypass_timeout(round(clamped))
-        except SHCException as err:
-            raise HomeAssistantError(
-                f"Failed to set {self._device.name} to {value}: {err}",
-                translation_domain=DOMAIN,
-                translation_key="number_set_failed",
-            ) from err
-        except (
-            AttributeError,
-            KeyError,
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
             json.JSONDecodeError,
         ) as err:
             LOGGER.warning(
-                "Unable to write bypass_timeout for %s: %s",
+                "Unable to set %s for %s: %s",
+                self.entity_description.key,
                 self._device.name,
                 err,
             )

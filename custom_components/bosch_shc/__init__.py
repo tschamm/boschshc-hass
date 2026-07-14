@@ -391,7 +391,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # Build the mTLS SSLContext off the event loop (blocking PEM reads).
     # verify_ssl=False: the per-request ssl= kwarg already passes the mTLS context.
     websession = async_get_clientsession(hass, verify_ssl=False)
-    _session_kwargs = {"long_poll_timeout": long_poll_timeout}
+    _session_kwargs: dict[str, Any] = {"long_poll_timeout": long_poll_timeout}
     if "ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters:
         _session_kwargs["ssl_context"] = await hass.async_add_executor_job(
             build_ssl_context,
@@ -875,7 +875,7 @@ class SwitchDeviceEventListener:
         self.entry = entry
         self._device = device
         self._keypad_service = None
-        self.device_id = None
+        self.device_id: str | None = None
         # Replay-guard (#336): seed from the current eventtimestamp so a stale
         # keypress re-delivered on resubscribe/restart doesn't refire an automation.
         seed_ts = device.eventtimestamp

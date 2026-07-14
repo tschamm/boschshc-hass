@@ -15,8 +15,9 @@ Pattern: `Cls.__new__(Cls)` bypasses SHCEntity.__init__ (no hass / device
 registry needed) for most tests; a handful exercise the real `__init__` with
 `_update_attr` patched to a no-op so the super().__init__ path is covered.
 async_press tests drive the coroutine via asyncio.run() directly, and
-async_setup_entry tests build a minimal fake session/hass/config_entry and
-call the coroutine the same way — no HA test harness, no network.
+async_setup_entry tests drive the shared `mock_config_entry`/`mock_session`
+fixtures (see conftest.py) through the platform's real async_setup_entry —
+no HA test harness, no network.
 """
 
 from __future__ import annotations
@@ -54,8 +55,10 @@ from custom_components.bosch_shc.const import (
 )
 from custom_components.bosch_shc.entity import SHCEntity
 
+from .conftest import run_setup_entry
+
 # ---------------------------------------------------------------------------
-# Shared helpers — general device/hass/entry fixtures (test_button.py)
+# Shared helpers — general device fixtures (test_button.py)
 # ---------------------------------------------------------------------------
 
 
@@ -80,22 +83,6 @@ def _make_device(
     )
 
 
-def _make_hass() -> SimpleNamespace:
-    """Minimal fake hass (unused by button.async_setup_entry, kept for parity)."""
-    return SimpleNamespace()
-
-
-def _make_config_entry(
-    session: object, options=None, unique_id="test-uid", shc_device=None
-) -> SimpleNamespace:
-    """Minimal fake ConfigEntry with runtime_data (session/shc_device)."""
-    entry = SimpleNamespace(options=options or {}, entry_id="E1", unique_id=unique_id)
-    entry.runtime_data = SimpleNamespace(
-        session=session, shc_device=shc_device, title="Test SHC"
-    )
-    return entry
-
-
 def _without_diagnostics_button(entities: list) -> list:
     """Strip the always-created SHCEnableAllDiagnosticsButton from a result list.
 
@@ -108,27 +95,31 @@ def _without_diagnostics_button(entities: list) -> list:
     return [e for e in entities if not isinstance(e, SHCEnableAllDiagnosticsButton)]
 
 
-def _collect():
-    """Return (collected_list, async_add_entities callable)."""
-    collected: list = []
+def _run_setup(mock_config_entry, mock_session) -> list:
+    """Drive button.async_setup_entry via the shared conftest fixtures.
 
-    def add(entities: list) -> None:
-        collected.extend(entities)
+    Replaces this file's old bespoke `_run_setup`/`_run_setup_with_entry`/
+    `_run_button_setup`/`_setup_buttons` helpers (all the same shape: wire a
+    session onto a config entry, call async_setup_entry, collect entities) —
+    and filters out the always-present hub diagnostics button, which every
+    device-bucket test in this file predates and ignores.
 
-    return collected, add
-
-
-def _run_setup(
-    session: object, options=None, unique_id="test-uid", shc_device=None
-) -> list:
-    """Drive button.async_setup_entry with fake hass/entry/session."""
-    hass = _make_hass()
-    entry = _make_config_entry(
-        session, options=options, unique_id=unique_id, shc_device=shc_device
+    button.py's async_setup_entry unconditionally builds a
+    SHCEnableAllDiagnosticsButton from config_entry.unique_id and
+    config_entry.runtime_data.shc_device — attributes the shared
+    mock_config_entry fixture doesn't set by default (unlike session, which
+    conftest's own run_setup_entry wires up). Default them here so every
+    test in this file doesn't have to; a test that cares about a specific
+    value still wins by setting it before calling this helper.
+    """
+    if not hasattr(mock_config_entry, "unique_id"):
+        mock_config_entry.unique_id = None
+    if not hasattr(mock_config_entry.runtime_data, "shc_device"):
+        mock_config_entry.runtime_data.shc_device = None
+    result = asyncio.run(
+        run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
     )
-    collected, add = _collect()
-    asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
-    return _without_diagnostics_button(collected)
+    return _without_diagnostics_button(result)
 
 
 def _button_device() -> SimpleNamespace:
@@ -183,50 +174,6 @@ def _fake_shc_device() -> SimpleNamespace:
     )
 
 
-def _make_entry(options=None, entry_id="E1", unique_id="uid-001") -> SimpleNamespace:
-    return SimpleNamespace(
-        options=options or {},
-        entry_id=entry_id,
-        unique_id=unique_id,
-    )
-
-
-def _run_setup_with_entry(session, entry) -> list:
-    """Drive async_setup_entry with an already-built config entry.
-
-    Distinct from `_run_setup` above (which builds hass/entry/options for
-    you) — this one lets the caller pre-build `entry` (e.g. via
-    `_make_entry`) before wiring `runtime_data` onto it.
-    """
-    entry.runtime_data = SimpleNamespace(
-        session=session, shc_device=_fake_shc_device(), title="Test SHC"
-    )
-    hass = _make_hass()
-    collected: list = []
-
-    def add(entities):
-        collected.extend(entities)
-
-    asyncio.run(async_setup_entry(hass, entry, add))
-    return _without_diagnostics_button(collected)
-
-
-def _make_session(
-    impulse_relays=None,
-    smoke_detectors=None,
-    twinguards=None,
-    scenarios=None,
-):
-    return SimpleNamespace(
-        device_helper=SimpleNamespace(
-            micromodule_impulse_relays=impulse_relays or [],
-            smoke_detectors=smoke_detectors or [],
-            twinguards=twinguards or [],
-        ),
-        scenarios=scenarios or [],
-    )
-
-
 def _good_scenario(sid="sc-001", name="Morning Lights"):
     return SimpleNamespace(id=sid, name=name, trigger=lambda: None)
 
@@ -255,52 +202,10 @@ def _excl(*ids):
     return {OPT_EXCLUDED_DEVICES: list(ids)}
 
 
-def _make_button_session(**kw):
-    defaults = dict(
-        micromodule_impulse_relays=[],
-        smoke_detectors=[],
-        twinguards=[],
-        motion_detectors2=[],
-    )
-    defaults.update(kw)
-    return SimpleNamespace(
-        device_helper=SimpleNamespace(**defaults),
-        scenarios=[],
-    )
-
-
-def _run_button_setup(session, options=None):
-    hass = SimpleNamespace()
-    config_entry = SimpleNamespace(
-        options=options or {},
-        entry_id="E1",
-        unique_id="uid1",
-    )
-    config_entry.runtime_data = SimpleNamespace(
-        session=session,
-        shc_device=SimpleNamespace(
-            identifiers={("bosch_shc", "shc")},
-            name="SHC",
-            manufacturer="Bosch",
-            model="SHC",
-        ),
-    )
-    collected = []
-
-    def _add(ents, *a, **kw):
-        collected.extend(ents)
-
-    asyncio.run(async_setup_entry(hass, config_entry, _add))
-    return _without_diagnostics_button(collected)
-
-
 # ---------------------------------------------------------------------------
 # Shared helpers — MD2 walk/detection/tamper fixtures
 # (test_apk_walktest_and_sensitivity.py + test_md2_detection_tamper_pollcontrol.py
-#  define near-identical `_fake_md2`; deduped to one copy here.
-#  Both files ALSO define a `_make_button_session` that collides in name
-#  with the (differently-shaped) one above from test_apk_coverage_gaps.py —
-#  renamed to `_make_md2_button_session` to avoid clobbering it.)
+#  define near-identical `_fake_md2`; deduped to one copy here.)
 # ---------------------------------------------------------------------------
 
 
@@ -315,47 +220,6 @@ def _fake_md2(**kwargs):
     )
     defaults.update(kwargs)
     return SimpleNamespace(**defaults)
-
-
-def _make_md2_button_session(**helper_lists):
-    defaults = dict(
-        smoke_detectors=[],
-        twinguards=[],
-        motion_detectors2=[],
-        userdefinedstates=[],
-    )
-    defaults.update(helper_lists)
-    return SimpleNamespace(
-        device_helper=SimpleNamespace(**defaults),
-        userdefinedstates=[],
-        scenarios=[],
-        subscribe=lambda *a, **kw: None,
-    )
-
-
-def _setup_buttons(session):
-    entry_id = "E1"
-    hass = SimpleNamespace()
-    shc_device = SimpleNamespace(
-        name="SHC",
-        id="shc",
-        identifiers={("bosch_shc", "shc")},
-        manufacturer="Bosch",
-        model="SHC",
-    )
-    entry = SimpleNamespace(
-        options={}, entry_id=entry_id, unique_id="UID1", async_on_unload=MagicMock()
-    )
-    entry.runtime_data = SimpleNamespace(
-        session=session, shc_device=shc_device, title="Test SHC"
-    )
-    entities: list = []
-
-    async def _run():
-        await async_setup_entry(hass, entry, lambda e, *a, **k: entities.extend(e))
-
-    asyncio.run(_run())
-    return _without_diagnostics_button(entities)
 
 
 # ---------------------------------------------------------------------------
@@ -385,50 +249,6 @@ def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
     )
     base.update(kw)
     return SimpleNamespace(**base)
-
-
-def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
-    """Minimal hass. session/shc are cached so a paired _fake_entry(hass=...)
-    call can wire them onto entry.runtime_data (the modern storage location —
-    this integration no longer uses hass.data[DOMAIN])."""
-    shc_obj = shc or SimpleNamespace(
-        identifiers={("bosch_shc", "shc")},
-        name="SHC",
-        manufacturer="Bosch",
-        model="SHC",
-        id="shc1",
-    )
-    h = MagicMock()
-    h.data = {}
-    h._fake_session = session
-    h._fake_shc = shc_obj
-
-    async def _executor_job(fn, *args):
-        return fn(*args)
-
-    h.async_add_executor_job = _executor_job
-    h.config_entries = MagicMock()
-    h.bus = MagicMock()
-    h.bus.async_listen_once = MagicMock(return_value=MagicMock())
-    h.async_create_task = MagicMock()
-    return h
-
-
-def _fake_entry(entry_id="E1", title="Test SHC", options=None, hass=None):
-    """Build a fake config entry with runtime_data wired from `hass` (as
-    produced by _fake_hass) when provided."""
-    entry = MagicMock()
-    entry.entry_id = entry_id
-    entry.title = title
-    entry.options = options or {}
-    entry.unique_id = "uid1"
-    entry.async_on_unload = MagicMock()
-    entry.runtime_data = SimpleNamespace(
-        session=getattr(hass, "_fake_session", None) if hass is not None else None,
-        shc_device=getattr(hass, "_fake_shc", None) if hass is not None else None,
-        title=title,
-    )
-    return entry
 
 
 def _new(cls):
@@ -534,46 +354,39 @@ class TestSHCRelayButton:
 
     # async_setup_entry integration
 
-    def test_setup_impulse_relay_creates_relay_button(self):
+    def test_setup_impulse_relay_creates_relay_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
-        )
-        result = _run_setup(session)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCRelayButton)
 
-    def test_setup_no_relays_yields_nothing(self):
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[])
-        )
-        result = _run_setup(session)
+    def test_setup_no_relays_yields_nothing(self, mock_config_entry, mock_session):
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_setup_multiple_relays(self):
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[_make_device(), _make_device()]
-            )
-        )
-        result = _run_setup(session)
+    def test_setup_multiple_relays(self, mock_config_entry, mock_session):
+        mock_session.device_helper.micromodule_impulse_relays = [
+            _make_device(),
+            _make_device(),
+        ]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, SHCRelayButton) for e in result)
 
-    def test_setup_entry_id_stored(self):
+    def test_setup_entry_id_stored(self, mock_config_entry, mock_session):
         dev = _make_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
-        )
-        result = _run_setup(session)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._entry_id == "E1"
 
-    def test_setup_excluded_device_skipped(self):
+    def test_setup_excluded_device_skipped(self, mock_config_entry, mock_session):
         dev = _make_device(device_id="hdm:excluded")
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
-        )
-        result = _run_setup(session, options={"excluded_devices": ["hdm:excluded"]})
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        mock_config_entry.options = {"excluded_devices": ["hdm:excluded"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
 
@@ -707,28 +520,27 @@ class TestStructural:
 class TestImpulseRelayExcluded:
     """button.py — micromodule_impulse_relays: excluded device is skipped."""
 
-    def test_excluded_relay_is_not_added(self):
+    def test_excluded_relay_is_not_added(self, mock_config_entry, mock_session):
         """device_excluded returns True → continue → device not in entities."""
         dev = _make_device(device_id="relay-excl")
-        session = _make_session(impulse_relays=[dev])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["relay-excl"]})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["relay-excl"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_non_excluded_relay_is_added(self):
+    def test_non_excluded_relay_is_added(self, mock_config_entry, mock_session):
         """Sanity: a relay NOT excluded IS added (false branch)."""
         dev = _make_device(device_id="relay-ok")
-        session = _make_session(impulse_relays=[dev])
-        entry = _make_entry()
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
 
-    def test_mixed_relays_only_non_excluded_added(self):
+    def test_mixed_relays_only_non_excluded_added(self, mock_config_entry, mock_session):
         excl = _make_device(device_id="relay-excl")
         ok = _make_device(device_id="relay-ok")
-        session = _make_session(impulse_relays=[excl, ok])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["relay-excl"]})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.micromodule_impulse_relays = [excl, ok]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["relay-excl"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
 
 
@@ -736,100 +548,72 @@ class TestButtonSetupEntry:
     """Button async_setup_entry for relays and smoke-test buttons (fixed
     device fixtures, from test_platforms_setup.py)."""
 
-    def _run(self, session: object) -> list:
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected, add = _collect()
-
-        asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
-        return _without_diagnostics_button(collected)
-
-    def test_impulse_relays_produce_relay_button_entities(self) -> None:
+    def test_impulse_relays_produce_relay_button_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """micromodule_impulse_relays → SHCRelayButton."""
         dev = _button_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
-        )
-        result = self._run(session)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCRelayButton)
 
-    def test_no_relays_adds_nothing(self) -> None:
+    def test_no_relays_adds_nothing(self, mock_config_entry, mock_session) -> None:
         """No relays → nothing added."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[])
-        )
-        result = self._run(session)
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_entity_name_from_device(self) -> None:
+    def test_entity_name_from_device(self, mock_config_entry, mock_session) -> None:
         """SHCRelayButton._attr_name is None (no attr_name passed).
 
         With _attr_has_entity_name=True and _attr_name=None, HA uses the device
         name as the entity name (primary entity pattern).
         """
         dev = _button_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
-        )
-        result = self._run(session)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._attr_name is None
 
-    def test_unique_id_from_root_and_device_id(self) -> None:
+    def test_unique_id_from_root_and_device_id(
+        self, mock_config_entry, mock_session
+    ) -> None:
         """unique_id = root_device_id + '_' + device_id."""
         dev = _button_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(micromodule_impulse_relays=[dev])
-        )
-        result = self._run(session)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._attr_unique_id == "aa:bb:cc:00:00:06_hdm:HomeMaticIP:relay1"
 
-    def test_multiple_relays_all_collected(self) -> None:
+    def test_multiple_relays_all_collected(self, mock_config_entry, mock_session) -> None:
         """Two relays → two SHCRelayButton entities."""
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[_button_device(), _button_device()]
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.micromodule_impulse_relays = [
+            _button_device(),
+            _button_device(),
+        ]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, SHCRelayButton) for e in result)
 
-    def test_entry_id_stored(self) -> None:
+    def test_entry_id_stored(self, mock_config_entry, mock_session) -> None:
         dev = _button_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[dev],
-                smoke_detectors=[],
-                twinguards=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.micromodule_impulse_relays = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._entry_id == "E1"
 
-    def test_smoke_detectors_produce_smoke_test_buttons(self) -> None:
+    def test_smoke_detectors_produce_smoke_test_buttons(
+        self, mock_config_entry, mock_session
+    ) -> None:
         dev = _smoke_test_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[dev],
-                twinguards=[],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.smoke_detectors = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
-    def test_twinguards_produce_smoke_test_buttons(self) -> None:
+    def test_twinguards_produce_smoke_test_buttons(
+        self, mock_config_entry, mock_session
+    ) -> None:
         dev = _smoke_test_device(name="TwinGuard", device_id="hdm:ZigBee:tw1")
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[dev],
-            )
-        )
-        result = self._run(session)
+        mock_session.device_helper.twinguards = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
@@ -895,54 +679,37 @@ class TestSHCSmokeTestButton:
 
     # async_setup_entry integration
 
-    def test_setup_smoke_detector_creates_smoke_test_button(self):
+    def test_setup_smoke_detector_creates_smoke_test_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[dev],
-                twinguards=[],
-            )
-        )
-        result = _run_setup(session)
+        mock_session.device_helper.smoke_detectors = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
-    def test_setup_twinguard_creates_smoke_test_button(self):
+    def test_setup_twinguard_creates_smoke_test_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[dev],
-            )
-        )
-        result = _run_setup(session)
+        mock_session.device_helper.twinguards = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
-    def test_setup_both_smoke_and_twinguard(self):
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[_make_device(device_id="s1")],
-                twinguards=[_make_device(device_id="t1")],
-            )
-        )
-        result = _run_setup(session)
+    def test_setup_both_smoke_and_twinguard(self, mock_config_entry, mock_session):
+        mock_session.device_helper.smoke_detectors = [_make_device(device_id="s1")]
+        mock_session.device_helper.twinguards = [_make_device(device_id="t1")]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, SHCSmokeTestButton) for e in result)
 
-    def test_setup_unique_id_includes_smoke_test_suffix(self):
+    def test_setup_unique_id_includes_smoke_test_suffix(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device(root_device_id="root1", device_id="dev1")
-        session = SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[dev],
-                twinguards=[],
-            )
-        )
-        result = _run_setup(session)
+        mock_session.device_helper.smoke_detectors = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._attr_unique_id == "root1_dev1_smoke_test"
 
 
@@ -996,28 +763,31 @@ class TestSHCSmokeTestButtonInit:
 class TestSmokeDetectorExcluded:
     """button.py — smoke_detectors: excluded device is skipped."""
 
-    def test_excluded_smoke_detector_not_added(self):
+    def test_excluded_smoke_detector_not_added(self, mock_config_entry, mock_session):
         dev = _make_device(device_id="smoke-excl")
-        session = _make_session(smoke_detectors=[dev])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["smoke-excl"]})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.smoke_detectors = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["smoke-excl"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_non_excluded_smoke_detector_is_added(self):
+    def test_non_excluded_smoke_detector_is_added(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device(device_id="smoke-ok")
-        session = _make_session(smoke_detectors=[dev])
-        entry = _make_entry()
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.smoke_detectors = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
-    def test_excluded_smoke_detector_yields_smoke_test_button(self):
+    def test_excluded_smoke_detector_yields_smoke_test_button(
+        self, mock_config_entry, mock_session
+    ):
         """When not excluded, the entity type is SHCSmokeTestButton."""
         ok = _make_device(device_id="smoke-ok2")
         excl = _make_device(device_id="smoke-excl2")
-        session = _make_session(smoke_detectors=[excl, ok])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["smoke-excl2"]})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.smoke_detectors = [excl, ok]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["smoke-excl2"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
@@ -1025,27 +795,30 @@ class TestSmokeDetectorExcluded:
 class TestTwinguardExcluded:
     """button.py — twinguards: excluded device is skipped."""
 
-    def test_excluded_twinguard_not_added(self):
+    def test_excluded_twinguard_not_added(self, mock_config_entry, mock_session):
         dev = _make_device(device_id="tg-excl")
-        session = _make_session(twinguards=[dev])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["tg-excl"]})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.twinguards = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["tg-excl"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_non_excluded_twinguard_is_added_as_smoke_test_button(self):
+    def test_non_excluded_twinguard_is_added_as_smoke_test_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device(device_id="tg-ok")
-        session = _make_session(twinguards=[dev])
-        entry = _make_entry()
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.twinguards = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSmokeTestButton)
 
-    def test_mixed_twinguards_only_non_excluded_added(self):
+    def test_mixed_twinguards_only_non_excluded_added(
+        self, mock_config_entry, mock_session
+    ):
         excl = _make_device(device_id="tg-excl")
         ok = _make_device(device_id="tg-ok")
-        session = _make_session(twinguards=[excl, ok])
-        entry = _make_entry(options={OPT_EXCLUDED_DEVICES: ["tg-excl"]})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.device_helper.twinguards = [excl, ok]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["tg-excl"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
 
 
@@ -1090,47 +863,33 @@ class TestSHCSirenTestAlarmButton:
 
     # --- async_setup_entry integration ---
 
-    def _session_with_siren(self, sirens):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=sirens,
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_siren_creates_test_alarm_button(self):
+    def test_setup_siren_creates_test_alarm_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = self._session_with_siren([dev])
-        result = _run_setup(session)
+        mock_session.device_helper.outdoor_sirens = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCSirenTestAlarmButton)
 
-    def test_setup_no_sirens_yields_nothing(self):
-        session = self._session_with_siren([])
-        result = _run_setup(session)
+    def test_setup_no_sirens_yields_nothing(self, mock_config_entry, mock_session):
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_setup_multiple_sirens(self):
-        session = self._session_with_siren(
-            [
-                _make_device(device_id="s1"),
-                _make_device(device_id="s2"),
-            ]
-        )
-        result = _run_setup(session)
+    def test_setup_multiple_sirens(self, mock_config_entry, mock_session):
+        mock_session.device_helper.outdoor_sirens = [
+            _make_device(device_id="s1"),
+            _make_device(device_id="s2"),
+        ]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 2
         assert all(isinstance(e, SHCSirenTestAlarmButton) for e in result)
 
-    def test_setup_siren_excluded(self):
+    def test_setup_siren_excluded(self, mock_config_entry, mock_session):
         dev = _make_device(device_id="hdm:excluded-siren")
-        session = self._session_with_siren([dev])
-        result = _run_setup(
-            session, options={"excluded_devices": ["hdm:excluded-siren"]}
-        )
+        mock_session.device_helper.outdoor_sirens = [dev]
+        mock_config_entry.options = {"excluded_devices": ["hdm:excluded-siren"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
 
@@ -1183,45 +942,31 @@ class TestResetEnergySummationButton:
 
     # --- async_setup_entry integration ---
 
-    def _session_with_plugs(self, smart_plugs=(), smart_plugs_compact=()):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=[],
-                smart_plugs=list(smart_plugs),
-                smart_plugs_compact=list(smart_plugs_compact),
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_smart_plug_creates_button(self):
+    def test_setup_smart_plug_creates_button(self, mock_config_entry, mock_session):
         dev = _make_device()
-        session = self._session_with_plugs(smart_plugs=[dev])
-        result = _run_setup(session)
+        mock_session.device_helper.smart_plugs = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ResetEnergySummationButton)
 
-    def test_setup_smart_plug_compact_creates_button(self):
+    def test_setup_smart_plug_compact_creates_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = self._session_with_plugs(smart_plugs_compact=[dev])
-        result = _run_setup(session)
+        mock_session.device_helper.smart_plugs_compact = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ResetEnergySummationButton)
 
-    def test_setup_no_plugs_yields_nothing(self):
-        session = self._session_with_plugs()
-        result = _run_setup(session)
+    def test_setup_no_plugs_yields_nothing(self, mock_config_entry, mock_session):
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_setup_plug_excluded(self):
+    def test_setup_plug_excluded(self, mock_config_entry, mock_session):
         dev = _make_device(device_id="hdm:excluded-plug")
-        session = self._session_with_plugs(smart_plugs=[dev])
-        result = _run_setup(
-            session, options={"excluded_devices": ["hdm:excluded-plug"]}
-        )
+        mock_session.device_helper.smart_plugs = [dev]
+        mock_config_entry.options = {"excluded_devices": ["hdm:excluded-plug"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
 
@@ -1274,58 +1019,42 @@ class TestShutterRecalibrateButton:
 
     # --- async_setup_entry integration ---
 
-    def _session_with_shutters(
-        self,
-        shutter_controls=(),
-        micromodule_shutter_controls=(),
-        micromodule_blinds=(),
+    def test_setup_shutter_control_creates_button(
+        self, mock_config_entry, mock_session
     ):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=[],
-                shutter_controls=list(shutter_controls),
-                micromodule_shutter_controls=list(micromodule_shutter_controls),
-                micromodule_blinds=list(micromodule_blinds),
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_shutter_control_creates_button(self):
         dev = _make_device()
-        session = self._session_with_shutters(shutter_controls=[dev])
-        result = _run_setup(session)
+        mock_session.device_helper.shutter_controls = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ShutterRecalibrateButton)
 
-    def test_setup_micromodule_shutter_control_creates_button(self):
+    def test_setup_micromodule_shutter_control_creates_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = self._session_with_shutters(micromodule_shutter_controls=[dev])
-        result = _run_setup(session)
+        mock_session.device_helper.micromodule_shutter_controls = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ShutterRecalibrateButton)
 
-    def test_setup_micromodule_blinds_creates_button(self):
+    def test_setup_micromodule_blinds_creates_button(
+        self, mock_config_entry, mock_session
+    ):
         dev = _make_device()
-        session = self._session_with_shutters(micromodule_blinds=[dev])
-        result = _run_setup(session)
+        mock_session.device_helper.micromodule_blinds = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], ShutterRecalibrateButton)
 
-    def test_setup_no_shutters_yields_nothing(self):
-        session = self._session_with_shutters()
-        result = _run_setup(session)
+    def test_setup_no_shutters_yields_nothing(self, mock_config_entry, mock_session):
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_setup_shutter_excluded(self):
+    def test_setup_shutter_excluded(self, mock_config_entry, mock_session):
         dev = _make_device(device_id="hdm:excluded-shutter")
-        session = self._session_with_shutters(shutter_controls=[dev])
-        result = _run_setup(
-            session, options={"excluded_devices": ["hdm:excluded-shutter"]}
-        )
+        mock_session.device_helper.shutter_controls = [dev]
+        mock_config_entry.options = {"excluded_devices": ["hdm:excluded-shutter"]}
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
 
@@ -1431,19 +1160,9 @@ class TestSHCScenarioButton:
 
     # --- async_setup_entry integration ---
 
-    def _session_with_scenarios(self, scenarios):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=[],
-                outdoor_sirens=[],
-            ),
-            scenarios=scenarios,
-        )
-
-    def test_setup_scenario_buttons_created_when_option_enabled(self):
+    def test_setup_scenario_buttons_created_when_option_enabled(
+        self, mock_config_entry, mock_session
+    ):
         shc_dev = SimpleNamespace(
             identifiers={("bosch_shc", "uid")},
             name="SHC",
@@ -1451,24 +1170,25 @@ class TestSHCScenarioButton:
             model="SmartHomeController",
         )
         sc = SimpleNamespace(id="sc-1", name="Away")
-        session = self._session_with_scenarios([sc])
-        result = _run_setup(
-            session,
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid",
-            shc_device=shc_dev,
-        )
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = shc_dev
+        result = _run_setup(mock_config_entry, mock_session)
         scenario_buttons = [e for e in result if isinstance(e, SHCScenarioButton)]
         assert len(scenario_buttons) == 1
         assert scenario_buttons[0]._attr_name == "Away"
 
-    def test_setup_no_scenario_buttons_when_option_disabled(self):
+    def test_setup_no_scenario_buttons_when_option_disabled(
+        self, mock_config_entry, mock_session
+    ):
         sc = SimpleNamespace(id="sc-1", name="Away")
-        session = self._session_with_scenarios([sc])
-        result = _run_setup(session, options={OPT_SCENARIOS_AS_BUTTONS: False})
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: False}
+        result = _run_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SHCScenarioButton) for e in result)
 
-    def test_setup_multiple_scenario_buttons(self):
+    def test_setup_multiple_scenario_buttons(self, mock_config_entry, mock_session):
         shc_dev = SimpleNamespace(
             identifiers={("bosch_shc", "uid")},
             name="SHC",
@@ -1479,17 +1199,15 @@ class TestSHCScenarioButton:
             SimpleNamespace(id="s1", name="Morning"),
             SimpleNamespace(id="s2", name="Evening"),
         ]
-        session = self._session_with_scenarios(scenarios)
-        result = _run_setup(
-            session,
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid",
-            shc_device=shc_dev,
-        )
+        mock_session.scenarios = scenarios
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = shc_dev
+        result = _run_setup(mock_config_entry, mock_session)
         sb = [e for e in result if isinstance(e, SHCScenarioButton)]
         assert len(sb) == 2
 
-    def test_setup_bad_scenario_skipped_not_crash(self):
+    def test_setup_bad_scenario_skipped_not_crash(self, mock_config_entry, mock_session):
         """A malformed scenario (missing id/name) must be skipped gracefully."""
         shc_dev = SimpleNamespace(
             identifiers={("bosch_shc", "uid")},
@@ -1499,16 +1217,13 @@ class TestSHCScenarioButton:
         )
         # No .id attribute → AttributeError → should be caught and skipped.
         bad_sc = SimpleNamespace(name="No ID")
-        # SimpleNamespace doesn't set .id here — accessing it raises AttributeError.
         good_sc = SimpleNamespace(id="ok", name="Good")
-        session = self._session_with_scenarios([bad_sc, good_sc])
+        mock_session.scenarios = [bad_sc, good_sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = shc_dev
         # This must not raise; the bad scenario is skipped.
-        result = _run_setup(
-            session,
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid",
-            shc_device=shc_dev,
-        )
+        result = _run_setup(mock_config_entry, mock_session)
         sb = [e for e in result if isinstance(e, SHCScenarioButton)]
         # Only the good scenario makes it through.
         assert len(sb) == 1
@@ -1519,50 +1234,63 @@ class TestScenariosAsButtonsBlock:
     """OPT_SCENARIOS_AS_BUTTONS=True → scenarios become SHCScenarioButton
     entities (coverage-gap tests, incl. KeyError/AttributeError skip path)."""
 
-    def test_scenarios_as_buttons_false_by_default(self):
+    def test_scenarios_as_buttons_false_by_default(
+        self, mock_config_entry, mock_session
+    ):
         """When option is absent / False, no scenario buttons are added."""
         sc = _good_scenario()
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry()
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [sc]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
-    def test_scenarios_as_buttons_true_adds_button(self):
+    def test_scenarios_as_buttons_true_adds_button(
+        self, mock_config_entry, mock_session
+    ):
         sc = _good_scenario(sid="sc-001", name="Morning")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCScenarioButton)
 
-    def test_scenario_unique_id_uses_entry_unique_id(self):
+    def test_scenario_unique_id_uses_entry_unique_id(
+        self, mock_config_entry, mock_session
+    ):
         sc = _good_scenario(sid="sc-abc")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(
-            options={OPT_SCENARIOS_AS_BUTTONS: True}, unique_id="uid-xyz"
-        )
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-xyz"
+        mock_config_entry.runtime_data.shc_device = None
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._attr_unique_id == "uid-xyz_scenario_sc-abc"
 
-    def test_scenario_name_is_scenario_name(self):
+    def test_scenario_name_is_scenario_name(self, mock_config_entry, mock_session):
         sc = _good_scenario(sid="sc-001", name="Evening Scene")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._attr_name == "Evening Scene"
 
-    def test_multiple_scenarios_all_added(self):
+    def test_multiple_scenarios_all_added(self, mock_config_entry, mock_session):
         scenarios = [
             _good_scenario(sid="sc-001", name="Scene A"),
             _good_scenario(sid="sc-002", name="Scene B"),
             _good_scenario(sid="sc-003", name="Scene C"),
         ]
-        session = _make_session(scenarios=scenarios)
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = scenarios
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 3
 
-    def test_keyerror_on_scenario_logs_warning_and_skips(self):
+    def test_keyerror_on_scenario_logs_warning_and_skips(
+        self, mock_config_entry, mock_session
+    ):
         """A scenario whose attribute access raises KeyError is skipped, not fatal."""
 
         class _BadScenario:
@@ -1576,17 +1304,21 @@ class TestScenariosAsButtonsBlock:
 
         bad = _BadScenario()
         good = _good_scenario(sid="sc-good", name="Good")
-        session = _make_session(scenarios=[bad, good])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+        mock_session.scenarios = [bad, good]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
 
         with patch("custom_components.bosch_shc.button.LOGGER") as mock_log:
-            result = _run_setup_with_entry(session, entry)
+            result = _run_setup(mock_config_entry, mock_session)
 
         mock_log.warning.assert_called_once()
         assert len(result) == 1
         assert isinstance(result[0], SHCScenarioButton)
 
-    def test_attribute_error_on_scenario_logs_warning_and_skips(self):
+    def test_attribute_error_on_scenario_logs_warning_and_skips(
+        self, mock_config_entry, mock_session
+    ):
         """A scenario whose attribute access raises AttributeError is skipped."""
 
         class _BadScenario:
@@ -1598,16 +1330,18 @@ class TestScenariosAsButtonsBlock:
 
         bad = _BadScenario()
         good = _good_scenario(sid="sc-good2", name="Good2")
-        session = _make_session(scenarios=[bad, good])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
+        mock_session.scenarios = [bad, good]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
 
         with patch("custom_components.bosch_shc.button.LOGGER") as mock_log:
-            result = _run_setup_with_entry(session, entry)
+            result = _run_setup(mock_config_entry, mock_session)
 
         mock_log.warning.assert_called_once()
         assert len(result) == 1
 
-    def test_all_bad_scenarios_yields_empty(self):
+    def test_all_bad_scenarios_yields_empty(self, mock_config_entry, mock_session):
         """All malformed scenarios → empty entity list (async_add_entities not called)."""
 
         class _Bad:
@@ -1617,9 +1351,11 @@ class TestScenariosAsButtonsBlock:
 
             name = "Bad"
 
-        session = _make_session(scenarios=[_Bad(), _Bad()])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True})
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [_Bad(), _Bad()]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
+        result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
 
@@ -1705,7 +1441,9 @@ class TestSHCScenarioButtonPress:
         btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
         assert asyncio.run(btn.async_press()) is None
 
-    def test_setup_scenario_button_press_via_setup_entry(self):
+    def test_setup_scenario_button_press_via_setup_entry(
+        self, mock_config_entry, mock_session
+    ):
         """End-to-end: button created via async_setup_entry, then pressed."""
         trigger_calls = []
         sc = _good_scenario(sid="sc-e2e", name="E2E Scene")
@@ -1715,12 +1453,11 @@ class TestSHCScenarioButtonPress:
 
         sc.async_trigger = _trig
 
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(
-            options={OPT_SCENARIOS_AS_BUTTONS: True},
-            unique_id="uid-e2e",
-        )
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-e2e"
+        mock_config_entry.runtime_data.shc_device = None
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         asyncio.run(result[0].async_press())
         assert trigger_calls == [True]
@@ -1778,12 +1515,16 @@ class TestSHCScenarioButtonQualityScale:
         btn = SHCScenarioButton(scenario=sc, entry_unique_id="uid-1", entry_id="entry-1")
         assert btn.device_info is None
 
-    def test_setup_entry_passes_shc_device_to_button(self):
+    def test_setup_entry_passes_shc_device_to_button(
+        self, mock_config_entry, mock_session
+    ):
         """async_setup_entry populates shc_device so device_info is not None."""
         sc = _good_scenario(sid="sc-wiring", name="Test Wiring")
-        session = _make_session(scenarios=[sc])
-        entry = _make_entry(options={OPT_SCENARIOS_AS_BUTTONS: True}, unique_id="uid-w")
-        result = _run_setup_with_entry(session, entry)
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+        mock_config_entry.unique_id = "uid-w"
+        mock_config_entry.runtime_data.shc_device = _fake_shc_device()
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         btn = result[0]
         assert btn.device_info is not None
@@ -1793,14 +1534,15 @@ class TestSHCScenarioButtonQualityScale:
 class TestButtonMotionDetectors2DeviceExcluded:
     """button.py — device_excluded continue in the motion_detectors2 loop."""
 
-    def test_excluded_md2_not_added(self):
+    def test_excluded_md2_not_added(self, mock_config_entry, mock_session):
         md2 = _fake_device_kw(
             id="md2-excl",
             walk_state=object(),
         )
-        session = _make_button_session(motion_detectors2=[md2])
-        entities = _run_button_setup(session, options=_excl("md2-excl"))
-        ids = [getattr(e, "_attr_unique_id", "") for e in entities]
+        mock_session.device_helper.motion_detectors2 = [md2]
+        mock_config_entry.options = _excl("md2-excl")
+        result = _run_setup(mock_config_entry, mock_session)
+        ids = [getattr(e, "_attr_unique_id", "") for e in result]
         assert not any("md2-excl" in uid for uid in ids)
 
 
@@ -1896,26 +1638,17 @@ class TestSHCWalkTestButtons:
         dev.supports_tamper_reset = has_tamper
         return dev
 
-    def _session(self, md2_devices):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=md2_devices,
-                outdoor_sirens=[],
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_walk_test_creates_start_and_stop_buttons(self):
+    def test_setup_walk_test_creates_start_and_stop_buttons(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device()
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         walk_types = [type(e) for e in result]
         assert SHCWalkTestButton in walk_types
         assert SHCWalkTestStopButton in walk_types
 
-    def test_setup_walk_test_buttons_count(self):
+    def test_setup_walk_test_buttons_count(self, mock_config_entry, mock_session):
         """One MD2 with walk_test → exactly 2 walk-test buttons (+ 1 tamper)."""
         dev = self._md2_device(
             supports_walk=True,
@@ -1923,7 +1656,8 @@ class TestSHCWalkTestButtons:
             supports_detection=False,
             has_tamper=True,
         )
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         walk_buttons = [
             e
             for e in result
@@ -1931,25 +1665,32 @@ class TestSHCWalkTestButtons:
         ]
         assert len(walk_buttons) == 2
 
-    def test_setup_no_walk_test_when_supports_false(self):
+    def test_setup_no_walk_test_when_supports_false(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device(supports_walk=False)
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SHCWalkTestButton) for e in result)
         assert not any(isinstance(e, SHCWalkTestStopButton) for e in result)
 
-    def test_setup_no_walk_test_when_walk_state_none(self):
+    def test_setup_no_walk_test_when_walk_state_none(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device(walk_state=None)
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SHCWalkTestButton) for e in result)
 
-    def test_setup_walk_unique_ids(self):
+    def test_setup_walk_unique_ids(self, mock_config_entry, mock_session):
         dev = _make_device(root_device_id="root1", device_id="dev1")
         dev.supports_walk_test = True
         dev.walk_state = "STOPPED"
         dev.supports_detection_test = False
         dev.reset_tampered_state = lambda: None
         dev.supports_tamper_reset = True
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         uids = [e._attr_unique_id for e in result]
         assert "root1_dev1_walk_test" in uids
         assert "root1_dev1_walk_test_stop" in uids
@@ -1959,47 +1700,57 @@ class TestWalkTestButtonSetup:
     """async_setup_entry wiring for the MD2 walk-test buttons (fixture-driven,
     from test_apk_walktest_and_sensitivity.py)."""
 
-    def test_walk_test_button_created_when_walk_state_present(self):
+    def test_walk_test_button_created_when_walk_state_present(
+        self, mock_config_entry, mock_session
+    ):
         from boschshcpy.services_impl import WalkTestService
 
         md2 = _fake_md2(
             walk_state=WalkTestService.WalkState.UNKNOWN, supports_walk_test=True
         )
-        session = _make_md2_button_session(motion_detectors2=[md2])
-        entities = _setup_buttons(session)
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCWalkTestButton" in types
 
-    def test_walk_test_button_skipped_when_no_walk_state_attr(self):
+    def test_walk_test_button_skipped_when_no_walk_state_attr(
+        self, mock_config_entry, mock_session
+    ):
         md2 = _fake_md2()  # no walk_state attr
-        session = _make_md2_button_session(motion_detectors2=[md2])
-        entities = _setup_buttons(session)
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCWalkTestButton" not in types
 
-    def test_walk_test_button_skipped_when_walk_state_is_none(self):
+    def test_walk_test_button_skipped_when_walk_state_is_none(
+        self, mock_config_entry, mock_session
+    ):
         # supports_walk_test=True but walk_state=None -> skipped
         md2 = _fake_md2(walk_state=None, supports_walk_test=True)
-        session = _make_md2_button_session(motion_detectors2=[md2])
-        entities = _setup_buttons(session)
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCWalkTestButton" not in types
 
-    def test_walk_test_stop_button_created_alongside_start(self):
+    def test_walk_test_stop_button_created_alongside_start(
+        self, mock_config_entry, mock_session
+    ):
         from boschshcpy.services_impl import WalkTestService
 
         md2 = _fake_md2(
             walk_state=WalkTestService.WalkState.UNKNOWN, supports_walk_test=True
         )
-        session = _make_md2_button_session(motion_detectors2=[md2])
-        entities = _setup_buttons(session)
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCWalkTestStopButton" in types
 
-    def test_walk_test_stop_button_skipped_when_no_walk_state(self):
+    def test_walk_test_stop_button_skipped_when_no_walk_state(
+        self, mock_config_entry, mock_session
+    ):
         md2 = _fake_md2()  # no walk_state attr
-        session = _make_md2_button_session(motion_detectors2=[md2])
-        entities = _setup_buttons(session)
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCWalkTestStopButton" not in types
 
@@ -2188,38 +1939,33 @@ class TestSHCDetectionTestButtons:
         dev.supports_tamper_reset = has_tamper
         return dev
 
-    def _session(self, md2_devices):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=md2_devices,
-                outdoor_sirens=[],
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_detection_test_creates_start_and_stop(self):
+    def test_setup_detection_test_creates_start_and_stop(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device()
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         det_types = [type(e) for e in result]
         assert SHCDetectionTestButton in det_types
         assert SHCDetectionTestStopButton in det_types
 
-    def test_setup_no_detection_when_not_supported(self):
+    def test_setup_no_detection_when_not_supported(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device(supports_detection=False)
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SHCDetectionTestButton) for e in result)
 
-    def test_setup_det_unique_ids(self):
+    def test_setup_det_unique_ids(self, mock_config_entry, mock_session):
         dev = _make_device(root_device_id="root1", device_id="dev1")
         dev.supports_walk_test = False
         dev.walk_state = None
         dev.supports_detection_test = True
         dev.reset_tampered_state = lambda: None
         dev.supports_tamper_reset = True
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         uids = [e._attr_unique_id for e in result]
         assert "root1_dev1_detection_test" in uids
         assert "root1_dev1_detection_test_stop" in uids
@@ -2229,33 +1975,45 @@ class TestButtonSetup:
     """async_setup_entry wiring for MD2 detection-test + tamper-reset buttons
     (from test_md2_detection_tamper_pollcontrol.py)."""
 
-    def test_detection_buttons_created_when_supported(self):
+    def test_detection_buttons_created_when_supported(
+        self, mock_config_entry, mock_session
+    ):
         md2 = _fake_md2(supports_detection_test=True)
-        entities = _setup_buttons(_make_md2_button_session(motion_detectors2=[md2]))
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCDetectionTestButton" in types
         assert "SHCDetectionTestStopButton" in types
 
-    def test_detection_buttons_skipped_when_unsupported(self):
+    def test_detection_buttons_skipped_when_unsupported(
+        self, mock_config_entry, mock_session
+    ):
         md2 = _fake_md2(supports_detection_test=False)
-        entities = _setup_buttons(_make_md2_button_session(motion_detectors2=[md2]))
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCDetectionTestButton" not in types
 
-    def test_tamper_reset_created_when_service_supported(self):
+    def test_tamper_reset_created_when_service_supported(
+        self, mock_config_entry, mock_session
+    ):
         md2 = _fake_md2(
             reset_tampered_state=lambda: None, supports_tamper_reset=True
         )
-        entities = _setup_buttons(_make_md2_button_session(motion_detectors2=[md2]))
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCTamperResetButton" in types
 
-    def test_tamper_reset_skipped_when_service_unsupported(self):
+    def test_tamper_reset_skipped_when_service_unsupported(
+        self, mock_config_entry, mock_session
+    ):
         """reset_tampered_state()/async_reset_tampered_state() are defined
         unconditionally on SHCMotionDetector2, so gating must use the real
         supports_tamper_reset presence check, not hasattr on the method."""
         md2 = _fake_md2(supports_tamper_reset=False)
-        entities = _setup_buttons(_make_md2_button_session(motion_detectors2=[md2]))
+        mock_session.device_helper.motion_detectors2 = [md2]
+        entities = _run_setup(mock_config_entry, mock_session)
         types = [type(e).__name__ for e in entities]
         assert "SHCTamperResetButton" not in types
 
@@ -2348,37 +2106,32 @@ class TestSHCTamperResetButton:
         dev.supports_tamper_reset = has_tamper
         return dev
 
-    def _session(self, md2_devices):
-        return SimpleNamespace(
-            device_helper=SimpleNamespace(
-                micromodule_impulse_relays=[],
-                smoke_detectors=[],
-                twinguards=[],
-                motion_detectors2=md2_devices,
-                outdoor_sirens=[],
-            ),
-            scenarios=[],
-        )
-
-    def test_setup_tamper_button_created_when_reset_method_present(self):
+    def test_setup_tamper_button_created_when_reset_method_present(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device_with_tamper(has_tamper=True)
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert len(result) == 1
         assert isinstance(result[0], SHCTamperResetButton)
 
-    def test_setup_no_tamper_button_without_reset_method(self):
+    def test_setup_no_tamper_button_without_reset_method(
+        self, mock_config_entry, mock_session
+    ):
         dev = self._md2_device_with_tamper(has_tamper=False)
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SHCTamperResetButton) for e in result)
 
-    def test_setup_tamper_unique_id(self):
+    def test_setup_tamper_unique_id(self, mock_config_entry, mock_session):
         dev = _make_device(root_device_id="root1", device_id="dev1")
         dev.supports_walk_test = False
         dev.walk_state = None
         dev.supports_detection_test = False
         dev.reset_tampered_state = lambda: None
         dev.supports_tamper_reset = True
-        result = _run_setup(self._session([dev]))
+        mock_session.device_helper.motion_detectors2 = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
         assert result[0]._attr_unique_id == "root1_dev1_reset_tamper"
 
 
@@ -2408,36 +2161,25 @@ class TestTamperResetButton:
 class TestButtonDimmerSetup:
     """async_setup_entry: dimmer preview buttons."""
 
-    def _run_button_setup(self, dimmers, options=None):
-        session = MagicMock()
-        session.device_helper.micromodule_impulse_relays = []
-        session.device_helper.smoke_detectors = []
-        session.device_helper.twinguards = []
-        session.device_helper.motion_detectors2 = []
-        session.device_helper.outdoor_sirens = []
-        session.device_helper.micromodule_dimmers = dimmers
-        session.scenarios = []
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options=options or {})
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        return _without_diagnostics_button(collected)
-
-    def test_dimmer_with_dimmer_configuration_adds_preview_buttons(self):
+    def test_dimmer_with_dimmer_configuration_adds_preview_buttons(
+        self, mock_config_entry, mock_session
+    ):
         """Dimmer with supports_dimmer_configuration=True → both preview buttons."""
         dev = _fake_dev("dim1", supports_dimmer_configuration=True)
-        collected = self._run_button_setup([dev])
-        types = [type(e).__name__ for e in collected]
+        mock_session.device_helper.micromodule_dimmers = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
+        types = [type(e).__name__ for e in result]
         assert "DimmerPreviewMaxButton" in types
         assert "DimmerPreviewMinButton" in types
 
-    def test_dimmer_without_supports_skips_preview_buttons(self):
+    def test_dimmer_without_supports_skips_preview_buttons(
+        self, mock_config_entry, mock_session
+    ):
         """supports_dimmer_configuration=False → buttons not added."""
         dev = _fake_dev("dim1")  # no supports_dimmer_configuration
-        collected = self._run_button_setup([dev])
-        types = [type(e).__name__ for e in collected]
+        mock_session.device_helper.micromodule_dimmers = [dev]
+        result = _run_setup(mock_config_entry, mock_session)
+        types = [type(e).__name__ for e in result]
         assert "DimmerPreviewMaxButton" not in types
 
 
@@ -2480,25 +2222,15 @@ class TestDimmerPreviewButtonInits:
 class TestButtonDimmerExcluded:
     """button.py: excluded dimmer device → continue."""
 
-    def test_excluded_dimmer_skipped_in_button_setup(self):
+    def test_excluded_dimmer_skipped_in_button_setup(
+        self, mock_config_entry, mock_session
+    ):
         """device_excluded → continue before dimmer_configuration check."""
         dev = _fake_dev("dim_excl", supports_dimmer_configuration=True)
-
-        session = MagicMock()
-        session.device_helper.micromodule_impulse_relays = []
-        session.device_helper.smoke_detectors = []
-        session.device_helper.twinguards = []
-        session.device_helper.motion_detectors2 = []
-        session.device_helper.outdoor_sirens = []
-        session.device_helper.micromodule_dimmers = [dev]
-        session.scenarios = []
-
-        hass = _fake_hass(session=session)
-        entry = _fake_entry(hass=hass, options={OPT_EXCLUDED_DEVICES: ["dim_excl"]})
-
-        collected = []
-        _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
-        assert not any(isinstance(e, DimmerPreviewMaxButton) for e in collected)
+        mock_session.device_helper.micromodule_dimmers = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["dim_excl"]}
+        result = _run_setup(mock_config_entry, mock_session)
+        assert not any(isinstance(e, DimmerPreviewMaxButton) for e in result)
 
 
 def test_dimmer_preview_max_calls_service():
@@ -2521,13 +2253,14 @@ class TestSHCEnableAllDiagnosticsButtonSetup:
     """The hub-level diagnostics-enable button is created unconditionally,
     unlike every other button here (all gated by device buckets/options)."""
 
-    def test_button_always_created_even_with_no_other_entities(self) -> None:
-        session = SimpleNamespace(device_helper=SimpleNamespace())
-        hass = _make_hass()
-        entry = _make_config_entry(session)
-        collected, add = _collect()
-
-        asyncio.run(async_setup_entry(hass, entry, add))  # type: ignore[arg-type]
+    def test_button_always_created_even_with_no_other_entities(
+        self, mock_config_entry, mock_session
+    ) -> None:
+        mock_config_entry.unique_id = None
+        mock_config_entry.runtime_data.shc_device = None
+        collected = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
 
         assert any(
             isinstance(e, SHCEnableAllDiagnosticsButton) for e in collected
@@ -2564,7 +2297,7 @@ def test_dimmer_preview_buttons_safe_without_service():
 # ---------------------------------------------------------------------------
 
 
-def test_setup_mixed_all_entity_types():
+def test_setup_mixed_all_entity_types(mock_config_entry, mock_session):
     """All device buckets populated → one entity per type (plus tamper)."""
     relay = _make_device(device_id="relay1")
     smoke = _make_device(device_id="smoke1")
@@ -2585,23 +2318,17 @@ def test_setup_mixed_all_entity_types():
     )
     sc = SimpleNamespace(id="sc-1", name="Goodnight")
 
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            micromodule_impulse_relays=[relay],
-            smoke_detectors=[smoke],
-            twinguards=[],
-            motion_detectors2=[md2],
-            outdoor_sirens=[siren],
-        ),
-        scenarios=[sc],
-    )
+    mock_session.device_helper.micromodule_impulse_relays = [relay]
+    mock_session.device_helper.smoke_detectors = [smoke]
+    mock_session.device_helper.motion_detectors2 = [md2]
+    mock_session.device_helper.outdoor_sirens = [siren]
+    mock_session.scenarios = [sc]
 
-    result = _run_setup(
-        session,
-        options={OPT_SCENARIOS_AS_BUTTONS: True},
-        unique_id="uid",
-        shc_device=shc_dev,
-    )
+    mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: True}
+    mock_config_entry.unique_id = "uid"
+    mock_config_entry.runtime_data.shc_device = shc_dev
+
+    result = _run_setup(mock_config_entry, mock_session)
 
     types = [type(e) for e in result]
     assert SHCRelayButton in types
@@ -2615,17 +2342,7 @@ def test_setup_mixed_all_entity_types():
     assert SHCSirenTestAlarmButton in types
 
 
-def test_setup_empty_all_buckets_yields_nothing():
+def test_setup_empty_all_buckets_yields_nothing(mock_config_entry, mock_session):
     """All device buckets empty → nothing added."""
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            micromodule_impulse_relays=[],
-            smoke_detectors=[],
-            twinguards=[],
-            motion_detectors2=[],
-            outdoor_sirens=[],
-        ),
-        scenarios=[],
-    )
-    result = _run_setup(session)
+    result = _run_setup(mock_config_entry, mock_session)
     assert result == []

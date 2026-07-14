@@ -117,6 +117,7 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
         self._room_label = name
         self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
+        self._device: SHCClimateControl = device  # type: ignore[assignment]
 
     @property
     def device_name(self) -> str:
@@ -510,6 +511,7 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
         super().__init__(device=device, entry_id=entry_id)
         self._attr_name: str | None = name  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
+        self._device: SHCHeatingCircuit = device  # type: ignore[assignment]
 
     @property
     def current_temperature(self) -> float | None:

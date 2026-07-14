@@ -6,7 +6,13 @@ import asyncio
 from typing import Any
 
 import aiohttp
-from boschshcpy import PowerSwitchService, SHCLight, SHCSession
+from boschshcpy import (
+    PowerSwitchService,
+    SHCLight,
+    SHCLightSwitch,
+    SHCMotionDetector2,
+    SHCSession,
+)
 from boschshcpy.device import SHCDevice
 from boschshcpy.exceptions import SHCException
 from homeassistant.components.light import (
@@ -80,7 +86,7 @@ async def async_setup_entry(
                 )
     else:
         ledvance_lights = list(session.device_helper.ledvance_lights)
-    room_lights: dict[str, list[SHCDevice]] = {}
+    room_lights: dict[str, list[SHCLight]] = {}
     for light in (
         ledvance_lights + list(session.device_helper.micromodule_dimmers) + hue_lights
     ):
@@ -191,6 +197,10 @@ class LightSwitch(SHCEntity, LightEntity):  # type: ignore[misc]
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the SHC light switch entity."""
         super().__init__(device=device, entry_id=entry_id)
+        # Narrow from the base SHCDevice: every caller of this class passes a
+        # Hue/LEDVANCE light or a micromodule dimmer (SHCMicromoduleDimmer,
+        # itself a SHCLight subclass) — see async_setup_entry above.
+        self._device: SHCLight = device  # type: ignore[assignment]
         self._attr_supported_color_modes: set[ColorMode] = set()
 
         if self._device.supports_color_hsb:
@@ -327,6 +337,7 @@ class MotionDetectorLight(SHCEntity, LightEntity):  # type: ignore[misc]
         """Initialize the Motion Detector II light entity."""
         super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_motionlight"
+        self._device: SHCMotionDetector2 = device  # type: ignore[assignment]
 
     @property
     def is_on(self) -> bool:
@@ -383,6 +394,13 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
 
     _attr_supported_color_modes: set[ColorMode] = {ColorMode.ONOFF}
     _attr_color_mode = ColorMode.ONOFF
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the relay light entity."""
+        super().__init__(device=device, entry_id=entry_id)
+        # Narrow from the base SHCDevice: light_switch_devices() only yields
+        # SHCLightSwitch/SHCLightSwitchBSM devices (see async_setup_entry).
+        self._device: SHCLightSwitch = device  # type: ignore[assignment]
 
     @property
     def is_on(self) -> bool | None:
@@ -450,7 +468,7 @@ class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
 
     def __init__(
         self,
-        devices: list[SHCDevice],
+        devices: list[SHCLight],
         room_id: str,
         room_name: str,
         entry_id: str,

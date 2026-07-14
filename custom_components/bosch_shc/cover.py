@@ -6,9 +6,12 @@ from typing import Any
 
 from boschshcpy import (
     KeypadService,
+    SHCMicromoduleBlinds,
+    SHCMicromoduleShutterControl,
     SHCSession,
     ShutterControlService,
 )
+from boschshcpy.device import SHCDevice
 from boschshcpy.exceptions import SHCException
 from homeassistant.components.cover import (
     ATTR_POSITION,
@@ -81,6 +84,23 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     _last_position = None
     _skip_update = False
     _app_command = False
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the shutter control cover.
+
+        This entity class is shared by two device buckets: the plain
+        `shutter_controls` (e.g. BBL, `SHCShutterControl`) and the
+        `micromodule_shutter_controls` (`SHCMicromoduleShutterControl`, which
+        also exposes the Keypad-derived `eventtype`/`keycode` used by the
+        MICROMODULE_SHUTTER branches below). Narrowing to the richer
+        micromodule subtype here — the same one-line-redeclaration pattern
+        used elsewhere in this codebase (see valve.py's `SHCValve`) — covers
+        every attribute this class touches; the `device_model` checks already
+        guard runtime access to the micromodule-only attributes for plain
+        `SHCShutterControl` instances.
+        """
+        super().__init__(device, entry_id)
+        self._device: SHCMicromoduleShutterControl = device  # type: ignore[assignment]
 
     def _micromodule_keypad_switch_off(self) -> None:
         if self._device.device_model == "MICROMODULE_SHUTTER":
@@ -331,6 +351,15 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         | CoverEntityFeature.STOP
         | CoverEntityFeature.STOP_TILT
     )
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the blinds control cover, narrowed to SHCMicromoduleBlinds.
+
+        Adds `current_angle`/`async_set_target_angle`/`async_stop_blinds` on
+        top of the parent's `SHCMicromoduleShutterControl` narrowing.
+        """
+        super().__init__(device, entry_id)
+        self._device: SHCMicromoduleBlinds = device  # type: ignore[assignment]
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover (lift) via ShutterControl.level."""

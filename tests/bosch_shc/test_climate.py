@@ -52,6 +52,8 @@ from custom_components.bosch_shc.climate import (
 )
 from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 
+from .conftest import run_setup_entry
+
 # ===========================================================================
 # Shared enum shorthands
 # ===========================================================================
@@ -388,68 +390,8 @@ def _make_heating_circuit_device(device_id="hc-1", room_id="room-2"):
     )
 
 
-def _make_hass_and_entry(climates=None, heating_circuits=None, excluded_device_ids=None):
-    """Return (hass, config_entry) with a faked session."""
-    climates = climates or []
-    heating_circuits = heating_circuits or []
-    excluded = excluded_device_ids or []
-
-    session = SimpleNamespace(
-        device_helper=SimpleNamespace(
-            climate_controls=climates,
-            heating_circuits=heating_circuits,
-        ),
-        room=lambda room_id: SimpleNamespace(name=f"Room-{room_id}"),
-    )
-
-    entry_id = "entry-clim"
-    options = {OPT_EXCLUDED_DEVICES: excluded}
-    hass = SimpleNamespace()
-    config_entry = SimpleNamespace(entry_id=entry_id, options=options)
-    config_entry.runtime_data = SimpleNamespace(
-        session=session, shc_device=None, title="Test SHC"
-    )
-    return hass, config_entry
-
-
-def _run_setup(hass, config_entry):
-    added = []
-
-    def _add(entities):
-        added.extend(entities)
-
-    asyncio.run(async_setup_entry(hass, config_entry, _add))
-    return added
-
-
 def _make_room(name="Living Room"):
     return SimpleNamespace(name=name)
-
-
-def _make_session(climate_controls=None, heating_circuits=None, rooms=None):
-    """Fake SHCSession with device_helper and room() lookup."""
-    rooms = rooms or {}
-    dh = SimpleNamespace(
-        climate_controls=climate_controls or [],
-        heating_circuits=heating_circuits or [],
-    )
-
-    def _room(room_id):
-        return rooms[room_id]
-
-    return SimpleNamespace(device_helper=dh, room=_room)
-
-
-def _make_hass(session, entry_id="entry-1"):
-    return SimpleNamespace()
-
-
-def _make_config_entry(entry_id="entry-1", session=None):
-    config_entry = SimpleNamespace(options={}, entry_id=entry_id)
-    config_entry.runtime_data = SimpleNamespace(
-        session=session, shc_device=None, title="Test SHC"
-    )
-    return config_entry
 
 
 # ===========================================================================
@@ -527,79 +469,77 @@ def _make_hc_entity():
 class TestAsyncSetupEntry:
     """Drive async_setup_entry with various device combinations."""
 
-    def _setup(self, climate_controls, heating_circuits, rooms, entry_id="entry-1"):
-        session = _make_session(
-            climate_controls=climate_controls,
-            heating_circuits=heating_circuits,
-            rooms=rooms,
+    def _setup(
+        self,
+        mock_config_entry,
+        mock_session,
+        climate_controls,
+        heating_circuits,
+        rooms,
+        entry_id="entry-1",
+    ) -> list:
+        mock_session.device_helper.climate_controls = climate_controls
+        mock_session.device_helper.heating_circuits = heating_circuits
+        mock_session.room = lambda room_id: rooms[room_id]
+        mock_config_entry.entry_id = entry_id
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
-        hass = _make_hass(session, entry_id)
-        config_entry = _make_config_entry(entry_id, session=session)
 
-        added = []
-        _run(async_setup_entry(hass, config_entry, added.append))
-        return added
-
-    def test_no_devices_adds_nothing(self):
+    def test_no_devices_adds_nothing(self, mock_config_entry, mock_session):
         """entities list empty → async_add_entities never called."""
-        added = self._setup([], [], {})
-        # async_add_entities receives each entity list (not called means no append)
+        added = self._setup(mock_config_entry, mock_session, [], [], {})
         assert added == []
 
-    def test_one_climate_control_added(self):
+    def test_one_climate_control_added(self, mock_config_entry, mock_session):
         """One climate → one ClimateControl entity appended."""
         dev = _make_cc_device_full(room_id="r1")
         rooms = {"r1": _make_room("Kitchen")}
-        added = self._setup([dev], [], rooms)
-        # async_add_entities is called once with the full list
+        added = self._setup(mock_config_entry, mock_session, [dev], [], rooms)
         assert len(added) == 1
-        entities = added[0]
-        assert len(entities) == 1
-        assert isinstance(entities[0], ClimateControl)
+        assert isinstance(added[0], ClimateControl)
 
-    def test_climate_control_name_uses_room_name(self):
+    def test_climate_control_name_uses_room_name(self, mock_config_entry, mock_session):
         """Device name = room name; the entity name comes from the
         translation_key 'room_climate_control' (#333), so _attr_name is None
         and the friendly name resolves to '<room> <translated>' — no doubling.
         """
         dev = _make_cc_device_full(room_id="r2")
         rooms = {"r2": _make_room("Bedroom")}
-        added = self._setup([dev], [], rooms)
-        entity = added[0][0]
+        added = self._setup(mock_config_entry, mock_session, [dev], [], rooms)
+        entity = added[0]
         assert entity.device_name == "Bedroom"
         assert entity._attr_name is None
         assert entity._attr_translation_key == "room_climate_control"
 
-    def test_one_heating_circuit_added(self):
+    def test_one_heating_circuit_added(self, mock_config_entry, mock_session):
         """One heating circuit → one HeatingCircuit entity."""
         dev = _make_hc_device_full()
-        added = self._setup([], [dev], {})
+        added = self._setup(mock_config_entry, mock_session, [], [dev], {})
         assert len(added) == 1
-        entities = added[0]
-        assert len(entities) == 1
-        assert isinstance(entities[0], HeatingCircuit)
+        assert isinstance(added[0], HeatingCircuit)
 
-    def test_heating_circuit_name_from_device(self):
+    def test_heating_circuit_name_from_device(self, mock_config_entry, mock_session):
         """HeatingCircuit name = heating_circuit.name."""
         dev = _make_hc_device_full(name="HC South Wing")
-        added = self._setup([], [dev], {})
-        entity = added[0][0]
+        added = self._setup(mock_config_entry, mock_session, [], [dev], {})
+        entity = added[0]
         assert entity.name == "HC South Wing"
 
-    def test_both_climate_and_heating_circuit(self):
+    def test_both_climate_and_heating_circuit(self, mock_config_entry, mock_session):
         """Mix of devices → both entity types in one list."""
         cc_dev = _make_cc_device_full(room_id="r3")
         hc_dev = _make_hc_device_full()
         rooms = {"r3": _make_room("Office")}
-        added = self._setup([cc_dev], [hc_dev], rooms)
-        assert len(added) == 1
-        entities = added[0]
-        assert len(entities) == 2
-        types = {type(e) for e in entities}
+        added = self._setup(
+            mock_config_entry, mock_session, [cc_dev], [hc_dev], rooms
+        )
+        assert len(added) == 2
+        types = {type(e) for e in added}
         assert ClimateControl in types
         assert HeatingCircuit in types
 
-    def test_multiple_climate_controls(self):
+    def test_multiple_climate_controls(self, mock_config_entry, mock_session):
         """Two climates → two ClimateControl entities."""
         dev1 = _make_cc_device_full(root_device_id="r1", id_="d1", room_id="room-a")
         dev2 = _make_cc_device_full(root_device_id="r2", id_="d2", room_id="room-b")
@@ -607,15 +547,22 @@ class TestAsyncSetupEntry:
             "room-a": _make_room("Room A"),
             "room-b": _make_room("Room B"),
         }
-        added = self._setup([dev1, dev2], [], rooms)
-        assert len(added[0]) == 2
+        added = self._setup(mock_config_entry, mock_session, [dev1, dev2], [], rooms)
+        assert len(added) == 2
 
-    def test_entry_id_passed_to_entity(self):
+    def test_entry_id_passed_to_entity(self, mock_config_entry, mock_session):
         """ClimateControl receives the correct entry_id."""
         dev = _make_cc_device_full(room_id="rx")
         rooms = {"rx": _make_room("X")}
-        added = self._setup([dev], [], rooms, entry_id="my-entry-99")
-        entity = added[0][0]
+        added = self._setup(
+            mock_config_entry,
+            mock_session,
+            [dev],
+            [],
+            rooms,
+            entry_id="my-entry-99",
+        )
+        entity = added[0]
         assert entity._entry_id == "my-entry-99"
 
 
@@ -2259,39 +2206,44 @@ class TestClimateControlPresetModeErrors:
 # ===========================================================================
 
 class TestClimateSetupExcluded:
-    def test_excluded_climate_control_not_added(self):
+    def _run(self, mock_config_entry, mock_session) -> list:
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+
+    def test_excluded_climate_control_not_added(self, mock_config_entry, mock_session):
         """Excluded climate device must not appear in entities."""
         dev = _make_climate_device(device_id="excl-clim")
-        hass, entry = _make_hass_and_entry(
-            climates=[dev],
-            excluded_device_ids=["excl-clim"],
-        )
-        added = _run_setup(hass, entry)
+        mock_session.device_helper.climate_controls = [dev]
+        mock_session.room = lambda room_id: SimpleNamespace(name=f"Room-{room_id}")
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl-clim"]}
+        added = self._run(mock_config_entry, mock_session)
         assert all(
             getattr(e, "_device", None) is not dev for e in added
         ), "Excluded climate device should not be added"
 
-    def test_non_excluded_climate_control_is_added(self):
+    def test_non_excluded_climate_control_is_added(
+        self, mock_config_entry, mock_session
+    ):
         """Non-excluded climate device must appear in entities."""
         dev = _make_climate_device(device_id="keep-clim")
-        hass, entry = _make_hass_and_entry(
-            climates=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
+        mock_session.device_helper.climate_controls = [dev]
+        mock_session.room = lambda room_id: SimpleNamespace(name=f"Room-{room_id}")
+        added = self._run(mock_config_entry, mock_session)
         assert any(
             getattr(e, "_device", None) is dev for e in added
         ), "Non-excluded climate device should be added"
 
-    def test_mixed_climates_only_excluded_is_skipped(self):
+    def test_mixed_climates_only_excluded_is_skipped(
+        self, mock_config_entry, mock_session
+    ):
         """When one of two climates is excluded, only the non-excluded one is added."""
         keep = _make_climate_device(device_id="clim-keep")
         excl = _make_climate_device(device_id="clim-excl")
-        hass, entry = _make_hass_and_entry(
-            climates=[keep, excl],
-            excluded_device_ids=["clim-excl"],
-        )
-        added = _run_setup(hass, entry)
+        mock_session.device_helper.climate_controls = [keep, excl]
+        mock_session.room = lambda room_id: SimpleNamespace(name=f"Room-{room_id}")
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["clim-excl"]}
+        added = self._run(mock_config_entry, mock_session)
         device_ids = [getattr(e, "_device", SimpleNamespace()).id for e in added]
         assert "clim-keep" in device_ids
         assert "clim-excl" not in device_ids
@@ -2406,26 +2358,28 @@ class TestClimateControlProperties:
 
 
 class TestHeatingCircuitSetupExcluded:
-    def test_excluded_heating_circuit_not_added(self):
+    def _run(self, mock_config_entry, mock_session) -> list:
+        return asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+
+    def test_excluded_heating_circuit_not_added(self, mock_config_entry, mock_session):
         """Excluded heating circuit must not appear in entities."""
         dev = _make_heating_circuit_device(device_id="excl-hc")
-        hass, entry = _make_hass_and_entry(
-            heating_circuits=[dev],
-            excluded_device_ids=["excl-hc"],
-        )
-        added = _run_setup(hass, entry)
+        mock_session.device_helper.heating_circuits = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl-hc"]}
+        added = self._run(mock_config_entry, mock_session)
         assert all(
             getattr(e, "_device", None) is not dev for e in added
         ), "Excluded heating circuit should not be added"
 
-    def test_non_excluded_heating_circuit_is_added(self):
+    def test_non_excluded_heating_circuit_is_added(
+        self, mock_config_entry, mock_session
+    ):
         """Non-excluded heating circuit must appear in entities."""
         dev = _make_heating_circuit_device(device_id="keep-hc")
-        hass, entry = _make_hass_and_entry(
-            heating_circuits=[dev],
-            excluded_device_ids=[],
-        )
-        added = _run_setup(hass, entry)
+        mock_session.device_helper.heating_circuits = [dev]
+        added = self._run(mock_config_entry, mock_session)
         assert any(
             getattr(e, "_device", None) is dev for e in added
         ), "Non-excluded heating circuit should be added"

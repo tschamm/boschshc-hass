@@ -2594,7 +2594,7 @@ class TestTwinguardCombinedRatingSensorErrorPaths:
 
         s = self._sensor(_Unknown())
         assert s.native_value == "unknown"
-        assert s.native_value in s._attr_options
+        assert s.native_value in s.options
 
     def test_happy_path_bad(self):
         class _Bad:
@@ -2681,9 +2681,9 @@ class TestWalkStateSensor:
 
     def test_options_list(self):
         s = self._make()
-        assert "walk_test_started" in s._attr_options
-        assert "walk_test_stopped" in s._attr_options
-        assert "unknown" in s._attr_options
+        assert "walk_test_started" in s.options
+        assert "walk_test_stopped" in s.options
+        assert "unknown" in s.options
 
 
 class TestWalkStateSensorSetup:
@@ -2822,7 +2822,7 @@ def test_siren_main_power_and_solar_enum_lowercased():
         power_supply=SimpleNamespace(main_power_supply=SimpleNamespace(name="SOLAR"))
     )
     assert mp.native_value == "solar"
-    assert mp.native_value in mp._attr_options
+    assert mp.native_value in mp.options
 
     sc = _new(SirenSolarChargingSensor)
     sc._device = SimpleNamespace(

@@ -177,14 +177,16 @@ def topology_to_svg(graph: dict[str, Any], width: int = 900) -> str:
             f'stroke="{color}" stroke-width="2"/>'
         )
 
-    for node_id, (x, y) in positions.items():
+    for node_id, (node_x, node_y) in positions.items():
         label = _esc_html(names_by_id.get(node_id, node_id))
         is_controller = node_id == CONTROLLER_NODE_ID
         fill = "#1565c0" if is_controller else "#37474f"
-        svg_parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6" fill="{fill}"/>')
         svg_parts.append(
-            f'<text x="{x:.1f}" y="{y - 10:.1f}" text-anchor="middle" fill="#212121">'
-            f"{label}</text>"
+            f'<circle cx="{node_x:.1f}" cy="{node_y:.1f}" r="6" fill="{fill}"/>'
+        )
+        svg_parts.append(
+            f'<text x="{node_x:.1f}" y="{node_y - 10:.1f}" text-anchor="middle" '
+            f'fill="#212121">{label}</text>'
         )
 
     svg_parts.append("</svg>")

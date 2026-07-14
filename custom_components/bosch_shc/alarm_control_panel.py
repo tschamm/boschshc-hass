@@ -87,13 +87,16 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={(DOMAIN, self._device.id)},
             name=self._device.name,
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
-            via_device=(DOMAIN, self._device.root_device_id),
         )
+        root_device_id = self._device.root_device_id
+        if root_device_id is not None:
+            info["via_device"] = (DOMAIN, root_device_id)
+        return info
 
     @property
     def available(self) -> bool:
