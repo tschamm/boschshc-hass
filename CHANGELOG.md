@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.11.2 — fix stale device availability after an SHC firmware update (hass#370)
+
+**No breaking changes.**
+
+Bumped `boschshcpy` pin to **0.4.14**. After a long-poll poll-id resubscribe
+(a ~24h cycle, or any connection gap long enough to invalidate the poll id —
+e.g. an SHC firmware update/reboot), the library's refresh only short-polled
+each device's *services*, never re-fetching the device's own top-level
+`status`. A device that went `UNDEFINED` during the gap and later
+reconnected could keep reporting stale availability indefinitely — showing
+as a confident "closed"/"off" instead of "unavailable" right after an SHC
+firmware update, which could mislead automations. Fixed at the library
+level (`boschshcpy` 0.4.14); this release just picks up the new pin.
+
 ## 0.11.1 — climate auto-mode temperature fix, Zigbee mesh-view rework
 
 **No breaking changes.**
