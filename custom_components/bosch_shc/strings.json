@@ -339,6 +339,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Open Doors/Windows"
+      },
       "floor_temperature": {
         "name": "Floor Temperature"
       },

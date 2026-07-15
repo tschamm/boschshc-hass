@@ -4965,6 +4965,7 @@ class TestTemperatureDropSwitchSetupEntry:
         )
         mock_session.device_helper.climate_controls = [climate]
         room = MagicMock()
+        room.name = "Kinderzimmer"
         room.async_temperature_drop_service = AsyncMock(
             return_value={"configuration": {"enabled": True}}
         )
@@ -4976,6 +4977,12 @@ class TestTemperatureDropSwitchSetupEntry:
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
         assert any(isinstance(e, TemperatureDropEnabledSwitch) for e in entities)
+        drop_switch = next(
+            e for e in entities if isinstance(e, TemperatureDropEnabledSwitch)
+        )
+        # hass#372: must report the room's own name, not the shared
+        # ROOM_CLIMATE_CONTROL device's generic raw name.
+        assert drop_switch.device_name == "Kinderzimmer"
 
     def test_skipped_when_service_absent(self, mock_config_entry, mock_session):
         from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch

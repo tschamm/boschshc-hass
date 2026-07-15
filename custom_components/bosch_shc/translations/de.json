@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Offene Türen/Fenster"
+      },
       "walk_test_state": {
         "name": "Begehungstest-Status"
       },

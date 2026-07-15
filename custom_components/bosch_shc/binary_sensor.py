@@ -281,16 +281,22 @@ async def async_setup_entry(  # noqa: C901
     for climate in session.device_helper.climate_controls:
         if device_excluded(climate, config_entry.options):
             continue
+        try:
+            room_name = session.room(climate.room_id).name
+        except (KeyError, AttributeError):
+            room_name = None
         entities.append(
             CallForHeatSensor(
                 device=climate,
                 entry_id=config_entry.entry_id,
+                device_name=room_name,
             )
         )
         entities.append(
             ScheduleOverrideActiveSensor(
                 device=climate,
                 entry_id=config_entry.entry_id,
+                device_name=room_name,
             )
         )
 
@@ -396,14 +402,29 @@ class SHCBinarySensor[_DeviceT: SHCDevice](SHCEntity, BinarySensorEntity):  # ty
     entity_description: SHCBinarySensorEntityDescription[_DeviceT]
     _device: _DeviceT
 
-    def __init__(self, device: _DeviceT, entry_id: str) -> None:
+    def __init__(
+        self, device: _DeviceT, entry_id: str, device_name: str | None = None
+    ) -> None:
         """Initialize, deriving unique_id from entity_description.unique_id_suffix."""
         super().__init__(device, entry_id)
+        self._device_name_override = device_name
         if self.entity_description.unique_id_suffix is not None:
             self._attr_unique_id = (
                 f"{device.root_device_id}_{device.id}_"
                 f"{self.entity_description.unique_id_suffix}"
             )
+
+    @property
+    def device_name(self) -> str:
+        """Name of the device (overridable).
+
+        Some virtual devices' own raw name is a generic placeholder shared
+        by every entity attached to that same device; whichever platform's
+        registry write lands last would otherwise win, see hass#372.
+        """
+        if self._device_name_override is not None:
+            return self._device_name_override
+        return super().device_name
 
     @property
     def is_on(self) -> bool:

@@ -63,6 +63,7 @@ from custom_components.bosch_shc.sensor import (
     PuritySensor,
     ReferenceMovingTimeBottomToTopSensor,
     ReferenceMovingTimeTopToBottomSensor,
+    SHCOpenWindowsSensor,
     SirenBatterySensor,
     SirenMainPowerSensor,
     SirenSolarChargingSensor,
@@ -3124,6 +3125,29 @@ def test_next_setpoint_temperature_safe_when_attrs_missing():
     assert attrs["next_operation_mode"] is None
 
 
+def test_next_setpoint_temperature_device_name_uses_room_name():
+    """hass#372: must report the room's own name, not the shared
+    ROOM_CLIMATE_CONTROL device's generic raw name.
+    """
+    device = SimpleNamespace(
+        id="roomClimateControl_hz_1",
+        root_device_id="shc1",
+        name="-RoomClimateControl-",
+    )
+    s = NextSetpointTemperatureSensor(device=device, entry_id="entry1", room_name="Büro")
+    assert s.device_name == "Büro"
+
+
+def test_next_setpoint_temperature_device_name_falls_back_without_room_name():
+    device = SimpleNamespace(
+        id="roomClimateControl_hz_1",
+        root_device_id="shc1",
+        name="-RoomClimateControl-",
+    )
+    s = NextSetpointTemperatureSensor(device=device, entry_id="entry1")
+    assert s.device_name == "-RoomClimateControl-"
+
+
 def test_presence_simulation_running_start_reads_value():
     s = _new(PresenceSimulationRunningStartSensor)
     s._device = SimpleNamespace(running_start_time="2026-07-07T18:00:00Z")
@@ -3185,7 +3209,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session()
         entities = _run_setup(session)
         # Only the EmmaPowerSensor is always added
-        assert len(entities) == 1
+        assert len(entities) == 2
         assert isinstance(entities[0], EmmaPowerSensor)
 
     def test_one_thermostat_yields_temperature_and_valve_tappet(self):
@@ -3193,7 +3217,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(thermostats=[dev])
         entities = _run_setup(session)
         # 2 from thermostat + 1 EMMA
-        assert len(entities) == 3
+        assert len(entities) == 4
         types = [type(e) for e in entities]
         assert TemperatureSensor in types
         assert ValveTappetSensor in types
@@ -3206,7 +3230,7 @@ class TestAsyncSetupEntryEntityCounts:
         ]
         session = _make_fake_session(thermostats=devs)
         entities = _run_setup(session)
-        assert len(entities) == 5  # 2×(Temp+Valve) + EMMA
+        assert len(entities) == 6  # 2×(Temp+Valve) + EMMA
         assert sum(isinstance(e, TemperatureSensor) for e in entities) == 2
         assert sum(isinstance(e, ValveTappetSensor) for e in entities) == 2
 
@@ -3215,7 +3239,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(wallthermostats=[dev])
         entities = _run_setup(session)
         # 2 + EMMA
-        assert len(entities) == 3
+        assert len(entities) == 4
         types = [type(e) for e in entities]
         assert TemperatureSensor in types
         assert HumiditySensor in types
@@ -3224,7 +3248,7 @@ class TestAsyncSetupEntryEntityCounts:
         dev = _fake_device(name="RT1", device_id="hdm:RT:001")
         session = _make_fake_session(roomthermostats=[dev])
         entities = _run_setup(session)
-        assert len(entities) == 3
+        assert len(entities) == 4
         types = [type(e) for e in entities]
         assert TemperatureSensor in types
         assert HumiditySensor in types
@@ -3235,7 +3259,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(wallthermostats=[wt], roomthermostats=[rt])
         entities = _run_setup(session)
         # 4 (2 devices × 2 sensors each) + EMMA
-        assert len(entities) == 5
+        assert len(entities) == 6
         assert sum(isinstance(e, TemperatureSensor) for e in entities) == 2
         assert sum(isinstance(e, HumiditySensor) for e in entities) == 2
 
@@ -3245,7 +3269,7 @@ class TestAsyncSetupEntryEntityCounts:
         entities = _run_setup(session)
         # Temp, Humidity, Purity, AirQuality, TempRating, HumidityRating, PurityRating
         # + CombinedRating (diag), Description (diag) + EMMA
-        assert len(entities) == 10
+        assert len(entities) == 11
         types = [type(e) for e in entities]
         assert TemperatureSensor in types
         assert HumiditySensor in types
@@ -3262,7 +3286,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(smart_plugs=[dev])
         entities = _run_setup(session)
         # 2 + EMMA
-        assert len(entities) == 3
+        assert len(entities) == 4
         types = [type(e) for e in entities]
         assert PowerSensor in types
         assert EnergySensor in types
@@ -3271,7 +3295,7 @@ class TestAsyncSetupEntryEntityCounts:
         dev = _fake_device(name="LSB1", device_id="hdm:LSB:001")
         session = _make_fake_session(light_switches_bsm=[dev])
         entities = _run_setup(session)
-        assert len(entities) == 3
+        assert len(entities) == 4
         types = [type(e) for e in entities]
         assert PowerSensor in types
         assert EnergySensor in types
@@ -3280,7 +3304,7 @@ class TestAsyncSetupEntryEntityCounts:
         dev = _fake_device(name="MLC1", device_id="hdm:MLC:001")
         session = _make_fake_session(micromodule_light_controls=[dev])
         entities = _run_setup(session)
-        assert len(entities) == 3
+        assert len(entities) == 4
         assert sum(isinstance(e, PowerSensor) for e in entities) == 1
         assert sum(isinstance(e, EnergySensor) for e in entities) == 1
 
@@ -3290,7 +3314,7 @@ class TestAsyncSetupEntryEntityCounts:
         entities = _run_setup(session)
         # Power + Energy + 2 reference-moving-time diagnostics (diagnostic
         # entities default enabled) + EMMA.
-        assert len(entities) == 5
+        assert len(entities) == 6
         assert sum(isinstance(e, PowerSensor) for e in entities) == 1
         assert sum(isinstance(e, EnergySensor) for e in entities) == 1
         assert (
@@ -3307,7 +3331,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(micromodule_blinds=[dev])
         entities = _run_setup(session)
         # Power + Energy + 2 reference-moving-time diagnostics + EMMA.
-        assert len(entities) == 5
+        assert len(entities) == 6
         assert sum(isinstance(e, PowerSensor) for e in entities) == 1
         assert sum(isinstance(e, EnergySensor) for e in entities) == 1
 
@@ -3316,7 +3340,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(shutter_controls=[dev])
         entities = _run_setup(session)
         # No power/energy for plain shutter_controls, only the 2 diagnostics + EMMA.
-        assert len(entities) == 3
+        assert len(entities) == 4
         assert (
             sum(isinstance(e, ReferenceMovingTimeTopToBottomSensor) for e in entities)
             == 1
@@ -3330,7 +3354,7 @@ class TestAsyncSetupEntryEntityCounts:
         dev = _fake_device(name="BBL1", device_id="hdm:BBL:001")
         session = _make_fake_session(shutter_controls=[dev])
         entities = _run_setup(session, options={"diagnostic_entities": False})
-        assert len(entities) == 1  # only EMMA
+        assert len(entities) == 2  # only EMMA
         assert not any(
             isinstance(
                 e,
@@ -3347,7 +3371,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(smart_plugs_compact=[dev])
         entities = _run_setup(session)
         # 3 + EMMA
-        assert len(entities) == 4
+        assert len(entities) == 5
         types = [type(e) for e in entities]
         assert PowerSensor in types
         assert EnergySensor in types
@@ -3358,7 +3382,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(motion_detectors=[dev])
         entities = _run_setup(session)
         # 1 + EMMA
-        assert len(entities) == 2
+        assert len(entities) == 3
         assert isinstance(entities[0], IlluminanceLevelSensor)
 
     def test_motion_detector2_yields_illuminance_and_temperature(self):
@@ -3367,7 +3391,7 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(motion_detectors2=[dev])
         entities = _run_setup(session)
         # IlluminanceLevelSensor + TemperatureSensor + CommunicationQualitySensor (diag) + EMMA
-        assert len(entities) == 4
+        assert len(entities) == 5
         types = [type(e) for e in entities]
         assert IlluminanceLevelSensor in types
         assert TemperatureSensor in types
@@ -3380,14 +3404,14 @@ class TestAsyncSetupEntryEntityCounts:
         session = _make_fake_session(motion_detectors=[dev1], motion_detectors2=[dev2])
         entities = _run_setup(session)
         # MD1: 1 IlluminanceLevelSensor; MD2: Illuminance + Temperature + CommunicationQuality + EMMA
-        assert len(entities) == 5
+        assert len(entities) == 6
         assert sum(isinstance(e, IlluminanceLevelSensor) for e in entities) == 2
 
     def test_no_entities_without_devices_adds_nothing_except_emma(self):
         """async_add_entities is called once (EMMA always present); result has 1 entity."""
         session = _make_fake_session()
         entities = _run_setup(session)
-        assert len(entities) == 1  # EMMA always present
+        assert len(entities) == 2  # EMMA always present
 
     def test_mixed_devices_all_entity_types_present(self):
         """One of every device group → all sensor types present."""
@@ -3744,7 +3768,7 @@ class TestDeviceExcludedContinueBranches:
         entities = _run_setup_with_options(
             session, {OPT_EXCLUDED_DEVICES: excl_ids}
         )
-        assert len(entities) == 1
+        assert len(entities) == 2
         assert isinstance(entities[0], EmmaPowerSensor)
 
 
@@ -3869,7 +3893,7 @@ class TestZigbeeRoutingQualitySensorSetup:
                 )
 
         asyncio.run(_inner())
-        assert collected == []
+        assert len(collected) == 1  # only the always-on open-windows sensor
 
     def test_no_coordinator_on_runtime_data_is_safe(self):
         """runtime_data without a zigbee_routing_coordinator attribute (e.g. a
@@ -4103,3 +4127,59 @@ class TestZigbeeRoutingQualitySensorState:
             status="UNAVAILABLE",
         )
         assert s.available is False
+
+
+# ---------------------------------------------------------------------------
+# SHCOpenWindowsSensor -- whole-home open-doors/open-windows summary
+# ---------------------------------------------------------------------------
+
+class TestSHCOpenWindowsSensor:
+    def _sensor(self, session=None, shc_device=None):
+        return SHCOpenWindowsSensor(
+            session=session if session is not None else MagicMock(),
+            entry_id="entry1",
+            shc_device=shc_device,
+        )
+
+    def test_native_value_defaults_zero(self):
+        s = self._sensor()
+        assert s.native_value == 0
+
+    def test_device_info_none_without_shc_device(self):
+        s = self._sensor()
+        assert s.device_info is None
+
+    def test_device_info_uses_shc_device_identifiers(self):
+        shc_device = SimpleNamespace(id="shc-device-1", identifiers={("bosch_shc", "shc1")})
+        s = self._sensor(shc_device=shc_device)
+        assert s.device_info["identifiers"] == {("bosch_shc", "shc1")}
+
+    def test_async_update_populates_counts_and_attributes(self):
+        session = MagicMock()
+        session.api.get_open_windows = AsyncMock(
+            return_value={
+                "openDoors": [{"name": "Front Door", "roomName": "Hall"}],
+                "openWindows": [
+                    {"name": "Kitchen Window"},
+                    {"name": "Office Window"},
+                ],
+                "openOthers": [],
+            }
+        )
+        s = self._sensor(session=session)
+        asyncio.run(s.async_update())
+        assert s.native_value == 3
+        assert s.extra_state_attributes == {
+            "open_doors": ["Front Door"],
+            "open_windows": ["Kitchen Window", "Office Window"],
+            "open_others": [],
+        }
+
+    def test_async_update_handles_shc_exception(self):
+        from boschshcpy.exceptions import SHCException
+
+        session = MagicMock()
+        session.api.get_open_windows = AsyncMock(side_effect=SHCException("boom"))
+        s = self._sensor(session=session)
+        asyncio.run(s.async_update())  # must not raise
+        assert s.native_value == 0

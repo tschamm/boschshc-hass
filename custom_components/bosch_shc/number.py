@@ -938,6 +938,11 @@ class TemperatureDropValueNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         self._value: float | None = None
 
     @property
+    def device_name(self) -> str:
+        """Name of the device (the room, matching ClimateControl's own device_info)."""
+        return str(self._room.name)
+
+    @property
     def native_value(self) -> float | None:
         """Return the configured temperature-drop value."""
         return self._value

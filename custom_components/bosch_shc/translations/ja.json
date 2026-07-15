@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "開いているドア/窓"
+      },
       "walk_test_state": {
         "name": "ウォークテスト状態"
       },

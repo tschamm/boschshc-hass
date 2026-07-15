@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Otvorené dvere/okná"
+      },
       "walk_test_state": {
         "name": "Stav testu chôdze"
       },

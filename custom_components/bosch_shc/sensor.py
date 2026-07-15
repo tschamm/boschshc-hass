@@ -28,6 +28,7 @@ from boschshcpy import (
     SHCWallThermostat,
 )
 from boschshcpy.device import SHCDevice
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -62,6 +63,7 @@ except ImportError:
 
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -118,10 +120,15 @@ async def async_setup_entry(  # noqa: C901
         for climate in getattr(session.device_helper, "climate_controls", []):
             if device_excluded(climate, config_entry.options):
                 continue
+            try:
+                room_name = session.room(climate.room_id).name
+            except (KeyError, AttributeError):
+                room_name = None
             entities.append(
                 NextSetpointTemperatureSensor(
                     device=climate,
                     entry_id=config_entry.entry_id,
+                    room_name=room_name,
                 )
             )
 
@@ -565,6 +572,14 @@ async def async_setup_entry(  # noqa: C901
                     coordinator=zigbee_routing_coordinator,
                 )
             )
+
+    entities.append(
+        SHCOpenWindowsSensor(
+            session=session,
+            entry_id=config_entry.entry_id,
+            shc_device=getattr(config_entry.runtime_data, "shc_device", None),
+        )
+    )
 
     if entities:
         async_add_entities(entities)
@@ -1528,9 +1543,26 @@ class NextSetpointTemperatureSensor(SHCSensor[SHCClimateControl]):  # type: igno
     entity_description = SENSOR_DESCRIPTIONS[NEXT_SETPOINT_TEMPERATURE_SENSOR]
     _unrecorded_attributes = frozenset({"next_change_at"})
 
-    def __init__(self, device: SHCClimateControl, entry_id: str) -> None:
+    def __init__(
+        self, device: SHCClimateControl, entry_id: str, room_name: str | None = None
+    ) -> None:
         """Initialize the next-setpoint-temperature sensor."""
         super().__init__(device, self.entity_description, entry_id)
+        self._room_name = room_name
+
+    @property
+    def device_name(self) -> str:
+        """Name of the device (the room, matching ClimateControl's own device_info).
+
+        The raw ROOM_CLIMATE_CONTROL device's own name is a generic
+        placeholder ("-RoomClimateControl-") -- every entity sharing this
+        device's identifiers must resolve the real room name the same way,
+        or whichever platform's device registry write lands last wins and
+        overwrites the others (hass#372).
+        """
+        return (
+            self._room_name if self._room_name is not None else str(self._device.name)
+        )
 
 
 class PresenceSimulationRunningStartSensor(SHCSensor[SHCPresenceSimulationSystem]):  # type: ignore[misc]
@@ -1586,6 +1618,70 @@ def _zigbee_hop_device_and_quality(hop: Any) -> tuple[Any, Any]:
         if len(hop) == 2:
             device_id, quality = hop
     return device_id, quality
+
+
+class SHCOpenWindowsSensor(SensorEntity):  # type: ignore[misc]
+    """Whole-home summary of open doors/windows (official OpenAPI spec).
+
+    Not tied to one SHC device -- scoped to the config entry like
+    SHCEnableAllDiagnosticsButton -- so this does not inherit SHCEntity.
+    The underlying `doors-windows/openwindows` endpoint is a plain GET, not
+    delivered by the long-poll stream, so this is should_poll=True like the
+    other new probe-based entities added this session.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "open_windows_doors"
+    _attr_should_poll = True
+    _attr_native_unit_of_measurement = "doors/windows"
+
+    def __init__(
+        self,
+        session: SHCSession,
+        entry_id: str,
+        shc_device: DeviceEntry | None = None,
+    ) -> None:
+        """Initialize the open-windows/doors summary sensor."""
+        self._session = session
+        self._entry_id = entry_id
+        self._shc_device = shc_device
+        prefix = shc_device.id if shc_device is not None else entry_id
+        self._attr_unique_id = f"{prefix}_open_windows_doors"
+        self._open_doors: list[dict[str, Any]] = []
+        self._open_windows: list[dict[str, Any]] = []
+        self._open_others: list[dict[str, Any]] = []
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Return the device info (links this sensor to the SHC controller device)."""
+        if self._shc_device is None:
+            return None
+        return DeviceInfo(identifiers=self._shc_device.identifiers)
+
+    @property
+    def native_value(self) -> int:
+        """Return the total count of open doors, windows, and other openings."""
+        return len(self._open_doors) + len(self._open_windows) + len(self._open_others)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, list[str]]:
+        """Return the names of each currently-open door/window/other opening."""
+        return {
+            "open_doors": [d.get("name", "") for d in self._open_doors],
+            "open_windows": [w.get("name", "") for w in self._open_windows],
+            "open_others": [o.get("name", "") for o in self._open_others],
+        }
+
+    async def async_update(self) -> None:
+        """Poll the whole-home open-doors/open-windows summary."""
+        try:
+            data = await self._session.api.get_open_windows()
+        except SHCException as err:
+            LOGGER.debug("Failed to poll open-windows summary: %s", err)
+            return
+        self._open_doors = data.get("openDoors", [])
+        self._open_windows = data.get("openWindows", [])
+        self._open_others = data.get("openOthers", [])
 
 
 class ZigbeeRoutingQualitySensor(  # type: ignore[misc]

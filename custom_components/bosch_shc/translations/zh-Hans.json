@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "打开的门/窗"
+      },
       "walk_test_state": {
         "name": "步行测试状态"
       },

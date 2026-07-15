@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Atvērtas durvis/logi"
+      },
       "walk_test_state": {
         "name": "Walk Test stāvoklis"
       },

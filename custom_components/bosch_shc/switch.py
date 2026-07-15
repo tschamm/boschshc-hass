@@ -1345,6 +1345,11 @@ class TemperatureDropEnabledSwitch(SHCEntity, SwitchEntity):  # type: ignore[mis
         self._enabled: bool | None = None
 
     @property
+    def device_name(self) -> str:
+        """Name of the device (the room, matching ClimateControl's own device_info)."""
+        return str(self._room.name)
+
+    @property
     def is_on(self) -> bool:
         """Return True if the temperature-drop service is enabled."""
         return bool(self._enabled)

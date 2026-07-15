@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "דלתות/חלונות פתוחים"
+      },
       "walk_test_state": {
         "name": "מצב בדיקת הליכה"
       },

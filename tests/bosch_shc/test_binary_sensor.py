@@ -4496,3 +4496,44 @@ class TestBinarySensorSetupExcludedBranches:
         )
         entities = _run_setup_with_options(session, _excl(*excl_ids))
         assert entities == []
+
+
+class TestClimateControlSharedDeviceNameOverride:
+    """hass#372: entities sharing a ROOM_CLIMATE_CONTROL device's identifiers
+    must resolve the real room name themselves, since the virtual device's
+    own raw name is a generic placeholder ("-RoomClimateControl-") shared by
+    every entity attached to it -- whichever entity's device registry write
+    lands last would otherwise silently overwrite the device's display name.
+    """
+
+    def test_call_for_heat_sensor_uses_room_name_when_given(self):
+        dev = _fake_device("cc-room")
+        dev.has_demand = True
+        sensor = CallForHeatSensor(device=dev, entry_id="entry1", device_name="Büro")
+        assert sensor.device_name == "Büro"
+
+    def test_call_for_heat_sensor_falls_back_without_room_name(self):
+        dev = _fake_device("cc-room")
+        dev.has_demand = True
+        dev.name = "-RoomClimateControl-"
+        sensor = CallForHeatSensor(device=dev, entry_id="entry1")
+        assert sensor.device_name == "-RoomClimateControl-"
+
+    def test_setup_resolves_room_name_from_session(self):
+        dev = _fake_device("cc-room")
+        dev.has_demand = False
+        dev.room_id = "hz_1"
+        session = _make_fake_session_v2(climate_controls=[dev])
+        session.room = lambda room_id: SimpleNamespace(name="Büro")
+        entities = _run_setup_with_options(session, {})
+        cfh = next(e for e in entities if isinstance(e, CallForHeatSensor))
+        assert cfh.device_name == "Büro"
+
+    def test_setup_falls_back_when_session_has_no_room_method(self):
+        dev = _fake_device("cc-room")
+        dev.has_demand = False
+        dev.name = "-RoomClimateControl-"
+        session = _make_fake_session_v2(climate_controls=[dev])
+        entities = _run_setup_with_options(session, {})
+        cfh = next(e for e in entities if isinstance(e, CallForHeatSensor))
+        assert cfh.device_name == "-RoomClimateControl-"

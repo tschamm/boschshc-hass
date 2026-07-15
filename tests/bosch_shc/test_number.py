@@ -2874,6 +2874,7 @@ class TestTemperatureDropNumberSetupEntry:
         )
         mock_session.device_helper.climate_controls = [climate]
         room = MagicMock()
+        room.name = "Kinderzimmer"
         room.async_temperature_drop_service = AsyncMock(
             return_value={"configuration": {"dropTemperature": 1.0}}
         )
@@ -2882,6 +2883,12 @@ class TestTemperatureDropNumberSetupEntry:
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
         assert any(isinstance(e, TemperatureDropValueNumber) for e in entities)
+        drop_number = next(
+            e for e in entities if isinstance(e, TemperatureDropValueNumber)
+        )
+        # hass#372: must report the room's own name, not the shared
+        # ROOM_CLIMATE_CONTROL device's generic raw name.
+        assert drop_number.device_name == "Kinderzimmer"
 
     def test_skipped_when_service_absent(self, mock_config_entry, mock_session):
         climate = SimpleNamespace(

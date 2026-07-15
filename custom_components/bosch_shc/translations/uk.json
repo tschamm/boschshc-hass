@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Відчинені двері/вікна"
+      },
       "walk_test_state": {
         "name": "Стан Walk Test"
       },

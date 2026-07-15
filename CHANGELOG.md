@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.12.2 — fix Room Climate Control devices losing their room name (#372)
+
+**No breaking changes.**
+
+- **Fix: every `ROOM_CLIMATE_CONTROL` device lost its room name** (showing
+  the literal placeholder `-RoomClimateControl-` instead, e.g. "Büro",
+  "Wohnzimmer", ...) (#372). Root cause: the virtual per-room
+  `ROOM_CLIMATE_CONTROL` device's own raw name from the SHC really is the
+  generic string `-RoomClimateControl-` — the `climate` entity has always
+  resolved the real room name itself and set it explicitly, but several
+  *other* entity types added on top of the same device across recent
+  releases (`CallForHeatSensor`, `ScheduleOverrideActiveSensor`,
+  `NextSetpointTemperatureSensor`, and this release's new temperature-drop
+  switch/number) never did the same — whichever platform's device-registry
+  write landed last silently won and overwrote the room name back to the
+  placeholder. All four now resolve and report the same room name as the
+  `climate` entity, so the device's display name stays correct regardless
+  of entity/platform setup order. **Confirmed live** — reproduced and fixed
+  against a real installation.
+- Bumps the `boschshcpy` pin to 0.6.1 (Multiroom Boiler Control — lib-only,
+  no owned hardware to design/live-test HA entities against yet; open-doors/
+  open-windows summary; several smaller official-spec gaps closed — see
+  `boschshcpy`'s own CHANGELOG for the full breakdown).
+- **New: whole-home "Open Doors/Windows" sensor** — a single always-on
+  sensor showing the total count of currently-open doors/windows, with the
+  individual open item names as attributes. **Live-confirmed** against a
+  real SHC. `should_poll=True`, matching the recently-fixed polling pattern.
+
 ## 0.12.1 — pin boschshcpy 0.5.1 (water-alarm mute bugfix)
 
 **No breaking changes.**

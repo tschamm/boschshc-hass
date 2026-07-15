@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Portas/janelas abertas"
+      },
       "walk_test_state": {
         "name": "Estado do Teste de Circulação"
       },

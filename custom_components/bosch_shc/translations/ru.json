@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Открытые двери/окна"
+      },
       "walk_test_state": {
         "name": "Состояние теста обхода"
       },

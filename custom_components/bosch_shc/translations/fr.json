@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Portes/fenêtres ouvertes"
+      },
       "walk_test_state": {
         "name": "État du test de déambulation"
       },

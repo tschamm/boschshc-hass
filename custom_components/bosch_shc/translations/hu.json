@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Nyitott ajtók/ablakok"
+      },
       "walk_test_state": {
         "name": "Mozgásteszt állapota"
       },

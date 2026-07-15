@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Pintu/Jendela Terbuka"
+      },
       "walk_test_state": {
         "name": "Status Uji Jalan"
       },

@@ -31,6 +31,8 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 - [Configuration](#configuration)
 - [Supported platforms](#supported-platforms)
 - [Supported devices](#supported-devices)
+- [Firmware updates](#firmware-updates)
+- [Automation rules & whole-home controls](#automation-rules--whole-home-controls)
 - [Services / actions](#services--actions)
 - [Data updates](#data-updates)
 - [Troubleshooting](#troubleshooting)
@@ -50,9 +52,18 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 - 🔒 **Local & private** — mutual-TLS to the SHC, real-time push updates, nothing leaves your network.
 - 🧩 **Broad device coverage** — thermostats, shutters/blinds (with tilt), micromodules, plugs,
   lights, cameras, Twinguard, smoke & intrusion, motion, contacts, water-leak, EMMA, and more.
-- ⚙️ **Rich options flow** — suppress unwanted sensors/switches, expose scenarios as buttons,
-  presence-based child lock and thermostat silent mode, device/room filter, and connection tuning —
-  all with safe defaults (existing setups are never changed).
+- 🔥 **Firmware updates in HA** — the controller and every firmware-capable device get a normal
+  HA "Update available" notification with an Install button, no need to open the Bosch app.
+- 🤖 **Bosch's own automation rules as HA entities** (opt-in) — enable/disable and trigger any
+  rule you already built in the Bosch app, straight from Home Assistant.
+- 🚨 **Alarm "Mute" buttons** for the intrusion system and the whole-home water-leak alarm.
+- 🌡️ **Per-room temperature-drop (anti-frost) controls** and a **thermostat regulation-algorithm**
+  select, mirroring the Bosch app's room-detail screen.
+- 🚪 **Whole-home "Open Doors/Windows" summary sensor** — one glance at how many openings are open.
+- ⚙️ **Rich options flow** — suppress unwanted sensors/switches, expose scenarios/automation rules
+  as buttons, per-room light groups, presence-based child lock and thermostat silent mode,
+  device/room filter, and connection tuning — all with safe defaults (existing setups are never
+  changed).
 - 🌍 **30 languages** for the configuration UI.
 - 🏅 **Home Assistant Platinum** quality scale — all Bronze/Silver/Gold/Platinum rules done or exempt.
 
@@ -164,6 +175,7 @@ Options marked with ★ are shown only when the relevant devices are connected t
 | Expose light relays as `light` ★ | off | Flip all BSM / Light Control II channels from `switch` to `light` domain |
 | Expose selected relays as `light` ★ | (none) | Per-device picker — choose individual channels to expose as `light` |
 | Enable per-room light groups | off | One aggregate `light` entity per SHC room with 2+ dimmable/color lights, to turn a whole room's lights on/off from a single entity — on/off only |
+| Automation rules as entities | off | One `switch` (enable/disable) + one `button` (trigger now) per Bosch-app-native automation rule you've built in the Bosch Smart Home app. No-op if the SHC reports zero rules |
 
 #### Presence & silent mode
 
@@ -198,15 +210,16 @@ hu, id, it, ja, ko, lv, nb, nl, no, pl, pt, pt-BR, ru, sk, sv, tr, uk, zh-Hans, 
 |---|---|
 | `alarm_control_panel` | Intrusion Detection System |
 | `binary_sensor` | Shutter Contact (Gen 1 + Gen 2), Motion Detector (Gen 1 + Gen 2 [+M]), Smoke Detector (Gen 1 + Gen 2), Smoke Detection System, Water Leakage Sensor, Shutter Contact 2 Plus (vibration), Twinguard smoke alarm, Battery state (all battery devices) |
-| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper, Enable All Diagnostics (one per SHC controller) |
+| `button` | Micromodule Relay (impulse/momentary), Scenarios (optional), Smoke Detector self-test, Motion Detector II Walk/Detection Test (start/stop) & Reset Tamper, Enable All Diagnostics (one per SHC controller), Intrusion-alarm Mute, Water-alarm Mute, Automation-rule "trigger now" (optional, one per rule) |
 | `climate` | Room Climate Control (thermostat valve groups), Heating Circuit |
 | `cover` | Shutter Control (BBL), Micromodule Shutter, Micromodule Awning, Micromodule Blinds (with tilt) |
 | `event` | Universal Switch (WRC2 / SWITCH2) button presses, Scenarios, Motion events, Smoke Detector & Smoke-Detection-System alarm events |
-| `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options) |
-| `number` | Thermostat temperature offset |
-| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time, installation profile), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config |
-| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state, EMMA grid power, Battery level (diagnostic, optional), Zigbee routing quality — one per Zigbee device, aggregated link quality + hop-by-hop route as an attribute (diagnostic, optional¹) |
-| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States |
+| `light` | LEDVANCE lights (on/off, brightness, color), Hue (via SHC), Micromodule Dimmer, Motion Detector II indicator light, BSM / Light Control II (optional — see options), per-room light groups (optional) |
+| `number` | Thermostat temperature offset, per-room temperature-drop (anti-frost) value, Outdoor Siren alarm/flash duration + delay, Bypass timeout, Smart-plug/heating-circuit setpoints (see device table) |
+| `select` | Motion Detector II (motion sensitivity, smart-sensitivity comfort/security levels, orientation-light response time, installation profile), Shutter Contact 2 Plus vibration sensitivity, Twinguard smoke sensitivity, thermostat/relay display & terminal config, Outdoor Siren sound level, thermostat regulation algorithm (Internal/Custom, where supported) |
+| `sensor` | Temperature, Humidity, CO₂/purity, Air-quality + rating (Twinguard), Energy + Power (Smart Plug / Compact, Light Control, Micromodule variants), Illuminance (Motion Detectors), Motion Detector II detection-test state, EMMA grid power, Battery level (diagnostic, optional), Zigbee routing quality — one per Zigbee device, aggregated link quality + hop-by-hop route as an attribute (diagnostic, optional¹), whole-home Open Doors/Windows summary (always-on) |
+| `switch` | Smart Plug, Smart Plug Compact, Light Control, Micromodule Relay, Camera Eyes / 360 / Outdoor Gen2 (privacy, light, notification), Presence Simulation, Bypass (Shutter Contact 2), Child Lock, Pet Immunity & Tamper Protection (Motion Detector II), Smart Sensitivity (Motion Detector II), Silent Mode (thermostat), Vibration detection, User-Defined States, per-room Temperature Drop enable/disable, Automation rule enable/disable (optional, one per rule) |
+| `update` | SHC controller firmware (Install action), per-device firmware status for firmware-capable models (see below) |
 | `valve` | Thermostat radiator valve (position, diagnostic) |
 
 > [!TIP]
@@ -234,24 +247,26 @@ not yet implemented in this integration).
 
 | Device family | Entity types created |
 |---|---|
-| Room Climate Controller (BWTH/BWTH24) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset), `valve` (tappet position, diagnostic) |
+| Room Climate Controller (BWTH/BWTH24) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset), `valve` (tappet position, diagnostic), `select` (regulation algorithm, where supported) |
 | Room Thermostat (wall-mounted) | `climate`, `sensor` (temperature, humidity), `number` (temperature offset) |
+| Radiator Thermostat II (TRV_GEN2 / TRV_GEN2_DUAL) | as above, plus `update` (firmware status + install) |
 | Heating Circuit | `climate`, `number` (eco + comfort setpoints) |
-| Shutter Control (BBL) / Micromodule Shutter / Awning | `cover` (position) |
-| Micromodule Blinds | `cover` (position + tilt), `sensor` (power, energy) |
+| A room with the anti-frost/window-open feature | `switch` (temperature-drop enable/disable), `number` (temperature-drop value in °C) — one pair per room, mirrors the Bosch app's room-detail screen³ |
+| Shutter Control (BBL) / Micromodule Shutter / Awning | `cover` (position), `update` (firmware status + install) |
+| Micromodule Blinds | `cover` (position + tilt), `sensor` (power, energy), `update` (firmware status + install) |
 | Shutter Contact I | `binary_sensor` (window/door open state) |
 | Shutter Contact II | `binary_sensor` (open state), `switch` (bypass) |
 | Shutter Contact 2 Plus | `binary_sensor` (open state, vibration), `select` (vibration sensitivity), `switch` (bypass, vibration enabled) |
 | Motion Detector I | `binary_sensor` (motion), `sensor` (illuminance), `event` (motion) |
-| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹), `select` (sensitivity, orientation-light, installation profile), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion) |
+| Motion Detector II / II [+M] | `binary_sensor` (motion, occupancy, tamper), `sensor` (temperature, illuminance, walk/detection-test state¹), `select` (sensitivity, orientation-light, installation profile), `switch` (tamper protection, pet immunity, smart sensitivity), `button` (walk test start/stop, tamper reset), `light` (indicator LED), `event` (motion), `update` (firmware status + install) |
 | Smoke Detector I | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test) |
-| Smoke Detector II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test), `switch` (intrusion alarm — sounds this detector's own siren only²) |
-| Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test) |
+| Smoke Detector II | `binary_sensor` (alarm), `event` (alarm events), `button` (self-test), `switch` (intrusion alarm — sounds this detector's own siren only²), `update` (firmware status + install) |
+| Twinguard | `sensor` (temperature, humidity, CO₂/purity, combined rating), `binary_sensor` (smoke alarm), `select` (smoke sensitivity), `button` (smoke test), `update` (firmware status + install) |
 | Smoke Detection System | `binary_sensor` (aggregate alarm state), `event` (alarm events) |
-| Outdoor Siren | `binary_sensor` (acoustic alarm, visual alarm, tamper), `sensor` (battery %, power source, solar quality), `button` (test alarm), `number` (alarm/flash duration + delay), `select` (sound level) |
+| Outdoor Siren | `binary_sensor` (acoustic alarm, visual alarm, tamper), `sensor` (battery %, power source, solar quality), `button` (test alarm), `number` (alarm/flash duration + delay), `select` (sound level), `update` (firmware status + install) |
 | Smart Plug (PSM) | `switch`, `sensor` (power, energy) |
-| Smart Plug Compact (PSM Compact) | `switch`, `sensor` (power, energy) |
-| Light Control / Micromodule Relay (BSM) | `switch` (or `light` — opt-in per device), `sensor` (power, energy) |
+| Smart Plug Compact (PSM Compact) / PLUG_COMPACT_DUAL | `switch`, `sensor` (power, energy), `update` (firmware status + install on the Dual variant) |
+| Light Control / Micromodule Relay (BSM) | `switch` (or `light` — opt-in per device), `sensor` (power, energy), `update` (firmware status + install on Light Control II) |
 | Micromodule Dimmer | `light` (brightness) |
 | LEDVANCE lights (ZigBee via SHC) | `light` (on/off, brightness, color) |
 | Hue lights (via SHC Hue bridge) | `light` (on/off, brightness, color) |
@@ -262,8 +277,11 @@ not yet implemented in this integration).
 | Outdoor Camera Gen2 | `switch` (privacy, front light, ambient light) |
 | EMMA (Energy Management Module A) | `sensor` (grid power) |
 | Scenarios | `button` (optional, one per scenario), `event` (always, one per scenario) |
+| Bosch app automation rules | `switch` (enable/disable, optional), `button` (trigger now, optional) — one pair per rule |
 | User-Defined States | `switch` (one per user-defined state) |
-| Intrusion Detection System | `alarm_control_panel` |
+| Intrusion Detection System | `alarm_control_panel`, `button` (Mute, always-on) |
+| Whole-home water-leak alarm | `button` (Mute, always-on when the alarm system is present) |
+| SHC controller | `update` (firmware status + install), `sensor` (whole-home Open Doors/Windows summary, always-on) |
 
 > ¹ Disabled by default — enable per-entity in **Settings → Devices & Services → [device] → Diagnostics**,
 > or press the **Enable All Diagnostics** button to enable every diagnostic entity for this SHC at once.
@@ -275,9 +293,70 @@ not yet implemented in this integration).
 > intrusion-alarm system (`SurveillanceAlarm` is read-only); the IDS only supports
 > arm / disarm / mute. Treat this switch as a single-device siren, not a system alarm.
 >
+> ³ The temperature-drop entities are created per **room**, not per device — any room
+> whose thermostat(s) support the SHC's anti-frost/window-open compensation service gets
+> one switch + one number, independent of how many thermostats are in that room.
+>
 > Devices not listed (e.g. third-party ZigBee or Z-Wave accessories not
 > from Bosch) may be physically paired to the SHC but are not surfaced by
 > this integration.
+
+---
+
+## Firmware updates
+
+The SHC controller and many battery-/mains-powered devices can receive over-the-air firmware
+updates through the Bosch Smart Home app — this integration surfaces that as a normal Home
+Assistant `update` entity, so a pending update shows up wherever you already look for HA updates
+(the Settings notification badge, the Updates dashboard) with a one-click **Install** button,
+instead of requiring you to open the Bosch app.
+
+- **Controller update** — always created, one per SHC. Reflects the controller's own
+  `swUpdateState` (from the public `/information` endpoint) and supports Install.
+- **Per-device update entities** — created automatically for any paired device whose model has
+  a firmware UI in the Bosch app: radiator thermostats (TRV_GEN2 / TRV_GEN2_DUAL), Motion
+  Detector II, Smoke Detector II, Twinguard, Outdoor Siren, Light Control II
+  (Micromodule Light Control), Shutter/Blinds/Awning Control II, and Smart Plug Compact Dual.
+  Devices whose model doesn't support firmware updates simply get no `update` entity — nothing
+  to configure.
+- **Install** triggers the same device-level firmware activation the Bosch app uses. **Confirmed
+  live end-to-end**: a real radiator thermostat's pending update was installed from this
+  integration's own Install button and moved through `AwaitingActivation` → `UpdatePending` →
+  `UpToDateAwaitingUserInteraction` over roughly 90 seconds, staying fully functional the whole
+  time.
+- Firmware rarely changes, so these entities poll on a slow ~6-hour interval rather than the
+  fast interval most other entities use — don't expect an update to appear the instant Bosch
+  publishes one.
+
+---
+
+## Automation rules & whole-home controls
+
+A few features mirror parts of the Bosch app that live outside the usual per-device model —
+enable them explicitly (or they're simply always on where the relevant hardware exists):
+
+- **Automation rules as entities** (opt-in, off by default — see [Options](#options)) — if you've
+  built automation rules directly in the Bosch Smart Home app (its own rule engine, separate from
+  Home Assistant automations), enabling this option creates one `switch` (enable/disable the rule)
+  and one `button` (trigger it immediately) per rule. Useful for wiring a Bosch-app rule into an
+  HA automation, or for a dashboard toggle to temporarily disable one. No-op if the SHC reports no
+  rules.
+- **Intrusion-alarm Mute button** — always created when an Intrusion Detection System is present.
+  Silences a currently-triggered alarm, the same as the "Mute" action in the Bosch app — previously
+  only reachable from the app.
+- **Water-alarm Mute button** — always created when the whole-home water-leak alarm system is
+  present. Same idea, for a triggered water-leak alarm.
+- **Per-room temperature-drop controls** — for any room whose thermostat(s) support the SHC's
+  anti-frost/window-open compensation service, a `switch` (enable/disable the drop) and a
+  `number` (the drop value in °C) are created automatically, mirroring the Bosch app's
+  room-detail screen.
+- **Thermostat regulation-algorithm select** — where a thermostat supports it, lets you switch
+  between "Internal" and "Custom" regulation, matching the same setting in the Bosch app. Probed
+  per device; not created on thermostats that don't expose this capability (most don't).
+- **Whole-home "Open Doors/Windows" sensor** — always created, one per SHC. A single sensor
+  showing the total number of currently-open doors/windows across the whole home, with the
+  individual open item names listed as an attribute — a quick "did I leave anything open"
+  at-a-glance check without combining every individual Shutter Contact yourself.
 
 ---
 
@@ -354,8 +433,11 @@ change occurs, then responds immediately with the changed values. This gives
 **near-real-time** push updates — typically under 100 ms — without polling.
 
 - **No polling interval** — state changes arrive as push events. `should_poll = False`
-  on all entities (exception: camera-type switches and motion derived from timestamps,
-  which set `should_poll = True` for their specific sensors).
+  on all entities (exceptions: camera-type switches and motion derived from timestamps;
+  firmware `update` entities, which poll every ~6 hours since firmware rarely changes; and the
+  automation-rule, regulation-algorithm, temperature-drop and Open Doors/Windows entities from
+  0.12.0/Unreleased, which have no push notification from the SHC and poll on the normal ~30s
+  interval instead).
 - **Reconnect** — if the connection drops (network glitch, SHC restart), the library
   automatically reconnects and re-subscribes. A warning is logged on disconnect; an
   info message confirms reconnection.
@@ -590,6 +672,27 @@ sequenceDiagram
     end
 ```
 
+### What this integration creates in Home Assistant
+
+```mermaid
+graph TD
+    SHC(("Bosch SHC\ncontroller"))
+
+    SHC --> CLIMATE["climate\nthermostats, heating circuits"]
+    SHC --> COVER["cover\nshutters, blinds, awnings"]
+    SHC --> LIGHT["light\nLEDVANCE, Hue, dimmers,\noptional relays/room groups"]
+    SHC --> SWITCH["switch\nplugs, relays, bypass, child lock,\ntemperature drop, automation rules"]
+    SHC --> BINSENS["binary_sensor\ncontacts, motion, smoke,\nwater leak, battery"]
+    SHC --> SENSOR["sensor\ntemperature, humidity, power/energy,\nair quality, Open Doors/Windows"]
+    SHC --> NUMBER["number\ntemp offsets, temperature drop,\nsiren timing"]
+    SHC --> SELECT["select\nsensitivity, profiles,\nregulation algorithm"]
+    SHC --> BUTTON["button\nscenarios, self-tests, mute,\nautomation-rule triggers"]
+    SHC --> EVENT["event\nbutton presses, alarms, motion"]
+    SHC --> UPDATE["update\ncontroller + per-device firmware"]
+    SHC --> VALVE["valve\nradiator valve position"]
+    SHC --> ALARM["alarm_control_panel\nIntrusion Detection System"]
+```
+
 ---
 
 ## Quality
@@ -614,6 +717,53 @@ checked by `scripts/check-quality-scale.py --tier platinum`).
 ## What's new
 
 The full version-by-version history lives in [`CHANGELOG.md`](CHANGELOG.md). Recent highlights:
+
+**Unreleased — whole-home Open Doors/Windows sensor**
+
+New always-on `sensor` showing the total count of currently-open doors/windows across the
+whole home, with the individual open item names as attributes. Live-confirmed against a real
+SHC. Requires `boschshcpy==0.6.1`.
+
+**0.12.1 — pin boschshcpy 0.5.1 (water-alarm mute bugfix)**
+
+Fixes two real bugs in the whole-home water-leak alarm domain added in 0.12.0: the wrong
+`AlarmState` enum value (a real alarm would have shown as `unknown`) and the mute button using
+the wrong HTTP method (it would have failed outright). Both fixed at the library level; no
+code changes needed here.
+
+**0.12.0 — big sync with the official Bosch Smart Home app**
+
+The largest feature release in a while — a round of reverse-engineering (APK decompile + live
+traffic capture against a real SHC) closing gaps between this integration and the official
+Bosch app. Everything below was live-confirmed against real hardware, not just implemented from
+the spec:
+
+- **Firmware updates, end to end** — the headline feature. See [Firmware updates](#firmware-updates).
+- **New: automation-rule entities** (opt-in) — one switch + one button per Bosch-app automation rule.
+- **New: intrusion-alarm and water-alarm "Mute" buttons.**
+- **New: per-room temperature-drop (anti-frost) controls** — switch + number, mirroring the Bosch
+  app's room-detail screen.
+- **New: thermostat regulation-algorithm select** (Internal/Custom), where supported.
+
+**0.11.2 — fix stale device availability after an SHC firmware update**
+
+After a long-poll resubscribe (roughly every 24h, or any gap long enough to invalidate the poll
+id — e.g. an SHC firmware update/reboot), a device that went unavailable during the gap could
+keep reporting stale availability indefinitely instead of showing `unavailable`. Fixed at the
+library level (`boschshcpy` 0.4.14).
+
+**0.11.1 — climate auto-mode temperature fix, Zigbee mesh-view rework**
+
+Setting a temperature on a thermostat already in `AUTOMATIC` mode no longer silently drops the
+change. The Zigbee mesh-view export (see [Visualizing your Zigbee mesh](#visualizing-your-zigbee-mesh))
+now shows a router even if it doesn't answer its own routing query, as long as another device's
+route passes through it; visual refresh for light/dark mode.
+
+**0.10.15 — Zigbee topology export, bulk-diagnostics button**
+
+New `bosch_shc.export_zigbee_topology` action (see
+[Visualizing your Zigbee mesh](#visualizing-your-zigbee-mesh)) and a new "Enable All Diagnostics"
+button (one per SHC) that bulk-enables every disabled-by-default diagnostic entity in one click.
 
 **0.10.14 — device_trigger.py refactor, boschshcpy thread-safety fix**
 

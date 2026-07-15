@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Avatud uksed/aknad"
+      },
       "walk_test_state": {
         "name": "Kõnnistesti olek"
       },
