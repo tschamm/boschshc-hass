@@ -36,9 +36,11 @@ from custom_components.bosch_shc.button import (
     DimmerPreviewMaxButton,
     DimmerPreviewMinButton,
     ResetEnergySummationButton,
+    SHCAutomationRuleTriggerButton,
     SHCDetectionTestButton,
     SHCDetectionTestStopButton,
     SHCEnableAllDiagnosticsButton,
+    SHCIntrusionAlarmMuteButton,
     SHCRelayButton,
     SHCScenarioButton,
     SHCSirenTestAlarmButton,
@@ -46,10 +48,12 @@ from custom_components.bosch_shc.button import (
     SHCTamperResetButton,
     SHCWalkTestButton,
     SHCWalkTestStopButton,
+    SHCWaterAlarmMuteButton,
     ShutterRecalibrateButton,
     async_setup_entry,
 )
 from custom_components.bosch_shc.const import (
+    OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_EXCLUDED_DEVICES,
     OPT_SCENARIOS_AS_BUTTONS,
 )
@@ -2346,3 +2350,203 @@ def test_setup_empty_all_buckets_yields_nothing(mock_config_entry, mock_session)
     """All device buckets empty → nothing added."""
     result = _run_setup(mock_config_entry, mock_session)
     assert result == []
+
+
+# ---------------------------------------------------------------------------
+# SHCAutomationRuleTriggerButton
+# ---------------------------------------------------------------------------
+
+
+def _make_rule_trigger_button(rule=None, shc_device=None):
+    btn = SHCAutomationRuleTriggerButton.__new__(SHCAutomationRuleTriggerButton)
+    btn._rule = rule if rule is not None else SimpleNamespace(id="r1", name="TV aus")
+    btn._shc_device = shc_device
+    return btn
+
+
+def test_rule_trigger_button_device_info_none_without_shc_device():
+    btn = _make_rule_trigger_button(shc_device=None)
+    assert btn.device_info is None
+
+
+def test_rule_trigger_button_device_info_links_shc_device():
+    shc_device = SimpleNamespace(
+        identifiers={("bosch_shc", "shc1")},
+        name="Bosch SHC",
+        manufacturer="Bosch",
+        model="SmartHomeController",
+    )
+    btn = _make_rule_trigger_button(shc_device=shc_device)
+    info = btn.device_info
+    assert info["identifiers"] == shc_device.identifiers
+
+
+def test_rule_trigger_button_press_calls_trigger():
+    rule = SimpleNamespace(id="r1", name="TV aus")
+    rule.async_trigger = AsyncMock()
+    btn = _make_rule_trigger_button(rule)
+    asyncio.run(btn.async_press())
+    rule.async_trigger.assert_awaited_once()
+
+
+def test_rule_trigger_button_press_wraps_shc_exception():
+    rule = SimpleNamespace(id="r1", name="TV aus")
+    rule.async_trigger = AsyncMock(side_effect=SHCException("boom"))
+    btn = _make_rule_trigger_button(rule)
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(btn.async_press())
+
+
+class TestAutomationRuleButtonSetupEntry:
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_AUTOMATION_RULES_AS_ENTITIES: True}}],
+        indirect=True,
+    )
+    def test_creates_button_per_rule_when_enabled(
+        self, mock_config_entry, mock_session
+    ):
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.automation_rules = [
+            SimpleNamespace(id="r1", name="Rule 1"),
+            SimpleNamespace(id="r2", name="Rule 2"),
+        ]
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        buttons = [
+            e for e in entities if isinstance(e, SHCAutomationRuleTriggerButton)
+        ]
+        assert len(buttons) == 2
+
+    def test_no_buttons_when_option_disabled(self, mock_config_entry, mock_session):
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.automation_rules = [SimpleNamespace(id="r1", name="Rule 1")]
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(
+            isinstance(e, SHCAutomationRuleTriggerButton) for e in entities
+        )
+
+
+# ---------------------------------------------------------------------------
+# SHCIntrusionAlarmMuteButton / SHCWaterAlarmMuteButton
+# ---------------------------------------------------------------------------
+
+
+def _make_alarm_device(**kw):
+    base = dict(
+        id="/intrusion",
+        root_device_id="hdm:root",
+        name="Intrusion Detection System",
+        manufacturer="BOSCH",
+        device_model="IDS",
+    )
+    base.update(kw)
+    return SimpleNamespace(**base)
+
+
+def test_intrusion_mute_button_device_info():
+    device = _make_alarm_device()
+    btn = SHCIntrusionAlarmMuteButton.__new__(SHCIntrusionAlarmMuteButton)
+    btn._device = device
+    info = btn.device_info
+    assert info["name"] == "Intrusion Detection System"
+    assert info["via_device"] == ("bosch_shc", "hdm:root")
+
+
+def test_intrusion_mute_button_press_calls_mute():
+    device = _make_alarm_device()
+    device.async_mute = AsyncMock()
+    btn = SHCIntrusionAlarmMuteButton.__new__(SHCIntrusionAlarmMuteButton)
+    btn._device = device
+    asyncio.run(btn.async_press())
+    device.async_mute.assert_awaited_once()
+
+
+def test_intrusion_mute_button_press_wraps_shc_exception():
+    device = _make_alarm_device()
+    device.async_mute = AsyncMock(side_effect=SHCException("boom"))
+    btn = SHCIntrusionAlarmMuteButton.__new__(SHCIntrusionAlarmMuteButton)
+    btn._device = device
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(btn.async_press())
+
+
+def test_water_alarm_mute_button_device_info():
+    device = _make_alarm_device(
+        id="/wateralarm", name="Water Alarm System", device_model="WATERALARM"
+    )
+    btn = SHCWaterAlarmMuteButton.__new__(SHCWaterAlarmMuteButton)
+    btn._device = device
+    info = btn.device_info
+    assert info["name"] == "Water Alarm System"
+
+
+def test_water_alarm_mute_button_press_calls_mute():
+    device = _make_alarm_device(id="/wateralarm", device_model="WATERALARM")
+    device.async_mute = AsyncMock()
+    btn = SHCWaterAlarmMuteButton.__new__(SHCWaterAlarmMuteButton)
+    btn._device = device
+    asyncio.run(btn.async_press())
+    device.async_mute.assert_awaited_once()
+
+
+def test_water_alarm_mute_button_press_wraps_shc_exception():
+    device = _make_alarm_device(id="/wateralarm", device_model="WATERALARM")
+    device.async_mute = AsyncMock(side_effect=SHCException("boom"))
+    btn = SHCWaterAlarmMuteButton.__new__(SHCWaterAlarmMuteButton)
+    btn._device = device
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(btn.async_press())
+
+
+class TestAlarmMuteButtonSetupEntry:
+    def test_intrusion_mute_button_created_when_system_present(
+        self, mock_config_entry, mock_session
+    ):
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.intrusion_system = _make_alarm_device()
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert any(isinstance(e, SHCIntrusionAlarmMuteButton) for e in entities)
+
+    def test_no_intrusion_mute_button_when_system_absent(
+        self, mock_config_entry, mock_session
+    ):
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.intrusion_system = None
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, SHCIntrusionAlarmMuteButton) for e in entities)
+
+    def test_water_alarm_mute_button_created_when_system_present(
+        self, mock_config_entry, mock_session
+    ):
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.water_alarm_system = _make_alarm_device(
+            id="/wateralarm", device_model="WATERALARM"
+        )
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert any(isinstance(e, SHCWaterAlarmMuteButton) for e in entities)
+
+    def test_no_water_alarm_mute_button_when_system_absent(
+        self, mock_config_entry, mock_session
+    ):
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.water_alarm_system = None
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, SHCWaterAlarmMuteButton) for e in entities)

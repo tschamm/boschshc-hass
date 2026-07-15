@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Slēpt LEDVANCE gaismas no Bosch SHC",
               "suppress_motion_indicator_light": "Slēpt kustību detektora indikatora gaismu",
               "suppress_camera_switches": "Slēpt Bosch kameras slēdžus",
-              "room_light_groups": "Iespējot telpu gaismas grupas"
+              "room_light_groups": "Iespējot telpu gaismas grupas",
+              "automation_rules_as_entities": "Rādīt Bosch automatizācijas noteikumus kā entītijas"
             },
             "data_description": {
               "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Kad IESĖGSTS: LEDVANCE gaismeļļi, kas savienoti ar SHC, vairs netiek rādīti kā entītijas. Izmantojiet, lai izvairītos no duplikātiem ar LEDVANCE vai Zigbee integrāciju. Nokluājums: izslēgts.",
               "suppress_motion_indicator_light": "Kad IESĖGSTS: kustību detektora II indikatorgaīsmas entītija netiek izveidota. Nokluājums: izslēgts.",
               "suppress_camera_switches": "Kad IESLĒGTS: Bosch kameru (Eyes / 360 / Outdoor Gen2) privātuma, gaismas un paziņojumu slēdži netiek izveidoti. Izmantojiet ar Bosch Camera Tool. Nokluājums: izslēgts.",
-              "room_light_groups": "Kad IESLĒGTS: katrai SHC telpai ar 2 vai vairāk regulējamas spilgtuma/krāsu gaismas ķermeņiem (LEDVANCE, Hue, Light/Shutter Control II dimmeri) tiek izveidota viena apkopota `light` entītija, ļaujot ieslēgt/izslēgt visas telpas gaismas no vienas entītijas — tas atspoguļo telpas līmeņa vadību, kāda apkurei jau ir, izmantojot Room Climate Control. Tikai ieslēgšana/izslēgšana, bez spilgtuma/krāsas apkopošanas. Noklusējums: izslēgts (jaunu entītiju nav)."
+              "room_light_groups": "Kad IESLĒGTS: katrai SHC telpai ar 2 vai vairāk regulējamas spilgtuma/krāsu gaismas ķermeņiem (LEDVANCE, Hue, Light/Shutter Control II dimmeri) tiek izveidota viena apkopota `light` entītija, ļaujot ieslēgt/izslēgt visas telpas gaismas no vienas entītijas — tas atspoguļo telpas līmeņa vadību, kāda apkurei jau ir, izmantojot Room Climate Control. Tikai ieslēgšana/izslēgšana, bez spilgtuma/krāsas apkopošanas. Noklusējums: izslēgts (jaunu entītiju nav).",
+              "automation_rules_as_entities": "Ja IESLĒGTS: katram Bosch lietotnē konfigurētajam automatizācijas noteikumam tiek izveidots slēdzis (iespējot/atspējot) un poga (manuāla palaišana) — Bosch pašas lokālais noteikumu dzinējs, pilnībā atdalīts no Home Assistant automatizācijām. Noklusējums: izslēgts (jaunu entīciju nav)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Iespējot visu diagnostiku"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Apklusināt trauksmi"
+      },
+      "water_alarm_mute": {
+        "name": "Apklusināt ūdens trauksmi"
+      },
+      "automation_rule_trigger": {
+        "name": "Aktivizēt"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulsa garums"
+      },
+      "temperature_drop_value": {
+        "name": "Temperatūras pazemināšanas vērtība"
       },
       "energy_saving_power_threshold": {
         "name": "Enerģijas taupīšanas jaudas slieksnis"
@@ -313,6 +327,13 @@
           "heating_rcc": "Apkure (RCC)",
           "boiler": "Boilers",
           "mini_pv": "Mini saules panelis"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Regulēšanas algoritms",
+        "state": {
+          "internal": "Iekšējais",
+          "custom": "Pielāgots"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Apiešana nekad nebeidzas"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperatūras pazemināšana"
+      },
+      "automation_rule": {
+        "name": "Iespējots"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Pogas nospiešana neizdevās."
     },
+    "automation_rule_update_failed": {
+      "message": "Neizdevās atjaunināt automatizācijas noteikumu."
+    },
     "switch_action_failed": {
       "message": "Slēdža stāvokļa maiņa neizdevās."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Vērtības iestatīšana neizdevās."
+    },
+    "update_install_failed": {
+      "message": "Neizdevās sākt aparātprogrammatūras atjauninājumu."
     },
     "zigbee_topology_no_data": {
       "message": "Šim SHC kontrolierim vēl nav pieejami Zigbee maršrutēšanas dati (nav pievienota neviena Zigbee ierīce, vai kopš Home Assistant palaišanas vēl nav pabeigta pirmā 5 minūšu aptauja)."

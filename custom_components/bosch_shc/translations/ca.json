@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Suprimeix els llums LEDVANCE del Bosch SHC",
               "suppress_motion_indicator_light": "Suprimeix la llum indicadora del detector de moviment",
               "suppress_camera_switches": "Suprimeix els interruptors de la càmera Bosch",
-              "room_light_groups": "Activa els grups de llums per habitació"
+              "room_light_groups": "Activa els grups de llums per habitació",
+              "automation_rules_as_entities": "Exposa les regles d'automatització de Bosch com a entitats"
             },
             "data_description": {
               "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Quan està ACTIVAT: els llums LEDVANCE emparellats amb el SHC ja no s'exposen com a entitats. Utilitza-ho per evitar duplicats amb la integració LEDVANCE o Zigbee. Predeterminat: desactivat.",
               "suppress_motion_indicator_light": "Quan està ACTIVAT: l'entitat del LED indicador del detector de moviment II no es crea. Predeterminat: desactivat.",
               "suppress_camera_switches": "Quan està ACTIVAT: els interruptors de privadesa, llum i notificació per a les càmeres Bosch (Eyes / 360 / Outdoor Gen2) no es creen. Utilitza-ho amb Bosch Camera Tool. Predeterminat: desactivat.",
-              "room_light_groups": "Quan està ACTIVAT: crea una entitat `light` agregada per cada habitació del SHC amb 2 o més llums regulables/de color (LEDVANCE, Hue, reguladors Light/Shutter Control II), permetent encendre o apagar tots els llums d'una habitació des d'una sola entitat — reflectint el control per habitació que la calefacció ja té mitjançant Room Climate Control. Només encès/apagat, sense agregació de brillantor/color. Predeterminat: desactivat (sense entitats noves)."
+              "room_light_groups": "Quan està ACTIVAT: crea una entitat `light` agregada per cada habitació del SHC amb 2 o més llums regulables/de color (LEDVANCE, Hue, reguladors Light/Shutter Control II), permetent encendre o apagar tots els llums d'una habitació des d'una sola entitat — reflectint el control per habitació que la calefacció ja té mitjançant Room Climate Control. Només encès/apagat, sense agregació de brillantor/color. Predeterminat: desactivat (sense entitats noves).",
+              "automation_rules_as_entities": "Quan està ACTIVAT: crea un interruptor (activa/desactiva) i un botó (activa manualment) per a cada regla d'automatització configurada a l'app de Bosch — el motor de regles local propi de Bosch, totalment separat de les automatitzacions de Home Assistant. Per defecte: desactivat (sense entitats noves)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Activa tots els diagnòstics"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Silenciar l'alarma"
+      },
+      "water_alarm_mute": {
+        "name": "Silenciar l'alarma d'aigua"
+      },
+      "automation_rule_trigger": {
+        "name": "Activa"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Durada de l'impuls"
+      },
+      "temperature_drop_value": {
+        "name": "Valor de baixada de temperatura"
       },
       "energy_saving_power_threshold": {
         "name": "Llindar de potència d'estalvi energètic"
@@ -313,6 +327,13 @@
           "heating_rcc": "Calefacció (RCC)",
           "boiler": "Escalfador",
           "mini_pv": "Mini fotovoltaica"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Algorisme de regulació",
+        "state": {
+          "internal": "Intern",
+          "custom": "Personalitzat"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Bypass sense caducitat"
+      },
+      "temperature_drop_enabled": {
+        "name": "Baixada de temperatura"
+      },
+      "automation_rule": {
+        "name": "Activat"
       }
     },
     "light": {
@@ -637,6 +664,9 @@
     "button_press_failed": {
       "message": "La pulsació del botó ha fallat."
     },
+    "automation_rule_update_failed": {
+      "message": "No s'ha pogut actualitzar la regla d'automatització."
+    },
     "switch_action_failed": {
       "message": "No s'ha pogut canviar l'estat de l'interruptor."
     },
@@ -651,6 +681,9 @@
     },
     "number_set_failed": {
       "message": "No s'ha pogut establir el valor."
+    },
+    "update_install_failed": {
+      "message": "No s'ha pogut iniciar l'actualització del firmware."
     }
   }
 }

@@ -102,6 +102,11 @@ def mock_session(device_buckets: dict[str, Any]) -> SimpleNamespace:
         updateState=SimpleNamespace(name="UP_TO_DATE"),
         version="2.0",
     )
+    # Sane defaults for optional/always-on session features -- individual
+    # tests override these when they actually exercise the feature.
+    session.intrusion_system = None
+    session.water_alarm_system = None
+    session.automation_rules = []
     return session
 
 

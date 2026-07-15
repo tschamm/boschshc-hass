@@ -40,7 +40,11 @@ from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
+from .const import (
+    DOMAIN,
+    OPT_AUTOMATION_RULES_AS_ENTITIES,
+    OPT_SUPPRESS_CAMERA_SWITCHES,
+)
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -904,6 +908,38 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
+    # Temperature-drop service (anti-frost/window-open, APK-traced) -- no-op
+    # if a room has no such service (404 -> SHCException, skipped).
+    for climate in getattr(session.device_helper, "climate_controls", []):
+        if device_excluded(climate, config_entry.options):
+            continue
+        room_id = climate.room_id
+        if room_id is None:
+            continue
+        room = session.room(room_id)
+        try:
+            tds = await room.async_temperature_drop_service()
+        except SHCException:
+            continue
+        if tds is None:
+            continue
+        entities.append(
+            TemperatureDropEnabledSwitch(
+                device=climate, room=room, entry_id=config_entry.entry_id
+            )
+        )
+
+    if config_entry.options.get(OPT_AUTOMATION_RULES_AS_ENTITIES, False):
+        shc_device_for_rules: DeviceEntry = config_entry.runtime_data.shc_device
+        entities.extend(
+            SHCAutomationRuleSwitch(
+                rule=rule,
+                entry_id=config_entry.entry_id,
+                shc_device=shc_device_for_rules,
+            )
+            for rule in session.automation_rules
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -1211,3 +1247,141 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
             manufacturer=self._shc.manufacturer,
             model=self._shc.model,
         )
+
+
+class SHCAutomationRuleSwitch(SwitchEntity):  # type: ignore[misc]
+    """Enable/disable a single Bosch automation rule (system/automation).
+
+    Not an SHC device -- Bosch's own local rule engine, entirely separate
+    from Home Assistant's automations (#OPT_AUTOMATION_RULES_AS_ENTITIES).
+    Rule state isn't part of the long-poll device-service push model, so it
+    must be explicitly polled (default HA polling interval).
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "automation_rule"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = True
+
+    def __init__(
+        self,
+        rule: Any,
+        entry_id: str,
+        shc_device: DeviceEntry | None = None,
+    ) -> None:
+        """Initialize an automation rule switch."""
+        self._rule = rule
+        self._shc_device = shc_device
+        self._attr_unique_id = f"{entry_id}_automation_rule_{rule.id}"
+        self._attr_name = rule.name
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Return the device info (links this switch to the SHC controller device)."""
+        if self._shc_device is None:
+            return None
+        return DeviceInfo(
+            identifiers=self._shc_device.identifiers,
+            name=self._shc_device.name,
+            manufacturer=self._shc_device.manufacturer,
+            model=self._shc_device.model,
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if this automation rule is enabled."""
+        return bool(self._rule.enabled)
+
+    async def async_update(self) -> None:
+        """Poll this rule's current enabled state."""
+        try:
+            await self._rule.async_refresh()
+        except SHCException as err:
+            LOGGER.debug("Failed to poll automation rule %s: %s", self._rule.name, err)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable this automation rule."""
+        try:
+            await self._rule.async_set_enabled(True)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to enable automation rule {self._rule.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="automation_rule_update_failed",
+            ) from err
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable this automation rule."""
+        try:
+            await self._rule.async_set_enabled(False)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to disable automation rule {self._rule.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="automation_rule_update_failed",
+            ) from err
+
+
+class TemperatureDropEnabledSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
+    """Enable/disable a room's temperature-drop (anti-frost/window-open) service.
+
+    Not in the official OpenAPI spec; APK ground-truth
+    (RestRequests.getTemperatureDropService/putTemperatureDropService), live-
+    confirmed across 12 real rooms. Reads/writes go through the room (not the
+    climate device) -- a separate resource, so it must be explicitly polled.
+    """
+
+    _attr_translation_key = "temperature_drop_enabled"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = True
+
+    def __init__(self, device: SHCDevice, room: Any, entry_id: str) -> None:
+        """Initialize the temperature-drop enabled switch."""
+        super().__init__(device, entry_id)
+        self._room = room
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_temperature_drop_enabled"
+        )
+        self._enabled: bool | None = None
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if the temperature-drop service is enabled."""
+        return bool(self._enabled)
+
+    async def async_update(self) -> None:
+        """Poll this room's temperature-drop service configuration."""
+        try:
+            data = await self._room.async_temperature_drop_service()
+        except SHCException as err:
+            LOGGER.debug(
+                "Failed to poll temperature-drop service for %s: %s",
+                self.device_name,
+                err,
+            )
+            return
+        self._enabled = bool((data or {}).get("configuration", {}).get("enabled"))
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable the temperature-drop service."""
+        try:
+            await self._room.async_set_temperature_drop_enabled(True)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to enable temperature drop for {self.device_name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="switch_action_failed",
+            ) from err
+        self._enabled = True
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable the temperature-drop service."""
+        try:
+            await self._room.async_set_temperature_drop_enabled(False)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to disable temperature drop for {self.device_name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="switch_action_failed",
+            ) from err
+        self._enabled = False

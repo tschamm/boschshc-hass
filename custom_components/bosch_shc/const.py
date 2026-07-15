@@ -72,6 +72,9 @@ OPT_SILENT_MODE_END = "silent_mode_end"
 # control heating already has via ROOM_CLIMATE_CONTROL. Default False = no new
 # entities (non-breaking). Only rooms with 2+ eligible lights get a group.
 OPT_ROOM_LIGHT_GROUPS = "room_light_groups"
+# Opt-in to expose Bosch's local automation-rule engine as a switch+button per
+# rule (entity-heavy like scenarios_as_buttons/room_light_groups above).
+OPT_AUTOMATION_RULES_AS_ENTITIES = "automation_rules_as_entities"
 
 # Camera Tool companion project
 CAMERA_TOOL_URL = (

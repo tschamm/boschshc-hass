@@ -603,6 +603,27 @@ async def async_setup_entry(  # noqa: C901
     entities: list[NumberEntity] = []
     session: SHCSession = config_entry.runtime_data.session
 
+    # Temperature-drop service drop value (APK-traced, live-confirmed across
+    # 12 real rooms) -- always on, no-op if a room has no such service.
+    for climate in getattr(session.device_helper, "climate_controls", []):
+        if device_excluded(climate, config_entry.options):
+            continue
+        room_id = climate.room_id
+        if room_id is None:
+            continue
+        room = session.room(room_id)
+        try:
+            tds = await room.async_temperature_drop_service()
+        except SHCException:
+            continue
+        if tds is None:
+            continue
+        entities.append(
+            TemperatureDropValueNumber(
+                device=climate, room=room, entry_id=config_entry.entry_id
+            )
+        )
+
     for number in (
         list(session.device_helper.thermostats)
         + list(session.device_helper.roomthermostats)
@@ -886,3 +907,63 @@ class SHCNumber[_DeviceT: SHCDevice](SHCEntity, NumberEntity):  # type: ignore[m
                 self._device.name,
                 err,
             )
+
+
+class TemperatureDropValueNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
+    """How many degrees a room's temperature-drop service lowers the setpoint.
+
+    Not in the official OpenAPI spec; APK ground-truth
+    (RestRequests.getTemperatureDropService/putTemperatureDropService), live-
+    confirmed across 12 real rooms. Reads/writes go through the room (not the
+    climate device) -- a separate resource, so it must be explicitly polled.
+    Bounds are conservative engineering defaults (not confirmed from the app's
+    own UI limits).
+    """
+
+    _attr_translation_key = "temperature_drop_value"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = True
+    _attr_native_min_value = 0.5
+    _attr_native_max_value = 5.0
+    _attr_native_step = 0.5
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+
+    def __init__(self, device: SHCDevice, room: Any, entry_id: str) -> None:
+        """Initialize the temperature-drop value number."""
+        super().__init__(device, entry_id)
+        self._room = room
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_temperature_drop_value"
+        )
+        self._value: float | None = None
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the configured temperature-drop value."""
+        return self._value
+
+    async def async_update(self) -> None:
+        """Poll this room's temperature-drop service configuration."""
+        try:
+            data = await self._room.async_temperature_drop_service()
+        except SHCException as err:
+            LOGGER.debug(
+                "Failed to poll temperature-drop service for %s: %s",
+                self.device_name,
+                err,
+            )
+            return
+        value = (data or {}).get("configuration", {}).get("dropTemperature")
+        self._value = float(value) if value is not None else None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the temperature-drop value."""
+        try:
+            await self._room.async_set_temperature_drop_value(value)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to set temperature drop for {self.device_name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
+        self._value = value

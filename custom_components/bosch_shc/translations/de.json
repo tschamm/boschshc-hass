@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "LEDVANCE-Leuchten vom Bosch SHC unterdrücken",
               "suppress_motion_indicator_light": "Statusleuchte des Bewegungsmelders unterdrücken",
               "suppress_camera_switches": "Bosch-Kamera-Schalter unterdrücken",
-              "room_light_groups": "Raum-Lichtgruppen aktivieren"
+              "room_light_groups": "Raum-Lichtgruppen aktivieren",
+              "automation_rules_as_entities": "Bosch-Automatisierungsregeln als Entitäten anzeigen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Wenn AN: LEDVANCE-Leuchten, die am SHC angemeldet sind, werden nicht mehr als Entitäten bereitgestellt. Nützlich bei gleichzeitig aktiver LEDVANCE- oder Zigbee-Integration. Standard: aus.",
               "suppress_motion_indicator_light": "Wenn AN: die Entität zur Steuerung der Statusleuchte von Bewegungsmeldern II wird nicht angelegt. Standard: aus.",
               "suppress_camera_switches": "Wenn AN: Datenschutz-, Licht- und Benachrichtigungs-Schalter für Bosch-Kameras (Eyes / 360 / Outdoor Gen2) werden nicht angelegt. Nützlich, wenn das Bosch Camera Tool ebenfalls aktiv ist. Standard: aus.",
-              "room_light_groups": "Wenn AN: erstellt für jeden SHC-Raum mit 2 oder mehr dimmbaren/farbigen Lampen (LEDVANCE, Hue, Light/Shutter Control II Dimmer) eine gebündelte `light`-Entität, mit der sich alle Lampen eines Raums über eine einzige Entität ein- und ausschalten lassen – analog zur Raumsteuerung, die die Heizung über die Raumklimasteuerung bereits hat. Nur Ein/Aus, keine Helligkeits-/Farbbündelung. Standard: aus (keine neuen Entitäten)."
+              "room_light_groups": "Wenn AN: erstellt für jeden SHC-Raum mit 2 oder mehr dimmbaren/farbigen Lampen (LEDVANCE, Hue, Light/Shutter Control II Dimmer) eine gebündelte `light`-Entität, mit der sich alle Lampen eines Raums über eine einzige Entität ein- und ausschalten lassen – analog zur Raumsteuerung, die die Heizung über die Raumklimasteuerung bereits hat. Nur Ein/Aus, keine Helligkeits-/Farbbündelung. Standard: aus (keine neuen Entitäten).",
+              "automation_rules_as_entities": "Bei AN: erstellt für jede in der Bosch-App konfigurierte Automatisierungsregel einen Schalter (aktivieren/deaktivieren) und eine Schaltfläche (manuell auslösen) — Boschs eigene lokale Regel-Engine, komplett getrennt von den Automatisierungen von Home Assistant. Standard: aus (keine neuen Entitäten)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Alle Diagnosen aktivieren"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Alarm stummschalten"
+      },
+      "water_alarm_mute": {
+        "name": "Wasseralarm stummschalten"
+      },
+      "automation_rule_trigger": {
+        "name": "Auslösen"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulsdauer"
+      },
+      "temperature_drop_value": {
+        "name": "Temperaturabsenkungswert"
       },
       "energy_saving_power_threshold": {
         "name": "Energiesparmodus Leistungsschwelle"
@@ -313,6 +327,13 @@
           "heating_rcc": "Heizung (RCC)",
           "boiler": "Boiler",
           "mini_pv": "Mini-PV"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Regelalgorithmus",
+        "state": {
+          "internal": "Intern",
+          "custom": "Benutzerdefiniert"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Bypass läuft nie ab"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperaturabsenkung"
+      },
+      "automation_rule": {
+        "name": "Aktiviert"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Tastendruck fehlgeschlagen."
     },
+    "automation_rule_update_failed": {
+      "message": "Aktualisieren der Automatisierungsregel fehlgeschlagen."
+    },
     "switch_action_failed": {
       "message": "Änderung des Schalterzustands fehlgeschlagen."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Festlegen des Werts fehlgeschlagen."
+    },
+    "update_install_failed": {
+      "message": "Starten der Firmware-Aktualisierung fehlgeschlagen."
     },
     "zigbee_topology_no_data": {
       "message": "Für diesen SHC-Controller liegen noch keine Zigbee-Routing-Daten vor (keine Zigbee-Geräte gekoppelt, oder die erste 5-Minuten-Abfrage seit dem Start von Home Assistant ist noch nicht abgeschlossen)."

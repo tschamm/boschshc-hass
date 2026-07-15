@@ -50,6 +50,7 @@ from .const import (
     DOMAIN,
     LOGGER,
     OPT_ALL_LIGHTS_AS_LIGHT,
+    OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_CHILD_LOCK_ENABLED,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_ENABLE_RAWSCAN,
@@ -92,6 +93,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_SCENARIOS_FILTER,
         OPT_SUPPRESS_CAMERA_SWITCHES,
         OPT_ROOM_LIGHT_GROUPS,
+        OPT_AUTOMATION_RULES_AS_ENTITIES,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -689,6 +691,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
             vol.Optional(
                 OPT_ROOM_LIGHT_GROUPS,
                 default=current.get(OPT_ROOM_LIGHT_GROUPS, False),
+            )
+        ] = BooleanSelector()
+
+        # Bosch's own local automation-rule engine as switch+button entities.
+        # Always offered, no-op if the SHC reports zero rules.
+        features_fields[
+            vol.Optional(
+                OPT_AUTOMATION_RULES_AS_ENTITIES,
+                default=current.get(OPT_AUTOMATION_RULES_AS_ENTITIES, False),
             )
         ] = BooleanSelector()
 

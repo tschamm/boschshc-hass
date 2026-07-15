@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Bosch SHC에서 LEDVANCE 조명 숨기기",
               "suppress_motion_indicator_light": "동작 감지기 표시등 숨기기",
               "suppress_camera_switches": "Bosch 카메라 스위치 숨기기",
-              "room_light_groups": "방별 조명 그룹 활성화"
+              "room_light_groups": "방별 조명 그룹 활성화",
+              "automation_rules_as_entities": "Bosch 자동화 규칙을 엔티티로 노출"
             },
             "data_description": {
               "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "켜짐: SHC에 페어링된 LEDVANCE 조명이 더 이상 엔티티로 노출되지 않습니다. LEDVANCE 또는 Zigbee 통합 시 중복을 방지하려면 사용하세요. 기본값: 꺼짐.",
               "suppress_motion_indicator_light": "켜짐: 동작 감지기 II의 표시등 LED 엔티티가 생성되지 않습니다. 기본값: 꺼짐.",
               "suppress_camera_switches": "켜짐: Bosch 카메라(Eyes / 360 / Outdoor Gen2)의 개인 정보 보호, 조명 및 알림 스위치 엔티티가 생성되지 않습니다. Bosch Camera Tool과 함께 사용하세요. 기본값: 꺼짐.",
-              "room_light_groups": "켜짐: 조광/컬러 조명(LEDVANCE, Hue, Light/Shutter Control II 디머)이 2개 이상 있는 SHC 방마다 집계된 `light` 엔티티를 하나씩 생성하여, 하나의 엔티티로 방 전체 조명을 켜고 끌 수 있습니다 — 난방이 Room Climate Control을 통해 이미 제공하는 방 단위 제어와 동일한 방식입니다. 켜기/끄기만 지원하며 밝기·색상은 집계되지 않습니다. 기본값: 꺼짐(새 엔티티 없음)."
+              "room_light_groups": "켜짐: 조광/컬러 조명(LEDVANCE, Hue, Light/Shutter Control II 디머)이 2개 이상 있는 SHC 방마다 집계된 `light` 엔티티를 하나씩 생성하여, 하나의 엔티티로 방 전체 조명을 켜고 끌 수 있습니다 — 난방이 Room Climate Control을 통해 이미 제공하는 방 단위 제어와 동일한 방식입니다. 켜기/끄기만 지원하며 밝기·색상은 집계되지 않습니다. 기본값: 꺼짐(새 엔티티 없음).",
+              "automation_rules_as_entities": "켜짐으로 설정하면 Bosch 앱에 구성된 각 자동화 규칙에 대해 스위치(활성화/비활성화)와 버튼(수동 실행)이 생성됩니다 — Home Assistant 자체 자동화와는 완전히 별개인 Bosch 자체 로컬 규칙 엔진입니다. 기본값: 꺼짐(새 엔티티 없음)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "모든 진단 활성화"
+      },
+      "intrusion_alarm_mute": {
+        "name": "알람 음소거"
+      },
+      "water_alarm_mute": {
+        "name": "누수 알람 음소거"
+      },
+      "automation_rule_trigger": {
+        "name": "트리거"
       }
     },
     "number": {
       "impulse_length": {
         "name": "임펄스 길이"
+      },
+      "temperature_drop_value": {
+        "name": "온도 강하 값"
       },
       "energy_saving_power_threshold": {
         "name": "절전 전력 임계값"
@@ -313,6 +327,13 @@
           "heating_rcc": "난방 (RCC)",
           "boiler": "보일러",
           "mini_pv": "미니 태양광"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "조절 알고리즘",
+        "state": {
+          "internal": "내부",
+          "custom": "사용자 지정"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "바이패스 만료 없음"
+      },
+      "temperature_drop_enabled": {
+        "name": "온도 강하"
+      },
+      "automation_rule": {
+        "name": "사용"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "버튼 누르기에 실패했습니다."
     },
+    "automation_rule_update_failed": {
+      "message": "자동화 규칙 업데이트에 실패했습니다."
+    },
     "switch_action_failed": {
       "message": "스위치 상태 변경에 실패했습니다."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "값 설정에 실패했습니다."
+    },
+    "update_install_failed": {
+      "message": "펌웨어 업데이트를 시작하지 못했습니다."
     },
     "zigbee_topology_no_data": {
       "message": "이 SHC 컨트롤러에 대한 Zigbee 라우팅 데이터가 아직 없습니다(Zigbee 장치가 페어링되지 않았거나, Home Assistant 시작 이후 첫 5분 폴링이 아직 완료되지 않았습니다)."

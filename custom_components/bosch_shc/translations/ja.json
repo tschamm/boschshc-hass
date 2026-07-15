@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Bosch SHCのLEDVANCEライトを非表示にする",
               "suppress_motion_indicator_light": "モーションセンサーのインジケーターライトを非表示にする",
               "suppress_camera_switches": "Boschカメラのスイッチを非表示にする",
-              "room_light_groups": "部屋ごとのライトグループを有効にする"
+              "room_light_groups": "部屋ごとのライトグループを有効にする",
+              "automation_rules_as_entities": "Bosch のオートメーションルールをエンティティとして公開"
             },
             "data_description": {
               "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "ONにすると、SHCに登録されているLEDVANCEライトはエンティティとして作成されなくなります。LEDVANCEまたはZigbeeインテグレーションとの重複を防ぎます。デフォルト：オフ。",
               "suppress_motion_indicator_light": "ONにすると、モーションセンサーIIのインジケーターLEDエンティティは作成されません。デフォルト：オフ。",
               "suppress_camera_switches": "ONにすると、Boschカメラ（Eyes/360/Outdoor Gen2）のプライバシー、ライト、通知スイッチエンティティが作成されません。Bosch Camera Toolと併用してください。デフォルト：オフ。",
-              "room_light_groups": "ONにすると、調光/カラー対応ライト（LEDVANCE、Hue、Light/Shutter Control IIの調光器）が2台以上あるSHCの部屋ごとに、集約された`light`エンティティを1つ作成し、1つのエンティティから部屋の照明をまとめてオン/オフできるようになります。暖房がRoom Climate Controlを通じてすでに持っている部屋単位の制御と同様の仕組みです。オン/オフのみで、明るさや色の集約は行いません。デフォルト：オフ（新しいエンティティは作成されません）。"
+              "room_light_groups": "ONにすると、調光/カラー対応ライト（LEDVANCE、Hue、Light/Shutter Control IIの調光器）が2台以上あるSHCの部屋ごとに、集約された`light`エンティティを1つ作成し、1つのエンティティから部屋の照明をまとめてオン/オフできるようになります。暖房がRoom Climate Controlを通じてすでに持っている部屋単位の制御と同様の仕組みです。オン/オフのみで、明るさや色の集約は行いません。デフォルト：オフ（新しいエンティティは作成されません）。",
+              "automation_rules_as_entities": "オンにすると、Bosch アプリで設定された各オートメーションルールに対して、スイッチ（有効/無効）とボタン（手動実行）が作成されます — Home Assistant 自身のオートメーションとは完全に独立した、Bosch 独自のローカルルールエンジンです。デフォルト: オフ（新しいエンティティなし）。"
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "すべての診断を有効化"
+      },
+      "intrusion_alarm_mute": {
+        "name": "アラームをミュート"
+      },
+      "water_alarm_mute": {
+        "name": "水漏れアラームをミュート"
+      },
+      "automation_rule_trigger": {
+        "name": "実行"
       }
     },
     "number": {
       "impulse_length": {
         "name": "インパルス長"
+      },
+      "temperature_drop_value": {
+        "name": "温度低下値"
       },
       "energy_saving_power_threshold": {
         "name": "省エネ電力しきい値"
@@ -313,6 +327,13 @@
           "heating_rcc": "暖房 (RCC)",
           "boiler": "ボイラー",
           "mini_pv": "ミニ太陽光"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "調節アルゴリズム",
+        "state": {
+          "internal": "内部",
+          "custom": "カスタム"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "バイパス無期限"
+      },
+      "temperature_drop_enabled": {
+        "name": "温度低下"
+      },
+      "automation_rule": {
+        "name": "有効"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "ボタンの押下に失敗しました。"
     },
+    "automation_rule_update_failed": {
+      "message": "オートメーションルールの更新に失敗しました。"
+    },
     "switch_action_failed": {
       "message": "スイッチの状態変更に失敗しました。"
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "値の設定に失敗しました。"
+    },
+    "update_install_failed": {
+      "message": "ファームウェアの更新を開始できませんでした。"
     },
     "zigbee_topology_no_data": {
       "message": "このSHCコントローラーではまだZigbeeルーティングデータが利用できません（Zigbeeデバイスがペアリングされていないか、Home Assistant起動後の最初の5分間ポーリングがまだ完了していません）。"

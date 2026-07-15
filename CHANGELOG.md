@@ -1,6 +1,59 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — big sync with the official Bosch Smart Home app
+
+A large round of reverse-engineering (APK decompile + live traffic capture
+against a real SHC) closing the gap between this integration and what the
+official Bosch app can do — many new entities, all built on the matching
+`boschshcpy` 0.5.0 release. Everything marked **live-confirmed** was
+verified against a real controller/real device, not implemented from the
+OpenAPI spec/decompile alone.
+
+- **★ Firmware updates, end to end — the headline feature of this release.**
+  The controller's `update.*` entity now has `INSTALL` wired up, and every
+  device whose model has a firmware UI in the Bosch app (TRV_GEN2/
+  TRV_GEN2_DUAL, MD2, SMOKE_DETECTOR2, TWINGUARD, OUTDOOR_SIREN,
+  MICROMODULE_LIGHT_CONTROL, MICROMODULE_BLINDS/SHUTTER/AWNING,
+  PLUG_COMPACT_DUAL) now gets its own firmware-status `update` entity —
+  so a pending update shows up as a normal HA "Update available"
+  notification, with an Install button, instead of requiring the Bosch app.
+  Not in the official OpenAPI spec — traced via APK decompile
+  (`FirmwarePresenter`/`FirmwareStateLoader`,
+  `RestRequests.getDeviceFirmwareState`/`putDeviceFirmwareActivation`); an
+  earlier attempt this same development round gated entity creation on a
+  per-device `SoftwareUpdate` service that turned out to be a wrong guess
+  (no real device ever advertises it) — replaced with a device-agnostic
+  probe. **Confirmed live end to end**, including the actual install: a
+  TRV_GEN2 radiator thermostat's pending update was triggered from this
+  integration's own Install button and moved through
+  `AwaitingActivation` → `UpdatePending` → `UpToDateAwaitingUserInteraction`
+  over ~90 seconds — a genuine, successful over-the-air firmware install,
+  the device stayed fully functional throughout.
+- **New: automation-rule entities** (opt-in, `automation_rules_as_entities`
+  option) — one switch (enable/disable) + one button (trigger now) per
+  Bosch-app-native automation rule, **live-confirmed** against a real SHC
+  with 23 real user-configured rules.
+- **New: intrusion-alarm and water-alarm "Mute" buttons** — closes a real
+  gap: the Bosch app's in-alarm "Mute" action had no equivalent in this
+  integration before. Always-on when the corresponding alarm system is
+  present, **live-confirmed**.
+- **New: temperature-drop controls** — a switch (enable/disable) + number
+  (drop value in °C) per room with the anti-frost/window-open compensation
+  service, mirroring the Bosch app's room-detail screen. **Live-confirmed**
+  across 12 real rooms.
+- **New: thermostat regulation-algorithm select** — lets you switch a
+  thermostat between "Internal" and "Custom" regulation, mirroring the
+  Bosch app. Probed per-device (not created on devices that don't support
+  it); **live-confirmed** absence-handling against several real HomeMaticIP
+  room-thermostats and a TRV_GEN2 valve, none of which expose this
+  capability on this installation.
+- Hardening found via an internal bug-hunt pass on the above: a
+  long-standing `SHCEntity.should_poll` override was silently defeating
+  `_attr_should_poll = True` on any subclass (affected the 4 new
+  poll-based entities above plus the existing firmware-update entity) —
+  fixed, and **live-verified** via a real-time log monitor to confirm
+  genuinely periodic (~30s) polling across all affected entities, not a
+  one-shot update at setup.
 
 ## 0.11.2 — fix stale device availability after an SHC firmware update (hass#370)
 

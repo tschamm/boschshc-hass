@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "隐藏来自 Bosch SHC 的 LEDVANCE 灯",
               "suppress_motion_indicator_light": "隐藏运动探测器指示灯",
               "suppress_camera_switches": "隐藏 Bosch 摄像头开关",
-              "room_light_groups": "启用按房间分组的灯光"
+              "room_light_groups": "启用按房间分组的灯光",
+              "automation_rules_as_entities": "将 Bosch 自动化规则公开为实体"
             },
             "data_description": {
               "scenarios_as_buttons": "开启时：每个 Bosch SHC 场景也会在 Home Assistant 中显示为按钮实体（除 `trigger_scenario` 服务外）。适用于直接触发场景的仪表板磁贴和自动化。默认：关闭。",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "开启后：与 SHC 配对的 LEDVANCE 灯将不再作为实体公开。可防止与 LEDVANCE 或 Zigbee 集成重复。默认：关闭。",
               "suppress_motion_indicator_light": "开启后：运动探测器 II 的 LED 指示灯实体将不再创建。默认：关闭。",
               "suppress_camera_switches": "开启后：Bosch 摄像头（Eyes / 360 / Outdoor Gen2）的隐私模式、灯光和通知开关实体不会被创建。与 Bosch Camera Tool一起使用。默认：关闭。",
-              "room_light_groups": "开启后：为每个拥有 2 个及以上可调光/彩色灯具（LEDVANCE、Hue、Light/Shutter Control II 调光器）的 SHC 房间创建一个聚合 `light` 实体，可通过单一实体一次性开关整个房间的所有灯具——效果类似于 Room Climate Control 已提供的房间级供暖控制。仅支持开关，不聚合亮度或颜色。默认：关闭（不会创建新实体）。"
+              "room_light_groups": "开启后：为每个拥有 2 个及以上可调光/彩色灯具（LEDVANCE、Hue、Light/Shutter Control II 调光器）的 SHC 房间创建一个聚合 `light` 实体，可通过单一实体一次性开关整个房间的所有灯具——效果类似于 Room Climate Control 已提供的房间级供暖控制。仅支持开关，不聚合亮度或颜色。默认：关闭（不会创建新实体）。",
+              "automation_rules_as_entities": "开启后：会为 Bosch 应用中配置的每条自动化规则创建一个开关（启用/禁用）和一个按钮（手动触发）——这是 Bosch 自有的本地规则引擎，与 Home Assistant 自身的自动化完全独立。默认：关闭（不新增实体）。"
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "启用所有诊断"
+      },
+      "intrusion_alarm_mute": {
+        "name": "静音警报"
+      },
+      "water_alarm_mute": {
+        "name": "静音水浸警报"
+      },
+      "automation_rule_trigger": {
+        "name": "触发"
       }
     },
     "number": {
       "impulse_length": {
         "name": "脉冲时长"
+      },
+      "temperature_drop_value": {
+        "name": "温度下降值"
       },
       "energy_saving_power_threshold": {
         "name": "节能功率阈值"
@@ -313,6 +327,13 @@
           "heating_rcc": "供暖 (RCC)",
           "boiler": "锅炉",
           "mini_pv": "迷你光伏"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "调节算法",
+        "state": {
+          "internal": "内部",
+          "custom": "自定义"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "旁路永不过期"
+      },
+      "temperature_drop_enabled": {
+        "name": "温度下降"
+      },
+      "automation_rule": {
+        "name": "已启用"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "按钮按下失败。"
     },
+    "automation_rule_update_failed": {
+      "message": "更新自动化规则失败。"
+    },
     "switch_action_failed": {
       "message": "无法更改开关状态。"
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "无法设置数值。"
+    },
+    "update_install_failed": {
+      "message": "无法启动固件更新。"
     },
     "zigbee_topology_no_data": {
       "message": "此 SHC 控制器目前尚无可用的 Zigbee 路由数据（未配对任何 Zigbee 设备，或自 Home Assistant 启动以来首次 5 分钟轮询尚未完成）。"

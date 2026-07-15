@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Bosch SHC'den LEDVANCE ışıklarını gizle",
               "suppress_motion_indicator_light": "Hareket dedektörü gösterge ışığını gizle",
               "suppress_camera_switches": "Bosch kamera anahtarlarını gizle",
-              "room_light_groups": "Oda başına ışık gruplarını etkinleştir"
+              "room_light_groups": "Oda başına ışık gruplarını etkinleştir",
+              "automation_rules_as_entities": "Bosch otomasyon kurallarını varlık olarak göster"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "AÇIK olduğunda: SHC'ye eşleştirilmiş LEDVANCE ışıkları artık varlık olarak sunulmaz. LEDVANCE veya Zigbee entegrasyonu ile yinelenenleri önlemek için kullanın. Varsayılan: kapalı.",
               "suppress_motion_indicator_light": "AÇIK olduğunda: Hareket Dedektörü II gösterge LED varlığı oluşturulmaz. Varsayılan: kapalı.",
               "suppress_camera_switches": "AÇIK olduğunda: Bosch kameraları (Eyes / 360 / Outdoor Gen2) için gizlilik, ışık ve bildirim anahtarları oluşturulmaz. Bosch Camera Tool ile birlikte kullanın. Varsayılan: kapalı.",
-              "room_light_groups": "AÇIK olduğunda: 2 veya daha fazla kısılabilir/renkli ışığa sahip (LEDVANCE, Hue, Light/Shutter Control II dimmerleri) her SHC odası için tek bir toplu `light` varlığı oluşturur ve bir odanın tüm ışıklarını tek bir varlıktan açıp kapatmanızı sağlar — ısıtmanın Room Climate Control ile zaten sahip olduğu oda düzeyinde kontrolü yansıtır. Sadece açma/kapama, parlaklık veya renk toplanması yoktur. Varsayılan: kapalı (yeni varlık oluşturulmaz)."
+              "room_light_groups": "AÇIK olduğunda: 2 veya daha fazla kısılabilir/renkli ışığa sahip (LEDVANCE, Hue, Light/Shutter Control II dimmerleri) her SHC odası için tek bir toplu `light` varlığı oluşturur ve bir odanın tüm ışıklarını tek bir varlıktan açıp kapatmanızı sağlar — ısıtmanın Room Climate Control ile zaten sahip olduğu oda düzeyinde kontrolü yansıtır. Sadece açma/kapama, parlaklık veya renk toplanması yoktur. Varsayılan: kapalı (yeni varlık oluşturulmaz).",
+              "automation_rules_as_entities": "AÇIK olduğunda: Bosch uygulamasında yapılandırılan her otomasyon kuralı için bir anahtar (etkinleştir/devre dışı bırak) ve bir düğme (manuel tetikle) oluşturur — Home Assistant'ın kendi otomasyonlarından tamamen ayrı, Bosch'un kendi yerel kural motoru. Varsayılan: kapalı (yeni varlık yok)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Tüm Tanılamaları Etkinleştir"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Alarmı sessize al"
+      },
+      "water_alarm_mute": {
+        "name": "Su alarmını sessize al"
+      },
+      "automation_rule_trigger": {
+        "name": "Tetikle"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Darbe Süresi"
+      },
+      "temperature_drop_value": {
+        "name": "Sıcaklık Düşüş Değeri"
       },
       "energy_saving_power_threshold": {
         "name": "Enerji Tasarrufu Güç Eşiği"
@@ -313,6 +327,13 @@
           "heating_rcc": "Isıtma (RCC)",
           "boiler": "Kombi",
           "mini_pv": "Mini Güneş Paneli"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Düzenleme Algoritması",
+        "state": {
+          "internal": "Dahili",
+          "custom": "Özel"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Atlama Asla Sona Ermez"
+      },
+      "temperature_drop_enabled": {
+        "name": "Sıcaklık Düşüşü"
+      },
+      "automation_rule": {
+        "name": "Etkin"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Düğmeye basma işlemi başarısız oldu."
     },
+    "automation_rule_update_failed": {
+      "message": "Otomasyon kuralı güncellenemedi."
+    },
     "switch_action_failed": {
       "message": "Anahtar durumu değiştirilemedi."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Değer ayarlanamadı."
+    },
+    "update_install_failed": {
+      "message": "Bellenim güncellemesi başlatılamadı."
     },
     "zigbee_topology_no_data": {
       "message": "Bu SHC denetleyicisi için henüz kullanılabilir Zigbee yönlendirme verisi yok (eşleştirilmiş Zigbee cihazı yok veya Home Assistant başladığından beri ilk 5 dakikalık tarama tamamlanmadı)."

@@ -56,15 +56,19 @@ from homeassistant.util import slugify
 from custom_components.bosch_shc.const import (
     DOMAIN,
     OPT_ALL_LIGHTS_AS_LIGHT,
+    OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_EXCLUDED_DEVICES,
     OPT_SUPPRESS_CAMERA_SWITCHES,
 )
 from custom_components.bosch_shc.switch import (
     SWITCH_TYPES,
+    SHCAutomationRuleSwitch,
     SHCSwitch,
     SHCUserDefinedStateSwitch,
     async_setup_entry,
 )
+
+from .conftest import run_setup_entry
 
 
 
@@ -360,6 +364,7 @@ def _make_exclusion_session(*, userdefinedstates=None):
         roomthermostats=[excl],
         wallthermostats=[excl],
         universal_switches=[],
+        climate_controls=[],
     )
     session = MagicMock()
     session.device_helper = dh
@@ -4745,3 +4750,257 @@ class TestSHCSwitchAsyncUpdateFallback:
         sw.hass = SimpleNamespace(async_add_executor_job=fake_executor_job)
         _run(sw.async_update())
         assert update_called
+
+
+# ---------------------------------------------------------------------------
+# SHCAutomationRuleSwitch
+# ---------------------------------------------------------------------------
+
+
+def _make_rule_switch(rule=None, shc_device=None):
+    sw = SHCAutomationRuleSwitch.__new__(SHCAutomationRuleSwitch)
+    sw._rule = rule if rule is not None else SimpleNamespace(
+        id="r1", name="TV aus", enabled=True
+    )
+    sw._shc_device = shc_device
+    return sw
+
+
+def test_automation_rule_switch_is_on_true():
+    sw = _make_rule_switch(SimpleNamespace(id="r1", name="TV aus", enabled=True))
+    assert sw.is_on is True
+
+
+def test_automation_rule_switch_is_on_false():
+    sw = _make_rule_switch(SimpleNamespace(id="r1", name="TV aus", enabled=False))
+    assert sw.is_on is False
+
+
+def test_automation_rule_switch_device_info_none_without_shc_device():
+    sw = _make_rule_switch(shc_device=None)
+    assert sw.device_info is None
+
+
+def test_automation_rule_switch_device_info_links_shc_device():
+    shc_device = SimpleNamespace(
+        identifiers={("bosch_shc", "shc1")},
+        name="Bosch SHC",
+        manufacturer="Bosch",
+        model="SmartHomeController",
+    )
+    sw = _make_rule_switch(shc_device=shc_device)
+    info = sw.device_info
+    assert info["identifiers"] == shc_device.identifiers
+    assert info["name"] == "Bosch SHC"
+
+
+def test_automation_rule_switch_async_update_calls_refresh():
+    rule = SimpleNamespace(id="r1", name="TV aus", enabled=True)
+    rule.async_refresh = AsyncMock()
+    sw = _make_rule_switch(rule)
+    _run(sw.async_update())
+    rule.async_refresh.assert_awaited_once()
+
+
+def test_automation_rule_switch_async_update_logs_on_error():
+    rule = SimpleNamespace(id="r1", name="TV aus", enabled=True)
+    rule.async_refresh = AsyncMock(side_effect=SHCException("boom"))
+    sw = _make_rule_switch(rule)
+    _run(sw.async_update())  # must not raise
+
+
+def test_automation_rule_switch_turn_on_calls_set_enabled_true():
+    rule = SimpleNamespace(id="r1", name="TV aus", enabled=False)
+    rule.async_set_enabled = AsyncMock()
+    sw = _make_rule_switch(rule)
+    _run(sw.async_turn_on())
+    rule.async_set_enabled.assert_awaited_once_with(True)
+
+
+def test_automation_rule_switch_turn_off_calls_set_enabled_false():
+    rule = SimpleNamespace(id="r1", name="TV aus", enabled=True)
+    rule.async_set_enabled = AsyncMock()
+    sw = _make_rule_switch(rule)
+    _run(sw.async_turn_off())
+    rule.async_set_enabled.assert_awaited_once_with(False)
+
+
+def test_automation_rule_switch_turn_on_wraps_shc_exception():
+    rule = SimpleNamespace(id="r1", name="TV aus", enabled=False)
+    rule.async_set_enabled = AsyncMock(side_effect=SHCException("boom"))
+    sw = _make_rule_switch(rule)
+    with pytest.raises(HomeAssistantError):
+        _run(sw.async_turn_on())
+
+
+def test_automation_rule_switch_turn_off_wraps_shc_exception():
+    rule = SimpleNamespace(id="r1", name="TV aus", enabled=True)
+    rule.async_set_enabled = AsyncMock(side_effect=SHCException("boom"))
+    sw = _make_rule_switch(rule)
+    with pytest.raises(HomeAssistantError):
+        _run(sw.async_turn_off())
+
+
+class TestAutomationRulesSwitchSetupEntry:
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_AUTOMATION_RULES_AS_ENTITIES: True}}],
+        indirect=True,
+    )
+    def test_creates_switch_per_rule_when_enabled(
+        self, mock_config_entry, mock_session
+    ):
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace(
+            identifiers={("bosch_shc", "shc1")},
+            name="Bosch SHC",
+            manufacturer="Bosch",
+            model="SmartHomeController",
+        )
+        mock_session.automation_rules = [
+            SimpleNamespace(id="r1", name="Rule 1", enabled=True),
+            SimpleNamespace(id="r2", name="Rule 2", enabled=False),
+        ]
+        mock_session.userdefinedstates = []
+        mock_session.subscribe = MagicMock()
+        mock_config_entry.async_on_unload = MagicMock()
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        rule_switches = [e for e in entities if isinstance(e, SHCAutomationRuleSwitch)]
+        assert len(rule_switches) == 2
+
+    def test_no_switches_when_option_disabled(self, mock_config_entry, mock_session):
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_session.automation_rules = [
+            SimpleNamespace(id="r1", name="Rule 1", enabled=True)
+        ]
+        mock_session.userdefinedstates = []
+        mock_session.subscribe = MagicMock()
+        mock_config_entry.async_on_unload = MagicMock()
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, SHCAutomationRuleSwitch) for e in entities)
+
+
+# ---------------------------------------------------------------------------
+# TemperatureDropEnabledSwitch
+# ---------------------------------------------------------------------------
+
+
+def _make_tds_switch(room=None):
+    from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch
+
+    sw = TemperatureDropEnabledSwitch.__new__(TemperatureDropEnabledSwitch)
+    sw._device = SimpleNamespace(name="Kinderzimmer")
+    sw._room = room if room is not None else MagicMock()
+    sw._enabled = None
+    return sw
+
+
+def test_tds_switch_is_on_false_initially():
+    sw = _make_tds_switch()
+    assert sw.is_on is False
+
+
+def test_tds_switch_async_update_sets_enabled():
+    room = MagicMock()
+    room.async_temperature_drop_service = AsyncMock(
+        return_value={"configuration": {"enabled": True}}
+    )
+    sw = _make_tds_switch(room)
+    _run(sw.async_update())
+    assert sw.is_on is True
+
+
+def test_tds_switch_async_update_logs_on_error():
+    room = MagicMock()
+    room.async_temperature_drop_service = AsyncMock(side_effect=SHCException("boom"))
+    sw = _make_tds_switch(room)
+    _run(sw.async_update())  # must not raise
+
+
+def test_tds_switch_turn_on_calls_room():
+    room = MagicMock()
+    room.async_set_temperature_drop_enabled = AsyncMock()
+    sw = _make_tds_switch(room)
+    _run(sw.async_turn_on())
+    room.async_set_temperature_drop_enabled.assert_awaited_once_with(True)
+    assert sw.is_on is True
+
+
+def test_tds_switch_turn_off_calls_room():
+    room = MagicMock()
+    room.async_set_temperature_drop_enabled = AsyncMock()
+    sw = _make_tds_switch(room)
+    _run(sw.async_turn_off())
+    room.async_set_temperature_drop_enabled.assert_awaited_once_with(False)
+    assert sw.is_on is False
+
+
+def test_tds_switch_turn_on_wraps_shc_exception():
+    room = MagicMock()
+    room.async_set_temperature_drop_enabled = AsyncMock(
+        side_effect=SHCException("boom")
+    )
+    sw = _make_tds_switch(room)
+    with pytest.raises(HomeAssistantError):
+        _run(sw.async_turn_on())
+
+
+class TestTemperatureDropSwitchSetupEntry:
+    def test_created_when_service_present(self, mock_config_entry, mock_session):
+        from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch
+
+        climate = SimpleNamespace(
+            id="roomClimateControl_hz_1",
+            root_device_id="shc1",
+            room_id="hz_1",
+            name="Kinderzimmer",
+            manufacturer="BOSCH",
+            device_model="ROOM_CLIMATE_CONTROL",
+            status="AVAILABLE",
+            subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
+        )
+        mock_session.device_helper.climate_controls = [climate]
+        room = MagicMock()
+        room.async_temperature_drop_service = AsyncMock(
+            return_value={"configuration": {"enabled": True}}
+        )
+        mock_session.room = MagicMock(return_value=room)
+        mock_session.userdefinedstates = []
+        mock_session.subscribe = MagicMock()
+        mock_config_entry.async_on_unload = MagicMock()
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert any(isinstance(e, TemperatureDropEnabledSwitch) for e in entities)
+
+    def test_skipped_when_service_absent(self, mock_config_entry, mock_session):
+        from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch
+
+        climate = SimpleNamespace(
+            id="roomClimateControl_hz_1",
+            root_device_id="shc1",
+            room_id="hz_1",
+            name="Kinderzimmer",
+            manufacturer="BOSCH",
+            device_model="ROOM_CLIMATE_CONTROL",
+            status="AVAILABLE",
+            subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
+        )
+        mock_session.device_helper.climate_controls = [climate]
+        room = MagicMock()
+        room.async_temperature_drop_service = AsyncMock(
+            side_effect=SHCException("404")
+        )
+        mock_session.room = MagicMock(return_value=room)
+        mock_session.userdefinedstates = []
+        mock_session.subscribe = MagicMock()
+        mock_config_entry.async_on_unload = MagicMock()
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, TemperatureDropEnabledSwitch) for e in entities)

@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "LEDVANCE-lampen van Bosch SHC onderdrukken",
               "suppress_motion_indicator_light": "Statusindicator bewegingsdetector onderdrukken",
               "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken",
-              "room_light_groups": "Lichtgroepen per kamer inschakelen"
+              "room_light_groups": "Lichtgroepen per kamer inschakelen",
+              "automation_rules_as_entities": "Bosch-automatiseringsregels als entiteiten weergeven"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Wanneer AAN: LEDVANCE-lampen gekoppeld aan de SHC worden niet meer als entiteiten beschikbaar gesteld. Gebruik dit om duplicaten met de LEDVANCE- of Zigbee-integratie te vermijden. Standaard: uit.",
               "suppress_motion_indicator_light": "Wanneer AAN: de entiteit voor de statusindicator van bewegingsdetectoren II wordt niet aangemaakt. Standaard: uit.",
               "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool. Standaard: uit.",
-              "room_light_groups": "Wanneer AAN: er wordt per SHC-kamer met 2 of meer dimbare/kleurenlampen (LEDVANCE, Hue, Light/Shutter Control II-dimmers) één gecombineerde `light`-entiteit aangemaakt, waarmee u alle lampen van een kamer met één entiteit aan/uit kunt zetten — vergelijkbaar met de kamergebonden regeling die verwarming al heeft via Kamerklimaat regeling. Alleen aan/uit, geen samenvoeging van helderheid/kleur. Standaard: uit (geen nieuwe entiteiten)."
+              "room_light_groups": "Wanneer AAN: er wordt per SHC-kamer met 2 of meer dimbare/kleurenlampen (LEDVANCE, Hue, Light/Shutter Control II-dimmers) één gecombineerde `light`-entiteit aangemaakt, waarmee u alle lampen van een kamer met één entiteit aan/uit kunt zetten — vergelijkbaar met de kamergebonden regeling die verwarming al heeft via Kamerklimaat regeling. Alleen aan/uit, geen samenvoeging van helderheid/kleur. Standaard: uit (geen nieuwe entiteiten).",
+              "automation_rules_as_entities": "Indien AAN: er wordt een schakelaar (in-/uitschakelen) en een knop (handmatig activeren) aangemaakt voor elke automatiseringsregel die in de Bosch-app is geconfigureerd — Bosch's eigen lokale regel-engine, volledig los van de automatiseringen van Home Assistant zelf. Standaard: uit (geen nieuwe entiteiten)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Alle diagnostiek inschakelen"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Alarm dempen"
+      },
+      "water_alarm_mute": {
+        "name": "Waterlarm dempen"
+      },
+      "automation_rule_trigger": {
+        "name": "Activeren"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulslengte"
+      },
+      "temperature_drop_value": {
+        "name": "Temperatuurverlagingswaarde"
       },
       "energy_saving_power_threshold": {
         "name": "Energiebesparingsdrempel vermogen"
@@ -313,6 +327,13 @@
           "heating_rcc": "Verwarming (RCC)",
           "boiler": "Boiler",
           "mini_pv": "Mini-zonnepaneel"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Regelalgoritme",
+        "state": {
+          "internal": "Intern",
+          "custom": "Aangepast"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Overbrugging verloopt nooit"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperatuurverlaging"
+      },
+      "automation_rule": {
+        "name": "Ingeschakeld"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Knopdruk mislukt."
     },
+    "automation_rule_update_failed": {
+      "message": "Bijwerken van de automatiseringsregel is mislukt."
+    },
     "switch_action_failed": {
       "message": "Wijziging van schakelaarstatus mislukt."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Instellen van de waarde mislukt."
+    },
+    "update_install_failed": {
+      "message": "Starten van de firmware-update mislukt."
     },
     "zigbee_topology_no_data": {
       "message": "Er zijn nog geen Zigbee-routeringsgegevens beschikbaar voor deze SHC-controller (er zijn geen Zigbee-apparaten gekoppeld, of de eerste polling van 5 minuten is nog niet voltooid sinds Home Assistant is gestart)."

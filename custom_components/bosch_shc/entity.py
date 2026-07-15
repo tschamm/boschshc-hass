@@ -157,6 +157,9 @@ class SHCEntity(Entity):  # type: ignore[misc]
     """Representation of a SHC base entity."""
 
     _attr_has_entity_name = True
+    # SHC entities push state via long-poll by default; subclasses backed by a
+    # separately-probed endpoint (no push) override this to True.
+    _attr_should_poll = False
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the generic SHC device."""
@@ -235,8 +238,3 @@ class SHCEntity(Entity):  # type: ignore[misc]
     def available(self) -> bool:
         """Return false if status is unavailable."""
         return bool(self._device.status == "AVAILABLE")
-
-    @property
-    def should_poll(self) -> bool:
-        """Report polling mode. SHC Entity is communicating via long polling."""
-        return False

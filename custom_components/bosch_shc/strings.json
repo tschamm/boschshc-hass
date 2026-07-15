@@ -104,7 +104,8 @@
               "scenarios_filter": "Scenario button filter",
               "suppress_ledvance_lights": "Suppress LEDVANCE lights from Bosch SHC",
               "suppress_motion_indicator_light": "Suppress motion detector indicator light",
-              "room_light_groups": "Enable per-room light groups"
+              "room_light_groups": "Enable per-room light groups",
+              "automation_rules_as_entities": "Expose Bosch automation rules as entities"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
@@ -118,7 +119,8 @@
               "scenarios_filter": "Leave empty to create buttons for ALL scenarios (default). Select one or more to limit buttons to only those scenarios. Applies only when 'Expose scenarios as button entities' is on.",
               "suppress_ledvance_lights": "When ON: LEDVANCE lights paired to the SHC are no longer exposed as entities by this integration. Use this to avoid duplicates when the LEDVANCE or Zigbee integration is also active. Default: off.",
               "suppress_motion_indicator_light": "When ON: the indicator-LED brightness entity for Motion Detector II devices is not created. Default: off (entity is shown).",
-              "room_light_groups": "When ON: creates one aggregate `light` entity per SHC room with 2+ dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers), letting you turn all of a room's lights on/off from a single entity — mirroring the room-level control heating already has via Room Climate Control. On/off only, no brightness/colour aggregation. Default: off (no new entities)."
+              "room_light_groups": "When ON: creates one aggregate `light` entity per SHC room with 2+ dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers), letting you turn all of a room's lights on/off from a single entity — mirroring the room-level control heating already has via Room Climate Control. On/off only, no brightness/colour aggregation. Default: off (no new entities).",
+              "automation_rules_as_entities": "When ON: creates a switch (enable/disable) and a button (manually trigger) for every automation rule configured in the Bosch app — Bosch's own local rule engine, entirely separate from Home Assistant's own automations. Default: off (no new entities)."
             }
           },
           "presence": {
@@ -211,11 +213,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Enable All Diagnostics"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Mute Alarm"
+      },
+      "water_alarm_mute": {
+        "name": "Mute Water Alarm"
+      },
+      "automation_rule_trigger": {
+        "name": "Trigger"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulse Length"
+      },
+      "temperature_drop_value": {
+        "name": "Temperature Drop Value"
       },
       "energy_saving_power_threshold": {
         "name": "Energy Saving Power Threshold"
@@ -314,6 +328,13 @@
           "heating_rcc": "Heating (RCC)",
           "boiler": "Boiler",
           "mini_pv": "Mini PV"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Regulation Algorithm",
+        "state": {
+          "internal": "Internal",
+          "custom": "Custom"
         }
       }
     },
@@ -490,6 +511,12 @@
       },
       "bypass_infinite": {
         "name": "Bypass Never Expires"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperature Drop"
+      },
+      "automation_rule": {
+        "name": "Enabled"
       }
     }
   },
@@ -521,6 +548,9 @@
     "button_press_failed": {
       "message": "Button press failed."
     },
+    "automation_rule_update_failed": {
+      "message": "Failed to update the automation rule."
+    },
     "switch_action_failed": {
       "message": "Failed to change the switch state."
     },
@@ -535,6 +565,9 @@
     },
     "number_set_failed": {
       "message": "Failed to set the value."
+    },
+    "update_install_failed": {
+      "message": "Failed to start the firmware update."
     },
     "zigbee_topology_no_data": {
       "message": "No Zigbee routing data available yet for this SHC controller (no Zigbee devices paired, or the first 5-minute poll hasn't completed since Home Assistant started)."

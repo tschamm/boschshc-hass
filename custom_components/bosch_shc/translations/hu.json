@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "LEDVANCE-lámpák elrejtése a Bosch SHC-ből",
               "suppress_motion_indicator_light": "Mozgásérzékelő jelzőfény elrejtése",
               "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése",
-              "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése"
+              "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése",
+              "automation_rules_as_entities": "Bosch automatizálási szabályok megjelenítése entitásként"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Ha BE van kapcsolva: az SHC-hez párosított LEDVANCE-lámpák nem kerülnek entitásként közzé. Használja a LEDVANCE vagy Zigbee integráció esetén a duplikációk elkerüléséhez. Alapértelmezett: ki.",
               "suppress_motion_indicator_light": "Ha BE van kapcsolva: a mozgásérzékelő II jelzőfény-entitása nem jön létre. Alapértelmezett: ki.",
               "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki.",
-              "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások)."
+              "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások).",
+              "automation_rules_as_entities": "Ha BE van kapcsolva: minden, a Bosch alkalmazásban beállított automatizálási szabályhoz létrejön egy kapcsoló (engedélyezés/letiltás) és egy gomb (kézi indítás) — ez a Bosch saját helyi szabálymotorja, teljesen független a Home Assistant saját automatizálásaitól. Alapértelmezett: ki (nincs új entitás)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Összes diagnosztika engedélyezése"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Riasztás némítása"
+      },
+      "water_alarm_mute": {
+        "name": "Vízriasztás némítása"
+      },
+      "automation_rule_trigger": {
+        "name": "Aktiválás"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulzushossz"
+      },
+      "temperature_drop_value": {
+        "name": "Hőmérséklet-csökkentés értéke"
       },
       "energy_saving_power_threshold": {
         "name": "Energiatakarékos teljesítményküszöb"
@@ -313,6 +327,13 @@
           "heating_rcc": "Fűtés (RCC)",
           "boiler": "Bojler",
           "mini_pv": "Mini napelem"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Szabályozási algoritmus",
+        "state": {
+          "internal": "Belső",
+          "custom": "Egyéni"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Kihagyás lejárat nélkül"
+      },
+      "temperature_drop_enabled": {
+        "name": "Hőmérséklet-csökkentés"
+      },
+      "automation_rule": {
+        "name": "Engedélyezve"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "A gombnyomás sikertelen."
     },
+    "automation_rule_update_failed": {
+      "message": "Az automatizálási szabály frissítése sikertelen volt."
+    },
     "switch_action_failed": {
       "message": "A kapcsoló állapotának megváltoztatása sikertelen."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Az érték beállítása sikertelen."
+    },
+    "update_install_failed": {
+      "message": "Nem sikerült elindítani a firmware-frissítést."
     },
     "zigbee_topology_no_data": {
       "message": "Ehhez az SHC vezérlőhöz még nem áll rendelkezésre Zigbee útválasztási adat (nincs párosított Zigbee eszköz, vagy az első 5 perces lekérdezés még nem fejeződött be a Home Assistant indítása óta)."

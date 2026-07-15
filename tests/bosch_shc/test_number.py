@@ -53,6 +53,7 @@ from custom_components.bosch_shc.number import (
     SIREN_FLASH_DELAY,
     SIREN_FLASH_DURATION,
     SHCNumber,
+    TemperatureDropValueNumber,
     async_setup_entry,
 )
 
@@ -2794,3 +2795,131 @@ class TestNumberErrorPaths:
         num.entity_description = NUMBER_DESCRIPTIONS[DIMMER_MIN]
         num._device = SimpleNamespace(dimmer_configuration=svc, name="Dimmer")
         _run(num.async_set_native_value(10.0))  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# TemperatureDropValueNumber
+# ---------------------------------------------------------------------------
+
+
+def _make_tds_number(room=None):
+    num = TemperatureDropValueNumber.__new__(TemperatureDropValueNumber)
+    num._device = SimpleNamespace(name="Kinderzimmer")
+    num._room = room if room is not None else MagicMock()
+    num._value = None
+    return num
+
+
+def test_tds_number_native_value_none_initially():
+    num = _make_tds_number()
+    assert num.native_value is None
+
+
+def test_tds_number_async_update_sets_value():
+    room = MagicMock()
+    room.async_temperature_drop_service = AsyncMock(
+        return_value={"configuration": {"dropTemperature": 1.5}}
+    )
+    num = _make_tds_number(room)
+    asyncio.run(num.async_update())
+    assert num.native_value == 1.5
+
+
+def test_tds_number_async_update_handles_missing_value():
+    room = MagicMock()
+    room.async_temperature_drop_service = AsyncMock(
+        return_value={"configuration": {}}
+    )
+    num = _make_tds_number(room)
+    asyncio.run(num.async_update())
+    assert num.native_value is None
+
+
+def test_tds_number_async_update_logs_on_error():
+    room = MagicMock()
+    room.async_temperature_drop_service = AsyncMock(side_effect=SHCException("boom"))
+    num = _make_tds_number(room)
+    asyncio.run(num.async_update())  # must not raise
+
+
+def test_tds_number_async_set_native_value_calls_room():
+    room = MagicMock()
+    room.async_set_temperature_drop_value = AsyncMock()
+    num = _make_tds_number(room)
+    asyncio.run(num.async_set_native_value(2.0))
+    room.async_set_temperature_drop_value.assert_awaited_once_with(2.0)
+    assert num.native_value == 2.0
+
+
+def test_tds_number_async_set_native_value_wraps_shc_exception():
+    room = MagicMock()
+    room.async_set_temperature_drop_value = AsyncMock(side_effect=SHCException("boom"))
+    num = _make_tds_number(room)
+    with pytest.raises(HomeAssistantError):
+        asyncio.run(num.async_set_native_value(2.0))
+
+
+class TestTemperatureDropNumberSetupEntry:
+    def test_created_when_service_present(self, mock_config_entry, mock_session):
+        climate = SimpleNamespace(
+            id="roomClimateControl_hz_1",
+            root_device_id="shc1",
+            room_id="hz_1",
+            name="Kinderzimmer",
+            manufacturer="BOSCH",
+            device_model="ROOM_CLIMATE_CONTROL",
+            status="AVAILABLE",
+            subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
+        )
+        mock_session.device_helper.climate_controls = [climate]
+        room = MagicMock()
+        room.async_temperature_drop_service = AsyncMock(
+            return_value={"configuration": {"dropTemperature": 1.0}}
+        )
+        mock_session.room = MagicMock(return_value=room)
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert any(isinstance(e, TemperatureDropValueNumber) for e in entities)
+
+    def test_skipped_when_service_absent(self, mock_config_entry, mock_session):
+        climate = SimpleNamespace(
+            id="roomClimateControl_hz_1",
+            root_device_id="shc1",
+            room_id="hz_1",
+            name="Kinderzimmer",
+            manufacturer="BOSCH",
+            device_model="ROOM_CLIMATE_CONTROL",
+            status="AVAILABLE",
+            subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
+        )
+        mock_session.device_helper.climate_controls = [climate]
+        room = MagicMock()
+        room.async_temperature_drop_service = AsyncMock(
+            side_effect=SHCException("404")
+        )
+        mock_session.room = MagicMock(return_value=room)
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, TemperatureDropValueNumber) for e in entities)
+
+    def test_skipped_when_room_id_none(self, mock_config_entry, mock_session):
+        climate = SimpleNamespace(
+            id="roomClimateControl_hz_1",
+            root_device_id="shc1",
+            room_id=None,
+            name="Kinderzimmer",
+            manufacturer="BOSCH",
+            device_model="ROOM_CLIMATE_CONTROL",
+            status="AVAILABLE",
+            subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
+        )
+        mock_session.device_helper.climate_controls = [climate]
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, TemperatureDropValueNumber) for e in entities)

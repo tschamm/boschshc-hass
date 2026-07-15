@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Skjul LEDVANCE-lys fra Bosch SHC",
               "suppress_motion_indicator_light": "Skjul bevegelsesdetektorens statusindikator",
               "suppress_camera_switches": "Skjul Bosch-kamerabrytere",
-              "room_light_groups": "Aktiver rombaserte lysgrupper"
+              "room_light_groups": "Aktiver rombaserte lysgrupper",
+              "automation_rules_as_entities": "Vis Bosch-automatiseringsregler som enheter"
             },
             "data_description": {
               "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Når PÅ: LEDVANCE-lys paret med SHC vises ikke lenger som entiteter. Bruk for å unngå duplikater med LEDVANCE- eller Zigbee-integrasjonen. Standard: av.",
               "suppress_motion_indicator_light": "Når PÅ: entiteten for bevegelsesdetektor II’s statusindikator opprettes ikke. Standard: av.",
               "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool. Standard: av.",
-              "room_light_groups": "Når PÅ: opprettes én samlet `light`-entitet per SHC-rom med 2 eller flere dimbare/fargelys (LEDVANCE, Hue, Light/Shutter Control II-dimmere), som lar deg slå av/på alle lysene i et rom fra én entitet — tilsvarende den romvise styringen oppvarming allerede har via Romklimastyring. Kun av/på, ingen aggregering av lysstyrke/farge. Standard: av (ingen nye entiteter)."
+              "room_light_groups": "Når PÅ: opprettes én samlet `light`-entitet per SHC-rom med 2 eller flere dimbare/fargelys (LEDVANCE, Hue, Light/Shutter Control II-dimmere), som lar deg slå av/på alle lysene i et rom fra én entitet — tilsvarende den romvise styringen oppvarming allerede har via Romklimastyring. Kun av/på, ingen aggregering av lysstyrke/farge. Standard: av (ingen nye entiteter).",
+              "automation_rules_as_entities": "Når PÅ: oppretter en bryter (aktiver/deaktiver) og en knapp (utløs manuelt) for hver automatiseringsregel som er konfigurert i Bosch-appen — Boschs egen lokale regelmotor, helt atskilt fra Home Assistants egne automatiseringer. Standard: av (ingen nye enheter)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Aktiver all diagnostikk"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Demp alarm"
+      },
+      "water_alarm_mute": {
+        "name": "Demp vannalarm"
+      },
+      "automation_rule_trigger": {
+        "name": "Utløs"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulslengde"
+      },
+      "temperature_drop_value": {
+        "name": "Temperaturfallverdi"
       },
       "energy_saving_power_threshold": {
         "name": "Effektgrense for energisparing"
@@ -313,6 +327,13 @@
           "heating_rcc": "Oppvarming (RCC)",
           "boiler": "Kjele",
           "mini_pv": "Mini solcelle"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Reguleringsalgoritme",
+        "state": {
+          "internal": "Intern",
+          "custom": "Egendefinert"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Forbikobling utløper aldri"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperaturfall"
+      },
+      "automation_rule": {
+        "name": "Aktivert"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Knappetrykk mislyktes."
     },
+    "automation_rule_update_failed": {
+      "message": "Kunne ikke oppdatere automatiseringsregelen."
+    },
     "switch_action_failed": {
       "message": "Endring av bryterstatus mislyktes."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Kunne ikke angi verdien."
+    },
+    "update_install_failed": {
+      "message": "Kunne ikke starte fastvareoppdateringen."
     },
     "zigbee_topology_no_data": {
       "message": "Ingen Zigbee-rutingdata er tilgjengelig ennå for denne SHC-kontrolleren (ingen Zigbee-enheter er paret, eller den første 5-minutters avlesningen er ikke fullført siden Home Assistant startet)."

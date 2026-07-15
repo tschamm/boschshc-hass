@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Dölj LEDVANCE-lampor från Bosch SHC",
               "suppress_motion_indicator_light": "Dölj rörelsedektorns statusindikator",
               "suppress_camera_switches": "Dölj Bosch-kameraomkopplare",
-              "room_light_groups": "Aktivera ljusgrupper per rum"
+              "room_light_groups": "Aktivera ljusgrupper per rum",
+              "automation_rules_as_entities": "Visa Bosch-automatiseringsregler som entiteter"
             },
             "data_description": {
               "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "När PÅ: LEDVANCE-lampor kopplade till SHC skapas inte längre som entiteter. Använd för att undvika dubbletter med LEDVANCE- eller Zigbee-integrationen. Standard: av.",
               "suppress_motion_indicator_light": "När PÅ: entiteten för rörelsedetektor II:s statusindikator skapas inte. Standard: av.",
               "suppress_camera_switches": "När PÅ: sekretess-, ljus- och aviseringsomkopplare för Bosch-kameror (Eyes / 360 / Outdoor Gen2) skapas inte. Använd med Bosch Camera Tool. Standard: av.",
-              "room_light_groups": "När PÅ: skapar en aggregerad `light`-entitet per SHC-rum med 2 eller fler dimbara/färgbara lampor (LEDVANCE-, Hue-, Light/Shutter Control II-dimrar), så att du kan slå på/av alla lampor i ett rum från en enda entitet — på samma sätt som värmen redan har rumsstyrning via Room Climate Control. Endast på/av, ingen aggregering av ljusstyrka eller färg. Standard: av (inga nya entiteter)."
+              "room_light_groups": "När PÅ: skapar en aggregerad `light`-entitet per SHC-rum med 2 eller fler dimbara/färgbara lampor (LEDVANCE-, Hue-, Light/Shutter Control II-dimrar), så att du kan slå på/av alla lampor i ett rum från en enda entitet — på samma sätt som värmen redan har rumsstyrning via Room Climate Control. Endast på/av, ingen aggregering av ljusstyrka eller färg. Standard: av (inga nya entiteter).",
+              "automation_rules_as_entities": "Vid PÅ: skapar en brytare (aktivera/inaktivera) och en knapp (utlös manuellt) för varje automatiseringsregel som konfigurerats i Bosch-appen — Boschs egen lokala regelmotor, helt separat från Home Assistants egna automatiseringar. Standard: av (inga nya entiteter)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Aktivera all diagnostik"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Tysta larm"
+      },
+      "water_alarm_mute": {
+        "name": "Tysta vattenlarm"
+      },
+      "automation_rule_trigger": {
+        "name": "Utlös"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulslängd"
+      },
+      "temperature_drop_value": {
+        "name": "Temperatursänkningsvärde"
       },
       "energy_saving_power_threshold": {
         "name": "Effekttröskel för energisparläge"
@@ -313,6 +327,13 @@
           "heating_rcc": "Uppvärmning (RCC)",
           "boiler": "Panna",
           "mini_pv": "Mini solcell"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Regleringsalgoritm",
+        "state": {
+          "internal": "Intern",
+          "custom": "Anpassad"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Förbikoppling upphör aldrig"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperatursänkning"
+      },
+      "automation_rule": {
+        "name": "Aktiverad"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Knapptryckningen misslyckades."
     },
+    "automation_rule_update_failed": {
+      "message": "Det gick inte att uppdatera automatiseringsregeln."
+    },
     "switch_action_failed": {
       "message": "Det gick inte att ändra brytarens tillstånd."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Det gick inte att ange värdet."
+    },
+    "update_install_failed": {
+      "message": "Det gick inte att starta firmwareuppdateringen."
     },
     "zigbee_topology_no_data": {
       "message": "Det finns ännu ingen Zigbee-routningsdata för denna SHC-styrenhet (inga Zigbee-enheter parkopplade, eller så har den första 5-minutersavsökningen inte slutförts sedan Home Assistant startade)."

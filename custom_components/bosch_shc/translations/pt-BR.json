@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Suprimir luzes LEDVANCE do Bosch SHC",
               "suppress_motion_indicator_light": "Suprimir indicador luminoso do detector de movimento",
               "suppress_camera_switches": "Suprimir os controles da câmera Bosch",
-              "room_light_groups": "Ativar grupos de luz por cômodo"
+              "room_light_groups": "Ativar grupos de luz por cômodo",
+              "automation_rules_as_entities": "Expor as regras de automação da Bosch como entidades"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC também aparece como uma entidade de botão no Home Assistant (além do serviço trigger_scenario). Útil para blocos de painel e automações que acionam cenários diretamente. Padrão: desativado.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Quando ATIVADO: as luzes LEDVANCE emparelhadas ao SHC deixam de ser expostas como entidades. Use para evitar duplicatas com a integração LEDVANCE ou Zigbee. Padrão: desativado.",
               "suppress_motion_indicator_light": "Quando ATIVADO: a entidade do LED indicador dos detectores de movimento II não é criada. Padrão: desativado.",
               "suppress_camera_switches": "Quando ATIVADO: os controles de privacidade, luz e notificação para as câmeras Bosch (Eyes / 360 / Outdoor Gen2) não são criados. Use com o Bosch Camera Tool. Padrão: desativado.",
-              "room_light_groups": "Quando ATIVADO: cria uma entidade `light` agregada por cômodo do SHC que tenha 2 ou mais luzes reguláveis/coloridas (dimmers LEDVANCE, Hue, Light/Shutter Control II), permitindo ligar/desligar todas as luzes de um cômodo a partir de uma única entidade — espelhando o controle por cômodo que o aquecimento já tem através do Room Climate Control. Apenas ligar/desligar, sem agregação de brilho ou cor. Padrão: desativado (nenhuma entidade nova)."
+              "room_light_groups": "Quando ATIVADO: cria uma entidade `light` agregada por cômodo do SHC que tenha 2 ou mais luzes reguláveis/coloridas (dimmers LEDVANCE, Hue, Light/Shutter Control II), permitindo ligar/desligar todas as luzes de um cômodo a partir de uma única entidade — espelhando o controle por cômodo que o aquecimento já tem através do Room Climate Control. Apenas ligar/desligar, sem agregação de brilho ou cor. Padrão: desativado (nenhuma entidade nova).",
+              "automation_rules_as_entities": "Quando LIGADO: cria um switch (ativar/desativar) e um botão (acionar manualmente) para cada regra de automação configurada no aplicativo Bosch — o motor de regras local próprio da Bosch, totalmente separado das automações do próprio Home Assistant. Padrão: desligado (nenhuma entidade nova)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Ativar Todos os Diagnósticos"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Silenciar alarme"
+      },
+      "water_alarm_mute": {
+        "name": "Silenciar alarme de água"
+      },
+      "automation_rule_trigger": {
+        "name": "Acionar"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Duração do Impulso"
+      },
+      "temperature_drop_value": {
+        "name": "Valor de queda de temperatura"
       },
       "energy_saving_power_threshold": {
         "name": "Limite de Potência para Economia de Energia"
@@ -313,6 +327,13 @@
           "heating_rcc": "Aquecimento (RCC)",
           "boiler": "Boiler",
           "mini_pv": "Mini fotovoltaico"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Algoritmo de regulação",
+        "state": {
+          "internal": "Interno",
+          "custom": "Personalizado"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Bypass nunca expira"
+      },
+      "temperature_drop_enabled": {
+        "name": "Queda de temperatura"
+      },
+      "automation_rule": {
+        "name": "Ativado"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Falha ao pressionar o botão."
     },
+    "automation_rule_update_failed": {
+      "message": "Falha ao atualizar a regra de automação."
+    },
     "switch_action_failed": {
       "message": "Falha ao alterar o estado do interruptor."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Falha ao definir o valor."
+    },
+    "update_install_failed": {
+      "message": "Falha ao iniciar a atualização de firmware."
     },
     "zigbee_topology_no_data": {
       "message": "Ainda não há dados de roteamento Zigbee disponíveis para este controlador SHC (nenhum dispositivo Zigbee emparelhado, ou a primeira varredura de 5 minutos ainda não foi concluída desde que o Home Assistant foi iniciado)."

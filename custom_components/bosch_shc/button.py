@@ -32,6 +32,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     DOMAIN,
     LOGGER,
+    OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SCENARIOS_FILTER,
 )
@@ -159,6 +160,35 @@ async def async_setup_entry(  # noqa: C901
             for scenario in session.scenarios
             if not scenario_filter or scenario.id in scenario_filter
             if (btn := _make_scenario_button(scenario)) is not None
+        )
+
+    if config_entry.options.get(OPT_AUTOMATION_RULES_AS_ENTITIES, False):
+        shc_device_for_rules: DeviceEntry = config_entry.runtime_data.shc_device
+        entities.extend(
+            SHCAutomationRuleTriggerButton(
+                rule=rule,
+                entry_id=config_entry.entry_id,
+                shc_device=shc_device_for_rules,
+            )
+            for rule in session.automation_rules
+        )
+
+    # async_mute() existed but was unreachable (no HA mute hook/service) --
+    # maps to the Bosch app's alarm-triggered "Stummschalten" option.
+    intrusion_system = session.intrusion_system
+    if intrusion_system is not None:
+        entities.append(
+            SHCIntrusionAlarmMuteButton(
+                device=intrusion_system, entry_id=config_entry.entry_id
+            )
+        )
+
+    water_alarm_system = session.water_alarm_system
+    if water_alarm_system is not None:
+        entities.append(
+            SHCWaterAlarmMuteButton(
+                device=water_alarm_system, entry_id=config_entry.entry_id
+            )
         )
 
     for siren in getattr(session.device_helper, "outdoor_sirens", []):
@@ -668,3 +698,134 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
                 await self.hass.config_entries.async_reload(self._entry_id)
             finally:
                 self._reload_in_progress = False
+
+
+class SHCAutomationRuleTriggerButton(ButtonEntity):  # type: ignore[misc]
+    """Manually fire a single Bosch automation rule (system/automation).
+
+    Not an SHC device -- mirrors SHCScenarioButton's pattern for the same
+    reason (Bosch's local rule engine is entirely separate from HA's own
+    automations). Gated by OPT_AUTOMATION_RULES_AS_ENTITIES.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "automation_rule_trigger"
+    _attr_should_poll = False
+
+    def __init__(
+        self,
+        rule: Any,
+        entry_id: str,
+        shc_device: DeviceEntry | None = None,
+    ) -> None:
+        """Initialize an automation rule trigger button."""
+        self._rule = rule
+        self._shc_device = shc_device
+        self._attr_unique_id = f"{entry_id}_automation_rule_{rule.id}_trigger"
+        self._attr_name = rule.name
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Return the device info (links this button to the SHC controller device)."""
+        if self._shc_device is None:
+            return None
+        return DeviceInfo(
+            identifiers=self._shc_device.identifiers,
+            name=self._shc_device.name,
+            manufacturer=self._shc_device.manufacturer,
+            model=self._shc_device.model,
+        )
+
+    async def async_press(self) -> None:
+        """Manually fire this automation rule now."""
+        try:
+            await self._rule.async_trigger()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to trigger automation rule {self._rule.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
+
+
+class SHCIntrusionAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
+    """Mute the currently-triggered intrusion alarm.
+
+    Maps to the Bosch app's alarm-triggered "Stummschalten" option (the
+    other being "Notruf" / emergency call, which this integration does not
+    offer). Shares the intrusion system's own virtual device.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "intrusion_alarm_mute"
+    _attr_should_poll = False
+
+    def __init__(self, device: Any, entry_id: str) -> None:
+        """Initialize the intrusion alarm mute button."""
+        self._device = device
+        self._entry_id = entry_id
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_mute"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info (shares the intrusion system's device)."""
+        info = DeviceInfo(
+            identifiers={(DOMAIN, self._device.id)},
+            name=self._device.name,
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+        )
+        root_device_id = self._device.root_device_id
+        if root_device_id is not None:
+            info["via_device"] = (DOMAIN, root_device_id)
+        return info
+
+    async def async_press(self) -> None:
+        """Mute the active intrusion alarm."""
+        try:
+            await self._device.async_mute()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to mute the intrusion alarm: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
+
+
+class SHCWaterAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
+    """Mute the currently-triggered water-leak alarm system."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "water_alarm_mute"
+    _attr_should_poll = False
+
+    def __init__(self, device: Any, entry_id: str) -> None:
+        """Initialize the water alarm mute button."""
+        self._device = device
+        self._entry_id = entry_id
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_mute"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info (its own virtual device, linked to the SHC)."""
+        info = DeviceInfo(
+            identifiers={(DOMAIN, self._device.id)},
+            name=self._device.name,
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+        )
+        root_device_id = self._device.root_device_id
+        if root_device_id is not None:
+            info["via_device"] = (DOMAIN, root_device_id)
+        return info
+
+    async def async_press(self) -> None:
+        """Mute the active water alarm."""
+        try:
+            await self._device.async_mute()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to mute the water alarm: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err

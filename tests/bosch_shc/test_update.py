@@ -11,9 +11,12 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from boschshcpy.exceptions import SHCException
+from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 from custom_components.bosch_shc.update import (
+    FIRMWARE_CAPABLE_MODELS,
     ControllerUpdate,
     DeviceUpdate,
     async_setup_entry,
@@ -28,13 +31,6 @@ def _new(cls):
 
 def _run(coro):
     return asyncio.run(coro)
-
-
-def _sw_service(**kw):
-    """A stand-in SoftwareUpdate service carrying the real SwUpdateState enum."""
-    from boschshcpy.services_impl import SoftwareUpdateService
-
-    return SimpleNamespace(SwUpdateState=SoftwareUpdateService.SwUpdateState, **kw)
 
 
 def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
@@ -127,73 +123,139 @@ class TestControllerUpdateAsyncUpdate:
         _run(cu.async_update())
 
 
-# --------------------- per-device SoftwareUpdate entity ---------------------
+class TestControllerUpdateAsyncInstall:
+    """Cover ControllerUpdate.async_install (the new APK-traced trigger)."""
+
+    def test_async_install_calls_start_software_update(self):
+        called = []
+
+        async def fake_start():
+            called.append(True)
+
+        cu = ControllerUpdate(
+            SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0"),
+            "My SHC",
+            "e1",
+        )
+        cu._information = SimpleNamespace(
+            async_start_software_update=fake_start,
+        )
+        _run(cu.async_install(version=None, backup=False))
+        assert called
+
+    def test_async_install_wraps_shc_exception(self):
+        async def fake_start():
+            raise SHCException("boom")
+
+        cu = ControllerUpdate(
+            SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0"),
+            "My SHC",
+            "e1",
+        )
+        cu._information = SimpleNamespace(async_start_software_update=fake_start)
+        with pytest.raises(HomeAssistantError):
+            _run(cu.async_install(version=None, backup=False))
 
 
-def test_device_update_available():
-    from boschshcpy.services_impl import SoftwareUpdateService
+# ------------------- per-device firmware-state-probe entity ------------------
 
-    svc = _sw_service(
-        sw_installed_version="1.0.0",
-        sw_update_available_version="1.1.0",
-        sw_update_state=SoftwareUpdateService.SwUpdateState.UPDATE_AVAILABLE,
-    )
+
+def test_device_update_installed_version_is_fixed_marker():
     u = _new(DeviceUpdate)
-    u._device = SimpleNamespace(software_update=svc)
-    assert u.installed_version == "1.0.0"
-    assert u.latest_version == "1.1.0"
-    assert u.in_progress is False
+    u._firmware_state = "UpToDate"
+    assert u.installed_version == "up_to_date"
 
 
-def test_device_update_latest_equals_installed_when_no_update():
-    from boschshcpy.services_impl import SoftwareUpdateService
+def test_device_update_up_to_date_states_report_no_update():
+    for state in (None, "UpToDate", "UpToDateAwaitingUserInteraction", "Unknown", "Fetching"):
+        u = _new(DeviceUpdate)
+        u._firmware_state = state
+        assert u.latest_version == u.installed_version, state
+        assert u.in_progress is False
 
-    svc = _sw_service(
-        sw_installed_version="1.0.0",
-        sw_update_available_version="1.0.0",
-        sw_update_state=SoftwareUpdateService.SwUpdateState.NO_UPDATE_AVAILABLE,
-    )
+
+def test_device_update_pending_states_report_update_available():
+    for state in ("UpdateAvailable", "AwaitingActivation", "AwaitingActivationTimeout", "UpdatePending", "AwaitingUserInteraction", "Failed"):
+        u = _new(DeviceUpdate)
+        u._firmware_state = state
+        assert u.latest_version != u.installed_version, state
+
+
+def test_device_update_in_progress_states():
+    for state in ("UpdateRunning", "TransferringUpdate"):
+        u = _new(DeviceUpdate)
+        u._firmware_state = state
+        assert u.in_progress is True
+        # still reported as pending, not up to date
+        assert u.latest_version != u.installed_version
+
+
+def test_device_update_release_summary_surfaces_raw_state():
     u = _new(DeviceUpdate)
-    u._device = SimpleNamespace(software_update=svc)
-    assert u.latest_version == "1.0.0"
+    u._firmware_state = "AwaitingActivation"
+    assert u.release_summary == "AwaitingActivation"
 
 
-def test_device_update_latest_version_kept_after_failed_install():
-    """Regression: a failed install doesn't apply the pending version, so
-    latest_version must keep showing it instead of falling back to
-    sw_installed_version (which would misreport "up to date" right when the
-    update is still outstanding)."""
-    from boschshcpy.services_impl import SoftwareUpdateService
-
-    svc = _sw_service(
-        sw_installed_version="1.0.0",
-        sw_update_available_version="1.1.0",
-        sw_update_state=SoftwareUpdateService.SwUpdateState.UPDATE_FAILED,
-    )
+def test_device_update_unrecognized_state_treated_as_pending():
+    """A future/unknown state string must not silently hide as up-to-date."""
     u = _new(DeviceUpdate)
-    u._device = SimpleNamespace(software_update=svc)
-    assert u.latest_version == "1.1.0"
+    u._firmware_state = "SomeBrandNewState"
+    assert u.latest_version != u.installed_version
 
 
-def test_device_update_in_progress():
-    from boschshcpy.services_impl import SoftwareUpdateService
+class TestDeviceUpdateAsyncUpdate:
+    def test_async_update_stores_probed_state(self):
+        u = _new(DeviceUpdate)
 
-    svc = _sw_service(
-        sw_installed_version="1.0.0",
-        sw_update_available_version="1.1.0",
-        sw_update_state=SoftwareUpdateService.SwUpdateState.INSTALLING,
-    )
-    u = _new(DeviceUpdate)
-    u._device = SimpleNamespace(software_update=svc)
-    assert u.in_progress is True
+        async def fake_probe():
+            return "AwaitingActivation"
+
+        u._device = SimpleNamespace(
+            name="FakeDev", async_firmware_update_state=fake_probe
+        )
+        _run(u.async_update())
+        assert u._firmware_state == "AwaitingActivation"
+
+    def test_async_update_logs_and_keeps_last_state_on_error(self):
+        u = _new(DeviceUpdate)
+        u._firmware_state = "UpToDate"
+
+        async def fake_probe():
+            raise SHCException("boom")
+
+        u._device = SimpleNamespace(
+            name="FakeDev", async_firmware_update_state=fake_probe
+        )
+        _run(u.async_update())
+        assert u._firmware_state == "UpToDate"
 
 
-def test_device_update_no_service_is_safe():
-    u = _new(DeviceUpdate)
-    u._device = SimpleNamespace(software_update=None)
-    assert u.installed_version is None
-    assert u.latest_version is None
-    assert u.in_progress is False
+class TestDeviceUpdateAsyncInstall:
+    """Cover DeviceUpdate.async_install (the new APK-traced trigger)."""
+
+    def test_async_install_calls_activate_firmware_update(self):
+        called = []
+
+        async def fake_activate():
+            called.append(True)
+
+        u = _new(DeviceUpdate)
+        u._device = SimpleNamespace(
+            name="FakeDev", async_activate_firmware_update=fake_activate
+        )
+        _run(u.async_install(version=None, backup=False))
+        assert called
+
+    def test_async_install_wraps_shc_exception(self):
+        async def fake_activate():
+            raise SHCException("boom")
+
+        u = _new(DeviceUpdate)
+        u._device = SimpleNamespace(
+            name="FakeDev", async_activate_firmware_update=fake_activate
+        )
+        with pytest.raises(HomeAssistantError):
+            _run(u.async_install(version=None, backup=False))
 
 
 # ------------------------- async_setup_entry wiring --------------------------
@@ -219,27 +281,36 @@ class TestUpdateAsyncSetupEntry:
         result = self._run(mock_config_entry, mock_session)
         assert any(e._information for e in result)
 
-    def test_setup_entry_device_with_software_update(
+    def test_setup_entry_device_with_firmware_capable_model(
         self, mock_config_entry, mock_session
     ):
-        """Lines 54-58: device with supports_software_update=True adds DeviceUpdate."""
-        dev = _fake_dev(supports_software_update=True)
+        """A device whose model is in FIRMWARE_CAPABLE_MODELS gets a DeviceUpdate."""
+        dev = _fake_dev(device_model="TRV_GEN2")
         mock_session.devices = [dev]
         result = self._run(mock_config_entry, mock_session)
         assert any(isinstance(e, DeviceUpdate) for e in result)
 
-    def test_setup_entry_device_without_software_update(
+    def test_setup_entry_device_with_unsupported_model_skipped(
         self, mock_config_entry, mock_session
     ):
-        """Line 57: device without supports_software_update is skipped."""
-        dev = _fake_dev()  # no supports_software_update
+        """A device whose model isn't firmware-capable is skipped."""
+        dev = _fake_dev()  # device_model="TestModel" (default, not in the set)
         mock_session.devices = [dev]
         result = self._run(mock_config_entry, mock_session)
         assert not any(isinstance(e, DeviceUpdate) for e in result)
 
+    @pytest.mark.parametrize("model", sorted(FIRMWARE_CAPABLE_MODELS))
+    def test_setup_entry_every_firmware_capable_model_gets_an_entity(
+        self, mock_config_entry, mock_session, model
+    ):
+        dev = _fake_dev(device_model=model)
+        mock_session.devices = [dev]
+        result = self._run(mock_config_entry, mock_session)
+        assert any(isinstance(e, DeviceUpdate) for e in result), model
+
 
 class TestUpdateExcludedDevice:
-    """update.py line 56: device_excluded in setup loop → continue."""
+    """update.py: device_excluded in setup loop → continue."""
 
     @pytest.mark.parametrize(
         "mock_config_entry",
@@ -249,8 +320,8 @@ class TestUpdateExcludedDevice:
     def test_excluded_device_skipped_in_update_setup(
         self, mock_config_entry, mock_session
     ):
-        """Line 56: device in OPT_EXCLUDED_DEVICES → continue (no DeviceUpdate added)."""
-        dev = _fake_dev("excl1", supports_software_update=True)
+        """Device in OPT_EXCLUDED_DEVICES → continue (no DeviceUpdate added)."""
+        dev = _fake_dev("excl1", device_model="TRV_GEN2")
         mock_session.devices = [dev]
         mock_config_entry.title = "Test SHC"
         result = asyncio.run(

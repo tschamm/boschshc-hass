@@ -54,7 +54,7 @@ jobs:
         run: >-
           codespell custom_components
           --skip="*/translations/*"
-          --ignore-words-list=hass,nd,childs,unparseable
+          --ignore-words-list=hass,nd,childs,unparseable,uptodate
 
       - name: pip-audit (our manifest deps)
         run: |

@@ -54,6 +54,7 @@ from custom_components.bosch_shc.select import (
     StateAfterPowerOutageSelect,
     SwitchTypeSelect,
     TerminalTypeSelect,
+    ThermostatRegulationAlgorithmSelect,
     ValveTypeSelect,
     VibrationSensitivitySelect,
     _MOTION_SENSITIVITY_OPTIONS,
@@ -88,7 +89,16 @@ def _run(coro):
 
 
 def _fake_device(**kwargs):
-    defaults = dict(name="Dev", id="dev1", root_device_id="root1", serial="SER1")
+    defaults = dict(
+        name="Dev",
+        id="dev1",
+        root_device_id="root1",
+        serial="SER1",
+        # Every real SHCDevice carries this unconditionally (#186 follow-up);
+        # default to "no regulation-algorithm config" so tests unrelated to
+        # that feature don't need to know about it.
+        async_thermostat_regulation_algorithm=AsyncMock(return_value=None),
+    )
     defaults.update(kwargs)
     return SimpleNamespace(**defaults)
 
@@ -3794,3 +3804,100 @@ class TestAsyncSelectOptionWriteFailureSurfacesAsHomeAssistantError:
         with pytest.raises(HomeAssistantError):
             asyncio.run(ent.async_select_option("outdoor"))
 
+
+
+# ---------------------------------------------------------------------------
+# ThermostatRegulationAlgorithmSelect
+# ---------------------------------------------------------------------------
+
+
+def _make_regulation_select():
+    e = ThermostatRegulationAlgorithmSelect.__new__(ThermostatRegulationAlgorithmSelect)
+    e._device = SimpleNamespace(name="Heizkoerper")
+    e._algorithm = None
+    return e
+
+
+def test_regulation_select_current_option_none_initially():
+    e = _make_regulation_select()
+    assert e.current_option is None
+
+
+def test_regulation_select_async_update_sets_option():
+    dev = SimpleNamespace(
+        name="Heizkoerper",
+        async_thermostat_regulation_algorithm=AsyncMock(return_value="INTERNAL"),
+    )
+    e = _make_regulation_select()
+    e._device = dev
+    _run(e.async_update())
+    assert e.current_option == "internal"
+
+
+def test_regulation_select_async_update_logs_on_error():
+    dev = SimpleNamespace(
+        name="Heizkoerper",
+        async_thermostat_regulation_algorithm=AsyncMock(
+            side_effect=SHCException("boom")
+        ),
+    )
+    e = _make_regulation_select()
+    e._device = dev
+    _run(e.async_update())  # must not raise
+
+
+def test_regulation_select_async_select_option_calls_device():
+    dev = SimpleNamespace(
+        name="Heizkoerper",
+        async_set_thermostat_regulation_algorithm=AsyncMock(),
+    )
+    e = _make_regulation_select()
+    e._device = dev
+    _run(e.async_select_option("custom"))
+    dev.async_set_thermostat_regulation_algorithm.assert_awaited_once_with("CUSTOM")
+    assert e.current_option == "custom"
+
+
+def test_regulation_select_async_select_option_wraps_shc_exception():
+    dev = SimpleNamespace(
+        name="Heizkoerper",
+        async_set_thermostat_regulation_algorithm=AsyncMock(
+            side_effect=SHCException("boom")
+        ),
+    )
+    e = _make_regulation_select()
+    e._device = dev
+    with pytest.raises(HomeAssistantError):
+        _run(e.async_select_option("custom"))
+
+
+class TestRegulationAlgorithmSelectSetupEntry:
+    def test_created_when_config_present(self):
+        dev = _fake_device(
+            async_thermostat_regulation_algorithm=AsyncMock(return_value="INTERNAL")
+        )
+        session = _make_session(thermostats=[dev])
+        entities = _setup(session)
+        assert any(isinstance(e, ThermostatRegulationAlgorithmSelect) for e in entities)
+
+    def test_skipped_when_config_absent(self):
+        dev = _fake_device(
+            async_thermostat_regulation_algorithm=AsyncMock(return_value=None)
+        )
+        session = _make_session(thermostats=[dev])
+        entities = _setup(session)
+        assert not any(
+            isinstance(e, ThermostatRegulationAlgorithmSelect) for e in entities
+        )
+
+    def test_skipped_when_probe_raises(self):
+        dev = _fake_device(
+            async_thermostat_regulation_algorithm=AsyncMock(
+                side_effect=SHCException("404")
+            )
+        )
+        session = _make_session(thermostats=[dev])
+        entities = _setup(session)
+        assert not any(
+            isinstance(e, ThermostatRegulationAlgorithmSelect) for e in entities
+        )

@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Skryť svetlá LEDVANCE z Bosch SHC",
               "suppress_motion_indicator_light": "Skryť indikátor pohybového senzora",
               "suppress_camera_switches": "Skryť prepínače kamery Bosch",
-              "room_light_groups": "Povoliť skupiny osvetlenia podľa miestností"
+              "room_light_groups": "Povoliť skupiny osvetlenia podľa miestností",
+              "automation_rules_as_entities": "Zobraziť automatizačné pravidlá Bosch ako entity"
             },
             "data_description": {
               "scenarios_as_buttons": "Keď ZAP: každý scenár Bosch SHC sa zobrazí aj ako tlačidlová entita v Home Assistant (okrem služby trigger_scenario). Užitočné pre dlaždice panela a automatizácie, ktoré priamo spúšťajú scenáre. Predvolené: vyp.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Keď ZAPNUTÉ: svetlá LEDVANCE spárované so SHC sa nevytvoria ako entity. Použite pre zamedzenie duplikátov s integráciou LEDVANCE alebo Zigbee. Predvolené: vypnuté.",
               "suppress_motion_indicator_light": "Keď ZAPNUTÉ: entita LED indikátora pohybového senzora II sa nevytvorí. Predvolené: vypnuté.",
               "suppress_camera_switches": "Keď ZAPNUTÉ: prepínače ochrany súkromia, svetla a oznámení pre kamery Bosch (Eyes / 360 / Outdoor Gen2) sa nevytvoria. Použite s Bosch Camera Tool. Predvolené: vypnuté.",
-              "room_light_groups": "Keď ZAPNUTÉ: vytvorí sa jedna agregovaná entita `light` pre každú miestnosť SHC s 2 a viacerými stmievateľnými/farebnými svetlami (stmievače LEDVANCE, Hue, Light/Shutter Control II), čo umožňuje zapnúť/vypnúť všetky svetlá v miestnosti z jednej entity — podobne ako už funguje riadenie kúrenia na úrovni miestnosti cez Room Climate Control. Iba zapnutie/vypnutie, bez agregácie jasu alebo farby. Predvolené: vypnuté (žiadne nové entity)."
+              "room_light_groups": "Keď ZAPNUTÉ: vytvorí sa jedna agregovaná entita `light` pre každú miestnosť SHC s 2 a viacerými stmievateľnými/farebnými svetlami (stmievače LEDVANCE, Hue, Light/Shutter Control II), čo umožňuje zapnúť/vypnúť všetky svetlá v miestnosti z jednej entity — podobne ako už funguje riadenie kúrenia na úrovni miestnosti cez Room Climate Control. Iba zapnutie/vypnutie, bez agregácie jasu alebo farby. Predvolené: vypnuté (žiadne nové entity).",
+              "automation_rules_as_entities": "Keď je ZAPNUTÉ: pre každé automatizačné pravidlo nakonfigurované v aplikácii Bosch sa vytvorí prepínač (povoliť/zakázať) a tlačidlo (ručné spustenie) — vlastný lokálny nástroj pre pravidlá Bosch, úplne oddelený od automatizácií Home Assistant. Predvolené: vypnuté (žiadne nové entity)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Povoliť všetku diagnostiku"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Stlmiť alarm"
+      },
+      "water_alarm_mute": {
+        "name": "Stlmiť vodný alarm"
+      },
+      "automation_rule_trigger": {
+        "name": "Spustiť"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Dĺžka impulzu"
+      },
+      "temperature_drop_value": {
+        "name": "Hodnota poklesu teploty"
       },
       "energy_saving_power_threshold": {
         "name": "Prahová hodnota úspory energie"
@@ -313,6 +327,13 @@
           "heating_rcc": "Kúrenie (RCC)",
           "boiler": "Bojler",
           "mini_pv": "Mini fotovoltika"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Regulačný algoritmus",
+        "state": {
+          "internal": "Interný",
+          "custom": "Vlastný"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Premostenie nikdy nevyprší"
+      },
+      "temperature_drop_enabled": {
+        "name": "Pokles teploty"
+      },
+      "automation_rule": {
+        "name": "Povolené"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Stlačenie tlačidla zlyhalo."
     },
+    "automation_rule_update_failed": {
+      "message": "Aktualizácia automatizačného pravidla zlyhala."
+    },
     "switch_action_failed": {
       "message": "Zmena stavu spínača zlyhala."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Nastavenie hodnoty zlyhalo."
+    },
+    "update_install_failed": {
+      "message": "Nepodarilo sa spustiť aktualizáciu firmvéru."
     },
     "zigbee_topology_no_data": {
       "message": "Pre tento SHC ovládač zatiaľ nie sú dostupné žiadne údaje o smerovaní Zigbee (nie je spárované žiadne zariadenie Zigbee, alebo prvé 5-minútové zisťovanie ešte nebolo dokončené od spustenia Home Assistant)."

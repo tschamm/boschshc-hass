@@ -22,7 +22,7 @@ run_hass() {
   if ruff format --check custom_components; then _ok "ruff format"; else _fail "ruff format"; fi
 
   _banner "codespell"
-  if codespell custom_components --skip="*/translations/*" --ignore-words-list=hass,nd,childs,unparseable; then
+  if codespell custom_components --skip="*/translations/*" --ignore-words-list=hass,nd,childs,unparseable,uptodate; then
     _ok "codespell"
   else _fail "codespell"; fi
 

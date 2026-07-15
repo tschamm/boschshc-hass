@@ -549,6 +549,27 @@ async def async_setup_entry(  # noqa: C901
     entities: list[SelectEntity] = []
     session: SHCSession = config_entry.runtime_data.session
 
+    # Thermostat regulation algorithm (APK-traced): thermostat-only probe,
+    # 404 (SHCException) means this device lacks the config, skipped.
+    for device in (
+        list(getattr(session.device_helper, "thermostats", []))
+        + list(getattr(session.device_helper, "wallthermostats", []))
+        + list(getattr(session.device_helper, "roomthermostats", []))
+    ):
+        if device_excluded(device, config_entry.options):
+            continue
+        try:
+            algorithm = await device.async_thermostat_regulation_algorithm()
+        except SHCException:
+            continue
+        if algorithm is None:
+            continue
+        entities.append(
+            ThermostatRegulationAlgorithmSelect(
+                device=device, entry_id=config_entry.entry_id
+            )
+        )
+
     for device in session.device_helper.motion_detectors2:
         if device_excluded(device, config_entry.options):
             continue
@@ -1012,3 +1033,56 @@ class InstallationProfileSelect(SHCSelect):
         self._attr_options = [
             p.lower() for p in (getattr(device, "supported_profiles", []) or [])
         ]
+
+
+class ThermostatRegulationAlgorithmSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
+    """Select the regulation algorithm used by a thermostat (INTERNAL/CUSTOM).
+
+    Not in the official OpenAPI spec; APK ground-truth
+    (RestRequests.get/putThermostatRegulationAlgorithmConfiguration), live-
+    confirmed against a real TRV_GEN2. A separate resource from the normal
+    device-service model, so it must be explicitly polled.
+    """
+
+    _attr_translation_key = "thermostat_regulation_algorithm"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = True
+    _attr_options = ["internal", "custom"]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the thermostat regulation-algorithm select."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_regulation_algorithm"
+        )
+        self._algorithm: str | None = None
+
+    async def async_update(self) -> None:
+        """Poll this thermostat's current regulation algorithm."""
+        try:
+            self._algorithm = await self._device.async_thermostat_regulation_algorithm()
+        except SHCException as err:
+            LOGGER.debug(
+                "Failed to poll regulation algorithm for %s: %s",
+                self.device_name,
+                err,
+            )
+
+    @property
+    def current_option(self) -> str | None:
+        """Return the currently selected regulation algorithm."""
+        if self._algorithm is None:
+            return None
+        return self._algorithm.lower()
+
+    async def async_select_option(self, option: str) -> None:
+        """Set the regulation algorithm."""
+        try:
+            await self._device.async_set_thermostat_regulation_algorithm(option.upper())
+            self._algorithm = option.upper()
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to set regulation algorithm for {self.device_name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="select_option_failed",
+            ) from err

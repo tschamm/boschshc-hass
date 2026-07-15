@@ -103,7 +103,8 @@
               "suppress_ledvance_lights": "Peida LEDVANCE-tuled Bosch SHC-st",
               "suppress_motion_indicator_light": "Peida liikumisanduri indikaatortuli",
               "suppress_camera_switches": "Peida Boschi kaamerakapslid",
-              "room_light_groups": "Luba toapõhised valgusgrupid"
+              "room_light_groups": "Luba toapõhised valgusgrupid",
+              "automation_rules_as_entities": "Kuva Boschi automatiseerimisreeglid olemitena"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
@@ -117,7 +118,8 @@
               "suppress_ledvance_lights": "Kui SEES: SHC-ga seotud LEDVANCE-tuled ei kuvata enam olemitena. Kasuta duplikaatide vältimiseks LEDVANCE või Zigbee integratsiooniga. Vaikimisi: väljas.",
               "suppress_motion_indicator_light": "Kui SEES: liikumisanduri II indikaatorlehe olemi ei looda. Vaikimisi: väljas.",
               "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas.",
-              "room_light_groups": "Kui SEES: loob iga SHC toa kohta, kus on 2 või enam reguleeritavat/värvilist tuld (LEDVANCE, Hue, Light/Shutter Control II dimmerid), ühe koondava `light` olemi, millega saad korraga sisse või välja lülitada kõik toa tuled ühest olemist – sarnaselt sellele, kuidas küttel on juba toapõhine juhtimine Room Climate Control kaudu. Ainult sees/väljas, heledust ega värvi ei koondata. Vaikimisi: väljas (uusi olemeid ei looda)."
+              "room_light_groups": "Kui SEES: loob iga SHC toa kohta, kus on 2 või enam reguleeritavat/värvilist tuld (LEDVANCE, Hue, Light/Shutter Control II dimmerid), ühe koondava `light` olemi, millega saad korraga sisse või välja lülitada kõik toa tuled ühest olemist – sarnaselt sellele, kuidas küttel on juba toapõhine juhtimine Room Climate Control kaudu. Ainult sees/väljas, heledust ega värvi ei koondata. Vaikimisi: väljas (uusi olemeid ei looda).",
+              "automation_rules_as_entities": "Kui SEES: luuakse igale Boschi rakenduses seadistatud automatiseerimisreeglile lüliti (luba/keela) ja nupp (käivita käsitsi) — Boschi enda kohalik reeglimootor, mis on täiesti eraldiseisev Home Assistanti enda automatiseerimistest. Vaikimisi: väljas (uusi olemeid ei lisata)."
             }
           },
           "presence": {
@@ -210,11 +212,23 @@
       },
       "enable_all_diagnostics": {
         "name": "Luba kõik diagnostikad"
+      },
+      "intrusion_alarm_mute": {
+        "name": "Vaigista alarm"
+      },
+      "water_alarm_mute": {
+        "name": "Vaigista veealarm"
+      },
+      "automation_rule_trigger": {
+        "name": "Käivita"
       }
     },
     "number": {
       "impulse_length": {
         "name": "Impulsi pikkus"
+      },
+      "temperature_drop_value": {
+        "name": "Temperatuuri langetuse väärtus"
       },
       "energy_saving_power_threshold": {
         "name": "Energiasäästu võimsuse lävi"
@@ -313,6 +327,13 @@
           "heating_rcc": "Küte (RCC)",
           "boiler": "Boiler",
           "mini_pv": "Mini päikesepaneel"
+        }
+      },
+      "thermostat_regulation_algorithm": {
+        "name": "Reguleerimisalgoritm",
+        "state": {
+          "internal": "Sisemine",
+          "custom": "Kohandatud"
         }
       }
     },
@@ -481,6 +502,12 @@
       },
       "bypass_infinite": {
         "name": "Möödaviik ilma aegumiseta"
+      },
+      "temperature_drop_enabled": {
+        "name": "Temperatuuri langetus"
+      },
+      "automation_rule": {
+        "name": "Lubatud"
       }
     },
     "light": {
@@ -628,6 +655,9 @@
     "button_press_failed": {
       "message": "Nupuvajutus ebaõnnestus."
     },
+    "automation_rule_update_failed": {
+      "message": "Automatiseerimisreegli värskendamine ebaõnnestus."
+    },
     "switch_action_failed": {
       "message": "Lüliti oleku muutmine ebaõnnestus."
     },
@@ -642,6 +672,9 @@
     },
     "number_set_failed": {
       "message": "Väärtuse määramine ebaõnnestus."
+    },
+    "update_install_failed": {
+      "message": "Püsivara värskenduse käivitamine ebaõnnestus."
     },
     "zigbee_topology_no_data": {
       "message": "Selle SHC kontrolleri jaoks pole veel Zigbee marsruutimisandmeid saadaval (Zigbee-seadmeid pole lisatud või esimest 5-minutilist skaneeringut pole pärast Home Assistanti käivitamist veel lõpetatud)."
