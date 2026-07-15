@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.1 — pin boschshcpy 0.5.1 (water-alarm mute bugfix)
+
+**No breaking changes.**
+
+- Bumps the `boschshcpy` pin to 0.5.1, which fixes two real bugs in the
+  whole-home water-leak alarm domain added in 0.12.0/0.5.0: the
+  `AlarmState` enum used the wrong value (`ALARM_ON` instead of the
+  spec's `WATER_ALARM`, meaning a real alarm would have shown as
+  `UNKNOWN`), and `mute()` used the wrong HTTP method (`PUT` instead of
+  the spec's `POST`, meaning the mute button would have failed outright).
+  Both were found by cross-checking the official OpenAPI spec — see
+  `boschshcpy`'s own CHANGELOG for detail. No code changes needed on this
+  side; the water-alarm mute button (`button.py`) only calls
+  `async_mute()`, it never touched the broken enum directly.
+
 ## 0.12.0 — big sync with the official Bosch Smart Home app
 
 A large round of reverse-engineering (APK decompile + live traffic capture
