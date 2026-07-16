@@ -62,9 +62,9 @@ FIRMWARE_CAPABLE_MODELS = frozenset(
 _UP_TO_DATE_STATES = frozenset(
     {None, "UpToDate", "UpToDateAwaitingUserInteraction", "Fetching"}
 )
-# States where the app itself shows an active progress indicator.
+# Live-confirmed on #373: app showed "updating" for 7+ min on UpdateAvailable.
 _DEVICE_IN_PROGRESS_STATES = frozenset(
-    {"UpdateRunning", "TransferringUpdate", "Unknown"}
+    {"UpdateRunning", "TransferringUpdate", "Unknown", "UpdateAvailable"}
 )
 
 # The ONLY state the live-confirmed PUT .../activate call is valid from --
@@ -162,7 +162,10 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
         """
         refresh = getattr(self._information, "async_refresh", None)
         if refresh is not None:
-            await refresh()
+            try:
+                await refresh()
+            except SHCException as err:
+                LOGGER.debug("Failed to poll controller update state: %s", err)
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any
@@ -183,6 +186,8 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
                 translation_domain=DOMAIN,
                 translation_key="update_install_failed",
             ) from err
+        finally:
+            await self.async_update()
 
 
 class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
@@ -258,9 +263,8 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
         state = self._firmware_state
         if state != _ACTIVATABLE_STATE:
             raise HomeAssistantError(
-                f"Firmware update for {self.device_name} is not ready to "
-                f"activate yet (current state: {state}). Wait for the "
-                "controller to finish preparing it before trying again.",
+                f"Firmware update for {self.device_name} cannot be activated "
+                f"right now (current state: {state}).",
                 translation_domain=DOMAIN,
                 translation_key="update_not_ready",
                 translation_placeholders={
@@ -276,3 +280,7 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
                 translation_domain=DOMAIN,
                 translation_key="update_install_failed",
             ) from err
+        finally:
+            # Re-poll now so a second click before the next 6h poll doesn't
+            # re-activate a since-moved-on state and 409 again (#373).
+            await self.async_update()

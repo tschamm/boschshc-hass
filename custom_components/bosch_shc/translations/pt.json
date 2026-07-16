@@ -680,7 +680,7 @@
       "message": "Falha ao iniciar a atualização do firmware."
     },
     "update_not_ready": {
-      "message": "A atualização de firmware para {name} ainda não está pronta para ser ativada (estado atual: {state}). Aguarde até que o controlador termine de prepará-la antes de tentar novamente."
+      "message": "A atualização de firmware para {name} não pode ser ativada agora (estado atual: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Ainda não existem dados de encaminhamento Zigbee disponíveis para este controlador SHC (nenhum dispositivo Zigbee emparelhado, ou a primeira pesquisa de 5 minutos ainda não terminou desde que o Home Assistant foi iniciado)."

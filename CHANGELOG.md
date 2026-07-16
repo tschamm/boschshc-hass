@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
+
+**No breaking changes.**
+
+- **Fix: `UpdateAvailable` wasn't counted as "in progress".** Live-confirmed
+  on #373: the Bosch app showed "updating" continuously for 7+ minutes
+  while the probe sat on `UpdateAvailable`, not just a transfer starting
+  soon. It's now bucketed alongside `UpdateRunning`/`TransferringUpdate`/
+  `Unknown`.
+- **Fix: a second Install click before the next scheduled poll (up to 6h
+  later) could re-trigger the exact raw-409 bug 0.12.4 fixed.** Neither
+  `DeviceUpdate.async_install` nor `ControllerUpdate.async_install`
+  re-polled the firmware state after activating — so the entity kept
+  reporting the pre-activation state until its next poll, and a second
+  click during that window would re-send `activate` against a device that
+  had since moved on. Both now re-poll immediately after the install call
+  (success or failure).
+- **Fix: `ControllerUpdate.async_update` had no error handling**, unlike
+  its sibling `DeviceUpdate.async_update` — a transient probe failure
+  would have made the entity unavailable instead of just keeping its
+  last-known state. Now matches the same guard.
+- Softened the `update_not_ready` error message (no longer implies "the
+  controller is still preparing it", which was misleading for e.g. a
+  genuinely `Failed` or `AwaitingActivationTimeout` state) — all 29
+  languages.
+- Two independent bughunt passes reviewed the whole file; one open,
+  unconfirmed item was deliberately left alone: whether `UpdatePending`
+  (the state immediately after a successful activation) should also count
+  as "in progress" — plausible from the module's own documented live
+  trace, but not yet directly evidenced the way `UpdateAvailable`/
+  `Unknown` were, so it wasn't blind-fixed.
+
 ## 0.12.7 — firmware update entities now poll immediately on startup (#373)
 
 **No breaking changes.**

@@ -680,7 +680,7 @@
       "message": "펌웨어 업데이트를 시작하지 못했습니다."
     },
     "update_not_ready": {
-      "message": "{name}의 펌웨어 업데이트는 아직 활성화할 준비가 되지 않았습니다 (현재 상태: {state}). 컨트롤러가 준비를 완료할 때까지 기다린 후 다시 시도하세요."
+      "message": "{name}의 펌웨어 업데이트는 지금 활성화할 수 없습니다 (현재 상태: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "이 SHC 컨트롤러에 대한 Zigbee 라우팅 데이터가 아직 없습니다(Zigbee 장치가 페어링되지 않았거나, Home Assistant 시작 이후 첫 5분 폴링이 아직 완료되지 않았습니다)."

@@ -680,7 +680,7 @@
       "message": "Det gick inte att starta firmwareuppdateringen."
     },
     "update_not_ready": {
-      "message": "Firmwareuppdateringen för {name} är inte redo att aktiveras än (nuvarande status: {state}). Vänta tills styrenheten har slutfört förberedelsen innan du försöker igen."
+      "message": "Firmwareuppdateringen för {name} kan inte aktiveras just nu (nuvarande status: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Det finns ännu ingen Zigbee-routningsdata för denna SHC-styrenhet (inga Zigbee-enheter parkopplade, eller så har den första 5-minutersavsökningen inte slutförts sedan Home Assistant startade)."

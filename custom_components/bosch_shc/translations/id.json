@@ -680,7 +680,7 @@
       "message": "Gagal memulai pembaruan firmware."
     },
     "update_not_ready": {
-      "message": "Pembaruan firmware untuk {name} belum siap diaktifkan (status saat ini: {state}). Tunggu hingga pengontrol selesai mempersiapkannya sebelum mencoba lagi."
+      "message": "Pembaruan firmware untuk {name} tidak dapat diaktifkan saat ini (status saat ini: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Belum ada data routing Zigbee yang tersedia untuk kontroler SHC ini (tidak ada perangkat Zigbee yang dipasangkan, atau polling 5 menit pertama belum selesai sejak Home Assistant dimulai)."

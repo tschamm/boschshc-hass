@@ -680,7 +680,7 @@
       "message": "无法启动固件更新。"
     },
     "update_not_ready": {
-      "message": "{name} 的固件更新尚未准备好激活（当前状态：{state}）。请等待控制器完成准备后再重试。"
+      "message": "{name} 的固件更新目前无法激活（当前状态：{state}）。"
     },
     "zigbee_topology_no_data": {
       "message": "此 SHC 控制器目前尚无可用的 Zigbee 路由数据（未配对任何 Zigbee 设备，或自 Home Assistant 启动以来首次 5 分钟轮询尚未完成）。"

@@ -680,7 +680,7 @@
       "message": "Püsivara värskenduse käivitamine ebaõnnestus."
     },
     "update_not_ready": {
-      "message": "Seadme {name} püsivara värskendus ei ole veel aktiveerimiseks valmis (praegune olek: {state}). Oota, kuni juhtseade lõpetab ettevalmistuse, enne kui proovid uuesti."
+      "message": "Seadme {name} püsivara värskendust ei saa praegu aktiveerida (praegune olek: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Selle SHC kontrolleri jaoks pole veel Zigbee marsruutimisandmeid saadaval (Zigbee-seadmeid pole lisatud või esimest 5-minutilist skaneeringut pole pärast Home Assistanti käivitamist veel lõpetatud)."

@@ -124,6 +124,21 @@ class TestControllerUpdateAsyncUpdate:
         # information without async_refresh — must not raise
         _run(cu.async_update())
 
+    def test_async_update_logs_and_keeps_last_state_on_error(self):
+        """Bughunt follow-up (#373): a transient probe failure must not
+        crash/unavailable this entity, matching DeviceUpdate's own guard."""
+        info = SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0")
+        cu = ControllerUpdate(info, "My SHC", "e1")
+
+        async def fake_refresh():
+            raise SHCException("boom")
+
+        cu._information = SimpleNamespace(
+            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+            async_refresh=fake_refresh,
+        )
+        _run(cu.async_update())  # must not raise
+
 
 class TestControllerUpdateAsyncInstall:
     """Cover ControllerUpdate.async_install (the new APK-traced trigger)."""
@@ -177,7 +192,7 @@ def test_device_update_up_to_date_states_report_no_update():
 
 
 def test_device_update_pending_states_report_update_available():
-    for state in ("UpdateAvailable", "AwaitingActivation", "AwaitingActivationTimeout", "UpdatePending", "AwaitingUserInteraction", "Failed"):
+    for state in ("AwaitingActivation", "AwaitingActivationTimeout", "UpdatePending", "AwaitingUserInteraction", "Failed"):
         u = _new(DeviceUpdate)
         u._firmware_state = state
         assert u.latest_version != u.installed_version, state
@@ -194,7 +209,7 @@ def test_device_update_unknown_state_is_mid_transfer_not_up_to_date():
 
 
 def test_device_update_in_progress_states():
-    for state in ("UpdateRunning", "TransferringUpdate", "Unknown"):
+    for state in ("UpdateRunning", "TransferringUpdate", "Unknown", "UpdateAvailable"):
         u = _new(DeviceUpdate)
         u._firmware_state = state
         assert u.in_progress is True
@@ -262,22 +277,53 @@ class TestDeviceUpdateAsyncInstall:
         async def fake_activate():
             called.append(True)
 
+        async def fake_probe():
+            return "UpdatePending"
+
         u = _new(DeviceUpdate)
         u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
-            name="FakeDev", async_activate_firmware_update=fake_activate
+            name="FakeDev",
+            async_activate_firmware_update=fake_activate,
+            async_firmware_update_state=fake_probe,
         )
         _run(u.async_install(version=None, backup=False))
         assert called
+
+    def test_async_install_reprolls_state_after_activating(self):
+        """Bughunt follow-up (#373): without this, a second click before the
+        next 6h poll would re-send activate against a since-moved-on state
+        and 409 again."""
+
+        async def fake_activate():
+            pass
+
+        async def fake_probe():
+            return "UpdatePending"
+
+        u = _new(DeviceUpdate)
+        u._firmware_state = "AwaitingActivation"
+        u._device = SimpleNamespace(
+            name="FakeDev",
+            async_activate_firmware_update=fake_activate,
+            async_firmware_update_state=fake_probe,
+        )
+        _run(u.async_install(version=None, backup=False))
+        assert u._firmware_state == "UpdatePending"
 
     def test_async_install_wraps_shc_exception(self):
         async def fake_activate():
             raise SHCException("boom")
 
+        async def fake_probe():
+            return "AwaitingActivation"
+
         u = _new(DeviceUpdate)
         u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
-            name="FakeDev", async_activate_firmware_update=fake_activate
+            name="FakeDev",
+            async_activate_firmware_update=fake_activate,
+            async_firmware_update_state=fake_probe,
         )
         with pytest.raises(HomeAssistantError):
             _run(u.async_install(version=None, backup=False))

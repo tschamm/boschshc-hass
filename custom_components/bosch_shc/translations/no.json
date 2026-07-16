@@ -680,7 +680,7 @@
       "message": "Kunne ikke starte fastvareoppdateringen."
     },
     "update_not_ready": {
-      "message": "Fastvareoppdateringen for {name} er ikke klar til å aktiveres ennå (nåværende status: {state}). Vent til kontrolleren er ferdig med å forberede den før du prøver igjen."
+      "message": "Fastvareoppdateringen for {name} kan ikke aktiveres akkurat nå (nåværende status: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Ingen Zigbee-rutingdata er tilgjengelig ennå for denne SHC-kontrolleren (ingen Zigbee-enheter er paret, eller den første 5-minutters avlesningen er ikke fullført siden Home Assistant startet)."

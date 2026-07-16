@@ -689,7 +689,7 @@
       "message": "No s'ha pogut iniciar l'actualització del firmware."
     },
     "update_not_ready": {
-      "message": "L'actualització de firmware per a {name} encara no està a punt per activar-se (estat actual: {state}). Espera que el controlador acabi de preparar-la abans de tornar-ho a provar."
+      "message": "L'actualització de firmware per a {name} no es pot activar ara mateix (estat actual: {state})."
     }
   }
 }
