@@ -957,6 +957,48 @@ class TestServiceHandlers:
         assert list(tmp_path.glob("www/bosch_shc/*_zigbee_topology.json"))
         assert list(tmp_path.glob("www/bosch_shc/*_zigbee_topology.html"))
 
+    def test_export_zigbee_topology_includes_devices_with_no_routing_data(
+        self, fake_hass, fake_entry, fake_session, tmp_path
+    ):
+        """Field report: a device whose on-demand routing query never
+        answered (sleepy end device) was silently missing from the exported
+        map entirely -- it must still appear, unconnected."""
+        from boschshcpy.zigbee_routing import SHCZigbeeRoutingInfo
+
+        responsive = SimpleNamespace(id="hdm:ZigBee:aaa", name="Plug A")
+        sleepy = SimpleNamespace(id="hdm:ZigBee:sleepy", name="Motion Sensor")
+        session = fake_session
+        session.devices = [responsive, sleepy]
+
+        async def fake_routing_info(device_id):
+            if device_id == "hdm:ZigBee:sleepy":
+                raise SHCException("timed out")
+            return SHCZigbeeRoutingInfo(
+                {
+                    "device": device_id,
+                    "aggregatedQuality": "GOOD",
+                    "route": [{"deviceId": device_id, "quality": "GOOD"}],
+                }
+            )
+
+        session.get_zigbee_routing_info = AsyncMock(side_effect=fake_routing_info)
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        hass.config.path = MagicMock(
+            side_effect=lambda *parts: str(tmp_path.joinpath(*parts))
+        )
+        entry.runtime_data.shc_device.name = "Test SHC"
+        handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
+
+        call_obj = self._make_service_call(title="")
+        result = _run(handler(call_obj))
+
+        node_ids = [n["id"] for n in result["graph"]["nodes"]]
+        assert "hdm:ZigBee:aaa" in node_ids
+        assert "hdm:ZigBee:sleepy" in node_ids
+
     def test_export_zigbee_topology_no_data_raises(self, fake_hass, fake_entry, fake_session):
         """No Zigbee devices polled yet -> ServiceValidationError, not an empty graph."""
         from homeassistant.exceptions import ServiceValidationError

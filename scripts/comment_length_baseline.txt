@@ -5,12 +5,12 @@
 # line numbers throughout and carried forward existing per-device hardware/
 # API documentation comments from the old per-class docstrings into the
 # new EntityDescription entries — same content, no new prose added.
-custom_components/bosch_shc/__init__.py:510
-custom_components/bosch_shc/__init__.py:605
-custom_components/bosch_shc/__init__.py:618
-custom_components/bosch_shc/__init__.py:779
-custom_components/bosch_shc/__init__.py:896
-custom_components/bosch_shc/__init__.py:951
+custom_components/bosch_shc/__init__.py:518
+custom_components/bosch_shc/__init__.py:613
+custom_components/bosch_shc/__init__.py:626
+custom_components/bosch_shc/__init__.py:787
+custom_components/bosch_shc/__init__.py:904
+custom_components/bosch_shc/__init__.py:959
 custom_components/bosch_shc/binary_sensor.py:1033
 custom_components/bosch_shc/binary_sensor.py:1169
 custom_components/bosch_shc/binary_sensor.py:1255

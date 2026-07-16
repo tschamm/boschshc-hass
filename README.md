@@ -396,15 +396,32 @@ short/long), scenario triggers, motion events, and smoke-detector alarms.
 
 ---
 
-## Visualizing your Zigbee mesh
+## Visualizing your mesh
+
+This integration bridges two very different SHC radio generations, and only one of them can be
+mapped:
+
+- **Zigbee devices** (device IDs like `hdm:ZigBee:...`) — a real self-healing mesh, and the SHC
+  exposes an (undocumented) per-device hop-chain endpoint, which this integration turns into an
+  actual topology export (below).
+- **868 MHz / gen-1 devices** (device IDs like `hdm:HomeMaticIP:...`, since this hardware
+  generation is OEM'd from HomeMatic/eQ-3) — this protocol has no per-device routing telemetry at
+  all, confirmed via decompiling the official Bosch app: only a small number of Plug+ (`PSM`)
+  units can act as designated repeaters (a plain on/off `Routing` capability, similar to a
+  child-lock toggle), not a mesh with per-device link quality. There's no hop-chain data to build
+  a map out of for this radio, on the SHC's own API or in Bosch's own app.
+
+### Zigbee mesh
 
 The SHC has no built-in network map, and no way to see which device is routing through which
 other device — only a per-device "communication quality" enum, with no routing context. The
 `bosch_shc.export_zigbee_topology` action fills that gap using the last routing poll (the same
 `SHCZigbeeRoutingCoordinator` that backs the disabled-by-default Zigbee routing quality diagnostic
-sensor, refreshed every 5 minutes).
+sensor, refreshed every 5 minutes). Every paired Zigbee device is included, even one whose
+on-demand routing query didn't answer in time (e.g. a sleepy battery end device) — it still shows
+up as an unconnected node instead of silently vanishing from the map.
 
-### Easiest path — just look at it, no YAML
+#### Easiest path — just look at it, no YAML
 
 1. **Settings → Devices & Services → Bosch SHC**, or **Developer Tools → Actions**, search for
    **"Export Zigbee Topology"** and select it.
@@ -414,7 +431,7 @@ sensor, refreshed every 5 minutes).
    `http://<your-ha-ip>:8123/local/bosch_shc/<name>_zigbee_topology.html`. That page is a
    ready-made diagram — colored lines for link quality, no setup, works offline.
 
-### For automations, dashboards, or your own tooling
+#### For automations, dashboards, or your own tooling
 
 ```yaml
 action: bosch_shc.export_zigbee_topology

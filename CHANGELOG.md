@@ -33,6 +33,22 @@
   or genuinely not applicable to this integration's shape.
 - Docs: README now explains the beta release train and how to opt in to
   beta versions via HACS.
+- **Fix: some Zigbee devices could be silently missing from the
+  `bosch_shc.export_zigbee_topology` map entirely**, with no indication
+  they even exist — reported live by real users (motion detectors,
+  Twinguards, and window contacts missing from their exported map). Root
+  cause: a device only became a node in the graph if its on-demand routing
+  query succeeded that poll cycle; a sleepy battery end device that didn't
+  answer in time (a real, expected Zigbee behavior, not a malfunction) was
+  simply omitted. Every currently-paired Zigbee device is now always shown
+  as a node — unconnected if it has no routing data yet, instead of
+  invisible.
+- Docs: the "Visualizing your Zigbee mesh" README section is now
+  "Visualizing your mesh", explaining both radio generations — the real
+  Zigbee mesh export, and why an equivalent map isn't possible for 868 MHz
+  (gen-1, `hdm:HomeMaticIP:`) devices (confirmed via decompiling the
+  official Bosch app: this protocol has no per-device routing telemetry at
+  all, only a plain on/off repeater-role flag on Plug+ units).
 
 ## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
 

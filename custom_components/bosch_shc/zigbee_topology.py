@@ -49,6 +49,7 @@ def build_topology_graph(
     routing_data: dict[str, "SHCZigbeeRoutingInfo"],
     device_names: dict[str, str],
     controller_name: str,
+    all_zigbee_device_ids: "set[str] | None" = None,
 ) -> dict[str, Any]:
     """Build a JSON-serializable node/edge graph from coordinator data.
 
@@ -59,8 +60,15 @@ def build_topology_graph(
     no self-reported entry of its own, so a router that doesn't answer its
     own routinginfo query still shows up connected. Devices with an empty
     route (no connection) become an unconnected node with no edge.
+
+    ``all_zigbee_device_ids``, when given, seeds every known Zigbee device as
+    a node up front -- otherwise a device whose on-demand routing query
+    failed every poll (e.g. a sleepy battery end device that just never
+    answered in time) is silently missing from the graph entirely, with no
+    indication it exists (reported live: some motion detectors/Twinguards/
+    window contacts never showed up at all).
     """
-    node_ids: set[str] = {CONTROLLER_NODE_ID}
+    node_ids: set[str] = {CONTROLLER_NODE_ID, *(all_zigbee_device_ids or ())}
     edges_by_source: dict[str, dict[str, Any]] = {}
 
     def _add_edge(source: str, target: str, quality: str) -> None:

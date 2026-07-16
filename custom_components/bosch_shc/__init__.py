@@ -264,8 +264,16 @@ def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
             device_names = {
                 device.id: device.name for device in runtime.session.devices
             }
+            zigbee_device_ids = {
+                device_id
+                for device_id in device_names
+                if device_id.startswith("hdm:ZigBee:")
+            }
             graph = build_topology_graph(
-                coordinator.data, device_names, runtime.shc_device.name or runtime.title
+                coordinator.data,
+                device_names,
+                runtime.shc_device.name or runtime.title,
+                zigbee_device_ids,
             )
             mermaid = topology_to_mermaid(graph)
             html = topology_to_html(graph, f"Zigbee topology — {runtime.title}")

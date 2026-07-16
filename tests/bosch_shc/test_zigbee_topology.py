@@ -128,6 +128,44 @@ def test_no_connection_device_has_no_edge_but_is_still_a_node() -> None:
     assert any(n["id"] == "hdm:ZigBee:offline" for n in graph["nodes"])
 
 
+def test_device_with_no_routing_data_still_shows_as_a_node() -> None:
+    """Field report: some devices (sleepy end devices whose on-demand
+    routinginfo query never answered in time) were silently missing from
+    the graph entirely, with no indication they even exist. When the caller
+    passes the full known-Zigbee-device set, every one of them must appear
+    as a node even if routing_data has no entry for it at all."""
+    routing_data: dict[str, SHCZigbeeRoutingInfo] = {}
+    graph = build_topology_graph(
+        routing_data,
+        {"hdm:ZigBee:sleepy": "Sleepy Motion Sensor"},
+        controller_name="SHC",
+        all_zigbee_device_ids={"hdm:ZigBee:sleepy"},
+    )
+
+    assert graph["edges"] == []
+    assert any(n["id"] == "hdm:ZigBee:sleepy" for n in graph["nodes"])
+
+
+def test_devices_with_routing_data_are_unaffected_by_the_full_id_set() -> None:
+    """all_zigbee_device_ids must not duplicate or otherwise disturb nodes
+    that DO have real routing data."""
+    routing_data = {
+        "hdm:ZigBee:a": _routing_info("hdm:ZigBee:a", [("hdm:ZigBee:a", "GOOD")]),
+    }
+    graph = build_topology_graph(
+        routing_data,
+        {"hdm:ZigBee:a": "Device A"},
+        controller_name="SHC",
+        all_zigbee_device_ids={"hdm:ZigBee:a"},
+    )
+
+    node_ids = [n["id"] for n in graph["nodes"]]
+    assert node_ids.count("hdm:ZigBee:a") == 1
+    assert graph["edges"] == [
+        {"from": "hdm:ZigBee:a", "to": "controller", "quality": "good"}
+    ]
+
+
 def test_unknown_device_name_falls_back_to_device_id() -> None:
     """A device missing from device_names still renders (id as its own label)."""
     routing_data = {
