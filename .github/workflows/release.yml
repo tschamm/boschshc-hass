@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to release (e.g. v0.6.1)"
+        description: "Existing tag to release (e.g. v0.6.1 or v0.6.1-beta.1)"
         required: true
 
 permissions:
@@ -86,20 +86,30 @@ jobs:
         run: echo "tag=${INPUT_TAG:-$REF_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Validate tag format
+        id: format
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "::error::TAG='$TAG' is not a semver tag (must match vX.Y.Z)"
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]] || {
+            echo "::error::TAG='$TAG' is not a semver tag (must match vX.Y.Z or vX.Y.Z-beta.N)"
             exit 1
           }
+          if [[ "$TAG" =~ -beta\.[0-9]+$ ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Extract release notes from CHANGELOG.md
         id: notes
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
+          # A beta tag (vX.Y.Z-beta.N) tests the CHANGELOG entry already
+          # written for the eventual stable vX.Y.Z — strip the suffix to
+          # find it.
           VERSION="${TAG#v}"
+          VERSION="${VERSION%-beta.*}"
           # Release title = the full CHANGELOG heading ("X.Y.Z — summary"), so the
           # GitHub release matches the house style without manual polishing. Falls
           # back to the bare version if the heading has no "— summary" part.
@@ -121,18 +131,27 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
           FALLBACK: ${{ steps.notes.outputs.fallback }}
           TITLE: ${{ steps.notes.outputs.title }}
+          PRERELEASE: ${{ steps.format.outputs.prerelease }}
         run: |
           NOTES_FLAG="--notes-file /tmp/release-notes.md"
           [ "$FALLBACK" = "true" ] && NOTES_FLAG="--generate-notes"
+          # Betas are marked --prerelease (HACS's "Show beta versions" toggle +
+          # AwesomeVersion comparator already handle vX.Y.Z-beta.N sorting
+          # correctly) so they never become the repo's "Latest release" —
+          # that only happens for a plain vX.Y.Z tag.
+          PRERELEASE_FLAG=""
+          [ "$PRERELEASE" = "true" ] && PRERELEASE_FLAG="--prerelease"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release edit "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "$TITLE" \
-              $NOTES_FLAG
+              $NOTES_FLAG \
+              $PRERELEASE_FLAG
           else
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "$TITLE" \
               --verify-tag \
-              $NOTES_FLAG
+              $NOTES_FLAG \
+              $PRERELEASE_FLAG
           fi
