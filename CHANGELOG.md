@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.3 — fix confusing raw 409 on firmware update.install (#373)
+## 0.12.4 — fix confusing raw 409 on firmware update.install (#373)
 
 **No breaking changes.**
 

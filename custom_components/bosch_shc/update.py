@@ -65,15 +65,8 @@ _UP_TO_DATE_STATES = frozenset(
 # States where the app itself shows an active progress indicator.
 _DEVICE_IN_PROGRESS_STATES = frozenset({"UpdateRunning", "TransferringUpdate"})
 
-# The ONLY state the live-confirmed PUT .../activate call is valid from
-# (rawscan-database.md / hass#186 follow-up: AwaitingActivation -> UpdatePending
-# -> ... -> UpToDateAwaitingUserInteraction). Every other "pending" state
-# (UpdateAvailable = known but not yet transferred to the device, Failed,
-# AwaitingActivationTimeout, AwaitingUserInteraction = needs physical
-# confirmation on the device itself, UpdatePending/UpdateRunning = already
-# activating) legitimately 409s if activated again -- hass#373. Rather than
-# hitting the SHC and surfacing a raw, confusing 409, refuse locally with a
-# translated explanation of the actual blocking state.
+# The ONLY state the live-confirmed PUT .../activate call is valid from --
+# every other pending state legitimately 409s if activated (again) (#373).
 _ACTIVATABLE_STATE = "AwaitingActivation"
 
 # Markers, not real versions -- the probe returns a lifecycle state, and
