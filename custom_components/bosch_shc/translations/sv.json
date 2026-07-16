@@ -677,7 +677,7 @@
       "message": "Det gick inte att ange värdet."
     },
     "update_install_failed": {
-      "message": "Det gick inte att starta firmwareuppdateringen."
+      "message": "Det gick inte att starta firmwareuppdateringen för {name}: {error}"
     },
     "update_not_ready": {
       "message": "Firmwareuppdateringen för {name} kan inte aktiveras just nu (nuvarande status: {state})."

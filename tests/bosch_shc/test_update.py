@@ -149,13 +149,18 @@ class TestControllerUpdateAsyncInstall:
         async def fake_start():
             called.append(True)
 
+        async def fake_refresh():
+            pass
+
         cu = ControllerUpdate(
             SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0"),
             "My SHC",
             "e1",
         )
         cu._information = SimpleNamespace(
+            update_state="UPDATE_AVAILABLE",
             async_start_software_update=fake_start,
+            async_refresh=fake_refresh,
         )
         _run(cu.async_install(version=None, backup=False))
         assert called
@@ -164,14 +169,43 @@ class TestControllerUpdateAsyncInstall:
         async def fake_start():
             raise SHCException("boom")
 
+        async def fake_refresh():
+            pass
+
         cu = ControllerUpdate(
             SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0"),
             "My SHC",
             "e1",
         )
-        cu._information = SimpleNamespace(async_start_software_update=fake_start)
+        cu._information = SimpleNamespace(
+            update_state="UPDATE_AVAILABLE",
+            async_start_software_update=fake_start,
+            async_refresh=fake_refresh,
+        )
         with pytest.raises(HomeAssistantError):
             _run(cu.async_install(version=None, backup=False))
+
+    def test_async_install_refuses_when_not_activatable(self):
+        """hass#373 bughunt follow-up: ControllerUpdate had no state guard,
+        unlike DeviceUpdate — a service-call install while already
+        downloading/installing would just 409, same bug class as #373."""
+        for state in (None, "NO_UPDATE_AVAILABLE", "DOWNLOADING", "INSTALLING", "UPDATE_SUCCESS", "UPDATE_FAILED"):
+            called = []
+
+            async def fake_start():
+                called.append(True)
+
+            cu = ControllerUpdate(
+                SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0"),
+                "My SHC",
+                "e1",
+            )
+            cu._information = SimpleNamespace(
+                update_state=state, async_start_software_update=fake_start
+            )
+            with pytest.raises(HomeAssistantError):
+                _run(cu.async_install(version=None, backup=False))
+            assert not called, state
 
 
 # ------------------- per-device firmware-state-probe entity ------------------
@@ -227,6 +261,53 @@ def test_device_update_supports_progress_feature():
 def test_controller_update_supports_progress_feature():
     cu = _new(ControllerUpdate)
     assert UpdateEntityFeature.PROGRESS in cu.supported_features
+
+
+def test_device_update_has_firmware_device_class():
+    from custom_components.bosch_shc.update import UpdateDeviceClass
+
+    u = _new(DeviceUpdate)
+    assert u.device_class == UpdateDeviceClass.FIRMWARE
+
+
+def test_controller_update_has_firmware_device_class():
+    from custom_components.bosch_shc.update import UpdateDeviceClass
+
+    cu = _new(ControllerUpdate)
+    assert cu.device_class == UpdateDeviceClass.FIRMWARE
+
+
+class TestDeviceUpdateAsyncUpdateExceptionScope:
+    def test_non_shc_exception_is_also_swallowed(self):
+        """Bughunt follow-up: async_update must never raise, whatever the
+        error type -- a bare SHCException-only catch let e.g. a timeout
+        propagate and mask the real error in async_install's finally block."""
+        u = _new(DeviceUpdate)
+        u._firmware_state = "UpToDate"
+
+        async def fake_probe():
+            raise TimeoutError("boom")
+
+        u._device = SimpleNamespace(
+            name="FakeDev", async_firmware_update_state=fake_probe
+        )
+        _run(u.async_update())  # must not raise
+        assert u._firmware_state == "UpToDate"
+
+
+class TestControllerUpdateAsyncUpdateExceptionScope:
+    def test_non_shc_exception_is_also_swallowed(self):
+        info = SimpleNamespace(unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0")
+        cu = ControllerUpdate(info, "My SHC", "e1")
+
+        async def fake_refresh():
+            raise TimeoutError("boom")
+
+        cu._information = SimpleNamespace(
+            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+            async_refresh=fake_refresh,
+        )
+        _run(cu.async_update())  # must not raise
 
 
 def test_device_update_release_summary_surfaces_raw_state():

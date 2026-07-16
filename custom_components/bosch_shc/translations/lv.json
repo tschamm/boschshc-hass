@@ -677,7 +677,7 @@
       "message": "Vērtības iestatīšana neizdevās."
     },
     "update_install_failed": {
-      "message": "Neizdevās sākt aparātprogrammatūras atjauninājumu."
+      "message": "Neizdevās sākt programmaparatūras atjauninājumu ierīcei {name}: {error}"
     },
     "update_not_ready": {
       "message": "Programmaparatūras atjauninājumu ierīcei {name} pašlaik nevar aktivizēt (pašreizējais statuss: {state})."

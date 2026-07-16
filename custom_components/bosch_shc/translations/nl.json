@@ -677,7 +677,7 @@
       "message": "Instellen van de waarde mislukt."
     },
     "update_install_failed": {
-      "message": "Starten van de firmware-update mislukt."
+      "message": "Kan de firmware-update voor {name} niet starten: {error}"
     },
     "update_not_ready": {
       "message": "De firmware-update voor {name} kan momenteel niet worden geactiveerd (huidige status: {state})."

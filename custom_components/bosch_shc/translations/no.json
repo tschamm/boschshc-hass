@@ -677,7 +677,7 @@
       "message": "Kunne ikke angi verdien."
     },
     "update_install_failed": {
-      "message": "Kunne ikke starte fastvareoppdateringen."
+      "message": "Kunne ikke starte fastvareoppdateringen for {name}: {error}"
     },
     "update_not_ready": {
       "message": "Fastvareoppdateringen for {name} kan ikke aktiveres akkurat nå (nåværende status: {state})."

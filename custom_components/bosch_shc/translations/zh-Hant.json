@@ -677,7 +677,7 @@
       "message": "無法設定數值。"
     },
     "update_install_failed": {
-      "message": "無法啟動韌體更新。"
+      "message": "無法為 {name} 啟動韌體更新：{error}"
     },
     "update_not_ready": {
       "message": "{name} 的韌體更新目前無法啟用（目前狀態：{state}）。"

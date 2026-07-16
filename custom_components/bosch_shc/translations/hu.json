@@ -677,7 +677,7 @@
       "message": "Az érték beállítása sikertelen."
     },
     "update_install_failed": {
-      "message": "Nem sikerült elindítani a firmware-frissítést."
+      "message": "Nem sikerült elindítani a(z) {name} firmware-frissítését: {error}"
     },
     "update_not_ready": {
       "message": "A(z) {name} firmware-frissítése jelenleg nem aktiválható (jelenlegi állapot: {state})."

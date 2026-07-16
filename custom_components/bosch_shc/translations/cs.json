@@ -686,7 +686,7 @@
       "message": "Nastavení hodnoty se nezdařilo."
     },
     "update_install_failed": {
-      "message": "Nepodařilo se spustit aktualizaci firmwaru."
+      "message": "Nepodařilo se spustit aktualizaci firmwaru pro {name}: {error}"
     },
     "update_not_ready": {
       "message": "Aktualizaci firmwaru pro {name} nelze právě teď aktivovat (aktuální stav: {state})."

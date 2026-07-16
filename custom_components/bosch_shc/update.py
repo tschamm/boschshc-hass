@@ -19,7 +19,11 @@ from typing import Any
 from boschshcpy import SHCSession
 from boschshcpy.device import SHCDevice
 from boschshcpy.exceptions import SHCException
-from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
+from homeassistant.components.update import (
+    UpdateDeviceClass,
+    UpdateEntity,
+    UpdateEntityFeature,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -38,6 +42,10 @@ SCAN_INTERVAL = timedelta(hours=6)
 # swUpdateState values that mean an install is currently running (controller,
 # from the public /information endpoint's own, differently-shaped enum).
 _IN_PROGRESS_STATES = {"DOWNLOADING", "INSTALLING", "UPDATE_IN_PROGRESS"}
+
+# The ONLY controller-level state ready to activate (bosch-shc-api-docs
+# swUpdateState enum) -- same asymmetry-closing guard as _ACTIVATABLE_STATE.
+_CONTROLLER_ACTIVATABLE_STATE = "UPDATE_AVAILABLE"
 
 # Models with a firmware-update UI in the Bosch app (one "*FirmwareFragment"
 # class per model, APK) — avoids blind-probing every device at startup.
@@ -114,6 +122,7 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
 
     _attr_has_entity_name = True
     _attr_translation_key = "controller_update"
+    _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_supported_features = (
         UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
     )
@@ -164,7 +173,7 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
         if refresh is not None:
             try:
                 await refresh()
-            except SHCException as err:
+            except Exception as err:  # noqa: BLE001 -- never raise from a poll
                 LOGGER.debug("Failed to poll controller update state: %s", err)
 
     async def async_install(
@@ -177,7 +186,23 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
         actually fired) — see module docstring for the per-device confirm.
         version/backup are ignored: the underlying endpoint takes no
         parameters (no specific-version install, no pre-update backup).
+
+        Only ever calls the start endpoint from `_CONTROLLER_ACTIVATABLE_STATE`
+        (hass#373 bughunt follow-up: `DeviceUpdate` got this guard, this
+        sibling class hadn't) — every other state would just 409.
         """
+        state = getattr(self._information, "update_state", None)
+        if state != _CONTROLLER_ACTIVATABLE_STATE:
+            raise HomeAssistantError(
+                f"Firmware update for {self._title} cannot be activated "
+                f"right now (current state: {state}).",
+                translation_domain=DOMAIN,
+                translation_key="update_not_ready",
+                translation_placeholders={
+                    "name": self._title,
+                    "state": str(state),
+                },
+            )
         try:
             await self._information.async_start_software_update()
         except SHCException as err:
@@ -185,6 +210,7 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
                 f"Failed to start the firmware update on {self._title}: {err}",
                 translation_domain=DOMAIN,
                 translation_key="update_install_failed",
+                translation_placeholders={"name": self._title, "error": str(err)},
             ) from err
         finally:
             await self.async_update()
@@ -201,6 +227,7 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
     """
 
     _attr_translation_key = "device_firmware"
+    _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_supported_features = (
         UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
     )
@@ -220,7 +247,7 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
         """
         try:
             self._firmware_state = await self._device.async_firmware_update_state()
-        except SHCException as err:
+        except Exception as err:  # noqa: BLE001 -- never raise from a poll
             LOGGER.debug(
                 "Failed to poll firmware state for %s: %s", self.device_name, err
             )
@@ -279,6 +306,10 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
                 f"Failed to start the firmware update on {self.device_name}: {err}",
                 translation_domain=DOMAIN,
                 translation_key="update_install_failed",
+                translation_placeholders={
+                    "name": self.device_name,
+                    "error": str(err),
+                },
             ) from err
         finally:
             # Re-poll now so a second click before the next 6h poll doesn't

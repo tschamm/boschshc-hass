@@ -677,7 +677,7 @@
       "message": "无法设置数值。"
     },
     "update_install_failed": {
-      "message": "无法启动固件更新。"
+      "message": "无法为 {name} 启动固件更新：{error}"
     },
     "update_not_ready": {
       "message": "{name} 的固件更新目前无法激活（当前状态：{state}）。"

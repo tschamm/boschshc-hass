@@ -677,7 +677,7 @@
       "message": "Nastavenie hodnoty zlyhalo."
     },
     "update_install_failed": {
-      "message": "Nepodarilo sa spustiť aktualizáciu firmvéru."
+      "message": "Nepodarilo sa spustiť aktualizáciu firmvéru pre {name}: {error}"
     },
     "update_not_ready": {
       "message": "Aktualizáciu firmvéru pre {name} momentálne nemožno aktivovať (aktuálny stav: {state})."

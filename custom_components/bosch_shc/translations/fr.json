@@ -677,7 +677,7 @@
       "message": "Échec de la définition de la valeur."
     },
     "update_install_failed": {
-      "message": "Échec du démarrage de la mise à jour du micrologiciel."
+      "message": "Échec du démarrage de la mise à jour du firmware pour {name} : {error}"
     },
     "update_not_ready": {
       "message": "La mise à jour du firmware pour {name} ne peut pas être activée pour le moment (état actuel : {state})."

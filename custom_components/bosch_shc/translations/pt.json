@@ -677,7 +677,7 @@
       "message": "Falha ao definir o valor."
     },
     "update_install_failed": {
-      "message": "Falha ao iniciar a atualização do firmware."
+      "message": "Falha ao iniciar a atualização de firmware para {name}: {error}"
     },
     "update_not_ready": {
       "message": "A atualização de firmware para {name} não pode ser ativada agora (estado atual: {state})."

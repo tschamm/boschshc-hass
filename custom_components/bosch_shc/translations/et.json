@@ -677,7 +677,7 @@
       "message": "Väärtuse määramine ebaõnnestus."
     },
     "update_install_failed": {
-      "message": "Püsivara värskenduse käivitamine ebaõnnestus."
+      "message": "Seadme {name} püsivara värskenduse käivitamine ebaõnnestus: {error}"
     },
     "update_not_ready": {
       "message": "Seadme {name} püsivara värskendust ei saa praegu aktiveerida (praegune olek: {state})."

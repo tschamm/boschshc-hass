@@ -686,7 +686,7 @@
       "message": "No s'ha pogut establir el valor."
     },
     "update_install_failed": {
-      "message": "No s'ha pogut iniciar l'actualització del firmware."
+      "message": "No s'ha pogut iniciar l'actualització de firmware per a {name}: {error}"
     },
     "update_not_ready": {
       "message": "L'actualització de firmware per a {name} no es pot activar ara mateix (estat actual: {state})."

@@ -677,7 +677,7 @@
       "message": "値の設定に失敗しました。"
     },
     "update_install_failed": {
-      "message": "ファームウェアの更新を開始できませんでした。"
+      "message": "{name} のファームウェア更新を開始できませんでした: {error}"
     },
     "update_not_ready": {
       "message": "{name} のファームウェア更新は現在アクティブ化できません（現在の状態: {state}）。"

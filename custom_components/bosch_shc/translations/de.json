@@ -677,7 +677,7 @@
       "message": "Festlegen des Werts fehlgeschlagen."
     },
     "update_install_failed": {
-      "message": "Starten der Firmware-Aktualisierung fehlgeschlagen."
+      "message": "Starten der Firmware-Aktualisierung für {name} fehlgeschlagen: {error}"
     },
     "update_not_ready": {
       "message": "Die Firmware-Aktualisierung für {name} kann derzeit nicht aktiviert werden (aktueller Status: {state})."

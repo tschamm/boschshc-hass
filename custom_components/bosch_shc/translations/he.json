@@ -677,7 +677,7 @@
       "message": "הגדרת הערך נכשלה."
     },
     "update_install_failed": {
-      "message": "נכשלה הפעלת עדכון הקושחה."
+      "message": "הפעלת עדכון הקושחה עבור {name} נכשלה: {error}"
     },
     "update_not_ready": {
       "message": "לא ניתן להפעיל כעת את עדכון הקושחה עבור {name} (מצב נוכחי: {state})."

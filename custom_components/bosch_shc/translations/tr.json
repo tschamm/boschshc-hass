@@ -677,7 +677,7 @@
       "message": "Değer ayarlanamadı."
     },
     "update_install_failed": {
-      "message": "Bellenim güncellemesi başlatılamadı."
+      "message": "{name} için ürün yazılımı güncellemesi başlatılamadı: {error}"
     },
     "update_not_ready": {
       "message": "{name} için ürün yazılımı güncellemesi şu anda etkinleştirilemiyor (geçerli durum: {state})."

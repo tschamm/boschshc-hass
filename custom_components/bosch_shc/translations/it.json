@@ -677,7 +677,7 @@
       "message": "Impostazione del valore non riuscita."
     },
     "update_install_failed": {
-      "message": "Impossibile avviare l'aggiornamento del firmware."
+      "message": "Impossibile avviare l'aggiornamento del firmware per {name}: {error}"
     },
     "update_not_ready": {
       "message": "L'aggiornamento del firmware per {name} non può essere attivato in questo momento (stato attuale: {state})."

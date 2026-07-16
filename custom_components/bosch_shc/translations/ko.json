@@ -677,7 +677,7 @@
       "message": "값 설정에 실패했습니다."
     },
     "update_install_failed": {
-      "message": "펌웨어 업데이트를 시작하지 못했습니다."
+      "message": "{name}의 펌웨어 업데이트를 시작하지 못했습니다: {error}"
     },
     "update_not_ready": {
       "message": "{name}의 펌웨어 업데이트는 지금 활성화할 수 없습니다 (현재 상태: {state})."

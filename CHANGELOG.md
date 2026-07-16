@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.12.9 — update-entity asymmetry fixes + HA convention alignment (#373)
+
+**No breaking changes.**
+
+- **Fix: `ControllerUpdate.async_install` had no state guard**, unlike its
+  sibling `DeviceUpdate` — the entire point of the #373 fix was "only
+  activate from the ready state, everything else 409s", but that guard was
+  only ever added to `DeviceUpdate`. A service-call install (or a user
+  double-clicking) while the controller was already `DOWNLOADING`/
+  `INSTALLING` would reproduce the same raw-409 bug. Both classes now use
+  the same guard pattern.
+- **Fix: the `update_install_failed` error discarded the real failure
+  detail** — the frontend showed a generic "Failed to start the firmware
+  update.", with the actual device name/error only visible in logs. Now
+  threads both through via `translation_placeholders`, matching how
+  `update_not_ready` already worked. All 29 languages.
+- **Fix: a non-`SHCException` error during the background poll (e.g. a bare
+  timeout) could propagate out of `async_update`** and, via `async_install`'s
+  `finally` re-poll, mask the real install error. Both `async_update`
+  methods now catch every exception, matching their own documented "never
+  raise from a poll" contract.
+- **New: both entities now declare `device_class = UpdateDeviceClass.FIRMWARE`**,
+  matching the convention used by every comparable reference integration
+  (shelly/esphome/zha/matter) — found via a dedicated research pass
+  comparing our `update.py` against HA core's own reference integrations.
+- Two more independent research/bughunt passes reviewed the whole file
+  against upstream HA conventions and reference integrations; besides the
+  above, everything else checked (feature flags, entity_category,
+  percentage handling, translation shape, `EntityDescription` applicability,
+  `should_poll`/`SCAN_INTERVAL`, stale-entity cleanup) was already correct
+  or genuinely not applicable to this integration's shape.
+
 ## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
 
 **No breaking changes.**

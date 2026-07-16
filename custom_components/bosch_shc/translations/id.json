@@ -677,7 +677,7 @@
       "message": "Gagal menyetel nilai."
     },
     "update_install_failed": {
-      "message": "Gagal memulai pembaruan firmware."
+      "message": "Gagal memulai pembaruan firmware untuk {name}: {error}"
     },
     "update_not_ready": {
       "message": "Pembaruan firmware untuk {name} tidak dapat diaktifkan saat ini (status saat ini: {state})."

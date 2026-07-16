@@ -677,7 +677,7 @@
       "message": "Nie udało się ustawić wartości."
     },
     "update_install_failed": {
-      "message": "Nie udało się rozpocząć aktualizacji oprogramowania układowego."
+      "message": "Nie udało się rozpocząć aktualizacji oprogramowania układowego dla {name}: {error}"
     },
     "update_not_ready": {
       "message": "Aktualizacji oprogramowania układowego dla {name} nie można teraz aktywować (bieżący stan: {state})."

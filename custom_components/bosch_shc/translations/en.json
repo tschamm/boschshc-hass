@@ -677,7 +677,7 @@
       "message": "Failed to set the value."
     },
     "update_install_failed": {
-      "message": "Failed to start the firmware update."
+      "message": "Failed to start the firmware update on {name}: {error}"
     },
     "update_not_ready": {
       "message": "Firmware update for {name} cannot be activated right now (current state: {state})."
