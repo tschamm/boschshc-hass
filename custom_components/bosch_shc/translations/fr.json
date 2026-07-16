@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Supprimer le voyant du détecteur de mouvement",
               "suppress_camera_switches": "Supprimer les interrupteurs de caméra Bosch",
               "room_light_groups": "Activer les groupes de lumières par pièce",
-              "automation_rules_as_entities": "Exposer les règles d'automatisation Bosch comme entités"
+              "automation_rules_as_entities": "Exposer les règles d'automatisation Bosch comme entités",
+              "temperature_drop_entities": "Activer les entités de baisse de température"
             },
             "data_description": {
               "scenarios_as_buttons": "Quand ACTIVÉ : chaque scénario Bosch SHC apparaît également comme entité bouton dans Home Assistant (en plus du service `trigger_scenario`). Utile pour les tuiles de tableau de bord et les automatisations qui déclenchent des scénarios directement. Par défaut : désactivé.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Quand ACTIVÉ : l'entité de luminosité de la LED indicatrice des détecteurs de mouvement II n'est pas créée. Par défaut : désactivé.",
               "suppress_camera_switches": "Quand ACTIVÉ : les interrupteurs de confidentialité, lumière et notification pour les caméras Bosch (Eyes / 360 / Outdoor Gen2) ne sont pas créés. Utilisez cela avec Bosch Camera Tool. Par défaut : désactivé.",
               "room_light_groups": "Quand ACTIVÉ : crée une entité `light` agrégée par pièce SHC comptant 2 lumières variables/couleur ou plus (LEDVANCE, Hue, variateurs Light/Shutter Control II), permettant d'allumer ou d'éteindre toutes les lumières d'une pièce depuis une seule entité — à l'image du contrôle par pièce déjà disponible pour le chauffage via Room Climate Control. Allumage/extinction uniquement, pas d'agrégation de luminosité ni de couleur. Par défaut : désactivé (aucune nouvelle entité).",
-              "automation_rules_as_entities": "Si ACTIVÉ : crée un interrupteur (activer/désactiver) et un bouton (déclenchement manuel) pour chaque règle d'automatisation configurée dans l'application Bosch — le moteur de règles local propre à Bosch, entièrement distinct des automatisations de Home Assistant. Par défaut : désactivé (aucune nouvelle entité)."
+              "automation_rules_as_entities": "Si ACTIVÉ : crée un interrupteur (activer/désactiver) et un bouton (déclenchement manuel) pour chaque règle d'automatisation configurée dans l'application Bosch — le moteur de règles local propre à Bosch, entièrement distinct des automatisations de Home Assistant. Par défaut : désactivé (aucune nouvelle entité).",
+              "temperature_drop_entities": "Si ACTIVÉ : crée un interrupteur (activer/désactiver) et un nombre (valeur de baisse) pour le service de baisse de température (protection antigel/fenêtre ouverte) de chaque pièce. La plupart des installations n'utilisent pas cette fonctionnalité. Par défaut : désactivé (aucune nouvelle entité)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "Nom du SHC",
           "description": "Titre du SHC. Laisser vide pour utiliser le premier SHC configuré."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Actualiser le routage Zigbee",
+      "description": "Récupère immédiatement une lecture actualisée du routage Zigbee. Les données de routage ne sont sinon récupérées qu'une seule fois au démarrage, pas selon un calendrier récurrent, afin d'éviter une décharge inutile de la batterie des appareils Zigbee — utilisez ceci avant Exporter la topologie Zigbee pour obtenir une carte à jour.",
+      "fields": {
+        "title": {
+          "name": "Nom du SHC",
+          "description": "Titre du SHC. Laissez vide pour utiliser le premier SHC configuré."
         }
       }
     }

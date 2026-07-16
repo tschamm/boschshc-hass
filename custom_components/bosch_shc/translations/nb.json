@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Skjul bevegelsesdetektorens statusindikator",
               "suppress_camera_switches": "Skjul Bosch-kamerabrytere",
               "room_light_groups": "Aktiver lysgrupper per rom",
-              "automation_rules_as_entities": "Vis Bosch-automatiseringsregler som enheter"
+              "automation_rules_as_entities": "Vis Bosch-automatiseringsregler som enheter",
+              "temperature_drop_entities": "Aktiver enheter for temperaturfall"
             },
             "data_description": {
               "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Når PÅ: entiteten for bevegelsesdetektor II’s statusindikator opprettes ikke. Standard: av.",
               "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool. Standard: av.",
               "room_light_groups": "Når PÅ: oppretter én samlet `light`-entitet per SHC-rom med 2 eller flere dimbare/fargelys (LEDVANCE, Hue, Light/Shutter Control II-dimmere), slik at du kan slå alle lysene i et rom av/på fra én entitet — på samme måte som oppvarming allerede har rombasert styring via Romklimastyring. Kun av/på, ingen aggregering av lysstyrke eller farge. Standard: av (ingen nye entiteter).",
-              "automation_rules_as_entities": "Når PÅ: oppretter en bryter (aktiver/deaktiver) og en knapp (utløs manuelt) for hver automatiseringsregel som er konfigurert i Bosch-appen — Boschs egen lokale regelmotor, helt atskilt fra Home Assistants egne automatiseringer. Standard: av (ingen nye enheter)."
+              "automation_rules_as_entities": "Når PÅ: oppretter en bryter (aktiver/deaktiver) og en knapp (utløs manuelt) for hver automatiseringsregel som er konfigurert i Bosch-appen — Boschs egen lokale regelmotor, helt atskilt fra Home Assistants egne automatiseringer. Standard: av (ingen nye enheter).",
+              "temperature_drop_entities": "Når PÅ: oppretter en bryter (aktiver/deaktiver) og et tall (fallverdi) for temperaturfall-tjenesten (frostbeskyttelse/åpent vindu) i hvert rom. De fleste installasjoner bruker ikke denne funksjonen. Standard: av (ingen nye enheter)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC-navn",
           "description": "SHC-ens tittel. La stå tomt for å bruke den første konfigurerte SHC-en."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Oppdater Zigbee-ruting",
+      "description": "Henter en fersk Zigbee-rutingavlesning nå. Rutingdata hentes ellers bare én gang ved oppstart, ikke etter en fast tidsplan, for å unngå unødvendig batteriforbruk på Zigbee-enheter — bruk denne før Eksporter Zigbee-topologi for et oppdatert kart.",
+      "fields": {
+        "title": {
+          "name": "SHC-navn",
+          "description": "Tittel på SHC. La stå tomt for å bruke den første konfigurerte SHC-en."
         }
       }
     }

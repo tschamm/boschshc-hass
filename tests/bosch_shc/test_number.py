@@ -29,7 +29,10 @@ from homeassistant.const import UnitOfTemperature, UnitOfTime
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
-from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
+from custom_components.bosch_shc.const import (
+    OPT_EXCLUDED_DEVICES,
+    OPT_TEMPERATURE_DROP_ENTITIES,
+)
 from custom_components.bosch_shc.number import (
     _SIREN_ALARM_DELAY,
     _SIREN_ALARM_DURATION,
@@ -2860,6 +2863,15 @@ def test_tds_number_async_set_native_value_wraps_shc_exception():
 
 
 class TestTemperatureDropNumberSetupEntry:
+    """Opt-in (OPT_TEMPERATURE_DROP_ENTITIES, hass#373 follow-up): a Bosch
+    SHC engineer flagged this should_poll entity's default-on 15s poll as
+    an unnecessary load, and most setups don't use the feature anyway."""
+
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_TEMPERATURE_DROP_ENTITIES: True}}],
+        indirect=True,
+    )
     def test_created_when_service_present(self, mock_config_entry, mock_session):
         climate = SimpleNamespace(
             id="roomClimateControl_hz_1",
@@ -2890,6 +2902,11 @@ class TestTemperatureDropNumberSetupEntry:
         # ROOM_CLIMATE_CONTROL device's generic raw name.
         assert drop_number.device_name == "Kinderzimmer"
 
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_TEMPERATURE_DROP_ENTITIES: True}}],
+        indirect=True,
+    )
     def test_skipped_when_service_absent(self, mock_config_entry, mock_session):
         climate = SimpleNamespace(
             id="roomClimateControl_hz_1",
@@ -2913,6 +2930,11 @@ class TestTemperatureDropNumberSetupEntry:
         )
         assert not any(isinstance(e, TemperatureDropValueNumber) for e in entities)
 
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_TEMPERATURE_DROP_ENTITIES: True}}],
+        indirect=True,
+    )
     def test_skipped_when_room_id_none(self, mock_config_entry, mock_session):
         climate = SimpleNamespace(
             id="roomClimateControl_hz_1",
@@ -2930,3 +2952,30 @@ class TestTemperatureDropNumberSetupEntry:
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
         assert not any(isinstance(e, TemperatureDropValueNumber) for e in entities)
+
+
+def test_temperature_drop_number_skipped_by_default(mock_config_entry, mock_session):
+    """Default (no option set) must not create the entity or even probe the
+    service -- OPT_TEMPERATURE_DROP_ENTITIES defaults to off."""
+    climate = SimpleNamespace(
+        id="roomClimateControl_hz_1",
+        root_device_id="shc1",
+        room_id="hz_1",
+        name="Kinderzimmer",
+        manufacturer="BOSCH",
+        device_model="ROOM_CLIMATE_CONTROL",
+        status="AVAILABLE",
+        subscribe_callback=MagicMock(),
+        unsubscribe_callback=MagicMock(),
+    )
+    mock_session.device_helper.climate_controls = [climate]
+    room = MagicMock()
+    room.async_temperature_drop_service = AsyncMock(
+        return_value={"configuration": {"dropTemperature": 1.0}}
+    )
+    mock_session.room = MagicMock(return_value=room)
+    entities = asyncio.run(
+        run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+    )
+    assert not any(isinstance(e, TemperatureDropValueNumber) for e in entities)
+    room.async_temperature_drop_service.assert_not_awaited()

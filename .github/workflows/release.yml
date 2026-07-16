@@ -108,13 +108,19 @@ jobs:
           # A beta tag (vX.Y.Z-beta.N) tests the CHANGELOG entry already
           # written for the eventual stable vX.Y.Z — strip the suffix to
           # find it.
-          VERSION="${TAG#v}"
-          VERSION="${VERSION%-beta.*}"
+          FULL_VERSION="${TAG#v}"
+          VERSION="${FULL_VERSION%-beta.*}"
           # Release title = the full CHANGELOG heading ("X.Y.Z — summary"), so the
           # GitHub release matches the house style without manual polishing. Falls
           # back to the bare version if the heading has no "— summary" part.
           HEADING=$(grep -m1 "^## ${VERSION}\( \|$\)" CHANGELOG.md | sed 's/^## //')
           [ -z "$HEADING" ] && HEADING="$VERSION"
+          # Beta tags get "Beta - N" spliced in right after the version, so
+          # it's visible in the title itself, not just the "Pre-release" badge.
+          if [[ "$FULL_VERSION" =~ -beta\.([0-9]+)$ ]]; then
+            BETA_N="${BASH_REMATCH[1]}"
+            HEADING="${HEADING/#$VERSION/$VERSION Beta - $BETA_N}"
+          fi
           echo "title=$HEADING" >> "$GITHUB_OUTPUT"
           awk "/^## $VERSION( |$)/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
             > /tmp/release-notes.md

@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Mozgásérzékelő jelzőfény elrejtése",
               "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése",
               "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése",
-              "automation_rules_as_entities": "Bosch automatizálási szabályok megjelenítése entitásként"
+              "automation_rules_as_entities": "Bosch automatizálási szabályok megjelenítése entitásként",
+              "temperature_drop_entities": "Hőmérséklet-csökkentési entitások engedélyezése"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Ha BE van kapcsolva: a mozgásérzékelő II jelzőfény-entitása nem jön létre. Alapértelmezett: ki.",
               "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki.",
               "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások).",
-              "automation_rules_as_entities": "Ha BE van kapcsolva: minden, a Bosch alkalmazásban beállított automatizálási szabályhoz létrejön egy kapcsoló (engedélyezés/letiltás) és egy gomb (kézi indítás) — ez a Bosch saját helyi szabálymotorja, teljesen független a Home Assistant saját automatizálásaitól. Alapértelmezett: ki (nincs új entitás)."
+              "automation_rules_as_entities": "Ha BE van kapcsolva: minden, a Bosch alkalmazásban beállított automatizálási szabályhoz létrejön egy kapcsoló (engedélyezés/letiltás) és egy gomb (kézi indítás) — ez a Bosch saját helyi szabálymotorja, teljesen független a Home Assistant saját automatizálásaitól. Alapértelmezett: ki (nincs új entitás).",
+              "temperature_drop_entities": "Ha BE van kapcsolva: létrehoz egy kapcsolót (engedélyezés/letiltás) és egy számot (csökkentési érték) minden szoba hőmérséklet-csökkentési (fagyvédelem/nyitott ablak) szolgáltatásához. A legtöbb rendszer nem használja ezt a funkciót. Alapértelmezett: ki (nincs új entitás)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC neve",
           "description": "Az SHC megnevezése. Hagyja üresen az első beállított SHC használatához."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Zigbee útválasztás frissítése",
+      "description": "Azonnal friss Zigbee útválasztási adatokat kér le. Az útválasztási adatok egyébként csak egyszer, indításkor kerülnek lekérésre, nem rendszeres időközönként, hogy elkerüljék a Zigbee eszközök felesleges akkumulátor-lemerülését — használja ezt a Zigbee topológia exportálása előtt egy naprakész térképért.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC címe. Hagyja üresen az első konfigurált SHC használatához."
         }
       }
     }

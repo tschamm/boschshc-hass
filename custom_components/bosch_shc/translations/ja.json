@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "モーションセンサーのインジケーターライトを非表示にする",
               "suppress_camera_switches": "Boschカメラのスイッチを非表示にする",
               "room_light_groups": "部屋ごとのライトグループを有効にする",
-              "automation_rules_as_entities": "Bosch のオートメーションルールをエンティティとして公開"
+              "automation_rules_as_entities": "Bosch のオートメーションルールをエンティティとして公開",
+              "temperature_drop_entities": "温度低下エンティティを有効にする"
             },
             "data_description": {
               "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "ONにすると、モーションセンサーIIのインジケーターLEDエンティティは作成されません。デフォルト：オフ。",
               "suppress_camera_switches": "ONにすると、Boschカメラ（Eyes/360/Outdoor Gen2）のプライバシー、ライト、通知スイッチエンティティが作成されません。Bosch Camera Toolと併用してください。デフォルト：オフ。",
               "room_light_groups": "ONにすると、調光/カラー対応ライト（LEDVANCE、Hue、Light/Shutter Control IIの調光器）が2台以上あるSHCの部屋ごとに、集約された`light`エンティティを1つ作成し、1つのエンティティから部屋の照明をまとめてオン/オフできるようになります。暖房がRoom Climate Controlを通じてすでに持っている部屋単位の制御と同様の仕組みです。オン/オフのみで、明るさや色の集約は行いません。デフォルト：オフ（新しいエンティティは作成されません）。",
-              "automation_rules_as_entities": "オンにすると、Bosch アプリで設定された各オートメーションルールに対して、スイッチ（有効/無効）とボタン（手動実行）が作成されます — Home Assistant 自身のオートメーションとは完全に独立した、Bosch 独自のローカルルールエンジンです。デフォルト: オフ（新しいエンティティなし）。"
+              "automation_rules_as_entities": "オンにすると、Bosch アプリで設定された各オートメーションルールに対して、スイッチ（有効/無効）とボタン（手動実行）が作成されます — Home Assistant 自身のオートメーションとは完全に独立した、Bosch 独自のローカルルールエンジンです。デフォルト: オフ（新しいエンティティなし）。",
+              "temperature_drop_entities": "オンにすると、各部屋の温度低下サービス（凍結防止／窓開放）用にスイッチ（有効／無効）と数値（低下値）が作成されます。ほとんどの設置環境ではこの機能は使用されません。デフォルト：オフ（新しいエンティティなし）。"
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC名",
           "description": "SHCのタイトル。空欄の場合、最初に設定された SHC が使用されます。"
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Zigbeeルーティングを更新",
+      "description": "今すぐ最新のZigbeeルーティング情報を取得します。ルーティングデータは通常、起動時に一度だけ取得され、定期的なスケジュールでは取得されません。これはZigbeeデバイスの不要なバッテリー消耗を避けるためです。最新のマップを得るには、「Zigbeeトポロジーをエクスポート」の前にこれを使用してください。",
+      "fields": {
+        "title": {
+          "name": "SHC名",
+          "description": "SHCのタイトル。空欄のままにすると、最初に設定されたSHCが使用されます。"
         }
       }
     }

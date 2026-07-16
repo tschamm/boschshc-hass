@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Ukryj wskaźnik LED czujnika ruchu",
               "suppress_camera_switches": "Ukryj przełączniki kamery Bosch",
               "room_light_groups": "Włącz grupy świateł dla poszczególnych pomieszczeń",
-              "automation_rules_as_entities": "Udostępnij reguły automatyzacji Bosch jako encje"
+              "automation_rules_as_entities": "Udostępnij reguły automatyzacji Bosch jako encje",
+              "temperature_drop_entities": "Włącz encje spadku temperatury"
             },
             "data_description": {
               "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Gdy WŁĄCZONE: encja jasności diody LED czujnika ruchu II nie jest tworzona. Domyślnie: wyłączone.",
               "suppress_camera_switches": "Gdy WŁĄCZONE: przełączniki trybu prywatności, świateł i powiadomień dla kamer Bosch (Eyes / 360 / Outdoor Gen2) nie są tworzone. Użyj z Bosch Camera Tool. Domyślnie: wyłączone.",
               "room_light_groups": "Gdy WŁĄCZONE: dla każdego pomieszczenia SHC z 2 lub więcej ściemnialnymi/kolorowymi lampkami (LEDVANCE, Hue, ściemniacze Light/Shutter Control II) tworzona jest jedna zbiorcza encja `light`, dzięki której można włączyć/wyłączyć wszystkie lampki w pomieszczeniu za pomocą jednej encji — podobnie jak ogrzewanie ma już sterowanie na poziomie pomieszczenia dzięki funkcji Sterowanie klimatem pokoju. Tylko włącz/wyłącz, bez agregacji jasności/koloru. Domyślnie: wyłączone (brak nowych encji).",
-              "automation_rules_as_entities": "Gdy WŁĄCZONE: dla każdej reguły automatyzacji skonfigurowanej w aplikacji Bosch tworzony jest przełącznik (włącz/wyłącz) i przycisk (ręczne wyzwolenie) — własny lokalny silnik reguł Bosch, całkowicie oddzielny od automatyzacji Home Assistant. Domyślnie: wyłączone (brak nowych encji)."
+              "automation_rules_as_entities": "Gdy WŁĄCZONE: dla każdej reguły automatyzacji skonfigurowanej w aplikacji Bosch tworzony jest przełącznik (włącz/wyłącz) i przycisk (ręczne wyzwolenie) — własny lokalny silnik reguł Bosch, całkowicie oddzielny od automatyzacji Home Assistant. Domyślnie: wyłączone (brak nowych encji).",
+              "temperature_drop_entities": "Gdy WŁĄCZONE: tworzy przełącznik (włącz/wyłącz) i liczbę (wartość spadku) dla usługi spadku temperatury (ochrona przeciwmrozowa/otwarte okno) każdego pomieszczenia. Większość instalacji nie korzysta z tej funkcji. Domyślnie: wyłączone (brak nowych encji)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "Nazwa SHC",
           "description": "Tytuł SHC. Pozostaw puste, aby użyć pierwszego skonfigurowanego SHC."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Odśwież trasowanie Zigbee",
+      "description": "Natychmiast pobiera aktualny odczyt trasowania Zigbee. Dane trasowania są w przeciwnym razie pobierane tylko raz przy uruchomieniu, a nie według stałego harmonogramu, aby uniknąć niepotrzebnego rozładowania baterii urządzeń Zigbee — użyj tego przed akcją Eksportuj topologię Zigbee, aby uzyskać aktualną mapę.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Nazwa SHC. Pozostaw puste, aby użyć pierwszego skonfigurowanego SHC."
         }
       }
     }

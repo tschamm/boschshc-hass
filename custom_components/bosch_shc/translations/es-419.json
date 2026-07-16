@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Suprimir el indicador luminoso del detector de movimiento",
               "suppress_camera_switches": "Suprimir los interruptores de cámara Bosch",
               "room_light_groups": "Habilitar grupos de luces por habitación",
-              "automation_rules_as_entities": "Exponer las reglas de automatización de Bosch como entidades"
+              "automation_rules_as_entities": "Exponer las reglas de automatización de Bosch como entidades",
+              "temperature_drop_entities": "Habilitar entidades de caída de temperatura"
             },
             "data_description": {
               "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario de Bosch SHC también aparece como una entidad de botón en Home Assistant (además del servicio trigger_scenario). Útil para paneles y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Cuando está ACTIVADO: la entidad del LED indicador de los detectores de movimiento II no se crea. Predeterminado: desactivado.",
               "suppress_camera_switches": "Cuando está ACTIVADO: los interruptores de privacidad, luz y notificación para las cámaras Bosch (Eyes / 360 / Outdoor Gen2) no se crean. Úsalo con Bosch Camera Tool. Predeterminado: desactivado.",
               "room_light_groups": "Cuando está ACTIVADO: crea una entidad `light` agregada por cada habitación del SHC que tenga 2 o más luces regulables/de color (LEDVANCE, Hue, reguladores Light/Shutter Control II), lo que te permite encender o apagar todas las luces de una habitación desde una sola entidad, igual que el control por habitación que la calefacción ya tiene mediante Room Climate Control. Solo encendido/apagado, sin agregación de brillo ni color. Predeterminado: desactivado (no se crean entidades nuevas).",
-              "automation_rules_as_entities": "Cuando está ACTIVADO: crea un interruptor (activar/desactivar) y un botón (activar manualmente) para cada regla de automatización configurada en la app de Bosch — el motor de reglas local propio de Bosch, totalmente independiente de las automatizaciones de Home Assistant. Predeterminado: desactivado (sin entidades nuevas)."
+              "automation_rules_as_entities": "Cuando está ACTIVADO: crea un interruptor (activar/desactivar) y un botón (activar manualmente) para cada regla de automatización configurada en la app de Bosch — el motor de reglas local propio de Bosch, totalmente independiente de las automatizaciones de Home Assistant. Predeterminado: desactivado (sin entidades nuevas).",
+              "temperature_drop_entities": "Cuando esté ACTIVADO: crea un interruptor (activar/desactivar) y un número (valor de caída) para el servicio de caída de temperatura (anticongelante/ventana abierta) de cada habitación. La mayoría de las instalaciones no usan esta función. Predeterminado: desactivado (sin entidades nuevas)."
             }
           },
           "presence": {
@@ -612,6 +614,16 @@
     "export_zigbee_topology": {
       "name": "Exportar topología Zigbee",
       "description": "Genera un gráfico de topología de malla Zigbee (calidad de enlace por salto) a partir del último sondeo de enrutamiento y lo guarda como JSON y una página HTML visualizable en www/bosch_shc/. También devuelve el gráfico como JSON y como texto de diagrama Mermaid en la respuesta del servicio.",
+      "fields": {
+        "title": {
+          "name": "Nombre del SHC",
+          "description": "Título del SHC. Déjelo vacío para usar el primer SHC configurado."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Actualizar el enrutamiento Zigbee",
+      "description": "Obtiene una lectura actualizada del enrutamiento Zigbee de inmediato. Los datos de enrutamiento normalmente solo se obtienen una vez al iniciar, no de forma periódica, para evitar un consumo innecesario de batería en los dispositivos Zigbee — úselo antes de Exportar topología Zigbee para obtener un mapa actualizado.",
       "fields": {
         "title": {
           "name": "Nombre del SHC",

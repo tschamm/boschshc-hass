@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any, cast
 
 from boschshcpy import (
@@ -78,6 +79,10 @@ from .coordinator import SHCZigbeeRoutingCoordinator
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
+
+# Without this, should_poll=True entities default to HA's 15s interval;
+# real state still arrives instantly via the per-contact entities either way.
+SCAN_INTERVAL = timedelta(minutes=5)
 
 
 async def async_setup_entry(  # noqa: C901

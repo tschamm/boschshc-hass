@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Skrýt indikátor pohybového čidla",
               "suppress_camera_switches": "Skrýt přepínače fotoaparátu Bosch",
               "room_light_groups": "Povolit skupiny světel podle místnosti",
-              "automation_rules_as_entities": "Zobrazit automatizační pravidla Bosch jako entity"
+              "automation_rules_as_entities": "Zobrazit automatizační pravidla Bosch jako entity",
+              "temperature_drop_entities": "Povolit entity poklesu teploty"
             },
             "data_description": {
               "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Pokud ZAPNUTO: entita LED indikátoru pohybového čidla II se nevytvoří. Výchozí: vypnuto.",
               "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool. Výchozí: vypnuto.",
               "room_light_groups": "Pokud ZAPNUTO: vytvoří jednu souhrnnou entitu `light` pro každou místnost SHC se 2 nebo více stmívatelnými/barevnými světly (LEDVANCE, Hue, stmívače Light/Shutter Control II), což umožňuje zapnout/vypnout všechna světla v místnosti z jedné entity — obdoba ovládání vytápění po místnostech, které již existuje díky Room Climate Control. Pouze zapnuto/vypnuto, bez agregace jasu/barvy. Výchozí: vypnuto (žádné nové entity).",
-              "automation_rules_as_entities": "Když je ZAPNUTO: pro každé automatizační pravidlo nakonfigurované v aplikaci Bosch se vytvoří přepínač (povolit/zakázat) a tlačítko (ruční spuštění) — jde o vlastní lokální nástroj pro pravidla Bosch, zcela oddělený od automatizací Home Assistant. Výchozí: vypnuto (žádné nové entity)."
+              "automation_rules_as_entities": "Když je ZAPNUTO: pro každé automatizační pravidlo nakonfigurované v aplikaci Bosch se vytvoří přepínač (povolit/zakázat) a tlačítko (ruční spuštění) — jde o vlastní lokální nástroj pro pravidla Bosch, zcela oddělený od automatizací Home Assistant. Výchozí: vypnuto (žádné nové entity).",
+              "temperature_drop_entities": "Když je ZAPNUTO: vytvoří přepínač (povolit/zakázat) a číslo (hodnota poklesu) pro službu poklesu teploty (ochrana proti mrazu/otevřené okno) v každé místnosti. Většina instalací tuto funkci nepoužívá. Výchozí: vypnuto (žádné nové entity)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "Název SHC",
           "description": "Název SHC. Ponechte prázdné pro použití prvního nakonfigurovaného SHC."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Obnovit směrování Zigbee",
+      "description": "Okamžitě získá aktuální údaje o směrování Zigbee. Data o směrování se jinak načítají pouze jednou při spuštění, ne v pravidelném intervalu, aby se předešlo zbytečnému vybíjení baterie zařízení Zigbee — použijte tuto akci před Exportovat topologii Zigbee, chcete-li aktuální mapu.",
+      "fields": {
+        "title": {
+          "name": "Název SHC",
+          "description": "Název SHC. Ponechte prázdné, chcete-li použít první nakonfigurovaný SHC."
         }
       }
     }

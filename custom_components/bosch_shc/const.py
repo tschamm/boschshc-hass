@@ -27,6 +27,7 @@ SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
 SERVICE_EXPORT_ZIGBEE_TOPOLOGY = "export_zigbee_topology"
+SERVICE_REFRESH_ZIGBEE_ROUTING = "refresh_zigbee_routing"
 
 # Options flow keys
 OPT_SCENARIOS_AS_BUTTONS = "scenarios_as_buttons"
@@ -75,6 +76,9 @@ OPT_ROOM_LIGHT_GROUPS = "room_light_groups"
 # Opt-in to expose Bosch's local automation-rule engine as a switch+button per
 # rule (entity-heavy like scenarios_as_buttons/room_light_groups above).
 OPT_AUTOMATION_RULES_AS_ENTITIES = "automation_rules_as_entities"
+# Opt-in for the per-room temperature-drop switch+number (its default-on
+# 15s poll was flagged as unnecessary load). Default False = no new entities.
+OPT_TEMPERATURE_DROP_ENTITIES = "temperature_drop_entities"
 
 # Camera Tool companion project
 CAMERA_TOOL_URL = (

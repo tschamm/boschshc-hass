@@ -7,6 +7,7 @@ import json
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 import aiohttp
@@ -39,12 +40,16 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, OPT_TEMPERATURE_DROP_ENTITIES
 from .entity import SHCEntity, device_excluded
 
 LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
+
+# Rarely-changing config state; without this, should_poll=True entities
+# default to HA's 15s interval (flagged as an unnecessary load concern).
+SCAN_INTERVAL = timedelta(minutes=15)
 
 
 # Device-type unions used to parametrize SHCNumberEntityDescription[_DeviceT]
@@ -603,26 +608,27 @@ async def async_setup_entry(  # noqa: C901
     entities: list[NumberEntity] = []
     session: SHCSession = config_entry.runtime_data.session
 
-    # Temperature-drop service drop value (APK-traced, live-confirmed across
-    # 12 real rooms) -- always on, no-op if a room has no such service.
-    for climate in getattr(session.device_helper, "climate_controls", []):
-        if device_excluded(climate, config_entry.options):
-            continue
-        room_id = climate.room_id
-        if room_id is None:
-            continue
-        room = session.room(room_id)
-        try:
-            tds = await room.async_temperature_drop_service()
-        except SHCException:
-            continue
-        if tds is None:
-            continue
-        entities.append(
-            TemperatureDropValueNumber(
-                device=climate, room=room, entry_id=config_entry.entry_id
+    # Temperature-drop service drop value (APK-traced, live-confirmed).
+    # Opt-in: should_poll entity was flagged as an unnecessary load cost.
+    if config_entry.options.get(OPT_TEMPERATURE_DROP_ENTITIES, False):
+        for climate in getattr(session.device_helper, "climate_controls", []):
+            if device_excluded(climate, config_entry.options):
+                continue
+            room_id = climate.room_id
+            if room_id is None:
+                continue
+            room = session.room(room_id)
+            try:
+                tds = await room.async_temperature_drop_service()
+            except SHCException:
+                continue
+            if tds is None:
+                continue
+            entities.append(
+                TemperatureDropValueNumber(
+                    device=climate, room=room, entry_id=config_entry.entry_id
+                )
             )
-        )
 
     for number in (
         list(session.device_helper.thermostats)

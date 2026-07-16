@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "隱藏動作偵測器指示燈",
               "suppress_camera_switches": "隱藏 Bosch 攝影機開關",
               "room_light_groups": "啟用依房間分組的燈光",
-              "automation_rules_as_entities": "將 Bosch 自動化規則公開為實體"
+              "automation_rules_as_entities": "將 Bosch 自動化規則公開為實體",
+              "temperature_drop_entities": "啟用降溫實體"
             },
             "data_description": {
               "scenarios_as_buttons": "開啟時：每個 Bosch SHC 情境也會在 Home Assistant 中顯示為按鈕實體（除了 trigger_scenario 服務之外）。適用於直接觸發情境的儀表板圖塊和自動化。預設：關閉。",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "開啟後：動作偵測器 II 的 LED 指示燈實體將不再建立。預設：關閉。",
               "suppress_camera_switches": "開啟後：Bosch 攝影機（Eyes / 360 / Outdoor Gen2）的隱私模式、燈光和通知開關實體不會被建立。與 Bosch Camera Tool一起使用。預設：關閉。",
               "room_light_groups": "開啟後：為每個擁有 2 個以上可調光/彩色燈具（LEDVANCE、Hue、Light/Shutter Control II 調光器）的 SHC 房間建立一個彙總 `light` 實體，可透過單一實體一次開關整個房間的所有燈具——效果類似 Room Climate Control 已提供的房間層級暖氣控制。僅支援開關，不彙總亮度或色彩。預設：關閉（不會建立新實體）。",
-              "automation_rules_as_entities": "開啟後：會為 Bosch 應用程式中設定的每條自動化規則建立一個開關（啟用/停用）和一個按鈕（手動觸發）——這是 Bosch 自有的本機規則引擎，與 Home Assistant 自身的自動化完全獨立。預設：關閉（不新增實體）。"
+              "automation_rules_as_entities": "開啟後：會為 Bosch 應用程式中設定的每條自動化規則建立一個開關（啟用/停用）和一個按鈕（手動觸發）——這是 Bosch 自有的本機規則引擎，與 Home Assistant 自身的自動化完全獨立。預設：關閉（不新增實體）。",
+              "temperature_drop_entities": "開啟後：為每個房間的降溫（防凍/開窗）服務建立一個開關（啟用/停用）與一個數值（降溫值）。大多數安裝不會使用此功能。預設：關閉（不建立新實體）。"
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC 名稱",
           "description": "SHC 的標題。留空則使用第一個已設定的 SHC。"
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "重新整理 Zigbee 路由",
+      "description": "立即取得最新的 Zigbee 路由讀數。否則路由資料僅在啟動時取得一次，而非按固定排程取得，以避免 Zigbee 裝置不必要的電池消耗——在執行「匯出 Zigbee 拓撲」之前使用此操作以取得最新的地圖。",
+      "fields": {
+        "title": {
+          "name": "SHC 名稱",
+          "description": "SHC 的標題。留空以使用第一個已設定的 SHC。"
         }
       }
     }

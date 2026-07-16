@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine, Sequence
 from dataclasses import dataclass
+from datetime import timedelta
 from enum import Enum
 from typing import Any
 
@@ -45,6 +46,10 @@ from .entity import SHCEntity, device_excluded
 LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
+
+# Rarely-changing config state; without this, should_poll=True entities
+# default to HA's 15s interval (flagged as an unnecessary load concern).
+SCAN_INTERVAL = timedelta(minutes=15)
 
 
 @dataclass(frozen=True, kw_only=True)

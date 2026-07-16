@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Statusindicator bewegingsdetector onderdrukken",
               "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken",
               "room_light_groups": "Lichtgroepen per kamer inschakelen",
-              "automation_rules_as_entities": "Bosch-automatiseringsregels als entiteiten weergeven"
+              "automation_rules_as_entities": "Bosch-automatiseringsregels als entiteiten weergeven",
+              "temperature_drop_entities": "Temperatuurdaling-entiteiten inschakelen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Wanneer AAN: de entiteit voor de statusindicator van bewegingsdetectoren II wordt niet aangemaakt. Standaard: uit.",
               "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool. Standaard: uit.",
               "room_light_groups": "Wanneer AAN: er wordt per SHC-kamer met 2 of meer dimbare/kleurenlampen (LEDVANCE, Hue, Light/Shutter Control II-dimmers) één gecombineerde `light`-entiteit aangemaakt, waarmee u alle lampen van een kamer met één entiteit aan/uit kunt zetten — vergelijkbaar met de kamergebonden regeling die verwarming al heeft via Kamerklimaat regeling. Alleen aan/uit, geen samenvoeging van helderheid/kleur. Standaard: uit (geen nieuwe entiteiten).",
-              "automation_rules_as_entities": "Indien AAN: er wordt een schakelaar (in-/uitschakelen) en een knop (handmatig activeren) aangemaakt voor elke automatiseringsregel die in de Bosch-app is geconfigureerd — Bosch's eigen lokale regel-engine, volledig los van de automatiseringen van Home Assistant zelf. Standaard: uit (geen nieuwe entiteiten)."
+              "automation_rules_as_entities": "Indien AAN: er wordt een schakelaar (in-/uitschakelen) en een knop (handmatig activeren) aangemaakt voor elke automatiseringsregel die in de Bosch-app is geconfigureerd — Bosch's eigen lokale regel-engine, volledig los van de automatiseringen van Home Assistant zelf. Standaard: uit (geen nieuwe entiteiten).",
+              "temperature_drop_entities": "Indien AAN: creëert een schakelaar (in-/uitschakelen) en een getal (dalingswaarde) voor de temperatuurdaling-service (vorstbescherming/open raam) van elke kamer. De meeste installaties gebruiken deze functie niet. Standaard: uit (geen nieuwe entiteiten)."
             }
           },
           "presence": {
@@ -612,6 +614,16 @@
     "export_zigbee_topology": {
       "name": "Zigbee-topologie exporteren",
       "description": "Bouwt een Zigbee-meshtopologiegrafiek (linkkwaliteit per hop) op basis van de laatste routeringspolling en schrijft deze als JSON en een bekijkbare HTML-pagina onder www/bosch_shc/. Geeft de grafiek ook terug als JSON en als Mermaid-diagramtekst in het serviceantwoord.",
+      "fields": {
+        "title": {
+          "name": "SHC-naam",
+          "description": "Titel van de SHC. Laat leeg om de eerst geconfigureerde SHC te gebruiken."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Zigbee-routering vernieuwen",
+      "description": "Haalt nu direct een actuele Zigbee-routeringsmeting op. Routeringsgegevens worden anders slechts één keer bij het opstarten opgehaald, niet volgens een terugkerend schema, om onnodige batterijafname bij Zigbee-apparaten te voorkomen — gebruik dit vóór Zigbee-topologie exporteren voor een actuele kaart.",
       "fields": {
         "title": {
           "name": "SHC-naam",

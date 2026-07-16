@@ -2,7 +2,9 @@
 
 ## 0.12.9 — update-entity asymmetry fixes + HA convention alignment (#373)
 
-**No breaking changes.**
+**Breaking (opt-in feature re-defaulted to off):** if you use the
+temperature-drop switch/number entities, re-enable them under
+**Settings → Devices & Services → Bosch SHC → Configure → Features**.
 
 - **Fix: `ControllerUpdate.async_install` had no state guard**, unlike its
   sibling `DeviceUpdate` — the entire point of the #373 fix was "only
@@ -49,6 +51,34 @@
   (gen-1, `hdm:HomeMaticIP:`) devices (confirmed via decompiling the
   official Bosch app: this protocol has no per-device routing telemetry at
   all, only a plain on/off repeater-role flag on Plug+ units).
+- A Bosch SHC firmware engineer reached out directly with log-level
+  feedback about this integration's REST polling patterns — the following
+  points are his, verified and fixed:
+- **Fix: Zigbee routing info no longer polls periodically at all.** It now
+  fetches once at Home Assistant startup only; a new `refresh_zigbee_routing`
+  action lets you pull a fresh reading on demand (e.g. right before
+  `export_zigbee_topology`). Each query is a live over-the-air round-trip to
+  the physical device — not cached SHC-side — so even the previous slower
+  interval was needless drain on battery-powered Zigbee end devices. The
+  per-device queries are also now sequential, not concurrent, avoiding a
+  request burst against the SHC and the mesh itself.
+- **Fix: several entities silently defaulted to Home Assistant's 15-second
+  poll interval** (automation-rule status, thermostat regulation algorithm,
+  the doors/windows summary sensor) because no explicit interval had been
+  set. Now 5–15 minutes depending on how often the underlying data actually
+  changes.
+- **New: the temperature-drop switch/number entities are now opt-in**
+  (`OPT_TEMPERATURE_DROP_ENTITIES`, default off) — most setups don't use
+  this feature, and it was one of the sources of unnecessary 15-second
+  polling above.
+- Investigated but NOT changed pending confirmation: `CameraLight`/
+  `CameraAmbientLight`/`CameraFrontLight`/`PrivacyMode` switches have carried
+  an explicit (and seemingly unjustified) `should_poll=True` since ~2023.
+  We could not confirm from our own code or the official API docs whether
+  these camera services are actually delivered via the long-poll stream
+  like every other device service — changing this blind risked silently
+  freezing these entities for real camera owners, so it's left as-is
+  pending confirmation from Bosch.
 
 ## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
 

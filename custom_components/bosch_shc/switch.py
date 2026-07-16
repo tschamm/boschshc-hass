@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 import aiohttp
@@ -44,6 +45,7 @@ from .const import (
     DOMAIN,
     OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_SUPPRESS_CAMERA_SWITCHES,
+    OPT_TEMPERATURE_DROP_ENTITIES,
 )
 from .entity import (
     SHCEntity,
@@ -56,6 +58,10 @@ from .entity import (
 LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
+
+# Rarely-changing config state; without this, should_poll=True entities
+# default to HA's 15s interval (flagged as an unnecessary load concern).
+SCAN_INTERVAL = timedelta(minutes=15)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -908,26 +914,27 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    # Temperature-drop service (anti-frost/window-open, APK-traced) -- no-op
-    # if a room has no such service (404 -> SHCException, skipped).
-    for climate in getattr(session.device_helper, "climate_controls", []):
-        if device_excluded(climate, config_entry.options):
-            continue
-        room_id = climate.room_id
-        if room_id is None:
-            continue
-        room = session.room(room_id)
-        try:
-            tds = await room.async_temperature_drop_service()
-        except SHCException:
-            continue
-        if tds is None:
-            continue
-        entities.append(
-            TemperatureDropEnabledSwitch(
-                device=climate, room=room, entry_id=config_entry.entry_id
+    # Temperature-drop service (anti-frost/window-open, APK-traced).
+    # Opt-in: should_poll entity was flagged as an unnecessary load cost.
+    if config_entry.options.get(OPT_TEMPERATURE_DROP_ENTITIES, False):
+        for climate in getattr(session.device_helper, "climate_controls", []):
+            if device_excluded(climate, config_entry.options):
+                continue
+            room_id = climate.room_id
+            if room_id is None:
+                continue
+            room = session.room(room_id)
+            try:
+                tds = await room.async_temperature_drop_service()
+            except SHCException:
+                continue
+            if tds is None:
+                continue
+            entities.append(
+                TemperatureDropEnabledSwitch(
+                    device=climate, room=room, entry_id=config_entry.entry_id
+                )
             )
-        )
 
     if config_entry.options.get(OPT_AUTOMATION_RULES_AS_ENTITIES, False):
         shc_device_for_rules: DeviceEntry = config_entry.runtime_data.shc_device

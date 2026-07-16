@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Peida liikumisanduri indikaatortuli",
               "suppress_camera_switches": "Peida Boschi kaamerakapslid",
               "room_light_groups": "Luba toapõhised valgusgrupid",
-              "automation_rules_as_entities": "Kuva Boschi automatiseerimisreeglid olemitena"
+              "automation_rules_as_entities": "Kuva Boschi automatiseerimisreeglid olemitena",
+              "temperature_drop_entities": "Luba temperatuuri languse üksused"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Kui SEES: liikumisanduri II indikaatorlehe olemi ei looda. Vaikimisi: väljas.",
               "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas.",
               "room_light_groups": "Kui SEES: loob iga SHC toa kohta, kus on 2 või enam reguleeritavat/värvilist tuld (LEDVANCE, Hue, Light/Shutter Control II dimmerid), ühe koondava `light` olemi, millega saad korraga sisse või välja lülitada kõik toa tuled ühest olemist – sarnaselt sellele, kuidas küttel on juba toapõhine juhtimine Room Climate Control kaudu. Ainult sees/väljas, heledust ega värvi ei koondata. Vaikimisi: väljas (uusi olemeid ei looda).",
-              "automation_rules_as_entities": "Kui SEES: luuakse igale Boschi rakenduses seadistatud automatiseerimisreeglile lüliti (luba/keela) ja nupp (käivita käsitsi) — Boschi enda kohalik reeglimootor, mis on täiesti eraldiseisev Home Assistanti enda automatiseerimistest. Vaikimisi: väljas (uusi olemeid ei lisata)."
+              "automation_rules_as_entities": "Kui SEES: luuakse igale Boschi rakenduses seadistatud automatiseerimisreeglile lüliti (luba/keela) ja nupp (käivita käsitsi) — Boschi enda kohalik reeglimootor, mis on täiesti eraldiseisev Home Assistanti enda automatiseerimistest. Vaikimisi: väljas (uusi olemeid ei lisata).",
+              "temperature_drop_entities": "Kui SEES: loob igale toale lüliti (luba/keela) ja numbri (languse väärtus) temperatuuri languse teenuse (jäätumiskaitse/aken lahti) jaoks. Enamik seadistusi seda funktsiooni ei kasuta. Vaikimisi: väljas (uusi üksusi ei looda)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC nimi",
           "description": "SHC pealkiri. Jäta tühjaks, et kasutada esimest seadistatud SHC-d."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Värskenda Zigbee marsruutimist",
+      "description": "Toob kohe värske Zigbee marsruutimise näidu. Vastasel juhul tuuakse marsruutimisandmed ainult üks kord käivitamisel, mitte regulaarse ajakava alusel, et vältida Zigbee seadmete tarbetut aku tühjenemist — kasutage seda enne käsku Ekspordi Zigbee topoloogia, et saada värske kaart.",
+      "fields": {
+        "title": {
+          "name": "SHC nimi",
+          "description": "SHC pealkiri. Jätke tühjaks, et kasutada esimest seadistatud SHC-d."
         }
       }
     }

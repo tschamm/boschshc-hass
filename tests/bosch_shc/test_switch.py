@@ -59,6 +59,7 @@ from custom_components.bosch_shc.const import (
     OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_EXCLUDED_DEVICES,
     OPT_SUPPRESS_CAMERA_SWITCHES,
+    OPT_TEMPERATURE_DROP_ENTITIES,
 )
 from custom_components.bosch_shc.switch import (
     SWITCH_TYPES,
@@ -4949,6 +4950,15 @@ def test_tds_switch_turn_on_wraps_shc_exception():
 
 
 class TestTemperatureDropSwitchSetupEntry:
+    """Opt-in (OPT_TEMPERATURE_DROP_ENTITIES, hass#373 follow-up): a Bosch
+    SHC engineer flagged this should_poll entity's default-on 15s poll as
+    an unnecessary load, and most setups don't use the feature anyway."""
+
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_TEMPERATURE_DROP_ENTITIES: True}}],
+        indirect=True,
+    )
     def test_created_when_service_present(self, mock_config_entry, mock_session):
         from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch
 
@@ -4984,6 +4994,11 @@ class TestTemperatureDropSwitchSetupEntry:
         # ROOM_CLIMATE_CONTROL device's generic raw name.
         assert drop_switch.device_name == "Kinderzimmer"
 
+    @pytest.mark.parametrize(
+        "mock_config_entry",
+        [{"options": {OPT_TEMPERATURE_DROP_ENTITIES: True}}],
+        indirect=True,
+    )
     def test_skipped_when_service_absent(self, mock_config_entry, mock_session):
         from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch
 
@@ -5011,3 +5026,34 @@ class TestTemperatureDropSwitchSetupEntry:
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
         assert not any(isinstance(e, TemperatureDropEnabledSwitch) for e in entities)
+
+    def test_skipped_by_default(self, mock_config_entry, mock_session):
+        """Default (no option set) must not create the entity or even probe
+        the service -- OPT_TEMPERATURE_DROP_ENTITIES defaults to off."""
+        from custom_components.bosch_shc.switch import TemperatureDropEnabledSwitch
+
+        climate = SimpleNamespace(
+            id="roomClimateControl_hz_1",
+            root_device_id="shc1",
+            room_id="hz_1",
+            name="Kinderzimmer",
+            manufacturer="BOSCH",
+            device_model="ROOM_CLIMATE_CONTROL",
+            status="AVAILABLE",
+            subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
+        )
+        mock_session.device_helper.climate_controls = [climate]
+        room = MagicMock()
+        room.async_temperature_drop_service = AsyncMock(
+            return_value={"configuration": {"enabled": True}}
+        )
+        mock_session.room = MagicMock(return_value=room)
+        mock_session.userdefinedstates = []
+        mock_session.subscribe = MagicMock()
+        mock_config_entry.async_on_unload = MagicMock()
+        entities = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+        assert not any(isinstance(e, TemperatureDropEnabledSwitch) for e in entities)
+        room.async_temperature_drop_service.assert_not_awaited()

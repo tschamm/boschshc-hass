@@ -72,6 +72,7 @@ from .const import (
     OPT_SUPPRESS_LEDVANCE_LIGHTS,
     OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
     OPT_SUPPRESS_POWER_SENSORS,
+    OPT_TEMPERATURE_DROP_ENTITIES,
 )
 from .entity import light_relay_friendly_model, light_switch_devices
 
@@ -94,6 +95,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_SUPPRESS_CAMERA_SWITCHES,
         OPT_ROOM_LIGHT_GROUPS,
         OPT_AUTOMATION_RULES_AS_ENTITIES,
+        OPT_TEMPERATURE_DROP_ENTITIES,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -700,6 +702,13 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
             vol.Optional(
                 OPT_AUTOMATION_RULES_AS_ENTITIES,
                 default=current.get(OPT_AUTOMATION_RULES_AS_ENTITIES, False),
+            )
+        ] = BooleanSelector()
+
+        features_fields[
+            vol.Optional(
+                OPT_TEMPERATURE_DROP_ENTITIES,
+                default=current.get(OPT_TEMPERATURE_DROP_ENTITIES, False),
             )
         ] = BooleanSelector()
 

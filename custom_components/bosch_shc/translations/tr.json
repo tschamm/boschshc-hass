@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Hareket dedektörü gösterge ışığını gizle",
               "suppress_camera_switches": "Bosch kamera anahtarlarını gizle",
               "room_light_groups": "Oda başına ışık gruplarını etkinleştir",
-              "automation_rules_as_entities": "Bosch otomasyon kurallarını varlık olarak göster"
+              "automation_rules_as_entities": "Bosch otomasyon kurallarını varlık olarak göster",
+              "temperature_drop_entities": "Sıcaklık düşüşü varlıklarını etkinleştir"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "AÇIK olduğunda: Hareket Dedektörü II gösterge LED varlığı oluşturulmaz. Varsayılan: kapalı.",
               "suppress_camera_switches": "AÇIK olduğunda: Bosch kameraları (Eyes / 360 / Outdoor Gen2) için gizlilik, ışık ve bildirim anahtarları oluşturulmaz. Bosch Camera Tool ile birlikte kullanın. Varsayılan: kapalı.",
               "room_light_groups": "AÇIK olduğunda: 2 veya daha fazla kısılabilir/renkli ışığa sahip (LEDVANCE, Hue, Light/Shutter Control II dimmerleri) her SHC odası için tek bir toplu `light` varlığı oluşturur ve bir odanın tüm ışıklarını tek bir varlıktan açıp kapatmanızı sağlar — ısıtmanın Room Climate Control ile zaten sahip olduğu oda düzeyinde kontrolü yansıtır. Sadece açma/kapama, parlaklık veya renk toplanması yoktur. Varsayılan: kapalı (yeni varlık oluşturulmaz).",
-              "automation_rules_as_entities": "AÇIK olduğunda: Bosch uygulamasında yapılandırılan her otomasyon kuralı için bir anahtar (etkinleştir/devre dışı bırak) ve bir düğme (manuel tetikle) oluşturur — Home Assistant'ın kendi otomasyonlarından tamamen ayrı, Bosch'un kendi yerel kural motoru. Varsayılan: kapalı (yeni varlık yok)."
+              "automation_rules_as_entities": "AÇIK olduğunda: Bosch uygulamasında yapılandırılan her otomasyon kuralı için bir anahtar (etkinleştir/devre dışı bırak) ve bir düğme (manuel tetikle) oluşturur — Home Assistant'ın kendi otomasyonlarından tamamen ayrı, Bosch'un kendi yerel kural motoru. Varsayılan: kapalı (yeni varlık yok).",
+              "temperature_drop_entities": "AÇIK olduğunda: her odanın sıcaklık düşüşü (donma önleme/açık pencere) hizmeti için bir anahtar (etkinleştir/devre dışı bırak) ve bir sayı (düşüş değeri) oluşturur. Çoğu kurulum bu özelliği kullanmaz. Varsayılan: kapalı (yeni varlık yok)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC adı",
           "description": "SHC'nin başlığı. İlk yapılandırılmış SHC'yi kullanmak için boş bırakın."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Zigbee Yönlendirmesini Yenile",
+      "description": "Şimdi güncel bir Zigbee yönlendirme okuması alır. Yönlendirme verileri aksi takdirde yalnızca başlangıçta bir kez alınır, düzenli bir zamanlamayla değil, Zigbee cihazlarında gereksiz pil tüketimini önlemek için — güncel bir harita için bunu Zigbee Topolojisini Dışa Aktar işleminden önce kullanın.",
+      "fields": {
+        "title": {
+          "name": "SHC Adı",
+          "description": "SHC başlığı. İlk yapılandırılmış SHC'yi kullanmak için boş bırakın."
         }
       }
     }

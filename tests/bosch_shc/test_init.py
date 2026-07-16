@@ -49,6 +49,7 @@ from custom_components.bosch_shc.const import (
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
+    SERVICE_REFRESH_ZIGBEE_ROUTING,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
 )
@@ -1020,6 +1021,41 @@ class TestServiceHandlers:
         session = fake_session
         handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
         handler = handlers[SERVICE_EXPORT_ZIGBEE_TOPOLOGY]
+
+        call_obj = self._make_service_call(title="WrongTitle")
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
+
+    # -- refresh_zigbee_routing service (#373 follow-up: the coordinator no
+    # longer polls periodically, so this is the only way to get a fresh
+    # reading after startup) --
+
+    def test_refresh_zigbee_routing_calls_coordinator_request_refresh(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        session = fake_session
+        handlers, hass, entry, _ = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        handler = handlers[SERVICE_REFRESH_ZIGBEE_ROUTING]
+        coordinator = entry.runtime_data.zigbee_routing_coordinator
+        coordinator.async_request_refresh = AsyncMock()
+
+        call_obj = self._make_service_call(title="")
+        _run(handler(call_obj))
+
+        coordinator.async_request_refresh.assert_awaited_once()
+
+    def test_refresh_zigbee_routing_filters_by_title(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        handlers, hass, entry, _ = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        handler = handlers[SERVICE_REFRESH_ZIGBEE_ROUTING]
 
         call_obj = self._make_service_call(title="WrongTitle")
         with pytest.raises(ServiceValidationError):

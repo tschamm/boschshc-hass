@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Statusleuchte des Bewegungsmelders unterdrücken",
               "suppress_camera_switches": "Bosch-Kamera-Schalter unterdrücken",
               "room_light_groups": "Raum-Lichtgruppen aktivieren",
-              "automation_rules_as_entities": "Bosch-Automatisierungsregeln als Entitäten anzeigen"
+              "automation_rules_as_entities": "Bosch-Automatisierungsregeln als Entitäten anzeigen",
+              "temperature_drop_entities": "Temperaturabsenkungs-Entitäten aktivieren"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Wenn AN: die Entität zur Steuerung der Statusleuchte von Bewegungsmeldern II wird nicht angelegt. Standard: aus.",
               "suppress_camera_switches": "Wenn AN: Datenschutz-, Licht- und Benachrichtigungs-Schalter für Bosch-Kameras (Eyes / 360 / Outdoor Gen2) werden nicht angelegt. Nützlich, wenn das Bosch Camera Tool ebenfalls aktiv ist. Standard: aus.",
               "room_light_groups": "Wenn AN: erstellt für jeden SHC-Raum mit 2 oder mehr dimmbaren/farbigen Lampen (LEDVANCE, Hue, Light/Shutter Control II Dimmer) eine gebündelte `light`-Entität, mit der sich alle Lampen eines Raums über eine einzige Entität ein- und ausschalten lassen – analog zur Raumsteuerung, die die Heizung über die Raumklimasteuerung bereits hat. Nur Ein/Aus, keine Helligkeits-/Farbbündelung. Standard: aus (keine neuen Entitäten).",
-              "automation_rules_as_entities": "Bei AN: erstellt für jede in der Bosch-App konfigurierte Automatisierungsregel einen Schalter (aktivieren/deaktivieren) und eine Schaltfläche (manuell auslösen) — Boschs eigene lokale Regel-Engine, komplett getrennt von den Automatisierungen von Home Assistant. Standard: aus (keine neuen Entitäten)."
+              "automation_rules_as_entities": "Bei AN: erstellt für jede in der Bosch-App konfigurierte Automatisierungsregel einen Schalter (aktivieren/deaktivieren) und eine Schaltfläche (manuell auslösen) — Boschs eigene lokale Regel-Engine, komplett getrennt von den Automatisierungen von Home Assistant. Standard: aus (keine neuen Entitäten).",
+              "temperature_drop_entities": "Wenn AN: erstellt einen Schalter (aktivieren/deaktivieren) und eine Zahl (Absenkwert) für den Temperaturabsenkungsdienst (Frostschutz/Fenster offen) jedes Raums. Die meisten Installationen nutzen dieses Feature nicht. Standard: aus (keine neuen Entitäten)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "SHC Name",
           "description": "Name des SHC. Leer lassen, um den ersten konfigurierten SHC zu verwenden."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Zigbee-Routing aktualisieren",
+      "description": "Ruft jetzt sofort einen aktuellen Zigbee-Routing-Status ab. Routing-Daten werden sonst nur einmal beim Start abgerufen, nicht regelmäßig, um unnötigen Batterieverbrauch bei Zigbee-Geräten zu vermeiden — vor „Zigbee-Topologie exportieren“ verwenden, um eine aktuelle Karte zu erhalten.",
+      "fields": {
+        "title": {
+          "name": "SHC-Name",
+          "description": "Titel des SHC. Leer lassen, um den ersten konfigurierten SHC zu verwenden."
         }
       }
     }

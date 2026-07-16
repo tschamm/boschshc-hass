@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Suprimir indicador luminoso do detector de movimento",
               "suppress_camera_switches": "Suprimir os controles da câmera Bosch",
               "room_light_groups": "Ativar grupos de luz por cômodo",
-              "automation_rules_as_entities": "Expor as regras de automação da Bosch como entidades"
+              "automation_rules_as_entities": "Expor as regras de automação da Bosch como entidades",
+              "temperature_drop_entities": "Ativar entidades de queda de temperatura"
             },
             "data_description": {
               "scenarios_as_buttons": "Quando ATIVADO: cada cenário Bosch SHC também aparece como uma entidade de botão no Home Assistant (além do serviço trigger_scenario). Útil para blocos de painel e automações que acionam cenários diretamente. Padrão: desativado.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Quando ATIVADO: a entidade do LED indicador dos detectores de movimento II não é criada. Padrão: desativado.",
               "suppress_camera_switches": "Quando ATIVADO: os controles de privacidade, luz e notificação para as câmeras Bosch (Eyes / 360 / Outdoor Gen2) não são criados. Use com o Bosch Camera Tool. Padrão: desativado.",
               "room_light_groups": "Quando ATIVADO: cria uma entidade `light` agregada por cômodo do SHC que tenha 2 ou mais luzes reguláveis/coloridas (dimmers LEDVANCE, Hue, Light/Shutter Control II), permitindo ligar/desligar todas as luzes de um cômodo a partir de uma única entidade — espelhando o controle por cômodo que o aquecimento já tem através do Room Climate Control. Apenas ligar/desligar, sem agregação de brilho ou cor. Padrão: desativado (nenhuma entidade nova).",
-              "automation_rules_as_entities": "Quando LIGADO: cria um switch (ativar/desativar) e um botão (acionar manualmente) para cada regra de automação configurada no aplicativo Bosch — o motor de regras local próprio da Bosch, totalmente separado das automações do próprio Home Assistant. Padrão: desligado (nenhuma entidade nova)."
+              "automation_rules_as_entities": "Quando LIGADO: cria um switch (ativar/desativar) e um botão (acionar manualmente) para cada regra de automação configurada no aplicativo Bosch — o motor de regras local próprio da Bosch, totalmente separado das automações do próprio Home Assistant. Padrão: desligado (nenhuma entidade nova).",
+              "temperature_drop_entities": "Quando ATIVADO: cria um interruptor (ativar/desativar) e um número (valor de queda) para o serviço de queda de temperatura (anticongelamento/janela aberta) de cada cômodo. A maioria das instalações não usa esse recurso. Padrão: desativado (sem novas entidades)."
             }
           },
           "presence": {
@@ -612,6 +614,16 @@
     "export_zigbee_topology": {
       "name": "Exportar Topologia Zigbee",
       "description": "Constrói um grafo de topologia da malha Zigbee (qualidade do link por salto) a partir da última varredura de roteamento e o grava como JSON e como uma página HTML visualizável em www/bosch_shc/. Também retorna o grafo como JSON e como texto de diagrama Mermaid na resposta do serviço.",
+      "fields": {
+        "title": {
+          "name": "Nome do SHC",
+          "description": "Título do SHC. Deixe em branco para usar o primeiro SHC configurado."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Atualizar roteamento Zigbee",
+      "description": "Obtém uma leitura atualizada do roteamento Zigbee agora mesmo. Os dados de roteamento normalmente são obtidos apenas uma vez na inicialização, não em uma programação recorrente, para evitar consumo desnecessário de bateria em dispositivos Zigbee — use isso antes de Exportar topologia Zigbee para obter um mapa atualizado.",
       "fields": {
         "title": {
           "name": "Nome do SHC",

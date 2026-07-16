@@ -104,7 +104,8 @@
               "suppress_motion_indicator_light": "Suprimeix la llum indicadora del detector de moviment",
               "suppress_camera_switches": "Suprimeix els interruptors de la càmera Bosch",
               "room_light_groups": "Activa els grups de llums per habitació",
-              "automation_rules_as_entities": "Exposa les regles d'automatització de Bosch com a entitats"
+              "automation_rules_as_entities": "Exposa les regles d'automatització de Bosch com a entitats",
+              "temperature_drop_entities": "Activa les entitats de caiguda de temperatura"
             },
             "data_description": {
               "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
@@ -119,7 +120,8 @@
               "suppress_motion_indicator_light": "Quan està ACTIVAT: l'entitat del LED indicador del detector de moviment II no es crea. Predeterminat: desactivat.",
               "suppress_camera_switches": "Quan està ACTIVAT: els interruptors de privadesa, llum i notificació per a les càmeres Bosch (Eyes / 360 / Outdoor Gen2) no es creen. Utilitza-ho amb Bosch Camera Tool. Predeterminat: desactivat.",
               "room_light_groups": "Quan està ACTIVAT: crea una entitat `light` agregada per cada habitació del SHC amb 2 o més llums regulables/de color (LEDVANCE, Hue, reguladors Light/Shutter Control II), permetent encendre o apagar tots els llums d'una habitació des d'una sola entitat — reflectint el control per habitació que la calefacció ja té mitjançant Room Climate Control. Només encès/apagat, sense agregació de brillantor/color. Predeterminat: desactivat (sense entitats noves).",
-              "automation_rules_as_entities": "Quan està ACTIVAT: crea un interruptor (activa/desactiva) i un botó (activa manualment) per a cada regla d'automatització configurada a l'app de Bosch — el motor de regles local propi de Bosch, totalment separat de les automatitzacions de Home Assistant. Per defecte: desactivat (sense entitats noves)."
+              "automation_rules_as_entities": "Quan està ACTIVAT: crea un interruptor (activa/desactiva) i un botó (activa manualment) per a cada regla d'automatització configurada a l'app de Bosch — el motor de regles local propi de Bosch, totalment separat de les automatitzacions de Home Assistant. Per defecte: desactivat (sense entitats noves).",
+              "temperature_drop_entities": "Quan estigui ACTIVAT: crea un interruptor (activa/desactiva) i un número (valor de caiguda) per al servei de caiguda de temperatura (antigel/finestra oberta) de cada habitació. La majoria d'instal·lacions no utilitzen aquesta funció. Per defecte: desactivat (sense entitats noves)."
             }
           },
           "presence": {
@@ -616,6 +618,16 @@
         "title": {
           "name": "Nom del SHC",
           "description": "Títol del SHC. Deixeu-ho buit per utilitzar el primer SHC configurat."
+        }
+      }
+    },
+    "refresh_zigbee_routing": {
+      "name": "Actualitza l'encaminament Zigbee",
+      "description": "Obté una lectura actualitzada de l'encaminament Zigbee ara mateix. Les dades d'encaminament només s'obtenen una vegada en iniciar, no de manera periòdica, per evitar un consum innecessari de bateria als dispositius Zigbee — utilitzeu-ho abans d'Exporta la topologia Zigbee per obtenir un mapa actualitzat.",
+      "fields": {
+        "title": {
+          "name": "Nom de l'SHC",
+          "description": "Títol de l'SHC. Deixeu-ho buit per utilitzar el primer SHC configurat."
         }
       }
     }
