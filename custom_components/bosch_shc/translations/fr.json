@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Échec du démarrage de la mise à jour du micrologiciel."
     },
+    "update_not_ready": {
+      "message": "La mise à jour du firmware pour {name} n'est pas encore prête à être activée (état actuel : {state}). Attendez que le contrôleur ait terminé sa préparation avant de réessayer."
+    },
     "zigbee_topology_no_data": {
       "message": "Aucune donnée de routage Zigbee n'est encore disponible pour ce contrôleur SHC (aucun appareil Zigbee appairé, ou le premier relevé de 5 minutes n'est pas encore terminé depuis le démarrage de Home Assistant)."
     },

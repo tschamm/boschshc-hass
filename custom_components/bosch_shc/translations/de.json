@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Starten der Firmware-Aktualisierung fehlgeschlagen."
     },
+    "update_not_ready": {
+      "message": "Die Firmware-Aktualisierung für {name} ist noch nicht bereit zur Aktivierung (aktueller Status: {state}). Warte, bis der Controller die Vorbereitung abgeschlossen hat, bevor Du es erneut versuchst."
+    },
     "zigbee_topology_no_data": {
       "message": "Für diesen SHC-Controller liegen noch keine Zigbee-Routing-Daten vor (keine Zigbee-Geräte gekoppelt, oder die erste 5-Minuten-Abfrage seit dem Start von Home Assistant ist noch nicht abgeschlossen)."
     },

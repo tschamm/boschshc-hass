@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "ファームウェアの更新を開始できませんでした。"
     },
+    "update_not_ready": {
+      "message": "{name} のファームウェア更新はまだアクティブ化できる状態ではありません（現在の状態: {state}）。コントローラーが準備を完了するまで待ってから再試行してください。"
+    },
     "zigbee_topology_no_data": {
       "message": "このSHCコントローラーではまだZigbeeルーティングデータが利用できません（Zigbeeデバイスがペアリングされていないか、Home Assistant起動後の最初の5分間ポーリングがまだ完了していません）。"
     },

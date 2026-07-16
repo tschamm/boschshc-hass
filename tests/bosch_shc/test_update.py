@@ -240,6 +240,7 @@ class TestDeviceUpdateAsyncInstall:
             called.append(True)
 
         u = _new(DeviceUpdate)
+        u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
             name="FakeDev", async_activate_firmware_update=fake_activate
         )
@@ -251,11 +252,44 @@ class TestDeviceUpdateAsyncInstall:
             raise SHCException("boom")
 
         u = _new(DeviceUpdate)
+        u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
             name="FakeDev", async_activate_firmware_update=fake_activate
         )
         with pytest.raises(HomeAssistantError):
             _run(u.async_install(version=None, backup=False))
+
+    def test_async_install_refuses_when_not_awaiting_activation(self):
+        """hass#373: any state other than AwaitingActivation must be refused
+        locally (informative error) instead of hitting the SHC and getting a
+        confusing raw 409."""
+        for state in (
+            None,
+            "UpToDate",
+            "UpdateAvailable",
+            "TransferringUpdate",
+            "UpdatePending",
+            "UpdateRunning",
+            "AwaitingUserInteraction",
+            "AwaitingActivationTimeout",
+            "Failed",
+            "Unknown",
+            "Fetching",
+            "UpToDateAwaitingUserInteraction",
+        ):
+            called = []
+
+            async def fake_activate():
+                called.append(True)
+
+            u = _new(DeviceUpdate)
+            u._firmware_state = state
+            u._device = SimpleNamespace(
+                name="FakeDev", async_activate_firmware_update=fake_activate
+            )
+            with pytest.raises(HomeAssistantError):
+                _run(u.async_install(version=None, backup=False))
+            assert not called, state
 
 
 # ------------------------- async_setup_entry wiring --------------------------

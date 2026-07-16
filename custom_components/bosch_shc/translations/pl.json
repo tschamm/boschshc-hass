@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Nie udało się rozpocząć aktualizacji oprogramowania układowego."
     },
+    "update_not_ready": {
+      "message": "Aktualizacja oprogramowania układowego dla {name} nie jest jeszcze gotowa do aktywacji (bieżący stan: {state}). Poczekaj, aż kontroler zakończy przygotowywanie, zanim spróbujesz ponownie."
+    },
     "zigbee_topology_no_data": {
       "message": "Brak jeszcze dostępnych danych routingu Zigbee dla tego kontrolera SHC (nie sparowano żadnych urządzeń Zigbee lub pierwsze 5-minutowe odpytanie nie zostało jeszcze zakończone od uruchomienia Home Assistant)."
     },

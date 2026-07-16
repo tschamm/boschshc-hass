@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Failed to start the firmware update."
     },
+    "update_not_ready": {
+      "message": "Firmware update for {name} is not ready to activate yet (current state: {state}). Wait for the controller to finish preparing it before trying again."
+    },
     "zigbee_topology_no_data": {
       "message": "No Zigbee routing data available yet for this SHC controller (no Zigbee devices paired, or the first 5-minute poll hasn't completed since Home Assistant started)."
     },

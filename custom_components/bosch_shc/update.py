@@ -65,6 +65,17 @@ _UP_TO_DATE_STATES = frozenset(
 # States where the app itself shows an active progress indicator.
 _DEVICE_IN_PROGRESS_STATES = frozenset({"UpdateRunning", "TransferringUpdate"})
 
+# The ONLY state the live-confirmed PUT .../activate call is valid from
+# (rawscan-database.md / hass#186 follow-up: AwaitingActivation -> UpdatePending
+# -> ... -> UpToDateAwaitingUserInteraction). Every other "pending" state
+# (UpdateAvailable = known but not yet transferred to the device, Failed,
+# AwaitingActivationTimeout, AwaitingUserInteraction = needs physical
+# confirmation on the device itself, UpdatePending/UpdateRunning = already
+# activating) legitimately 409s if activated again -- hass#373. Rather than
+# hitting the SHC and surfacing a raw, confusing 409, refuse locally with a
+# translated explanation of the actual blocking state.
+_ACTIVATABLE_STATE = "AwaitingActivation"
+
 # Markers, not real versions -- the probe returns a lifecycle state, and
 # UpdateEntity only needs the two to differ to show "update available".
 _UP_TO_DATE_VERSION = "up_to_date"
@@ -238,7 +249,24 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
         Confirmed live against a real TRV_GEN2 — see module docstring.
         version/backup are ignored: the underlying endpoint takes no
         parameters (no specific-version install, no pre-update backup).
+
+        Only ever calls the activate endpoint from `_ACTIVATABLE_STATE`
+        (hass#373) — every other pending state means the SHC isn't ready to
+        activate yet and would just 409.
         """
+        state = self._firmware_state
+        if state != _ACTIVATABLE_STATE:
+            raise HomeAssistantError(
+                f"Firmware update for {self.device_name} is not ready to "
+                f"activate yet (current state: {state}). Wait for the "
+                "controller to finish preparing it before trying again.",
+                translation_domain=DOMAIN,
+                translation_key="update_not_ready",
+                translation_placeholders={
+                    "name": self.device_name,
+                    "state": str(state),
+                },
+            )
         try:
             await self._device.async_activate_firmware_update()
         except SHCException as err:

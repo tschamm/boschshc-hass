@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Nepodarilo sa spustiť aktualizáciu firmvéru."
     },
+    "update_not_ready": {
+      "message": "Aktualizácia firmvéru pre {name} ešte nie je pripravená na aktiváciu (aktuálny stav: {state}). Počkajte, kým ovládač dokončí prípravu, kým to skúsite znova."
+    },
     "zigbee_topology_no_data": {
       "message": "Pre tento SHC ovládač zatiaľ nie sú dostupné žiadne údaje o smerovaní Zigbee (nie je spárované žiadne zariadenie Zigbee, alebo prvé 5-minútové zisťovanie ešte nebolo dokončené od spustenia Home Assistant)."
     },

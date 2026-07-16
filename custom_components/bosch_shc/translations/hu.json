@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Nem sikerült elindítani a firmware-frissítést."
     },
+    "update_not_ready": {
+      "message": "A(z) {name} firmware-frissítése még nem áll készen az aktiválásra (jelenlegi állapot: {state}). Várja meg, amíg a vezérlő befejezi az előkészítést, mielőtt újra próbálkozna."
+    },
     "zigbee_topology_no_data": {
       "message": "Ehhez az SHC vezérlőhöz még nem áll rendelkezésre Zigbee útválasztási adat (nincs párosított Zigbee eszköz, vagy az első 5 perces lekérdezés még nem fejeződött be a Home Assistant indítása óta)."
     },

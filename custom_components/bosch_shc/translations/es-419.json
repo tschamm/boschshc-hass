@@ -687,6 +687,9 @@
     },
     "update_install_failed": {
       "message": "Error al iniciar la actualización del firmware."
+    },
+    "update_not_ready": {
+      "message": "La actualización de firmware para {name} aún no está lista para activarse (estado actual: {state}). Espera a que el controlador termine de prepararla antes de volver a intentarlo."
     }
   }
 }

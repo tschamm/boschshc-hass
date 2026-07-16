@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Bellenim güncellemesi başlatılamadı."
     },
+    "update_not_ready": {
+      "message": "{name} için ürün yazılımı güncellemesi henüz etkinleştirilmeye hazır değil (geçerli durum: {state}). Tekrar denemeden önce denetleyicinin hazırlığı tamamlamasını bekleyin."
+    },
     "zigbee_topology_no_data": {
       "message": "Bu SHC denetleyicisi için henüz kullanılabilir Zigbee yönlendirme verisi yok (eşleştirilmiş Zigbee cihazı yok veya Home Assistant başladığından beri ilk 5 dakikalık tarama tamamlanmadı)."
     },

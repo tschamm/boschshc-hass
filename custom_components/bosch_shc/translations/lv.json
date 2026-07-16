@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Neizdevās sākt aparātprogrammatūras atjauninājumu."
     },
+    "update_not_ready": {
+      "message": "Programmaparatūras atjauninājums ierīcei {name} vēl nav gatavs aktivizēšanai (pašreizējais statuss: {state}). Uzgaidiet, līdz kontrolieris pabeidz sagatavošanu, pirms mēģināt vēlreiz."
+    },
     "zigbee_topology_no_data": {
       "message": "Šim SHC kontrolierim vēl nav pieejami Zigbee maršrutēšanas dati (nav pievienota neviena Zigbee ierīce, vai kopš Home Assistant palaišanas vēl nav pabeigta pirmā 5 minūšu aptauja)."
     },

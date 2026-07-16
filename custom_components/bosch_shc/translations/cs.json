@@ -687,6 +687,9 @@
     },
     "update_install_failed": {
       "message": "Nepodařilo se spustit aktualizaci firmwaru."
+    },
+    "update_not_ready": {
+      "message": "Aktualizace firmwaru pro {name} ještě není připravena k aktivaci (aktuální stav: {state}). Počkejte, až ovladač dokončí přípravu, než to zkusíte znovu."
     }
   }
 }

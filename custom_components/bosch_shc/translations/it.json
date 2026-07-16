@@ -679,6 +679,9 @@
     "update_install_failed": {
       "message": "Impossibile avviare l'aggiornamento del firmware."
     },
+    "update_not_ready": {
+      "message": "L'aggiornamento del firmware per {name} non è ancora pronto per l'attivazione (stato attuale: {state}). Attendi che il controller finisca di prepararlo prima di riprovare."
+    },
     "zigbee_topology_no_data": {
       "message": "Non sono ancora disponibili dati di routing Zigbee per questo controller SHC (nessun dispositivo Zigbee associato, oppure la prima scansione di 5 minuti non è ancora stata completata dall'avvio di Home Assistant)."
     },

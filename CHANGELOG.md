@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.12.3 — fix confusing raw 409 on firmware update.install (#373)
+
+**No breaking changes.**
+
+- **Fix: firmware `update.install` fails with a confusing raw HTTP 409** on
+  per-device update entities (`DeviceUpdate`, e.g. Radiator Thermostat II)
+  (#373). Root cause: `latest_version` shows "update available" for *any*
+  non-up-to-date firmware lifecycle state, but the live-confirmed
+  `PUT .../activate` call is only actually valid from the `AwaitingActivation`
+  state — every other pending state (`UpdateAvailable` = known but not yet
+  transferred to the device, `Failed`, `AwaitingActivationTimeout`,
+  `AwaitingUserInteraction` = needs physical confirmation on the device
+  itself, `UpdatePending`/`UpdateRunning` = already activating) legitimately
+  409s if activated (again). `async_install` now checks the currently-probed
+  state first and refuses locally with a clear, translated message naming
+  the actual blocking state, instead of hitting the SHC and surfacing a raw
+  409. New `update_not_ready` translation key, all 29 languages.
+
 ## 0.12.2 — fix Room Climate Control devices losing their room name (#372)
 
 **No breaking changes.**
