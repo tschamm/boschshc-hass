@@ -7,9 +7,12 @@ name: Auto-tag beta
 # never decides a version number itself and never commits anything; it only
 # ever tags a beta string a human already wrote into manifest.json.
 #
-# release.yml picks up the pushed tag from here exactly like a manually
-# pushed one, reruns the full quality+test gate, and publishes the
-# pre-release GitHub Release.
+# A tag pushed with the default GITHUB_TOKEN does NOT trigger other
+# workflows (GitHub's own loop-prevention) -- so release.yml's
+# `on: push: tags:` never fires for a tag created here. This job pushes the
+# tag AND explicitly dispatches release.yml via `workflow_dispatch` (which
+# release.yml already supports for manual re-runs) so the pre-release
+# GitHub Release still gets published, same as for a manually pushed tag.
 
 on:
   push:
@@ -25,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -69,3 +73,20 @@ jobs:
           )
           subprocess.run(["git", "push", "origin", tag], check=True)
           print(f"Tagged and pushed {tag}.")
+
+      - name: Dispatch release.yml for the new tag
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/bosch_shc/manifest.json'))['version'])")
+          if [[ "$version" != *-beta.* ]]; then
+            echo "Not a beta version -- nothing to dispatch."
+            exit 0
+          fi
+          tag="v${version}"
+          if ! git tag -l "$tag" | grep -qx "$tag"; then
+            echo "Tag ${tag} was not created this run -- nothing to dispatch."
+            exit 0
+          fi
+          gh workflow run release.yml --ref master -f "tag=${tag}"
