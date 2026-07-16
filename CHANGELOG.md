@@ -31,6 +31,8 @@
   percentage handling, translation shape, `EntityDescription` applicability,
   `should_poll`/`SCAN_INTERVAL`, stale-entity cleanup) was already correct
   or genuinely not applicable to this integration's shape.
+- Docs: README now explains the beta release train and how to opt in to
+  beta versions via HACS.
 
 ## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
 
