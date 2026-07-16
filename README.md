@@ -103,6 +103,27 @@ All paired devices are discovered automatically. Customise what gets created und
 
 ## Installation
 
+### Beta releases
+
+New fixes/features land first as a **beta** release (`vX.Y.Z-beta.N`) before being
+promoted to a stable release. Betas run through the exact same test/quality gate as a
+stable release, so they're safe to try — this is how you can help test a fix before it
+reaches everyone, or get a feature slightly earlier.
+
+By default HACS only shows stable releases. To opt in to betas for this integration:
+
+1. Go to **Settings → Devices & Services → Entities**, search for the **Bosch SHC**
+   HACS-provided update entity (something like *"Bosch Smart Home Controller (SHC)
+   integration Update"*), open it, and enable it — this switch is disabled by default,
+   so it won't show up until you turn it on. Give HA a few seconds to pick it up.
+2. Once enabled, HACS includes beta releases when checking for updates for this
+   integration, and the beta version will show up as an available update like any other.
+3. To go back to stable-only, just disable the entity again.
+
+Prefer to install a specific beta (or any specific version) directly instead of waiting
+for HACS to offer it? In HACS, open **Bosch SHC → ⋮ → Redownload → "Need a different
+version?"** and pick the release you want.
+
 ### HACS (recommended)
 
 1. Open **HACS → Integrations**, search for **Bosch SHC**, and install it.
