@@ -99,7 +99,9 @@ async def async_setup_entry(
         if device.device_model in FIRMWARE_CAPABLE_MODELS:
             entities.append(DeviceUpdate(device, config_entry.entry_id))
 
-    async_add_entities(entities)
+    # Without this, HA schedules the first poll a full SCAN_INTERVAL from now
+    # (#373) -- entities would sit unset for up to 6h after every restart.
+    async_add_entities(entities, update_before_add=True)
 
 
 class ControllerUpdate(UpdateEntity):  # type: ignore[misc]

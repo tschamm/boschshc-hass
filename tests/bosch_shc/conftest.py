@@ -126,7 +126,7 @@ async def run_setup_entry(
     hass = SimpleNamespace()
     collected: list[Any] = []
 
-    def add(entities: list[Any]) -> None:
+    def add(entities: list[Any], update_before_add: bool = False) -> None:
         collected.extend(entities)
 
     await async_setup_entry(hass, mock_config_entry, add)

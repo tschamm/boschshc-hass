@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.7 — firmware update entities now poll immediately on startup (#373)
+
+**No breaking changes.**
+
+- **Fix: firmware update entities showed stale/unset state for up to 6
+  hours after every restart.** `async_add_entities()` was called without
+  `update_before_add=True` — confirmed against HA core's own
+  `entity_platform.py`, a polling entity's *first* poll is scheduled a full
+  `SCAN_INTERVAL` from the moment it's added, not immediately. For these
+  entities (`SCAN_INTERVAL = 6h`), that meant every restart/reload left
+  `DeviceUpdate`/`ControllerUpdate` sitting on their initial `None` state
+  — reported as "up to date" with no progress shown — until the next
+  scheduled poll up to 6h later. This is what #373's reporter saw right
+  after updating to 0.12.6: the entity hadn't actually re-polled yet, it
+  wasn't a regression in the `Unknown`-state fix itself. Entities now poll
+  once immediately when added.
+
 ## 0.12.6 — fix firmware update entity hiding an update still actually in progress (#373)
 
 **No breaking changes.**

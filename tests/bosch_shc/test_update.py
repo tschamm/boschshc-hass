@@ -338,6 +338,21 @@ class TestUpdateAsyncSetupEntry:
         result = self._run(mock_config_entry, mock_session)
         assert any(e._information for e in result)
 
+    def test_setup_entry_polls_before_add(self, mock_config_entry, mock_session):
+        """hass#373 follow-up: without update_before_add=True, HA schedules
+        the first poll a full SCAN_INTERVAL (6h) from now, leaving these
+        entities on a stale/unset firmware_state after every restart."""
+        mock_config_entry.title = "Test SHC"
+        mock_config_entry.runtime_data.session = mock_session
+        mock_session.devices = []
+        calls = []
+
+        def add(entities, update_before_add=False):
+            calls.append(update_before_add)
+
+        asyncio.run(async_setup_entry(SimpleNamespace(), mock_config_entry, add))
+        assert calls == [True]
+
     def test_setup_entry_device_with_firmware_capable_model(
         self, mock_config_entry, mock_session
     ):
