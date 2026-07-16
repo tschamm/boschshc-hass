@@ -110,7 +110,9 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
 
     _attr_has_entity_name = True
     _attr_translation_key = "controller_update"
-    _attr_supported_features = UpdateEntityFeature.INSTALL
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
     _attr_should_poll = True
 
     def __init__(self, information: Any, title: str, entry_id: str) -> None:
@@ -190,7 +192,9 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
     """
 
     _attr_translation_key = "device_firmware"
-    _attr_supported_features = UpdateEntityFeature.INSTALL
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
     _attr_should_poll = True
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.5 — firmware update entity now shows an actual progress indicator (#373)
+
+**No breaking changes.**
+
+- **Fix: the per-device firmware update entity's "in progress" state was
+  silently ignored by the frontend.** `DeviceUpdate`/`ControllerUpdate`
+  declared `in_progress` but never the `UpdateEntityFeature.PROGRESS`
+  flag it requires to have any effect — confirmed against HA core's own
+  `UpdateEntity` (`in_progress`/`update_percentage` are no-ops without it).
+  Both entities now declare `PROGRESS`; no numeric percentage is reported
+  (`update_percentage` stays `None`), since neither the local SHC API nor
+  the official Bosch app itself expose one — APK decompile of the app's own
+  `FirmwarePresenter`/`FirmwareView` confirmed it only ever shows a plain
+  status label, never a progress bar, matching what #373's reporter saw.
+
 ## 0.12.4 — fix confusing raw 409 on firmware update.install (#373)
 
 **No breaking changes.**

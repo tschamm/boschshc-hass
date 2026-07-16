@@ -14,6 +14,8 @@ import pytest
 from boschshcpy.exceptions import SHCException
 from homeassistant.exceptions import HomeAssistantError
 
+from homeassistant.components.update import UpdateEntityFeature
+
 from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 from custom_components.bosch_shc.update import (
     FIRMWARE_CAPABLE_MODELS,
@@ -190,6 +192,18 @@ def test_device_update_in_progress_states():
         assert u.latest_version != u.installed_version
 
 
+def test_device_update_supports_progress_feature():
+    """`in_progress` has no effect in the UI without PROGRESS declared
+    (homeassistant/components/update/__init__.py) -- must actually be set."""
+    u = _new(DeviceUpdate)
+    assert UpdateEntityFeature.PROGRESS in u.supported_features
+
+
+def test_controller_update_supports_progress_feature():
+    cu = _new(ControllerUpdate)
+    assert UpdateEntityFeature.PROGRESS in cu.supported_features
+
+
 def test_device_update_release_summary_surfaces_raw_state():
     u = _new(DeviceUpdate)
     u._firmware_state = "AwaitingActivation"
@@ -228,7 +242,6 @@ class TestDeviceUpdateAsyncUpdate:
         )
         _run(u.async_update())
         assert u._firmware_state == "UpToDate"
-
 
 class TestDeviceUpdateAsyncInstall:
     """Cover DeviceUpdate.async_install (the new APK-traced trigger)."""
