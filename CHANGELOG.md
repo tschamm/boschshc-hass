@@ -51,9 +51,9 @@ temperature-drop switch/number entities, re-enable them under
   (gen-1, `hdm:HomeMaticIP:`) devices (confirmed via decompiling the
   official Bosch app: this protocol has no per-device routing telemetry at
   all, only a plain on/off repeater-role flag on Plug+ units).
-- A Bosch SHC firmware engineer reached out directly with log-level
-  feedback about this integration's REST polling patterns — the following
-  points are his, verified and fixed:
+- Reviewed this integration's REST polling patterns for unnecessary load on
+  the SHC and battery-powered Zigbee end devices — the following points were
+  found and fixed:
 - **Fix: Zigbee routing info no longer polls periodically at all.** It now
   fetches once at Home Assistant startup only; a new `refresh_zigbee_routing`
   action lets you pull a fresh reading on demand (e.g. right before

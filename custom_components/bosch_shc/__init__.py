@@ -347,10 +347,10 @@ def _register_refresh_zigbee_routing_service(hass: HomeAssistant) -> None:
     """Register the refresh_zigbee_routing service if not already registered.
 
     The Zigbee routing coordinator only ever fetches once at startup (no
-    periodic polling — a Bosch SHC engineer flagged even a slow periodic
-    interval as an unnecessary battery/stability cost). This is the
-    explicit, user-requested way to get a fresh reading on demand, e.g.
-    right before exporting the topology map.
+    periodic polling — even a slow periodic interval is an unnecessary
+    battery/stability cost). This is the explicit, user-requested way to
+    get a fresh reading on demand, e.g. right before exporting the
+    topology map.
     """
     if hass.services.has_service(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING):
         return

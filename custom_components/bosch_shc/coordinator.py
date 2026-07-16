@@ -32,10 +32,10 @@ class SHCZigbeeRoutingCoordinator(
     Only devices whose id starts with "hdm:ZigBee:" support
     SHCSessionAsync.get_zigbee_routing_info (ground truth from a real SHC).
 
-    No periodic polling (`update_interval=None`): a Bosch SHC engineer
-    flagged even a slow periodic interval as an unnecessary battery/
-    stability cost, since each query is a live over-the-air round-trip to
-    the device, never cached. Data is fetched once at startup (the explicit
+    No periodic polling (`update_interval=None`): even a slow periodic
+    interval is an unnecessary battery/stability cost, since each query is
+    a live over-the-air round-trip to the device, never cached. Data is
+    fetched once at startup (the explicit
     `async_refresh()` call in async_setup_entry) and afterwards only on
     explicit user request, via the `refresh_zigbee_routing` service.
     """
@@ -59,8 +59,8 @@ class SHCZigbeeRoutingCoordinator(
         Sequential, not concurrent: firing every device's on-demand routing
         query at once spikes load on the SHC and the Zigbee mesh itself
         (each query makes the SHC round-trip live to the physical device,
-        nothing is cached) — flagged by a Bosch SHC engineer as a real
-        stability/battery concern. A few extra seconds of wall-clock per
+        nothing is cached) — a real stability/battery concern. A few extra
+        seconds of wall-clock per
         refresh is a fine trade for a refresh that only happens on request.
 
         A single device's failure (offline mesh node, transient error) must
