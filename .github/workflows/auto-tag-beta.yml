@@ -1,0 +1,71 @@
+name: Auto-tag beta
+
+# Whenever a push to master lands with manifest.json's version already set
+# to an untagged "X.Y.Z-beta.N" (a deliberate version bump made in that
+# commit, reviewed like any other change), tag it and push the tag --
+# automating just the mechanical "git tag && git push" step. This workflow
+# never decides a version number itself and never commits anything; it only
+# ever tags a beta string a human already wrote into manifest.json.
+#
+# release.yml picks up the pushed tag from here exactly like a manually
+# pushed one, reruns the full quality+test gate, and publishes the
+# pre-release GitHub Release.
+
+on:
+  push:
+    branches: [master]
+    paths: ["custom_components/bosch_shc/manifest.json"]
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    name: Tag the new beta version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Tag if manifest version is an untagged beta
+        shell: python
+        run: |
+          import json
+          import subprocess
+
+          with open("custom_components/bosch_shc/manifest.json") as f:
+              version = json.load(f)["version"]
+
+          if "-beta." not in version:
+              print(f"'{version}' is not a beta version -- nothing to do.")
+              raise SystemExit(0)
+
+          tag = f"v{version}"
+          existing = subprocess.run(
+              ["git", "tag", "-l", tag], capture_output=True, text=True, check=True
+          ).stdout.strip()
+          if existing:
+              print(f"{tag} already exists -- nothing to do.")
+              raise SystemExit(0)
+
+          subprocess.run(
+              ["git", "config", "user.name", "github-actions[bot]"], check=True
+          )
+          subprocess.run(
+              [
+                  "git",
+                  "config",
+                  "user.email",
+                  "41898282+github-actions[bot]@users.noreply.github.com",
+              ],
+              check=True,
+          )
+          subprocess.run(
+              ["git", "tag", "-a", tag, "-m", f"Auto-tag {tag}"], check=True
+          )
+          subprocess.run(["git", "push", "origin", tag], check=True)
+          print(f"Tagged and pushed {tag}.")
