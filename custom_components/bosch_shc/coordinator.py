@@ -76,14 +76,22 @@ class SHCZigbeeRoutingCoordinator(
         ]
         result: dict[str, SHCZigbeeRoutingInfo] = {}
         for device_id in device_ids:
-            try:
-                result[device_id] = await self._session.get_zigbee_routing_info(
-                    device_id
-                )
-            except (SHCException, SHCConnectionError) as err:
-                LOGGER.debug(
-                    "Failed to fetch Zigbee routing info for %s: %s",
-                    device_id,
-                    err,
-                )
+            info = await self._fetch_one(device_id)
+            if info is not None:
+                result[device_id] = info
         return result
+
+    async def _fetch_one(self, device_id: str) -> SHCZigbeeRoutingInfo | None:
+        """Fetch one device's routing info, or None on a per-device error.
+
+        A separate method (not an inline try/except in the loop above) both
+        avoids ruff's PERF203 and keeps the per-device isolation contract
+        documented on _async_update_data easy to read at a glance.
+        """
+        try:
+            return await self._session.get_zigbee_routing_info(device_id)
+        except (SHCException, SHCConnectionError) as err:
+            LOGGER.debug(
+                "Failed to fetch Zigbee routing info for %s: %s", device_id, err
+            )
+            return None
