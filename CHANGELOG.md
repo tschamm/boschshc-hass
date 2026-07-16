@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.6 — fix firmware update entity hiding an update still actually in progress (#373)
+
+**No breaking changes.**
+
+- **Fix: the per-device firmware update entity could silently claim
+  "up to date" while the device was still actively updating.** The
+  `Unknown` firmware lifecycle state was bucketed together with "nothing
+  to install", but our own live-confirmed transfer trace
+  (`AwaitingActivation` → `UpdatePending` → `Unknown` (mid-transfer) →
+  `UpToDateAwaitingUserInteraction`) shows `Unknown` genuinely occurs
+  *during* an active transfer, not once it's done. Reported live on #373:
+  the Bosch app still showed "Firmware wird aktualisiert ..." while our
+  entity had already dropped to "up to date" and hidden the update
+  entirely. `Unknown` now counts as in-progress/pending, matching reality.
+
 ## 0.12.5 — firmware update entity now shows an actual progress indicator (#373)
 
 **No breaking changes.**

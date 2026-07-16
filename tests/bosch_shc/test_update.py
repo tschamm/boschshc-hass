@@ -169,7 +169,7 @@ def test_device_update_installed_version_is_fixed_marker():
 
 
 def test_device_update_up_to_date_states_report_no_update():
-    for state in (None, "UpToDate", "UpToDateAwaitingUserInteraction", "Unknown", "Fetching"):
+    for state in (None, "UpToDate", "UpToDateAwaitingUserInteraction", "Fetching"):
         u = _new(DeviceUpdate)
         u._firmware_state = state
         assert u.latest_version == u.installed_version, state
@@ -183,8 +183,18 @@ def test_device_update_pending_states_report_update_available():
         assert u.latest_version != u.installed_version, state
 
 
+def test_device_update_unknown_state_is_mid_transfer_not_up_to_date():
+    """hass#373 follow-up: a live-confirmed transfer goes through "Unknown"
+    mid-transfer (rawscan-database.md) -- must show as in-progress/pending,
+    not silently as up to date (was hiding a genuinely still-running update)."""
+    u = _new(DeviceUpdate)
+    u._firmware_state = "Unknown"
+    assert u.latest_version != u.installed_version
+    assert u.in_progress is True
+
+
 def test_device_update_in_progress_states():
-    for state in ("UpdateRunning", "TransferringUpdate"):
+    for state in ("UpdateRunning", "TransferringUpdate", "Unknown"):
         u = _new(DeviceUpdate)
         u._firmware_state = state
         assert u.in_progress is True

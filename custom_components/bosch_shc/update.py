@@ -58,12 +58,14 @@ FIRMWARE_CAPABLE_MODELS = frozenset(
 )
 
 # FirmwareView.FirmwareState values (APK) meaning "nothing to install" --
-# anything else, incl. an unrecognized future string, counts as pending.
+# "Unknown" is NOT here: it's a live-confirmed mid-transfer transient (#373).
 _UP_TO_DATE_STATES = frozenset(
-    {None, "UpToDate", "UpToDateAwaitingUserInteraction", "Unknown", "Fetching"}
+    {None, "UpToDate", "UpToDateAwaitingUserInteraction", "Fetching"}
 )
 # States where the app itself shows an active progress indicator.
-_DEVICE_IN_PROGRESS_STATES = frozenset({"UpdateRunning", "TransferringUpdate"})
+_DEVICE_IN_PROGRESS_STATES = frozenset(
+    {"UpdateRunning", "TransferringUpdate", "Unknown"}
+)
 
 # The ONLY state the live-confirmed PUT .../activate call is valid from --
 # every other pending state legitimately 409s if activated (again) (#373).
