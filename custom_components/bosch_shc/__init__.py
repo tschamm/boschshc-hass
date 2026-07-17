@@ -511,17 +511,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         zigbee_routing_coordinator=zigbee_routing_coordinator,
     )
 
-    # async_refresh(), not async_config_entry_first_refresh(): this backs an
-    # opt-in diagnostic sensor and must not fail the whole entry on a hiccup.
-    # Backgrounded, not awaited: _async_update_data queries every Zigbee
-    # device sequentially over the air (never cached SHC-side), which can
-    # take minutes on a mesh with many/slow devices — that must not delay
-    # the entry reaching LOADED, since every other platform's data already
-    # arrived via the long-poll stream by this point.
-    # The task reference is kept (not fire-and-forget) so async_unload_entry
-    # can cancel it before session.stop_polling() closes the HTTP session —
-    # HA's own config-entry background-task cancellation only runs AFTER
-    # async_unload_entry returns, which would otherwise be too late.
+    # Backgrounded (sequential live per-device queries can take minutes) so
+    # setup isn't delayed; task kept so unload can cancel it before stop_polling().
     entry.runtime_data.zigbee_routing_refresh_task = entry.async_create_background_task(
         hass,
         zigbee_routing_coordinator.async_refresh(),
@@ -906,13 +897,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for listener in runtime.switch_event_listeners:
         listener.shutdown()
     runtime.switch_event_listeners.clear()
-    # Cancel the Zigbee-routing first-refresh background task before
-    # stop_polling() closes the shared HTTP session — otherwise, if the
-    # refresh is still in flight (a slow/large Zigbee mesh), its in-flight
-    # request fails against an already-closed session and logs a spurious
-    # "Unexpected error fetching" traceback. HA's own config-entry
-    # background-task cancellation only runs after this function returns,
-    # which would be too late.
+    # Cancel before stop_polling() closes the session, else an in-flight
+    # refresh races the closed session and logs a spurious traceback.
     if runtime.zigbee_routing_refresh_task is not None:
         runtime.zigbee_routing_refresh_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):

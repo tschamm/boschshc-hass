@@ -1,14 +1,14 @@
 # Known comment-length violations, accepted as pre-existing debt.
 # Format: path:line — do NOT add new entries; fix new violations instead.
-# Regenerated 2026-07-17 after the bughunt round shifted line numbers in
-# __init__.py (OPT_SSL_VERIFY_HOSTNAME warning) — same pre-existing
-# comment content, no new prose added.
-custom_components/bosch_shc/__init__.py:1016
-custom_components/bosch_shc/__init__.py:572
-custom_components/bosch_shc/__init__.py:667
-custom_components/bosch_shc/__init__.py:680
-custom_components/bosch_shc/__init__.py:841
-custom_components/bosch_shc/__init__.py:961
+# Regenerated 2026-07-17 after the Zigbee-routing background-task fix
+# shifted line numbers in __init__.py — same pre-existing comment
+# content, no new prose added.
+custom_components/bosch_shc/__init__.py:1027
+custom_components/bosch_shc/__init__.py:577
+custom_components/bosch_shc/__init__.py:672
+custom_components/bosch_shc/__init__.py:685
+custom_components/bosch_shc/__init__.py:846
+custom_components/bosch_shc/__init__.py:972
 custom_components/bosch_shc/binary_sensor.py:1033
 custom_components/bosch_shc/binary_sensor.py:1169
 custom_components/bosch_shc/binary_sensor.py:1255
