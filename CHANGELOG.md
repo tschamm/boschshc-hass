@@ -90,6 +90,12 @@ temperature-drop switch/number entities, re-enable them under
 - Docs: added the missing `temperature_drop_entities` row to the README's
   options table (the feature itself shipped earlier this week, the docs
   entry was missed).
+- Pins `boschshcpy==0.6.3`, which fixes a real long-poll robustness gap:
+  any error other than "unknown poll id" (code -32001) on the poll call
+  never invalidated the poll id, so the poll loop kept retrying with the
+  same broken id and repeating the identical error indefinitely instead of
+  recovering via resubscribe. Now any poll error triggers the same
+  resubscribe-and-refresh recovery already used for -32001.
 
 ## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
 

@@ -13,5 +13,5 @@ homeassistant>=2026.7.2
 # Runtime dependency of the integration — pinned to the manifest version so the
 # unit gate tests against the exact released lib (an unpinned spec let CI install
 # a stale cached wheel and miss new lib APIs).
-boschshcpy==0.6.1
+boschshcpy==0.6.3
 mypy
