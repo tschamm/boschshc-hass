@@ -110,6 +110,10 @@ promoted to a stable release. Betas run through the exact same test/quality gate
 stable release, so they're safe to try — this is how you can help test a fix before it
 reaches everyone, or get a feature slightly earlier.
 
+The latest beta is automatically promoted to a stable release every **Friday at 18:00
+(Europe/Berlin)**, giving each beta at least a few days of real-world testing before it
+becomes the default version everyone gets.
+
 By default HACS only shows stable releases. To opt in to betas for this integration:
 
 1. Go to **Settings → Devices & Services → Entities**, search for

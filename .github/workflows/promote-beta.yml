@@ -1,0 +1,106 @@
+name: Promote beta to stable
+
+# Runs every Friday 18:00 Europe/Berlin. GitHub Actions cron is UTC-only and
+# not DST-aware -- the "16 * * 5" below is CEST (UTC+2, summer). Update to
+# "0 17 * * 5" when Europe switches back to CET (UTC+1, late October) to
+# keep the actual wall-clock time at 18:00 Berlin.
+#
+# Weekly cadence: find the newest beta tag (vX.Y.Z-beta.N) that has no
+# corresponding stable tag (vX.Y.Z) yet, and tag+push that same commit as
+# stable. release.yml already reruns the FULL quality+test gate on any tag
+# push, so promotion carries no separate safety logic — if the beta's code
+# was broken, the fresh CI run on the new stable tag fails and no GH Release
+# gets published, same as it always has for a manual release.
+#
+# A beta tag's CHANGELOG entry is already written under the eventual stable
+# heading ("## X.Y.Z — ...", not "## X.Y.Z-beta.N") per this repo's release
+# convention, so nothing else needs to change for the promoted release.
+
+on:
+  schedule:
+    - cron: "0 16 * * 5" # Friday 18:00 Europe/Berlin (CEST, UTC+2)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  find:
+    name: Find latest unpromoted beta
+    runs-on: ubuntu-latest
+    outputs:
+      found: ${{ steps.find.outputs.found }}
+      beta_tag: ${{ steps.find.outputs.beta_tag }}
+      stable_tag: ${{ steps.find.outputs.stable_tag }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Find latest unpromoted beta
+        id: find
+        shell: python
+        run: |
+          import os
+          import re
+          import subprocess
+
+          tags = subprocess.run(
+              ["git", "tag", "-l", "v*"], capture_output=True, text=True, check=True
+          ).stdout.splitlines()
+
+          pattern = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$")
+          stable_versions = set()
+          betas = []
+          for tag in tags:
+              match = pattern.match(tag)
+              if not match:
+                  continue
+              major, minor, patch, beta = match.groups()
+              key = (int(major), int(minor), int(patch))
+              if beta is None:
+                  stable_versions.add(key)
+              else:
+                  betas.append((key, int(beta), tag))
+
+          candidates = [b for b in betas if b[0] not in stable_versions]
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              if not candidates:
+                  print("No unpromoted beta tag found -- nothing to do.")
+                  f.write("found=false\n")
+              else:
+                  candidates.sort()
+                  key, beta_num, beta_tag = candidates[-1]
+                  stable_tag = f"v{key[0]}.{key[1]}.{key[2]}"
+                  print(f"Promoting {beta_tag} -> {stable_tag}")
+                  f.write("found=true\n")
+                  f.write(f"beta_tag={beta_tag}\n")
+                  f.write(f"stable_tag={stable_tag}\n")
+
+  promote:
+    name: Tag + push the stable release
+    needs: find
+    if: needs.find.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create and push the stable tag
+        env:
+          BETA_TAG: ${{ needs.find.outputs.beta_tag }}
+          STABLE_TAG: ${{ needs.find.outputs.stable_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Peel to the commit explicitly -- tagging a tag name directly
+          # creates a "nested tag" (new tag object pointing at the old tag
+          # object, not the commit), which git itself warns against.
+          git tag -a "$STABLE_TAG" "${BETA_TAG}^{commit}" -m "Promote $BETA_TAG to stable"
+          git push origin "$STABLE_TAG"
