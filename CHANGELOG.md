@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.9 — update-entity asymmetry fixes + HA convention alignment (#373)
+## 0.12.10 — fix ~150s startup delay from a blocking Zigbee-routing refresh
 
 - **Fix: the integration could take minutes to load after a restart**,
   reported live via a real user's "integration startup time" diagnostics
@@ -15,6 +15,8 @@
   entry no longer waits on it, and the task is explicitly cancelled during
   unload/reload (before the shared HTTP session closes) so an in-flight
   refresh can't race a closed session.
+
+## 0.12.9 — update-entity asymmetry fixes + HA convention alignment (#373)
 
 **Breaking (opt-in feature re-defaulted to off):** if you use the
 temperature-drop switch/number entities, re-enable them under
