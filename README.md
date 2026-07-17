@@ -112,7 +112,11 @@ reaches everyone, or get a feature slightly earlier.
 
 The latest beta is automatically promoted to a stable release every **Friday at 18:00
 (Europe/Berlin)**, giving each beta at least a few days of real-world testing before it
-becomes the default version everyone gets.
+becomes the default version everyone gets. In short, there are two release trains:
+
+- **beta** — released as fixes/features land, for anyone who wants updates sooner.
+- **stable** — a collection of that week's beta updates, promoted automatically every
+  Friday. If a week has no new betas, there's no stable release that week either.
 
 By default HACS only shows stable releases. To opt in to betas for this integration:
 

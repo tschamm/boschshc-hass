@@ -130,6 +130,18 @@ jobs:
           else
             echo "fallback=false" >> "$GITHUB_OUTPUT"
           fi
+          # Every stable release is the automated Friday promotion of that
+          # week's latest beta (see promote-beta.yml) — make that explicit
+          # in the notes themselves, not just implicit from the CHANGELOG
+          # structure, so it's visible to anyone reading just the release.
+          if [[ ! "$FULL_VERSION" =~ -beta\. ]] && [ -s /tmp/release-notes.md ]; then
+            {
+              echo "_This release collects everything that landed as beta updates this week. There are two release trains: **beta** (\`vX.Y.Z-beta.N\`, released as fixes/features land, for anyone who wants updates sooner) and **stable** (\`vX.Y.Z\`, this one — the latest beta promoted automatically every Friday). If a week has no new betas, there's no stable release that week either._"
+              echo
+              cat /tmp/release-notes.md
+            } > /tmp/release-notes-full.md
+            mv /tmp/release-notes-full.md /tmp/release-notes.md
+          fi
 
       - name: Create or update release
         env:
