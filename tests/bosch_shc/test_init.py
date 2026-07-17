@@ -142,6 +142,25 @@ def _make_fake_entry(entry_id="test_entry_id", title="Test SHC",
     # during async_setup_entry) requires the entry to report itself as
     # mid-setup, exactly like a real ConfigEntry does at this point.
     entry.state = ConfigEntryState.SETUP_IN_PROGRESS
+
+    # The Zigbee-routing first refresh is backgrounded (not awaited) in
+    # async_setup_entry — schedule the real coroutine as an asyncio Task so
+    # tests that care about its outcome can await entry._background_tasks
+    # explicitly, without making setup itself wait for it. Uses HA's own
+    # eager_task_factory (matching real ConfigEntry.async_create_background_task,
+    # which eager-starts by default) so the task actually runs up to its
+    # first suspension point before this synchronous call returns — a plain
+    # asyncio.ensure_future() wouldn't start the coroutine at all until the
+    # caller later awaits something real, understating how "in flight" the
+    # real task already is by the time async_setup_entry returns.
+    entry._background_tasks = []
+
+    def _create_background_task(hass_arg, target, name, eager_start=True):
+        task = asyncio.eager_task_factory(asyncio.get_event_loop(), target, name=name)
+        entry._background_tasks.append(task)
+        return task
+
+    entry.async_create_background_task = MagicMock(side_effect=_create_background_task)
     return entry
 
 
@@ -3722,17 +3741,134 @@ class TestZigbeeCoordinatorFailureDoesNotBlockSetup:
         dr_mock = _make_fake_device_registry()
         track_unsub = MagicMock()
 
-        with (
-            patch(PATCH_SESSION, return_value=session),
-            patch(PATCH_DR_GET, return_value=dr_mock),
-            patch(PATCH_PARSE_CERT, return_value=None),
-            patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
-        ):
-            result = _run(async_setup_entry(hass, entry))
+        async def _do():
+            with (
+                patch(PATCH_SESSION, return_value=session),
+                patch(PATCH_DR_GET, return_value=dr_mock),
+                patch(PATCH_PARSE_CERT, return_value=None),
+                patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
+            ):
+                result = await async_setup_entry(hass, entry)
+            # The refresh is now backgrounded (see
+            # TestZigbeeCoordinatorRefreshBackgrounded below) — await it here,
+            # in the same event loop, since this test cares about its outcome.
+            await asyncio.gather(*entry._background_tasks)
+            return result
+
+        result = _run(_do())
 
         assert result is True
         coordinator = entry.runtime_data.zigbee_routing_coordinator
         assert coordinator.last_update_success is False
+
+
+class TestZigbeeCoordinatorRefreshBackgrounded:
+    """The initial Zigbee-routing refresh must not block async_setup_entry.
+
+    Regression for a real report of the integration taking ~150s to load
+    after a restart (visible in HA's own "integration startup time"
+    diagnostics). Root cause: the coordinator queries every Zigbee device
+    sequentially, live over-the-air (never cached SHC-side) — with many or
+    slow/sleepy devices that adds up to minutes, and it was previously
+    awaited inline, so the entry couldn't reach LOADED until it finished.
+    """
+
+    def test_setup_returns_without_waiting_for_zigbee_refresh(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        session = fake_session
+        session.devices = [SimpleNamespace(id="hdm:ZigBee:abc")]
+        never_resolves = asyncio.Event()
+
+        async def _hang_forever(*_args, **_kwargs):
+            await never_resolves.wait()
+
+        session.get_zigbee_routing_info = AsyncMock(side_effect=_hang_forever)
+
+        hass = fake_hass
+        entry = fake_entry
+        dr_mock = _make_fake_device_registry()
+        track_unsub = MagicMock()
+
+        async def _do():
+            with (
+                patch(PATCH_SESSION, return_value=session),
+                patch(PATCH_DR_GET, return_value=dr_mock),
+                patch(PATCH_PARSE_CERT, return_value=None),
+                patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
+            ):
+                try:
+                    return await asyncio.wait_for(
+                        async_setup_entry(hass, entry), timeout=1
+                    )
+                finally:
+                    for task in entry._background_tasks:
+                        task.cancel()
+                    await asyncio.gather(
+                        *entry._background_tasks, return_exceptions=True
+                    )
+
+        result = _run(_do())
+
+        assert result is True
+        entry.async_create_background_task.assert_called_once()
+        call = entry.async_create_background_task.call_args
+        assert call.args[0] is hass
+        assert "zigbee_routing" in call.args[2]
+
+    def test_unload_cancels_in_flight_refresh_before_stop_polling(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """async_unload_entry must cancel a still-running background refresh
+        before calling session.stop_polling() (which closes the shared HTTP
+        session) — otherwise the in-flight fetch races a closed session and
+        logs a spurious traceback instead of a clean cancellation.
+        """
+        from custom_components.bosch_shc import async_unload_entry
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        session = fake_session
+        session.devices = [SimpleNamespace(id="hdm:ZigBee:abc")]
+        never_resolves = asyncio.Event()
+        fetch_was_cancelled = False
+
+        async def _hang_forever(*_args, **_kwargs):
+            nonlocal fetch_was_cancelled
+            try:
+                await never_resolves.wait()
+            except asyncio.CancelledError:
+                fetch_was_cancelled = True
+                raise
+
+        session.get_zigbee_routing_info = AsyncMock(side_effect=_hang_forever)
+
+        hass = fake_hass
+        entry = fake_entry
+        dr_mock = _make_fake_device_registry()
+        track_unsub = MagicMock()
+
+        async def _do():
+            with (
+                patch(PATCH_SESSION, return_value=session),
+                patch(PATCH_DR_GET, return_value=dr_mock),
+                patch(PATCH_PARSE_CERT, return_value=None),
+                patch(PATCH_TRACK_INTERVAL, return_value=track_unsub),
+            ):
+                await asyncio.wait_for(async_setup_entry(hass, entry), timeout=1)
+                # The background task must still be running at this point —
+                # otherwise this test isn't exercising the race at all.
+                assert not entry._background_tasks[0].done()
+                return await asyncio.wait_for(
+                    async_unload_entry(hass, entry), timeout=1
+                )
+
+        result = _run(_do())
+
+        assert result is True
+        assert fetch_was_cancelled is True
+        session.stop_polling.assert_awaited_once()
 
 
 class TestRawscanNoRuntimeData:

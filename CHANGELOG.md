@@ -2,6 +2,20 @@
 
 ## 0.12.9 — update-entity asymmetry fixes + HA convention alignment (#373)
 
+- **Fix: the integration could take minutes to load after a restart**,
+  reported live via a real user's "integration startup time" diagnostics
+  (147s for Bosch SHC vs. under 22s for every other integration). Root
+  cause: `async_setup_entry` `await`ed the Zigbee-routing coordinator's
+  first refresh inline — that coordinator deliberately queries every
+  Zigbee-attached device sequentially, live over the air (never cached
+  SHC-side, to avoid bursting the mesh), so a setup with many or
+  slow/sleepy Zigbee devices could block the entry from reaching `LOADED`
+  for a long time over data that only backs an opt-in diagnostic sensor.
+  Now scheduled as a config-entry-scoped background task instead — the
+  entry no longer waits on it, and the task is explicitly cancelled during
+  unload/reload (before the shared HTTP session closes) so an in-flight
+  refresh can't race a closed session.
+
 **Breaking (opt-in feature re-defaulted to off):** if you use the
 temperature-drop switch/number entities, re-enable them under
 **Settings → Devices & Services → Bosch SHC → Configure → Features**.
