@@ -354,6 +354,56 @@ class TestSetupUpdateAvailable:
 
 
 # ---------------------------------------------------------------------------
+# Tests: async_setup_entry — ssl_verify_hostname option (async-parity gap)
+# ---------------------------------------------------------------------------
+
+
+class TestSslVerifyHostnameWarning:
+    """ssl_verify_hostname is not honored on the async path (build_ssl_context
+    always hardcodes check_hostname=False) — same async-parity gap as
+    ssl_skip_verify.  Unlike ssl_skip_verify, this option previously had NO
+    warning at all when set, silently doing nothing.
+    """
+
+    def _do_setup(self, fake_hass, fake_entry, fake_session, options):
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        hass = fake_hass
+        entry = fake_entry
+        entry.options = options
+        dr_mock = _make_fake_device_registry()
+
+        with (
+            patch(PATCH_SESSION, return_value=fake_session),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            result = _run(async_setup_entry(hass, entry))
+        return result
+
+    def test_warns_when_enabled(self, fake_hass, fake_entry, fake_session, caplog):
+        with caplog.at_level("WARNING"):
+            result = self._do_setup(
+                fake_hass, fake_entry, fake_session, {"ssl_verify_hostname": True}
+            )
+        assert result is True
+        assert any(
+            "ssl_verify_hostname" in record.message for record in caplog.records
+        )
+
+    def test_no_warning_when_disabled(self, fake_hass, fake_entry, fake_session, caplog):
+        with caplog.at_level("WARNING"):
+            result = self._do_setup(
+                fake_hass, fake_entry, fake_session, {"ssl_verify_hostname": False}
+            )
+        assert result is True
+        assert not any(
+            "ssl_verify_hostname" in record.message for record in caplog.records
+        )
+
+
+# ---------------------------------------------------------------------------
 # Tests: async_setup_entry — certificate paths
 # ---------------------------------------------------------------------------
 

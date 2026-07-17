@@ -71,14 +71,25 @@ temperature-drop switch/number entities, re-enable them under
   (`OPT_TEMPERATURE_DROP_ENTITIES`, default off) — most setups don't use
   this feature, and it was one of the sources of unnecessary 15-second
   polling above.
-- Investigated but NOT changed pending confirmation: `CameraLight`/
-  `CameraAmbientLight`/`CameraFrontLight`/`PrivacyMode` switches have carried
-  an explicit (and seemingly unjustified) `should_poll=True` since ~2023.
-  We could not confirm from our own code or the official API docs whether
-  these camera services are actually delivered via the long-poll stream
-  like every other device service — changing this blind risked silently
-  freezing these entities for real camera owners, so it's left as-is
-  pending confirmation from Bosch.
+- Investigated, confirmed NOT a bug: `CameraLight`/`CameraAmbientLight`/
+  `CameraFrontLight`/`PrivacyMode` switches carry an explicit
+  `should_poll=True` since ~2023. Confirmed these camera services are, like
+  every other device service, delivered via the long-poll stream — the SHC
+  only ever serves its own cached value regardless of polling, so no change
+  is needed here.
+- **Fix: `OPT_SSL_VERIFY_HOSTNAME` silently did nothing on the async
+  connection path**, unlike its sibling `OPT_SSL_SKIP_VERIFY` which at
+  least logs a warning when its setting can't be honored. A user enabling
+  this option got no feedback that it was a no-op. Now warns consistently
+  with the sibling option.
+- **Fix: `TwinguardSmokeAlarmSensor.async_request_smoketest` raised an
+  error with no message** — every other write-path error in this
+  integration includes the device name and underlying exception text;
+  this one silently discarded both, leaving only a generic translated
+  string with zero diagnostic info.
+- Docs: added the missing `temperature_drop_entities` row to the README's
+  options table (the feature itself shipped earlier this week, the docs
+  entry was missed).
 
 ## 0.12.8 — more firmware update-entity fixes from a 2-agent bughunt (#373)
 

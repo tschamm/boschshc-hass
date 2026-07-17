@@ -2458,8 +2458,14 @@ class TestTwinguardSmokeTestException:
             async_smoketest_requested=AsyncMock(side_effect=SHCException("err")),
         )
 
-        with pytest.raises(HomeAssistantError):
+        with pytest.raises(HomeAssistantError) as exc_info:
             _run(ent.async_request_smoketest())
+        # Regression: the raised error must carry the device name and the
+        # original exception text (every other HomeAssistantError raise in
+        # this codebase does the same) -- previously this one omitted the
+        # message argument entirely, silently discarding both.
+        assert "Twinguard" in str(exc_info.value)
+        assert "err" in str(exc_info.value)
 
 
 class TestTwinguardAlarmTracker:

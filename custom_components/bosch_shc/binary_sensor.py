@@ -1383,6 +1383,7 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[
             await self._device.async_smoketest_requested()
         except SHCException as err:
             raise HomeAssistantError(
+                f"Smoke test request failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
                 translation_key="smoke_test_failed",
             ) from err

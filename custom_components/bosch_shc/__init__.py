@@ -79,6 +79,7 @@ from .const import (
     OPT_SILENT_MODE_END,
     OPT_SILENT_MODE_START,
     OPT_SSL_SKIP_VERIFY,
+    OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
     SERVICE_REFRESH_ZIGBEE_ROUTING,
     SERVICE_TRIGGER_RAWSCAN,
@@ -442,6 +443,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         LOGGER.warning(
             "ssl_skip_verify is set but is not yet honored on the async path; "
             "the bundled Bosch CA is still used. Tracked for async parity."
+        )
+    if entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False):
+        LOGGER.warning(
+            "ssl_verify_hostname is set but is not yet honored on the async "
+            "path; hostname verification is always disabled (the SHC's "
+            "certificate CN/SAN doesn't match its IP). Tracked for async parity."
         )
     # Build the mTLS SSLContext off the event loop (blocking PEM reads).
     # verify_ssl=False: the per-request ssl= kwarg already passes the mTLS context.

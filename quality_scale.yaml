@@ -592,17 +592,15 @@ rules:
     status: done
     comment: >
       boschshcpy: mypy.ini has `strict = true`, py.typed marker present,
-      passes clean. boschshc-hass: mypy.ini does NOT set `strict = true` —
-      it intentionally disables several strict-mode checks
-      (disable_error_code = attr-defined,return-value,override,
-      typeddict-item,dict-item,assignment,arg-type,union-attr) because the
-      integration's device/service objects come from the untyped-at-runtime
-      boschshcpy dynamic attribute model. CORRECTION (2026-07-01 audit): the
-      earlier "mypy --strict passes on both" claim was false for
-      boschshc-hass — it passes its own (looser) configured rule set, not
-      literal --strict. Tightening it further (removing disabled error
-      codes one at a time) is a legitimate follow-up but a separate,
-      possibly large undertaking — not done here. Retained targeted
+      passes clean. boschshc-hass: mypy.ini does NOT set `strict = true`,
+      but as of the 2026-07-14 core-prep session the `disable_error_code`
+      exemption line was removed entirely — mypy runs its own configured
+      rule set (disallow_untyped_defs/disallow_incomplete_defs, not literal
+      `--strict`) with zero suppressed error categories, and
+      `mypy custom_components/bosch_shc/` is genuinely clean. Device/service
+      typing gaps from boschshcpy's dynamic attribute model are handled via
+      local `self._device: <ConcreteType>` narrowing per entity class
+      instead of a blanket suppression. Retained targeted
       type: ignore[misc, func-returns-value] on the async wrapper that
       awaits the sync put_device_service_state (device_service.py) —
       structural limitation of the dual-API design, still present and
