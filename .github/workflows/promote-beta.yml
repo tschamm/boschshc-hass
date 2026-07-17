@@ -1,9 +1,16 @@
 name: Promote beta to stable
 
-# Runs every Friday 18:00 Europe/Berlin. GitHub Actions cron is UTC-only and
-# not DST-aware -- the "16 * * 5" below is CEST (UTC+2, summer). Update to
-# "0 17 * * 5" when Europe switches back to CET (UTC+1, late October) to
-# keep the actual wall-clock time at 18:00 Berlin.
+# Runs every Friday ~18:05 Europe/Berlin. GitHub Actions cron is UTC-only
+# and not DST-aware -- the "16 * * 5" below is CEST (UTC+2, summer). Update
+# to "5 17 * * 5" when Europe switches back to CET (UTC+1, late October) to
+# keep the actual wall-clock time at ~18:05 Berlin.
+#
+# Deliberately offset 5 minutes past the hour, not on it: GitHub documents
+# that scheduled workflows can be delayed under high load, "especially at
+# the start of every hour" -- confirmed on 2026-07-17, when this workflow's
+# first-ever scheduled run (at exactly 16:00 UTC) never fired at all and
+# had to be triggered manually. A few minutes off the hour avoids the
+# worst of that contention.
 #
 # Weekly cadence: find the newest beta tag (vX.Y.Z-beta.N) that has no
 # corresponding stable tag (vX.Y.Z) yet, and tag+push that same commit as
@@ -12,13 +19,22 @@ name: Promote beta to stable
 # was broken, the fresh CI run on the new stable tag fails and no GH Release
 # gets published, same as it always has for a manual release.
 #
+# A tag pushed with the default GITHUB_TOKEN does NOT trigger other
+# workflows (GitHub's own loop-prevention) -- so release.yml's
+# `on: push: tags:` never fires for a tag created here (confirmed
+# 2026-07-17: v0.12.9 got tagged+pushed fine but never got a GitHub
+# Release, needed a manual `gh workflow run release.yml` to finish the
+# job -- the exact same class of bug already fixed in auto-tag-beta.yml,
+# just not copied over here). This job now explicitly dispatches
+# release.yml via workflow_dispatch after pushing the tag.
+#
 # A beta tag's CHANGELOG entry is already written under the eventual stable
 # heading ("## X.Y.Z — ...", not "## X.Y.Z-beta.N") per this repo's release
 # convention, so nothing else needs to change for the promoted release.
 
 on:
   schedule:
-    - cron: "0 16 * * 5" # Friday 18:00 Europe/Berlin (CEST, UTC+2)
+    - cron: "5 16 * * 5" # Friday ~18:05 Europe/Berlin (CEST, UTC+2)
   workflow_dispatch: {}
 
 permissions:
@@ -86,6 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -104,3 +121,9 @@ jobs:
           # object, not the commit), which git itself warns against.
           git tag -a "$STABLE_TAG" "${BETA_TAG}^{commit}" -m "Promote $BETA_TAG to stable"
           git push origin "$STABLE_TAG"
+
+      - name: Dispatch release.yml for the new stable tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STABLE_TAG: ${{ needs.find.outputs.stable_tag }}
+        run: gh workflow run release.yml --ref master -f "tag=${STABLE_TAG}"
