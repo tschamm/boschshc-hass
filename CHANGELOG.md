@@ -2,6 +2,22 @@
 
 ## 0.12.10 — fix ~150s startup delay from a blocking Zigbee-routing refresh
 
+- **Fix: a corrupted or missing client certificate/key crashed setup with a
+  raw, cryptic `ssl.SSLError: [SSL] PEM lib`** instead of offering the
+  existing "reconfigure the integration" recovery flow. Reported via a
+  community-forum traceback after an unrelated controller restart coincided
+  with (unrelated to it) a corrupted on-disk PEM file. The pre-flight
+  certificate check already existed but only ever validated the
+  certificate, never the key, and deliberately doesn't block setup on parse
+  failures — so a bad cert *or* key fell straight through to an unguarded
+  `build_ssl_context()` call. That call is now wrapped and raises
+  `ConfigEntryAuthFailed` on `ssl.SSLError`/`OSError`/`ValueError`,
+  triggering the integration's existing reauth/"repair credentials" flow
+  (re-pairing writes fresh, valid PEM files). Bumped `boschshcpy` to 0.6.4,
+  which fixes the same crash shape one layer down (`SHCAPIAsync`'s
+  ssl_context fallback path) and hardens the cert/key write path with
+  `os.fsync()` against a possible root cause (a torn write surviving until
+  a much later, unrelated restart).
 - **Fix: the integration could take minutes to load after a restart**,
   reported live via a real user's "integration startup time" diagnostics
   (147s for Bosch SHC vs. under 22s for every other integration). Root

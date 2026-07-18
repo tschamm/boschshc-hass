@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import inspect
 import json
+import ssl
 from datetime import time as dt_time
 from datetime import timedelta
 from pathlib import Path
@@ -456,11 +457,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     websession = async_get_clientsession(hass, verify_ssl=False)
     _session_kwargs: dict[str, Any] = {"long_poll_timeout": long_poll_timeout}
     if "ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters:
-        _session_kwargs["ssl_context"] = await hass.async_add_executor_job(
-            build_ssl_context,
-            data[CONF_SSL_CERTIFICATE],
-            data[CONF_SSL_KEY],
-        )
+        try:
+            _session_kwargs["ssl_context"] = await hass.async_add_executor_job(
+                build_ssl_context,
+                data[CONF_SSL_CERTIFICATE],
+                data[CONF_SSL_KEY],
+            )
+        except (ssl.SSLError, OSError, ValueError) as err:
+            # A corrupted/missing cert or key file otherwise crashes setup
+            # here uncaught (the pre-flight check above only covers the cert).
+            LOGGER.error(
+                "Bosch SHC client certificate/key at %s / %s could not be "
+                "loaded (%s). Reconfigure the integration (put the "
+                "controller in pairing mode and re-authenticate).",
+                data.get(CONF_SSL_CERTIFICATE),
+                data.get(CONF_SSL_KEY),
+                err,
+            )
+            raise ConfigEntryAuthFailed(
+                "Client certificate or key could not be loaded "
+                f"({err}). Reconfigure the integration."
+            ) from err
     if "external_session" in inspect.signature(SHCSessionAsync.__init__).parameters:
         _session_kwargs["external_session"] = websession
     session = SHCSessionAsync(
@@ -527,7 +544,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             return  # no cert configured — nothing to check (mirrors startup guard)
         try:
             info = await hass.async_add_executor_job(parse_certificate, cert_path)
-        except Exception:  # noqa: BLE001  # silently ignore parsing issues
+        except Exception as err:  # noqa: BLE001  # don't block the daily check on parse issues
+            LOGGER.debug(
+                "Daily cert check: unable to parse Bosch SHC certificate (%s): %s",
+                cert_path,
+                err,
+            )
             return
         if info.days_remaining < 0:
             LOGGER.error(

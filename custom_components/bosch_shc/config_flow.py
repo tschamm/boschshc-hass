@@ -163,12 +163,20 @@ HOST_SCHEMA = vol.Schema(
 
 
 def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes) -> None:
-    """Write the tls assets to disk with owner-only permissions (0o600)."""
+    """Write the tls assets to disk with owner-only permissions (0o600).
+
+    Explicitly fsyncs before closing: without it, a crash/power-loss in the
+    window between a successful pairing and the OS flushing dirty pages can
+    leave a truncated/empty PEM file on disk that only fails much later, with
+    a cryptic OpenSSL error, on some unrelated future restart.
+    """
     makedirs(hass.config.path(DOMAIN), exist_ok=True)
     path = hass.config.path(DOMAIN, filename)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w", encoding="utf8") as file_handle:
         file_handle.write(asset.decode("utf-8"))
+        file_handle.flush()
+        os.fsync(file_handle.fileno())
 
 
 def create_credentials_and_validate(

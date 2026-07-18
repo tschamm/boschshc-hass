@@ -518,6 +518,106 @@ class TestSetupCertBranches:
 
 
 # ---------------------------------------------------------------------------
+# Tests: async_setup_entry — build_ssl_context failure (corrupted cert/key)
+#
+# Every other test in this module patches SHCSessionAsync with a bare
+# MagicMock, whose __init__ signature no longer matches the real class — so
+# `"ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters`
+# is always False there and the build_ssl_context call in async_setup_entry
+# is never exercised. A real (lightweight) class is used here instead, via
+# __new__, so the signature check genuinely sees the real parameter.
+# ---------------------------------------------------------------------------
+
+class TestSetupSslContextError:
+    def _setup_with_ssl_context_side_effect(
+        self, fake_hass, fake_entry, fake_session, side_effect
+    ):
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        class _RealSignatureSHCSessionAsync:
+            """Stands in for SHCSessionAsync but keeps the real __init__
+            signature (so the ssl_context feature-detection gate fires),
+            while __new__ hands back the pre-built fake_session mock."""
+
+            def __new__(cls, *args, **kwargs):
+                return fake_session
+
+            def __init__(
+                self,
+                controller_ip,
+                certificate,
+                key,
+                *,
+                external_session=None,
+                long_poll_timeout=30,
+                ssl_context=None,
+            ):  # pragma: no cover - never runs, __new__ returns fake_session
+                pass
+
+        hass = fake_hass
+        entry = fake_entry
+        entry.data["ssl_certificate"] = "/config/bosch_shc/shc_cert_x.pem"
+        entry.data["ssl_key"] = "/config/bosch_shc/shc_key_x.pem"
+
+        with (
+            patch(PATCH_SESSION, new=_RealSignatureSHCSessionAsync),
+            patch(
+                "custom_components.bosch_shc.__init__.build_ssl_context",
+                side_effect=side_effect,
+            ),
+            patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            return _run(async_setup_entry(hass, entry))
+
+    def test_corrupted_pem_raises_auth_failed(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A truncated/corrupted cert or key file makes OpenSSL raise
+        ssl.SSLError('[SSL] PEM lib') from build_ssl_context — this must
+        surface as ConfigEntryAuthFailed (triggers the existing
+        repair_credentials/reauth flow) instead of an unhandled crash."""
+        import ssl as ssl_module
+
+        from homeassistant.exceptions import ConfigEntryAuthFailed
+
+        with pytest.raises(ConfigEntryAuthFailed):
+            self._setup_with_ssl_context_side_effect(
+                fake_hass,
+                fake_entry,
+                fake_session,
+                ssl_module.SSLError("[SSL] PEM lib (_ssl.c:4184)"),
+            )
+
+    def test_missing_key_file_raises_auth_failed(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A missing key/cert file (e.g. deleted alongside a backup restore)
+        raises FileNotFoundError (an OSError subclass) from load_cert_chain
+        — same recoverable-via-reauth treatment as a corrupted file."""
+        from homeassistant.exceptions import ConfigEntryAuthFailed
+
+        with pytest.raises(ConfigEntryAuthFailed):
+            self._setup_with_ssl_context_side_effect(
+                fake_hass,
+                fake_entry,
+                fake_session,
+                FileNotFoundError(2, "No such file or directory"),
+            )
+
+    def test_valid_ssl_context_setup_succeeds(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """Sanity check: a working ssl_context still lets setup succeed —
+        guards against the try/except swallowing the success path too."""
+        result = self._setup_with_ssl_context_side_effect(
+            fake_hass, fake_entry, fake_session, None
+        )
+        assert result is True
+
+
+# ---------------------------------------------------------------------------
 # Tests: async_setup_entry — SHC connection errors
 # ---------------------------------------------------------------------------
 

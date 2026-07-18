@@ -1032,18 +1032,21 @@ class TestWriteTlsAsset:
         m = mock_open()
         with patch("custom_components.bosch_shc.config_flow.makedirs") as mk, \
                 patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
-                patch("custom_components.bosch_shc.config_flow.os.fdopen", m):
+                patch("custom_components.bosch_shc.config_flow.os.fdopen", m), \
+                patch("custom_components.bosch_shc.config_flow.os.fsync") as m_fsync:
             write_tls_asset(hass, "test-cert.pem", b"CERT_CONTENT")
 
         mk.assert_called_once()
         m.assert_called_once_with(5, "w", encoding="utf8")
         m().write.assert_called_once_with("CERT_CONTENT")
+        m_fsync.assert_called_once()
 
     def test_makedirs_called_with_exist_ok(self):
         hass = _new_make_hass()
         with patch("custom_components.bosch_shc.config_flow.makedirs") as mk, \
                 patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
-                patch("custom_components.bosch_shc.config_flow.os.fdopen", mock_open()):
+                patch("custom_components.bosch_shc.config_flow.os.fdopen", mock_open()), \
+                patch("custom_components.bosch_shc.config_flow.os.fsync"):
             write_tls_asset(hass, "key.pem", b"KEY")
 
         mk.assert_called_once_with(hass.config.path(DOMAIN), exist_ok=True)
@@ -1052,7 +1055,8 @@ class TestWriteTlsAsset:
         hass = _new_make_hass("/myconfig")
         with patch("custom_components.bosch_shc.config_flow.makedirs"), \
                 patch("custom_components.bosch_shc.config_flow.os.open", return_value=5) as m_open, \
-                patch("custom_components.bosch_shc.config_flow.os.fdopen", mock_open()):
+                patch("custom_components.bosch_shc.config_flow.os.fdopen", mock_open()), \
+                patch("custom_components.bosch_shc.config_flow.os.fsync"):
             write_tls_asset(hass, "somefile.pem", b"DATA")
 
         path_arg = m_open.call_args[0][0]
@@ -2055,7 +2059,8 @@ class TestWriteTlsAssetExtraCoverage:
         m = mock_open()
         with patch("custom_components.bosch_shc.config_flow.makedirs") as mock_makedirs, \
              patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
-             patch("custom_components.bosch_shc.config_flow.os.fdopen", m):
+             patch("custom_components.bosch_shc.config_flow.os.fdopen", m), \
+             patch("custom_components.bosch_shc.config_flow.os.fsync"):
             write_tls_asset(hass, "test_cert.pem", asset)
 
         mock_makedirs.assert_called_once_with(
@@ -2075,7 +2080,8 @@ class TestWriteTlsAssetExtraCoverage:
         m.return_value.__enter__.return_value.write = lambda s: written.append(s)
         with patch("custom_components.bosch_shc.config_flow.makedirs"), \
              patch("custom_components.bosch_shc.config_flow.os.open", return_value=5), \
-             patch("custom_components.bosch_shc.config_flow.os.fdopen", m):
+             patch("custom_components.bosch_shc.config_flow.os.fdopen", m), \
+             patch("custom_components.bosch_shc.config_flow.os.fsync"):
             write_tls_asset(hass, "key.pem", asset)
 
         assert written == ["certificate data"]

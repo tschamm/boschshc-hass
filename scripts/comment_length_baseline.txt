@@ -3,12 +3,12 @@
 # Regenerated 2026-07-17 after the Zigbee-routing background-task fix
 # shifted line numbers in __init__.py — same pre-existing comment
 # content, no new prose added.
-custom_components/bosch_shc/__init__.py:1027
-custom_components/bosch_shc/__init__.py:577
-custom_components/bosch_shc/__init__.py:672
-custom_components/bosch_shc/__init__.py:685
-custom_components/bosch_shc/__init__.py:846
-custom_components/bosch_shc/__init__.py:972
+custom_components/bosch_shc/__init__.py:1049
+custom_components/bosch_shc/__init__.py:599
+custom_components/bosch_shc/__init__.py:694
+custom_components/bosch_shc/__init__.py:707
+custom_components/bosch_shc/__init__.py:868
+custom_components/bosch_shc/__init__.py:994
 custom_components/bosch_shc/binary_sensor.py:1033
 custom_components/bosch_shc/binary_sensor.py:1169
 custom_components/bosch_shc/binary_sensor.py:1255
@@ -34,13 +34,13 @@ custom_components/bosch_shc/climate.py:32
 custom_components/bosch_shc/climate.py:321
 custom_components/bosch_shc/climate.py:469
 custom_components/bosch_shc/climate.py:76
-custom_components/bosch_shc/config_flow.py:201
-custom_components/bosch_shc/config_flow.py:265
-custom_components/bosch_shc/config_flow.py:334
-custom_components/bosch_shc/config_flow.py:585
-custom_components/bosch_shc/config_flow.py:605
-custom_components/bosch_shc/config_flow.py:652
-custom_components/bosch_shc/config_flow.py:689
+custom_components/bosch_shc/config_flow.py:209
+custom_components/bosch_shc/config_flow.py:273
+custom_components/bosch_shc/config_flow.py:342
+custom_components/bosch_shc/config_flow.py:593
+custom_components/bosch_shc/config_flow.py:613
+custom_components/bosch_shc/config_flow.py:660
+custom_components/bosch_shc/config_flow.py:697
 custom_components/bosch_shc/config_flow.py:79
 custom_components/bosch_shc/const.py:42
 custom_components/bosch_shc/const.py:70
