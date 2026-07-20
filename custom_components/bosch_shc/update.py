@@ -79,10 +79,9 @@ _DEVICE_IN_PROGRESS_STATES = frozenset(
 # every other pending state legitimately 409s if activated (again) (#373).
 _ACTIVATABLE_STATE = "AwaitingActivation"
 
-# Markers, not real versions -- the probe returns a lifecycle state, and
-# UpdateEntity only needs the two to differ to show "update available".
-_UP_TO_DATE_VERSION = "up_to_date"
-_UPDATE_AVAILABLE_VERSION = "update_available"
+# Markers, not real versions (#373 follow-up: human-readable, not snake_case).
+_UP_TO_DATE_VERSION = "Up to date"
+_UPDATE_AVAILABLE_VERSION = "Update available"
 
 
 async def async_setup_entry(

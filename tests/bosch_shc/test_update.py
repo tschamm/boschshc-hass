@@ -214,7 +214,7 @@ class TestControllerUpdateAsyncInstall:
 def test_device_update_installed_version_is_fixed_marker():
     u = _new(DeviceUpdate)
     u._firmware_state = "UpToDate"
-    assert u.installed_version == "up_to_date"
+    assert u.installed_version == "Up to date"
 
 
 def test_device_update_up_to_date_states_report_no_update():

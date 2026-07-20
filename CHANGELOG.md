@@ -2,6 +2,17 @@
 
 ## 0.12.10 — fix ~150s startup delay from a blocking Zigbee-routing refresh
 
+- **Fix: the per-device firmware update entity's "Installed version"/"Latest
+  version" fields showed the raw internal marker strings `up_to_date` /
+  `update_available`** instead of anything version-like, making them look
+  like broken data in the more-info dialog (reported on #373 with
+  screenshots comparing against the SHC controller's own update entity,
+  which does show a real version number). The per-device firmware probe
+  (`devicemanagement/firmware/{id}`) genuinely has no real version number to
+  report — only a bare lifecycle-state string — so these fields were always
+  fake placeholders used solely to make HA detect "update available" via
+  inequality; they're now human-readable text (`Up to date` / `Update
+  available`) instead of the raw snake_case state name.
 - **Fix: a corrupted or missing client certificate/key crashed setup with a
   raw, cryptic `ssl.SSLError: [SSL] PEM lib`** instead of offering the
   existing "reconfigure the integration" recovery flow. Reported via a
