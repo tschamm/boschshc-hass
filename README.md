@@ -357,6 +357,15 @@ instead of requiring you to open the Bosch app.
 - Firmware rarely changes, so these entities poll on a slow ~6-hour interval rather than the
   fast interval most other entities use — don't expect an update to appear the instant Bosch
   publishes one.
+- ⚠️ **Battery devices**: the SHC won't start a firmware update while a device reports a low
+  battery level — make sure the battery is fresh/normal first, or Install will just sit
+  unstarted. This is enforced by the SHC itself; the integration can't detect or override it.
+- ⚠️ **Radiator thermostats (TRV / TRV_GEN2 / TRV_GEN2_DUAL)**: after Install finishes, the
+  thermostat requires a manual on-device (or Bosch-app) calibration step before the update is
+  fully complete. Home Assistant has no way to represent this — the `update` entity will just
+  show "Update pending" until you calibrate it yourself.
+- Both disclaimers above are also shown in the per-device `update` entity's more-info dialog
+  when applicable.
 
 ---
 

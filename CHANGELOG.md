@@ -2,6 +2,17 @@
 
 ## 0.12.10 — fix ~150s startup delay from a blocking Zigbee-routing refresh
 
+- **Docs/UX: surfaced two SHC-enforced firmware-update preconditions that
+  this integration can't detect or override** (#373 follow-up, reported
+  live by a user working through a real install): a low battery level
+  blocks the SHC from starting an update at all, and radiator thermostats
+  (`TRV`/`TRV_GEN2`/`TRV_GEN2_DUAL`) require a manual on-device (or
+  Bosch-app) calibration step after install that Home Assistant has no way
+  to represent — it just shows "Update pending" until you do it. Both are
+  now shown as disclaimers in the per-device `update` entity's more-info
+  dialog (`release_summary`, alongside the raw lifecycle state) and
+  documented in the README's Firmware updates section.
+
 - **Fix: the per-device firmware update entity's "Installed version"/"Latest
   version" fields showed the raw internal marker strings `up_to_date` /
   `update_available`** instead of anything version-like, making them look

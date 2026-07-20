@@ -111,7 +111,8 @@ class TestControllerUpdateAsyncUpdate:
             refresh_called.append(True)
 
         cu._information = SimpleNamespace(
-            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+            unique_id="aa:bb:cc:dd:ee:ff",
+            version="9.0.0",
             async_refresh=fake_refresh,
         )
         _run(cu.async_update())
@@ -134,7 +135,8 @@ class TestControllerUpdateAsyncUpdate:
             raise SHCException("boom")
 
         cu._information = SimpleNamespace(
-            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+            unique_id="aa:bb:cc:dd:ee:ff",
+            version="9.0.0",
             async_refresh=fake_refresh,
         )
         _run(cu.async_update())  # must not raise
@@ -189,7 +191,14 @@ class TestControllerUpdateAsyncInstall:
         """hass#373 bughunt follow-up: ControllerUpdate had no state guard,
         unlike DeviceUpdate — a service-call install while already
         downloading/installing would just 409, same bug class as #373."""
-        for state in (None, "NO_UPDATE_AVAILABLE", "DOWNLOADING", "INSTALLING", "UPDATE_SUCCESS", "UPDATE_FAILED"):
+        for state in (
+            None,
+            "NO_UPDATE_AVAILABLE",
+            "DOWNLOADING",
+            "INSTALLING",
+            "UPDATE_SUCCESS",
+            "UPDATE_FAILED",
+        ):
             called = []
 
             async def fake_start():
@@ -226,7 +235,13 @@ def test_device_update_up_to_date_states_report_no_update():
 
 
 def test_device_update_pending_states_report_update_available():
-    for state in ("AwaitingActivation", "AwaitingActivationTimeout", "UpdatePending", "AwaitingUserInteraction", "Failed"):
+    for state in (
+        "AwaitingActivation",
+        "AwaitingActivationTimeout",
+        "UpdatePending",
+        "AwaitingUserInteraction",
+        "Failed",
+    ):
         u = _new(DeviceUpdate)
         u._firmware_state = state
         assert u.latest_version != u.installed_version, state
@@ -304,7 +319,8 @@ class TestControllerUpdateAsyncUpdateExceptionScope:
             raise TimeoutError("boom")
 
         cu._information = SimpleNamespace(
-            unique_id="aa:bb:cc:dd:ee:ff", version="9.0.0",
+            unique_id="aa:bb:cc:dd:ee:ff",
+            version="9.0.0",
             async_refresh=fake_refresh,
         )
         _run(cu.async_update())  # must not raise
@@ -313,7 +329,53 @@ class TestControllerUpdateAsyncUpdateExceptionScope:
 def test_device_update_release_summary_surfaces_raw_state():
     u = _new(DeviceUpdate)
     u._firmware_state = "AwaitingActivation"
+    # mains-powered, non-thermostat -> no disclaimers appended
+    u._device = SimpleNamespace(device_model="MICROMODULE_LIGHT_CONTROL")
     assert u.release_summary == "AwaitingActivation"
+
+
+def test_device_update_release_summary_adds_battery_disclaimer():
+    """hass#373 follow-up: battery devices need a normal battery level
+    before the SHC will let a firmware update start -- surfaced as a
+    disclaimer since the integration can't detect/override this itself."""
+    from boschshcpy import SHCBatteryDevice
+
+    u = _new(DeviceUpdate)
+    u._firmware_state = "AwaitingActivation"
+    device = _new(SHCBatteryDevice)
+    device._raw_device = {"deviceModel": "TWINGUARD"}
+    u._device = device
+    summary = u.release_summary
+    assert summary is not None
+    assert "AwaitingActivation" in summary
+    assert "battery" in summary.lower()
+    assert "calibration" not in summary.lower()
+
+
+def test_device_update_release_summary_adds_calibration_disclaimer():
+    """hass#373 follow-up: TRV/TRV_GEN2/TRV_GEN2_DUAL need a manual
+    calibration step after install that HA has no way to represent."""
+    u = _new(DeviceUpdate)
+    u._firmware_state = "UpdatePending"
+    u._device = SimpleNamespace(device_model="TRV_GEN2")
+    summary = u.release_summary
+    assert summary is not None
+    assert "UpdatePending" in summary
+    assert "calibration" in summary.lower()
+
+
+def test_device_update_release_summary_adds_both_disclaimers():
+    from boschshcpy import SHCBatteryDevice
+
+    u = _new(DeviceUpdate)
+    u._firmware_state = "UpdatePending"
+    device = _new(SHCBatteryDevice)
+    device._raw_device = {"deviceModel": "TRV"}
+    u._device = device
+    summary = u.release_summary
+    assert summary is not None
+    assert "battery" in summary.lower()
+    assert "calibration" in summary.lower()
 
 
 def test_device_update_unrecognized_state_treated_as_pending():
@@ -348,6 +410,7 @@ class TestDeviceUpdateAsyncUpdate:
         )
         _run(u.async_update())
         assert u._firmware_state == "UpToDate"
+
 
 class TestDeviceUpdateAsyncInstall:
     """Cover DeviceUpdate.async_install (the new APK-traced trigger)."""

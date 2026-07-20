@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
-from boschshcpy import SHCSession
+from boschshcpy import SHCBatteryDevice, SHCSession
 from boschshcpy.device import SHCDevice
 from boschshcpy.exceptions import SHCException
 from homeassistant.components.update import (
@@ -82,6 +82,22 @@ _ACTIVATABLE_STATE = "AwaitingActivation"
 # Markers, not real versions (#373 follow-up: human-readable, not snake_case).
 _UP_TO_DATE_VERSION = "Up to date"
 _UPDATE_AVAILABLE_VERSION = "Update available"
+
+# Thermostat models where a firmware install requires a manual on-device (or
+# Bosch-app) calibration step afterwards -- live-confirmed on TRV_GEN2 (#373).
+_CALIBRATION_MODELS = frozenset({"TRV", "TRV_GEN2", "TRV_GEN2_DUAL"})
+
+# SHC-enforced preconditions, surfaced via release_summary (#373 follow-up).
+_BATTERY_DISCLAIMER = (
+    "⚠️ The SHC won't start a firmware update while this device reports a "
+    "low battery level -- make sure the battery is fresh/normal first."
+)
+_CALIBRATION_DISCLAIMER = (
+    "⚠️ After installing, this thermostat requires a manual calibration "
+    "step (press the button on the device, or confirm via the Bosch app) "
+    "before the update is fully complete. Home Assistant cannot show this "
+    'step -- it will just display "Update pending" until you do it.'
+)
 
 
 async def async_setup_entry(
@@ -270,8 +286,21 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
 
     @property
     def release_summary(self) -> str | None:
-        """Surface the raw lifecycle state for the more-info dialog."""
-        return self._firmware_state
+        """Surface the raw lifecycle state + any relevant disclaimers.
+
+        The disclaimers cover SHC-enforced preconditions/limitations this
+        integration can't detect or override (#373 follow-up): a low battery
+        blocking install, and a post-install calibration step Home Assistant
+        has no way to represent.
+        """
+        disclaimers = []
+        if isinstance(self._device, SHCBatteryDevice):
+            disclaimers.append(_BATTERY_DISCLAIMER)
+        if self._device.device_model in _CALIBRATION_MODELS:
+            disclaimers.append(_CALIBRATION_DISCLAIMER)
+        if not disclaimers:
+            return self._firmware_state
+        return "\n\n".join([str(self._firmware_state), *disclaimers])
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any
