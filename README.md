@@ -603,6 +603,12 @@ logger:
 - **Camera stream** — only the privacy / light / notification switches are exposed.
   For snapshots, motion events and richer camera control use the companion
   [Bosch Smart Home Camera Tool](https://github.com/mosandlt/Bosch-Smart-Home-Camera-Tool-HomeAssistant).
+- **Shutter Contact II front-side button** — not exposed as an entity or event. The
+  SWD2 / SWD2_PLUS / SWD2_DUAL button does not appear on the local API at all (confirmed
+  via rawscan while pressing the button: zero change in any service/state) — this is a
+  firmware/API limitation, not something the integration can add. Workaround: map the
+  button to a **scenario** in the Bosch SHC app; the integration already exposes every
+  scenario as a `bosch_shc_event` (type `SCENARIO`), usable in automations.
 
 ---
 
