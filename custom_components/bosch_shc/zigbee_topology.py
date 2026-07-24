@@ -202,8 +202,10 @@ def topology_to_svg(graph: dict[str, Any], width: int = 900) -> str:
             positions[node_id] = (step * index, y)
 
     svg_parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
-        f'font-family="sans-serif" font-size="12">',
+        (
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
+            f'font-family="sans-serif" font-size="12">'
+        ),
         f'<rect width="{width}" height="{height}" fill="var(--surface)"/>',
     ]
 

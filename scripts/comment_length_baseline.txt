@@ -95,9 +95,9 @@ custom_components/bosch_shc/sensor.py:898
 custom_components/bosch_shc/sensor.py:942
 custom_components/bosch_shc/sensor.py:984
 custom_components/bosch_shc/switch.py:1006
-custom_components/bosch_shc/switch.py:1131
-custom_components/bosch_shc/switch.py:1157
-custom_components/bosch_shc/switch.py:1229
+custom_components/bosch_shc/switch.py:1132
+custom_components/bosch_shc/switch.py:1158
+custom_components/bosch_shc/switch.py:1230
 custom_components/bosch_shc/switch.py:192
 custom_components/bosch_shc/switch.py:203
 custom_components/bosch_shc/switch.py:228

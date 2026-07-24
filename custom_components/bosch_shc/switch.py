@@ -1121,6 +1121,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
         session: SHCSession,
         entry_id: str,
         description: SHCSwitchEntityDescription,
+        *,
         attr_name: str | None = None,
     ) -> None:
         """Initialize a SHC switch."""
