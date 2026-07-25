@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Чувствителност към движение"
+        "name": "Чувствителност към движение",
+        "state": {
+          "high": "Висока",
+          "middle": "Средна",
+          "low": "Ниска"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Чувствителност към вибрации"
+        "name": "Чувствителност към вибрации",
+        "state": {
+          "very_high": "Много висока",
+          "high": "Висока",
+          "medium": "Средна",
+          "low": "Ниска",
+          "very_low": "Много ниска"
+        }
       },
       "state_after_power_outage": {
-        "name": "Състояние след прекъсване на тока"
+        "name": "Състояние след прекъсване на тока",
+        "state": {
+          "off": "Изключено",
+          "on": "Включено",
+          "last_state": "Последно състояние"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Чувствителност към дим"
+        "name": "Чувствителност към дим",
+        "state": {
+          "high": "Висока",
+          "middle": "Средна",
+          "low": "Ниска"
+        }
       },
       "display_direction": {
-        "name": "Ориентация на дисплея"
+        "name": "Ориентация на дисплея",
+        "state": {
+          "normal": "Нормална",
+          "reversed": "Обърната"
+        }
       },
       "displayed_temperature": {
-        "name": "Показвана температура"
+        "name": "Показвана температура",
+        "state": {
+          "setpoint": "Зададена стойност",
+          "measured": "Измерена"
+        }
       },
       "terminal_type": {
-        "name": "Тип терминал"
+        "name": "Тип терминал",
+        "state": {
+          "not_connected": "Не е свързан",
+          "floor_sensor_connected": "Свързан подов сензор",
+          "floor_sensor_used_for_regulation": "Подов сензор, използван за регулиране",
+          "floor_sensor_displayed": "Показван подов сензор",
+          "floor_sensor_displayed_and_used_for_regulation": "Подов сензор, показван и използван за регулиране",
+          "volt_free_sensor_connected": "Свързан безпотенциален сензор",
+          "volt_free_sensor_connected_and_used_for_operation": "Безпотенциален сензор, свързан и използван за работа",
+          "outdoor_sensor_connected": "Свързан външен сензор"
+        }
       },
       "valve_type": {
-        "name": "Тип клапан"
+        "name": "Тип клапан",
+        "state": {
+          "normally_close": "Нормално затворен",
+          "normally_open": "Нормално отворен"
+        }
       },
       "heater_type": {
-        "name": "Тип нагревател"
+        "name": "Тип нагревател",
+        "state": {
+          "floor_heating": "Подово отопление",
+          "floor_heating_low_energy": "Подово отопление (нисък разход)",
+          "radiator": "Радиатор",
+          "convector_passive": "Конвектор (пасивен)",
+          "convector_active": "Конвектор (активен)",
+          "volt_free_heating": "Безпотенциално отопление"
+        }
       },
       "switch_type": {
-        "name": "Тип превключвател"
+        "name": "Тип превключвател",
+        "state": {
+          "none": "Няма",
+          "pushbutton": "Бутон",
+          "switch": "Превключвател",
+          "no_switch": "Без превключвател"
+        }
       },
       "actuator_type": {
-        "name": "Тип задвижващ елемент"
+        "name": "Тип задвижващ елемент",
+        "state": {
+          "normally_closed": "Нормално затворен",
+          "normally_open": "Нормално отворен",
+          "unsupported": "Неподдържан"
+        }
       },
       "output_mode": {
-        "name": "Изходен режим"
+        "name": "Изходен режим",
+        "state": {
+          "attached": "Прикачен",
+          "detached": "Отделен",
+          "detached_short_press": "Отделен (кратко натискане)",
+          "detached_long_press": "Отделен (продължително натискане)",
+          "unsupported": "Неподдържан"
+        }
       },
       "siren_sound_level": {
         "name": "Ниво на звука",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Време за реакция на ориентационното осветление"
+        "name": "Време за реакция на ориентационното осветление",
+        "state": {
+          "long": "Дълго",
+          "short": "Кратко"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Ниво на сигурност на интелигентната чувствителност"
+        "name": "Ниво на сигурност на интелигентната чувствителност",
+        "state": {
+          "high": "Високо",
+          "middle": "Средно",
+          "low": "Ниско"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Ниво на комфорт на интелигентната чувствителност"
+        "name": "Ниво на комфорт на интелигентната чувствителност",
+        "state": {
+          "high": "Високо",
+          "middle": "Средно",
+          "low": "Ниско"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Управление на фазата на димера"
+        "name": "Управление на фазата на димера",
+        "state": {
+          "trailing": "Изключващо фазово управление",
+          "leading": "Включващо фазово управление"
+        }
       },
       "installation_profile": {
         "name": "Профил на инсталация",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Активирано"
+      },
+      "child_lock": {
+        "name": "Детска защита"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Светлина"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Клапан"
       }
     }
   },

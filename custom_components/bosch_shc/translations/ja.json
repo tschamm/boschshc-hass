@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "モーション感度"
+        "name": "モーション感度",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "vibration_sensitivity": {
-        "name": "振動感度"
+        "name": "振動感度",
+        "state": {
+          "very_high": "非常に高い",
+          "high": "高い",
+          "medium": "中",
+          "low": "低い",
+          "very_low": "非常に低い"
+        }
       },
       "state_after_power_outage": {
-        "name": "停電後の状態"
+        "name": "停電後の状態",
+        "state": {
+          "off": "オフ",
+          "on": "オン",
+          "last_state": "前回の状態"
+        }
       },
       "smoke_sensitivity": {
-        "name": "煙感知感度"
+        "name": "煙感知感度",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "display_direction": {
-        "name": "ディスプレイ方向"
+        "name": "ディスプレイ方向",
+        "state": {
+          "normal": "通常",
+          "reversed": "反転"
+        }
       },
       "displayed_temperature": {
-        "name": "表示温度"
+        "name": "表示温度",
+        "state": {
+          "setpoint": "設定値",
+          "measured": "測定値"
+        }
       },
       "terminal_type": {
-        "name": "端子タイプ"
+        "name": "端子タイプ",
+        "state": {
+          "not_connected": "未接続",
+          "floor_sensor_connected": "床センサー接続",
+          "floor_sensor_used_for_regulation": "床センサーを調節に使用",
+          "floor_sensor_displayed": "床センサーを表示",
+          "floor_sensor_displayed_and_used_for_regulation": "床センサーを表示し調節に使用",
+          "volt_free_sensor_connected": "無電圧センサー接続",
+          "volt_free_sensor_connected_and_used_for_operation": "無電圧センサーを接続し動作に使用",
+          "outdoor_sensor_connected": "屋外センサー接続"
+        }
       },
       "valve_type": {
-        "name": "バルブタイプ"
+        "name": "バルブタイプ",
+        "state": {
+          "normally_close": "常時閉",
+          "normally_open": "常時開"
+        }
       },
       "heater_type": {
-        "name": "ヒータータイプ"
+        "name": "ヒータータイプ",
+        "state": {
+          "floor_heating": "床暖房",
+          "floor_heating_low_energy": "床暖房（低エネルギー）",
+          "radiator": "ラジエーター",
+          "convector_passive": "コンベクター（パッシブ）",
+          "convector_active": "コンベクター（アクティブ）",
+          "volt_free_heating": "無電圧暖房"
+        }
       },
       "switch_type": {
-        "name": "スイッチタイプ"
+        "name": "スイッチタイプ",
+        "state": {
+          "none": "なし",
+          "pushbutton": "押しボタン",
+          "switch": "スイッチ",
+          "no_switch": "スイッチなし"
+        }
       },
       "actuator_type": {
-        "name": "アクチュエータータイプ"
+        "name": "アクチュエータータイプ",
+        "state": {
+          "normally_closed": "常時閉",
+          "normally_open": "常時開",
+          "unsupported": "非対応"
+        }
       },
       "output_mode": {
-        "name": "出力モード"
+        "name": "出力モード",
+        "state": {
+          "attached": "接続",
+          "detached": "切断",
+          "detached_short_press": "切断（短押し）",
+          "detached_long_press": "切断（長押し）",
+          "unsupported": "非対応"
+        }
       },
       "siren_sound_level": {
         "name": "音量レベル",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "誘導灯応答時間"
+        "name": "誘導灯応答時間",
+        "state": {
+          "long": "長い",
+          "short": "短い"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "スマート感度セキュリティレベル"
+        "name": "スマート感度セキュリティレベル",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "スマート感度快適レベル"
+        "name": "スマート感度快適レベル",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "dimmer_phase_control": {
-        "name": "調光器位相制御"
+        "name": "調光器位相制御",
+        "state": {
+          "trailing": "後方位相制御",
+          "leading": "前方位相制御"
+        }
       },
       "installation_profile": {
         "name": "設置プロファイル",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "有効"
+      },
+      "child_lock": {
+        "name": "チャイルドロック"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "ライト"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "バルブ"
       }
     }
   },

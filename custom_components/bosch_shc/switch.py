@@ -214,6 +214,8 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "child_lock": SHCSwitchEntityDescription(
         key="child_lock",
+        # #377: shared translation key/name with child_lock_thermostat below.
+        translation_key="child_lock",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="child_lock",
         on_value=True,
@@ -223,6 +225,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "child_lock_thermostat": SHCSwitchEntityDescription(
         key="child_lock_thermostat",
+        translation_key="child_lock",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="child_lock",
         # Thermostats expose child lock as a ThermostatService.State enum, not a

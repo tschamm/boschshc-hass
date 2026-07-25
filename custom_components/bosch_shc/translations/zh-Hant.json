@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "移動靈敏度"
+        "name": "移動靈敏度",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "vibration_sensitivity": {
-        "name": "震動靈敏度"
+        "name": "震動靈敏度",
+        "state": {
+          "very_high": "非常高",
+          "high": "高",
+          "medium": "中",
+          "low": "低",
+          "very_low": "非常低"
+        }
       },
       "state_after_power_outage": {
-        "name": "斷電後恢復狀態"
+        "name": "斷電後恢復狀態",
+        "state": {
+          "off": "關閉",
+          "on": "開啟",
+          "last_state": "上次狀態"
+        }
       },
       "smoke_sensitivity": {
-        "name": "煙霧靈敏度"
+        "name": "煙霧靈敏度",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "display_direction": {
-        "name": "顯示方向"
+        "name": "顯示方向",
+        "state": {
+          "normal": "正常",
+          "reversed": "翻轉"
+        }
       },
       "displayed_temperature": {
-        "name": "顯示溫度"
+        "name": "顯示溫度",
+        "state": {
+          "setpoint": "設定值",
+          "measured": "測量值"
+        }
       },
       "terminal_type": {
-        "name": "接線端子類型"
+        "name": "接線端子類型",
+        "state": {
+          "not_connected": "未連接",
+          "floor_sensor_connected": "已連接地板感測器",
+          "floor_sensor_used_for_regulation": "地板感測器用於調節",
+          "floor_sensor_displayed": "顯示地板感測器",
+          "floor_sensor_displayed_and_used_for_regulation": "顯示地板感測器並用於調節",
+          "volt_free_sensor_connected": "已連接無源感測器",
+          "volt_free_sensor_connected_and_used_for_operation": "已連接無源感測器並用於操作",
+          "outdoor_sensor_connected": "已連接室外感測器"
+        }
       },
       "valve_type": {
-        "name": "閥門類型"
+        "name": "閥門類型",
+        "state": {
+          "normally_close": "常閉",
+          "normally_open": "常開"
+        }
       },
       "heater_type": {
-        "name": "加熱器類型"
+        "name": "加熱器類型",
+        "state": {
+          "floor_heating": "地暖",
+          "floor_heating_low_energy": "地暖（低能耗）",
+          "radiator": "散熱器",
+          "convector_passive": "對流器（被動）",
+          "convector_active": "對流器（主動）",
+          "volt_free_heating": "無源加熱"
+        }
       },
       "switch_type": {
-        "name": "開關類型"
+        "name": "開關類型",
+        "state": {
+          "none": "無",
+          "pushbutton": "按鈕",
+          "switch": "開關",
+          "no_switch": "無開關"
+        }
       },
       "actuator_type": {
-        "name": "執行器類型"
+        "name": "執行器類型",
+        "state": {
+          "normally_closed": "常閉",
+          "normally_open": "常開",
+          "unsupported": "不支援"
+        }
       },
       "output_mode": {
-        "name": "輸出模式"
+        "name": "輸出模式",
+        "state": {
+          "attached": "已連接",
+          "detached": "已分離",
+          "detached_short_press": "已分離（短按）",
+          "detached_long_press": "已分離（長按）",
+          "unsupported": "不支援"
+        }
       },
       "siren_sound_level": {
         "name": "音量等級",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "引導燈回應時間"
+        "name": "引導燈回應時間",
+        "state": {
+          "long": "長",
+          "short": "短"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "智慧靈敏度安全等級"
+        "name": "智慧靈敏度安全等級",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "智慧靈敏度舒適等級"
+        "name": "智慧靈敏度舒適等級",
+        "state": {
+          "high": "高",
+          "middle": "中",
+          "low": "低"
+        }
       },
       "dimmer_phase_control": {
-        "name": "調光器相位控制"
+        "name": "調光器相位控制",
+        "state": {
+          "trailing": "尾沿調光",
+          "leading": "前沿調光"
+        }
       },
       "installation_profile": {
         "name": "安裝配置檔",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "已啟用"
+      },
+      "child_lock": {
+        "name": "童鎖"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "燈光"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "閥門"
       }
     }
   },

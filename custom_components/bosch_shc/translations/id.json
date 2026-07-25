@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Sensitivitas Gerak"
+        "name": "Sensitivitas Gerak",
+        "state": {
+          "high": "Tinggi",
+          "middle": "Sedang",
+          "low": "Rendah"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Sensitivitas Getaran"
+        "name": "Sensitivitas Getaran",
+        "state": {
+          "very_high": "Sangat Tinggi",
+          "high": "Tinggi",
+          "medium": "Sedang",
+          "low": "Rendah",
+          "very_low": "Sangat Rendah"
+        }
       },
       "state_after_power_outage": {
-        "name": "Status Setelah Pemadaman Listrik"
+        "name": "Status Setelah Pemadaman Listrik",
+        "state": {
+          "off": "Mati",
+          "on": "Menyala",
+          "last_state": "Status Terakhir"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Sensitivitas Asap"
+        "name": "Sensitivitas Asap",
+        "state": {
+          "high": "Tinggi",
+          "middle": "Sedang",
+          "low": "Rendah"
+        }
       },
       "display_direction": {
-        "name": "Arah Tampilan"
+        "name": "Arah Tampilan",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Terbalik"
+        }
       },
       "displayed_temperature": {
-        "name": "Suhu yang Ditampilkan"
+        "name": "Suhu yang Ditampilkan",
+        "state": {
+          "setpoint": "Suhu Target",
+          "measured": "Terukur"
+        }
       },
       "terminal_type": {
-        "name": "Jenis Terminal"
+        "name": "Jenis Terminal",
+        "state": {
+          "not_connected": "Tidak Terhubung",
+          "floor_sensor_connected": "Sensor Lantai Terhubung",
+          "floor_sensor_used_for_regulation": "Sensor Lantai Digunakan untuk Regulasi",
+          "floor_sensor_displayed": "Sensor Lantai Ditampilkan",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensor Lantai Ditampilkan dan Digunakan untuk Regulasi",
+          "volt_free_sensor_connected": "Sensor Bebas Tegangan Terhubung",
+          "volt_free_sensor_connected_and_used_for_operation": "Sensor Bebas Tegangan Terhubung dan Digunakan untuk Operasi",
+          "outdoor_sensor_connected": "Sensor Luar Ruangan Terhubung"
+        }
       },
       "valve_type": {
-        "name": "Jenis Katup"
+        "name": "Jenis Katup",
+        "state": {
+          "normally_close": "Normalnya Tertutup",
+          "normally_open": "Normalnya Terbuka"
+        }
       },
       "heater_type": {
-        "name": "Jenis Pemanas"
+        "name": "Jenis Pemanas",
+        "state": {
+          "floor_heating": "Pemanas Lantai",
+          "floor_heating_low_energy": "Pemanas Lantai (Hemat Energi)",
+          "radiator": "Radiator",
+          "convector_passive": "Konvektor (Pasif)",
+          "convector_active": "Konvektor (Aktif)",
+          "volt_free_heating": "Pemanas Bebas Tegangan"
+        }
       },
       "switch_type": {
-        "name": "Jenis Sakelar"
+        "name": "Jenis Sakelar",
+        "state": {
+          "none": "Tidak Ada",
+          "pushbutton": "Tombol Tekan",
+          "switch": "Sakelar",
+          "no_switch": "Tanpa Sakelar"
+        }
       },
       "actuator_type": {
-        "name": "Jenis Aktuator"
+        "name": "Jenis Aktuator",
+        "state": {
+          "normally_closed": "Normalnya Tertutup",
+          "normally_open": "Normalnya Terbuka",
+          "unsupported": "Tidak Didukung"
+        }
       },
       "output_mode": {
-        "name": "Mode Keluaran"
+        "name": "Mode Keluaran",
+        "state": {
+          "attached": "Terpasang",
+          "detached": "Terlepas",
+          "detached_short_press": "Terlepas (Tekan Singkat)",
+          "detached_long_press": "Terlepas (Tekan Lama)",
+          "unsupported": "Tidak Didukung"
+        }
       },
       "siren_sound_level": {
         "name": "Tingkat Suara",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Waktu Respons Lampu Orientasi"
+        "name": "Waktu Respons Lampu Orientasi",
+        "state": {
+          "long": "Lama",
+          "short": "Singkat"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Level Keamanan Sensitivitas Cerdas"
+        "name": "Level Keamanan Sensitivitas Cerdas",
+        "state": {
+          "high": "Tinggi",
+          "middle": "Sedang",
+          "low": "Rendah"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Level Kenyamanan Sensitivitas Cerdas"
+        "name": "Level Kenyamanan Sensitivitas Cerdas",
+        "state": {
+          "high": "Tinggi",
+          "middle": "Sedang",
+          "low": "Rendah"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Kontrol Fase Dimmer"
+        "name": "Kontrol Fase Dimmer",
+        "state": {
+          "trailing": "Tepi Turun",
+          "leading": "Tepi Naik"
+        }
       },
       "installation_profile": {
         "name": "Profil Instalasi",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Diaktifkan"
+      },
+      "child_lock": {
+        "name": "Kunci Anak"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Lampu"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Katup"
       }
     }
   },

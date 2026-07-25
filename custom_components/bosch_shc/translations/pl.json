@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Czułość na ruch"
+        "name": "Czułość na ruch",
+        "state": {
+          "high": "Wysoka",
+          "middle": "Średnia",
+          "low": "Niska"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Czułość na wibracje"
+        "name": "Czułość na wibracje",
+        "state": {
+          "very_high": "Bardzo wysoka",
+          "high": "Wysoka",
+          "medium": "Średnia",
+          "low": "Niska",
+          "very_low": "Bardzo niska"
+        }
       },
       "state_after_power_outage": {
-        "name": "Stan po zaniku zasilania"
+        "name": "Stan po zaniku zasilania",
+        "state": {
+          "off": "Wyłączony",
+          "on": "Włączony",
+          "last_state": "Ostatni stan"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Czułość na dym"
+        "name": "Czułość na dym",
+        "state": {
+          "high": "Wysoka",
+          "middle": "Średnia",
+          "low": "Niska"
+        }
       },
       "display_direction": {
-        "name": "Orientacja wyświetlacza"
+        "name": "Orientacja wyświetlacza",
+        "state": {
+          "normal": "Normalny",
+          "reversed": "Odwrócony"
+        }
       },
       "displayed_temperature": {
-        "name": "Wyświetlana temperatura"
+        "name": "Wyświetlana temperatura",
+        "state": {
+          "setpoint": "Zadana",
+          "measured": "Zmierzona"
+        }
       },
       "terminal_type": {
-        "name": "Typ zacisku"
+        "name": "Typ zacisku",
+        "state": {
+          "not_connected": "Niepodłączony",
+          "floor_sensor_connected": "Podłączony czujnik podłogowy",
+          "floor_sensor_used_for_regulation": "Czujnik podłogowy używany do regulacji",
+          "floor_sensor_displayed": "Wyświetlany czujnik podłogowy",
+          "floor_sensor_displayed_and_used_for_regulation": "Czujnik podłogowy wyświetlany i używany do regulacji",
+          "volt_free_sensor_connected": "Podłączony czujnik beznapięciowy",
+          "volt_free_sensor_connected_and_used_for_operation": "Czujnik beznapięciowy podłączony i używany do obsługi",
+          "outdoor_sensor_connected": "Podłączony czujnik zewnętrzny"
+        }
       },
       "valve_type": {
-        "name": "Typ zaworu"
+        "name": "Typ zaworu",
+        "state": {
+          "normally_close": "Normalnie zamknięty",
+          "normally_open": "Normalnie otwarty"
+        }
       },
       "heater_type": {
-        "name": "Typ ogrzewania"
+        "name": "Typ ogrzewania",
+        "state": {
+          "floor_heating": "Ogrzewanie podłogowe",
+          "floor_heating_low_energy": "Ogrzewanie podłogowe (niskoenergetyczne)",
+          "radiator": "Grzejnik",
+          "convector_passive": "Konwektor (pasywny)",
+          "convector_active": "Konwektor (aktywny)",
+          "volt_free_heating": "Ogrzewanie beznapięciowe"
+        }
       },
       "switch_type": {
-        "name": "Typ przełącznika"
+        "name": "Typ przełącznika",
+        "state": {
+          "none": "Brak",
+          "pushbutton": "Przycisk",
+          "switch": "Przełącznik",
+          "no_switch": "Brak przełącznika"
+        }
       },
       "actuator_type": {
-        "name": "Typ siłownika"
+        "name": "Typ siłownika",
+        "state": {
+          "normally_closed": "Normalnie zamknięty",
+          "normally_open": "Normalnie otwarty",
+          "unsupported": "Nieobsługiwane"
+        }
       },
       "output_mode": {
-        "name": "Tryb wyjścia"
+        "name": "Tryb wyjścia",
+        "state": {
+          "attached": "Dołączony",
+          "detached": "Odłączony",
+          "detached_short_press": "Odłączony (krótkie naciśnięcie)",
+          "detached_long_press": "Odłączony (długie naciśnięcie)",
+          "unsupported": "Nieobsługiwane"
+        }
       },
       "siren_sound_level": {
         "name": "Poziom dźwięku",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Czas reakcji światła orientacyjnego"
+        "name": "Czas reakcji światła orientacyjnego",
+        "state": {
+          "long": "Długi",
+          "short": "Krótki"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Poziom bezpieczeństwa czułości inteligentnej"
+        "name": "Poziom bezpieczeństwa czułości inteligentnej",
+        "state": {
+          "high": "Wysoki",
+          "middle": "Średni",
+          "low": "Niski"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Poziom komfortu czułości inteligentnej"
+        "name": "Poziom komfortu czułości inteligentnej",
+        "state": {
+          "high": "Wysoki",
+          "middle": "Średni",
+          "low": "Niski"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Sterowanie fazą ściemniacza"
+        "name": "Sterowanie fazą ściemniacza",
+        "state": {
+          "trailing": "Faza opadająca",
+          "leading": "Faza narastająca"
+        }
       },
       "installation_profile": {
         "name": "Profil instalacji",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Włączone"
+      },
+      "child_lock": {
+        "name": "Blokada rodzicielska"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Lampka"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Zawór"
       }
     }
   },

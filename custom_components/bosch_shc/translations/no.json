@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Bevegelsesfølsomhet"
+        "name": "Bevegelsesfølsomhet",
+        "state": {
+          "high": "Høy",
+          "middle": "Middels",
+          "low": "Lav"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Vibrasjonsfølsomhet"
+        "name": "Vibrasjonsfølsomhet",
+        "state": {
+          "very_high": "Svært høy",
+          "high": "Høy",
+          "medium": "Middels",
+          "low": "Lav",
+          "very_low": "Svært lav"
+        }
       },
       "state_after_power_outage": {
-        "name": "Tilstand etter strømbrudd"
+        "name": "Tilstand etter strømbrudd",
+        "state": {
+          "off": "Av",
+          "on": "På",
+          "last_state": "Siste tilstand"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Røykfølsomhet"
+        "name": "Røykfølsomhet",
+        "state": {
+          "high": "Høy",
+          "middle": "Middels",
+          "low": "Lav"
+        }
       },
       "display_direction": {
-        "name": "Skjermretning"
+        "name": "Skjermretning",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Omvendt"
+        }
       },
       "displayed_temperature": {
-        "name": "Vist temperatur"
+        "name": "Vist temperatur",
+        "state": {
+          "setpoint": "Innstilt verdi",
+          "measured": "Målt"
+        }
       },
       "terminal_type": {
-        "name": "Terminaltype"
+        "name": "Terminaltype",
+        "state": {
+          "not_connected": "Ikke tilkoblet",
+          "floor_sensor_connected": "Gulvsensor tilkoblet",
+          "floor_sensor_used_for_regulation": "Gulvsensor brukt til regulering",
+          "floor_sensor_displayed": "Gulvsensor vist",
+          "floor_sensor_displayed_and_used_for_regulation": "Gulvsensor vist og brukt til regulering",
+          "volt_free_sensor_connected": "Potensialfri sensor tilkoblet",
+          "volt_free_sensor_connected_and_used_for_operation": "Potensialfri sensor tilkoblet og brukt til drift",
+          "outdoor_sensor_connected": "Utendørssensor tilkoblet"
+        }
       },
       "valve_type": {
-        "name": "Ventiltype"
+        "name": "Ventiltype",
+        "state": {
+          "normally_close": "Normalt lukket",
+          "normally_open": "Normalt åpen"
+        }
       },
       "heater_type": {
-        "name": "Varmertype"
+        "name": "Varmertype",
+        "state": {
+          "floor_heating": "Gulvvarme",
+          "floor_heating_low_energy": "Gulvvarme (lavenergi)",
+          "radiator": "Radiator",
+          "convector_passive": "Konvektor (passiv)",
+          "convector_active": "Konvektor (aktiv)",
+          "volt_free_heating": "Potensialfri oppvarming"
+        }
       },
       "switch_type": {
-        "name": "Brytertype"
+        "name": "Brytertype",
+        "state": {
+          "none": "Ingen",
+          "pushbutton": "Trykknapp",
+          "switch": "Bryter",
+          "no_switch": "Ingen bryter"
+        }
       },
       "actuator_type": {
-        "name": "Aktuatortype"
+        "name": "Aktuatortype",
+        "state": {
+          "normally_closed": "Normalt lukket",
+          "normally_open": "Normalt åpen",
+          "unsupported": "Ikke støttet"
+        }
       },
       "output_mode": {
-        "name": "Utgangsmodus"
+        "name": "Utgangsmodus",
+        "state": {
+          "attached": "Tilkoblet",
+          "detached": "Frakoblet",
+          "detached_short_press": "Frakoblet (kort trykk)",
+          "detached_long_press": "Frakoblet (langt trykk)",
+          "unsupported": "Ikke støttet"
+        }
       },
       "siren_sound_level": {
         "name": "Lydnivå",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Responstid orienteringslys"
+        "name": "Responstid orienteringslys",
+        "state": {
+          "long": "Lang",
+          "short": "Kort"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity sikkerhetsnivå"
+        "name": "Smart Sensitivity sikkerhetsnivå",
+        "state": {
+          "high": "Høy",
+          "middle": "Middels",
+          "low": "Lav"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity komfortnivå"
+        "name": "Smart Sensitivity komfortnivå",
+        "state": {
+          "high": "Høy",
+          "middle": "Middels",
+          "low": "Lav"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer fasekontroll"
+        "name": "Dimmer fasekontroll",
+        "state": {
+          "trailing": "Fallende fase",
+          "leading": "Stigende fase"
+        }
       },
       "installation_profile": {
         "name": "Installasjonsprofil",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Aktivert"
+      },
+      "child_lock": {
+        "name": "Barnelås"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Lys"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
       }
     }
   },

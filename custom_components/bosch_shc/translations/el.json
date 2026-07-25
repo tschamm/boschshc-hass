@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Ευαισθησία κίνησης"
+        "name": "Ευαισθησία κίνησης",
+        "state": {
+          "high": "Υψηλή",
+          "middle": "Μεσαία",
+          "low": "Χαμηλή"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Ευαισθησία δόνησης"
+        "name": "Ευαισθησία δόνησης",
+        "state": {
+          "very_high": "Πολύ υψηλή",
+          "high": "Υψηλή",
+          "medium": "Μεσαία",
+          "low": "Χαμηλή",
+          "very_low": "Πολύ χαμηλή"
+        }
       },
       "state_after_power_outage": {
-        "name": "Κατάσταση μετά από διακοπή ρεύματος"
+        "name": "Κατάσταση μετά από διακοπή ρεύματος",
+        "state": {
+          "off": "Ανενεργό",
+          "on": "Ενεργό",
+          "last_state": "Τελευταία κατάσταση"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Ευαισθησία καπνού"
+        "name": "Ευαισθησία καπνού",
+        "state": {
+          "high": "Υψηλή",
+          "middle": "Μεσαία",
+          "low": "Χαμηλή"
+        }
       },
       "display_direction": {
-        "name": "Κατεύθυνση οθόνης"
+        "name": "Κατεύθυνση οθόνης",
+        "state": {
+          "normal": "Κανονική",
+          "reversed": "Αντεστραμμένη"
+        }
       },
       "displayed_temperature": {
-        "name": "Εμφανιζόμενη θερμοκρασία"
+        "name": "Εμφανιζόμενη θερμοκρασία",
+        "state": {
+          "setpoint": "Επιθυμητή τιμή",
+          "measured": "Μετρημένη"
+        }
       },
       "terminal_type": {
-        "name": "Τύπος ακροδέκτη"
+        "name": "Τύπος ακροδέκτη",
+        "state": {
+          "not_connected": "Δεν είναι συνδεδεμένο",
+          "floor_sensor_connected": "Αισθητήρας δαπέδου συνδεδεμένος",
+          "floor_sensor_used_for_regulation": "Αισθητήρας δαπέδου που χρησιμοποιείται για ρύθμιση",
+          "floor_sensor_displayed": "Εμφάνιση αισθητήρα δαπέδου",
+          "floor_sensor_displayed_and_used_for_regulation": "Αισθητήρας δαπέδου εμφανιζόμενος και χρησιμοποιούμενος για ρύθμιση",
+          "volt_free_sensor_connected": "Συνδεδεμένος αισθητήρας χωρίς τάση",
+          "volt_free_sensor_connected_and_used_for_operation": "Αισθητήρας χωρίς τάση συνδεδεμένος και χρησιμοποιούμενος για λειτουργία",
+          "outdoor_sensor_connected": "Εξωτερικός αισθητήρας συνδεδεμένος"
+        }
       },
       "valve_type": {
-        "name": "Τύπος βαλβίδας"
+        "name": "Τύπος βαλβίδας",
+        "state": {
+          "normally_close": "Κανονικά κλειστή",
+          "normally_open": "Κανονικά ανοιχτή"
+        }
       },
       "heater_type": {
-        "name": "Τύπος θερμαντήρα"
+        "name": "Τύπος θερμαντήρα",
+        "state": {
+          "floor_heating": "Ενδοδαπέδια θέρμανση",
+          "floor_heating_low_energy": "Ενδοδαπέδια θέρμανση (χαμηλής ενέργειας)",
+          "radiator": "Καλοριφέρ",
+          "convector_passive": "Convector (παθητικό)",
+          "convector_active": "Convector (ενεργό)",
+          "volt_free_heating": "Θέρμανση χωρίς τάση"
+        }
       },
       "switch_type": {
-        "name": "Τύπος διακόπτη"
+        "name": "Τύπος διακόπτη",
+        "state": {
+          "none": "Κανένα",
+          "pushbutton": "Μπουτόν",
+          "switch": "Διακόπτης",
+          "no_switch": "Χωρίς διακόπτη"
+        }
       },
       "actuator_type": {
-        "name": "Τύπος ενεργοποιητή"
+        "name": "Τύπος ενεργοποιητή",
+        "state": {
+          "normally_closed": "Κανονικά κλειστό",
+          "normally_open": "Κανονικά ανοιχτό",
+          "unsupported": "Μη υποστηριζόμενο"
+        }
       },
       "output_mode": {
-        "name": "Λειτουργία εξόδου"
+        "name": "Λειτουργία εξόδου",
+        "state": {
+          "attached": "Συνδεδεμένο",
+          "detached": "Αποσυνδεδεμένο",
+          "detached_short_press": "Αποσυνδεδεμένο (σύντομο πάτημα)",
+          "detached_long_press": "Αποσυνδεδεμένο (παρατεταμένο πάτημα)",
+          "unsupported": "Μη υποστηριζόμενο"
+        }
       },
       "siren_sound_level": {
         "name": "Επίπεδο ήχου",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Χρόνος Απόκρισης Φωτισμού Προσανατολισμού"
+        "name": "Χρόνος Απόκρισης Φωτισμού Προσανατολισμού",
+        "state": {
+          "long": "Μεγάλος",
+          "short": "Σύντομος"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Επίπεδο Ασφάλειας Έξυπνης Ευαισθησίας"
+        "name": "Επίπεδο Ασφάλειας Έξυπνης Ευαισθησίας",
+        "state": {
+          "high": "Υψηλό",
+          "middle": "Μεσαίο",
+          "low": "Χαμηλό"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Επίπεδο Άνεσης Έξυπνης Ευαισθησίας"
+        "name": "Επίπεδο Άνεσης Έξυπνης Ευαισθησίας",
+        "state": {
+          "high": "Υψηλό",
+          "middle": "Μεσαίο",
+          "low": "Χαμηλό"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Έλεγχος Φάσης Dimmer"
+        "name": "Έλεγχος Φάσης Dimmer",
+        "state": {
+          "trailing": "Έλεγχος φάσης εκφόρτισης",
+          "leading": "Έλεγχος φάσης φόρτισης"
+        }
       },
       "installation_profile": {
         "name": "Προφίλ Εγκατάστασης",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Ενεργοποιημένο"
+      },
+      "child_lock": {
+        "name": "Κλείδωμα ασφαλείας παιδιών"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Φως"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Βαλβίδα"
       }
     }
   },

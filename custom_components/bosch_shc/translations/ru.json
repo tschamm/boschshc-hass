@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Чувствительность к движению"
+        "name": "Чувствительность к движению",
+        "state": {
+          "high": "Высокая",
+          "middle": "Средняя",
+          "low": "Низкая"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Чувствительность к вибрации"
+        "name": "Чувствительность к вибрации",
+        "state": {
+          "very_high": "Очень высокая",
+          "high": "Высокая",
+          "medium": "Средняя",
+          "low": "Низкая",
+          "very_low": "Очень низкая"
+        }
       },
       "state_after_power_outage": {
-        "name": "Состояние после отключения питания"
+        "name": "Состояние после отключения питания",
+        "state": {
+          "off": "Выключено",
+          "on": "Включено",
+          "last_state": "Последнее состояние"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Чувствительность к дыму"
+        "name": "Чувствительность к дыму",
+        "state": {
+          "high": "Высокая",
+          "middle": "Средняя",
+          "low": "Низкая"
+        }
       },
       "display_direction": {
-        "name": "Ориентация дисплея"
+        "name": "Ориентация дисплея",
+        "state": {
+          "normal": "Обычная",
+          "reversed": "Перевёрнутая"
+        }
       },
       "displayed_temperature": {
-        "name": "Отображаемая температура"
+        "name": "Отображаемая температура",
+        "state": {
+          "setpoint": "Заданная",
+          "measured": "Измеренная"
+        }
       },
       "terminal_type": {
-        "name": "Тип клеммы"
+        "name": "Тип клеммы",
+        "state": {
+          "not_connected": "Не подключено",
+          "floor_sensor_connected": "Подключён датчик пола",
+          "floor_sensor_used_for_regulation": "Датчик пола используется для регулирования",
+          "floor_sensor_displayed": "Отображается датчик пола",
+          "floor_sensor_displayed_and_used_for_regulation": "Датчик пола отображается и используется для регулирования",
+          "volt_free_sensor_connected": "Подключён беспотенциальный датчик",
+          "volt_free_sensor_connected_and_used_for_operation": "Беспотенциальный датчик подключён и используется для работы",
+          "outdoor_sensor_connected": "Подключён уличный датчик"
+        }
       },
       "valve_type": {
-        "name": "Тип клапана"
+        "name": "Тип клапана",
+        "state": {
+          "normally_close": "Нормально закрыт",
+          "normally_open": "Нормально открыт"
+        }
       },
       "heater_type": {
-        "name": "Тип обогревателя"
+        "name": "Тип обогревателя",
+        "state": {
+          "floor_heating": "Тёплый пол",
+          "floor_heating_low_energy": "Тёплый пол (энергосберегающий)",
+          "radiator": "Радиатор",
+          "convector_passive": "Конвектор (пассивный)",
+          "convector_active": "Конвектор (активный)",
+          "volt_free_heating": "Беспотенциальный обогрев"
+        }
       },
       "switch_type": {
-        "name": "Тип переключателя"
+        "name": "Тип переключателя",
+        "state": {
+          "none": "Нет",
+          "pushbutton": "Кнопка",
+          "switch": "Переключатель",
+          "no_switch": "Без переключателя"
+        }
       },
       "actuator_type": {
-        "name": "Тип исполнительного устройства"
+        "name": "Тип исполнительного устройства",
+        "state": {
+          "normally_closed": "Нормально закрыт",
+          "normally_open": "Нормально открыт",
+          "unsupported": "Не поддерживается"
+        }
       },
       "output_mode": {
-        "name": "Режим выхода"
+        "name": "Режим выхода",
+        "state": {
+          "attached": "Подключён",
+          "detached": "Отключён",
+          "detached_short_press": "Отключён (короткое нажатие)",
+          "detached_long_press": "Отключён (долгое нажатие)",
+          "unsupported": "Не поддерживается"
+        }
       },
       "siren_sound_level": {
         "name": "Уровень звука",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Время отклика ориентационного света"
+        "name": "Время отклика ориентационного света",
+        "state": {
+          "long": "Долгое",
+          "short": "Короткое"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Уровень безопасности умной чувствительности"
+        "name": "Уровень безопасности умной чувствительности",
+        "state": {
+          "high": "Высокий",
+          "middle": "Средний",
+          "low": "Низкий"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Уровень комфорта умной чувствительности"
+        "name": "Уровень комфорта умной чувствительности",
+        "state": {
+          "high": "Высокий",
+          "middle": "Средний",
+          "low": "Низкий"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Управление фазой диммера"
+        "name": "Управление фазой диммера",
+        "state": {
+          "trailing": "По заднему фронту",
+          "leading": "По переднему фронту"
+        }
       },
       "installation_profile": {
         "name": "Профиль установки",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Включено"
+      },
+      "child_lock": {
+        "name": "Блокировка от детей"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Освещение"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Клапан"
       }
     }
   },

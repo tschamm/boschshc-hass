@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Hareket Duyarlılığı"
+        "name": "Hareket Duyarlılığı",
+        "state": {
+          "high": "Yüksek",
+          "middle": "Orta",
+          "low": "Düşük"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Titreşim Duyarlılığı"
+        "name": "Titreşim Duyarlılığı",
+        "state": {
+          "very_high": "Çok Yüksek",
+          "high": "Yüksek",
+          "medium": "Orta",
+          "low": "Düşük",
+          "very_low": "Çok Düşük"
+        }
       },
       "state_after_power_outage": {
-        "name": "Güç Kesintisi Sonrası Durum"
+        "name": "Güç Kesintisi Sonrası Durum",
+        "state": {
+          "off": "Kapalı",
+          "on": "Açık",
+          "last_state": "Son Durum"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Duman Duyarlılığı"
+        "name": "Duman Duyarlılığı",
+        "state": {
+          "high": "Yüksek",
+          "middle": "Orta",
+          "low": "Düşük"
+        }
       },
       "display_direction": {
-        "name": "Ekran Yönü"
+        "name": "Ekran Yönü",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Ters"
+        }
       },
       "displayed_temperature": {
-        "name": "Gösterilen Sıcaklık"
+        "name": "Gösterilen Sıcaklık",
+        "state": {
+          "setpoint": "Ayar Noktası",
+          "measured": "Ölçülen"
+        }
       },
       "terminal_type": {
-        "name": "Terminal Türü"
+        "name": "Terminal Türü",
+        "state": {
+          "not_connected": "Bağlı Değil",
+          "floor_sensor_connected": "Zemin Sensörü Bağlı",
+          "floor_sensor_used_for_regulation": "Zemin Sensörü Düzenleme İçin Kullanılıyor",
+          "floor_sensor_displayed": "Zemin Sensörü Gösteriliyor",
+          "floor_sensor_displayed_and_used_for_regulation": "Zemin Sensörü Gösteriliyor ve Düzenleme İçin Kullanılıyor",
+          "volt_free_sensor_connected": "Gerilimsiz Sensör Bağlı",
+          "volt_free_sensor_connected_and_used_for_operation": "Gerilimsiz Sensör Bağlı ve Çalıştırma İçin Kullanılıyor",
+          "outdoor_sensor_connected": "Dış Mekan Sensörü Bağlı"
+        }
       },
       "valve_type": {
-        "name": "Vana Türü"
+        "name": "Vana Türü",
+        "state": {
+          "normally_close": "Normalde Kapalı",
+          "normally_open": "Normalde Açık"
+        }
       },
       "heater_type": {
-        "name": "Isıtıcı Türü"
+        "name": "Isıtıcı Türü",
+        "state": {
+          "floor_heating": "Zemin Isıtma",
+          "floor_heating_low_energy": "Zemin Isıtma (Düşük Enerji)",
+          "radiator": "Radyatör",
+          "convector_passive": "Konvektör (Pasif)",
+          "convector_active": "Konvektör (Aktif)",
+          "volt_free_heating": "Gerilimsiz Isıtma"
+        }
       },
       "switch_type": {
-        "name": "Anahtar Türü"
+        "name": "Anahtar Türü",
+        "state": {
+          "none": "Yok",
+          "pushbutton": "Buton",
+          "switch": "Anahtar",
+          "no_switch": "Anahtar Yok"
+        }
       },
       "actuator_type": {
-        "name": "Aktüatör Türü"
+        "name": "Aktüatör Türü",
+        "state": {
+          "normally_closed": "Normalde Kapalı",
+          "normally_open": "Normalde Açık",
+          "unsupported": "Desteklenmiyor"
+        }
       },
       "output_mode": {
-        "name": "Çıkış Modu"
+        "name": "Çıkış Modu",
+        "state": {
+          "attached": "Bağlı",
+          "detached": "Ayrık",
+          "detached_short_press": "Ayrık (Kısa Basış)",
+          "detached_long_press": "Ayrık (Uzun Basış)",
+          "unsupported": "Desteklenmiyor"
+        }
       },
       "siren_sound_level": {
         "name": "Ses Seviyesi",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Yönlendirme Işığı Yanıt Süresi"
+        "name": "Yönlendirme Işığı Yanıt Süresi",
+        "state": {
+          "long": "Uzun",
+          "short": "Kısa"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Akıllı Hassasiyet Güvenlik Düzeyi"
+        "name": "Akıllı Hassasiyet Güvenlik Düzeyi",
+        "state": {
+          "high": "Yüksek",
+          "middle": "Orta",
+          "low": "Düşük"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Akıllı Hassasiyet Konfor Düzeyi"
+        "name": "Akıllı Hassasiyet Konfor Düzeyi",
+        "state": {
+          "high": "Yüksek",
+          "middle": "Orta",
+          "low": "Düşük"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer Faz Kontrolü"
+        "name": "Dimmer Faz Kontrolü",
+        "state": {
+          "trailing": "Geriye Kesme",
+          "leading": "İleriye Kesme"
+        }
       },
       "installation_profile": {
         "name": "Kurulum Profili",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Etkin"
+      },
+      "child_lock": {
+        "name": "Çocuk Kilidi"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Işık"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vana"
       }
     }
   },

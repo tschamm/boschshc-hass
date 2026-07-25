@@ -79,116 +79,116 @@ class SHCSelectEntityDescription[_DeviceT: SHCDevice](SelectEntityDescription):
 
 # Motion sensitivity: exclude UNKNOWN from user-visible options.
 _MOTION_SENSITIVITY_OPTIONS = [
-    PirSensorConfigurationService.MotionSensitivity.HIGH.name,
-    PirSensorConfigurationService.MotionSensitivity.MIDDLE.name,
-    PirSensorConfigurationService.MotionSensitivity.LOW.name,
+    PirSensorConfigurationService.MotionSensitivity.HIGH.name.lower(),
+    PirSensorConfigurationService.MotionSensitivity.MIDDLE.name.lower(),
+    PirSensorConfigurationService.MotionSensitivity.LOW.name.lower(),
 ]
 
 # Vibration sensitivity: all values are valid user choices (no UNKNOWN).
 _VIBRATION_SENSITIVITY_OPTIONS = [
-    VibrationSensorService.SensitivityState.VERY_HIGH.name,
-    VibrationSensorService.SensitivityState.HIGH.name,
-    VibrationSensorService.SensitivityState.MEDIUM.name,
-    VibrationSensorService.SensitivityState.LOW.name,
-    VibrationSensorService.SensitivityState.VERY_LOW.name,
+    VibrationSensorService.SensitivityState.VERY_HIGH.name.lower(),
+    VibrationSensorService.SensitivityState.HIGH.name.lower(),
+    VibrationSensorService.SensitivityState.MEDIUM.name.lower(),
+    VibrationSensorService.SensitivityState.LOW.name.lower(),
+    VibrationSensorService.SensitivityState.VERY_LOW.name.lower(),
 ]
 
 # Orientation-light response time (PollControl longPollInterval): LONG = lower
 # battery use / slower, SHORT = more responsive / higher battery use. Exclude
 # UNKNOWN from user-visible options.
 _POLL_CONTROL_OPTIONS = [
-    PollControlService.PollControlState.LONG.name,
-    PollControlService.PollControlState.SHORT.name,
+    PollControlService.PollControlState.LONG.name.lower(),
+    PollControlService.PollControlState.SHORT.name.lower(),
 ]
 
 # State after power outage: OFF / ON / LAST_STATE (exclude UNKNOWN).
 _STATE_AFTER_POWER_OUTAGE_OPTIONS = [
-    PowerSwitchConfigurationService.StateAfterPowerOutage.OFF.name,
-    PowerSwitchConfigurationService.StateAfterPowerOutage.ON.name,
-    PowerSwitchConfigurationService.StateAfterPowerOutage.LAST_STATE.name,
+    PowerSwitchConfigurationService.StateAfterPowerOutage.OFF.name.lower(),
+    PowerSwitchConfigurationService.StateAfterPowerOutage.ON.name.lower(),
+    PowerSwitchConfigurationService.StateAfterPowerOutage.LAST_STATE.name.lower(),
 ]
 
 # Smoke sensitivity: HIGH / MIDDLE / LOW (exclude UNKNOWN).
 _SMOKE_SENSITIVITY_OPTIONS = [
-    SmokeSensitivityService.SmokeSensitivityLevel.HIGH.name,
-    SmokeSensitivityService.SmokeSensitivityLevel.MIDDLE.name,
-    SmokeSensitivityService.SmokeSensitivityLevel.LOW.name,
+    SmokeSensitivityService.SmokeSensitivityLevel.HIGH.name.lower(),
+    SmokeSensitivityService.SmokeSensitivityLevel.MIDDLE.name.lower(),
+    SmokeSensitivityService.SmokeSensitivityLevel.LOW.name.lower(),
 ]
 
 # Display direction: NORMAL / REVERSED (exclude UNKNOWN).
 _DISPLAY_DIRECTION_OPTIONS = [
-    DisplayDirection.Direction.NORMAL.name,
-    DisplayDirection.Direction.REVERSED.name,
+    DisplayDirection.Direction.NORMAL.name.lower(),
+    DisplayDirection.Direction.REVERSED.name.lower(),
 ]
 
 # Displayed temperature: SETPOINT / MEASURED (exclude UNKNOWN).
 _DISPLAYED_TEMPERATURE_OPTIONS = [
-    DisplayedTemperatureConfiguration.DisplayedTemperature.SETPOINT.name,
-    DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED.name,
+    DisplayedTemperatureConfiguration.DisplayedTemperature.SETPOINT.name.lower(),
+    DisplayedTemperatureConfiguration.DisplayedTemperature.MEASURED.name.lower(),
 ]
 
 # Terminal type: all user-selectable values (exclude UNKNOWN).
 _TERMINAL_TYPE_OPTIONS = [
-    TerminalConfiguration.Type.NOT_CONNECTED.name,
-    TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED.name,
-    TerminalConfiguration.Type.FLOOR_SENSOR_USED_FOR_REGULATION.name,
-    TerminalConfiguration.Type.FLOOR_SENSOR_DISPLAYED.name,
-    TerminalConfiguration.Type.FLOOR_SENSOR_DISPLAYED_AND_USED_FOR_REGULATION.name,
-    TerminalConfiguration.Type.VOLT_FREE_SENSOR_CONNECTED.name,
-    TerminalConfiguration.Type.VOLT_FREE_SENSOR_CONNECTED_AND_USED_FOR_OPERATION.name,
-    TerminalConfiguration.Type.OUTDOOR_SENSOR_CONNECTED.name,
+    TerminalConfiguration.Type.NOT_CONNECTED.name.lower(),
+    TerminalConfiguration.Type.FLOOR_SENSOR_CONNECTED.name.lower(),
+    TerminalConfiguration.Type.FLOOR_SENSOR_USED_FOR_REGULATION.name.lower(),
+    TerminalConfiguration.Type.FLOOR_SENSOR_DISPLAYED.name.lower(),
+    TerminalConfiguration.Type.FLOOR_SENSOR_DISPLAYED_AND_USED_FOR_REGULATION.name.lower(),
+    TerminalConfiguration.Type.VOLT_FREE_SENSOR_CONNECTED.name.lower(),
+    TerminalConfiguration.Type.VOLT_FREE_SENSOR_CONNECTED_AND_USED_FOR_OPERATION.name.lower(),
+    TerminalConfiguration.Type.OUTDOOR_SENSOR_CONNECTED.name.lower(),
 ]
 
 # WallThermostatConfiguration valve type: exclude UNKNOWN.
 _VALVE_TYPE_OPTIONS = [
-    WallThermostatConfiguration.ValveType.NORMALLY_CLOSE.name,
-    WallThermostatConfiguration.ValveType.NORMALLY_OPEN.name,
+    WallThermostatConfiguration.ValveType.NORMALLY_CLOSE.name.lower(),
+    WallThermostatConfiguration.ValveType.NORMALLY_OPEN.name.lower(),
 ]
 
 # WallThermostatConfiguration heater type: exclude UNKNOWN.
 _HEATER_TYPE_OPTIONS = [
-    WallThermostatConfiguration.HeaterType.FLOOR_HEATING.name,
-    WallThermostatConfiguration.HeaterType.FLOOR_HEATING_LOW_ENERGY.name,
-    WallThermostatConfiguration.HeaterType.RADIATOR.name,
-    WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE.name,
-    WallThermostatConfiguration.HeaterType.CONVECTOR_ACTIVE.name,
-    WallThermostatConfiguration.HeaterType.VOLT_FREE_HEATING.name,
+    WallThermostatConfiguration.HeaterType.FLOOR_HEATING.name.lower(),
+    WallThermostatConfiguration.HeaterType.FLOOR_HEATING_LOW_ENERGY.name.lower(),
+    WallThermostatConfiguration.HeaterType.RADIATOR.name.lower(),
+    WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE.name.lower(),
+    WallThermostatConfiguration.HeaterType.CONVECTOR_ACTIVE.name.lower(),
+    WallThermostatConfiguration.HeaterType.VOLT_FREE_HEATING.name.lower(),
 ]
 
 # SwitchConfiguration switch type: exclude UNKNOWN.
 _SWITCH_TYPE_OPTIONS = [
-    SwitchConfiguration.SwitchType.NONE.name,
-    SwitchConfiguration.SwitchType.PUSHBUTTON.name,
-    SwitchConfiguration.SwitchType.SWITCH.name,
-    SwitchConfiguration.SwitchType.NO_SWITCH.name,
+    SwitchConfiguration.SwitchType.NONE.name.lower(),
+    SwitchConfiguration.SwitchType.PUSHBUTTON.name.lower(),
+    SwitchConfiguration.SwitchType.SWITCH.name.lower(),
+    SwitchConfiguration.SwitchType.NO_SWITCH.name.lower(),
 ]
 
 # SwitchConfiguration actuator type: exclude UNKNOWN.
 _ACTUATOR_TYPE_OPTIONS = [
-    SwitchConfiguration.ActuatorType.NORMALLY_CLOSED.name,
-    SwitchConfiguration.ActuatorType.NORMALLY_OPEN.name,
-    SwitchConfiguration.ActuatorType.UNSUPPORTED.name,
+    SwitchConfiguration.ActuatorType.NORMALLY_CLOSED.name.lower(),
+    SwitchConfiguration.ActuatorType.NORMALLY_OPEN.name.lower(),
+    SwitchConfiguration.ActuatorType.UNSUPPORTED.name.lower(),
 ]
 
 # SwitchConfiguration output mode: exclude UNKNOWN.
 _OUTPUT_MODE_OPTIONS = [
-    SwitchConfiguration.OutputMode.ATTACHED.name,
-    SwitchConfiguration.OutputMode.DETACHED.name,
-    SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS.name,
-    SwitchConfiguration.OutputMode.DETACHED_LONG_PRESS.name,
-    SwitchConfiguration.OutputMode.UNSUPPORTED.name,
+    SwitchConfiguration.OutputMode.ATTACHED.name.lower(),
+    SwitchConfiguration.OutputMode.DETACHED.name.lower(),
+    SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS.name.lower(),
+    SwitchConfiguration.OutputMode.DETACHED_LONG_PRESS.name.lower(),
+    SwitchConfiguration.OutputMode.UNSUPPORTED.name.lower(),
 ]
 
 # SmartSensitivity manual level: HIGH / MIDDLE / LOW (exclude UNKNOWN).
 _SMART_SENSITIVITY_OPTIONS = [
-    SmartSensitivityControlService.MotionSensitivity.HIGH.name,
-    SmartSensitivityControlService.MotionSensitivity.MIDDLE.name,
-    SmartSensitivityControlService.MotionSensitivity.LOW.name,
+    SmartSensitivityControlService.MotionSensitivity.HIGH.name.lower(),
+    SmartSensitivityControlService.MotionSensitivity.MIDDLE.name.lower(),
+    SmartSensitivityControlService.MotionSensitivity.LOW.name.lower(),
 ]
 
 _SIREN_SOUND_LEVEL_OPTIONS = ["low", "medium", "high"]
 
-_DIMMER_PHASE_CONTROL_OPTIONS = ["TRAILING", "LEADING"]
+_DIMMER_PHASE_CONTROL_OPTIONS = ["trailing", "leading"]
 
 
 # ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ def _enum_attr_current_option_fn(
             val = getattr(device, attr)
             if val is None:
                 return None
-            name = str(val.name)
+            name = str(val.name).lower()
             if options is not None and name not in options:
                 return None
             return name
@@ -231,7 +231,7 @@ def _enum_attr_select_option_fn(
     """Build a select_option_fn calling `device.<setter>(enum_cls[option])`."""
 
     async def _select_option(device: SHCDevice, option: str) -> None:
-        await getattr(device, setter)(enum_cls[option])
+        await getattr(device, setter)(enum_cls[option.upper()])
 
     return _select_option
 
@@ -263,7 +263,7 @@ def _dimmer_current_option(
     if service is None:
         return None
     try:
-        name = service.edge_phase_control_mode.name
+        name = service.edge_phase_control_mode.name.lower()
         return name if options is None or name in options else None
     except (AttributeError, ValueError):
         return None
@@ -275,7 +275,7 @@ async def _dimmer_select_option(device: SHCMicromoduleDimmer, option: str) -> No
     if service is None:
         return
     try:
-        mode = DimmerConfigurationService.EdgePhaseControlMode[option]
+        mode = DimmerConfigurationService.EdgePhaseControlMode[option.upper()]
     except KeyError:
         return
     await service.async_set_edge_phase_control_mode(mode)
@@ -296,7 +296,7 @@ def _smart_sensitivity_current_option_fn(
         if level is None:
             return None
         # level may be an enum or a string
-        name = level.name if hasattr(level, "name") else str(level)
+        name = (level.name if hasattr(level, "name") else str(level)).lower()
         if options is not None and name not in options:
             return None
         return name
@@ -310,7 +310,7 @@ def _smart_sensitivity_select_option_fn(
     """Build a select_option_fn for one SmartSensitivityControl context."""
 
     async def _select_option(device: SHCMotionDetector2, option: str) -> None:
-        level = SmartSensitivityControlService.MotionSensitivity[option]
+        level = SmartSensitivityControlService.MotionSensitivity[option.upper()]
         await device.async_set_smart_sensitivity_manual_level(context, level)
 
     return _select_option

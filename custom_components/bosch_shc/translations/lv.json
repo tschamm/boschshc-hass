@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Kustību jutīgums"
+        "name": "Kustību jutīgums",
+        "state": {
+          "high": "Augsts",
+          "middle": "Vidējs",
+          "low": "Zems"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Vibrāciju jutīgums"
+        "name": "Vibrāciju jutīgums",
+        "state": {
+          "very_high": "Ļoti augsts",
+          "high": "Augsts",
+          "medium": "Vidējs",
+          "low": "Zems",
+          "very_low": "Ļoti zems"
+        }
       },
       "state_after_power_outage": {
-        "name": "Stāvoklis pēc strāvas zuduma"
+        "name": "Stāvoklis pēc strāvas zuduma",
+        "state": {
+          "off": "Izslēgts",
+          "on": "Ieslēgts",
+          "last_state": "Pēdējais stāvoklis"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Dūmu jutīgums"
+        "name": "Dūmu jutīgums",
+        "state": {
+          "high": "Augsts",
+          "middle": "Vidējs",
+          "low": "Zems"
+        }
       },
       "display_direction": {
-        "name": "Displeja orientācija"
+        "name": "Displeja orientācija",
+        "state": {
+          "normal": "Normāls",
+          "reversed": "Apgriezts"
+        }
       },
       "displayed_temperature": {
-        "name": "Rādāmā temperatūra"
+        "name": "Rādāmā temperatūra",
+        "state": {
+          "setpoint": "Iestatītā vērtība",
+          "measured": "Mērītā"
+        }
       },
       "terminal_type": {
-        "name": "Termināļa veids"
+        "name": "Termināļa veids",
+        "state": {
+          "not_connected": "Nav pievienots",
+          "floor_sensor_connected": "Grīdas sensors pievienots",
+          "floor_sensor_used_for_regulation": "Grīdas sensors izmantots regulēšanai",
+          "floor_sensor_displayed": "Grīdas sensors rādīts",
+          "floor_sensor_displayed_and_used_for_regulation": "Grīdas sensors rādīts un izmantots regulēšanai",
+          "volt_free_sensor_connected": "Bezsprieguma sensors pievienots",
+          "volt_free_sensor_connected_and_used_for_operation": "Bezsprieguma sensors pievienots un izmantots darbībai",
+          "outdoor_sensor_connected": "Āra sensors pievienots"
+        }
       },
       "valve_type": {
-        "name": "Vārsta veids"
+        "name": "Vārsta veids",
+        "state": {
+          "normally_close": "Parasti aizvērts",
+          "normally_open": "Parasti atvērts"
+        }
       },
       "heater_type": {
-        "name": "Sildītāja veids"
+        "name": "Sildītāja veids",
+        "state": {
+          "floor_heating": "Grīdas apkure",
+          "floor_heating_low_energy": "Grīdas apkure (zemas enerģijas)",
+          "radiator": "Radiators",
+          "convector_passive": "Konvektors (pasīvs)",
+          "convector_active": "Konvektors (aktīvs)",
+          "volt_free_heating": "Bezsprieguma apkure"
+        }
       },
       "switch_type": {
-        "name": "Slēdža veids"
+        "name": "Slēdža veids",
+        "state": {
+          "none": "Nav",
+          "pushbutton": "Pogslēdzis",
+          "switch": "Slēdzis",
+          "no_switch": "Bez slēdža"
+        }
       },
       "actuator_type": {
-        "name": "Aktuatora veids"
+        "name": "Aktuatora veids",
+        "state": {
+          "normally_closed": "Parasti aizvērts",
+          "normally_open": "Parasti atvērts",
+          "unsupported": "Netiek atbalstīts"
+        }
       },
       "output_mode": {
-        "name": "Izvades režīms"
+        "name": "Izvades režīms",
+        "state": {
+          "attached": "Pievienots",
+          "detached": "Atvienots",
+          "detached_short_press": "Atvienots (īss piespiediens)",
+          "detached_long_press": "Atvienots (garš piespiediens)",
+          "unsupported": "Netiek atbalstīts"
+        }
       },
       "siren_sound_level": {
         "name": "Skaņas līmenis",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Orientācijas gaismas reaģēšanas laiks"
+        "name": "Orientācijas gaismas reaģēšanas laiks",
+        "state": {
+          "long": "Ilgs",
+          "short": "Īss"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Viedās jutības drošības līmenis"
+        "name": "Viedās jutības drošības līmenis",
+        "state": {
+          "high": "Augsts",
+          "middle": "Vidējs",
+          "low": "Zems"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Viedās jutības komforta līmenis"
+        "name": "Viedās jutības komforta līmenis",
+        "state": {
+          "high": "Augsts",
+          "middle": "Vidējs",
+          "low": "Zems"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmera fāzes vadība"
+        "name": "Dimmera fāzes vadība",
+        "state": {
+          "trailing": "Nobeiguma fāzes vadība",
+          "leading": "Sākuma fāzes vadība"
+        }
       },
       "installation_profile": {
         "name": "Uzstādīšanas profils",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Iespējots"
+      },
+      "child_lock": {
+        "name": "Bērnu bloķēšana"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Gaisma"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vārsts"
       }
     }
   },

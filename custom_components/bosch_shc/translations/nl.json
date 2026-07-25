@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Bewegingsgevoeligheid"
+        "name": "Bewegingsgevoeligheid",
+        "state": {
+          "high": "Hoog",
+          "middle": "Gemiddeld",
+          "low": "Laag"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Trillingsgevoeligheid"
+        "name": "Trillingsgevoeligheid",
+        "state": {
+          "very_high": "Zeer hoog",
+          "high": "Hoog",
+          "medium": "Gemiddeld",
+          "low": "Laag",
+          "very_low": "Zeer laag"
+        }
       },
       "state_after_power_outage": {
-        "name": "Toestand na stroomuitval"
+        "name": "Toestand na stroomuitval",
+        "state": {
+          "off": "Uit",
+          "on": "Aan",
+          "last_state": "Laatste status"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Rookgevoeligheid"
+        "name": "Rookgevoeligheid",
+        "state": {
+          "high": "Hoog",
+          "middle": "Gemiddeld",
+          "low": "Laag"
+        }
       },
       "display_direction": {
-        "name": "Schermrichting"
+        "name": "Schermrichting",
+        "state": {
+          "normal": "Normaal",
+          "reversed": "Omgekeerd"
+        }
       },
       "displayed_temperature": {
-        "name": "Weergegeven temperatuur"
+        "name": "Weergegeven temperatuur",
+        "state": {
+          "setpoint": "Instelpunt",
+          "measured": "Gemeten"
+        }
       },
       "terminal_type": {
-        "name": "Aansluitingstype"
+        "name": "Aansluitingstype",
+        "state": {
+          "not_connected": "Niet aangesloten",
+          "floor_sensor_connected": "Vloersensor aangesloten",
+          "floor_sensor_used_for_regulation": "Vloersensor gebruikt voor regeling",
+          "floor_sensor_displayed": "Vloersensor weergegeven",
+          "floor_sensor_displayed_and_used_for_regulation": "Vloersensor weergegeven en gebruikt voor regeling",
+          "volt_free_sensor_connected": "Potentiaalvrije sensor aangesloten",
+          "volt_free_sensor_connected_and_used_for_operation": "Potentiaalvrije sensor aangesloten en gebruikt voor bediening",
+          "outdoor_sensor_connected": "Buitensensor aangesloten"
+        }
       },
       "valve_type": {
-        "name": "Kleppetype"
+        "name": "Kleppetype",
+        "state": {
+          "normally_close": "Normaal gesloten",
+          "normally_open": "Normaal geopend"
+        }
       },
       "heater_type": {
-        "name": "Verwarmingstype"
+        "name": "Verwarmingstype",
+        "state": {
+          "floor_heating": "Vloerverwarming",
+          "floor_heating_low_energy": "Vloerverwarming (laag energieverbruik)",
+          "radiator": "Radiator",
+          "convector_passive": "Convector (passief)",
+          "convector_active": "Convector (actief)",
+          "volt_free_heating": "Potentiaalvrije verwarming"
+        }
       },
       "switch_type": {
-        "name": "Schakelaartype"
+        "name": "Schakelaartype",
+        "state": {
+          "none": "Geen",
+          "pushbutton": "Drukknop",
+          "switch": "Schakelaar",
+          "no_switch": "Geen schakelaar"
+        }
       },
       "actuator_type": {
-        "name": "Actuatortype"
+        "name": "Actuatortype",
+        "state": {
+          "normally_closed": "Normaal gesloten",
+          "normally_open": "Normaal geopend",
+          "unsupported": "Niet ondersteund"
+        }
       },
       "output_mode": {
-        "name": "Uitvoermodus"
+        "name": "Uitvoermodus",
+        "state": {
+          "attached": "Gekoppeld",
+          "detached": "Ontkoppeld",
+          "detached_short_press": "Ontkoppeld (korte druk)",
+          "detached_long_press": "Ontkoppeld (lange druk)",
+          "unsupported": "Niet ondersteund"
+        }
       },
       "siren_sound_level": {
         "name": "Geluidsniveau",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Reactietijd oriëntatielicht"
+        "name": "Reactietijd oriëntatielicht",
+        "state": {
+          "long": "Lang",
+          "short": "Kort"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity beveiligingsniveau"
+        "name": "Smart Sensitivity beveiligingsniveau",
+        "state": {
+          "high": "Hoog",
+          "middle": "Gemiddeld",
+          "low": "Laag"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity comfortniveau"
+        "name": "Smart Sensitivity comfortniveau",
+        "state": {
+          "high": "Hoog",
+          "middle": "Gemiddeld",
+          "low": "Laag"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer faseregeling"
+        "name": "Dimmer faseregeling",
+        "state": {
+          "trailing": "Aflopende fase",
+          "leading": "Oplopende fase"
+        }
       },
       "installation_profile": {
         "name": "Installatieprofiel",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Ingeschakeld"
+      },
+      "child_lock": {
+        "name": "Kinderslot"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Lamp"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Klep"
       }
     }
   },

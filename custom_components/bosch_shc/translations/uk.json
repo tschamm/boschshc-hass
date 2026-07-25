@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Чутливість до руху"
+        "name": "Чутливість до руху",
+        "state": {
+          "high": "Високий",
+          "middle": "Середній",
+          "low": "Низький"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Чутливість до вібрації"
+        "name": "Чутливість до вібрації",
+        "state": {
+          "very_high": "Дуже високий",
+          "high": "Високий",
+          "medium": "Середній",
+          "low": "Низький",
+          "very_low": "Дуже низький"
+        }
       },
       "state_after_power_outage": {
-        "name": "Стан після відключення живлення"
+        "name": "Стан після відключення живлення",
+        "state": {
+          "off": "Вимкнено",
+          "on": "Увімкнено",
+          "last_state": "Останній стан"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Чутливість до диму"
+        "name": "Чутливість до диму",
+        "state": {
+          "high": "Високий",
+          "middle": "Середній",
+          "low": "Низький"
+        }
       },
       "display_direction": {
-        "name": "Орієнтація дисплея"
+        "name": "Орієнтація дисплея",
+        "state": {
+          "normal": "Звичайний",
+          "reversed": "Перевернутий"
+        }
       },
       "displayed_temperature": {
-        "name": "Температура на дисплеї"
+        "name": "Температура на дисплеї",
+        "state": {
+          "setpoint": "Задане значення",
+          "measured": "Виміряне значення"
+        }
       },
       "terminal_type": {
-        "name": "Тип клеми"
+        "name": "Тип клеми",
+        "state": {
+          "not_connected": "Не підключено",
+          "floor_sensor_connected": "Підключено підлоговий датчик",
+          "floor_sensor_used_for_regulation": "Підлоговий датчик використовується для регулювання",
+          "floor_sensor_displayed": "Підлоговий датчик відображається",
+          "floor_sensor_displayed_and_used_for_regulation": "Підлоговий датчик відображається та використовується для регулювання",
+          "volt_free_sensor_connected": "Підключено безпотенціальний датчик",
+          "volt_free_sensor_connected_and_used_for_operation": "Безпотенціальний датчик підключено та використовується для роботи",
+          "outdoor_sensor_connected": "Підключено зовнішній датчик"
+        }
       },
       "valve_type": {
-        "name": "Тип клапана"
+        "name": "Тип клапана",
+        "state": {
+          "normally_close": "Нормально закритий",
+          "normally_open": "Нормально відкритий"
+        }
       },
       "heater_type": {
-        "name": "Тип нагрівача"
+        "name": "Тип нагрівача",
+        "state": {
+          "floor_heating": "Тепла підлога",
+          "floor_heating_low_energy": "Тепла підлога (низьке енергоспоживання)",
+          "radiator": "Радіатор",
+          "convector_passive": "Конвектор (пасивний)",
+          "convector_active": "Конвектор (активний)",
+          "volt_free_heating": "Безпотенціальне опалення"
+        }
       },
       "switch_type": {
-        "name": "Тип перемикача"
+        "name": "Тип перемикача",
+        "state": {
+          "none": "Немає",
+          "pushbutton": "Кнопка",
+          "switch": "Перемикач",
+          "no_switch": "Без перемикача"
+        }
       },
       "actuator_type": {
-        "name": "Тип виконавчого пристрою"
+        "name": "Тип виконавчого пристрою",
+        "state": {
+          "normally_closed": "Нормально закритий",
+          "normally_open": "Нормально відкритий",
+          "unsupported": "Не підтримується"
+        }
       },
       "output_mode": {
-        "name": "Режим виходу"
+        "name": "Режим виходу",
+        "state": {
+          "attached": "Приєднано",
+          "detached": "Відокремлено",
+          "detached_short_press": "Відокремлено (коротке натискання)",
+          "detached_long_press": "Відокремлено (довге натискання)",
+          "unsupported": "Не підтримується"
+        }
       },
       "siren_sound_level": {
         "name": "Рівень гучності",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Час відгуку орієнтаційного освітлення"
+        "name": "Час відгуку орієнтаційного освітлення",
+        "state": {
+          "long": "Довгий",
+          "short": "Короткий"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Рівень безпеки розумної чутливості"
+        "name": "Рівень безпеки розумної чутливості",
+        "state": {
+          "high": "Високий",
+          "middle": "Середній",
+          "low": "Низький"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Рівень комфорту розумної чутливості"
+        "name": "Рівень комфорту розумної чутливості",
+        "state": {
+          "high": "Високий",
+          "middle": "Середній",
+          "low": "Низький"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Керування фазою диммера"
+        "name": "Керування фазою диммера",
+        "state": {
+          "trailing": "Керування заднім фронтом",
+          "leading": "Керування переднім фронтом"
+        }
       },
       "installation_profile": {
         "name": "Профіль встановлення",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Увімкнено"
+      },
+      "child_lock": {
+        "name": "Захист від дітей"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Світло"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Клапан"
       }
     }
   },

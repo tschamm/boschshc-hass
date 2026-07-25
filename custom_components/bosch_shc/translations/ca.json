@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Sensibilitat al moviment"
+        "name": "Sensibilitat al moviment",
+        "state": {
+          "high": "Alta",
+          "middle": "Mitjana",
+          "low": "Baixa"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Sensibilitat a la vibració"
+        "name": "Sensibilitat a la vibració",
+        "state": {
+          "very_high": "Molt alta",
+          "high": "Alta",
+          "medium": "Mitjana",
+          "low": "Baixa",
+          "very_low": "Molt baixa"
+        }
       },
       "state_after_power_outage": {
-        "name": "Estat després d'un tall de llum"
+        "name": "Estat després d'un tall de llum",
+        "state": {
+          "off": "Apagat",
+          "on": "Encès",
+          "last_state": "Últim estat"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Sensibilitat al fum"
+        "name": "Sensibilitat al fum",
+        "state": {
+          "high": "Alta",
+          "middle": "Mitjana",
+          "low": "Baixa"
+        }
       },
       "display_direction": {
-        "name": "Orientació de la pantalla"
+        "name": "Orientació de la pantalla",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Invertida"
+        }
       },
       "displayed_temperature": {
-        "name": "Temperatura mostrada"
+        "name": "Temperatura mostrada",
+        "state": {
+          "setpoint": "Consigna",
+          "measured": "Mesurada"
+        }
       },
       "terminal_type": {
-        "name": "Tipus de terminal"
+        "name": "Tipus de terminal",
+        "state": {
+          "not_connected": "No connectat",
+          "floor_sensor_connected": "Sensor de terra connectat",
+          "floor_sensor_used_for_regulation": "Sensor de terra utilitzat per a la regulació",
+          "floor_sensor_displayed": "Sensor de terra mostrat",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensor de terra mostrat i utilitzat per a la regulació",
+          "volt_free_sensor_connected": "Sensor lliure de tensió connectat",
+          "volt_free_sensor_connected_and_used_for_operation": "Sensor lliure de tensió connectat i utilitzat per al funcionament",
+          "outdoor_sensor_connected": "Sensor exterior connectat"
+        }
       },
       "valve_type": {
-        "name": "Tipus de vàlvula"
+        "name": "Tipus de vàlvula",
+        "state": {
+          "normally_close": "Normalment tancada",
+          "normally_open": "Normalment oberta"
+        }
       },
       "heater_type": {
-        "name": "Tipus de calefactor"
+        "name": "Tipus de calefactor",
+        "state": {
+          "floor_heating": "Terra radiant",
+          "floor_heating_low_energy": "Terra radiant (baix consum)",
+          "radiator": "Radiador",
+          "convector_passive": "Convector (passiu)",
+          "convector_active": "Convector (actiu)",
+          "volt_free_heating": "Calefacció lliure de tensió"
+        }
       },
       "switch_type": {
-        "name": "Tipus d'interruptor"
+        "name": "Tipus d'interruptor",
+        "state": {
+          "none": "Cap",
+          "pushbutton": "Polsador",
+          "switch": "Interruptor",
+          "no_switch": "Sense interruptor"
+        }
       },
       "actuator_type": {
-        "name": "Tipus d'actuador"
+        "name": "Tipus d'actuador",
+        "state": {
+          "normally_closed": "Normalment tancat",
+          "normally_open": "Normalment obert",
+          "unsupported": "No compatible"
+        }
       },
       "output_mode": {
-        "name": "Mode de sortida"
+        "name": "Mode de sortida",
+        "state": {
+          "attached": "Acoblat",
+          "detached": "Desacoblat",
+          "detached_short_press": "Desacoblat (pressió curta)",
+          "detached_long_press": "Desacoblat (pressió llarga)",
+          "unsupported": "No compatible"
+        }
       },
       "siren_sound_level": {
         "name": "Nivell de so",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Temps de resposta de la llum d'orientació"
+        "name": "Temps de resposta de la llum d'orientació",
+        "state": {
+          "long": "Llarg",
+          "short": "Curt"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Nivell de seguretat de la sensibilitat intel·ligent"
+        "name": "Nivell de seguretat de la sensibilitat intel·ligent",
+        "state": {
+          "high": "Alt",
+          "middle": "Mitjà",
+          "low": "Baix"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Nivell de confort de la sensibilitat intel·ligent"
+        "name": "Nivell de confort de la sensibilitat intel·ligent",
+        "state": {
+          "high": "Alt",
+          "middle": "Mitjà",
+          "low": "Baix"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Control de fase del regulador"
+        "name": "Control de fase del regulador",
+        "state": {
+          "trailing": "Tall de fase de cua",
+          "leading": "Tall de fase de cap"
+        }
       },
       "installation_profile": {
         "name": "Perfil d'instal·lació",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Activat"
+      },
+      "child_lock": {
+        "name": "Bloqueig infantil"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Llum"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vàlvula"
       }
     }
   },

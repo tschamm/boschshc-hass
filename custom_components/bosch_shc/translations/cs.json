@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Citlivost pohybu"
+        "name": "Citlivost pohybu",
+        "state": {
+          "high": "Vysoká",
+          "middle": "Střední",
+          "low": "Nízká"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Citlivost vibrací"
+        "name": "Citlivost vibrací",
+        "state": {
+          "very_high": "Velmi vysoká",
+          "high": "Vysoká",
+          "medium": "Střední",
+          "low": "Nízká",
+          "very_low": "Velmi nízká"
+        }
       },
       "state_after_power_outage": {
-        "name": "Stav po výpadku napájení"
+        "name": "Stav po výpadku napájení",
+        "state": {
+          "off": "Vypnuto",
+          "on": "Zapnuto",
+          "last_state": "Poslední stav"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Citlivost kouřového čidla"
+        "name": "Citlivost kouřového čidla",
+        "state": {
+          "high": "Vysoká",
+          "middle": "Střední",
+          "low": "Nízká"
+        }
       },
       "display_direction": {
-        "name": "Orientace displeje"
+        "name": "Orientace displeje",
+        "state": {
+          "normal": "Normální",
+          "reversed": "Obrácená"
+        }
       },
       "displayed_temperature": {
-        "name": "Zobrazovaná teplota"
+        "name": "Zobrazovaná teplota",
+        "state": {
+          "setpoint": "Požadovaná hodnota",
+          "measured": "Naměřená"
+        }
       },
       "terminal_type": {
-        "name": "Typ svorky"
+        "name": "Typ svorky",
+        "state": {
+          "not_connected": "Nepřipojeno",
+          "floor_sensor_connected": "Podlahové čidlo připojeno",
+          "floor_sensor_used_for_regulation": "Podlahové čidlo použito pro regulaci",
+          "floor_sensor_displayed": "Podlahové čidlo zobrazeno",
+          "floor_sensor_displayed_and_used_for_regulation": "Podlahové čidlo zobrazeno a použito pro regulaci",
+          "volt_free_sensor_connected": "Beznapěťové čidlo připojeno",
+          "volt_free_sensor_connected_and_used_for_operation": "Beznapěťové čidlo připojeno a použito pro provoz",
+          "outdoor_sensor_connected": "Venkovní čidlo připojeno"
+        }
       },
       "valve_type": {
-        "name": "Typ ventilu"
+        "name": "Typ ventilu",
+        "state": {
+          "normally_close": "Normálně zavřený",
+          "normally_open": "Normálně otevřený"
+        }
       },
       "heater_type": {
-        "name": "Typ topení"
+        "name": "Typ topení",
+        "state": {
+          "floor_heating": "Podlahové topení",
+          "floor_heating_low_energy": "Podlahové topení (nízkoenergetické)",
+          "radiator": "Radiátor",
+          "convector_passive": "Konvektor (pasivní)",
+          "convector_active": "Konvektor (aktivní)",
+          "volt_free_heating": "Beznapěťové topení"
+        }
       },
       "switch_type": {
-        "name": "Typ spínače"
+        "name": "Typ spínače",
+        "state": {
+          "none": "Žádný",
+          "pushbutton": "Tlačítko",
+          "switch": "Spínač",
+          "no_switch": "Bez spínače"
+        }
       },
       "actuator_type": {
-        "name": "Typ aktuátoru"
+        "name": "Typ aktuátoru",
+        "state": {
+          "normally_closed": "Normálně zavřený",
+          "normally_open": "Normálně otevřený",
+          "unsupported": "Nepodporováno"
+        }
       },
       "output_mode": {
-        "name": "Režim výstupu"
+        "name": "Režim výstupu",
+        "state": {
+          "attached": "Připojeno",
+          "detached": "Odpojeno",
+          "detached_short_press": "Odpojeno (krátké stisknutí)",
+          "detached_long_press": "Odpojeno (dlouhé stisknutí)",
+          "unsupported": "Nepodporováno"
+        }
       },
       "siren_sound_level": {
         "name": "Hlasitost",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Doba odezvy orientačního světla"
+        "name": "Doba odezvy orientačního světla",
+        "state": {
+          "long": "Dlouhá",
+          "short": "Krátká"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Úroveň zabezpečení inteligentní citlivosti"
+        "name": "Úroveň zabezpečení inteligentní citlivosti",
+        "state": {
+          "high": "Vysoká",
+          "middle": "Střední",
+          "low": "Nízká"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Úroveň komfortu inteligentní citlivosti"
+        "name": "Úroveň komfortu inteligentní citlivosti",
+        "state": {
+          "high": "Vysoká",
+          "middle": "Střední",
+          "low": "Nízká"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Řízení fáze stmívače"
+        "name": "Řízení fáze stmívače",
+        "state": {
+          "trailing": "Sestupná fázová regulace",
+          "leading": "Náběžná fázová regulace"
+        }
       },
       "installation_profile": {
         "name": "Instalační profil",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Povoleno"
+      },
+      "child_lock": {
+        "name": "Dětská pojistka"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Světlo"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
       }
     }
   },

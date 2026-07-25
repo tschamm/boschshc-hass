@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.12.11 — translate TRV_GEN2 select states + ChildLock/Valve entity names (#377)
+
+**Breaking (select option values, not entity IDs):** if you automate against
+the raw option string of any of the 16 selects listed below, update those
+automations — the values are now lowercase (e.g. `SETPOINT` → `setpoint`).
+
+- **Fix: several entity names and select-entity option values showed up
+  untranslated (raw internal identifiers) in the UI** instead of a
+  translated label — reported on a TRV_GEN2 (radiator thermostat) with
+  screenshots showing "ChildLock", "Valve", and raw enum values like
+  `SETPOINT`/`NORMAL` for the "Displayed Temperature"/"Display Direction"
+  selects. Root-caused two independent bugs, both fixed at the source
+  rather than patched per-entity:
+  - The `child_lock`/`child_lock_thermostat` switch descriptions and
+    `SHCValve` never set a `translation_key`, so their `attr_name`
+    ("ChildLock"/"Valve") rendered literally. Both now translate (`Child
+    Lock` / `Valve`).
+  - Every select entity built from the shared enum-reading helper
+    (`_enum_attr_current_option_fn`/`_enum_attr_select_option_fn`) exposed
+    its options as raw uppercase Python enum member names
+    (`SETPOINT`/`FLOOR_SENSOR_CONNECTED`/…) with no matching `state`
+    translation block — this affected 16 selects total, not just the 2
+    visible on a TRV_GEN2: `motion_sensitivity`, `vibration_sensitivity`,
+    `orientation_light_response_time`, `state_after_power_outage`,
+    `smoke_sensitivity`, `display_direction`, `displayed_temperature`,
+    `terminal_type`, `valve_type`, `heater_type`, `switch_type`,
+    `actuator_type`, `output_mode`, `smart_sensitivity_security_level`,
+    `smart_sensitivity_comfort_level`, and `dimmer_phase_control`. Fixed by
+    lowercasing the option values (matching the convention this integration
+    already uses for `siren_sound_level`/`installation_profile`, the two
+    selects that were already translated correctly) and adding the missing
+    `state` translations across all 30 languages.
+
 ## 0.12.10 — fix ~150s startup delay from a blocking Zigbee-routing refresh
 
 - **Docs/UX: surfaced two SHC-enforced firmware-update preconditions that

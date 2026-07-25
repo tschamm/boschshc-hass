@@ -194,11 +194,13 @@ class TestValveSetupEntry:
     def test_attr_name_valve_applied(self, mock_config_entry, mock_session) -> None:
         """async_setup_entry always passes attr_name='Valve'.
 
-        With _attr_has_entity_name=True, _attr_name holds only the feature
-        label; HA prepends the device name for display ('Test Valve Valve').
+        #377: attr_name only feeds the unique_id suffix now — the display
+        name is driven by _attr_translation_key ("valve"), not a raw
+        literal _attr_name.
         """
         result = self._run(mock_config_entry, mock_session)
-        assert result[0]._attr_name == "Valve"
+        assert not hasattr(result[0], "_attr_name")
+        assert result[0]._attr_translation_key == "valve"
 
     @pytest.mark.parametrize(
         "device_buckets", [{"thermostats": [_valve_device()]}], indirect=True
@@ -343,9 +345,14 @@ class TestValveSetupEntryExcluded:
         indirect=True,
     )
     def test_valve_attr_name_is_valve(self, mock_config_entry, mock_session):
-        """async_setup_entry passes attr_name='Valve' to SHCValve."""
+        """async_setup_entry passes attr_name='Valve' to SHCValve.
+
+        #377: attr_name only feeds the unique_id suffix; display name comes
+        from _attr_translation_key.
+        """
         result = self._run(mock_config_entry, mock_session)
-        assert result[0]._attr_name == "Valve"
+        assert not hasattr(result[0], "_attr_name")
+        assert result[0]._attr_translation_key == "valve"
 
     @pytest.mark.parametrize(
         "device_buckets",
@@ -445,11 +452,12 @@ class TestSHCValveInit:
     """Cover SHCValve.__init__ lines 57-66."""
 
     def test_init_no_attr_name_sets_name_none(self):
-        # With _attr_has_entity_name=True (from SHCEntity), _attr_name=None means
-        # HA uses the device name as the entity name.
+        # #377: SHCValve declares a class-level _attr_translation_key, so
+        # SHCEntity.__init__ deletes the instance _attr_name entirely
+        # (translated display name takes over, regardless of attr_name).
         dev = _fake_device()
         valve = SHCValve(device=dev, entry_id="test", attr_name=None)
-        assert valve._attr_name is None
+        assert not hasattr(valve, "_attr_name")
 
     def test_init_no_attr_name_sets_unique_id(self):
         dev = _fake_device()
@@ -457,10 +465,11 @@ class TestSHCValveInit:
         assert valve._attr_unique_id == "root1_dev1"
 
     def test_init_with_attr_name_sets_attr_name(self):
-        # _attr_name stores only the suffix; HA auto-prepends the device name at runtime.
+        # #377: attr_name only feeds unique_id now; _attr_name is deleted by
+        # SHCEntity.__init__ because SHCValve declares _attr_translation_key.
         dev = _fake_device()
         valve = SHCValve(device=dev, entry_id="test", attr_name="Valve")
-        assert valve._attr_name == "Valve"
+        assert not hasattr(valve, "_attr_name")
 
     def test_init_with_attr_name_lowercased_in_unique_id(self):
         dev = _fake_device()
@@ -481,7 +490,8 @@ class TestSHCValveInit:
         dev = _fake_device(name="my-cam", root_device_id="root2", device_id="dev2")
         valve = SHCValve(device=dev, entry_id="e", attr_name="ThermoValve")
         assert valve._attr_unique_id == "root2_dev2_thermovalve"
-        assert valve._attr_name == "ThermoValve"
+        # #377: attr_name only feeds unique_id; _attr_name is not set.
+        assert not hasattr(valve, "_attr_name")
 
 
 class TestSHCValveClassAttrs:

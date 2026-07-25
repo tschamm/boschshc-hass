@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Liikumistundlikkus"
+        "name": "Liikumistundlikkus",
+        "state": {
+          "high": "Kõrge",
+          "middle": "Keskmine",
+          "low": "Madal"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Vibratsioonitundlikkus"
+        "name": "Vibratsioonitundlikkus",
+        "state": {
+          "very_high": "Väga kõrge",
+          "high": "Kõrge",
+          "medium": "Keskmine",
+          "low": "Madal",
+          "very_low": "Väga madal"
+        }
       },
       "state_after_power_outage": {
-        "name": "Olek pärast toitekatkestust"
+        "name": "Olek pärast toitekatkestust",
+        "state": {
+          "off": "Väljas",
+          "on": "Sees",
+          "last_state": "Viimane olek"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Suitsutundlikkus"
+        "name": "Suitsutundlikkus",
+        "state": {
+          "high": "Kõrge",
+          "middle": "Keskmine",
+          "low": "Madal"
+        }
       },
       "display_direction": {
-        "name": "Ekraani suund"
+        "name": "Ekraani suund",
+        "state": {
+          "normal": "Tavaline",
+          "reversed": "Pööratud"
+        }
       },
       "displayed_temperature": {
-        "name": "Kuvatav temperatuur"
+        "name": "Kuvatav temperatuur",
+        "state": {
+          "setpoint": "Seadesuurus",
+          "measured": "Mõõdetud"
+        }
       },
       "terminal_type": {
-        "name": "Klemmi tüüp"
+        "name": "Klemmi tüüp",
+        "state": {
+          "not_connected": "Ühendamata",
+          "floor_sensor_connected": "Põrandaandur ühendatud",
+          "floor_sensor_used_for_regulation": "Põrandaandurit kasutatakse reguleerimiseks",
+          "floor_sensor_displayed": "Põrandaandur kuvatud",
+          "floor_sensor_displayed_and_used_for_regulation": "Põrandaandur kuvatud ja kasutatakse reguleerimiseks",
+          "volt_free_sensor_connected": "Pingevaba andur ühendatud",
+          "volt_free_sensor_connected_and_used_for_operation": "Pingevaba andur ühendatud ja kasutatakse töös",
+          "outdoor_sensor_connected": "Välisandur ühendatud"
+        }
       },
       "valve_type": {
-        "name": "Klapi tüüp"
+        "name": "Klapi tüüp",
+        "state": {
+          "normally_close": "Normaalselt suletud",
+          "normally_open": "Normaalselt avatud"
+        }
       },
       "heater_type": {
-        "name": "Kütteseadme tüüp"
+        "name": "Kütteseadme tüüp",
+        "state": {
+          "floor_heating": "Põrandaküte",
+          "floor_heating_low_energy": "Põrandaküte (madal energiakulu)",
+          "radiator": "Radiaator",
+          "convector_passive": "Konvektor (passiivne)",
+          "convector_active": "Konvektor (aktiivne)",
+          "volt_free_heating": "Pingevaba küte"
+        }
       },
       "switch_type": {
-        "name": "Lüliti tüüp"
+        "name": "Lüliti tüüp",
+        "state": {
+          "none": "Puudub",
+          "pushbutton": "Nupplüliti",
+          "switch": "Lüliti",
+          "no_switch": "Lülitita"
+        }
       },
       "actuator_type": {
-        "name": "Aktuaatori tüüp"
+        "name": "Aktuaatori tüüp",
+        "state": {
+          "normally_closed": "Normaalselt suletud",
+          "normally_open": "Normaalselt avatud",
+          "unsupported": "Ei toetata"
+        }
       },
       "output_mode": {
-        "name": "Väljundrežiim"
+        "name": "Väljundrežiim",
+        "state": {
+          "attached": "Ühendatud",
+          "detached": "Eraldatud",
+          "detached_short_press": "Eraldatud (lühike vajutus)",
+          "detached_long_press": "Eraldatud (pikk vajutus)",
+          "unsupported": "Ei toetata"
+        }
       },
       "siren_sound_level": {
         "name": "Helitase",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Orientatsioonivalguse reageerimisaeg"
+        "name": "Orientatsioonivalguse reageerimisaeg",
+        "state": {
+          "long": "Pikk",
+          "short": "Lühike"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Nutika tundlikkuse turvalisuse tase"
+        "name": "Nutika tundlikkuse turvalisuse tase",
+        "state": {
+          "high": "Kõrge",
+          "middle": "Keskmine",
+          "low": "Madal"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Nutika tundlikkuse mugavustase"
+        "name": "Nutika tundlikkuse mugavustase",
+        "state": {
+          "high": "Kõrge",
+          "middle": "Keskmine",
+          "low": "Madal"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmeri faasijuhtimine"
+        "name": "Dimmeri faasijuhtimine",
+        "state": {
+          "trailing": "Mahalülituv faasijuhtimine",
+          "leading": "Sisselülituv faasijuhtimine"
+        }
       },
       "installation_profile": {
         "name": "Paigaldusprofiil",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Lubatud"
+      },
+      "child_lock": {
+        "name": "Lapselukk"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Valgus"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Klapp"
       }
     }
   },

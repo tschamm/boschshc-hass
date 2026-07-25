@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "동작 감도"
+        "name": "동작 감도",
+        "state": {
+          "high": "높음",
+          "middle": "보통",
+          "low": "낮음"
+        }
       },
       "vibration_sensitivity": {
-        "name": "진동 감도"
+        "name": "진동 감도",
+        "state": {
+          "very_high": "매우 높음",
+          "high": "높음",
+          "medium": "보통",
+          "low": "낮음",
+          "very_low": "매우 낮음"
+        }
       },
       "state_after_power_outage": {
-        "name": "정전 후 상태"
+        "name": "정전 후 상태",
+        "state": {
+          "off": "꺼짐",
+          "on": "켜짐",
+          "last_state": "마지막 상태"
+        }
       },
       "smoke_sensitivity": {
-        "name": "연기 감도"
+        "name": "연기 감도",
+        "state": {
+          "high": "높음",
+          "middle": "보통",
+          "low": "낮음"
+        }
       },
       "display_direction": {
-        "name": "디스플레이 방향"
+        "name": "디스플레이 방향",
+        "state": {
+          "normal": "일반",
+          "reversed": "반전"
+        }
       },
       "displayed_temperature": {
-        "name": "표시 온도"
+        "name": "표시 온도",
+        "state": {
+          "setpoint": "설정값",
+          "measured": "측정값"
+        }
       },
       "terminal_type": {
-        "name": "단자 유형"
+        "name": "단자 유형",
+        "state": {
+          "not_connected": "연결 안 됨",
+          "floor_sensor_connected": "바닥 센서 연결됨",
+          "floor_sensor_used_for_regulation": "바닥 센서가 조절에 사용됨",
+          "floor_sensor_displayed": "바닥 센서 표시됨",
+          "floor_sensor_displayed_and_used_for_regulation": "바닥 센서 표시 및 조절에 사용됨",
+          "volt_free_sensor_connected": "무전압 센서 연결됨",
+          "volt_free_sensor_connected_and_used_for_operation": "무전압 센서 연결 및 작동에 사용됨",
+          "outdoor_sensor_connected": "실외 센서 연결됨"
+        }
       },
       "valve_type": {
-        "name": "밸브 유형"
+        "name": "밸브 유형",
+        "state": {
+          "normally_close": "상시 닫힘",
+          "normally_open": "상시 열림"
+        }
       },
       "heater_type": {
-        "name": "히터 유형"
+        "name": "히터 유형",
+        "state": {
+          "floor_heating": "바닥 난방",
+          "floor_heating_low_energy": "바닥 난방(저에너지)",
+          "radiator": "라디에이터",
+          "convector_passive": "컨벡터(수동형)",
+          "convector_active": "컨벡터(능동형)",
+          "volt_free_heating": "무전압 난방"
+        }
       },
       "switch_type": {
-        "name": "스위치 유형"
+        "name": "스위치 유형",
+        "state": {
+          "none": "없음",
+          "pushbutton": "푸시버튼",
+          "switch": "스위치",
+          "no_switch": "스위치 없음"
+        }
       },
       "actuator_type": {
-        "name": "액추에이터 유형"
+        "name": "액추에이터 유형",
+        "state": {
+          "normally_closed": "상시 닫힘",
+          "normally_open": "상시 열림",
+          "unsupported": "지원되지 않음"
+        }
       },
       "output_mode": {
-        "name": "출력 모드"
+        "name": "출력 모드",
+        "state": {
+          "attached": "연결됨",
+          "detached": "분리됨",
+          "detached_short_press": "분리됨(짧게 누름)",
+          "detached_long_press": "분리됨(길게 누름)",
+          "unsupported": "지원되지 않음"
+        }
       },
       "siren_sound_level": {
         "name": "음량 레벨",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "방향 조명 응답 시간"
+        "name": "방향 조명 응답 시간",
+        "state": {
+          "long": "길게",
+          "short": "짧게"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "스마트 감도 보안 수준"
+        "name": "스마트 감도 보안 수준",
+        "state": {
+          "high": "높음",
+          "middle": "보통",
+          "low": "낮음"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "스마트 감도 편의 수준"
+        "name": "스마트 감도 편의 수준",
+        "state": {
+          "high": "높음",
+          "middle": "보통",
+          "low": "낮음"
+        }
       },
       "dimmer_phase_control": {
-        "name": "디머 위상 제어"
+        "name": "디머 위상 제어",
+        "state": {
+          "trailing": "후행 위상 제어",
+          "leading": "선행 위상 제어"
+        }
       },
       "installation_profile": {
         "name": "설치 프로필",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "사용"
+      },
+      "child_lock": {
+        "name": "어린이 보호 잠금"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "조명"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "밸브"
       }
     }
   },

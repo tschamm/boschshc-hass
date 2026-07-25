@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Sensibilità al movimento"
+        "name": "Sensibilità al movimento",
+        "state": {
+          "high": "Alto",
+          "middle": "Medio",
+          "low": "Basso"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Sensibilità alle vibrazioni"
+        "name": "Sensibilità alle vibrazioni",
+        "state": {
+          "very_high": "Molto alto",
+          "high": "Alto",
+          "medium": "Medio",
+          "low": "Basso",
+          "very_low": "Molto basso"
+        }
       },
       "state_after_power_outage": {
-        "name": "Stato dopo interruzione di corrente"
+        "name": "Stato dopo interruzione di corrente",
+        "state": {
+          "off": "Spento",
+          "on": "Acceso",
+          "last_state": "Ultimo stato"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Sensibilità al fumo"
+        "name": "Sensibilità al fumo",
+        "state": {
+          "high": "Alto",
+          "middle": "Medio",
+          "low": "Basso"
+        }
       },
       "display_direction": {
-        "name": "Orientamento display"
+        "name": "Orientamento display",
+        "state": {
+          "normal": "Normale",
+          "reversed": "Invertito"
+        }
       },
       "displayed_temperature": {
-        "name": "Temperatura visualizzata"
+        "name": "Temperatura visualizzata",
+        "state": {
+          "setpoint": "Impostata",
+          "measured": "Misurata"
+        }
       },
       "terminal_type": {
-        "name": "Tipo di morsetto"
+        "name": "Tipo di morsetto",
+        "state": {
+          "not_connected": "Non collegato",
+          "floor_sensor_connected": "Sensore a pavimento collegato",
+          "floor_sensor_used_for_regulation": "Sensore a pavimento usato per la regolazione",
+          "floor_sensor_displayed": "Sensore a pavimento visualizzato",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensore a pavimento visualizzato e usato per la regolazione",
+          "volt_free_sensor_connected": "Sensore senza tensione collegato",
+          "volt_free_sensor_connected_and_used_for_operation": "Sensore senza tensione collegato e usato per il funzionamento",
+          "outdoor_sensor_connected": "Sensore esterno collegato"
+        }
       },
       "valve_type": {
-        "name": "Tipo di valvola"
+        "name": "Tipo di valvola",
+        "state": {
+          "normally_close": "Normalmente chiusa",
+          "normally_open": "Normalmente aperta"
+        }
       },
       "heater_type": {
-        "name": "Tipo di riscaldatore"
+        "name": "Tipo di riscaldatore",
+        "state": {
+          "floor_heating": "Riscaldamento a pavimento",
+          "floor_heating_low_energy": "Riscaldamento a pavimento (bassa energia)",
+          "radiator": "Radiatore",
+          "convector_passive": "Convettore (passivo)",
+          "convector_active": "Convettore (attivo)",
+          "volt_free_heating": "Riscaldamento senza tensione"
+        }
       },
       "switch_type": {
-        "name": "Tipo di interruttore"
+        "name": "Tipo di interruttore",
+        "state": {
+          "none": "Nessuno",
+          "pushbutton": "Pulsante",
+          "switch": "Interruttore",
+          "no_switch": "Nessun interruttore"
+        }
       },
       "actuator_type": {
-        "name": "Tipo di attuatore"
+        "name": "Tipo di attuatore",
+        "state": {
+          "normally_closed": "Normalmente chiuso",
+          "normally_open": "Normalmente aperto",
+          "unsupported": "Non supportato"
+        }
       },
       "output_mode": {
-        "name": "Modalità di uscita"
+        "name": "Modalità di uscita",
+        "state": {
+          "attached": "Collegato",
+          "detached": "Scollegato",
+          "detached_short_press": "Scollegato (pressione breve)",
+          "detached_long_press": "Scollegato (pressione lunga)",
+          "unsupported": "Non supportato"
+        }
       },
       "siren_sound_level": {
         "name": "Livello sonoro",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Tempo di risposta luce di orientamento"
+        "name": "Tempo di risposta luce di orientamento",
+        "state": {
+          "long": "Lungo",
+          "short": "Breve"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Livello di sicurezza della sensibilità intelligente"
+        "name": "Livello di sicurezza della sensibilità intelligente",
+        "state": {
+          "high": "Alto",
+          "middle": "Medio",
+          "low": "Basso"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Livello di comfort della sensibilità intelligente"
+        "name": "Livello di comfort della sensibilità intelligente",
+        "state": {
+          "high": "Alto",
+          "middle": "Medio",
+          "low": "Basso"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Controllo fase dimmer"
+        "name": "Controllo fase dimmer",
+        "state": {
+          "trailing": "Taglio in coda",
+          "leading": "Taglio in testa"
+        }
       },
       "installation_profile": {
         "name": "Profilo di installazione",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Abilitato"
+      },
+      "child_lock": {
+        "name": "Blocco bambini"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Luce"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Valvola"
       }
     }
   },

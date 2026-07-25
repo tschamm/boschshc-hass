@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "רגישות תנועה"
+        "name": "רגישות תנועה",
+        "state": {
+          "high": "גבוהה",
+          "middle": "בינונית",
+          "low": "נמוכה"
+        }
       },
       "vibration_sensitivity": {
-        "name": "רגישות רטט"
+        "name": "רגישות רטט",
+        "state": {
+          "very_high": "גבוהה מאוד",
+          "high": "גבוהה",
+          "medium": "בינונית",
+          "low": "נמוכה",
+          "very_low": "נמוכה מאוד"
+        }
       },
       "state_after_power_outage": {
-        "name": "מצב לאחר הפסקת חשמל"
+        "name": "מצב לאחר הפסקת חשמל",
+        "state": {
+          "off": "כבוי",
+          "on": "דלוק",
+          "last_state": "מצב אחרון"
+        }
       },
       "smoke_sensitivity": {
-        "name": "רגישות עשן"
+        "name": "רגישות עשן",
+        "state": {
+          "high": "גבוהה",
+          "middle": "בינונית",
+          "low": "נמוכה"
+        }
       },
       "display_direction": {
-        "name": "כיוון תצוגה"
+        "name": "כיוון תצוגה",
+        "state": {
+          "normal": "רגיל",
+          "reversed": "הפוך"
+        }
       },
       "displayed_temperature": {
-        "name": "טמפרטורה מוצגת"
+        "name": "טמפרטורה מוצגת",
+        "state": {
+          "setpoint": "טמפרטורת יעד",
+          "measured": "נמדדת"
+        }
       },
       "terminal_type": {
-        "name": "סוג מסוף"
+        "name": "סוג מסוף",
+        "state": {
+          "not_connected": "לא מחובר",
+          "floor_sensor_connected": "חיישן רצפה מחובר",
+          "floor_sensor_used_for_regulation": "חיישן רצפה משמש לוויסות",
+          "floor_sensor_displayed": "חיישן רצפה מוצג",
+          "floor_sensor_displayed_and_used_for_regulation": "חיישן רצפה מוצג ומשמש לוויסות",
+          "volt_free_sensor_connected": "חיישן ללא מתח מחובר",
+          "volt_free_sensor_connected_and_used_for_operation": "חיישן ללא מתח מחובר ומשמש להפעלה",
+          "outdoor_sensor_connected": "חיישן חוץ מחובר"
+        }
       },
       "valve_type": {
-        "name": "סוג שסתום"
+        "name": "סוג שסתום",
+        "state": {
+          "normally_close": "סגור כברירת מחדל",
+          "normally_open": "פתוח כברירת מחדל"
+        }
       },
       "heater_type": {
-        "name": "סוג מחמם"
+        "name": "סוג מחמם",
+        "state": {
+          "floor_heating": "חימום תת-רצפתי",
+          "floor_heating_low_energy": "חימום תת-רצפתי (חסכוני באנרגיה)",
+          "radiator": "רדיאטור",
+          "convector_passive": "קונבקטור (פסיבי)",
+          "convector_active": "קונבקטור (אקטיבי)",
+          "volt_free_heating": "חימום ללא מתח"
+        }
       },
       "switch_type": {
-        "name": "סוג מתג"
+        "name": "סוג מתג",
+        "state": {
+          "none": "ללא",
+          "pushbutton": "מתג לחיצה",
+          "switch": "מתג",
+          "no_switch": "ללא מתג"
+        }
       },
       "actuator_type": {
-        "name": "סוג מפעיל"
+        "name": "סוג מפעיל",
+        "state": {
+          "normally_closed": "סגור כברירת מחדל",
+          "normally_open": "פתוח כברירת מחדל",
+          "unsupported": "לא נתמך"
+        }
       },
       "output_mode": {
-        "name": "מצב פלט"
+        "name": "מצב פלט",
+        "state": {
+          "attached": "מחובר",
+          "detached": "מנותק",
+          "detached_short_press": "מנותק (לחיצה קצרה)",
+          "detached_long_press": "מנותק (לחיצה ארוכה)",
+          "unsupported": "לא נתמך"
+        }
       },
       "siren_sound_level": {
         "name": "עוצמת הצליל",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "זמן תגובה של אור אוריינטציה"
+        "name": "זמן תגובה של אור אוריינטציה",
+        "state": {
+          "long": "ארוך",
+          "short": "קצר"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "רמת אבטחה של רגישות חכמה"
+        "name": "רמת אבטחה של רגישות חכמה",
+        "state": {
+          "high": "גבוהה",
+          "middle": "בינונית",
+          "low": "נמוכה"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "רמת נוחות של רגישות חכמה"
+        "name": "רמת נוחות של רגישות חכמה",
+        "state": {
+          "high": "גבוהה",
+          "middle": "בינונית",
+          "low": "נמוכה"
+        }
       },
       "dimmer_phase_control": {
-        "name": "בקרת פאזה של דימר"
+        "name": "בקרת פאזה של דימר",
+        "state": {
+          "trailing": "פאזה יורדת",
+          "leading": "פאזה עולה"
+        }
       },
       "installation_profile": {
         "name": "פרופיל התקנה",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "מופעל"
+      },
+      "child_lock": {
+        "name": "נעילת ילדים"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "אור"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "שסתום"
       }
     }
   },

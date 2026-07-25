@@ -49,6 +49,7 @@ class SHCValve(SHCEntity, ValveEntity):  # type: ignore[misc]
     _attr_device_class = ValveDeviceClass.WATER
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_reports_position = True
+    _attr_translation_key = "valve"
 
     def __init__(
         self,
@@ -58,8 +59,8 @@ class SHCValve(SHCEntity, ValveEntity):  # type: ignore[misc]
     ) -> None:
         """Initialize a SHC valve."""
         super().__init__(device, entry_id)
-        if attr_name is not None:
-            self._attr_name = attr_name  # type: ignore[assignment]
+        # #377: attr_name only disambiguates unique_id; display name comes
+        # from _attr_translation_key now.
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None

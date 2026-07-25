@@ -266,52 +266,140 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Motion Sensitivity"
+        "name": "Motion Sensitivity",
+        "state": {
+          "high": "High",
+          "middle": "Middle",
+          "low": "Low"
+        }
       },
       "orientation_light_response_time": {
-        "name": "Orientation Light Response Time"
+        "name": "Orientation Light Response Time",
+        "state": {
+          "long": "Long",
+          "short": "Short"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Vibration Sensitivity"
+        "name": "Vibration Sensitivity",
+        "state": {
+          "very_high": "Very High",
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low",
+          "very_low": "Very Low"
+        }
       },
       "state_after_power_outage": {
-        "name": "State After Power Outage"
+        "name": "State After Power Outage",
+        "state": {
+          "off": "Off",
+          "on": "On",
+          "last_state": "Last State"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Smoke Sensitivity"
+        "name": "Smoke Sensitivity",
+        "state": {
+          "high": "High",
+          "middle": "Middle",
+          "low": "Low"
+        }
       },
       "display_direction": {
-        "name": "Display Direction"
+        "name": "Display Direction",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Reversed"
+        }
       },
       "displayed_temperature": {
-        "name": "Displayed Temperature"
+        "name": "Displayed Temperature",
+        "state": {
+          "setpoint": "Setpoint",
+          "measured": "Measured"
+        }
       },
       "terminal_type": {
-        "name": "Terminal Type"
+        "name": "Terminal Type",
+        "state": {
+          "not_connected": "Not Connected",
+          "floor_sensor_connected": "Floor Sensor Connected",
+          "floor_sensor_used_for_regulation": "Floor Sensor Used for Regulation",
+          "floor_sensor_displayed": "Floor Sensor Displayed",
+          "floor_sensor_displayed_and_used_for_regulation": "Floor Sensor Displayed and Used for Regulation",
+          "volt_free_sensor_connected": "Volt-Free Sensor Connected",
+          "volt_free_sensor_connected_and_used_for_operation": "Volt-Free Sensor Connected and Used for Operation",
+          "outdoor_sensor_connected": "Outdoor Sensor Connected"
+        }
       },
       "valve_type": {
-        "name": "Valve Type"
+        "name": "Valve Type",
+        "state": {
+          "normally_close": "Normally Closed",
+          "normally_open": "Normally Open"
+        }
       },
       "heater_type": {
-        "name": "Heater Type"
+        "name": "Heater Type",
+        "state": {
+          "floor_heating": "Floor Heating",
+          "floor_heating_low_energy": "Floor Heating (Low Energy)",
+          "radiator": "Radiator",
+          "convector_passive": "Convector (Passive)",
+          "convector_active": "Convector (Active)",
+          "volt_free_heating": "Volt-Free Heating"
+        }
       },
       "switch_type": {
-        "name": "Switch Type"
+        "name": "Switch Type",
+        "state": {
+          "none": "None",
+          "pushbutton": "Pushbutton",
+          "switch": "Switch",
+          "no_switch": "No Switch"
+        }
       },
       "actuator_type": {
-        "name": "Actuator Type"
+        "name": "Actuator Type",
+        "state": {
+          "normally_closed": "Normally Closed",
+          "normally_open": "Normally Open",
+          "unsupported": "Unsupported"
+        }
       },
       "output_mode": {
-        "name": "Output Mode"
+        "name": "Output Mode",
+        "state": {
+          "attached": "Attached",
+          "detached": "Detached",
+          "detached_short_press": "Detached (Short Press)",
+          "detached_long_press": "Detached (Long Press)",
+          "unsupported": "Unsupported"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity Security Level"
+        "name": "Smart Sensitivity Security Level",
+        "state": {
+          "high": "High",
+          "middle": "Middle",
+          "low": "Low"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity Comfort Level"
+        "name": "Smart Sensitivity Comfort Level",
+        "state": {
+          "high": "High",
+          "middle": "Middle",
+          "low": "Low"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer Phase Control"
+        "name": "Dimmer Phase Control",
+        "state": {
+          "trailing": "Trailing",
+          "leading": "Leading"
+        }
       },
       "siren_sound_level": {
         "name": "Sound Level",
@@ -517,11 +605,19 @@
       "bypass_infinite": {
         "name": "Bypass Never Expires"
       },
+      "child_lock": {
+        "name": "Child Lock"
+      },
       "temperature_drop_enabled": {
         "name": "Temperature Drop"
       },
       "automation_rule": {
         "name": "Enabled"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Valve"
       }
     }
   },

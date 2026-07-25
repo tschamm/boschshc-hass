@@ -525,7 +525,7 @@ class TestMotionSensitivitySelectClassAttrs:
         assert "UNKNOWN" not in _MOTION_SENSITIVITY_OPTIONS
 
     def test_options_contain_high_middle_low(self):
-        assert set(_MOTION_SENSITIVITY_OPTIONS) == {"HIGH", "MIDDLE", "LOW"}
+        assert set(_MOTION_SENSITIVITY_OPTIONS) == {"high", "middle", "low"}
 
     def test_unique_id_format(self):
         sel = _make_motion_select()
@@ -543,15 +543,15 @@ class TestMotionSensitivitySelectClassAttrs:
 class TestMotionSensitivitySelectCurrentOption:
     def test_returns_high(self):
         sel = _make_motion_select("HIGH")
-        assert sel.current_option == "HIGH"
+        assert sel.current_option == "high"
 
     def test_returns_middle(self):
         sel = _make_motion_select("MIDDLE")
-        assert sel.current_option == "MIDDLE"
+        assert sel.current_option == "middle"
 
     def test_returns_low(self):
         sel = _make_motion_select("LOW")
-        assert sel.current_option == "LOW"
+        assert sel.current_option == "low"
 
     def test_attribute_error_returns_none_with_warning(self):
         """When motion_sensitivity raises AttributeError, return None and warn."""
@@ -1117,7 +1117,7 @@ class TestOrientationLightResponseSelect:
         return e
 
     def test_current_option(self):
-        assert self._make("SHORT").current_option == "SHORT"
+        assert self._make("SHORT").current_option == "short"
 
     def test_current_option_unknown_not_in_options(self):
         e = self._make("UNKNOWN")
@@ -1134,7 +1134,7 @@ class TestOrientationLightResponseSelect:
 
     def test_options(self):
         e = OrientationLightResponseSelect.__new__(OrientationLightResponseSelect)
-        assert e._attr_options == ["LONG", "SHORT"]
+        assert e._attr_options == ["long", "short"]
 
     def test_setup_created_when_interval_present(self):
         from boschshcpy.services_impl import PollControlService
@@ -1239,7 +1239,7 @@ class TestVibrationSensitivitySelectClassAttrs:
         assert sel.entity_category == EntityCategory.CONFIG
 
     def test_options_contain_all_five_levels(self):
-        expected = {"VERY_HIGH", "HIGH", "MEDIUM", "LOW", "VERY_LOW"}
+        expected = {"very_high", "high", "medium", "low", "very_low"}
         assert set(_VIBRATION_SENSITIVITY_OPTIONS) == expected
 
     def test_unique_id_format(self):
@@ -1258,23 +1258,23 @@ class TestVibrationSensitivitySelectClassAttrs:
 class TestVibrationSensitivitySelectCurrentOption:
     def test_returns_high(self):
         sel = _make_vibration_select("HIGH")
-        assert sel.current_option == "HIGH"
+        assert sel.current_option == "high"
 
     def test_returns_very_high(self):
         sel = _make_vibration_select("VERY_HIGH")
-        assert sel.current_option == "VERY_HIGH"
+        assert sel.current_option == "very_high"
 
     def test_returns_medium(self):
         sel = _make_vibration_select("MEDIUM")
-        assert sel.current_option == "MEDIUM"
+        assert sel.current_option == "medium"
 
     def test_returns_low(self):
         sel = _make_vibration_select("LOW")
-        assert sel.current_option == "LOW"
+        assert sel.current_option == "low"
 
     def test_returns_very_low(self):
         sel = _make_vibration_select("VERY_LOW")
-        assert sel.current_option == "VERY_LOW"
+        assert sel.current_option == "very_low"
 
     def test_attribute_error_returns_none_with_warning(self):
 
@@ -1399,15 +1399,15 @@ class TestStateAfterPowerOutageSelect:
 
     def test_current_option_off(self):
         e = self._make("OFF")
-        assert e.current_option == "OFF"
+        assert e.current_option == "off"
 
     def test_current_option_on(self):
         e = self._make("ON")
-        assert e.current_option == "ON"
+        assert e.current_option == "on"
 
     def test_current_option_last_state(self):
         e = self._make("LAST_STATE")
-        assert e.current_option == "LAST_STATE"
+        assert e.current_option == "last_state"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import PowerSwitchConfigurationService
@@ -1507,7 +1507,7 @@ class TestStateAfterPowerOutageCurrentOption:
         )
         e = StateAfterPowerOutageSelect.__new__(StateAfterPowerOutageSelect)
         e._device = dev
-        e._attr_options = ["OFF", "ON", "LAST_STATE"]
+        e._attr_options = ["off", "on", "last_state"]
         return e
 
     def test_current_option_none_value_returns_none(self):
@@ -1526,19 +1526,19 @@ class TestStateAfterPowerOutageCurrentOption:
         e = self._make_entity(
             PowerSwitchConfigurationService.StateAfterPowerOutage.OFF
         )
-        assert e.current_option == "OFF"
+        assert e.current_option == "off"
 
     def test_current_option_on_returns_on(self):
         e = self._make_entity(
             PowerSwitchConfigurationService.StateAfterPowerOutage.ON
         )
-        assert e.current_option == "ON"
+        assert e.current_option == "on"
 
     def test_current_option_last_state_returns_last_state(self):
         e = self._make_entity(
             PowerSwitchConfigurationService.StateAfterPowerOutage.LAST_STATE
         )
-        assert e.current_option == "LAST_STATE"
+        assert e.current_option == "last_state"
 
 
 class TestStateAfterPowerOutageCurrentOptionNone:
@@ -1626,15 +1626,15 @@ class TestSmokeSensitivitySelect:
 
     def test_current_option_high(self):
         e = self._make("HIGH")
-        assert e.current_option == "HIGH"
+        assert e.current_option == "high"
 
     def test_current_option_middle(self):
         e = self._make("MIDDLE")
-        assert e.current_option == "MIDDLE"
+        assert e.current_option == "middle"
 
     def test_current_option_low(self):
         e = self._make("LOW")
-        assert e.current_option == "LOW"
+        assert e.current_option == "low"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import SmokeSensitivityService
@@ -1866,11 +1866,11 @@ class TestDisplayDirectionSelect:
 
     def test_current_option_normal(self):
         e = self._make("NORMAL")
-        assert e.current_option == "NORMAL"
+        assert e.current_option == "normal"
 
     def test_current_option_reversed(self):
         e = self._make("REVERSED")
-        assert e.current_option == "REVERSED"
+        assert e.current_option == "reversed"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import DisplayDirection
@@ -2020,11 +2020,11 @@ class TestDisplayedTemperatureSelect:
 
     def test_current_option_setpoint(self):
         e = self._make("SETPOINT")
-        assert e.current_option == "SETPOINT"
+        assert e.current_option == "setpoint"
 
     def test_current_option_measured(self):
         e = self._make("MEASURED")
-        assert e.current_option == "MEASURED"
+        assert e.current_option == "measured"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import DisplayedTemperatureConfiguration
@@ -2171,11 +2171,11 @@ class TestTerminalTypeSelect:
 
     def test_current_option_not_connected(self):
         e = self._make("NOT_CONNECTED")
-        assert e.current_option == "NOT_CONNECTED"
+        assert e.current_option == "not_connected"
 
     def test_current_option_floor_sensor(self):
         e = self._make("FLOOR_SENSOR_CONNECTED")
-        assert e.current_option == "FLOOR_SENSOR_CONNECTED"
+        assert e.current_option == "floor_sensor_connected"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import TerminalConfiguration
@@ -2316,11 +2316,11 @@ class TestValveTypeSelect:
 
     def test_current_option_normally_close(self):
         e = self._make("NORMALLY_CLOSE")
-        assert e.current_option == "NORMALLY_CLOSE"
+        assert e.current_option == "normally_close"
 
     def test_current_option_normally_open(self):
         e = self._make("NORMALLY_OPEN")
-        assert e.current_option == "NORMALLY_OPEN"
+        assert e.current_option == "normally_open"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
@@ -2461,11 +2461,11 @@ class TestHeaterTypeSelect:
 
     def test_current_option_radiator(self):
         e = self._make("RADIATOR")
-        assert e.current_option == "RADIATOR"
+        assert e.current_option == "radiator"
 
     def test_current_option_floor_heating(self):
         e = self._make("FLOOR_HEATING")
-        assert e.current_option == "FLOOR_HEATING"
+        assert e.current_option == "floor_heating"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import WallThermostatConfiguration
@@ -2603,11 +2603,11 @@ class TestSwitchTypeSelect:
 
     def test_current_option_pushbutton(self):
         e = self._make("PUSHBUTTON")
-        assert e.current_option == "PUSHBUTTON"
+        assert e.current_option == "pushbutton"
 
     def test_current_option_switch(self):
         e = self._make("SWITCH")
-        assert e.current_option == "SWITCH"
+        assert e.current_option == "switch"
 
     def test_current_option_none_not_in_options_returns_none(self):
         from boschshcpy.services_impl import SwitchConfiguration
@@ -2761,11 +2761,11 @@ class TestActuatorTypeSelect:
 
     def test_current_option_normally_open(self):
         e = self._make("NORMALLY_OPEN")
-        assert e.current_option == "NORMALLY_OPEN"
+        assert e.current_option == "normally_open"
 
     def test_current_option_normally_closed(self):
         e = self._make("NORMALLY_CLOSED")
-        assert e.current_option == "NORMALLY_CLOSED"
+        assert e.current_option == "normally_closed"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import SwitchConfiguration
@@ -2910,11 +2910,11 @@ class TestOutputModeSelect:
 
     def test_current_option_attached(self):
         e = self._make("ATTACHED")
-        assert e.current_option == "ATTACHED"
+        assert e.current_option == "attached"
 
     def test_current_option_detached(self):
         e = self._make("DETACHED")
-        assert e.current_option == "DETACHED"
+        assert e.current_option == "detached"
 
     def test_current_option_unknown_returns_none(self):
         from boschshcpy.services_impl import SwitchConfiguration
@@ -3054,15 +3054,15 @@ class TestSmartSensitivitySecurityLevelSelect:
 
     def test_current_option_high(self):
         e = self._make("HIGH")
-        assert e.current_option == "HIGH"
+        assert e.current_option == "high"
 
     def test_current_option_middle(self):
         e = self._make("MIDDLE")
-        assert e.current_option == "MIDDLE"
+        assert e.current_option == "middle"
 
     def test_current_option_low(self):
         e = self._make("LOW")
-        assert e.current_option == "LOW"
+        assert e.current_option == "low"
 
     def test_current_option_none_when_get_returns_none(self):
         def _get_none(c):
@@ -3127,9 +3127,9 @@ class TestSmartSensitivitySecurityLevelSelect:
         e = SmartSensitivitySecurityLevelSelect.__new__(
             SmartSensitivitySecurityLevelSelect
         )
-        assert "HIGH" in e._attr_options
-        assert "MIDDLE" in e._attr_options
-        assert "LOW" in e._attr_options
+        assert "high" in e._attr_options
+        assert "middle" in e._attr_options
+        assert "low" in e._attr_options
 
     def test_current_option_string_level(self):
         """Level may be a plain string (not an enum) — should still work."""
@@ -3141,7 +3141,7 @@ class TestSmartSensitivitySecurityLevelSelect:
             SmartSensitivitySecurityLevelSelect
         )
         e._device = dev
-        assert e.current_option == "LOW"
+        assert e.current_option == "low"
 
     def test_current_option_none_when_name_not_in_options(self):
         """Level has .name but it is not in HIGH/MIDDLE/LOW (e.g. UNKNOWN enum)."""
@@ -3193,15 +3193,15 @@ class TestSmartSensitivityComfortLevelSelect:
 
     def test_current_option_middle(self):
         e = self._make("MIDDLE")
-        assert e.current_option == "MIDDLE"
+        assert e.current_option == "middle"
 
     def test_current_option_high(self):
         e = self._make("HIGH")
-        assert e.current_option == "HIGH"
+        assert e.current_option == "high"
 
     def test_current_option_low(self):
         e = self._make("LOW")
-        assert e.current_option == "LOW"
+        assert e.current_option == "low"
 
     def test_current_option_none_when_get_returns_none(self):
         def _get_none(c):
@@ -3269,9 +3269,9 @@ class TestSmartSensitivityComfortLevelSelect:
         e = SmartSensitivityComfortLevelSelect.__new__(
             SmartSensitivityComfortLevelSelect
         )
-        assert "HIGH" in e._attr_options
-        assert "MIDDLE" in e._attr_options
-        assert "LOW" in e._attr_options
+        assert "high" in e._attr_options
+        assert "middle" in e._attr_options
+        assert "low" in e._attr_options
 
     def test_current_option_string_level(self):
         """Level may be a plain string (not an enum) — should still work."""
@@ -3283,7 +3283,7 @@ class TestSmartSensitivityComfortLevelSelect:
             SmartSensitivityComfortLevelSelect
         )
         e._device = dev
-        assert e.current_option == "HIGH"
+        assert e.current_option == "high"
 
     def test_current_option_none_when_name_not_in_options(self):
         """Level has .name but it is not in HIGH/MIDDLE/LOW (e.g. UNKNOWN enum)."""
@@ -3420,7 +3420,7 @@ class TestSelectDimmerExcluded:
 def test_dimmer_phase_select_current_option():
     s = _new(DimmerPhaseControlSelect)
     s._device = SimpleNamespace(dimmer_configuration=_phase_svc("TRAILING"))
-    assert s.current_option == "TRAILING"
+    assert s.current_option == "trailing"
 
 
 def test_dimmer_phase_select_returns_none_when_no_service():

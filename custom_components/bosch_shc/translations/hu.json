@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Mozgásérzékenység"
+        "name": "Mozgásérzékenység",
+        "state": {
+          "high": "Magas",
+          "middle": "Közepes",
+          "low": "Alacsony"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Rezgésérzékenység"
+        "name": "Rezgésérzékenység",
+        "state": {
+          "very_high": "Nagyon magas",
+          "high": "Magas",
+          "medium": "Közepes",
+          "low": "Alacsony",
+          "very_low": "Nagyon alacsony"
+        }
       },
       "state_after_power_outage": {
-        "name": "Állapot áramszünet után"
+        "name": "Állapot áramszünet után",
+        "state": {
+          "off": "Kikapcsolva",
+          "on": "Bekapcsolva",
+          "last_state": "Utolsó állapot"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Füstérzékenység"
+        "name": "Füstérzékenység",
+        "state": {
+          "high": "Magas",
+          "middle": "Közepes",
+          "low": "Alacsony"
+        }
       },
       "display_direction": {
-        "name": "Kijelző iránya"
+        "name": "Kijelző iránya",
+        "state": {
+          "normal": "Normál",
+          "reversed": "Fordított"
+        }
       },
       "displayed_temperature": {
-        "name": "Megjelenített hőmérséklet"
+        "name": "Megjelenített hőmérséklet",
+        "state": {
+          "setpoint": "Célérték",
+          "measured": "Mért érték"
+        }
       },
       "terminal_type": {
-        "name": "Csatlakozó típusa"
+        "name": "Csatlakozó típusa",
+        "state": {
+          "not_connected": "Nincs csatlakoztatva",
+          "floor_sensor_connected": "Padlóérzékelő csatlakoztatva",
+          "floor_sensor_used_for_regulation": "Padlóérzékelő szabályozáshoz használva",
+          "floor_sensor_displayed": "Padlóérzékelő megjelenítve",
+          "floor_sensor_displayed_and_used_for_regulation": "Padlóérzékelő megjelenítve és szabályozáshoz használva",
+          "volt_free_sensor_connected": "Feszültségmentes érzékelő csatlakoztatva",
+          "volt_free_sensor_connected_and_used_for_operation": "Feszültségmentes érzékelő csatlakoztatva és működtetéshez használva",
+          "outdoor_sensor_connected": "Kültéri érzékelő csatlakoztatva"
+        }
       },
       "valve_type": {
-        "name": "Szelep típusa"
+        "name": "Szelep típusa",
+        "state": {
+          "normally_close": "Alaphelyzetben zárt",
+          "normally_open": "Alaphelyzetben nyitott"
+        }
       },
       "heater_type": {
-        "name": "Fűtőberendezés típusa"
+        "name": "Fűtőberendezés típusa",
+        "state": {
+          "floor_heating": "Padlófűtés",
+          "floor_heating_low_energy": "Padlófűtés (alacsony energiafogyasztású)",
+          "radiator": "Radiátor",
+          "convector_passive": "Konvektor (passzív)",
+          "convector_active": "Konvektor (aktív)",
+          "volt_free_heating": "Feszültségmentes fűtés"
+        }
       },
       "switch_type": {
-        "name": "Kapcsoló típusa"
+        "name": "Kapcsoló típusa",
+        "state": {
+          "none": "Nincs",
+          "pushbutton": "Nyomógomb",
+          "switch": "Kapcsoló",
+          "no_switch": "Nincs kapcsoló"
+        }
       },
       "actuator_type": {
-        "name": "Aktuátor típusa"
+        "name": "Aktuátor típusa",
+        "state": {
+          "normally_closed": "Alaphelyzetben zárt",
+          "normally_open": "Alaphelyzetben nyitott",
+          "unsupported": "Nem támogatott"
+        }
       },
       "output_mode": {
-        "name": "Kimeneti mód"
+        "name": "Kimeneti mód",
+        "state": {
+          "attached": "Csatolt",
+          "detached": "Leválasztott",
+          "detached_short_press": "Leválasztott (rövid nyomás)",
+          "detached_long_press": "Leválasztott (hosszú nyomás)",
+          "unsupported": "Nem támogatott"
+        }
       },
       "siren_sound_level": {
         "name": "Hangerő",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Tájékoztató fény reakcióideje"
+        "name": "Tájékoztató fény reakcióideje",
+        "state": {
+          "long": "Hosszú",
+          "short": "Rövid"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Okos érzékenység biztonsági szintje"
+        "name": "Okos érzékenység biztonsági szintje",
+        "state": {
+          "high": "Magas",
+          "middle": "Közepes",
+          "low": "Alacsony"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Okos érzékenység kényelmi szintje"
+        "name": "Okos érzékenység kényelmi szintje",
+        "state": {
+          "high": "Magas",
+          "middle": "Közepes",
+          "low": "Alacsony"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer fázisszabályozás"
+        "name": "Dimmer fázisszabályozás",
+        "state": {
+          "trailing": "Lefutó élű vezérlés",
+          "leading": "Felfutó élű vezérlés"
+        }
       },
       "installation_profile": {
         "name": "Telepítési profil",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Engedélyezve"
+      },
+      "child_lock": {
+        "name": "Gyermekzár"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Lámpa"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Szelep"
       }
     }
   },
