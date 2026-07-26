@@ -79,9 +79,9 @@ _DEVICE_IN_PROGRESS_STATES = frozenset(
 # every other pending state legitimately 409s if activated (again) (#373).
 _ACTIVATABLE_STATE = "AwaitingActivation"
 
-# Markers, not real versions (#373 follow-up: human-readable, not snake_case).
-_UP_TO_DATE_VERSION = "Up to date"
-_UPDATE_AVAILABLE_VERSION = "Update available"
+# Marker, not a real version -- HA never translates these fields, so the
+# old English-sentence markers looked like a translation bug (#377 follow-up).
+_NO_UPDATE_MARKER = "current"
 
 # Thermostat models where a firmware install requires a manual on-device (or
 # Bosch-app) calibration step afterwards -- live-confirmed on TRV_GEN2 (#373).
@@ -270,14 +270,18 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
     @property
     def installed_version(self) -> str | None:
         """Return a fixed marker (the probe has no real version string)."""
-        return _UP_TO_DATE_VERSION
+        return _NO_UPDATE_MARKER
 
     @property
     def latest_version(self) -> str | None:
-        """Return a differing marker whenever a firmware state is pending."""
+        """Return the raw firmware_state token whenever an update is pending.
+
+        Falls back to the same marker as installed_version when up to date,
+        so the two compare equal and HA reports "no update available".
+        """
         if self._firmware_state in _UP_TO_DATE_STATES:
-            return _UP_TO_DATE_VERSION
-        return _UPDATE_AVAILABLE_VERSION
+            return _NO_UPDATE_MARKER
+        return self._firmware_state or _NO_UPDATE_MARKER
 
     @property
     def in_progress(self) -> bool:

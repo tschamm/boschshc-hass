@@ -223,7 +223,7 @@ class TestControllerUpdateAsyncInstall:
 def test_device_update_installed_version_is_fixed_marker():
     u = _new(DeviceUpdate)
     u._firmware_state = "UpToDate"
-    assert u.installed_version == "Up to date"
+    assert u.installed_version == "current"
 
 
 def test_device_update_up_to_date_states_report_no_update():
@@ -245,6 +245,16 @@ def test_device_update_pending_states_report_update_available():
         u = _new(DeviceUpdate)
         u._firmware_state = state
         assert u.latest_version != u.installed_version, state
+
+
+def test_device_update_latest_version_is_raw_state_token_not_a_sentence():
+    """#377 follow-up: the old "Update available" marker was a human sentence
+    HA's frontend renders verbatim (version fields are never translated),
+    so it looked like a translation bug in non-English UIs. latest_version
+    must now surface the raw firmware_state token instead."""
+    u = _new(DeviceUpdate)
+    u._firmware_state = "AwaitingActivation"
+    assert u.latest_version == "AwaitingActivation"
 
 
 def test_device_update_unknown_state_is_mid_transfer_not_up_to_date():

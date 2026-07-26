@@ -32,6 +32,26 @@ automations — the values are now lowercase (e.g. `SETPOINT` → `setpoint`).
     already uses for `siren_sound_level`/`installation_profile`, the two
     selects that were already translated correctly) and adding the missing
     `state` translations across all 30 languages.
+- **Fix: the per-device Firmware update entity's "Up to date"/"Update
+  available" text always showed up in English**, even on a fully translated
+  UI (#377 follow-up, reported after confirming the fix above). Root
+  cause: those were literal English sentences used as this integration's
+  synthetic `installed_version`/`latest_version` values — Home Assistant's
+  `update` entity always renders those fields verbatim, in every
+  integration, since they're meant to be real version numbers, never
+  translated text. Replaced the sentence markers with the device's own raw
+  firmware-state token (already shown untranslated in the entity's detail
+  view below, e.g. `AwaitingActivation`) so the field no longer looks like
+  a broken translation.
+- **CI: fixed the weekly beta→stable promotion workflow shipping every
+  "promoted" release still reporting itself as a beta in HACS** (#378),
+  regardless of the user's HACS channel setting. `promote-beta.yml` was
+  re-tagging the beta commit as-is, so `manifest.json`'s own `"version"`
+  field kept its `-beta.N` suffix forever — HACS reads that field directly.
+  The promotion job now corrects the version field in a new commit before
+  tagging it as stable. (v0.12.10's already-published tag is unaffected by
+  this fix and stays as-is per this repo's never-retag-a-published-release
+  rule; superseded once this release promotes.)
 
 ## 0.12.10 — fix ~150s startup delay from a blocking Zigbee-routing refresh
 

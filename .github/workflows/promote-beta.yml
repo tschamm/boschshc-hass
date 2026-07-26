@@ -31,6 +31,18 @@ name: Promote beta to stable
 # A beta tag's CHANGELOG entry is already written under the eventual stable
 # heading ("## X.Y.Z — ...", not "## X.Y.Z-beta.N") per this repo's release
 # convention, so nothing else needs to change for the promoted release.
+#
+# manifest.json's own "version" field DOES need to change, though: the beta
+# commit's tree has it set to "X.Y.Z-beta.N", and HACS reads that field
+# directly to decide whether an install is a beta -- so simply re-tagging
+# the beta commit left every "promoted" release still reporting as beta in
+# HACS regardless of the user's channel setting (hass#378). Fixed by
+# building a new commit (tree = beta tree with only manifest.json's version
+# corrected, parent = the beta commit) and tagging that instead of the beta
+# commit itself. Deliberately NOT pushed to any branch -- HACS/users install
+# from the tag's tree, not from master HEAD, so this stays scoped to the
+# tag; master's manifest.json naturally catches up to a clean version at
+# the start of the next release's beta.1 bump.
 
 on:
   schedule:
@@ -116,10 +128,46 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           # Peel to the commit explicitly -- tagging a tag name directly
           # creates a "nested tag" (new tag object pointing at the old tag
           # object, not the commit), which git itself warns against.
-          git tag -a "$STABLE_TAG" "${BETA_TAG}^{commit}" -m "Promote $BETA_TAG to stable"
+          BETA_COMMIT=$(git rev-parse "${BETA_TAG}^{commit}")
+          STABLE_VERSION="${STABLE_TAG#v}"
+
+          # Correct manifest.json's version field (hass#378: re-tagging the
+          # beta commit verbatim left it reading "X.Y.Z-beta.N" forever,
+          # which HACS shows regardless of the user's channel setting).
+          git checkout --detach "$BETA_COMMIT"
+          python3 - "$STABLE_VERSION" <<'EOF'
+          import re
+          import sys
+
+          version = sys.argv[1]
+          path = "custom_components/bosch_shc/manifest.json"
+          with open(path, encoding="utf-8") as f:
+              content = f.read()
+          content, count = re.subn(
+              r'"version":\s*"[^"]+"', f'"version": "{version}"', content, count=1
+          )
+          if count != 1:
+              raise SystemExit(f"expected exactly 1 version field in {path}, patched {count}")
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(content)
+          EOF
+
+          if git diff --quiet; then
+            # Beta was already promoted with a clean version somehow -- tag
+            # the beta commit as-is rather than creating a no-op commit.
+            git tag -a "$STABLE_TAG" "$BETA_COMMIT" -m "Promote $BETA_TAG to stable"
+          else
+            git add custom_components/bosch_shc/manifest.json
+            git commit -m "Release ${STABLE_VERSION} — promote ${BETA_TAG} to stable
+
+          Corrects manifest.json's version field, which the beta commit
+          still had set to a -beta.N suffix (hass#378)."
+            git tag -a "$STABLE_TAG" -m "Promote $BETA_TAG to stable"
+          fi
           git push origin "$STABLE_TAG"
 
       - name: Dispatch release.yml for the new stable tag
