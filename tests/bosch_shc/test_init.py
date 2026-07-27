@@ -26,7 +26,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.api import JSONRPCError
+from boschshcpy.exceptions import SHCConnectionError, SHCException, SHCSessionError
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import (
     ATTR_COMMAND,
@@ -657,6 +658,61 @@ class TestSetupConnectionErrors:
 
         with pytest.raises(ConfigEntryNotReady):
             self._setup_raising(fake_hass, fake_entry, fake_session, SHCConnectionError)
+
+    def test_session_error_on_async_init_raises_config_entry_not_ready(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        with pytest.raises(ConfigEntryNotReady):
+            self._setup_raising(
+                fake_hass, fake_entry, fake_session, SHCSessionError("bad state")
+            )
+
+
+# ---------------------------------------------------------------------------
+# Tests: async_setup_entry — start_polling failures (subscribe is a network
+# call too; a drop here used to crash setup uncaught and leak the session).
+# ---------------------------------------------------------------------------
+
+
+class TestSetupStartPollingErrors:
+    def _setup_with_start_polling_raising(
+        self, fake_hass, fake_entry, fake_session, exc
+    ):
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        session = fake_session
+        session.start_polling = AsyncMock(side_effect=exc)
+        session.api.close = AsyncMock()
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            return _run(async_setup_entry(fake_hass, fake_entry))
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            pytest.param(SHCConnectionError("dropped"), id="connection_error"),
+            pytest.param(SHCSessionError("bad state"), id="session_error"),
+            pytest.param(JSONRPCError(500, "boom"), id="jsonrpc_error"),
+        ],
+    )
+    def test_start_polling_failure_raises_config_entry_not_ready_and_closes_session(
+        self, fake_hass, fake_entry, fake_session, exc
+    ):
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        with pytest.raises(ConfigEntryNotReady):
+            self._setup_with_start_polling_raising(
+                fake_hass, fake_entry, fake_session, exc
+            )
+
+        fake_session.api.close.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------

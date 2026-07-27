@@ -3,12 +3,12 @@
 # Regenerated 2026-07-17 after the Zigbee-routing background-task fix
 # shifted line numbers in __init__.py — same pre-existing comment
 # content, no new prose added.
-custom_components/bosch_shc/__init__.py:1049
-custom_components/bosch_shc/__init__.py:599
-custom_components/bosch_shc/__init__.py:694
-custom_components/bosch_shc/__init__.py:707
-custom_components/bosch_shc/__init__.py:868
-custom_components/bosch_shc/__init__.py:994
+custom_components/bosch_shc/__init__.py:1061
+custom_components/bosch_shc/__init__.py:600
+custom_components/bosch_shc/__init__.py:695
+custom_components/bosch_shc/__init__.py:708
+custom_components/bosch_shc/__init__.py:880
+custom_components/bosch_shc/__init__.py:1006
 custom_components/bosch_shc/binary_sensor.py:1033
 custom_components/bosch_shc/binary_sensor.py:1169
 custom_components/bosch_shc/binary_sensor.py:1255

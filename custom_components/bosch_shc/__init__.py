@@ -21,6 +21,7 @@ from boschshcpy.exceptions import (
     SHCAuthenticationError,
     SHCConnectionError,
     SHCException,
+    SHCSessionError,
 )
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
@@ -491,7 +492,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     except SHCAuthenticationError as err:
         await session.api.close()
         raise ConfigEntryAuthFailed from err
-    except SHCConnectionError as err:
+    except (SHCConnectionError, SHCSessionError) as err:
         LOGGER.warning(
             "Bosch SHC at %s is unavailable, will retry: %s", data.get(CONF_HOST), err
         )
@@ -834,7 +835,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     )
     # Async long-poll: start_polling() creates an asyncio.Task on the loop
     # (no thread, no executor). Callbacks fire on the event loop directly.
-    await session.start_polling()
+    try:
+        await session.start_polling()
+    except (SHCConnectionError, SHCSessionError, JSONRPCError) as err:
+        # subscribe (RE/subscribe) is a network call -- a drop here used to
+        # crash setup uncaught and leak the session's aiohttp ClientSession.
+        LOGGER.warning(
+            "Bosch SHC at %s failed to start polling, will retry: %s",
+            data.get(CONF_HOST),
+            err,
+        )
+        await session.api.close()
+        raise ConfigEntryNotReady from err
     LOGGER.info("Bosch SHC '%s' connected and polling.", entry.title)
     entry.runtime_data.polling_handler = hass.bus.async_listen_once(
         EVENT_HOMEASSISTANT_STOP, stop_polling

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.12 — fix uncaught start_polling failures leaking the session
+
+- **Fix: a network drop during setup's long-poll subscribe step could crash
+  integration setup uncaught and leak the underlying aiohttp session**,
+  instead of triggering Home Assistant's normal `ConfigEntryNotReady` retry.
+  Found while addressing the same class of finding on the sibling ha-core
+  PR's Copilot review (home-assistant/core#177379): `start_polling()`'s
+  initial subscribe call is a real network request and can raise
+  `SHCConnectionError`/`SHCSessionError`/`JSONRPCError`, none of which were
+  previously caught. Also broadened the existing `async_init()` error
+  handling to catch `SHCSessionError` alongside `SHCConnectionError` — same
+  gap, one step earlier in setup. Both paths now log a warning, close the
+  session cleanly, and raise `ConfigEntryNotReady`. New regression tests
+  covering all three exception types on both call sites.
+
 ## 0.12.11 — translate TRV_GEN2 select states + ChildLock/Valve entity names (#377)
 
 **Breaking (select option values, not entity IDs):** if you automate against
