@@ -2,6 +2,14 @@
 
 ## 0.12.12 — fix uncaught start_polling failures leaking the session
 
+- **Docs: diagnostics.py no longer claims to be a "rawscan-equivalent".**
+  `_device_dump` only includes services `boschshcpy` recognizes
+  (`SUPPORTED_DEVICE_SERVICE_IDS`) — an unmapped/unknown service on a device
+  is silently absent from the diagnostics download. Found via Copilot's
+  review on the sibling ha-core PR (home-assistant/core#177390), which
+  carries the same limitation. The module docstring now says so plainly and
+  points to the existing `bosch_shc.trigger_rawscan` action for a truly
+  unfiltered dump. No behavior change.
 - **Fix: a network drop during setup's long-poll subscribe step could crash
   integration setup uncaught and leak the underlying aiohttp session**,
   instead of triggering Home Assistant's normal `ConfigEntryNotReady` retry.

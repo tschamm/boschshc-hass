@@ -49,8 +49,8 @@ custom_components/bosch_shc/cover.py:124
 custom_components/bosch_shc/cover.py:136
 custom_components/bosch_shc/cover.py:213
 custom_components/bosch_shc/cover.py:247
-custom_components/bosch_shc/diagnostics.py:39
-custom_components/bosch_shc/diagnostics.py:58
+custom_components/bosch_shc/diagnostics.py:41
+custom_components/bosch_shc/diagnostics.py:60
 custom_components/bosch_shc/entity.py:194
 custom_components/bosch_shc/event.py:140
 custom_components/bosch_shc/event.py:164

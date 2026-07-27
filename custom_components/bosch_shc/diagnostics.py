@@ -1,10 +1,12 @@
 """Diagnostics support for the Bosch SHC integration.
 
-Returns a redacted JSON snapshot of the controller + every device's raw service
-state when the user clicks "Download diagnostics" in
-Settings -> Devices & Services. This is the rawscan-equivalent that makes
-device/state bug reports (e.g. a cover reporting the wrong direction) actionable
-without asking the reporter to run anything by hand.
+Returns a redacted JSON snapshot of the controller + every device's known
+service state when the user clicks "Download diagnostics" in
+Settings -> Devices & Services, making most device/state bug reports (e.g. a
+cover reporting the wrong direction) actionable without asking the reporter to
+run anything by hand. This only covers services boschshcpy recognizes
+(SUPPORTED_DEVICE_SERVICE_IDS) -- for a truly unfiltered dump, including
+unmapped/unknown services, use the bosch_shc.trigger_rawscan action instead.
 
 Credentials (client certificate/key, controller password, OAuth token) and
 network identifiers (host/IP, MAC, serials) are redacted via
@@ -66,7 +68,7 @@ TO_REDACT = {
 
 
 def _device_dump(device: Any) -> dict[str, Any]:
-    """One device + the raw state of each of its services (the useful part)."""
+    """One device + the state of each of its known services."""
     return {
         "device_id": device.id,
         "root_device_id": device.root_device_id,
