@@ -2,6 +2,18 @@
 
 ## 0.12.12 — fix uncaught start_polling failures leaking the session
 
+- **Fix: a Shutter Control II cover's `operation_state` attribute (`MOVING`/
+  `STOPPED`/`OPENING`/`CLOSING`/`CALIBRATING`) could never be used in an
+  automation state-trigger**, even though it displayed correctly in the UI.
+  Root cause (#385): the attribute exposed the raw `boschshcpy` `Enum`
+  member instead of its `.name` string — HA's frontend shows it correctly
+  (orjson serializes `Enum`s by value for the websocket), but the backend
+  state-trigger engine compares the actual Python attribute value against
+  the string configured in the automation, and a plain `Enum` member is
+  never `==` to a string. Fixed by exposing `.name`, matching the existing
+  convention used by every other enum-valued attribute in this codebase
+  (e.g. `binary_sensor.py`'s `alarm_state`). 2 independent bug-hunt passes
+  confirmed this was the only instance of the pattern.
 - **Docs: diagnostics.py no longer claims to be a "rawscan-equivalent".**
   `_device_dump` only includes services `boschshcpy` recognizes
   (`SUPPORTED_DEVICE_SERVICE_IDS`) — an unmapped/unknown service on a device

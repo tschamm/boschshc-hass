@@ -1343,7 +1343,7 @@ class TestExtraStateAttributes:
             operation_state=STOPPED,
         )
         attrs = cover.extra_state_attributes
-        assert attrs == {"operation_state": STOPPED}
+        assert attrs == {"operation_state": STOPPED.name}
 
 
 # ---------------------------------------------------------------------------

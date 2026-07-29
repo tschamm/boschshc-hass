@@ -333,7 +333,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
         return {
-            "operation_state": self._device.operation_state,
+            "operation_state": self._device.operation_state.name,
         }
 
 
