@@ -2,6 +2,20 @@
 
 ## 0.12.12 — fix uncaught start_polling failures leaking the session
 
+- **Fix: a MICROMODULE_SHUTTER's physical wall switch could not reliably
+  drive `is_opening`/`is_closing` when configured as a `PUSHBUTTON`
+  switchType**, unlike a toggle/rocker (`SWITCH`) switchType. Root cause
+  (#385, confirmed against two real-hardware rawscans — one HA-UI-triggered
+  move, one physical-button-triggered move): the direction-detection logic
+  only recognized `Keypad` events of type `SWITCH_ON` (keycode 1=open/
+  2=close); a `PUSHBUTTON`-configured device instead sends `PRESS_SHORT`
+  events with the same keycode semantics, which fell through to a
+  level-vs-last-position fallback that can't work here — the device's
+  `level` attribute doesn't update until the move finishes. Fixed by
+  recognizing `PRESS_SHORT` alongside `SWITCH_ON` for the same keycode
+  mapping. 2 independent bug-hunt passes found no cross-device interference
+  (WRC2/SWITCH2 button-press automations use unrelated Keypad service
+  instances) and confirmed the fix is correctly scoped.
 - **Fix: a Shutter Control II cover's `operation_state` attribute (`MOVING`/
   `STOPPED`/`OPENING`/`CLOSING`/`CALIBRATING`) could never be used in an
   automation state-trigger**, even though it displayed correctly in the UI.

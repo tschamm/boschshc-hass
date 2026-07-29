@@ -589,8 +589,8 @@ class TestMicromoduleShutterMovingElseBranch:
             device_model="MICROMODULE_SHUTTER",
             level=0.6,
             operation_state=MOVING,
-            eventtype=PRESS_SHORT,
-            keycode=1,
+            eventtype=SWITCH_OFF,  # neither SWITCH_ON nor PRESS_SHORT → else-branch
+            keycode=0,
         )
         cover._last_position = None
         cover._attr_is_opening = None
@@ -607,8 +607,8 @@ class TestMicromoduleShutterMovingElseBranch:
             device_model="MICROMODULE_SHUTTER",
             level=0.5,
             operation_state=MOVING,
-            eventtype=PRESS_SHORT,
-            keycode=1,
+            eventtype=SWITCH_OFF,
+            keycode=0,
         )
         cover._last_position = 50
         cover._attr_is_opening = False
@@ -623,8 +623,8 @@ class TestMicromoduleShutterMovingElseBranch:
             device_model="MICROMODULE_SHUTTER",
             level=0.9,
             operation_state=MOVING,
-            eventtype=PRESS_SHORT,
-            keycode=1,
+            eventtype=SWITCH_OFF,
+            keycode=0,
         )
         cover._last_position = 40
         cover._update_attr()
@@ -637,13 +637,55 @@ class TestMicromoduleShutterMovingElseBranch:
             device_model="MICROMODULE_SHUTTER",
             level=0.1,
             operation_state=MOVING,
-            eventtype=PRESS_SHORT,
-            keycode=2,
+            eventtype=SWITCH_OFF,
+            keycode=0,
         )
         cover._last_position = 70
         cover._update_attr()
         assert cover._attr_is_closing is True
         assert cover._attr_is_opening is False
+
+
+# ---------------------------------------------------------------------------
+# MOVING MICROMODULE_SHUTTER keypad keycode 1/2 via PRESS_SHORT (PUSHBUTTON
+# switchType, #385) — mirrors the SWITCH_ON (toggle/rocker switchType) tests
+# above; both eventtypes share the same keycode 1=open/2=close semantics.
+# ---------------------------------------------------------------------------
+
+
+class TestMicromoduleShutterMovingKeypadPressShortOpen:
+    def test_press_short_keycode1_sets_opening(self):
+        """PRESS_SHORT keycode=1 → is_opening=True, target=100, last_position set."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.2,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+        )
+        cover._last_position = 20  # should be overwritten
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+        assert cover._target_position == 100
+        assert cover._last_position == 20  # round(0.2*100)
+
+
+class TestMicromoduleShutterMovingKeypadPressShortClose:
+    def test_press_short_keycode2_sets_closing(self):
+        """PRESS_SHORT keycode=2 → is_closing=True, target=0, last_position set."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.8,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=2,
+        )
+        cover._update_attr()
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+        assert cover._target_position == 0
+        assert cover._last_position == 80  # round(0.8*100)
 
 
 # ---------------------------------------------------------------------------
@@ -1164,8 +1206,8 @@ class TestMicromoduleShutterStoppedUpdatesLastPosition:
 
 def test_micromodule_shutter_physical_down_after_up_shows_closing_issue_294():
     """A MICROMODULE_SHUTTER moved by its physical switch sends Keypad
-    eventType=PRESS_SHORT (not SWITCH_ON), so the keycode direction branch never
-    fires and direction comes from level vs _last_position. _last_position must
+    eventType=PRESS_SHORT with a real per-button keycode (1=open/2=close,
+    honored since #385 alongside SWITCH_ON). _last_position must also still
     refresh at every rest (incl. physical moves) — otherwise the reference is
     frozen at the load-time position and the down move keeps showing 'opening'.
     Verified against a live device (deviceModel MICROMODULE_SHUTTER, Keypad
@@ -1173,14 +1215,16 @@ def test_micromodule_shutter_physical_down_after_up_shows_closing_issue_294():
     """
     cover = _make_cover(
         "MICROMODULE_SHUTTER", level=0.0, operation_state=STOPPED,
-        eventtype="PRESS_SHORT", keycode=2,
+        eventtype=PRESS_SHORT, keycode=1,
     )
     # 1. initial rest at fully closed -> reference initialises to 0
     cover._update_attr()
     assert cover._last_position == 0
 
-    # 2. physical UP move (level reports the target 1.0 == open) -> opening
+    # 2. physical UP-button press (keycode=1), level reports the target
+    #    1.0 == open -> opening
     cover._device.level = 1.0
+    cover._device.keycode = 1
     cover._device.operation_state = MOVING
     cover._update_attr()
     assert cover._attr_is_opening is True
@@ -1192,8 +1236,10 @@ def test_micromodule_shutter_physical_down_after_up_shows_closing_issue_294():
     cover._update_attr()
     assert cover._last_position == 100
 
-    # 4. physical DOWN move (level reports the target 0.0 == closed) -> closing
+    # 4. physical DOWN-button press (keycode=2), level reports the target
+    #    0.0 == closed -> closing
     cover._device.level = 0.0
+    cover._device.keycode = 2
     cover._device.operation_state = MOVING
     cover._update_attr()
     assert cover._attr_is_closing is True

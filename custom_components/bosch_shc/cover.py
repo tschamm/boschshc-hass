@@ -136,9 +136,10 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                 # Refresh the reference position on every rest for level-based
                 # devices, so the next movement's direction is computed against the
                 # actual resting position. This must include physical-switch moves
-                # of MICROMODULE shutters/blinds: their Keypad events arrive as
-                # PRESS_SHORT (not SWITCH_ON), so they never hit the keycode
-                # direction branch below and rely on this reference (issue #294).
+                # of MICROMODULE shutters/blinds: MICROMODULE_BLINDS has no keycode
+                # direction branch at all, and a MICROMODULE_SHUTTER's Keypad event
+                # falls back to this reference whenever its keycode isn't 1/2 (SWITCH_ON
+                # and PRESS_SHORT both hit the keycode branch directly since #385/#294).
                 if (
                     self._device.device_model
                     in ("BBL", "MICROMODULE_SHUTTER", "MICROMODULE_BLINDS")
@@ -165,8 +166,14 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                         self._attr_is_closing = True
                         self._attr_is_opening = False
             elif self._device.device_model == "MICROMODULE_SHUTTER":
+                # SWITCH_ON = toggle/rocker switchType; PRESS_SHORT = PUSHBUTTON
+                # switchType (#385) — both share the keycode 1=open/2=close mapping.
                 if (
-                    self._device.eventtype == KeypadService.KeyEvent.SWITCH_ON
+                    self._device.eventtype
+                    in (
+                        KeypadService.KeyEvent.SWITCH_ON,
+                        KeypadService.KeyEvent.PRESS_SHORT,
+                    )
                     and self._device.keycode == 1
                 ):
                     # When the event is triggered by the physical switch, we can determine the movement direction based on the keycode (1 for open, 2 for close), as the level attribute is not reliable during movement
@@ -175,7 +182,11 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                     self._attr_is_opening = True
                     self._target_position = 100
                 elif (
-                    self._device.eventtype == KeypadService.KeyEvent.SWITCH_ON
+                    self._device.eventtype
+                    in (
+                        KeypadService.KeyEvent.SWITCH_ON,
+                        KeypadService.KeyEvent.PRESS_SHORT,
+                    )
                     and self._device.keycode == 2
                 ):
                     self._last_position = round(self._device.level * 100.0)
