@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC 用戶端憑證即將到期",
       "description": "用於 **{title}** 的 Bosch SHC 用戶端憑證將在 {days} 天後（{expiry}）到期。若要續期：將控制器置於配對模式（按住前面的按鈕直到 LED 閃爍），然後前往 **設定 → 裝置與服務 → Bosch Smart Home Controller** 並選擇 **重新設定**。"
+    },
+    "update_battery_low": {
+      "title": "電池電量過低導致韌體更新被封鎖",
+      "description": "**{name}** 有可用的韌體更新，但由於此裝置回報電池電量過低，Bosch Smart Home Controller 不會啟動更新。請更換或充電後，再次嘗試安裝更新。"
+    },
+    "update_calibration_required": {
+      "title": "需要手動校準",
+      "description": "**{name}** 的韌體更新已成功安裝，但此恆溫器在完全完成前需要一個手動校準步驟：按下裝置上的按鈕，或透過 Bosch 應用程式確認。Home Assistant 無法顯示此步驟——在您完成之前，更新將持續顯示為待處理狀態。"
     }
   },
   "exceptions": {

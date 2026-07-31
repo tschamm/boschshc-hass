@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.12.13 — firmware update entity no longer leaks untranslated English text
+
+- **Fix: the firmware update entity's version fields and lifecycle notes
+  showed untranslated English regardless of the configured language**
+  (#377 follow-up). Root cause: Home Assistant's `UpdateEntity` never
+  translates `installed_version`/`latest_version`/`release_summary` — they
+  render byte-for-byte in every locale. 0.12.11's fix for this same issue
+  swapped one untranslated English marker (`"Up to date"`) for another
+  (`"current"`), and additionally added two English disclaimer sentences
+  (a low-battery precondition, a post-install manual calibration reminder)
+  directly into `release_summary` — which, being an HA-level field, can
+  never be localized no matter what string is put there. Both disclaimers
+  are now proper, translated **Repair issues** instead (`update_battery_low`
+  / `update_calibration_required`, translated to all 30 languages), created
+  only when actually relevant (an update is pending and the battery reports
+  low; a thermostat has finished installing and is awaiting calibration)
+  and cleared automatically once resolved or when the entity is removed.
+  `release_summary` now only ever carries the bare, technical, raw
+  firmware-state token, matching the convention every other real ha-core
+  `UpdateEntity` uses for this field. The `installed_version`/
+  `latest_version` "no real version" marker was also changed from the
+  word `"current"` to `"n/a"` — HA still can't translate it, but a short,
+  widely-recognized abbreviation reads less like a leaked, forgotten
+  translation than a full English word does.
+
 ## 0.12.12 — fix uncaught start_polling failures leaking the session
 
 - **Fix: a MICROMODULE_SHUTTER's physical wall switch could not reliably

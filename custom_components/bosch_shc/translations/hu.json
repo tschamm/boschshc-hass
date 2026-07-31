@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "A Bosch SHC ügyféltanúsítvány hamarosan lejár",
       "description": "A Bosch SHC ügyféltanúsítvány a(z) **{title}** számára {days} nap múlva lejár ({expiry}). A megújításhoz: állítsa a vezérlőt párosítási módba (nyomja meg az elülső gombot, amíg a LED-ek villogni nem kezdenek), majd lépjen ide: **Beállítások → Eszközök és szolgáltatások → Bosch Smart Home Controller**, és válassza az **Újrakonfigurálás** lehetőséget."
+    },
+    "update_battery_low": {
+      "title": "A firmware-frissítést az alacsony akkumulátorszint blokkolja",
+      "description": "Firmware-frissítés érhető el a(z) **{name}** eszközhöz, de a Bosch Smart Home Controller nem indítja el, amíg ez az eszköz alacsony akkumulátorszintet jelez. Cserélje ki vagy töltse fel az akkumulátort, majd próbálja meg újra telepíteni a frissítést."
+    },
+    "update_calibration_required": {
+      "title": "Kézi kalibrálás szükséges",
+      "description": "A(z) **{name}** firmware-frissítése sikeresen telepítve lett, de ez a termosztát a teljes befejezés előtt kézi kalibrálási lépést igényel: nyomja meg a gombot az eszközön, vagy erősítse meg a Bosch alkalmazáson keresztül. A Home Assistant nem tudja megjeleníteni ezt a lépést – a frissítést továbbra is függőben lévőként fogja mutatni, amíg ezt meg nem teszi."
     }
   },
   "exceptions": {

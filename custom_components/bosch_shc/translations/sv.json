@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC-klientcertifikatet löper snart ut",
       "description": "Bosch SHC-klientcertifikatet för **{title}** löper ut om {days} dag(ar) (den {expiry}). Förnya det så här: sätt styrenheten i parkopplingsläge (håll in frontknappen tills lysdioderna blinkar) och gå sedan till **Inställningar → Enheter och tjänster → Bosch Smart Home Controller** och välj **Konfigurera om**."
+    },
+    "update_battery_low": {
+      "title": "Firmware-uppdatering blockerad av låg batterinivå",
+      "description": "En firmware-uppdatering är tillgänglig för **{name}**, men Bosch Smart Home Controller startar den inte så länge enheten rapporterar låg batterinivå. Byt eller ladda batteriet och försök sedan installera uppdateringen igen."
+    },
+    "update_calibration_required": {
+      "title": "Manuell kalibrering krävs",
+      "description": "Firmware-uppdateringen för **{name}** installerades utan problem, men denna termostat kräver ett manuellt kalibreringssteg innan den är helt klar: tryck på knappen på enheten, eller bekräfta via Bosch-appen. Home Assistant kan inte visa detta steg – uppdateringen kommer att visas som väntande tills du har gjort det."
     }
   },
   "exceptions": {

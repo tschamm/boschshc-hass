@@ -799,6 +799,14 @@
     "cert_expiring": {
       "title": "Bosch SHC client certificate expiring soon",
       "description": "The client certificate for **{title}** will expire in {days} day(s) (on {expiry}). To renew it: put the controller into pairing mode (press the front button until the LEDs flash), then go to **Settings → Devices & services → Bosch Smart Home Controller** and select **Reconfigure**."
+    },
+    "update_battery_low": {
+      "title": "Firmware update blocked by low battery",
+      "description": "A firmware update is available for **{name}**, but the Bosch Smart Home Controller won't start it while this device reports a low battery level. Replace or recharge the battery, then try installing the update again."
+    },
+    "update_calibration_required": {
+      "title": "Manual calibration required",
+      "description": "The firmware update for **{name}** installed successfully, but this thermostat requires a manual calibration step before it's fully complete: press the button on the device, or confirm via the Bosch app. Home Assistant can't show this step — it will keep displaying an update as pending until you do it."
     }
   }
 }

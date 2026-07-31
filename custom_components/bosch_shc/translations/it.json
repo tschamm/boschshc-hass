@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Il certificato client Bosch SHC sta per scadere",
       "description": "Il certificato client Bosch SHC per **{title}** scadrà tra {days} giorno/i (il {expiry}). Per rinnovarlo: metti il controller in modalità di associazione (premi il pulsante frontale finché i LED lampeggiano), quindi vai su **Impostazioni → Dispositivi e servizi → Bosch Smart Home Controller** e seleziona **Riconfigura**."
+    },
+    "update_battery_low": {
+      "title": "Aggiornamento del firmware bloccato per batteria scarica",
+      "description": "È disponibile un aggiornamento del firmware per **{name}**, ma il Bosch Smart Home Controller non lo avvierà finché questo dispositivo segnala un livello di batteria basso. Sostituisci o ricarica la batteria, quindi prova a installare di nuovo l'aggiornamento."
+    },
+    "update_calibration_required": {
+      "title": "Calibrazione manuale richiesta",
+      "description": "L'aggiornamento del firmware per **{name}** è stato installato correttamente, ma questo termostato richiede un passaggio di calibrazione manuale prima di essere completo: premi il pulsante sul dispositivo oppure conferma tramite l'app Bosch. Home Assistant non può mostrare questo passaggio: continuerà a mostrare l'aggiornamento come in sospeso finché non lo effettui."
     }
   },
   "exceptions": {

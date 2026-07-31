@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Sertifikat klien Bosch SHC akan segera kedaluwarsa",
       "description": "Sertifikat klien Bosch SHC untuk **{title}** akan kedaluwarsa dalam {days} hari (pada {expiry}). Untuk memperbaruinya: masukkan pengontrol ke mode pemasangan (tekan tombol depan hingga LED berkedip), lalu buka **Pengaturan → Perangkat & layanan → Bosch Smart Home Controller** dan pilih **Konfigurasi ulang**."
+    },
+    "update_battery_low": {
+      "title": "Pembaruan firmware diblokir karena baterai lemah",
+      "description": "Pembaruan firmware tersedia untuk **{name}**, tetapi Bosch Smart Home Controller tidak akan memulainya selama perangkat ini melaporkan tingkat baterai rendah. Ganti atau isi ulang baterai, lalu coba instal pembaruan lagi."
+    },
+    "update_calibration_required": {
+      "title": "Diperlukan kalibrasi manual",
+      "description": "Pembaruan firmware untuk **{name}** berhasil diinstal, tetapi termostat ini memerlukan langkah kalibrasi manual sebelum benar-benar selesai: tekan tombol pada perangkat, atau konfirmasi melalui aplikasi Bosch. Home Assistant tidak dapat menampilkan langkah ini — ia akan terus menampilkan pembaruan sebagai tertunda hingga Anda melakukannya."
     }
   },
   "exceptions": {

@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "El certificat de client de Bosch SHC caducarà aviat",
       "description": "El certificat de client de Bosch SHC per a **{title}** caducarà d'aquí a {days} dia/dies (el {expiry}). Per renovar-lo: poseu el controlador en mode d'emparellament (premeu el botó frontal fins que els LED parpallegin) i aneu a **Configuració → Dispositius i serveis → Bosch Smart Home Controller** i seleccioneu **Reconfigura**."
+    },
+    "update_battery_low": {
+      "title": "Actualització de microprogramari bloquejada per bateria baixa",
+      "description": "Hi ha una actualització de microprogramari disponible per a **{name}**, però el Bosch Smart Home Controller no la iniciarà mentre aquest dispositiu indiqui un nivell de bateria baix. Substituïu o carregueu la bateria i, a continuació, torneu a intentar instal·lar l'actualització."
+    },
+    "update_calibration_required": {
+      "title": "Cal calibratge manual",
+      "description": "L'actualització de microprogramari per a **{name}** s'ha instal·lat correctament, però aquest termòstat requereix un pas de calibratge manual abans de quedar completament enllestit: premeu el botó del dispositiu o confirmeu-ho mitjançant l'aplicació Bosch. Home Assistant no pot mostrar aquest pas: continuarà mostrant una actualització pendent fins que ho feu."
     }
   },
   "exceptions": {

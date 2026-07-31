@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
-from boschshcpy import SHCBatteryDevice, SHCSession
+from boschshcpy import BatteryLevelService, SHCBatteryDevice, SHCSession
 from boschshcpy.device import SHCDevice
 from boschshcpy.exceptions import SHCException
 from homeassistant.components.update import (
@@ -27,10 +27,16 @@ from homeassistant.components.update import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, LOGGER
+from .const import (
+    DOMAIN,
+    ISSUE_UPDATE_BATTERY_LOW,
+    ISSUE_UPDATE_CALIBRATION_REQUIRED,
+    LOGGER,
+)
 from .entity import SHCEntity, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -79,25 +85,25 @@ _DEVICE_IN_PROGRESS_STATES = frozenset(
 # every other pending state legitimately 409s if activated (again) (#373).
 _ACTIVATABLE_STATE = "AwaitingActivation"
 
-# Marker, not a real version -- HA never translates these fields, so the
-# old English-sentence markers looked like a translation bug (#377 follow-up).
-_NO_UPDATE_MARKER = "current"
+# Marker, not a real version -- HA's UpdateEntity never translates this
+# field (rendered byte-for-byte in every locale) (#377 follow-up).
+_NO_UPDATE_MARKER = "n/a"
 
 # Thermostat models where a firmware install requires a manual on-device (or
 # Bosch-app) calibration step afterwards -- live-confirmed on TRV_GEN2 (#373).
 _CALIBRATION_MODELS = frozenset({"TRV", "TRV_GEN2", "TRV_GEN2_DUAL"})
 
-# SHC-enforced preconditions, surfaced via release_summary (#373 follow-up).
-_BATTERY_DISCLAIMER = (
-    "⚠️ The SHC won't start a firmware update while this device reports a "
-    "low battery level -- make sure the battery is fresh/normal first."
+# Battery states genuinely low (not OK/NOT_AVAILABLE) (#377 follow-up).
+_LOW_BATTERY_STATES = frozenset(
+    {
+        BatteryLevelService.State.LOW_BATTERY,
+        BatteryLevelService.State.CRITICAL_LOW,
+        BatteryLevelService.State.CRITICALLY_LOW_BATTERY,
+    }
 )
-_CALIBRATION_DISCLAIMER = (
-    "⚠️ After installing, this thermostat requires a manual calibration "
-    "step (press the button on the device, or confirm via the Bosch app) "
-    "before the update is fully complete. Home Assistant cannot show this "
-    'step -- it will just display "Update pending" until you do it.'
-)
+
+# SHC-enforced preconditions, surfaced via repair issues, not release_summary
+# prose (which HA never translates) (#373, #377 follow-ups).
 
 
 async def async_setup_entry(
@@ -266,6 +272,66 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
             LOGGER.debug(
                 "Failed to poll firmware state for %s: %s", self.device_name, err
             )
+        self._sync_repair_issues()
+
+    def _sync_repair_issues(self) -> None:
+        """Create/delete the two SHC-precondition repair issues (#377 follow-up).
+
+        Previously this content was static English prose glued onto
+        release_summary, which HA never translates — real Repair issues get
+        localized from strings.json instead, and only appear when the
+        underlying condition is actually true right now.
+        """
+        battery_issue_id = f"{ISSUE_UPDATE_BATTERY_LOW}_{self._attr_unique_id}"
+        update_pending = self._firmware_state not in _UP_TO_DATE_STATES
+        battery_low = (
+            isinstance(self._device, SHCBatteryDevice)
+            and self._device.batterylevel in _LOW_BATTERY_STATES
+        )
+        if update_pending and battery_low:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                battery_issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_UPDATE_BATTERY_LOW,
+                translation_placeholders={"name": self.device_name},
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, battery_issue_id)
+
+        calibration_issue_id = (
+            f"{ISSUE_UPDATE_CALIBRATION_REQUIRED}_{self._attr_unique_id}"
+        )
+        awaiting_calibration = (
+            self._device.device_model in _CALIBRATION_MODELS
+            and self._firmware_state == "UpToDateAwaitingUserInteraction"
+        )
+        if awaiting_calibration:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                calibration_issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_UPDATE_CALIBRATION_REQUIRED,
+                translation_placeholders={"name": self.device_name},
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, calibration_issue_id)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe + clean up any open repair issues (#377 follow-up)."""
+        await super().async_will_remove_from_hass()
+        ir.async_delete_issue(
+            self.hass, DOMAIN, f"{ISSUE_UPDATE_BATTERY_LOW}_{self._attr_unique_id}"
+        )
+        ir.async_delete_issue(
+            self.hass,
+            DOMAIN,
+            f"{ISSUE_UPDATE_CALIBRATION_REQUIRED}_{self._attr_unique_id}",
+        )
 
     @property
     def installed_version(self) -> str | None:
@@ -290,21 +356,15 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
 
     @property
     def release_summary(self) -> str | None:
-        """Surface the raw lifecycle state + any relevant disclaimers.
+        """Return the raw device-reported firmware lifecycle state.
 
-        The disclaimers cover SHC-enforced preconditions/limitations this
-        integration can't detect or override (#373 follow-up): a low battery
-        blocking install, and a post-install calibration step Home Assistant
-        has no way to represent.
+        Kept to the bare technical token: like installed_version/
+        latest_version, HA never translates this field, so it should not
+        carry integration-authored prose (#377 follow-up) — see the two
+        update_battery_low/update_calibration_required repair issues for
+        the (properly translated) SHC-precondition guidance instead.
         """
-        disclaimers = []
-        if isinstance(self._device, SHCBatteryDevice):
-            disclaimers.append(_BATTERY_DISCLAIMER)
-        if self._device.device_model in _CALIBRATION_MODELS:
-            disclaimers.append(_CALIBRATION_DISCLAIMER)
-        if not disclaimers:
-            return self._firmware_state
-        return "\n\n".join([str(self._firmware_state), *disclaimers])
+        return self._firmware_state
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any

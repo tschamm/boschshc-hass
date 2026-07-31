@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC klienta sertifikāts drīz beigsies",
       "description": "Bosch SHC klienta sertifikāts ierīcei **{title}** beigsies pēc {days} dienas(-ām) ({expiry}). Lai to atjaunotu: ievietojiet kontrolleri pārī savienošanas režīmā (nospiediet priekšējo pogu, līdz sāk mirgot LED indikatori), pēc tam dodieties uz **Iestatījumi → Ierīces un pakalpojumi → Bosch Smart Home Controller** un izvēlieties **Pārkonfigurēt**."
+    },
+    "update_battery_low": {
+      "title": "Aparātprogrammatūras atjauninājums bloķēts zema akumulatora uzlādes līmeņa dēļ",
+      "description": "Ierīcei **{name}** ir pieejams aparātprogrammatūras atjauninājums, taču Bosch Smart Home Controller to nesāks, kamēr šī ierīce uzrāda zemu akumulatora uzlādes līmeni. Nomainiet vai uzlādējiet akumulatoru un pēc tam mēģiniet atjauninājumu instalēt vēlreiz."
+    },
+    "update_calibration_required": {
+      "title": "Nepieciešama manuāla kalibrēšana",
+      "description": "Aparātprogrammatūras atjauninājums ierīcei **{name}** tika veiksmīgi instalēts, taču šim termostatam pirms pilnīgas pabeigšanas ir nepieciešams manuālas kalibrēšanas solis: nospiediet pogu uz ierīces vai apstipriniet, izmantojot Bosch lietotni. Home Assistant nevar parādīt šo soli — tas turpinās rādīt atjauninājumu kā gaidošu, kamēr to neizdarīsiet."
     }
   },
   "exceptions": {

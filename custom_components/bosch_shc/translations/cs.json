@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Klientský certifikát Bosch SHC brzy vyprší",
       "description": "Klientský certifikát Bosch SHC pro **{title}** vyprší za {days} den/dní (dne {expiry}). Chcete-li jej obnovit: přepněte kontrolér do párovacího režimu (stiskněte přední tlačítko, dokud nezačnou blikat LED diody), poté přejděte na **Nastavení → Zařízení a služby → Bosch Smart Home Controller** a vyberte **Překonfigurovat**."
+    },
+    "update_battery_low": {
+      "title": "Aktualizace firmwaru blokována kvůli nízkému stavu baterie",
+      "description": "Pro **{name}** je k dispozici aktualizace firmwaru, ale Bosch Smart Home Controller ji nespustí, dokud toto zařízení hlásí nízký stav baterie. Vyměňte nebo dobijte baterii a poté zkuste aktualizaci nainstalovat znovu."
+    },
+    "update_calibration_required": {
+      "title": "Vyžadována ruční kalibrace",
+      "description": "Aktualizace firmwaru pro **{name}** byla úspěšně nainstalována, ale tento termostat vyžaduje před úplným dokončením ruční krok kalibrace: stiskněte tlačítko na zařízení nebo potvrďte přes aplikaci Bosch. Home Assistant tento krok nemůže zobrazit – aktualizaci bude nadále zobrazovat jako čekající, dokud tak neučiníte."
     }
   },
   "exceptions": {

@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC-Client-Zertifikat läuft bald ab",
       "description": "Das Bosch SHC-Client-Zertifikat für **{title}** läuft in {days} Tag(en) ab (am {expiry}). Um es zu erneuern: Versetzen Sie den Controller in den Kopplungsmodus (drücken Sie die Fronttaste, bis die LEDs blinken), und gehen Sie dann zu **Einstellungen → Geräte & Dienste → Bosch Smart Home Controller** und wählen Sie **Neu konfigurieren**."
+    },
+    "update_battery_low": {
+      "title": "Firmware-Update durch niedrigen Akkustand blockiert",
+      "description": "Für **{name}** ist ein Firmware-Update verfügbar, aber der Bosch Smart Home Controller startet es nicht, solange dieses Gerät einen niedrigen Akkustand meldet. Ersetzen oder laden Sie den Akku auf und versuchen Sie dann erneut, das Update zu installieren."
+    },
+    "update_calibration_required": {
+      "title": "Manuelle Kalibrierung erforderlich",
+      "description": "Das Firmware-Update für **{name}** wurde erfolgreich installiert, aber dieses Thermostat erfordert vor dem vollständigen Abschluss einen manuellen Kalibrierungsschritt: Drücken Sie die Taste am Gerät oder bestätigen Sie über die Bosch App. Home Assistant kann diesen Schritt nicht anzeigen — es zeigt das Update so lange als ausstehend an, bis Sie dies tun."
     }
   },
   "exceptions": {

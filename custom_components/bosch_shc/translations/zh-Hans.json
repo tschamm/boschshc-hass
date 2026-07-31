@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC 客户端证书即将到期",
       "description": "用于 **{title}** 的 Bosch SHC 客户端证书将在 {days} 天后（{expiry}）到期。要续期：将控制器置于配对模式（按住前面的按钮直到 LED 闪烁），然后前往 **设置 → 设备与服务 → Bosch Smart Home Controller** 并选择 **重新配置**。"
+    },
+    "update_battery_low": {
+      "title": "电池电量过低导致固件更新被阻止",
+      "description": "**{name}** 有可用的固件更新，但由于该设备电池电量过低，Bosch Smart Home Controller 不会启动更新。请更换或充电后，再次尝试安装更新。"
+    },
+    "update_calibration_required": {
+      "title": "需要手动校准",
+      "description": "**{name}** 的固件更新已成功安装，但此恒温器在完全完成前需要一个手动校准步骤：按下设备上的按钮，或通过 Bosch 应用程序确认。Home Assistant 无法显示此步骤——在您完成校准之前，更新将持续显示为待处理状态。"
     }
   },
   "exceptions": {

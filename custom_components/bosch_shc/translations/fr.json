@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Le certificat client Bosch SHC expire bientôt",
       "description": "Le certificat client Bosch SHC pour **{title}** expirera dans {days} jour(s) (le {expiry}). Pour le renouveler : mettez le contrôleur en mode d'appairage (appuyez sur le bouton frontal jusqu'à ce que les voyants clignotent), puis allez dans **Paramètres → Appareils et services → Bosch Smart Home Controller** et sélectionnez **Reconfigurer**."
+    },
+    "update_battery_low": {
+      "title": "Mise à jour du micrologiciel bloquée par une batterie faible",
+      "description": "Une mise à jour du micrologiciel est disponible pour **{name}**, mais le Bosch Smart Home Controller ne la lancera pas tant que cet appareil signale un niveau de batterie faible. Remplacez ou rechargez la batterie, puis réessayez d'installer la mise à jour."
+    },
+    "update_calibration_required": {
+      "title": "Calibration manuelle requise",
+      "description": "La mise à jour du micrologiciel pour **{name}** a été installée avec succès, mais ce thermostat nécessite une étape de calibration manuelle avant d'être complètement terminée : appuyez sur le bouton de l'appareil, ou confirmez via l'application Bosch. Home Assistant ne peut pas afficher cette étape ; il continuera à afficher une mise à jour en attente jusqu'à ce que vous le fassiez."
     }
   },
   "exceptions": {

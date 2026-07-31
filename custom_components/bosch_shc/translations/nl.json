@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC-clientcertificaat verloopt binnenkort",
       "description": "Het Bosch SHC-clientcertificaat voor **{title}** verloopt over {days} dag(en) (op {expiry}). Om het te vernieuwen: zet de controller in koppelingsmodus (druk op de voorknop totdat de LED's knipperen) en ga naar **Instellingen → Apparaten & diensten → Bosch Smart Home Controller** en selecteer **Opnieuw configureren**."
+    },
+    "update_battery_low": {
+      "title": "Firmware-update geblokkeerd door lage batterij",
+      "description": "Er is een firmware-update beschikbaar voor **{name}**, maar de Bosch Smart Home Controller start deze niet zolang dit apparaat een laag batterijniveau meldt. Vervang of laad de batterij op en probeer de update daarna opnieuw te installeren."
+    },
+    "update_calibration_required": {
+      "title": "Handmatige kalibratie vereist",
+      "description": "De firmware-update voor **{name}** is succesvol geïnstalleerd, maar deze thermostaat vereist een handmatige kalibratiestap voordat deze volledig voltooid is: druk op de knop op het apparaat of bevestig via de Bosch-app. Home Assistant kan deze stap niet weergeven — de update blijft in behandeling totdat u dit doet."
     }
   },
   "exceptions": {

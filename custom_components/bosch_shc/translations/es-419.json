@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "El certificado de cliente de Bosch SHC vencerá pronto",
       "description": "El certificado de cliente de Bosch SHC para **{title}** vencerá en {days} día(s) (el {expiry}). Para renovarlo: ponga el controlador en modo de emparejamiento (presione el botón frontal hasta que parpadeen los LEDs), luego vaya a **Configuración → Dispositivos y servicios → Bosch Smart Home Controller** y seleccione **Reconfigurar**."
+    },
+    "update_battery_low": {
+      "title": "Actualización de firmware bloqueada por batería baja",
+      "description": "Hay una actualización de firmware disponible para **{name}**, pero el Bosch Smart Home Controller no la iniciará mientras este dispositivo indique un nivel de batería bajo. Reemplace o recargue la batería y luego intente instalar la actualización nuevamente."
+    },
+    "update_calibration_required": {
+      "title": "Se requiere calibración manual",
+      "description": "La actualización de firmware para **{name}** se instaló correctamente, pero este termostato requiere un paso de calibración manual antes de quedar completamente terminada: presione el botón del dispositivo o confirme a través de la aplicación Bosch. Home Assistant no puede mostrar este paso; seguirá mostrando la actualización como pendiente hasta que lo haga."
     }
   },
   "exceptions": {

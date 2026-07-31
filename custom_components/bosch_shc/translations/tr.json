@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC istemci sertifikasının süresi yakında doluyor",
       "description": "Bosch SHC istemci sertifikası **{title}** için {days} gün içinde ({expiry} tarihinde) sona erecek. Yenilemek için: denetleyiciyi eşleştirme moduna alın (LED'ler yanıp sönene kadar ön düğmeye basın), ardından **Ayarlar → Cihazlar ve hizmetler → Bosch Smart Home Controller** bölümüne gidip **Yeniden yapılandır**'ı seçin."
+    },
+    "update_battery_low": {
+      "title": "Düşük pil nedeniyle bellenim güncellemesi engellendi",
+      "description": "**{name}** için bir bellenim güncellemesi mevcut, ancak bu cihaz düşük pil seviyesi bildirdiği sürece Bosch Smart Home Controller güncellemeyi başlatmayacak. Pili değiştirin veya şarj edin, ardından güncellemeyi tekrar yüklemeyi deneyin."
+    },
+    "update_calibration_required": {
+      "title": "Manuel kalibrasyon gerekli",
+      "description": "**{name}** için bellenim güncellemesi başarıyla yüklendi, ancak bu termostatın tamamen tamamlanmadan önce manuel bir kalibrasyon adımına ihtiyacı var: cihazdaki düğmeye basın veya Bosch uygulaması üzerinden onaylayın. Home Assistant bu adımı gösteremez; siz bunu yapana kadar güncellemeyi beklemede olarak göstermeye devam eder."
     }
   },
   "exceptions": {

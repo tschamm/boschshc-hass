@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC クライアント証明書の有効期限が近づいています",
       "description": "**{title}**の Bosch SHC クライアント証明書は {days} 日後（{expiry}）に有効期限が切れます。更新するには、コントローラーをペアリングモードにし（LED が点滅するまで前面ボタンを押す）、**設定 → デバイスとサービス → Bosch Smart Home Controller** に移動して **再設定** を選択してください。"
+    },
+    "update_battery_low": {
+      "title": "バッテリー残量低下によりファームウェアの更新がブロックされています",
+      "description": "**{name}** 用のファームウェア更新が利用可能ですが、このデバイスがバッテリー残量低下を報告している間は Bosch Smart Home Controller が更新を開始しません。バッテリーを交換または充電してから、更新のインストールを再度お試しください。"
+    },
+    "update_calibration_required": {
+      "title": "手動での校正が必要です",
+      "description": "**{name}** のファームウェア更新は正常にインストールされましたが、このサーモスタットが完全に完了するには手動での校正が必要です。デバイスのボタンを押すか、Bosch アプリで確認してください。Home Assistant はこの手順を表示できないため、実行するまで更新を保留中として表示し続けます。"
     }
   },
   "exceptions": {

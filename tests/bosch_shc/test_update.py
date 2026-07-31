@@ -27,6 +27,22 @@ from custom_components.bosch_shc.update import (
 from .conftest import run_setup_entry
 
 
+@pytest.fixture(autouse=True)
+def _mock_issue_registry(monkeypatch):
+    """DeviceUpdate.async_update now syncs repair issues on every poll
+    (#377 follow-up) -- stub out the real issue-registry calls so tests
+    that don't care about them don't need a real hass instance."""
+    create = MagicMock()
+    delete = MagicMock()
+    monkeypatch.setattr(
+        "custom_components.bosch_shc.update.ir.async_create_issue", create
+    )
+    monkeypatch.setattr(
+        "custom_components.bosch_shc.update.ir.async_delete_issue", delete
+    )
+    return create, delete
+
+
 def _new(cls):
     return cls.__new__(cls)
 
@@ -223,7 +239,7 @@ class TestControllerUpdateAsyncInstall:
 def test_device_update_installed_version_is_fixed_marker():
     u = _new(DeviceUpdate)
     u._firmware_state = "UpToDate"
-    assert u.installed_version == "current"
+    assert u.installed_version == "n/a"
 
 
 def test_device_update_up_to_date_states_report_no_update():
@@ -314,7 +330,9 @@ class TestDeviceUpdateAsyncUpdateExceptionScope:
             raise TimeoutError("boom")
 
         u._device = SimpleNamespace(
-            name="FakeDev", async_firmware_update_state=fake_probe
+            name="FakeDev",
+            device_model="TestModel",
+            async_firmware_update_state=fake_probe,
         )
         _run(u.async_update())  # must not raise
         assert u._firmware_state == "UpToDate"
@@ -344,37 +362,12 @@ def test_device_update_release_summary_surfaces_raw_state():
     assert u.release_summary == "AwaitingActivation"
 
 
-def test_device_update_release_summary_adds_battery_disclaimer():
-    """hass#373 follow-up: battery devices need a normal battery level
-    before the SHC will let a firmware update start -- surfaced as a
-    disclaimer since the integration can't detect/override this itself."""
-    from boschshcpy import SHCBatteryDevice
-
-    u = _new(DeviceUpdate)
-    u._firmware_state = "AwaitingActivation"
-    device = _new(SHCBatteryDevice)
-    device._raw_device = {"deviceModel": "TWINGUARD"}
-    u._device = device
-    summary = u.release_summary
-    assert summary is not None
-    assert "AwaitingActivation" in summary
-    assert "battery" in summary.lower()
-    assert "calibration" not in summary.lower()
-
-
-def test_device_update_release_summary_adds_calibration_disclaimer():
-    """hass#373 follow-up: TRV/TRV_GEN2/TRV_GEN2_DUAL need a manual
-    calibration step after install that HA has no way to represent."""
-    u = _new(DeviceUpdate)
-    u._firmware_state = "UpdatePending"
-    u._device = SimpleNamespace(device_model="TRV_GEN2")
-    summary = u.release_summary
-    assert summary is not None
-    assert "UpdatePending" in summary
-    assert "calibration" in summary.lower()
-
-
-def test_device_update_release_summary_adds_both_disclaimers():
+def test_device_update_release_summary_never_carries_prose():
+    """#377 follow-up: release_summary must stay the bare technical token --
+    HA's UpdateEntity never translates this field, so integration-authored
+    English prose here would show up untranslated for every non-English
+    user, exactly like #377 reported. The battery/calibration guidance now
+    lives in repair issues (translated from strings.json) instead."""
     from boschshcpy import SHCBatteryDevice
 
     u = _new(DeviceUpdate)
@@ -382,10 +375,139 @@ def test_device_update_release_summary_adds_both_disclaimers():
     device = _new(SHCBatteryDevice)
     device._raw_device = {"deviceModel": "TRV"}
     u._device = device
-    summary = u.release_summary
-    assert summary is not None
-    assert "battery" in summary.lower()
-    assert "calibration" in summary.lower()
+    assert u.release_summary == "UpdatePending"
+
+
+class TestDeviceUpdateSyncRepairIssues:
+    """#377 follow-up: battery/calibration guidance moved from untranslated
+    release_summary prose to real (translated) repair issues."""
+
+    def _battery_device(self, firmware_state, level):
+        from boschshcpy import BatteryLevelService, SHCBatteryDevice
+
+        u = _new(DeviceUpdate)
+        u._firmware_state = firmware_state
+        u._attr_unique_id = "unique1"
+        device = _new(SHCBatteryDevice)
+        device._raw_device = {"deviceModel": "TWINGUARD"}
+        device._batterylevel_service = SimpleNamespace(warningLevel=level)
+        u._device = device
+        u.hass = MagicMock()
+        return u
+
+    def test_creates_battery_low_issue_when_update_pending_and_battery_low(
+        self, _mock_issue_registry
+    ):
+        from boschshcpy import BatteryLevelService
+
+        create, _delete = _mock_issue_registry
+        u = self._battery_device(
+            "AwaitingActivation", BatteryLevelService.State.LOW_BATTERY
+        )
+        u._sync_repair_issues()
+        assert any(
+            call.args[2] == "update_battery_low_unique1"
+            for call in create.call_args_list
+        )
+
+    def test_no_battery_issue_when_battery_ok(self, _mock_issue_registry):
+        from boschshcpy import BatteryLevelService
+
+        create, _delete = _mock_issue_registry
+        u = self._battery_device("AwaitingActivation", BatteryLevelService.State.OK)
+        u._sync_repair_issues()
+        assert not any(
+            call.args[2] == "update_battery_low_unique1"
+            for call in create.call_args_list
+        )
+
+    def test_no_battery_issue_when_up_to_date(self, _mock_issue_registry):
+        """A low battery only matters while an update is actually pending."""
+        from boschshcpy import BatteryLevelService
+
+        create, _delete = _mock_issue_registry
+        u = self._battery_device("UpToDate", BatteryLevelService.State.LOW_BATTERY)
+        u._sync_repair_issues()
+        assert not any(
+            call.args[2] == "update_battery_low_unique1"
+            for call in create.call_args_list
+        )
+
+    def test_creates_calibration_issue_when_awaiting_user_interaction(
+        self, _mock_issue_registry
+    ):
+        create, _delete = _mock_issue_registry
+        u = _new(DeviceUpdate)
+        u._firmware_state = "UpToDateAwaitingUserInteraction"
+        u._attr_unique_id = "unique1"
+        u._device = SimpleNamespace(device_model="TRV_GEN2", name="FakeDev")
+        u.hass = MagicMock()
+        u._sync_repair_issues()
+        assert any(
+            call.args[2] == "update_calibration_required_unique1"
+            for call in create.call_args_list
+        )
+
+    def test_no_calibration_issue_for_non_calibration_model(
+        self, _mock_issue_registry
+    ):
+        create, _delete = _mock_issue_registry
+        u = _new(DeviceUpdate)
+        u._firmware_state = "UpToDateAwaitingUserInteraction"
+        u._attr_unique_id = "unique1"
+        u._device = SimpleNamespace(device_model="MICROMODULE_LIGHT_CONTROL")
+        u.hass = MagicMock()
+        u._sync_repair_issues()
+        assert not any(
+            call.args[2] == "update_calibration_required_unique1"
+            for call in create.call_args_list
+        )
+
+    def test_clears_both_issues_once_resolved(self, _mock_issue_registry):
+        _create, delete = _mock_issue_registry
+        u = _new(DeviceUpdate)
+        u._firmware_state = "UpToDate"
+        u._attr_unique_id = "unique1"
+        u._device = SimpleNamespace(device_model="TestModel")
+        u.hass = MagicMock()
+        u._sync_repair_issues()
+        deleted_ids = {call.args[2] for call in delete.call_args_list}
+        assert "update_battery_low_unique1" in deleted_ids
+        assert "update_calibration_required_unique1" in deleted_ids
+
+    def test_async_will_remove_from_hass_clears_both_issues(
+        self, _mock_issue_registry
+    ):
+        _create, delete = _mock_issue_registry
+        u = _new(DeviceUpdate)
+        u._attr_unique_id = "unique1"
+        u.hass = MagicMock()
+        u._device = SimpleNamespace(
+            device_services=[], unsubscribe_callback=MagicMock()
+        )
+        _run(u.async_will_remove_from_hass())
+        deleted_ids = {call.args[2] for call in delete.call_args_list}
+        assert "update_battery_low_unique1" in deleted_ids
+        assert "update_calibration_required_unique1" in deleted_ids
+
+    def test_async_will_remove_from_hass_unsubscribes_device_callback(
+        self, _mock_issue_registry
+    ):
+        """Bughunt follow-up (#377): the new override must not skip
+        SHCEntity's own cleanup -- it fully replaced it at first, silently
+        leaking the device/service callback subscriptions on every removal
+        or config-entry reload."""
+        u = _new(DeviceUpdate)
+        u._attr_unique_id = "unique1"
+        u.hass = MagicMock()
+        service = SimpleNamespace(unsubscribe_callback=MagicMock())
+        device = SimpleNamespace(
+            device_services=[service], unsubscribe_callback=MagicMock()
+        )
+        u._device = device
+        _run(u.async_will_remove_from_hass())
+        service.unsubscribe_callback.assert_called_once()
+        device.unsubscribe_callback.assert_called_once()
 
 
 def test_device_update_unrecognized_state_treated_as_pending():
@@ -403,7 +525,9 @@ class TestDeviceUpdateAsyncUpdate:
             return "AwaitingActivation"
 
         u._device = SimpleNamespace(
-            name="FakeDev", async_firmware_update_state=fake_probe
+            name="FakeDev",
+            device_model="TestModel",
+            async_firmware_update_state=fake_probe,
         )
         _run(u.async_update())
         assert u._firmware_state == "AwaitingActivation"
@@ -416,7 +540,9 @@ class TestDeviceUpdateAsyncUpdate:
             raise SHCException("boom")
 
         u._device = SimpleNamespace(
-            name="FakeDev", async_firmware_update_state=fake_probe
+            name="FakeDev",
+            device_model="TestModel",
+            async_firmware_update_state=fake_probe
         )
         _run(u.async_update())
         assert u._firmware_state == "UpToDate"
@@ -438,6 +564,7 @@ class TestDeviceUpdateAsyncInstall:
         u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
             name="FakeDev",
+            device_model="TestModel",
             async_activate_firmware_update=fake_activate,
             async_firmware_update_state=fake_probe,
         )
@@ -459,6 +586,7 @@ class TestDeviceUpdateAsyncInstall:
         u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
             name="FakeDev",
+            device_model="TestModel",
             async_activate_firmware_update=fake_activate,
             async_firmware_update_state=fake_probe,
         )
@@ -476,6 +604,7 @@ class TestDeviceUpdateAsyncInstall:
         u._firmware_state = "AwaitingActivation"
         u._device = SimpleNamespace(
             name="FakeDev",
+            device_model="TestModel",
             async_activate_firmware_update=fake_activate,
             async_firmware_update_state=fake_probe,
         )

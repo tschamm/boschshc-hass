@@ -736,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC kliendi sertifikaat aegub peagi",
       "description": "Bosch SHC kliendi sertifikaat **{title}** jaoks aegub {days} päeva(de) pärast ({expiry}). Selle uuendamiseks: pange seade paaritusse (vajutage esipaneeli nuppu, kuni LED-id hakkavad vilkuma), seejärel minge jaotisse **Seaded → Seadmed ja teenused → Bosch Smart Home Controller** ja valige **Uuesti seadistamine**."
+    },
+    "update_battery_low": {
+      "title": "Püsivara uuendus blokeeritud aku madala taseme tõttu",
+      "description": "Seadmele **{name}** on saadaval püsivara uuendus, kuid Bosch Smart Home Controller ei käivita seda, kuni see seade näitab madalat akutaset. Vahetage või laadige aku, seejärel proovige uuendust uuesti installida."
+    },
+    "update_calibration_required": {
+      "title": "Vajalik on käsitsi kalibreerimine",
+      "description": "Seadme **{name}** püsivara uuendus paigaldati edukalt, kuid see termostaat vajab enne täielikku lõpetamist käsitsi kalibreerimist: vajutage seadmel olevat nuppu või kinnitage see Bosch rakenduse kaudu. Home Assistant ei saa seda sammu kuvada – see näitab uuendust ootel olevana, kuni olete selle teinud."
     }
   },
   "exceptions": {
