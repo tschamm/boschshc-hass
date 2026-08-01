@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity Sicherheitsstufe",
+        "name": "Sensitivität für Alarmsystem",
         "state": {
           "high": "Hoch",
           "middle": "Mittel",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity Komfortstufe",
+        "name": "Sensitivität für sonstige Fälle",
         "state": {
           "high": "Hoch",
           "middle": "Mittel",
@@ -555,7 +555,7 @@
         "name": "Visueller Alarm"
       },
       "siren_tamper": {
-        "name": "Manipulation"
+        "name": "Sabotage"
       },
       "siren_ac_dc_error": {
         "name": "AC/DC-Fehler"
@@ -582,7 +582,7 @@
         "name": "Präsenz"
       },
       "tamper": {
-        "name": "Manipulation"
+        "name": "Sabotage"
       },
       "schedule_override_active": {
         "name": "Zeitplanüberschreibung aktiv"
@@ -622,13 +622,13 @@
         "name": "Kindersicherung"
       },
       "pet_immunity_enabled": {
-        "name": "Kleintiererkennung"
+        "name": "Haustier / Saugroboter vorhanden"
       },
       "smart_sensitivity_enabled": {
-        "name": "Smart Sensitivity"
+        "name": "Automatische Sensitivität"
       },
       "tamper_protection_enabled": {
-        "name": "Manipulationsschutz"
+        "name": "Sabotageerkennung"
       },
       "silent_mode": {
         "name": "Flüstermodus"

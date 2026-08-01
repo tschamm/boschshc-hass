@@ -34,6 +34,17 @@
   were re-translated to all 30 languages, incidentally fixing a factually
   wrong "Night Mode" mistranslation of `nightly_promise_enabled` present
   in 3 languages (it's a periodic self-test, not a night-only mode).
+  A second round of German corrections followed after the reporter checked
+  our wording against their *current* Bosch app (the APK string table used
+  above turned out to be an older build that predates MD2's Smart
+  Sensitivity entirely, so their reading wins): `TamperProtection` →
+  "Sabotageerkennung", `SmartSensitivity` → "Automatische Sensitivität",
+  `PetImmunity` → "Haustier / Saugroboter vorhanden", and the two Smart
+  Sensitivity level selects → "Sensitivität für Alarmsystem" /
+  "Sensitivität für sonstige Fälle". That also settled a pre-existing
+  inconsistency in the tamper group — the two tamper binary sensors said
+  "Manipulation" while the reset button said "Sabotage zurücksetzen"; both
+  sensors are now "Sabotage", matching the app and each other.
 
 - **Fix: several MD2/TRV config switches and diagnostic sensors showed raw,
   untranslated internal identifiers instead of a translated name/state**
