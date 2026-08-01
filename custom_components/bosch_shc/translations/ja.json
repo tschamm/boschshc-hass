@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "スケジュールオーバーライド中"
       },
+      "summer_mode": {
+        "name": "サマーモード"
+      },
+      "ventilation_mode": {
+        "name": "換気モード"
+      },
       "shutter_calibration_required": {
         "name": "要キャリブレーション"
       }
@@ -625,7 +631,7 @@
         "name": "サイレントモード"
       },
       "smartplug_routing": {
-        "name": "ルーティング"
+        "name": "電波範囲拡張"
       },
       "camera_light": {
         "name": "カメラライト"
@@ -646,7 +652,7 @@
         "name": "警告抑制"
       },
       "nightly_promise_enabled": {
-        "name": "ナイトリープロミス"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "湿度警告"

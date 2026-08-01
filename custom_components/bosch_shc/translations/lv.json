@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Grafika pārrakstīšana aktīva"
       },
+      "summer_mode": {
+        "name": "Vasaras režīms"
+      },
+      "ventilation_mode": {
+        "name": "Ventilācijas režīms"
+      },
       "shutter_calibration_required": {
         "name": "Nepieciešama kalibrēšana"
       }
@@ -625,7 +631,7 @@
         "name": "Klusais režīms"
       },
       "smartplug_routing": {
-        "name": "Maršrutēšana"
+        "name": "Diapazona paplašināšana"
       },
       "camera_light": {
         "name": "Kameras gaisma"
@@ -646,7 +652,7 @@
         "name": "Brīdinājums apspiests"
       },
       "nightly_promise_enabled": {
-        "name": "Nakts solījums"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Mitruma brīdinājums"

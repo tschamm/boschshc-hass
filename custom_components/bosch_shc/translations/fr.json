@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Dérogation de programme active"
       },
+      "summer_mode": {
+        "name": "Mode été"
+      },
+      "ventilation_mode": {
+        "name": "Mode ventilation"
+      },
       "shutter_calibration_required": {
         "name": "Étalonnage requis"
       }
@@ -625,7 +631,7 @@
         "name": "Mode silencieux"
       },
       "smartplug_routing": {
-        "name": "Routage"
+        "name": "Extension de portée"
       },
       "camera_light": {
         "name": "Éclairage de la caméra"
@@ -646,7 +652,7 @@
         "name": "Avertissement supprimé"
       },
       "nightly_promise_enabled": {
-        "name": "Promesse nocturne"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Avertissement d'humidité"

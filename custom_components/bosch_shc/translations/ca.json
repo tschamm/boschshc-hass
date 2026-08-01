@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Anul·lació d'horari activa"
       },
+      "summer_mode": {
+        "name": "Mode estiu"
+      },
+      "ventilation_mode": {
+        "name": "Mode ventilació"
+      },
       "shutter_calibration_required": {
         "name": "Calibratge requerit"
       }
@@ -625,7 +631,7 @@
         "name": "Mode silenciós"
       },
       "smartplug_routing": {
-        "name": "Encaminament"
+        "name": "Extensió d'abast"
       },
       "camera_light": {
         "name": "Llum de la càmera"
@@ -646,7 +652,7 @@
         "name": "Avís suprimit"
       },
       "nightly_promise_enabled": {
-        "name": "Promesa nocturna"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Avís d'humitat"

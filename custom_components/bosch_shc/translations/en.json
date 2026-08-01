@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Schedule Override Active"
       },
+      "summer_mode": {
+        "name": "Summer Mode"
+      },
+      "ventilation_mode": {
+        "name": "Ventilation Mode"
+      },
       "shutter_calibration_required": {
         "name": "Calibration Required"
       }
@@ -628,7 +634,7 @@
         "name": "Silent Mode"
       },
       "smartplug_routing": {
-        "name": "Routing"
+        "name": "Range Extension"
       },
       "camera_light": {
         "name": "Camera Light"
@@ -649,7 +655,7 @@
         "name": "Warning Suppressed"
       },
       "nightly_promise_enabled": {
-        "name": "Nightly Promise"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Humidity Warning"

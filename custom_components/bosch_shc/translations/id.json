@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Penggantian Jadwal Aktif"
       },
+      "summer_mode": {
+        "name": "Mode Musim Panas"
+      },
+      "ventilation_mode": {
+        "name": "Mode Ventilasi"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrasi Diperlukan"
       }
@@ -625,7 +631,7 @@
         "name": "Mode Senyap"
       },
       "smartplug_routing": {
-        "name": "Perutean"
+        "name": "Perluasan Jangkauan"
       },
       "camera_light": {
         "name": "Lampu Kamera"
@@ -646,7 +652,7 @@
         "name": "Peringatan Ditekan"
       },
       "nightly_promise_enabled": {
-        "name": "Janji Malam"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Peringatan Kelembapan"

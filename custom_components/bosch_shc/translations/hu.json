@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Ütemezés felülbírálása aktív"
       },
+      "summer_mode": {
+        "name": "Nyári üzemmód"
+      },
+      "ventilation_mode": {
+        "name": "Szellőztetési üzemmód"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrálás szükséges"
       }
@@ -625,10 +631,10 @@
         "name": "Néma mód"
       },
       "smartplug_routing": {
-        "name": "Útválasztás"
+        "name": "Hatótávolság-bővítés"
       },
       "camera_light": {
-        "name": "Kamera fény"
+        "name": "Kamerafény"
       },
       "camera_notification": {
         "name": "Értesítések"
@@ -646,7 +652,7 @@
         "name": "Figyelmeztetés elnémítva"
       },
       "nightly_promise_enabled": {
-        "name": "Éjszakai ígéret"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Páratartalom figyelmeztetés"

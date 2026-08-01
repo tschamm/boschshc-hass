@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Program Geçersiz Kılma Etkin"
       },
+      "summer_mode": {
+        "name": "Yaz Modu"
+      },
+      "ventilation_mode": {
+        "name": "Havalandırma Modu"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrasyon Gerekli"
       }
@@ -625,7 +631,7 @@
         "name": "Sessiz Mod"
       },
       "smartplug_routing": {
-        "name": "Yönlendirme"
+        "name": "Menzil Genişletme"
       },
       "camera_light": {
         "name": "Kamera Işığı"
@@ -646,7 +652,7 @@
         "name": "Uyarı Bastırıldı"
       },
       "nightly_promise_enabled": {
-        "name": "Gece Modu"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Nem Uyarısı"

@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Tidsplanoverstyring aktiv"
       },
+      "summer_mode": {
+        "name": "Sommermodus"
+      },
+      "ventilation_mode": {
+        "name": "Ventilasjonsmodus"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrering kreves"
       }
@@ -616,7 +622,7 @@
         "name": "Dyreimmunitet"
       },
       "smart_sensitivity_enabled": {
-        "name": "Smart følsomhet"
+        "name": "Smart Sensitivity"
       },
       "tamper_protection_enabled": {
         "name": "Sabotasjebeskyttelse"
@@ -625,7 +631,7 @@
         "name": "Stille modus"
       },
       "smartplug_routing": {
-        "name": "Ruting"
+        "name": "Rekkeviddeutvidelse"
       },
       "camera_light": {
         "name": "Kameralys"
@@ -637,7 +643,7 @@
         "name": "Frontlys"
       },
       "camera_ambientlight": {
-        "name": "Ambientlys"
+        "name": "Omgivelseslys"
       },
       "energy_saving_mode_enabled": {
         "name": "Strømsparemodus"
@@ -646,7 +652,7 @@
         "name": "Advarsel undertrykt"
       },
       "nightly_promise_enabled": {
-        "name": "Nattlig løfte"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Fuktighetsvarsel"

@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Schemaåsidosättning aktiv"
       },
+      "summer_mode": {
+        "name": "Sommarläge"
+      },
+      "ventilation_mode": {
+        "name": "Ventilationsläge"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrering krävs"
       }
@@ -625,7 +631,7 @@
         "name": "Tyst läge"
       },
       "smartplug_routing": {
-        "name": "Routing"
+        "name": "Räckviddsförlängning"
       },
       "camera_light": {
         "name": "Kameralampa"
@@ -646,7 +652,7 @@
         "name": "Varning undertryckt"
       },
       "nightly_promise_enabled": {
-        "name": "Nattlöfte"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Fuktvarning"

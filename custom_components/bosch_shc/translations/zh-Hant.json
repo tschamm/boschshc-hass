@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "日程覆蓋生效中"
       },
+      "summer_mode": {
+        "name": "夏季模式"
+      },
+      "ventilation_mode": {
+        "name": "通風模式"
+      },
       "shutter_calibration_required": {
         "name": "需要校準"
       }
@@ -625,7 +631,7 @@
         "name": "靜音模式"
       },
       "smartplug_routing": {
-        "name": "路由"
+        "name": "範圍擴展"
       },
       "camera_light": {
         "name": "攝影機燈光"
@@ -646,7 +652,7 @@
         "name": "已抑制警告"
       },
       "nightly_promise_enabled": {
-        "name": "夜間守護"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "濕度警告"

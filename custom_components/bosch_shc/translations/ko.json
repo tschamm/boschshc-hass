@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "일정 재정의 활성"
       },
+      "summer_mode": {
+        "name": "여름 모드"
+      },
+      "ventilation_mode": {
+        "name": "환기 모드"
+      },
       "shutter_calibration_required": {
         "name": "보정 필요"
       }
@@ -625,7 +631,7 @@
         "name": "무음 모드"
       },
       "smartplug_routing": {
-        "name": "라우팅"
+        "name": "범위 확장"
       },
       "camera_light": {
         "name": "카메라 조명"
@@ -646,7 +652,7 @@
         "name": "경고 억제됨"
       },
       "nightly_promise_enabled": {
-        "name": "나이틀리 프라미스"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "습도 경고"

@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Ajakava ülekirjutus aktiivne"
       },
+      "summer_mode": {
+        "name": "Suverežiim"
+      },
+      "ventilation_mode": {
+        "name": "Ventilatsioonirežiim"
+      },
       "shutter_calibration_required": {
         "name": "Kalibreerimine vajalik"
       }
@@ -625,7 +631,7 @@
         "name": "Vaikne režiim"
       },
       "smartplug_routing": {
-        "name": "Marsruutimine"
+        "name": "Leviala laiendamine"
       },
       "camera_light": {
         "name": "Kaamera valgusti"
@@ -646,7 +652,7 @@
         "name": "Hoiatus summutatud"
       },
       "nightly_promise_enabled": {
-        "name": "Öine lubadus"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Niiskuse hoiatus"

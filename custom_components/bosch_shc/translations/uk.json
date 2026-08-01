@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Активне перевизначення розкладу"
       },
+      "summer_mode": {
+        "name": "Літній режим"
+      },
+      "ventilation_mode": {
+        "name": "Режим вентиляції"
+      },
       "shutter_calibration_required": {
         "name": "Потрібне калібрування"
       }
@@ -625,7 +631,7 @@
         "name": "Безшумний режим"
       },
       "smartplug_routing": {
-        "name": "Маршрутизація"
+        "name": "Розширення зони дії"
       },
       "camera_light": {
         "name": "Підсвітка камери"
@@ -646,7 +652,7 @@
         "name": "Попередження вимкнено"
       },
       "nightly_promise_enabled": {
-        "name": "Нічний режим"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Попередження про вологість"

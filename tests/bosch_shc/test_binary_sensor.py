@@ -4,6 +4,7 @@ Consolidates all binary_sensor platform test coverage: entity unit tests
 (ShutterContactSensor, MotionDetectionSensor, OccupancyDetectionSensor,
 SmokeDetectorSensor, SmokeDetectionSystemSensor, WaterLeakageDetectorSensor,
 BatterySensor, CallForHeatSensor, ScheduleOverrideActiveSensor,
+SummerModeSensor, VentilationModeSensor,
 ShutterCalibrationRequiredSensor, TamperSensor, Siren*Sensor), the
 TwinguardAlarmTracker / TwinguardSmokeAlarmSensor subsystem, async_setup_entry
 integration tests (device-type wiring, excluded-device branches, subscriber
@@ -59,9 +60,11 @@ from custom_components.bosch_shc.binary_sensor import (
     ShutterContactVibrationSensor,
     SmokeDetectionSystemSensor,
     SmokeDetectorSensor,
+    SummerModeSensor,
     TamperSensor,
     TwinguardAlarmTracker,
     TwinguardSmokeAlarmSensor,
+    VentilationModeSensor,
     WaterLeakageDetectorSensor,
     async_setup_entry,
 )
@@ -618,6 +621,44 @@ class TestScheduleOverrideActiveSensor:
 
     def test_off_when_attr_missing(self):
         # older boschshcpy without the property -> degrade to off, no crash
+        assert self._sensor().is_on is False
+
+
+class TestSummerModeSensor:
+    """#389."""
+
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = SummerModeSensor.__new__(SummerModeSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_on_when_summer_mode(self):
+        assert self._sensor(summer_mode=True).is_on is True
+
+    def test_off_when_not_summer_mode(self):
+        assert self._sensor(summer_mode=False).is_on is False
+
+    def test_off_when_attr_missing(self):
+        assert self._sensor().is_on is False
+
+
+class TestVentilationModeSensor:
+    """#389."""
+
+    @staticmethod
+    def _sensor(**device_attrs):
+        s = VentilationModeSensor.__new__(VentilationModeSensor)
+        s._device = SimpleNamespace(**device_attrs)
+        return s
+
+    def test_on_when_ventilation_mode(self):
+        assert self._sensor(ventilation_mode=True).is_on is True
+
+    def test_off_when_not_ventilation_mode(self):
+        assert self._sensor(ventilation_mode=False).is_on is False
+
+    def test_off_when_attr_missing(self):
         assert self._sensor().is_on is False
 
 
@@ -4465,6 +4506,30 @@ class TestBinarySensorSetupExcludedBranches:
         entities = _run_setup_with_options(session, {})
         cfh_ents = [e for e in entities if isinstance(e, CallForHeatSensor)]
         assert len(cfh_ents) == 1
+
+    def test_non_excluded_climate_control_produces_summer_and_ventilation_mode(self):
+        """#389: a climate control must also produce SummerMode/VentilationMode."""
+        dev = _fake_device("cc-keep2")
+        dev.has_demand = False
+        dev.summer_mode = True
+        dev.ventilation_mode = False
+        session = _make_fake_session_v2(climate_controls=[dev])
+        entities = _run_setup_with_options(session, {})
+        summer_ents = [e for e in entities if isinstance(e, SummerModeSensor)]
+        vent_ents = [e for e in entities if isinstance(e, VentilationModeSensor)]
+        assert len(summer_ents) == 1
+        assert len(vent_ents) == 1
+
+    def test_excluded_climate_control_yields_no_summer_or_ventilation_mode(self):
+        """#389: excluded climate control must skip SummerMode/VentilationMode too."""
+        dev = _fake_device("cc-excl2")
+        dev.has_demand = False
+        dev.summer_mode = False
+        dev.ventilation_mode = False
+        session = _make_fake_session_v2(climate_controls=[dev])
+        entities = _run_setup_with_options(session, _excl("cc-excl2"))
+        assert not any(isinstance(e, SummerModeSensor) for e in entities)
+        assert not any(isinstance(e, VentilationModeSensor) for e in entities)
 
     def test_mix_excluded_and_kept_climate_control(self):
         kept = _fake_device("cc-a")

@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "עקיפת לוח זמנים פעילה"
       },
+      "summer_mode": {
+        "name": "מצב קיץ"
+      },
+      "ventilation_mode": {
+        "name": "מצב אוורור"
+      },
       "shutter_calibration_required": {
         "name": "נדרש כיול"
       }
@@ -625,7 +631,7 @@
         "name": "מצב שקט"
       },
       "smartplug_routing": {
-        "name": "ניתוב"
+        "name": "הרחבת טווח"
       },
       "camera_light": {
         "name": "תאורת מצלמה"
@@ -646,7 +652,7 @@
         "name": "אזהרה מושתקת"
       },
       "nightly_promise_enabled": {
-        "name": "הבטחה לילית"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "אזהרת לחות"

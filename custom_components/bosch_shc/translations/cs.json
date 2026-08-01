@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Přepsání plánu aktivní"
       },
+      "summer_mode": {
+        "name": "Letní režim"
+      },
+      "ventilation_mode": {
+        "name": "Režim větrání"
+      },
       "shutter_calibration_required": {
         "name": "Vyžadována kalibrace"
       }
@@ -625,7 +631,7 @@
         "name": "Tichý režim"
       },
       "smartplug_routing": {
-        "name": "Směrování"
+        "name": "Rozšíření dosahu"
       },
       "camera_light": {
         "name": "Světlo kamery"
@@ -646,7 +652,7 @@
         "name": "Varování potlačeno"
       },
       "nightly_promise_enabled": {
-        "name": "Noční slib"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Varování před vlhkostí"

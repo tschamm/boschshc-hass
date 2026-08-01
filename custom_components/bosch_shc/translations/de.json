@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Zeitplanüberschreibung aktiv"
       },
+      "summer_mode": {
+        "name": "Sommermodus"
+      },
+      "ventilation_mode": {
+        "name": "Lüftungsmodus"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrierung erforderlich"
       }
@@ -616,7 +622,7 @@
         "name": "Kindersicherung"
       },
       "pet_immunity_enabled": {
-        "name": "Tiererkennung ignorieren"
+        "name": "Kleintiererkennung"
       },
       "smart_sensitivity_enabled": {
         "name": "Smart Sensitivity"
@@ -625,10 +631,10 @@
         "name": "Manipulationsschutz"
       },
       "silent_mode": {
-        "name": "Stiller Modus"
+        "name": "Flüstermodus"
       },
       "smartplug_routing": {
-        "name": "Routing"
+        "name": "Reichweitenverlängerung"
       },
       "camera_light": {
         "name": "Kameralicht"
@@ -649,7 +655,7 @@
         "name": "Warnung unterdrückt"
       },
       "nightly_promise_enabled": {
-        "name": "Nächtliches Versprechen"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Feuchtigkeitswarnung"
@@ -664,7 +670,7 @@
         "name": "Voralarm"
       },
       "vibration_enabled": {
-        "name": "Vibration"
+        "name": "Erschütterungserkennung"
       },
       "intrusion_alarm": {
         "name": "Einbruchalarm"

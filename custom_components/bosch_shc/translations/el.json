@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Παράκαμψη Προγράμματος Ενεργή"
       },
+      "summer_mode": {
+        "name": "Καλοκαιρινή λειτουργία"
+      },
+      "ventilation_mode": {
+        "name": "Λειτουργία αερισμού"
+      },
       "shutter_calibration_required": {
         "name": "Απαιτείται Βαθμονόμηση"
       }
@@ -625,7 +631,7 @@
         "name": "Αθόρυβη λειτουργία"
       },
       "smartplug_routing": {
-        "name": "Δρομολόγηση"
+        "name": "Επέκταση εμβέλειας"
       },
       "camera_light": {
         "name": "Φως κάμερας"
@@ -646,7 +652,7 @@
         "name": "Καταστολή προειδοποίησης"
       },
       "nightly_promise_enabled": {
-        "name": "Νυχτερινή υπόσχεση"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Προειδοποίηση υγρασίας"

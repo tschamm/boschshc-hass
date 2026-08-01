@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Schema-overschrijving actief"
       },
+      "summer_mode": {
+        "name": "Zomermodus"
+      },
+      "ventilation_mode": {
+        "name": "Ventilatiemodus"
+      },
       "shutter_calibration_required": {
         "name": "Kalibratie vereist"
       }
@@ -616,7 +622,7 @@
         "name": "Huisdierimmuniteit"
       },
       "smart_sensitivity_enabled": {
-        "name": "Slimme gevoeligheid"
+        "name": "Smart Sensitivity"
       },
       "tamper_protection_enabled": {
         "name": "Sabotagebescherming"
@@ -625,7 +631,7 @@
         "name": "Stille modus"
       },
       "smartplug_routing": {
-        "name": "Routering"
+        "name": "Bereikuitbreiding"
       },
       "camera_light": {
         "name": "Cameralicht"
@@ -646,7 +652,7 @@
         "name": "Waarschuwing onderdrukt"
       },
       "nightly_promise_enabled": {
-        "name": "Nachtbelofte"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Vochtigheidswaarschuwing"

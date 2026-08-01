@@ -587,6 +587,12 @@
       "schedule_override_active": {
         "name": "Активна отмяна на графика"
       },
+      "summer_mode": {
+        "name": "Летен режим"
+      },
+      "ventilation_mode": {
+        "name": "Режим на проветряване"
+      },
       "shutter_calibration_required": {
         "name": "Изисква се калибриране"
       }
@@ -625,7 +631,7 @@
         "name": "Тих режим"
       },
       "smartplug_routing": {
-        "name": "Маршрутизация"
+        "name": "Разширяване на обхвата"
       },
       "camera_light": {
         "name": "Осветление на камерата"
@@ -646,7 +652,7 @@
         "name": "Предупреждението е потиснато"
       },
       "nightly_promise_enabled": {
-        "name": "Нощно обещание"
+        "name": "Heartbeat"
       },
       "humidity_warning_enabled": {
         "name": "Предупреждение за влажност"

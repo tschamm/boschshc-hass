@@ -1,6 +1,39 @@
 # Changelog
 
-## 0.12.14 — 18 switch/sensor entities no longer show raw untranslated names
+## 0.12.14 — 18 switch/sensor entities no longer show raw untranslated names; new Summer Mode / Ventilation Mode sensors
+
+- **New: two diagnostic binary sensors on each thermostat/TRV room's virtual
+  RoomClimateControl device** (#389): **Summer Mode** (heating disabled for
+  the season — already folded into the climate entity's `hvac_mode=off`,
+  but that conflates it with any other future OFF cause, so a dedicated
+  sensor gives automations and the dashboard an explicit, unambiguous
+  trigger) and **Ventilation Mode** (an open-window/airing state that
+  suppresses heating — never surfaced anywhere before this release).
+  `boost_mode`/`low` (eco) were deliberately left out of this pass — both
+  are already exposed via the climate entity's `preset_mode`
+  (`boost`/`eco`), so a dedicated sensor would just duplicate existing
+  state. Required a small `boschshcpy` fix alongside: `ventilation_mode`
+  was modeled on the underlying service but never wired through the
+  `SHCClimateControl` device-model wrapper this integration actually
+  consumes (bumped to `boschshcpy` 0.6.5). Translated to all 30 languages.
+
+- **Terminology fixes, prompted by reporter feedback on the beta**: several
+  translated names in this release didn't match Bosch's own product
+  terminology. German `SilentMode` is now "Flüstermodus" (was "Stiller
+  Modus", per the reporter — confirmed against the official app's own
+  string table); `PetImmunity` is "Kleintiererkennung" (was a
+  backwards-reading "Tiererkennung ignorieren"); `VibrationEnabled` is
+  "Erschütterungserkennung" (was the bare word "Vibration"). Two English
+  source strings were also corrected after the same terminology check —
+  `smartplug_routing` is now "Range Extension" (was "Routing" — Bosch
+  never surfaces that word to users, it's a Zigbee mesh range-extending
+  feature) and `nightly_promise_enabled` is now "Heartbeat" (was "Nightly
+  Promise" — a literal translation of the internal API field name; Bosch's
+  own app uses the untranslated brand term "Heartbeat" for this Twinguard
+  self-test feature in every language checked). Both source-string changes
+  were re-translated to all 30 languages, incidentally fixing a factually
+  wrong "Night Mode" mistranslation of `nightly_promise_enabled` present
+  in 3 languages (it's a periodic self-test, not a night-only mode).
 
 - **Fix: several MD2/TRV config switches and diagnostic sensors showed raw,
   untranslated internal identifiers instead of a translated name/state**
