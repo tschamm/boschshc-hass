@@ -432,7 +432,12 @@
         "name": "열린 문/창문"
       },
       "walk_test_state": {
-        "name": "보행 테스트 상태"
+        "name": "보행 테스트 상태",
+        "state": {
+          "walk_test_started": "시작됨",
+          "walk_test_stopped": "중지됨",
+          "unknown": "알 수 없음"
+        }
       },
       "battery_level": {
         "name": "배터리 수준"
@@ -507,7 +512,12 @@
         "name": "밸브 태핏"
       },
       "detection_test_state": {
-        "name": "감지 테스트 상태"
+        "name": "감지 테스트 상태",
+        "state": {
+          "detection_test_started": "시작됨",
+          "detection_test_stopped": "중지됨",
+          "detection_test_unknown": "알 수 없음"
+        }
       },
       "next_setpoint_temperature": {
         "name": "다음 설정 온도"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "사용"
+      },
+      "pet_immunity_enabled": {
+        "name": "반려동물 면역"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "스마트 감도"
+      },
+      "tamper_protection_enabled": {
+        "name": "탬퍼 보호"
+      },
+      "silent_mode": {
+        "name": "무음 모드"
+      },
+      "smartplug_routing": {
+        "name": "라우팅"
+      },
+      "camera_light": {
+        "name": "카메라 조명"
+      },
+      "camera_notification": {
+        "name": "알림"
+      },
+      "camera_frontlight": {
+        "name": "전면 조명"
+      },
+      "camera_ambientlight": {
+        "name": "앰비언트 조명"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "절전 모드"
+      },
+      "warning_suppressed": {
+        "name": "경고 억제됨"
+      },
+      "nightly_promise_enabled": {
+        "name": "나이틀리 프라미스"
+      },
+      "humidity_warning_enabled": {
+        "name": "습도 경고"
+      },
+      "swap_inputs": {
+        "name": "입력 교체"
+      },
+      "swap_outputs": {
+        "name": "출력 교체"
+      },
+      "pre_alarm_enabled": {
+        "name": "사전 경보"
+      },
+      "vibration_enabled": {
+        "name": "진동"
+      },
+      "intrusion_alarm": {
+        "name": "침입 경보"
       },
       "child_lock": {
         "name": "어린이 보호 잠금"

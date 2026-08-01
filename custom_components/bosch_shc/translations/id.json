@@ -432,7 +432,12 @@
         "name": "Pintu/Jendela Terbuka"
       },
       "walk_test_state": {
-        "name": "Status Uji Jalan"
+        "name": "Status Uji Jalan",
+        "state": {
+          "walk_test_started": "Dimulai",
+          "walk_test_stopped": "Dihentikan",
+          "unknown": "Tidak Diketahui"
+        }
       },
       "battery_level": {
         "name": "Level Baterai"
@@ -507,7 +512,12 @@
         "name": "Tapet Katup"
       },
       "detection_test_state": {
-        "name": "Status Uji Deteksi"
+        "name": "Status Uji Deteksi",
+        "state": {
+          "detection_test_started": "Dimulai",
+          "detection_test_stopped": "Dihentikan",
+          "detection_test_unknown": "Tidak Diketahui"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Suhu Setpoint Berikutnya"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Diaktifkan"
+      },
+      "pet_immunity_enabled": {
+        "name": "Kekebalan Hewan Peliharaan"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Sensitivitas Cerdas"
+      },
+      "tamper_protection_enabled": {
+        "name": "Perlindungan Anti-Rusak"
+      },
+      "silent_mode": {
+        "name": "Mode Senyap"
+      },
+      "smartplug_routing": {
+        "name": "Perutean"
+      },
+      "camera_light": {
+        "name": "Lampu Kamera"
+      },
+      "camera_notification": {
+        "name": "Notifikasi"
+      },
+      "camera_frontlight": {
+        "name": "Lampu Depan"
+      },
+      "camera_ambientlight": {
+        "name": "Lampu Ambient"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Mode Hemat Energi"
+      },
+      "warning_suppressed": {
+        "name": "Peringatan Ditekan"
+      },
+      "nightly_promise_enabled": {
+        "name": "Janji Malam"
+      },
+      "humidity_warning_enabled": {
+        "name": "Peringatan Kelembapan"
+      },
+      "swap_inputs": {
+        "name": "Tukar Input"
+      },
+      "swap_outputs": {
+        "name": "Tukar Output"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pra-Alarm"
+      },
+      "vibration_enabled": {
+        "name": "Getaran"
+      },
+      "intrusion_alarm": {
+        "name": "Alarm Penyusupan"
       },
       "child_lock": {
         "name": "Kunci Anak"

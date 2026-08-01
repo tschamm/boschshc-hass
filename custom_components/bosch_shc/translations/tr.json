@@ -432,7 +432,12 @@
         "name": "Açık kapılar/pencereler"
       },
       "walk_test_state": {
-        "name": "Yürüyüş Testi Durumu"
+        "name": "Yürüyüş Testi Durumu",
+        "state": {
+          "walk_test_started": "Başladı",
+          "walk_test_stopped": "Durduruldu",
+          "unknown": "Bilinmiyor"
+        }
       },
       "battery_level": {
         "name": "Pil Seviyesi"
@@ -507,7 +512,12 @@
         "name": "Valf İticisi"
       },
       "detection_test_state": {
-        "name": "Algılama Testi Durumu"
+        "name": "Algılama Testi Durumu",
+        "state": {
+          "detection_test_started": "Başladı",
+          "detection_test_stopped": "Durduruldu",
+          "detection_test_unknown": "Bilinmiyor"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Sonraki Hedef Sıcaklık"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Etkin"
+      },
+      "pet_immunity_enabled": {
+        "name": "Evcil Hayvan Bağışıklığı"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Akıllı Hassasiyet"
+      },
+      "tamper_protection_enabled": {
+        "name": "Kurcalama Koruması"
+      },
+      "silent_mode": {
+        "name": "Sessiz Mod"
+      },
+      "smartplug_routing": {
+        "name": "Yönlendirme"
+      },
+      "camera_light": {
+        "name": "Kamera Işığı"
+      },
+      "camera_notification": {
+        "name": "Bildirimler"
+      },
+      "camera_frontlight": {
+        "name": "Ön Işık"
+      },
+      "camera_ambientlight": {
+        "name": "Ortam Işığı"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Enerji Tasarrufu Modu"
+      },
+      "warning_suppressed": {
+        "name": "Uyarı Bastırıldı"
+      },
+      "nightly_promise_enabled": {
+        "name": "Gece Modu"
+      },
+      "humidity_warning_enabled": {
+        "name": "Nem Uyarısı"
+      },
+      "swap_inputs": {
+        "name": "Girişleri Değiştir"
+      },
+      "swap_outputs": {
+        "name": "Çıkışları Değiştir"
+      },
+      "pre_alarm_enabled": {
+        "name": "Ön Alarm"
+      },
+      "vibration_enabled": {
+        "name": "Titreşim"
+      },
+      "intrusion_alarm": {
+        "name": "İzinsiz Giriş Alarmı"
       },
       "child_lock": {
         "name": "Çocuk Kilidi"

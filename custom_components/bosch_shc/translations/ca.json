@@ -432,7 +432,12 @@
         "name": "Portes/finestres obertes"
       },
       "walk_test_state": {
-        "name": "Estat de la prova de passada"
+        "name": "Estat de la prova de passada",
+        "state": {
+          "walk_test_started": "Iniciat",
+          "walk_test_stopped": "Aturat",
+          "unknown": "Desconegut"
+        }
       },
       "battery_level": {
         "name": "Nivell de bateria"
@@ -507,7 +512,12 @@
         "name": "Seguidor de vàlvula"
       },
       "detection_test_state": {
-        "name": "Estat del test de detecció"
+        "name": "Estat del test de detecció",
+        "state": {
+          "detection_test_started": "Iniciat",
+          "detection_test_stopped": "Aturat",
+          "detection_test_unknown": "Desconegut"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Propera temperatura de consigna"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Activat"
+      },
+      "pet_immunity_enabled": {
+        "name": "Immunitat a mascotes"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Sensibilitat intel·ligent"
+      },
+      "tamper_protection_enabled": {
+        "name": "Protecció antisabotatge"
+      },
+      "silent_mode": {
+        "name": "Mode silenciós"
+      },
+      "smartplug_routing": {
+        "name": "Encaminament"
+      },
+      "camera_light": {
+        "name": "Llum de la càmera"
+      },
+      "camera_notification": {
+        "name": "Notificacions"
+      },
+      "camera_frontlight": {
+        "name": "Llum frontal"
+      },
+      "camera_ambientlight": {
+        "name": "Llum ambiental"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Mode d'estalvi d'energia"
+      },
+      "warning_suppressed": {
+        "name": "Avís suprimit"
+      },
+      "nightly_promise_enabled": {
+        "name": "Promesa nocturna"
+      },
+      "humidity_warning_enabled": {
+        "name": "Avís d'humitat"
+      },
+      "swap_inputs": {
+        "name": "Intercanvia entrades"
+      },
+      "swap_outputs": {
+        "name": "Intercanvia sortides"
+      },
+      "pre_alarm_enabled": {
+        "name": "Prealarma"
+      },
+      "vibration_enabled": {
+        "name": "Vibració"
+      },
+      "intrusion_alarm": {
+        "name": "Alarma d'intrusió"
       },
       "child_lock": {
         "name": "Bloqueig infantil"

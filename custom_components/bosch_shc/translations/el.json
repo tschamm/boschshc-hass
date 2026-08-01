@@ -432,7 +432,12 @@
         "name": "Ανοιχτές πόρτες/παράθυρα"
       },
       "walk_test_state": {
-        "name": "Κατάσταση Walk Test"
+        "name": "Κατάσταση Walk Test",
+        "state": {
+          "walk_test_started": "Ξεκίνησε",
+          "walk_test_stopped": "Διακόπηκε",
+          "unknown": "Άγνωστη"
+        }
       },
       "battery_level": {
         "name": "Επίπεδο μπαταρίας"
@@ -507,7 +512,12 @@
         "name": "Έμβολο Βαλβίδας"
       },
       "detection_test_state": {
-        "name": "Κατάσταση Δοκιμής Ανίχνευσης"
+        "name": "Κατάσταση Δοκιμής Ανίχνευσης",
+        "state": {
+          "detection_test_started": "Ξεκίνησε",
+          "detection_test_stopped": "Διακόπηκε",
+          "detection_test_unknown": "Άγνωστη"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Επόμενη Θερμοκρασία Στόχου"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Ενεργοποιημένο"
+      },
+      "pet_immunity_enabled": {
+        "name": "Ανοσία σε κατοικίδια"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Έξυπνη ευαισθησία"
+      },
+      "tamper_protection_enabled": {
+        "name": "Προστασία παραβίασης"
+      },
+      "silent_mode": {
+        "name": "Αθόρυβη λειτουργία"
+      },
+      "smartplug_routing": {
+        "name": "Δρομολόγηση"
+      },
+      "camera_light": {
+        "name": "Φως κάμερας"
+      },
+      "camera_notification": {
+        "name": "Ειδοποιήσεις"
+      },
+      "camera_frontlight": {
+        "name": "Μπροστινό φως"
+      },
+      "camera_ambientlight": {
+        "name": "Φωτισμός περιβάλλοντος"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Λειτουργία εξοικονόμησης ενέργειας"
+      },
+      "warning_suppressed": {
+        "name": "Καταστολή προειδοποίησης"
+      },
+      "nightly_promise_enabled": {
+        "name": "Νυχτερινή υπόσχεση"
+      },
+      "humidity_warning_enabled": {
+        "name": "Προειδοποίηση υγρασίας"
+      },
+      "swap_inputs": {
+        "name": "Εναλλαγή εισόδων"
+      },
+      "swap_outputs": {
+        "name": "Εναλλαγή εξόδων"
+      },
+      "pre_alarm_enabled": {
+        "name": "Προσυναγερμός"
+      },
+      "vibration_enabled": {
+        "name": "Δόνηση"
+      },
+      "intrusion_alarm": {
+        "name": "Συναγερμός διάρρηξης"
       },
       "child_lock": {
         "name": "Κλείδωμα ασφαλείας παιδιών"

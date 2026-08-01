@@ -432,7 +432,12 @@
         "name": "打开的门/窗"
       },
       "walk_test_state": {
-        "name": "步行测试状态"
+        "name": "步行测试状态",
+        "state": {
+          "walk_test_started": "已开始",
+          "walk_test_stopped": "已停止",
+          "unknown": "未知"
+        }
       },
       "battery_level": {
         "name": "电池电量"
@@ -507,7 +512,12 @@
         "name": "阀门挺杆"
       },
       "detection_test_state": {
-        "name": "检测测试状态"
+        "name": "检测测试状态",
+        "state": {
+          "detection_test_started": "已开始",
+          "detection_test_stopped": "已停止",
+          "detection_test_unknown": "未知"
+        }
       },
       "next_setpoint_temperature": {
         "name": "下一个设定温度"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "已启用"
+      },
+      "pet_immunity_enabled": {
+        "name": "宠物免疫"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "智能灵敏度"
+      },
+      "tamper_protection_enabled": {
+        "name": "防拆保护"
+      },
+      "silent_mode": {
+        "name": "静音模式"
+      },
+      "smartplug_routing": {
+        "name": "路由"
+      },
+      "camera_light": {
+        "name": "摄像头灯光"
+      },
+      "camera_notification": {
+        "name": "通知"
+      },
+      "camera_frontlight": {
+        "name": "前置灯光"
+      },
+      "camera_ambientlight": {
+        "name": "环境灯光"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "节能模式"
+      },
+      "warning_suppressed": {
+        "name": "已抑制警告"
+      },
+      "nightly_promise_enabled": {
+        "name": "夜间守护"
+      },
+      "humidity_warning_enabled": {
+        "name": "湿度警告"
+      },
+      "swap_inputs": {
+        "name": "交换输入"
+      },
+      "swap_outputs": {
+        "name": "交换输出"
+      },
+      "pre_alarm_enabled": {
+        "name": "预警"
+      },
+      "vibration_enabled": {
+        "name": "振动"
+      },
+      "intrusion_alarm": {
+        "name": "入侵警报"
       },
       "child_lock": {
         "name": "童锁"

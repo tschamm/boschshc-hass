@@ -432,7 +432,12 @@
         "name": "Portas/janelas abertas"
       },
       "walk_test_state": {
-        "name": "Estado do Teste de Percurso"
+        "name": "Estado do Teste de Percurso",
+        "state": {
+          "walk_test_started": "Iniciado",
+          "walk_test_stopped": "Parado",
+          "unknown": "Desconhecido"
+        }
       },
       "battery_level": {
         "name": "Nível de Bateria"
@@ -507,7 +512,12 @@
         "name": "Haste da válvula"
       },
       "detection_test_state": {
-        "name": "Estado do teste de detecção"
+        "name": "Estado do teste de detecção",
+        "state": {
+          "detection_test_started": "Iniciado",
+          "detection_test_stopped": "Parado",
+          "detection_test_unknown": "Desconhecido"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Próxima temperatura definida"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Ativado"
+      },
+      "pet_immunity_enabled": {
+        "name": "Imunidade a Animais de Estimação"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Sensibilidade Inteligente"
+      },
+      "tamper_protection_enabled": {
+        "name": "Proteção contra Violação"
+      },
+      "silent_mode": {
+        "name": "Modo Silencioso"
+      },
+      "smartplug_routing": {
+        "name": "Roteamento"
+      },
+      "camera_light": {
+        "name": "Luz da Câmera"
+      },
+      "camera_notification": {
+        "name": "Notificações"
+      },
+      "camera_frontlight": {
+        "name": "Luz Frontal"
+      },
+      "camera_ambientlight": {
+        "name": "Luz Ambiente"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Modo de Economia de Energia"
+      },
+      "warning_suppressed": {
+        "name": "Aviso Suprimido"
+      },
+      "nightly_promise_enabled": {
+        "name": "Promessa Noturna"
+      },
+      "humidity_warning_enabled": {
+        "name": "Aviso de Umidade"
+      },
+      "swap_inputs": {
+        "name": "Trocar Entradas"
+      },
+      "swap_outputs": {
+        "name": "Trocar Saídas"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pré-Alarme"
+      },
+      "vibration_enabled": {
+        "name": "Vibração"
+      },
+      "intrusion_alarm": {
+        "name": "Alarme de Intrusão"
       },
       "child_lock": {
         "name": "Bloqueio infantil"

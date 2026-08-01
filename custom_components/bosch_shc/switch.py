@@ -83,6 +83,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "smartplug_routing": SHCSwitchEntityDescription(
         key="smartplug_routing",
+        translation_key="smartplug_routing",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="routing",
         on_value=RoutingService.State.ENABLED,
@@ -121,6 +122,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "cameraeyes_cameralight": SHCSwitchEntityDescription(
         key="cameraeyes_cameralight",
+        translation_key="camera_light",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameralight",
         on_value=CameraLightService.State.ON,
@@ -130,6 +132,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "cameraeyes_notification": SHCSwitchEntityDescription(
         key="cameraeyes_notification",
+        translation_key="camera_notification",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameranotification",
         on_value=CameraNotificationService.State.ENABLED,
@@ -147,6 +150,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "camera360_notification": SHCSwitchEntityDescription(
         key="camera360_notification",
+        translation_key="camera_notification",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameranotification",
         on_value=CameraNotificationService.State.ENABLED,
@@ -164,6 +168,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "cameraoutdoorgen2_camerafrontlight": SHCSwitchEntityDescription(
         key="cameraoutdoorgen2_camerafrontlight",
+        translation_key="camera_frontlight",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="camerafrontlight",
         on_value=CameraFrontLightService.State.ON,
@@ -173,6 +178,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "cameraoutdoorgen2_cameraambientlight": SHCSwitchEntityDescription(
         key="cameraoutdoorgen2_cameraambientlight",
+        translation_key="camera_ambientlight",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameraambientlight",
         on_value=CameraAmbientLightService.State.ON,
@@ -238,6 +244,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "pet_immunity_enabled": SHCSwitchEntityDescription(
         key="pet_immunity_enabled",
+        translation_key="pet_immunity_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="pet_immunity_enabled",
         on_value=True,
@@ -247,6 +254,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "energy_saving_mode_enabled": SHCSwitchEntityDescription(
         key="energy_saving_mode_enabled",
+        translation_key="energy_saving_mode_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="energy_saving_mode_enabled",
         on_value=True,
@@ -256,6 +264,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "warning_suppressed": SHCSwitchEntityDescription(
         key="warning_suppressed",
+        translation_key="warning_suppressed",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="warning_suppressed",
         on_value=True,
@@ -265,6 +274,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "nightly_promise_enabled": SHCSwitchEntityDescription(
         key="nightly_promise_enabled",
+        translation_key="nightly_promise_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="nightly_promise_enabled",
         on_value=True,
@@ -274,6 +284,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "humidity_warning_enabled": SHCSwitchEntityDescription(
         key="humidity_warning_enabled",
+        translation_key="humidity_warning_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="humidity_warning_enabled",
         on_value=True,
@@ -283,6 +294,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "swap_inputs": SHCSwitchEntityDescription(
         key="swap_inputs",
+        translation_key="swap_inputs",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="swap_inputs",
         on_value=True,
@@ -292,6 +304,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "swap_outputs": SHCSwitchEntityDescription(
         key="swap_outputs",
+        translation_key="swap_outputs",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="swap_outputs",
         on_value=True,
@@ -301,6 +314,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "pre_alarm_enabled": SHCSwitchEntityDescription(
         key="pre_alarm_enabled",
+        translation_key="pre_alarm_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="pre_alarm_enabled",
         on_value=True,
@@ -310,6 +324,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "smart_sensitivity_enabled": SHCSwitchEntityDescription(
         key="smart_sensitivity_enabled",
+        translation_key="smart_sensitivity_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="smart_sensitivity_enabled",
         on_value=True,
@@ -319,6 +334,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "tamper_protection_enabled": SHCSwitchEntityDescription(
         key="tamper_protection_enabled",
+        translation_key="tamper_protection_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="tamper_protection_enabled",
         on_value=True,
@@ -328,6 +344,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
+        translation_key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="silentmode",
         on_value=SilentModeService.State.MODE_SILENT,
@@ -337,6 +354,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "vibration_enabled": SHCSwitchEntityDescription(
         key="vibration_enabled",
+        translation_key="vibration_enabled",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="enabled",
         on_value=True,
@@ -353,6 +371,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "intrusion_alarm": SHCSwitchEntityDescription(
         key="intrusion_alarm",
+        translation_key="intrusion_alarm",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="intrusion_alarm",
         on_value=True,

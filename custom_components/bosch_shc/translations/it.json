@@ -432,7 +432,12 @@
         "name": "Porte/finestre aperte"
       },
       "walk_test_state": {
-        "name": "Stato Walk Test"
+        "name": "Stato Walk Test",
+        "state": {
+          "walk_test_started": "Avviato",
+          "walk_test_stopped": "Arrestato",
+          "unknown": "Sconosciuto"
+        }
       },
       "battery_level": {
         "name": "Livello batteria"
@@ -507,7 +512,12 @@
         "name": "Punteria valvola"
       },
       "detection_test_state": {
-        "name": "Stato test di rilevamento"
+        "name": "Stato test di rilevamento",
+        "state": {
+          "detection_test_started": "Avviato",
+          "detection_test_stopped": "Arrestato",
+          "detection_test_unknown": "Sconosciuto"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Prossima temperatura di setpoint"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Abilitato"
+      },
+      "pet_immunity_enabled": {
+        "name": "Immunità animali domestici"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Sensibilità intelligente"
+      },
+      "tamper_protection_enabled": {
+        "name": "Protezione antimanomissione"
+      },
+      "silent_mode": {
+        "name": "Modalità silenziosa"
+      },
+      "smartplug_routing": {
+        "name": "Instradamento"
+      },
+      "camera_light": {
+        "name": "Luce della telecamera"
+      },
+      "camera_notification": {
+        "name": "Notifiche"
+      },
+      "camera_frontlight": {
+        "name": "Luce frontale"
+      },
+      "camera_ambientlight": {
+        "name": "Luce ambientale"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Modalità risparmio energetico"
+      },
+      "warning_suppressed": {
+        "name": "Avviso soppresso"
+      },
+      "nightly_promise_enabled": {
+        "name": "Promessa notturna"
+      },
+      "humidity_warning_enabled": {
+        "name": "Avviso umidità"
+      },
+      "swap_inputs": {
+        "name": "Scambia ingressi"
+      },
+      "swap_outputs": {
+        "name": "Scambia uscite"
+      },
+      "pre_alarm_enabled": {
+        "name": "Preallarme"
+      },
+      "vibration_enabled": {
+        "name": "Vibrazione"
+      },
+      "intrusion_alarm": {
+        "name": "Allarme intrusione"
       },
       "child_lock": {
         "name": "Blocco bambini"

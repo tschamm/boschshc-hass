@@ -432,7 +432,12 @@
         "name": "Nyitott ajtók/ablakok"
       },
       "walk_test_state": {
-        "name": "Mozgásteszt állapota"
+        "name": "Mozgásteszt állapota",
+        "state": {
+          "walk_test_started": "Elindítva",
+          "walk_test_stopped": "Leállítva",
+          "unknown": "Ismeretlen"
+        }
       },
       "battery_level": {
         "name": "Akkumulátorszint"
@@ -507,7 +512,12 @@
         "name": "Szeleptányér"
       },
       "detection_test_state": {
-        "name": "Érzékelési teszt állapota"
+        "name": "Érzékelési teszt állapota",
+        "state": {
+          "detection_test_started": "Elindítva",
+          "detection_test_stopped": "Leállítva",
+          "detection_test_unknown": "Ismeretlen"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Következő célhőmérséklet"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Engedélyezve"
+      },
+      "pet_immunity_enabled": {
+        "name": "Háziállat-immunitás"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Intelligens érzékenység"
+      },
+      "tamper_protection_enabled": {
+        "name": "Szabotázsvédelem"
+      },
+      "silent_mode": {
+        "name": "Néma mód"
+      },
+      "smartplug_routing": {
+        "name": "Útválasztás"
+      },
+      "camera_light": {
+        "name": "Kamera fény"
+      },
+      "camera_notification": {
+        "name": "Értesítések"
+      },
+      "camera_frontlight": {
+        "name": "Elülső fény"
+      },
+      "camera_ambientlight": {
+        "name": "Környezeti fény"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiatakarékos mód"
+      },
+      "warning_suppressed": {
+        "name": "Figyelmeztetés elnémítva"
+      },
+      "nightly_promise_enabled": {
+        "name": "Éjszakai ígéret"
+      },
+      "humidity_warning_enabled": {
+        "name": "Páratartalom figyelmeztetés"
+      },
+      "swap_inputs": {
+        "name": "Bemenetek felcserélése"
+      },
+      "swap_outputs": {
+        "name": "Kimenetek felcserélése"
+      },
+      "pre_alarm_enabled": {
+        "name": "Előriasztás"
+      },
+      "vibration_enabled": {
+        "name": "Rezgés"
+      },
+      "intrusion_alarm": {
+        "name": "Behatolásjelző riasztás"
       },
       "child_lock": {
         "name": "Gyermekzár"

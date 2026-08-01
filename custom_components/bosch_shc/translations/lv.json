@@ -432,7 +432,12 @@
         "name": "Atvērtas durvis/logi"
       },
       "walk_test_state": {
-        "name": "Walk Test stāvoklis"
+        "name": "Walk Test stāvoklis",
+        "state": {
+          "walk_test_started": "Sākts",
+          "walk_test_stopped": "Apturēts",
+          "unknown": "Nezināms"
+        }
       },
       "battery_level": {
         "name": "Akumulatora līmenis"
@@ -507,7 +512,12 @@
         "name": "Vārsta stūmējs"
       },
       "detection_test_state": {
-        "name": "Detektēšanas testa stāvoklis"
+        "name": "Detektēšanas testa stāvoklis",
+        "state": {
+          "detection_test_started": "Sākts",
+          "detection_test_stopped": "Apturēts",
+          "detection_test_unknown": "Nezināms"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Nākamā iestatītā temperatūra"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Iespējots"
+      },
+      "pet_immunity_enabled": {
+        "name": "Imunitāte pret dzīvniekiem"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Viedā jutība"
+      },
+      "tamper_protection_enabled": {
+        "name": "Aizsardzība pret bojāšanu"
+      },
+      "silent_mode": {
+        "name": "Klusais režīms"
+      },
+      "smartplug_routing": {
+        "name": "Maršrutēšana"
+      },
+      "camera_light": {
+        "name": "Kameras gaisma"
+      },
+      "camera_notification": {
+        "name": "Paziņojumi"
+      },
+      "camera_frontlight": {
+        "name": "Priekšējā gaisma"
+      },
+      "camera_ambientlight": {
+        "name": "Apkārtējā gaisma"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Enerģijas taupīšanas režīms"
+      },
+      "warning_suppressed": {
+        "name": "Brīdinājums apspiests"
+      },
+      "nightly_promise_enabled": {
+        "name": "Nakts solījums"
+      },
+      "humidity_warning_enabled": {
+        "name": "Mitruma brīdinājums"
+      },
+      "swap_inputs": {
+        "name": "Mainīt ieejas"
+      },
+      "swap_outputs": {
+        "name": "Mainīt izejas"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pirmstrauksme"
+      },
+      "vibration_enabled": {
+        "name": "Vibrācija"
+      },
+      "intrusion_alarm": {
+        "name": "Ielaušanās trauksme"
       },
       "child_lock": {
         "name": "Bērnu bloķēšana"

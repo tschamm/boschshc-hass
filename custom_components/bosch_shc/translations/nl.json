@@ -432,7 +432,12 @@
         "name": "Open deuren/ramen"
       },
       "walk_test_state": {
-        "name": "Walk Test-status"
+        "name": "Walk Test-status",
+        "state": {
+          "walk_test_started": "Gestart",
+          "walk_test_stopped": "Gestopt",
+          "unknown": "Onbekend"
+        }
       },
       "battery_level": {
         "name": "Batterijniveau"
@@ -507,7 +512,12 @@
         "name": "Ventielstoterstang"
       },
       "detection_test_state": {
-        "name": "Detectietest status"
+        "name": "Detectietest status",
+        "state": {
+          "detection_test_started": "Gestart",
+          "detection_test_stopped": "Gestopt",
+          "detection_test_unknown": "Onbekend"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Volgende ingestelde temperatuur"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Ingeschakeld"
+      },
+      "pet_immunity_enabled": {
+        "name": "Huisdierimmuniteit"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Slimme gevoeligheid"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotagebescherming"
+      },
+      "silent_mode": {
+        "name": "Stille modus"
+      },
+      "smartplug_routing": {
+        "name": "Routering"
+      },
+      "camera_light": {
+        "name": "Cameralicht"
+      },
+      "camera_notification": {
+        "name": "Meldingen"
+      },
+      "camera_frontlight": {
+        "name": "Voorlicht"
+      },
+      "camera_ambientlight": {
+        "name": "Sfeerlicht"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiebesparingsmodus"
+      },
+      "warning_suppressed": {
+        "name": "Waarschuwing onderdrukt"
+      },
+      "nightly_promise_enabled": {
+        "name": "Nachtbelofte"
+      },
+      "humidity_warning_enabled": {
+        "name": "Vochtigheidswaarschuwing"
+      },
+      "swap_inputs": {
+        "name": "Ingangen wisselen"
+      },
+      "swap_outputs": {
+        "name": "Uitgangen wisselen"
+      },
+      "pre_alarm_enabled": {
+        "name": "Vooralarm"
+      },
+      "vibration_enabled": {
+        "name": "Trilling"
+      },
+      "intrusion_alarm": {
+        "name": "Inbraakalarm"
       },
       "child_lock": {
         "name": "Kinderslot"

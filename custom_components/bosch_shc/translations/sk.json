@@ -432,7 +432,12 @@
         "name": "Otvorené dvere/okná"
       },
       "walk_test_state": {
-        "name": "Stav testu chôdze"
+        "name": "Stav testu chôdze",
+        "state": {
+          "walk_test_started": "Spustený",
+          "walk_test_stopped": "Zastavený",
+          "unknown": "Neznámy"
+        }
       },
       "battery_level": {
         "name": "Úroveň batérie"
@@ -507,7 +512,12 @@
         "name": "Zdvih ventilu"
       },
       "detection_test_state": {
-        "name": "Stav testu detekcie"
+        "name": "Stav testu detekcie",
+        "state": {
+          "detection_test_started": "Spustený",
+          "detection_test_stopped": "Zastavený",
+          "detection_test_unknown": "Neznámy"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Nasledujúca požadovaná teplota"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Povolené"
+      },
+      "pet_immunity_enabled": {
+        "name": "Imunita voči zvieratám"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Inteligentná citlivosť"
+      },
+      "tamper_protection_enabled": {
+        "name": "Ochrana proti neoprávnenej manipulácii"
+      },
+      "silent_mode": {
+        "name": "Tichý režim"
+      },
+      "smartplug_routing": {
+        "name": "Smerovanie"
+      },
+      "camera_light": {
+        "name": "Svetlo kamery"
+      },
+      "camera_notification": {
+        "name": "Upozornenia"
+      },
+      "camera_frontlight": {
+        "name": "Predné svetlo"
+      },
+      "camera_ambientlight": {
+        "name": "Okolité osvetlenie"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Úsporný režim"
+      },
+      "warning_suppressed": {
+        "name": "Upozornenie potlačené"
+      },
+      "nightly_promise_enabled": {
+        "name": "Nočný sľub"
+      },
+      "humidity_warning_enabled": {
+        "name": "Upozornenie na vlhkosť"
+      },
+      "swap_inputs": {
+        "name": "Prehodiť vstupy"
+      },
+      "swap_outputs": {
+        "name": "Prehodiť výstupy"
+      },
+      "pre_alarm_enabled": {
+        "name": "Predalarm"
+      },
+      "vibration_enabled": {
+        "name": "Vibrácie"
+      },
+      "intrusion_alarm": {
+        "name": "Poplach narušenia"
       },
       "child_lock": {
         "name": "Detská poistka"

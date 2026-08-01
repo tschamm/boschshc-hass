@@ -460,7 +460,12 @@
         "name": "Valve Tappet"
       },
       "walk_test_state": {
-        "name": "Walk Test State"
+        "name": "Walk Test State",
+        "state": {
+          "walk_test_started": "Started",
+          "walk_test_stopped": "Stopped",
+          "unknown": "Unknown"
+        }
       },
       "battery_level": {
         "name": "Battery Level"
@@ -472,7 +477,12 @@
         "name": "Air Quality Description"
       },
       "detection_test_state": {
-        "name": "Detection Test State"
+        "name": "Detection Test State",
+        "state": {
+          "detection_test_started": "Started",
+          "detection_test_stopped": "Stopped",
+          "detection_test_unknown": "Unknown"
+        }
       },
       "communication_quality": {
         "name": "Communication Quality",
@@ -613,6 +623,60 @@
       },
       "automation_rule": {
         "name": "Enabled"
+      },
+      "pet_immunity_enabled": {
+        "name": "Pet Immunity"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Smart Sensitivity"
+      },
+      "tamper_protection_enabled": {
+        "name": "Tamper Protection"
+      },
+      "silent_mode": {
+        "name": "Silent Mode"
+      },
+      "smartplug_routing": {
+        "name": "Routing"
+      },
+      "camera_light": {
+        "name": "Camera Light"
+      },
+      "camera_notification": {
+        "name": "Notifications"
+      },
+      "camera_frontlight": {
+        "name": "Front Light"
+      },
+      "camera_ambientlight": {
+        "name": "Ambient Light"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energy Saving Mode"
+      },
+      "warning_suppressed": {
+        "name": "Warning Suppressed"
+      },
+      "nightly_promise_enabled": {
+        "name": "Nightly Promise"
+      },
+      "humidity_warning_enabled": {
+        "name": "Humidity Warning"
+      },
+      "swap_inputs": {
+        "name": "Swap Inputs"
+      },
+      "swap_outputs": {
+        "name": "Swap Outputs"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pre-Alarm"
+      },
+      "vibration_enabled": {
+        "name": "Vibration"
+      },
+      "intrusion_alarm": {
+        "name": "Intrusion Alarm"
       }
     },
     "valve": {

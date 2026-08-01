@@ -432,7 +432,12 @@
         "name": "Avatud uksed/aknad"
       },
       "walk_test_state": {
-        "name": "Kõnnistesti olek"
+        "name": "Kõnnistesti olek",
+        "state": {
+          "walk_test_started": "Käivitatud",
+          "walk_test_stopped": "Peatatud",
+          "unknown": "Teadmata"
+        }
       },
       "battery_level": {
         "name": "Aku tase"
@@ -507,7 +512,12 @@
         "name": "Klapi kergiti"
       },
       "detection_test_state": {
-        "name": "Tuvastustesti olek"
+        "name": "Tuvastustesti olek",
+        "state": {
+          "detection_test_started": "Käivitatud",
+          "detection_test_stopped": "Peatatud",
+          "detection_test_unknown": "Teadmata"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Järgmine seadepunkti temperatuur"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Lubatud"
+      },
+      "pet_immunity_enabled": {
+        "name": "Lemmiklooma immuunsus"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Nutikas tundlikkus"
+      },
+      "tamper_protection_enabled": {
+        "name": "Rikkumiskaitse"
+      },
+      "silent_mode": {
+        "name": "Vaikne režiim"
+      },
+      "smartplug_routing": {
+        "name": "Marsruutimine"
+      },
+      "camera_light": {
+        "name": "Kaamera valgusti"
+      },
+      "camera_notification": {
+        "name": "Teavitused"
+      },
+      "camera_frontlight": {
+        "name": "Esivalgus"
+      },
+      "camera_ambientlight": {
+        "name": "Ümbritsev valgustus"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiasäästurežiim"
+      },
+      "warning_suppressed": {
+        "name": "Hoiatus summutatud"
+      },
+      "nightly_promise_enabled": {
+        "name": "Öine lubadus"
+      },
+      "humidity_warning_enabled": {
+        "name": "Niiskuse hoiatus"
+      },
+      "swap_inputs": {
+        "name": "Vaheta sisendid"
+      },
+      "swap_outputs": {
+        "name": "Vaheta väljundid"
+      },
+      "pre_alarm_enabled": {
+        "name": "Eelhäire"
+      },
+      "vibration_enabled": {
+        "name": "Vibratsioon"
+      },
+      "intrusion_alarm": {
+        "name": "Sissetungihäire"
       },
       "child_lock": {
         "name": "Lapselukk"

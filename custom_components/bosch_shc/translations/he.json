@@ -432,7 +432,12 @@
         "name": "דלתות/חלונות פתוחים"
       },
       "walk_test_state": {
-        "name": "מצב בדיקת הליכה"
+        "name": "מצב בדיקת הליכה",
+        "state": {
+          "walk_test_started": "התחיל",
+          "walk_test_stopped": "נעצר",
+          "unknown": "לא ידוע"
+        }
       },
       "battery_level": {
         "name": "רמת סוללה"
@@ -507,7 +512,12 @@
         "name": "מרים שסתום"
       },
       "detection_test_state": {
-        "name": "מצב בדיקת גילוי"
+        "name": "מצב בדיקת גילוי",
+        "state": {
+          "detection_test_started": "התחיל",
+          "detection_test_stopped": "נעצר",
+          "detection_test_unknown": "לא ידוע"
+        }
       },
       "next_setpoint_temperature": {
         "name": "טמפרטורת היעד הבאה"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "מופעל"
+      },
+      "pet_immunity_enabled": {
+        "name": "חסינות לחיות מחמד"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "רגישות חכמה"
+      },
+      "tamper_protection_enabled": {
+        "name": "הגנה מפני חבלה"
+      },
+      "silent_mode": {
+        "name": "מצב שקט"
+      },
+      "smartplug_routing": {
+        "name": "ניתוב"
+      },
+      "camera_light": {
+        "name": "תאורת מצלמה"
+      },
+      "camera_notification": {
+        "name": "התראות"
+      },
+      "camera_frontlight": {
+        "name": "תאורה קדמית"
+      },
+      "camera_ambientlight": {
+        "name": "תאורת סביבה"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "מצב חיסכון באנרגיה"
+      },
+      "warning_suppressed": {
+        "name": "אזהרה מושתקת"
+      },
+      "nightly_promise_enabled": {
+        "name": "הבטחה לילית"
+      },
+      "humidity_warning_enabled": {
+        "name": "אזהרת לחות"
+      },
+      "swap_inputs": {
+        "name": "החלפת כניסות"
+      },
+      "swap_outputs": {
+        "name": "החלפת יציאות"
+      },
+      "pre_alarm_enabled": {
+        "name": "התראה מוקדמת"
+      },
+      "vibration_enabled": {
+        "name": "רטט"
+      },
+      "intrusion_alarm": {
+        "name": "אזעקת פריצה"
       },
       "child_lock": {
         "name": "נעילת ילדים"

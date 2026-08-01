@@ -432,7 +432,12 @@
         "name": "Åpne dører/vinduer"
       },
       "walk_test_state": {
-        "name": "Gåtest-tilstand"
+        "name": "Gåtest-tilstand",
+        "state": {
+          "walk_test_started": "Startet",
+          "walk_test_stopped": "Stoppet",
+          "unknown": "Ukjent"
+        }
       },
       "battery_level": {
         "name": "Batterinivå"
@@ -507,7 +512,12 @@
         "name": "Ventilstøter"
       },
       "detection_test_state": {
-        "name": "Deteksjonstest tilstand"
+        "name": "Deteksjonstest tilstand",
+        "state": {
+          "detection_test_started": "Startet",
+          "detection_test_stopped": "Stoppet",
+          "detection_test_unknown": "Ukjent"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Neste innstilte temperatur"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Aktivert"
+      },
+      "pet_immunity_enabled": {
+        "name": "Dyreimmunitet"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Smart følsomhet"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotasjebeskyttelse"
+      },
+      "silent_mode": {
+        "name": "Stille modus"
+      },
+      "smartplug_routing": {
+        "name": "Ruting"
+      },
+      "camera_light": {
+        "name": "Kameralys"
+      },
+      "camera_notification": {
+        "name": "Varsler"
+      },
+      "camera_frontlight": {
+        "name": "Frontlys"
+      },
+      "camera_ambientlight": {
+        "name": "Ambientlys"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Strømsparemodus"
+      },
+      "warning_suppressed": {
+        "name": "Advarsel undertrykt"
+      },
+      "nightly_promise_enabled": {
+        "name": "Nattlig løfte"
+      },
+      "humidity_warning_enabled": {
+        "name": "Fuktighetsvarsel"
+      },
+      "swap_inputs": {
+        "name": "Bytt innganger"
+      },
+      "swap_outputs": {
+        "name": "Bytt utganger"
+      },
+      "pre_alarm_enabled": {
+        "name": "Foralarm"
+      },
+      "vibration_enabled": {
+        "name": "Vibrasjon"
+      },
+      "intrusion_alarm": {
+        "name": "Innbruddsalarm"
       },
       "child_lock": {
         "name": "Barnelås"

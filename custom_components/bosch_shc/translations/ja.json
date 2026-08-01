@@ -432,7 +432,12 @@
         "name": "開いているドア/窓"
       },
       "walk_test_state": {
-        "name": "ウォークテスト状態"
+        "name": "ウォークテスト状態",
+        "state": {
+          "walk_test_started": "開始",
+          "walk_test_stopped": "停止",
+          "unknown": "不明"
+        }
       },
       "battery_level": {
         "name": "バッテリーレベル"
@@ -507,7 +512,12 @@
         "name": "バルブタペット"
       },
       "detection_test_state": {
-        "name": "検知テスト状態"
+        "name": "検知テスト状態",
+        "state": {
+          "detection_test_started": "開始",
+          "detection_test_stopped": "停止",
+          "detection_test_unknown": "不明"
+        }
       },
       "next_setpoint_temperature": {
         "name": "次回設定温度"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "有効"
+      },
+      "pet_immunity_enabled": {
+        "name": "ペット除外"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "スマート感度"
+      },
+      "tamper_protection_enabled": {
+        "name": "タンパー保護"
+      },
+      "silent_mode": {
+        "name": "サイレントモード"
+      },
+      "smartplug_routing": {
+        "name": "ルーティング"
+      },
+      "camera_light": {
+        "name": "カメラライト"
+      },
+      "camera_notification": {
+        "name": "通知"
+      },
+      "camera_frontlight": {
+        "name": "フロントライト"
+      },
+      "camera_ambientlight": {
+        "name": "アンビエントライト"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "省エネモード"
+      },
+      "warning_suppressed": {
+        "name": "警告抑制"
+      },
+      "nightly_promise_enabled": {
+        "name": "ナイトリープロミス"
+      },
+      "humidity_warning_enabled": {
+        "name": "湿度警告"
+      },
+      "swap_inputs": {
+        "name": "入力の入れ替え"
+      },
+      "swap_outputs": {
+        "name": "出力の入れ替え"
+      },
+      "pre_alarm_enabled": {
+        "name": "予備警報"
+      },
+      "vibration_enabled": {
+        "name": "振動"
+      },
+      "intrusion_alarm": {
+        "name": "侵入警報"
       },
       "child_lock": {
         "name": "チャイルドロック"

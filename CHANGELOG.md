@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.12.14 — 18 switch/sensor entities no longer show raw untranslated names
+
+- **Fix: several MD2/TRV config switches and diagnostic sensors showed raw,
+  untranslated internal identifiers instead of a translated name/state**
+  (#387, #388). Root cause: `SHCSwitch.__init__` only drops the literal
+  `attr_name` fallback (letting `translation_key` drive the shown name)
+  when the entity description actually carries a `translation_key` — 4
+  switch descriptions (Pet Immunity, Smart Sensitivity, Tamper Protection,
+  Silent Mode) never had one, so users saw raw strings like "PetImmunity"
+  or "SilentMode" in the UI. The MD2 Detection Test State diagnostic
+  sensor had the same gap one level up: its enum options were never given
+  translated state labels, so it showed "detection_test_stopped" instead
+  of "Stopped".
+  A follow-up audit (prompted by two independent bug-hunt passes on the
+  initial fix) found the identical bug pattern on 14 more switches that
+  weren't in the original reports — smart-plug Zigbee routing, Light/
+  Shutter Control II swap-input/output config, security-camera light/
+  notification toggles, Twinguard nightly-promise/humidity-warning,
+  smoke-detector pre-alarm/intrusion-alarm, and Shutter Contact II
+  vibration-detection — affecting smart plugs, cameras, Twinguard, smoke
+  detectors and Shutter Contact II owners, not just MD2/TRV. All 18
+  switches now carry a proper `translation_key`; the Detection Test State
+  and Walk Test State sensors now have translated state labels. Translated
+  to all 30 languages. No behavior change — display names/states only.
+
 ## 0.12.13 — firmware update entity no longer leaks untranslated English text
 
 - **Fix: the firmware update entity's version fields and lifecycle notes

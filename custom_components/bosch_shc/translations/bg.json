@@ -432,7 +432,12 @@
         "name": "Отворени врати/прозорци"
       },
       "walk_test_state": {
-        "name": "Състояние на Walk Test"
+        "name": "Състояние на Walk Test",
+        "state": {
+          "walk_test_started": "Стартиран",
+          "walk_test_stopped": "Спрян",
+          "unknown": "Неизвестно"
+        }
       },
       "battery_level": {
         "name": "Ниво на батерията"
@@ -507,7 +512,12 @@
         "name": "Вентилен щифт"
       },
       "detection_test_state": {
-        "name": "Състояние на теста за откриване"
+        "name": "Състояние на теста за откриване",
+        "state": {
+          "detection_test_started": "Стартиран",
+          "detection_test_stopped": "Спрян",
+          "detection_test_unknown": "Неизвестно"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Следваща зададена температура"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Активирано"
+      },
+      "pet_immunity_enabled": {
+        "name": "Устойчивост на домашни любимци"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Интелигентна чувствителност"
+      },
+      "tamper_protection_enabled": {
+        "name": "Защита от подправяне"
+      },
+      "silent_mode": {
+        "name": "Тих режим"
+      },
+      "smartplug_routing": {
+        "name": "Маршрутизация"
+      },
+      "camera_light": {
+        "name": "Осветление на камерата"
+      },
+      "camera_notification": {
+        "name": "Известия"
+      },
+      "camera_frontlight": {
+        "name": "Предна светлина"
+      },
+      "camera_ambientlight": {
+        "name": "Околно осветление"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Енергоспестяващ режим"
+      },
+      "warning_suppressed": {
+        "name": "Предупреждението е потиснато"
+      },
+      "nightly_promise_enabled": {
+        "name": "Нощно обещание"
+      },
+      "humidity_warning_enabled": {
+        "name": "Предупреждение за влажност"
+      },
+      "swap_inputs": {
+        "name": "Размяна на входовете"
+      },
+      "swap_outputs": {
+        "name": "Размяна на изходите"
+      },
+      "pre_alarm_enabled": {
+        "name": "Предварителна аларма"
+      },
+      "vibration_enabled": {
+        "name": "Вибрация"
+      },
+      "intrusion_alarm": {
+        "name": "Аларма за проникване"
       },
       "child_lock": {
         "name": "Детска защита"

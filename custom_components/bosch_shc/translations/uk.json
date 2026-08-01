@@ -432,7 +432,12 @@
         "name": "Відчинені двері/вікна"
       },
       "walk_test_state": {
-        "name": "Стан Walk Test"
+        "name": "Стан Walk Test",
+        "state": {
+          "walk_test_started": "Розпочато",
+          "walk_test_stopped": "Зупинено",
+          "unknown": "Невідомо"
+        }
       },
       "battery_level": {
         "name": "Рівень заряду батареї"
@@ -507,7 +512,12 @@
         "name": "Штовхач клапана"
       },
       "detection_test_state": {
-        "name": "Стан тесту виявлення"
+        "name": "Стан тесту виявлення",
+        "state": {
+          "detection_test_started": "Розпочато",
+          "detection_test_stopped": "Зупинено",
+          "detection_test_unknown": "Невідомо"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Наступна задана температура"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Увімкнено"
+      },
+      "pet_immunity_enabled": {
+        "name": "Ігнорування тварин"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Розумна чутливість"
+      },
+      "tamper_protection_enabled": {
+        "name": "Захист від втручання"
+      },
+      "silent_mode": {
+        "name": "Безшумний режим"
+      },
+      "smartplug_routing": {
+        "name": "Маршрутизація"
+      },
+      "camera_light": {
+        "name": "Підсвітка камери"
+      },
+      "camera_notification": {
+        "name": "Сповіщення"
+      },
+      "camera_frontlight": {
+        "name": "Передня підсвітка"
+      },
+      "camera_ambientlight": {
+        "name": "Фонова підсвітка"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Режим енергозбереження"
+      },
+      "warning_suppressed": {
+        "name": "Попередження вимкнено"
+      },
+      "nightly_promise_enabled": {
+        "name": "Нічний режим"
+      },
+      "humidity_warning_enabled": {
+        "name": "Попередження про вологість"
+      },
+      "swap_inputs": {
+        "name": "Поміняти входи місцями"
+      },
+      "swap_outputs": {
+        "name": "Поміняти виходи місцями"
+      },
+      "pre_alarm_enabled": {
+        "name": "Попередня тривога"
+      },
+      "vibration_enabled": {
+        "name": "Вібрація"
+      },
+      "intrusion_alarm": {
+        "name": "Тривога вторгнення"
       },
       "child_lock": {
         "name": "Захист від дітей"

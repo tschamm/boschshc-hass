@@ -432,7 +432,12 @@
         "name": "Открытые двери/окна"
       },
       "walk_test_state": {
-        "name": "Состояние теста обхода"
+        "name": "Состояние теста обхода",
+        "state": {
+          "walk_test_started": "Запущен",
+          "walk_test_stopped": "Остановлен",
+          "unknown": "Неизвестно"
+        }
       },
       "battery_level": {
         "name": "Уровень заряда батареи"
@@ -507,7 +512,12 @@
         "name": "Толкатель клапана"
       },
       "detection_test_state": {
-        "name": "Состояние теста обнаружения"
+        "name": "Состояние теста обнаружения",
+        "state": {
+          "detection_test_started": "Запущен",
+          "detection_test_stopped": "Остановлен",
+          "detection_test_unknown": "Неизвестно"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Следующая заданная температура"
@@ -601,6 +611,60 @@
       },
       "automation_rule": {
         "name": "Включено"
+      },
+      "pet_immunity_enabled": {
+        "name": "Игнорирование животных"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Умная чувствительность"
+      },
+      "tamper_protection_enabled": {
+        "name": "Защита от вскрытия"
+      },
+      "silent_mode": {
+        "name": "Бесшумный режим"
+      },
+      "smartplug_routing": {
+        "name": "Маршрутизация"
+      },
+      "camera_light": {
+        "name": "Подсветка камеры"
+      },
+      "camera_notification": {
+        "name": "Уведомления"
+      },
+      "camera_frontlight": {
+        "name": "Передняя подсветка"
+      },
+      "camera_ambientlight": {
+        "name": "Фоновая подсветка"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Энергосберегающий режим"
+      },
+      "warning_suppressed": {
+        "name": "Предупреждение отключено"
+      },
+      "nightly_promise_enabled": {
+        "name": "Ночной режим"
+      },
+      "humidity_warning_enabled": {
+        "name": "Предупреждение о влажности"
+      },
+      "swap_inputs": {
+        "name": "Поменять входы местами"
+      },
+      "swap_outputs": {
+        "name": "Поменять выходы местами"
+      },
+      "pre_alarm_enabled": {
+        "name": "Предварительная тревога"
+      },
+      "vibration_enabled": {
+        "name": "Вибрация"
+      },
+      "intrusion_alarm": {
+        "name": "Тревога вторжения"
       },
       "child_lock": {
         "name": "Блокировка от детей"

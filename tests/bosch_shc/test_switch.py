@@ -1175,12 +1175,16 @@ def test_setup_camera_eyes_entity_names(mock_config_entry, mock_session):
     cam = _fake_setup_device(name="Eyes Outdoor", dev_id="ceyes2")
     mock_session.device_helper.camera_eyes = [cam]
     entities = _setup_switch(mock_config_entry, mock_session)
-    # With _attr_has_entity_name=True, _attr_name holds only the feature label
-    # (None = primary entity; HA prepends device name for display).
-    names = {e._attr_name for e in entities}
-    assert None in names          # cameraeyes (primary: _attr_name=None)
-    assert "Light" in names       # cameraeyes_cameralight
-    assert "Notification" in names  # cameraeyes_notification
+    # With _attr_has_entity_name=True, entities without a translation_key
+    # fall back to _attr_name (None = primary entity, HA prepends device
+    # name); entities WITH a translation_key (#387/#388-class fix) drop
+    # _attr_name entirely and get their name from translation_key instead.
+    by_key = {e.entity_description.key: e for e in entities}
+    assert by_key["cameraeyes"]._attr_name is None  # primary entity
+    assert not hasattr(by_key["cameraeyes_cameralight"], "_attr_name")
+    assert by_key["cameraeyes_cameralight"].translation_key == "camera_light"
+    assert not hasattr(by_key["cameraeyes_notification"], "_attr_name")
+    assert by_key["cameraeyes_notification"].translation_key == "camera_notification"
 
 
 def test_shcswitch_unique_id_for_camera_notification(mock_config_entry, mock_session):
@@ -1400,11 +1404,21 @@ def test_setup_camera_outdoor_gen2_attr_names(mock_config_entry, mock_session):
     cam = _fake_setup_device(name="Eyes Outdoor II", dev_id="gen2_2")
     mock_session.device_helper.camera_outdoor_gen2 = [cam]
     entities = _setup_switch(mock_config_entry, mock_session)
-    # With _attr_has_entity_name=True, _attr_name holds only the feature label.
-    names = {e._attr_name for e in entities}
-    assert None in names            # cameraoutdoorgen2 (primary)
-    assert "Frontlight" in names    # camerafrontlight
-    assert "AmbientLight" in names  # cameraambientlight
+    # With _attr_has_entity_name=True, entities without a translation_key
+    # fall back to _attr_name; entities WITH a translation_key (#387/#388-class
+    # fix) drop _attr_name entirely and get their name from translation_key.
+    by_key = {e.entity_description.key: e for e in entities}
+    assert by_key["cameraoutdoorgen2"]._attr_name is None  # primary entity
+    assert not hasattr(by_key["cameraoutdoorgen2_camerafrontlight"], "_attr_name")
+    assert (
+        by_key["cameraoutdoorgen2_camerafrontlight"].translation_key
+        == "camera_frontlight"
+    )
+    assert not hasattr(by_key["cameraoutdoorgen2_cameraambientlight"], "_attr_name")
+    assert (
+        by_key["cameraoutdoorgen2_cameraambientlight"].translation_key
+        == "camera_ambientlight"
+    )
 
 
 
@@ -1555,6 +1569,72 @@ def test_bypass_infinite_switch_uses_translation_key_despite_attr_name():
     assert sw.unique_id == "root-1_hdm:ZigBee:dev1_bypassinfinite"
 
 
+@pytest.mark.parametrize(
+    ("switch_type", "attr_name"),
+    [
+        ("pet_immunity_enabled", "PetImmunity"),
+        ("smart_sensitivity_enabled", "SmartSensitivity"),
+        ("tamper_protection_enabled", "TamperProtection"),
+        ("silent_mode", "SilentMode"),
+    ],
+)
+def test_md2_config_switches_use_translation_key(switch_type, attr_name):
+    """#387/#388: these MD2/TRV config switches carried attr_name but no
+    translation_key, so HA showed the literal PascalCase attr_name
+    ("PetImmunity", "SmartSensitivity", "TamperProtection", "SilentMode")
+    instead of a translated name — same bug class as bypass_infinite above.
+    """
+    from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
+
+    sw = SHCSwitch(
+        device=_FAKE_DEVICE,
+        entry_id="e1",
+        description=SWITCH_TYPES[switch_type],
+        attr_name=attr_name,
+    )
+    assert not hasattr(sw, "_attr_name")
+    assert sw.translation_key == switch_type
+
+
+@pytest.mark.parametrize(
+    ("switch_type", "attr_name", "expected_translation_key"),
+    [
+        ("smartplug_routing", "Routing", "smartplug_routing"),
+        ("cameraeyes_cameralight", "Light", "camera_light"),
+        ("cameraeyes_notification", "Notification", "camera_notification"),
+        ("camera360_notification", "Notification", "camera_notification"),
+        ("cameraoutdoorgen2_camerafrontlight", "Frontlight", "camera_frontlight"),
+        ("cameraoutdoorgen2_cameraambientlight", "AmbientLight", "camera_ambientlight"),
+        ("energy_saving_mode_enabled", "EnergySavingMode", "energy_saving_mode_enabled"),
+        ("warning_suppressed", "WarningSuppressed", "warning_suppressed"),
+        ("nightly_promise_enabled", "NightlyPromise", "nightly_promise_enabled"),
+        ("humidity_warning_enabled", "HumidityWarning", "humidity_warning_enabled"),
+        ("swap_inputs", "SwapInputs", "swap_inputs"),
+        ("swap_outputs", "SwapOutputs", "swap_outputs"),
+        ("pre_alarm_enabled", "PreAlarm", "pre_alarm_enabled"),
+        ("vibration_enabled", "VibrationEnabled", "vibration_enabled"),
+        ("intrusion_alarm", "IntrusionAlarm", "intrusion_alarm"),
+    ],
+)
+def test_more_switches_use_translation_key(
+    switch_type, attr_name, expected_translation_key
+):
+    """Bughunt follow-up (#387/#388): 14 more SWITCH_TYPES entries had the
+    identical attr_name-but-no-translation_key gap (smart plugs, Light/Shutter
+    Control II micromodules, cameras, Twinguard, smoke detectors, Shutter
+    Contact II) — same root cause as the 4 MD2/TRV switches above, just not
+    on the device types the #387/#388 reporters happened to screenshot.
+    """
+    from custom_components.bosch_shc.switch import SWITCH_TYPES, SHCSwitch
+
+    sw = SHCSwitch(
+        device=_FAKE_DEVICE,
+        entry_id="e1",
+        description=SWITCH_TYPES[switch_type],
+        attr_name=attr_name,
+    )
+    assert not hasattr(sw, "_attr_name")
+    assert sw.translation_key == expected_translation_key
 
 
 # ---------------------------------------------------------------------------
@@ -4379,7 +4459,10 @@ class TestSHCSwitchInit:
             description=SWITCH_TYPES["cameraeyes_notification"],
             attr_name="Notification",
         )
-        assert sw._attr_name == "Notification"
+        # #387/#388: cameraeyes_notification now carries a translation_key,
+        # so the literal attr_name is dropped in favor of the translated name.
+        assert not hasattr(sw, "_attr_name")
+        assert sw.translation_key == "camera_notification"
 
     def test_init_child_lock_attr_name_lowercased_in_unique_id(self):
         dev = _FakeDevice()
@@ -4410,7 +4493,10 @@ class TestSHCSwitchInit:
             attr_name="SilentMode",
         )
         assert sw._attr_unique_id == "root1_dev1_silentmode"
-        assert sw._attr_name == "SilentMode"
+        # #387: silent_mode now carries a translation_key, so the literal
+        # attr_name is dropped in favor of the translated name (see
+        # test_md2_config_switches_use_translation_key above).
+        assert not hasattr(sw, "_attr_name")
 
     def test_init_entity_description_set(self):
         dev = _FakeDevice()
