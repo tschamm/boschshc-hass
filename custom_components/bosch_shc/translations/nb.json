@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Røyktest"
+        "name": "Testalarm"
       },
       "walk_test": {
         "name": "Gåtest"
@@ -207,7 +207,7 @@
         "name": "Forhåndsvis minimal lysstyrke"
       },
       "reset_energy_summation": {
-        "name": "Nullstill energiteller"
+        "name": "Nullstill energiforbruk"
       },
       "shutter_recalibrate": {
         "name": "Kalibrer på nytt"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulslengde"
+        "name": "Pulslengde"
       },
       "temperature_drop_value": {
-        "name": "Temperaturfallverdi"
+        "name": "Temperaturavvik"
       },
       "energy_saving_power_threshold": {
         "name": "Effektterskel for energisparing"
@@ -245,19 +245,19 @@
         "name": "Skjermlysstyrke"
       },
       "display_on_time": {
-        "name": "Skjermens på-tid"
+        "name": "Skjermens innkoblingstid"
       },
       "siren_alarm_duration": {
-        "name": "Alarmvarighet"
+        "name": "Alarmvarighet sirenetone"
       },
       "siren_flash_duration": {
-        "name": "Blitsvarighet"
+        "name": "Alarmvarighet blitslys"
       },
       "siren_alarm_delay": {
-        "name": "Alarmforsinkelse"
+        "name": "Alarmforsinkelse sirenetone"
       },
       "siren_flash_delay": {
-        "name": "Blitsforsinkelse"
+        "name": "Alarmforsinkelse blitslys"
       },
       "bypass_timeout": {
         "name": "Tidsavbrudd for forbikobling"
@@ -278,8 +278,8 @@
           "very_high": "Svært høy",
           "high": "Høy",
           "medium": "Middels",
-          "low": "Lav",
-          "very_low": "Svært lav"
+          "low": "Moderat",
+          "very_low": "Lav"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Skjermretning",
         "state": {
           "normal": "Normal",
-          "reversed": "Omvendt"
+          "reversed": "Rotert 180°"
         }
       },
       "displayed_temperature": {
         "name": "Vist temperatur",
         "state": {
-          "setpoint": "Innstilt verdi",
+          "setpoint": "Innstilt temperatur",
           "measured": "Målt"
         }
       },
       "terminal_type": {
-        "name": "Terminaltype",
+        "name": "Sensortilkobling",
         "state": {
-          "not_connected": "Ikke tilkoblet",
+          "not_connected": "Ikke i bruk",
           "floor_sensor_connected": "Gulvsensor tilkoblet",
           "floor_sensor_used_for_regulation": "Gulvsensor brukt til regulering",
-          "floor_sensor_displayed": "Gulvsensor vist",
-          "floor_sensor_displayed_and_used_for_regulation": "Gulvsensor vist og brukt til regulering",
+          "floor_sensor_displayed": "Kabeltemperatursensor (uten regulering)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeltemperatursensor (med regulering)",
           "volt_free_sensor_connected": "Potensialfri sensor tilkoblet",
-          "volt_free_sensor_connected_and_used_for_operation": "Potensialfri sensor tilkoblet og brukt til drift",
-          "outdoor_sensor_connected": "Utendørssensor tilkoblet"
+          "volt_free_sensor_connected_and_used_for_operation": "Potensialfri kontakt",
+          "outdoor_sensor_connected": "Utendørs temperatursensor"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Varmertype",
         "state": {
           "floor_heating": "Gulvvarme",
-          "floor_heating_low_energy": "Gulvvarme (lavenergi)",
+          "floor_heating_low_energy": "Gulvvarme lavenergi",
           "radiator": "Radiator",
-          "convector_passive": "Konvektor (passiv)",
-          "convector_active": "Konvektor (aktiv)",
-          "volt_free_heating": "Potensialfri oppvarming"
+          "convector_passive": "Passiv konvektor (uten ventilator)",
+          "convector_active": "Aktiv konvektor (med ventilator)",
+          "volt_free_heating": "Sentralvarme"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Ingen",
           "pushbutton": "Trykknapp",
-          "switch": "Bryter",
+          "switch": "Vippebryter",
           "no_switch": "Ingen bryter"
         }
       },
@@ -364,16 +364,16 @@
         "name": "Utgangsmodus",
         "state": {
           "attached": "Tilkoblet",
-          "detached": "Frakoblet",
-          "detached_short_press": "Frakoblet (kort trykk)",
-          "detached_long_press": "Frakoblet (langt trykk)",
+          "detached": "Frakoblet ved alle tastetrykk",
+          "detached_short_press": "Frakoblet ved kort trykk",
+          "detached_long_press": "Frakoblet ved langt trykk",
           "unsupported": "Ikke støttet"
         }
       },
       "siren_sound_level": {
-        "name": "Lydnivå",
+        "name": "Volum sirenetone",
         "state": {
-          "low": "Lav",
+          "low": "Redusert",
           "medium": "Middels",
           "high": "Høy"
         }
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity sikkerhetsnivå",
+        "name": "Sensitivitet for alarmsystem",
         "state": {
           "high": "Høy",
           "middle": "Middels",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity komfortnivå",
+        "name": "Sensitivitet for andre tilfeller",
         "state": {
           "high": "Høy",
           "middle": "Middels",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer fasekontroll",
         "state": {
-          "trailing": "Fallende fase",
-          "leading": "Stigende fase"
+          "trailing": "Bakkantdimming",
+          "leading": "Forkantdimming"
         }
       },
       "installation_profile": {
-        "name": "Installasjonsprofil",
+        "name": "Bruksformål",
         "state": {
-          "generic": "Innendørs (Generisk)",
+          "generic": "Standard",
           "outdoor": "Utendørs",
           "light": "Lys",
-          "heating_rcc": "Oppvarming (RCC)",
-          "boiler": "Kjele",
-          "mini_pv": "Mini solcelle"
+          "heating_rcc": "Oppvarming",
+          "boiler": "Sentralvarme",
+          "mini_pv": "Mini PV-anlegg"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Luftkvalitetsbeskrivelse"
       },
       "communication_quality": {
-        "name": "Kommunikasjonskvalitet",
+        "name": "Signalstyrke",
         "state": {
           "good": "God",
           "normal": "Normal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batteri"
+        "name": "Batterilading"
       },
       "siren_main_power": {
-        "name": "Strømkilde",
+        "name": "Primær strømkilde",
         "state": {
           "battery": "Batteri",
           "solar": "Solenergi",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Knappetilordning"
+        "name": "Knappefunksjoner"
       },
       "floor_temperature": {
         "name": "Gulvtemperatur"
       },
       "purity": {
-        "name": "Renhet"
+        "name": "Luftrenhet"
       },
       "air_quality": {
         "name": "Luftkvalitet"
@@ -500,7 +500,7 @@
         "name": "Fuktighetsvurdering"
       },
       "purity_rating": {
-        "name": "Renhetsvurdering"
+        "name": "Luftrenhetsvurdering"
       },
       "energy_yield": {
         "name": "Energiutbytte"
@@ -509,7 +509,7 @@
         "name": "Effektutbytte"
       },
       "valve_tappet": {
-        "name": "Ventilstøter"
+        "name": "Ventilposisjon"
       },
       "detection_test_state": {
         "name": "Deteksjonstest tilstand",
@@ -529,10 +529,10 @@
         "name": "Simulering kjører fra"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referanse bevegelsestid (nedenfra og opp)"
+        "name": "Åpningstid"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referanse bevegelsestid (ovenfra og ned)"
+        "name": "Lukketid"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee-rutingkvalitet",
@@ -588,10 +588,10 @@
         "name": "Tidsplanoverstyring aktiv"
       },
       "summer_mode": {
-        "name": "Sommermodus"
+        "name": "Sommerpause"
       },
       "ventilation_mode": {
-        "name": "Ventilasjonsmodus"
+        "name": "Bærekraftig lufting"
       },
       "shutter_calibration_required": {
         "name": "Kalibrering kreves"
@@ -619,13 +619,13 @@
         "name": "Aktivert"
       },
       "pet_immunity_enabled": {
-        "name": "Dyreimmunitet"
+        "name": "Kjæledyr / robotstøvsuger"
       },
       "smart_sensitivity_enabled": {
-        "name": "Smart Sensitivity"
+        "name": "Automatisk sensitivitet"
       },
       "tamper_protection_enabled": {
-        "name": "Sabotasjebeskyttelse"
+        "name": "Sabotasjeregistrering"
       },
       "silent_mode": {
         "name": "Stille modus"
@@ -658,7 +658,7 @@
         "name": "Fuktighetsvarsel"
       },
       "swap_inputs": {
-        "name": "Bytt innganger"
+        "name": "Endre knappetilordning"
       },
       "swap_outputs": {
         "name": "Bytt utganger"
@@ -667,7 +667,7 @@
         "name": "Foralarm"
       },
       "vibration_enabled": {
-        "name": "Vibrasjon"
+        "name": "Vibrasjonsregistrering"
       },
       "intrusion_alarm": {
         "name": "Innbruddsalarm"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Bevegelseslys"
+        "name": "Orienteringslys"
       },
       "room_light_group": {
         "name": "Lys"

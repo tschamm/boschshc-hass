@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Δοκιμή καπνού"
+        "name": "Δοκιμαστικός συναγερμός"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Προεπισκόπηση Ελάχιστης Φωτεινότητας"
       },
       "reset_energy_summation": {
-        "name": "Επαναφορά Μετρητή Ενέργειας"
+        "name": "Επαναφορά κατανάλωσης ενέργειας"
       },
       "shutter_recalibrate": {
         "name": "Επαναβαθμονόμηση"
@@ -230,7 +230,7 @@
         "name": "Διάρκεια παλμού"
       },
       "temperature_drop_value": {
-        "name": "Τιμή πτώσης θερμοκρασίας"
+        "name": "Απόκλιση θερμοκρασίας"
       },
       "energy_saving_power_threshold": {
         "name": "Όριο ισχύος εξοικονόμησης ενέργειας"
@@ -245,19 +245,19 @@
         "name": "Φωτεινότητα οθόνης"
       },
       "display_on_time": {
-        "name": "Χρόνος ενεργοποίησης οθόνης"
+        "name": "Διάρκεια ενεργοποίησης οθόνης"
       },
       "siren_alarm_duration": {
-        "name": "Διάρκεια συναγερμού"
+        "name": "Διάρκεια συναγερμού σειρήνας"
       },
       "siren_flash_duration": {
-        "name": "Διάρκεια αναλαμπής"
+        "name": "Διάρκεια συναγερμού φωτός αναλαμπής"
       },
       "siren_alarm_delay": {
-        "name": "Καθυστέρηση συναγερμού"
+        "name": "Καθυστέρηση συναγερμού σειρήνας"
       },
       "siren_flash_delay": {
-        "name": "Καθυστέρηση αναλαμπής"
+        "name": "Καθυστέρηση συναγερμού φωτός αναλαμπής"
       },
       "bypass_timeout": {
         "name": "Χρονικό Όριο Παράκαμψης"
@@ -278,8 +278,8 @@
           "very_high": "Πολύ υψηλή",
           "high": "Υψηλή",
           "medium": "Μεσαία",
-          "low": "Χαμηλή",
-          "very_low": "Πολύ χαμηλή"
+          "low": "Μέτρια",
+          "very_low": "Χαμηλή"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +299,30 @@
         }
       },
       "display_direction": {
-        "name": "Κατεύθυνση οθόνης",
+        "name": "Προσανατολισμός οθόνης",
         "state": {
           "normal": "Κανονική",
-          "reversed": "Αντεστραμμένη"
+          "reversed": "Περιστροφή κατά 180°"
         }
       },
       "displayed_temperature": {
         "name": "Εμφανιζόμενη θερμοκρασία",
         "state": {
-          "setpoint": "Επιθυμητή τιμή",
+          "setpoint": "Ρυθμισμένη θερμοκρασία",
           "measured": "Μετρημένη"
         }
       },
       "terminal_type": {
-        "name": "Τύπος ακροδέκτη",
+        "name": "Σύνδεση αισθητήρα",
         "state": {
-          "not_connected": "Δεν είναι συνδεδεμένο",
+          "not_connected": "Δεν χρησιμοποιείται",
           "floor_sensor_connected": "Αισθητήρας δαπέδου συνδεδεμένος",
           "floor_sensor_used_for_regulation": "Αισθητήρας δαπέδου που χρησιμοποιείται για ρύθμιση",
-          "floor_sensor_displayed": "Εμφάνιση αισθητήρα δαπέδου",
-          "floor_sensor_displayed_and_used_for_regulation": "Αισθητήρας δαπέδου εμφανιζόμενος και χρησιμοποιούμενος για ρύθμιση",
+          "floor_sensor_displayed": "Αισθητήρας θερμοκρασίας καλωδίου (χωρίς ρύθμιση)",
+          "floor_sensor_displayed_and_used_for_regulation": "Αισθητήρας θερμοκρασίας καλωδίου (με ρύθμιση)",
           "volt_free_sensor_connected": "Συνδεδεμένος αισθητήρας χωρίς τάση",
-          "volt_free_sensor_connected_and_used_for_operation": "Αισθητήρας χωρίς τάση συνδεδεμένος και χρησιμοποιούμενος για λειτουργία",
-          "outdoor_sensor_connected": "Εξωτερικός αισθητήρας συνδεδεμένος"
+          "volt_free_sensor_connected_and_used_for_operation": "Επαφή χωρίς δυναμικό",
+          "outdoor_sensor_connected": "Εξωτερικός αισθητήρας θερμοκρασίας"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Τύπος θερμαντήρα",
         "state": {
           "floor_heating": "Ενδοδαπέδια θέρμανση",
-          "floor_heating_low_energy": "Ενδοδαπέδια θέρμανση (χαμηλής ενέργειας)",
+          "floor_heating_low_energy": "Ενδοδαπέδια θέρμανση χαμηλής ενέργειας",
           "radiator": "Καλοριφέρ",
-          "convector_passive": "Convector (παθητικό)",
-          "convector_active": "Convector (ενεργό)",
-          "volt_free_heating": "Θέρμανση χωρίς τάση"
+          "convector_passive": "Παθητικός convector (χωρίς ανεμιστήρα)",
+          "convector_active": "Ενεργός convector (με ανεμιστήρα)",
+          "volt_free_heating": "Κεντρική θέρμανση"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Κανένα",
           "pushbutton": "Μπουτόν",
-          "switch": "Διακόπτης",
+          "switch": "Διακόπτης ρόκερ",
           "no_switch": "Χωρίς διακόπτη"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Λειτουργία εξόδου",
         "state": {
-          "attached": "Συνδεδεμένο",
-          "detached": "Αποσυνδεδεμένο",
-          "detached_short_press": "Αποσυνδεδεμένο (σύντομο πάτημα)",
-          "detached_long_press": "Αποσυνδεδεμένο (παρατεταμένο πάτημα)",
+          "attached": "Συζευγμένο",
+          "detached": "Αποσυνδεδεμένο με οποιοδήποτε πάτημα",
+          "detached_short_press": "Αποσυνδεδεμένο με σύντομο πάτημα",
+          "detached_long_press": "Αποσυνδεδεμένο με παρατεταμένο πάτημα",
           "unsupported": "Μη υποστηριζόμενο"
         }
       },
       "siren_sound_level": {
-        "name": "Επίπεδο ήχου",
+        "name": "Ένταση σειρήνας",
         "state": {
-          "low": "Χαμηλό",
+          "low": "Μειωμένο",
           "medium": "Μεσαίο",
-          "high": "Υψηλό"
+          "high": "Δυνατό"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Επίπεδο Ασφάλειας Έξυπνης Ευαισθησίας",
+        "name": "Ευαισθησία για το σύστημα συναγερμού",
         "state": {
           "high": "Υψηλό",
           "middle": "Μεσαίο",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Επίπεδο Άνεσης Έξυπνης Ευαισθησίας",
+        "name": "Ευαισθησία για άλλες περιπτώσεις",
         "state": {
           "high": "Υψηλό",
           "middle": "Μεσαίο",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Έλεγχος Φάσης Dimmer",
         "state": {
-          "trailing": "Έλεγχος φάσης εκφόρτισης",
-          "leading": "Έλεγχος φάσης φόρτισης"
+          "trailing": "Αποκοπή φάσης καθόδου",
+          "leading": "Αποκοπή φάσης ανόδου"
         }
       },
       "installation_profile": {
-        "name": "Προφίλ Εγκατάστασης",
+        "name": "Σκοπός χρήσης",
         "state": {
-          "generic": "Εσωτερικός (Γενικός)",
-          "outdoor": "Εξωτερικός",
-          "light": "Φωτισμός",
-          "heating_rcc": "Θέρμανση (RCC)",
-          "boiler": "Λέβητας",
-          "mini_pv": "Μίνι φωτοβολταϊκό"
+          "generic": "Τυπικό",
+          "outdoor": "Εξωτερικός χώρος",
+          "light": "Λάμπα",
+          "heating_rcc": "Θερμαντικό σώμα",
+          "boiler": "Κεντρική θέρμανση",
+          "mini_pv": "Σύστημα Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Περιγραφή ποιότητας αέρα"
       },
       "communication_quality": {
-        "name": "Ποιότητα επικοινωνίας",
+        "name": "Ισχύς σήματος",
         "state": {
           "good": "Καλή",
           "normal": "Κανονική",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Μπαταρία"
+        "name": "Φόρτιση μπαταρίας"
       },
       "siren_main_power": {
-        "name": "Πηγή τροφοδοσίας",
+        "name": "Κύρια πηγή",
         "state": {
           "battery": "Μπαταρία",
           "solar": "Ηλιακή ενέργεια",
@@ -488,7 +488,7 @@
         "name": "Θερμοκρασία Δαπέδου"
       },
       "purity": {
-        "name": "Καθαρότητα"
+        "name": "Καθαρότητα αέρα"
       },
       "air_quality": {
         "name": "Ποιότητα Αέρα"
@@ -500,7 +500,7 @@
         "name": "Βαθμολογία Υγρασίας"
       },
       "purity_rating": {
-        "name": "Βαθμολογία Καθαρότητας"
+        "name": "Βαθμολογία καθαρότητας αέρα"
       },
       "energy_yield": {
         "name": "Παραγωγή Ενέργειας"
@@ -509,7 +509,7 @@
         "name": "Παραγωγή Ισχύος"
       },
       "valve_tappet": {
-        "name": "Έμβολο Βαλβίδας"
+        "name": "Θέση βαλβίδας"
       },
       "detection_test_state": {
         "name": "Κατάσταση Δοκιμής Ανίχνευσης",
@@ -529,10 +529,10 @@
         "name": "Προσομοίωση σε Εξέλιξη Από"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Χρόνος Αναφοράς Κίνησης (Ανοδική Πορεία)"
+        "name": "Χρόνος ανοίγματος"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Χρόνος Αναφοράς Κίνησης (Καθοδική Πορεία)"
+        "name": "Χρόνος κλεισίματος"
       },
       "zigbee_routing_quality": {
         "name": "Ποιότητα Δρομολόγησης Zigbee",
@@ -588,10 +588,10 @@
         "name": "Παράκαμψη Προγράμματος Ενεργή"
       },
       "summer_mode": {
-        "name": "Καλοκαιρινή λειτουργία"
+        "name": "Θερινή παύση"
       },
       "ventilation_mode": {
-        "name": "Λειτουργία αερισμού"
+        "name": "Βιώσιμος αερισμός"
       },
       "shutter_calibration_required": {
         "name": "Απαιτείται Βαθμονόμηση"
@@ -619,16 +619,16 @@
         "name": "Ενεργοποιημένο"
       },
       "pet_immunity_enabled": {
-        "name": "Ανοσία σε κατοικίδια"
+        "name": "Κατοικίδιο / ρομποτική σκούπα"
       },
       "smart_sensitivity_enabled": {
-        "name": "Έξυπνη ευαισθησία"
+        "name": "Αυτόματη ευαισθησία"
       },
       "tamper_protection_enabled": {
-        "name": "Προστασία παραβίασης"
+        "name": "Ανίχνευση δολιοφθοράς"
       },
       "silent_mode": {
-        "name": "Αθόρυβη λειτουργία"
+        "name": "Λειτουργία ψιθύρου"
       },
       "smartplug_routing": {
         "name": "Επέκταση εμβέλειας"
@@ -658,7 +658,7 @@
         "name": "Προειδοποίηση υγρασίας"
       },
       "swap_inputs": {
-        "name": "Εναλλαγή εισόδων"
+        "name": "Αλλαγή αντιστοίχισης κουμπιών"
       },
       "swap_outputs": {
         "name": "Εναλλαγή εξόδων"
@@ -667,7 +667,7 @@
         "name": "Προσυναγερμός"
       },
       "vibration_enabled": {
-        "name": "Δόνηση"
+        "name": "Ανίχνευση δόνησης"
       },
       "intrusion_alarm": {
         "name": "Συναγερμός διάρρηξης"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Φως Κίνησης"
+        "name": "Φως προσανατολισμού"
       },
       "room_light_group": {
         "name": "Φως"

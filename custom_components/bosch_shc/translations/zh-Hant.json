@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "煙霧測試"
+        "name": "測試警報"
       },
       "walk_test": {
         "name": "步行測試"
@@ -207,7 +207,7 @@
         "name": "預覽最小亮度"
       },
       "reset_energy_summation": {
-        "name": "重設能量計數器"
+        "name": "重設能耗"
       },
       "shutter_recalibrate": {
         "name": "重新校準"
@@ -230,7 +230,7 @@
         "name": "脈衝長度"
       },
       "temperature_drop_value": {
-        "name": "溫度下降值"
+        "name": "溫度偏差"
       },
       "energy_saving_power_threshold": {
         "name": "節能功率閾值"
@@ -248,16 +248,16 @@
         "name": "顯示器點亮時間"
       },
       "siren_alarm_duration": {
-        "name": "警報持續時間"
+        "name": "警笛警報持續時間"
       },
       "siren_flash_duration": {
-        "name": "閃光持續時間"
+        "name": "閃光警報持續時間"
       },
       "siren_alarm_delay": {
-        "name": "警報延遲"
+        "name": "警笛警報延遲"
       },
       "siren_flash_delay": {
-        "name": "閃光延遲"
+        "name": "閃光警報延遲"
       },
       "bypass_timeout": {
         "name": "旁路逾時"
@@ -278,8 +278,8 @@
           "very_high": "非常高",
           "high": "高",
           "medium": "中",
-          "low": "低",
-          "very_low": "非常低"
+          "low": "較低",
+          "very_low": "低"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "顯示方向",
         "state": {
           "normal": "正常",
-          "reversed": "翻轉"
+          "reversed": "旋轉 180°"
         }
       },
       "displayed_temperature": {
         "name": "顯示溫度",
         "state": {
-          "setpoint": "設定值",
+          "setpoint": "設定溫度",
           "measured": "測量值"
         }
       },
       "terminal_type": {
-        "name": "接線端子類型",
+        "name": "感測器連接",
         "state": {
-          "not_connected": "未連接",
+          "not_connected": "未使用",
           "floor_sensor_connected": "已連接地板感測器",
           "floor_sensor_used_for_regulation": "地板感測器用於調節",
-          "floor_sensor_displayed": "顯示地板感測器",
-          "floor_sensor_displayed_and_used_for_regulation": "顯示地板感測器並用於調節",
+          "floor_sensor_displayed": "纜線溫度感測器（不用於調節）",
+          "floor_sensor_displayed_and_used_for_regulation": "纜線溫度感測器（用於調節）",
           "volt_free_sensor_connected": "已連接無源感測器",
-          "volt_free_sensor_connected_and_used_for_operation": "已連接無源感測器並用於操作",
-          "outdoor_sensor_connected": "已連接室外感測器"
+          "volt_free_sensor_connected_and_used_for_operation": "無源接點",
+          "outdoor_sensor_connected": "室外溫度感測器"
         }
       },
       "valve_type": {
@@ -338,9 +338,9 @@
           "floor_heating": "地暖",
           "floor_heating_low_energy": "地暖（低能耗）",
           "radiator": "散熱器",
-          "convector_passive": "對流器（被動）",
-          "convector_active": "對流器（主動）",
-          "volt_free_heating": "無源加熱"
+          "convector_passive": "對流器（無風扇）",
+          "convector_active": "對流器（附風扇）",
+          "volt_free_heating": "中央暖氣"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "無",
           "pushbutton": "按鈕",
-          "switch": "開關",
+          "switch": "蹺板開關",
           "no_switch": "無開關"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "輸出模式",
         "state": {
-          "attached": "已連接",
-          "detached": "已分離",
-          "detached_short_press": "已分離（短按）",
-          "detached_long_press": "已分離（長按）",
+          "attached": "連動",
+          "detached": "按任意按鍵時中斷",
+          "detached_short_press": "短按時中斷",
+          "detached_long_press": "長按時中斷",
           "unsupported": "不支援"
         }
       },
       "siren_sound_level": {
-        "name": "音量等級",
+        "name": "警笛音量",
         "state": {
-          "low": "低",
+          "low": "小聲",
           "medium": "中",
-          "high": "高"
+          "high": "大聲"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "智慧靈敏度安全等級",
+        "name": "警報系統靈敏度",
         "state": {
           "high": "高",
           "middle": "中",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "智慧靈敏度舒適等級",
+        "name": "其他情況靈敏度",
         "state": {
           "high": "高",
           "middle": "中",
@@ -409,14 +409,14 @@
         }
       },
       "installation_profile": {
-        "name": "安裝配置檔",
+        "name": "使用用途",
         "state": {
-          "generic": "室內（通用）",
+          "generic": "標準",
           "outdoor": "室外",
-          "light": "燈光",
-          "heating_rcc": "暖氣 (RCC)",
-          "boiler": "鍋爐",
-          "mini_pv": "迷你光伏"
+          "light": "燈具",
+          "heating_rcc": "加熱器",
+          "boiler": "中央暖氣",
+          "mini_pv": "Mini PV 系統"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "空氣品質描述"
       },
       "communication_quality": {
-        "name": "通訊品質",
+        "name": "訊號強度",
         "state": {
           "good": "良好",
           "normal": "正常",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "電池"
+        "name": "電池電量"
       },
       "siren_main_power": {
-        "name": "電源",
+        "name": "主電源",
         "state": {
           "battery": "電池",
           "solar": "太陽能",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "按鈕對應"
+        "name": "按鍵配置"
       },
       "floor_temperature": {
         "name": "地板溫度"
       },
       "purity": {
-        "name": "純淨度"
+        "name": "空氣純淨度"
       },
       "air_quality": {
         "name": "空氣品質"
@@ -500,7 +500,7 @@
         "name": "濕度評級"
       },
       "purity_rating": {
-        "name": "純淨度評級"
+        "name": "空氣純淨度評級"
       },
       "energy_yield": {
         "name": "能量產出"
@@ -509,7 +509,7 @@
         "name": "功率產出"
       },
       "valve_tappet": {
-        "name": "閥門挺桿"
+        "name": "閥門位置"
       },
       "detection_test_state": {
         "name": "偵測測試狀態",
@@ -529,10 +529,10 @@
         "name": "模擬執行始於"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "參考移動時間（由下至上）"
+        "name": "開啟時間"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "參考移動時間（由上至下）"
+        "name": "關閉時間"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee 路由品質",
@@ -588,10 +588,10 @@
         "name": "日程覆蓋生效中"
       },
       "summer_mode": {
-        "name": "夏季模式"
+        "name": "夏季暫停"
       },
       "ventilation_mode": {
-        "name": "通風模式"
+        "name": "節能通風"
       },
       "shutter_calibration_required": {
         "name": "需要校準"
@@ -619,16 +619,16 @@
         "name": "已啟用"
       },
       "pet_immunity_enabled": {
-        "name": "寵物免疫"
+        "name": "寵物 / 掃地機器人"
       },
       "smart_sensitivity_enabled": {
-        "name": "智慧靈敏度"
+        "name": "自動靈敏度"
       },
       "tamper_protection_enabled": {
-        "name": "防拆保護"
+        "name": "防拆偵測"
       },
       "silent_mode": {
-        "name": "靜音模式"
+        "name": "輕聲模式"
       },
       "smartplug_routing": {
         "name": "範圍擴展"
@@ -658,7 +658,7 @@
         "name": "濕度警告"
       },
       "swap_inputs": {
-        "name": "交換輸入"
+        "name": "變更按鍵配置"
       },
       "swap_outputs": {
         "name": "交換輸出"
@@ -667,7 +667,7 @@
         "name": "預警"
       },
       "vibration_enabled": {
-        "name": "震動"
+        "name": "震動偵測"
       },
       "intrusion_alarm": {
         "name": "入侵警報"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "動作燈"
+        "name": "方向指示燈"
       },
       "room_light_group": {
         "name": "燈光"

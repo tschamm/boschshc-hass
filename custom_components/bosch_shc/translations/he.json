@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "בדיקת עשן"
+        "name": "אזעקת בדיקה"
       },
       "walk_test": {
         "name": "בדיקת הליכה"
@@ -207,7 +207,7 @@
         "name": "תצוגה מקדימה של בהירות מינימלית"
       },
       "reset_energy_summation": {
-        "name": "איפוס מונה האנרגיה"
+        "name": "איפוס צריכת האנרגיה"
       },
       "shutter_recalibrate": {
         "name": "כיול מחדש"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "אורך דופק"
+        "name": "אורך הדופק"
       },
       "temperature_drop_value": {
-        "name": "ערך הפחתת טמפרטורה"
+        "name": "סטיית טמפרטורה"
       },
       "energy_saving_power_threshold": {
         "name": "סף צריכת חשמל לחיסכון באנרגיה"
@@ -245,19 +245,19 @@
         "name": "בהירות תצוגה"
       },
       "display_on_time": {
-        "name": "זמן הדלקת תצוגה"
+        "name": "משך הדלקת התצוגה"
       },
       "siren_alarm_duration": {
-        "name": "משך האזעקה"
+        "name": "משך אזעקת הסירנה"
       },
       "siren_flash_duration": {
-        "name": "משך ההבזק"
+        "name": "משך אזעקת נורית ההבזק"
       },
       "siren_alarm_delay": {
-        "name": "עיכוב האזעקה"
+        "name": "השהיית אזעקת הסירנה"
       },
       "siren_flash_delay": {
-        "name": "עיכוב ההבזק"
+        "name": "השהיית אזעקת נורית ההבזק"
       },
       "bypass_timeout": {
         "name": "פסק זמן לעקיפה"
@@ -278,8 +278,8 @@
           "very_high": "גבוהה מאוד",
           "high": "גבוהה",
           "medium": "בינונית",
-          "low": "נמוכה",
-          "very_low": "נמוכה מאוד"
+          "low": "מתונה",
+          "very_low": "נמוכה"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "כיוון תצוגה",
         "state": {
           "normal": "רגיל",
-          "reversed": "הפוך"
+          "reversed": "מסובב ב-180°"
         }
       },
       "displayed_temperature": {
         "name": "טמפרטורה מוצגת",
         "state": {
-          "setpoint": "טמפרטורת יעד",
+          "setpoint": "טמפרטורה מוגדרת",
           "measured": "נמדדת"
         }
       },
       "terminal_type": {
-        "name": "סוג מסוף",
+        "name": "חיבור חיישן",
         "state": {
-          "not_connected": "לא מחובר",
+          "not_connected": "לא בשימוש",
           "floor_sensor_connected": "חיישן רצפה מחובר",
           "floor_sensor_used_for_regulation": "חיישן רצפה משמש לוויסות",
-          "floor_sensor_displayed": "חיישן רצפה מוצג",
-          "floor_sensor_displayed_and_used_for_regulation": "חיישן רצפה מוצג ומשמש לוויסות",
+          "floor_sensor_displayed": "חיישן טמפרטורה בכבל (ללא ויסות)",
+          "floor_sensor_displayed_and_used_for_regulation": "חיישן טמפרטורה בכבל (עם ויסות)",
           "volt_free_sensor_connected": "חיישן ללא מתח מחובר",
-          "volt_free_sensor_connected_and_used_for_operation": "חיישן ללא מתח מחובר ומשמש להפעלה",
-          "outdoor_sensor_connected": "חיישן חוץ מחובר"
+          "volt_free_sensor_connected_and_used_for_operation": "מגע נטול פוטנציאל",
+          "outdoor_sensor_connected": "חיישן טמפרטורה חיצוני"
         }
       },
       "valve_type": {
@@ -336,19 +336,19 @@
         "name": "סוג מחמם",
         "state": {
           "floor_heating": "חימום תת-רצפתי",
-          "floor_heating_low_energy": "חימום תת-רצפתי (חסכוני באנרגיה)",
+          "floor_heating_low_energy": "חימום תת-רצפתי חסכוני באנרגיה",
           "radiator": "רדיאטור",
-          "convector_passive": "קונבקטור (פסיבי)",
-          "convector_active": "קונבקטור (אקטיבי)",
-          "volt_free_heating": "חימום ללא מתח"
+          "convector_passive": "קונבקטור פסיבי (ללא מאוורר)",
+          "convector_active": "קונבקטור אקטיבי (עם מאוורר)",
+          "volt_free_heating": "חימום מרכזי"
         }
       },
       "switch_type": {
         "name": "סוג מתג",
         "state": {
           "none": "ללא",
-          "pushbutton": "מתג לחיצה",
-          "switch": "מתג",
+          "pushbutton": "לחצן",
+          "switch": "מתג נדנדה",
           "no_switch": "ללא מתג"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "מצב פלט",
         "state": {
-          "attached": "מחובר",
-          "detached": "מנותק",
-          "detached_short_press": "מנותק (לחיצה קצרה)",
-          "detached_long_press": "מנותק (לחיצה ארוכה)",
+          "attached": "מצומד",
+          "detached": "מנותק בכל לחיצה",
+          "detached_short_press": "מנותק בלחיצה קצרה",
+          "detached_long_press": "מנותק בלחיצה ארוכה",
           "unsupported": "לא נתמך"
         }
       },
       "siren_sound_level": {
-        "name": "עוצמת הצליל",
+        "name": "עוצמת הסירנה",
         "state": {
-          "low": "נמוכה",
+          "low": "מופחתת",
           "medium": "בינונית",
-          "high": "גבוהה"
+          "high": "חזקה"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "רמת אבטחה של רגישות חכמה",
+        "name": "רגישות למערכת האזעקה",
         "state": {
           "high": "גבוהה",
           "middle": "בינונית",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "רמת נוחות של רגישות חכמה",
+        "name": "רגישות למקרים אחרים",
         "state": {
           "high": "גבוהה",
           "middle": "בינונית",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "בקרת פאזה של דימר",
         "state": {
-          "trailing": "פאזה יורדת",
-          "leading": "פאזה עולה"
+          "trailing": "חיתוך פאזה יורד",
+          "leading": "חיתוך פאזה עולה"
         }
       },
       "installation_profile": {
-        "name": "פרופיל התקנה",
+        "name": "מטרת השימוש",
         "state": {
-          "generic": "פנים (כללי)",
+          "generic": "סטנדרטי",
           "outdoor": "חוץ",
-          "light": "תאורה",
-          "heating_rcc": "חימום (RCC)",
-          "boiler": "דוד",
-          "mini_pv": "מיני פוטו-וולטאי"
+          "light": "מנורה",
+          "heating_rcc": "תנור חימום",
+          "boiler": "חימום מרכזי",
+          "mini_pv": "מערכת Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "תיאור איכות אוויר"
       },
       "communication_quality": {
-        "name": "איכות תקשורת",
+        "name": "עוצמת האות",
         "state": {
           "good": "טובה",
           "normal": "רגילה",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "סוללה"
+        "name": "טעינת הסוללה"
       },
       "siren_main_power": {
-        "name": "מקור חשמל",
+        "name": "מקור ראשי",
         "state": {
           "battery": "סוללה",
           "solar": "סולארי",
@@ -488,7 +488,7 @@
         "name": "טמפרטורת רצפה"
       },
       "purity": {
-        "name": "טוהר"
+        "name": "טוהר האוויר"
       },
       "air_quality": {
         "name": "איכות אוויר"
@@ -500,7 +500,7 @@
         "name": "דירוג לחות"
       },
       "purity_rating": {
-        "name": "דירוג טוהר"
+        "name": "דירוג טוהר האוויר"
       },
       "energy_yield": {
         "name": "תפוקת אנרגיה"
@@ -509,7 +509,7 @@
         "name": "תפוקת כוח"
       },
       "valve_tappet": {
-        "name": "מרים שסתום"
+        "name": "מיקום השסתום"
       },
       "detection_test_state": {
         "name": "מצב בדיקת גילוי",
@@ -529,10 +529,10 @@
         "name": "הדמיה פועלת מאז"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "זמן תנועה מכויל (מלמטה למעלה)"
+        "name": "זמן פתיחה"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "זמן תנועה מכויל (מלמעלה למטה)"
+        "name": "זמן סגירה"
       },
       "zigbee_routing_quality": {
         "name": "איכות ניתוב Zigbee",
@@ -588,10 +588,10 @@
         "name": "עקיפת לוח זמנים פעילה"
       },
       "summer_mode": {
-        "name": "מצב קיץ"
+        "name": "הפסקת קיץ"
       },
       "ventilation_mode": {
-        "name": "מצב אוורור"
+        "name": "אוורור בר-קיימא"
       },
       "shutter_calibration_required": {
         "name": "נדרש כיול"
@@ -619,16 +619,16 @@
         "name": "מופעל"
       },
       "pet_immunity_enabled": {
-        "name": "חסינות לחיות מחמד"
+        "name": "חיית מחמד / שואב אבק רובוטי"
       },
       "smart_sensitivity_enabled": {
-        "name": "רגישות חכמה"
+        "name": "רגישות אוטומטית"
       },
       "tamper_protection_enabled": {
-        "name": "הגנה מפני חבלה"
+        "name": "זיהוי חבלה"
       },
       "silent_mode": {
-        "name": "מצב שקט"
+        "name": "מצב לחישה"
       },
       "smartplug_routing": {
         "name": "הרחבת טווח"
@@ -658,7 +658,7 @@
         "name": "אזהרת לחות"
       },
       "swap_inputs": {
-        "name": "החלפת כניסות"
+        "name": "שינוי מיפוי לחצנים"
       },
       "swap_outputs": {
         "name": "החלפת יציאות"
@@ -667,7 +667,7 @@
         "name": "התראה מוקדמת"
       },
       "vibration_enabled": {
-        "name": "רטט"
+        "name": "זיהוי רטט"
       },
       "intrusion_alarm": {
         "name": "אזעקת פריצה"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "אור תנועה"
+        "name": "תאורת התמצאות"
       },
       "room_light_group": {
         "name": "אור"

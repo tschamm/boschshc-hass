@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Rauchmelder-Test"
+        "name": "Testalarm"
       },
       "walk_test": {
         "name": "Begehungstest starten"
@@ -207,7 +207,7 @@
         "name": "Vorschau minimale Helligkeit"
       },
       "reset_energy_summation": {
-        "name": "Energiezähler zurücksetzen"
+        "name": "Energieverbrauch zurücksetzen"
       },
       "shutter_recalibrate": {
         "name": "Neu kalibrieren"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulsdauer"
+        "name": "Impulslänge"
       },
       "temperature_drop_value": {
-        "name": "Temperaturabsenkungswert"
+        "name": "Temperaturabweichung"
       },
       "energy_saving_power_threshold": {
         "name": "Energiesparmodus Leistungsschwelle"
@@ -248,16 +248,16 @@
         "name": "Display-Einschaltdauer"
       },
       "siren_alarm_duration": {
-        "name": "Alarmdauer"
+        "name": "Alarmdauer Sirenenton"
       },
       "siren_flash_duration": {
-        "name": "Blinkdauer"
+        "name": "Alarmdauer Blitzlicht"
       },
       "siren_alarm_delay": {
-        "name": "Alarmverzögerung"
+        "name": "Alarmverzögerung Sirenenton"
       },
       "siren_flash_delay": {
-        "name": "Blinkverzögerung"
+        "name": "Alarmverzögerung Blitzlicht"
       },
       "bypass_timeout": {
         "name": "Bypass-Timeout"
@@ -278,8 +278,8 @@
           "very_high": "Sehr hoch",
           "high": "Hoch",
           "medium": "Mittel",
-          "low": "Niedrig",
-          "very_low": "Sehr niedrig"
+          "low": "Mäßig",
+          "very_low": "Gering"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Anzeigeausrichtung",
         "state": {
           "normal": "Normal",
-          "reversed": "Umgekehrt"
+          "reversed": "Um 180° gedreht"
         }
       },
       "displayed_temperature": {
         "name": "Angezeigte Temperatur",
         "state": {
-          "setpoint": "Sollwert",
+          "setpoint": "Solltemperatur",
           "measured": "Gemessen"
         }
       },
       "terminal_type": {
-        "name": "Anschlusstyp",
+        "name": "Sensoranschluss",
         "state": {
-          "not_connected": "Nicht angeschlossen",
+          "not_connected": "Nicht verwendet",
           "floor_sensor_connected": "Bodenfühler angeschlossen",
           "floor_sensor_used_for_regulation": "Bodenfühler zur Regelung verwendet",
-          "floor_sensor_displayed": "Bodenfühler angezeigt",
-          "floor_sensor_displayed_and_used_for_regulation": "Bodenfühler angezeigt und zur Regelung verwendet",
+          "floor_sensor_displayed": "Kabeltemperaturfühler (ohne Regelung)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeltemperaturfühler (mit Regelung)",
           "volt_free_sensor_connected": "Potentialfreier Fühler angeschlossen",
-          "volt_free_sensor_connected_and_used_for_operation": "Potentialfreier Fühler angeschlossen und für den Betrieb verwendet",
-          "outdoor_sensor_connected": "Außenfühler angeschlossen"
+          "volt_free_sensor_connected_and_used_for_operation": "Potentialfreier Kontakt",
+          "outdoor_sensor_connected": "Außentemperaturfühler"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Heizungstyp",
         "state": {
           "floor_heating": "Fußbodenheizung",
-          "floor_heating_low_energy": "Fußbodenheizung (Niedrigenergie)",
+          "floor_heating_low_energy": "Fußbodenheizung Niedrigenergie",
           "radiator": "Heizkörper",
-          "convector_passive": "Konvektor (passiv)",
-          "convector_active": "Konvektor (aktiv)",
-          "volt_free_heating": "Potentialfreie Heizung"
+          "convector_passive": "Passiver Konvektor (ohne Ventilator)",
+          "convector_active": "Aktiver Konvektor (mit Ventilator)",
+          "volt_free_heating": "Zentralheizung"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Keine",
           "pushbutton": "Taster",
-          "switch": "Schalter",
+          "switch": "Wippschalter",
           "no_switch": "Kein Schalter"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Ausgabemodus",
         "state": {
-          "attached": "Angeschlossen",
-          "detached": "Getrennt",
-          "detached_short_press": "Getrennt (kurzer Druck)",
-          "detached_long_press": "Getrennt (langer Druck)",
+          "attached": "Gekoppelt",
+          "detached": "Getrennt (bei jedem Tastendruck)",
+          "detached_short_press": "Getrennt (bei kurzem Tastendruck)",
+          "detached_long_press": "Getrennt (bei langem Tastendruck)",
           "unsupported": "Nicht unterstützt"
         }
       },
       "siren_sound_level": {
-        "name": "Lautstärke",
+        "name": "Lautstärke Sirenenton",
         "state": {
-          "low": "Niedrig",
+          "low": "Gering",
           "medium": "Mittel",
-          "high": "Hoch"
+          "high": "Laut"
         }
       },
       "orientation_light_response_time": {
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer-Phasensteuerung",
         "state": {
-          "trailing": "Abschaltphase (Trailing Edge)",
-          "leading": "Anschnittphase (Leading Edge)"
+          "trailing": "Phasenabschnitt",
+          "leading": "Phasenanschnitt"
         }
       },
       "installation_profile": {
-        "name": "Einsatzbereich",
+        "name": "Verwendungszweck",
         "state": {
-          "generic": "Innen (Standard)",
+          "generic": "Standard",
           "outdoor": "Außen",
-          "light": "Licht",
-          "heating_rcc": "Heizung (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini-PV"
+          "light": "Leuchte",
+          "heating_rcc": "Heizung",
+          "boiler": "Zentralheizung",
+          "mini_pv": "Mini-PV-Anlage"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Luftqualitätsbeschreibung"
       },
       "communication_quality": {
-        "name": "Kommunikationsqualität",
+        "name": "Signalstärke",
         "state": {
           "good": "Gut",
           "normal": "Normal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batterie"
+        "name": "Batterieladung"
       },
       "siren_main_power": {
-        "name": "Stromquelle",
+        "name": "Primäre Stromquelle",
         "state": {
           "battery": "Batterie",
           "solar": "Solar",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Tastenzuordnung"
+        "name": "Belegung der Tasten"
       },
       "floor_temperature": {
         "name": "Fußbodentemperatur"
       },
       "purity": {
-        "name": "Reinheit"
+        "name": "Luftreinheit"
       },
       "air_quality": {
         "name": "Luftqualität"
@@ -500,7 +500,7 @@
         "name": "Feuchtigkeitsbewertung"
       },
       "purity_rating": {
-        "name": "Reinheitsbewertung"
+        "name": "Luftreinheitsbewertung"
       },
       "energy_yield": {
         "name": "Energieertrag"
@@ -509,7 +509,7 @@
         "name": "Leistungsertrag"
       },
       "valve_tappet": {
-        "name": "Ventilstößel"
+        "name": "Ventilposition"
       },
       "detection_test_state": {
         "name": "Erkennungstest-Status",
@@ -529,10 +529,10 @@
         "name": "Simulation läuft seit"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referenzlaufzeit (von unten nach oben)"
+        "name": "Öffnungszeit"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referenzlaufzeit (von oben nach unten)"
+        "name": "Schließzeit"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee-Routingqualität",
@@ -588,10 +588,10 @@
         "name": "Zeitplanüberschreibung aktiv"
       },
       "summer_mode": {
-        "name": "Sommermodus"
+        "name": "Sommerpause"
       },
       "ventilation_mode": {
-        "name": "Lüftungsmodus"
+        "name": "Nachhaltiges Lüften"
       },
       "shutter_calibration_required": {
         "name": "Kalibrierung erforderlich"
@@ -622,7 +622,7 @@
         "name": "Kindersicherung"
       },
       "pet_immunity_enabled": {
-        "name": "Haustier / Saugroboter vorhanden"
+        "name": "Haustier / Saugroboter"
       },
       "smart_sensitivity_enabled": {
         "name": "Automatische Sensitivität"
@@ -661,7 +661,7 @@
         "name": "Feuchtigkeitswarnung"
       },
       "swap_inputs": {
-        "name": "Eingänge tauschen"
+        "name": "Tastenbelegung ändern"
       },
       "swap_outputs": {
         "name": "Ausgänge tauschen"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Bewegungslicht"
+        "name": "Orientierungslicht"
       },
       "room_light_group": {
         "name": "Licht"

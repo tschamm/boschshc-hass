@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Dūmu tests"
+        "name": "Testa trauksme"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Minimālā spilgtuma priekšskatījums"
       },
       "reset_energy_summation": {
-        "name": "Atiestatīt enerģijas skaitītāju"
+        "name": "Atiestatīt enerģijas patēriņu"
       },
       "shutter_recalibrate": {
         "name": "Kalibrēt no jauna"
@@ -230,7 +230,7 @@
         "name": "Impulsa garums"
       },
       "temperature_drop_value": {
-        "name": "Temperatūras pazemināšanas vērtība"
+        "name": "Temperatūras novirze"
       },
       "energy_saving_power_threshold": {
         "name": "Enerģijas taupīšanas jaudas slieksnis"
@@ -245,19 +245,19 @@
         "name": "Displeja spilgtums"
       },
       "display_on_time": {
-        "name": "Displeja ieslēgšanas laiks"
+        "name": "Displeja ieslēgšanas ilgums"
       },
       "siren_alarm_duration": {
-        "name": "Signāla ilgums"
+        "name": "Sirēnas trauksmes ilgums"
       },
       "siren_flash_duration": {
-        "name": "Mirgošanas ilgums"
+        "name": "Mirgojošās gaismas trauksmes ilgums"
       },
       "siren_alarm_delay": {
-        "name": "Signāla aizkave"
+        "name": "Sirēnas trauksmes aizkave"
       },
       "siren_flash_delay": {
-        "name": "Mirgošanas aizkave"
+        "name": "Mirgojošās gaismas trauksmes aizkave"
       },
       "bypass_timeout": {
         "name": "Apiešanas noildze"
@@ -278,8 +278,8 @@
           "very_high": "Ļoti augsts",
           "high": "Augsts",
           "medium": "Vidējs",
-          "low": "Zems",
-          "very_low": "Ļoti zems"
+          "low": "Mērens",
+          "very_low": "Zems"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Displeja orientācija",
         "state": {
           "normal": "Normāls",
-          "reversed": "Apgriezts"
+          "reversed": "Pagriezts par 180°"
         }
       },
       "displayed_temperature": {
         "name": "Rādāmā temperatūra",
         "state": {
-          "setpoint": "Iestatītā vērtība",
+          "setpoint": "Iestatītā temperatūra",
           "measured": "Mērītā"
         }
       },
       "terminal_type": {
-        "name": "Termināļa veids",
+        "name": "Sensora pieslēgums",
         "state": {
-          "not_connected": "Nav pievienots",
+          "not_connected": "Netiek izmantots",
           "floor_sensor_connected": "Grīdas sensors pievienots",
           "floor_sensor_used_for_regulation": "Grīdas sensors izmantots regulēšanai",
-          "floor_sensor_displayed": "Grīdas sensors rādīts",
-          "floor_sensor_displayed_and_used_for_regulation": "Grīdas sensors rādīts un izmantots regulēšanai",
+          "floor_sensor_displayed": "Kabeļa temperatūras sensors (bez regulēšanas)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeļa temperatūras sensors (ar regulēšanu)",
           "volt_free_sensor_connected": "Bezsprieguma sensors pievienots",
-          "volt_free_sensor_connected_and_used_for_operation": "Bezsprieguma sensors pievienots un izmantots darbībai",
-          "outdoor_sensor_connected": "Āra sensors pievienots"
+          "volt_free_sensor_connected_and_used_for_operation": "Bezpotenciāla kontakts",
+          "outdoor_sensor_connected": "Āra temperatūras sensors"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Sildītāja veids",
         "state": {
           "floor_heating": "Grīdas apkure",
-          "floor_heating_low_energy": "Grīdas apkure (zemas enerģijas)",
+          "floor_heating_low_energy": "Grīdas apkure ar zemu enerģijas patēriņu",
           "radiator": "Radiators",
-          "convector_passive": "Konvektors (pasīvs)",
-          "convector_active": "Konvektors (aktīvs)",
-          "volt_free_heating": "Bezsprieguma apkure"
+          "convector_passive": "Pasīvs konvektors (bez ventilatora)",
+          "convector_active": "Aktīvs konvektors (ar ventilatoru)",
+          "volt_free_heating": "Centrālapkure"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Nav",
           "pushbutton": "Pogslēdzis",
-          "switch": "Slēdzis",
+          "switch": "Šūpojošais slēdzis",
           "no_switch": "Bez slēdža"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Izvades režīms",
         "state": {
-          "attached": "Pievienots",
-          "detached": "Atvienots",
-          "detached_short_press": "Atvienots (īss piespiediens)",
-          "detached_long_press": "Atvienots (garš piespiediens)",
+          "attached": "Sasaistīts",
+          "detached": "Atvienots ar jebkuru pogas nospiedienu",
+          "detached_short_press": "Atvienots ar īsu nospiedienu",
+          "detached_long_press": "Atvienots ar garu nospiedienu",
           "unsupported": "Netiek atbalstīts"
         }
       },
       "siren_sound_level": {
-        "name": "Skaņas līmenis",
+        "name": "Sirēnas skaļums",
         "state": {
-          "low": "Zems",
+          "low": "Samazināts",
           "medium": "Vidējs",
-          "high": "Augsts"
+          "high": "Skaļš"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Viedās jutības drošības līmenis",
+        "name": "Trauksmes sistēmas jutība",
         "state": {
           "high": "Augsts",
           "middle": "Vidējs",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Viedās jutības komforta līmenis",
+        "name": "Jutība citiem gadījumiem",
         "state": {
           "high": "Augsts",
           "middle": "Vidējs",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Dimmera fāzes vadība",
         "state": {
-          "trailing": "Nobeiguma fāzes vadība",
-          "leading": "Sākuma fāzes vadība"
+          "trailing": "Beigu fāzes nogriešana",
+          "leading": "Sākuma fāzes nogriešana"
         }
       },
       "installation_profile": {
-        "name": "Uzstādīšanas profils",
+        "name": "Lietošanas mērķis",
         "state": {
-          "generic": "Iekštelpas (vispārīgs)",
+          "generic": "Standarta",
           "outdoor": "Ārtelpas",
-          "light": "Apgaismojums",
-          "heating_rcc": "Apkure (RCC)",
-          "boiler": "Boilers",
-          "mini_pv": "Mini saules panelis"
+          "light": "Lampa",
+          "heating_rcc": "Sildītājs",
+          "boiler": "Centrālapkure",
+          "mini_pv": "Mini PV sistēma"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Gaisa kvalitātes apraksts"
       },
       "communication_quality": {
-        "name": "Komunikācijas kvalitāte",
+        "name": "Signāla stiprums",
         "state": {
           "good": "Laba",
           "normal": "Normāla",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Akumulators"
+        "name": "Akumulatora uzlāde"
       },
       "siren_main_power": {
-        "name": "Barošanas avots",
+        "name": "Primārais avots",
         "state": {
           "battery": "Akumulators",
           "solar": "Saules enerģija",
@@ -488,7 +488,7 @@
         "name": "Grīdas temperatūra"
       },
       "purity": {
-        "name": "Tīrība"
+        "name": "Gaisa tīrība"
       },
       "air_quality": {
         "name": "Gaisa kvalitāte"
@@ -500,7 +500,7 @@
         "name": "Mitruma novērtējums"
       },
       "purity_rating": {
-        "name": "Tīrības novērtējums"
+        "name": "Gaisa tīrības novērtējums"
       },
       "energy_yield": {
         "name": "Enerģijas ražība"
@@ -509,7 +509,7 @@
         "name": "Jaudas ražība"
       },
       "valve_tappet": {
-        "name": "Vārsta stūmējs"
+        "name": "Vārsta pozīcija"
       },
       "detection_test_state": {
         "name": "Detektēšanas testa stāvoklis",
@@ -529,10 +529,10 @@
         "name": "Simulācijas darbības sākums"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Atskaites kustības laiks (no apakšas uz augšu)"
+        "name": "Atvēršanas laiks"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Atskaites kustības laiks (no augšas uz apakšu)"
+        "name": "Aizvēršanas laiks"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee maršrutēšanas kvalitāte",
@@ -588,10 +588,10 @@
         "name": "Grafika pārrakstīšana aktīva"
       },
       "summer_mode": {
-        "name": "Vasaras režīms"
+        "name": "Vasaras pārtraukums"
       },
       "ventilation_mode": {
-        "name": "Ventilācijas režīms"
+        "name": "Ilgtspējīga vēdināšana"
       },
       "shutter_calibration_required": {
         "name": "Nepieciešama kalibrēšana"
@@ -619,16 +619,16 @@
         "name": "Iespējots"
       },
       "pet_immunity_enabled": {
-        "name": "Imunitāte pret dzīvniekiem"
+        "name": "Mājdzīvnieks / robotputekļsūcējs"
       },
       "smart_sensitivity_enabled": {
-        "name": "Viedā jutība"
+        "name": "Automātiskā jutība"
       },
       "tamper_protection_enabled": {
-        "name": "Aizsardzība pret bojāšanu"
+        "name": "Sabotāžas noteikšana"
       },
       "silent_mode": {
-        "name": "Klusais režīms"
+        "name": "Čuksta režīms"
       },
       "smartplug_routing": {
         "name": "Diapazona paplašināšana"
@@ -658,7 +658,7 @@
         "name": "Mitruma brīdinājums"
       },
       "swap_inputs": {
-        "name": "Mainīt ieejas"
+        "name": "Mainīt pogu piešķiri"
       },
       "swap_outputs": {
         "name": "Mainīt izejas"
@@ -667,7 +667,7 @@
         "name": "Pirmstrauksme"
       },
       "vibration_enabled": {
-        "name": "Vibrācija"
+        "name": "Vibrācijas noteikšana"
       },
       "intrusion_alarm": {
         "name": "Ielaušanās trauksme"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Kustības gaisma"
+        "name": "Orientācijas gaisma"
       },
       "room_light_group": {
         "name": "Gaisma"

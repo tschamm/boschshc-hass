@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Füstérzékelő teszt"
+        "name": "Teszt riasztás"
       },
       "walk_test": {
         "name": "Mozgásteszt"
@@ -207,7 +207,7 @@
         "name": "Minimális fényerő előnézet"
       },
       "reset_energy_summation": {
-        "name": "Energiaszámláló visszaállítása"
+        "name": "Energiafogyasztás nullázása"
       },
       "shutter_recalibrate": {
         "name": "Újrakalibrálás"
@@ -230,7 +230,7 @@
         "name": "Impulzushossz"
       },
       "temperature_drop_value": {
-        "name": "Hőmérséklet-csökkentés értéke"
+        "name": "Hőmérséklet-eltérés"
       },
       "energy_saving_power_threshold": {
         "name": "Energiatakarékos teljesítményküszöb"
@@ -245,19 +245,19 @@
         "name": "Kijelző fényereje"
       },
       "display_on_time": {
-        "name": "Kijelző bekapcsolási ideje"
+        "name": "Kijelző bekapcsolási időtartama"
       },
       "siren_alarm_duration": {
-        "name": "Riasztás időtartama"
+        "name": "Sziréna riasztás időtartama"
       },
       "siren_flash_duration": {
-        "name": "Villogás időtartama"
+        "name": "Villogó fény riasztás időtartama"
       },
       "siren_alarm_delay": {
-        "name": "Riasztás késleltetése"
+        "name": "Sziréna riasztás késleltetése"
       },
       "siren_flash_delay": {
-        "name": "Villogás késleltetése"
+        "name": "Villogó fény riasztás késleltetése"
       },
       "bypass_timeout": {
         "name": "Kihagyás időtúllépése"
@@ -278,8 +278,8 @@
           "very_high": "Nagyon magas",
           "high": "Magas",
           "medium": "Közepes",
-          "low": "Alacsony",
-          "very_low": "Nagyon alacsony"
+          "low": "Mérsékelt",
+          "very_low": "Alacsony"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +299,30 @@
         }
       },
       "display_direction": {
-        "name": "Kijelző iránya",
+        "name": "Kijelző tájolása",
         "state": {
           "normal": "Normál",
-          "reversed": "Fordított"
+          "reversed": "180°-kal elforgatva"
         }
       },
       "displayed_temperature": {
         "name": "Megjelenített hőmérséklet",
         "state": {
-          "setpoint": "Célérték",
+          "setpoint": "Beállított hőmérséklet",
           "measured": "Mért érték"
         }
       },
       "terminal_type": {
-        "name": "Csatlakozó típusa",
+        "name": "Érzékelő csatlakozás",
         "state": {
-          "not_connected": "Nincs csatlakoztatva",
+          "not_connected": "Nincs használatban",
           "floor_sensor_connected": "Padlóérzékelő csatlakoztatva",
           "floor_sensor_used_for_regulation": "Padlóérzékelő szabályozáshoz használva",
-          "floor_sensor_displayed": "Padlóérzékelő megjelenítve",
-          "floor_sensor_displayed_and_used_for_regulation": "Padlóérzékelő megjelenítve és szabályozáshoz használva",
+          "floor_sensor_displayed": "Kábeles hőmérséklet-érzékelő (szabályozás nélkül)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kábeles hőmérséklet-érzékelő (szabályozással)",
           "volt_free_sensor_connected": "Feszültségmentes érzékelő csatlakoztatva",
-          "volt_free_sensor_connected_and_used_for_operation": "Feszültségmentes érzékelő csatlakoztatva és működtetéshez használva",
-          "outdoor_sensor_connected": "Kültéri érzékelő csatlakoztatva"
+          "volt_free_sensor_connected_and_used_for_operation": "Potenciálmentes érintkező",
+          "outdoor_sensor_connected": "Kültéri hőmérséklet-érzékelő"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Fűtőberendezés típusa",
         "state": {
           "floor_heating": "Padlófűtés",
-          "floor_heating_low_energy": "Padlófűtés (alacsony energiafogyasztású)",
+          "floor_heating_low_energy": "Alacsony energiájú padlófűtés",
           "radiator": "Radiátor",
-          "convector_passive": "Konvektor (passzív)",
-          "convector_active": "Konvektor (aktív)",
-          "volt_free_heating": "Feszültségmentes fűtés"
+          "convector_passive": "Passzív konvektor (ventilátor nélkül)",
+          "convector_active": "Aktív konvektor (ventilátorral)",
+          "volt_free_heating": "Központi fűtés"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Nincs",
           "pushbutton": "Nyomógomb",
-          "switch": "Kapcsoló",
+          "switch": "Billenőkapcsoló",
           "no_switch": "Nincs kapcsoló"
         }
       },
@@ -364,18 +364,18 @@
         "name": "Kimeneti mód",
         "state": {
           "attached": "Csatolt",
-          "detached": "Leválasztott",
-          "detached_short_press": "Leválasztott (rövid nyomás)",
-          "detached_long_press": "Leválasztott (hosszú nyomás)",
+          "detached": "Leválasztva bármely gombnyomásra",
+          "detached_short_press": "Leválasztva rövid gombnyomásra",
+          "detached_long_press": "Leválasztva hosszú gombnyomásra",
           "unsupported": "Nem támogatott"
         }
       },
       "siren_sound_level": {
-        "name": "Hangerő",
+        "name": "Sziréna hangereje",
         "state": {
-          "low": "Alacsony",
+          "low": "Csökkentett",
           "medium": "Közepes",
-          "high": "Magas"
+          "high": "Hangos"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Okos érzékenység biztonsági szintje",
+        "name": "Riasztórendszer érzékenysége",
         "state": {
           "high": "Magas",
           "middle": "Közepes",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Okos érzékenység kényelmi szintje",
+        "name": "Érzékenység egyéb esetekhez",
         "state": {
           "high": "Magas",
           "middle": "Közepes",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer fázisszabályozás",
         "state": {
-          "trailing": "Lefutó élű vezérlés",
-          "leading": "Felfutó élű vezérlés"
+          "trailing": "Lefutó élű fázishasítás",
+          "leading": "Felfutó élű fázishasítás"
         }
       },
       "installation_profile": {
-        "name": "Telepítési profil",
+        "name": "Felhasználás célja",
         "state": {
-          "generic": "Beltéri (általános)",
+          "generic": "Normál",
           "outdoor": "Kültéri",
-          "light": "Világítás",
-          "heating_rcc": "Fűtés (RCC)",
-          "boiler": "Bojler",
-          "mini_pv": "Mini napelem"
+          "light": "Lámpa",
+          "heating_rcc": "Fűtőtest",
+          "boiler": "Központi fűtés",
+          "mini_pv": "Mini PV rendszer"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Levegőminőség leírása"
       },
       "communication_quality": {
-        "name": "Kommunikáció minősége",
+        "name": "Jelerősség",
         "state": {
           "good": "Jó",
           "normal": "Normál",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Akkumulátor"
+        "name": "Akkumulátor töltöttsége"
       },
       "siren_main_power": {
-        "name": "Tápforrás",
+        "name": "Elsődleges forrás",
         "state": {
           "battery": "Akkumulátor",
           "solar": "Napelem",
@@ -488,7 +488,7 @@
         "name": "Padlóhőmérséklet"
       },
       "purity": {
-        "name": "Tisztaság"
+        "name": "Levegőtisztaság"
       },
       "air_quality": {
         "name": "Levegőminőség"
@@ -500,7 +500,7 @@
         "name": "Páratartalom értékelés"
       },
       "purity_rating": {
-        "name": "Tisztasági értékelés"
+        "name": "Levegőtisztaság értékelése"
       },
       "energy_yield": {
         "name": "Energiahozam"
@@ -509,7 +509,7 @@
         "name": "Teljesítményhozam"
       },
       "valve_tappet": {
-        "name": "Szeleptányér"
+        "name": "Szelepállás"
       },
       "detection_test_state": {
         "name": "Érzékelési teszt állapota",
@@ -529,10 +529,10 @@
         "name": "Szimuláció futásának kezdete"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Kalibrált mozgásidő (alulról felfelé)"
+        "name": "Nyitási idő"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Kalibrált mozgásidő (felülről lefelé)"
+        "name": "Zárási idő"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee útválasztás minősége",
@@ -588,10 +588,10 @@
         "name": "Ütemezés felülbírálása aktív"
       },
       "summer_mode": {
-        "name": "Nyári üzemmód"
+        "name": "Nyári szünet"
       },
       "ventilation_mode": {
-        "name": "Szellőztetési üzemmód"
+        "name": "Fenntartható szellőztetés"
       },
       "shutter_calibration_required": {
         "name": "Kalibrálás szükséges"
@@ -619,16 +619,16 @@
         "name": "Engedélyezve"
       },
       "pet_immunity_enabled": {
-        "name": "Háziállat-immunitás"
+        "name": "Háziállat / robotporszívó"
       },
       "smart_sensitivity_enabled": {
-        "name": "Intelligens érzékenység"
+        "name": "Automatikus érzékenység"
       },
       "tamper_protection_enabled": {
-        "name": "Szabotázsvédelem"
+        "name": "Szabotázsérzékelés"
       },
       "silent_mode": {
-        "name": "Néma mód"
+        "name": "Suttogó üzemmód"
       },
       "smartplug_routing": {
         "name": "Hatótávolság-bővítés"
@@ -658,7 +658,7 @@
         "name": "Páratartalom figyelmeztetés"
       },
       "swap_inputs": {
-        "name": "Bemenetek felcserélése"
+        "name": "Gombhozzárendelés módosítása"
       },
       "swap_outputs": {
         "name": "Kimenetek felcserélése"
@@ -667,7 +667,7 @@
         "name": "Előriasztás"
       },
       "vibration_enabled": {
-        "name": "Rezgés"
+        "name": "Rezgésérzékelés"
       },
       "intrusion_alarm": {
         "name": "Behatolásjelző riasztás"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Mozgásvezérelt lámpa"
+        "name": "Tájékozódási fény"
       },
       "room_light_group": {
         "name": "Lámpa"

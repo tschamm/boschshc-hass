@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Prova de fum"
+        "name": "Alarma de prova"
       },
       "walk_test": {
         "name": "Prova de passada"
@@ -207,7 +207,7 @@
         "name": "Previsualitza la brillantor mínima"
       },
       "reset_energy_summation": {
-        "name": "Restableix el comptador d'energia"
+        "name": "Restableix el consum d'energia"
       },
       "shutter_recalibrate": {
         "name": "Recalibra"
@@ -230,7 +230,7 @@
         "name": "Durada de l'impuls"
       },
       "temperature_drop_value": {
-        "name": "Valor de baixada de temperatura"
+        "name": "Desviació de temperatura"
       },
       "energy_saving_power_threshold": {
         "name": "Llindar de potència d'estalvi energètic"
@@ -245,19 +245,19 @@
         "name": "Brillantor de la pantalla"
       },
       "display_on_time": {
-        "name": "Temps d'encesa de la pantalla"
+        "name": "Durada d'encesa de la pantalla"
       },
       "siren_alarm_duration": {
-        "name": "Durada de l'alarma"
+        "name": "Durada de l'alarma de la sirena"
       },
       "siren_flash_duration": {
-        "name": "Durada del flaix"
+        "name": "Durada de l'alarma del llum intermitent"
       },
       "siren_alarm_delay": {
-        "name": "Retard de l'alarma"
+        "name": "Retard de l'alarma de la sirena"
       },
       "siren_flash_delay": {
-        "name": "Retard del flaix"
+        "name": "Retard de l'alarma del llum intermitent"
       },
       "bypass_timeout": {
         "name": "Temps d'espera del bypass"
@@ -278,8 +278,8 @@
           "very_high": "Molt alta",
           "high": "Alta",
           "medium": "Mitjana",
-          "low": "Baixa",
-          "very_low": "Molt baixa"
+          "low": "Moderada",
+          "very_low": "Baixa"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Orientació de la pantalla",
         "state": {
           "normal": "Normal",
-          "reversed": "Invertida"
+          "reversed": "Girada 180°"
         }
       },
       "displayed_temperature": {
         "name": "Temperatura mostrada",
         "state": {
-          "setpoint": "Consigna",
+          "setpoint": "Temperatura ajustada",
           "measured": "Mesurada"
         }
       },
       "terminal_type": {
-        "name": "Tipus de terminal",
+        "name": "Connexió del sensor",
         "state": {
-          "not_connected": "No connectat",
+          "not_connected": "No utilitzat",
           "floor_sensor_connected": "Sensor de terra connectat",
           "floor_sensor_used_for_regulation": "Sensor de terra utilitzat per a la regulació",
-          "floor_sensor_displayed": "Sensor de terra mostrat",
-          "floor_sensor_displayed_and_used_for_regulation": "Sensor de terra mostrat i utilitzat per a la regulació",
+          "floor_sensor_displayed": "Sensor de temperatura de cable (sense regulació)",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensor de temperatura de cable (amb regulació)",
           "volt_free_sensor_connected": "Sensor lliure de tensió connectat",
-          "volt_free_sensor_connected_and_used_for_operation": "Sensor lliure de tensió connectat i utilitzat per al funcionament",
-          "outdoor_sensor_connected": "Sensor exterior connectat"
+          "volt_free_sensor_connected_and_used_for_operation": "Contacte lliure de potencial",
+          "outdoor_sensor_connected": "Sensor de temperatura exterior"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Tipus de calefactor",
         "state": {
           "floor_heating": "Terra radiant",
-          "floor_heating_low_energy": "Terra radiant (baix consum)",
+          "floor_heating_low_energy": "Terra radiant de baixa energia",
           "radiator": "Radiador",
-          "convector_passive": "Convector (passiu)",
-          "convector_active": "Convector (actiu)",
-          "volt_free_heating": "Calefacció lliure de tensió"
+          "convector_passive": "Convector passiu (sense ventilador)",
+          "convector_active": "Convector actiu (amb ventilador)",
+          "volt_free_heating": "Calefacció central"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Cap",
           "pushbutton": "Polsador",
-          "switch": "Interruptor",
+          "switch": "Interruptor basculant",
           "no_switch": "Sense interruptor"
         }
       },
@@ -364,18 +364,18 @@
         "name": "Mode de sortida",
         "state": {
           "attached": "Acoblat",
-          "detached": "Desacoblat",
-          "detached_short_press": "Desacoblat (pressió curta)",
-          "detached_long_press": "Desacoblat (pressió llarga)",
+          "detached": "Desacoblat amb qualsevol pulsació",
+          "detached_short_press": "Desacoblat amb pulsació curta",
+          "detached_long_press": "Desacoblat amb pulsació llarga",
           "unsupported": "No compatible"
         }
       },
       "siren_sound_level": {
-        "name": "Nivell de so",
+        "name": "Volum de la sirena",
         "state": {
-          "low": "Baix",
+          "low": "Reduït",
           "medium": "Mitjà",
-          "high": "Alt"
+          "high": "Fort"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Nivell de seguretat de la sensibilitat intel·ligent",
+        "name": "Sensibilitat per al sistema d'alarma",
         "state": {
           "high": "Alt",
           "middle": "Mitjà",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Nivell de confort de la sensibilitat intel·ligent",
+        "name": "Sensibilitat per a altres casos",
         "state": {
           "high": "Alt",
           "middle": "Mitjà",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Control de fase del regulador",
         "state": {
-          "trailing": "Tall de fase de cua",
-          "leading": "Tall de fase de cap"
+          "trailing": "Tall de fase per flanc de baixada",
+          "leading": "Tall de fase per flanc de pujada"
         }
       },
       "installation_profile": {
-        "name": "Perfil d'instal·lació",
+        "name": "Finalitat d'ús",
         "state": {
-          "generic": "Interior (genèric)",
+          "generic": "Estàndard",
           "outdoor": "Exterior",
-          "light": "Llum",
-          "heating_rcc": "Calefacció (RCC)",
-          "boiler": "Escalfador",
-          "mini_pv": "Mini fotovoltaica"
+          "light": "Làmpada",
+          "heating_rcc": "Escalfador",
+          "boiler": "Calefacció central",
+          "mini_pv": "Sistema Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Descripció de la qualitat de l'aire"
       },
       "communication_quality": {
-        "name": "Qualitat de comunicació",
+        "name": "Intensitat del senyal",
         "state": {
           "good": "Bona",
           "normal": "Normal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Bateria"
+        "name": "Càrrega de la bateria"
       },
       "siren_main_power": {
-        "name": "Font d'alimentació",
+        "name": "Font primària",
         "state": {
           "battery": "Bateria",
           "solar": "Solar",
@@ -488,7 +488,7 @@
         "name": "Temperatura del terra"
       },
       "purity": {
-        "name": "Puresa"
+        "name": "Puresa de l'aire"
       },
       "air_quality": {
         "name": "Qualitat de l'aire"
@@ -500,7 +500,7 @@
         "name": "Valoració d'humitat"
       },
       "purity_rating": {
-        "name": "Valoració de puresa"
+        "name": "Valoració de la puresa de l'aire"
       },
       "energy_yield": {
         "name": "Rendiment energètic"
@@ -509,7 +509,7 @@
         "name": "Rendiment de potència"
       },
       "valve_tappet": {
-        "name": "Seguidor de vàlvula"
+        "name": "Posició de la vàlvula"
       },
       "detection_test_state": {
         "name": "Estat del test de detecció",
@@ -529,10 +529,10 @@
         "name": "Simulació en curs des de"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Temps de referència de moviment (de baix a dalt)"
+        "name": "Temps d'obertura"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Temps de referència de moviment (de dalt a baix)"
+        "name": "Temps de tancament"
       },
       "zigbee_routing_quality": {
         "name": "Qualitat d'encaminament Zigbee",
@@ -588,10 +588,10 @@
         "name": "Anul·lació d'horari activa"
       },
       "summer_mode": {
-        "name": "Mode estiu"
+        "name": "Pausa d'estiu"
       },
       "ventilation_mode": {
-        "name": "Mode ventilació"
+        "name": "Ventilació sostenible"
       },
       "shutter_calibration_required": {
         "name": "Calibratge requerit"
@@ -619,16 +619,16 @@
         "name": "Activat"
       },
       "pet_immunity_enabled": {
-        "name": "Immunitat a mascotes"
+        "name": "Mascota / robot aspirador"
       },
       "smart_sensitivity_enabled": {
-        "name": "Sensibilitat intel·ligent"
+        "name": "Sensibilitat automàtica"
       },
       "tamper_protection_enabled": {
-        "name": "Protecció antisabotatge"
+        "name": "Detecció de sabotatge"
       },
       "silent_mode": {
-        "name": "Mode silenciós"
+        "name": "Mode xiuxiueig"
       },
       "smartplug_routing": {
         "name": "Extensió d'abast"
@@ -658,7 +658,7 @@
         "name": "Avís d'humitat"
       },
       "swap_inputs": {
-        "name": "Intercanvia entrades"
+        "name": "Canvia l'assignació de botons"
       },
       "swap_outputs": {
         "name": "Intercanvia sortides"
@@ -667,7 +667,7 @@
         "name": "Prealarma"
       },
       "vibration_enabled": {
-        "name": "Vibració"
+        "name": "Detecció de vibració"
       },
       "intrusion_alarm": {
         "name": "Alarma d'intrusió"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Llum de moviment"
+        "name": "Llum d'orientació"
       },
       "room_light_group": {
         "name": "Llum"

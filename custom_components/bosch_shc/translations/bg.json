@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Тест за дим"
+        "name": "Тестова аларма"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Преглед на минимална яркост"
       },
       "reset_energy_summation": {
-        "name": "Нулиране на брояча за енергия"
+        "name": "Нулиране на потреблението на енергия"
       },
       "shutter_recalibrate": {
         "name": "Прекалибриране"
@@ -230,7 +230,7 @@
         "name": "Дължина на импулса"
       },
       "temperature_drop_value": {
-        "name": "Стойност на понижаването на температурата"
+        "name": "Отклонение на температурата"
       },
       "energy_saving_power_threshold": {
         "name": "Праг на мощност за енергоспестяване"
@@ -245,19 +245,19 @@
         "name": "Яркост на дисплея"
       },
       "display_on_time": {
-        "name": "Време на включен дисплей"
+        "name": "Продължителност на включване на дисплея"
       },
       "siren_alarm_duration": {
-        "name": "Продължителност на алармата"
+        "name": "Продължителност на алармата на сирената"
       },
       "siren_flash_duration": {
-        "name": "Продължителност на мигането"
+        "name": "Продължителност на светлинната аларма"
       },
       "siren_alarm_delay": {
-        "name": "Закъснение на алармата"
+        "name": "Закъснение на алармата на сирената"
       },
       "siren_flash_delay": {
-        "name": "Закъснение на мигането"
+        "name": "Закъснение на светлинната аларма"
       },
       "bypass_timeout": {
         "name": "Изчакване за заобикаляне"
@@ -278,8 +278,8 @@
           "very_high": "Много висока",
           "high": "Висока",
           "medium": "Средна",
-          "low": "Ниска",
-          "very_low": "Много ниска"
+          "low": "Умерена",
+          "very_low": "Ниска"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Ориентация на дисплея",
         "state": {
           "normal": "Нормална",
-          "reversed": "Обърната"
+          "reversed": "Завъртяно на 180°"
         }
       },
       "displayed_temperature": {
         "name": "Показвана температура",
         "state": {
-          "setpoint": "Зададена стойност",
+          "setpoint": "Зададена температура",
           "measured": "Измерена"
         }
       },
       "terminal_type": {
-        "name": "Тип терминал",
+        "name": "Свързване на сензор",
         "state": {
-          "not_connected": "Не е свързан",
+          "not_connected": "Не се използва",
           "floor_sensor_connected": "Свързан подов сензор",
           "floor_sensor_used_for_regulation": "Подов сензор, използван за регулиране",
-          "floor_sensor_displayed": "Показван подов сензор",
-          "floor_sensor_displayed_and_used_for_regulation": "Подов сензор, показван и използван за регулиране",
+          "floor_sensor_displayed": "Кабелен температурен сензор (без регулиране)",
+          "floor_sensor_displayed_and_used_for_regulation": "Кабелен температурен сензор (с регулиране)",
           "volt_free_sensor_connected": "Свързан безпотенциален сензор",
-          "volt_free_sensor_connected_and_used_for_operation": "Безпотенциален сензор, свързан и използван за работа",
-          "outdoor_sensor_connected": "Свързан външен сензор"
+          "volt_free_sensor_connected_and_used_for_operation": "Безпотенциален контакт",
+          "outdoor_sensor_connected": "Външен температурен сензор"
         }
       },
       "valve_type": {
@@ -338,9 +338,9 @@
           "floor_heating": "Подово отопление",
           "floor_heating_low_energy": "Подово отопление (нисък разход)",
           "radiator": "Радиатор",
-          "convector_passive": "Конвектор (пасивен)",
-          "convector_active": "Конвектор (активен)",
-          "volt_free_heating": "Безпотенциално отопление"
+          "convector_passive": "Пасивен конвектор (без вентилатор)",
+          "convector_active": "Активен конвектор (с вентилатор)",
+          "volt_free_heating": "Централно отопление"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Няма",
           "pushbutton": "Бутон",
-          "switch": "Превключвател",
+          "switch": "Клавишен превключвател",
           "no_switch": "Без превключвател"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Изходен режим",
         "state": {
-          "attached": "Прикачен",
-          "detached": "Отделен",
-          "detached_short_press": "Отделен (кратко натискане)",
-          "detached_long_press": "Отделен (продължително натискане)",
+          "attached": "Свързан",
+          "detached": "Отделен при всяко натискане",
+          "detached_short_press": "Отделен при кратко натискане",
+          "detached_long_press": "Отделен при продължително натискане",
           "unsupported": "Неподдържан"
         }
       },
       "siren_sound_level": {
-        "name": "Ниво на звука",
+        "name": "Сила на звука на сирената",
         "state": {
-          "low": "Ниско",
-          "medium": "Средно",
-          "high": "Високо"
+          "low": "Намалена",
+          "medium": "Средна",
+          "high": "Силна"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Ниво на сигурност на интелигентната чувствителност",
+        "name": "Чувствителност за алармената система",
         "state": {
           "high": "Високо",
           "middle": "Средно",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Ниво на комфорт на интелигентната чувствителност",
+        "name": "Чувствителност за други случаи",
         "state": {
           "high": "Високо",
           "middle": "Средно",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Управление на фазата на димера",
         "state": {
-          "trailing": "Изключващо фазово управление",
-          "leading": "Включващо фазово управление"
+          "trailing": "Фазово управление по заден фронт",
+          "leading": "Фазово управление по преден фронт"
         }
       },
       "installation_profile": {
-        "name": "Профил на инсталация",
+        "name": "Предназначение",
         "state": {
-          "generic": "На закрито (общо)",
+          "generic": "Стандартно",
           "outdoor": "На открито",
-          "light": "Осветление",
-          "heating_rcc": "Отопление (RCC)",
-          "boiler": "Бойлер",
-          "mini_pv": "Мини фотоволтаик"
+          "light": "Лампа",
+          "heating_rcc": "Отопление",
+          "boiler": "Централно отопление",
+          "mini_pv": "Система Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Описание на качеството на въздуха"
       },
       "communication_quality": {
-        "name": "Качество на комуникацията",
+        "name": "Сила на сигнала",
         "state": {
           "good": "Добро",
           "normal": "Нормално",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Батерия"
+        "name": "Заряд на батерията"
       },
       "siren_main_power": {
-        "name": "Захранване",
+        "name": "Основен източник",
         "state": {
           "battery": "Батерия",
           "solar": "Слънчева енергия",
@@ -488,7 +488,7 @@
         "name": "Температура на пода"
       },
       "purity": {
-        "name": "Чистота"
+        "name": "Чистота на въздуха"
       },
       "air_quality": {
         "name": "Качество на въздуха"
@@ -500,7 +500,7 @@
         "name": "Оценка на влажността"
       },
       "purity_rating": {
-        "name": "Оценка на чистотата"
+        "name": "Оценка на чистотата на въздуха"
       },
       "energy_yield": {
         "name": "Енергийна добив"
@@ -509,7 +509,7 @@
         "name": "Добив на мощност"
       },
       "valve_tappet": {
-        "name": "Вентилен щифт"
+        "name": "Положение на клапана"
       },
       "detection_test_state": {
         "name": "Състояние на теста за откриване",
@@ -529,10 +529,10 @@
         "name": "Симулацията работи от"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Референтно време на движение (отдолу нагоре)"
+        "name": "Време за отваряне"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Референтно време на движение (отгоре надолу)"
+        "name": "Време за затваряне"
       },
       "zigbee_routing_quality": {
         "name": "Качество на Zigbee маршрутизацията",
@@ -588,10 +588,10 @@
         "name": "Активна отмяна на графика"
       },
       "summer_mode": {
-        "name": "Летен режим"
+        "name": "Лятна пауза"
       },
       "ventilation_mode": {
-        "name": "Режим на проветряване"
+        "name": "Устойчиво проветряване"
       },
       "shutter_calibration_required": {
         "name": "Изисква се калибриране"
@@ -619,16 +619,16 @@
         "name": "Активирано"
       },
       "pet_immunity_enabled": {
-        "name": "Устойчивост на домашни любимци"
+        "name": "Домашен любимец / робот прахосмукачка"
       },
       "smart_sensitivity_enabled": {
-        "name": "Интелигентна чувствителност"
+        "name": "Автоматична чувствителност"
       },
       "tamper_protection_enabled": {
-        "name": "Защита от подправяне"
+        "name": "Откриване на саботаж"
       },
       "silent_mode": {
-        "name": "Тих режим"
+        "name": "Режим на шепот"
       },
       "smartplug_routing": {
         "name": "Разширяване на обхвата"
@@ -658,7 +658,7 @@
         "name": "Предупреждение за влажност"
       },
       "swap_inputs": {
-        "name": "Размяна на входовете"
+        "name": "Промяна на съответствието на бутоните"
       },
       "swap_outputs": {
         "name": "Размяна на изходите"
@@ -667,7 +667,7 @@
         "name": "Предварителна аларма"
       },
       "vibration_enabled": {
-        "name": "Вибрация"
+        "name": "Откриване на вибрации"
       },
       "intrusion_alarm": {
         "name": "Аларма за проникване"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Светлина за движение"
+        "name": "Ориентационно осветление"
       },
       "room_light_group": {
         "name": "Светлина"

@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Uji Asap"
+        "name": "Uji Alarm"
       },
       "walk_test": {
         "name": "Uji Jalan"
@@ -207,7 +207,7 @@
         "name": "Pratinjau Kecerahan Minimum"
       },
       "reset_energy_summation": {
-        "name": "Reset Penghitung Energi"
+        "name": "Reset Konsumsi Energi"
       },
       "shutter_recalibrate": {
         "name": "Kalibrasi Ulang"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Panjang Impuls"
+        "name": "Panjang Pulsa"
       },
       "temperature_drop_value": {
-        "name": "Nilai Penurunan Suhu"
+        "name": "Deviasi Suhu"
       },
       "energy_saving_power_threshold": {
         "name": "Ambang Daya Hemat Energi"
@@ -245,19 +245,19 @@
         "name": "Kecerahan Layar"
       },
       "display_on_time": {
-        "name": "Waktu Layar Menyala"
+        "name": "Durasi Layar Menyala"
       },
       "siren_alarm_duration": {
-        "name": "Durasi Alarm"
+        "name": "Durasi Alarm Sirene"
       },
       "siren_flash_duration": {
-        "name": "Durasi Lampu Kilat"
+        "name": "Durasi Alarm Lampu Kilat"
       },
       "siren_alarm_delay": {
-        "name": "Penundaan Alarm"
+        "name": "Penundaan Alarm Sirene"
       },
       "siren_flash_delay": {
-        "name": "Penundaan Lampu Kilat"
+        "name": "Penundaan Alarm Lampu Kilat"
       },
       "bypass_timeout": {
         "name": "Batas Waktu Bypass"
@@ -278,8 +278,8 @@
           "very_high": "Sangat Tinggi",
           "high": "Tinggi",
           "medium": "Sedang",
-          "low": "Rendah",
-          "very_low": "Sangat Rendah"
+          "low": "Agak Rendah",
+          "very_low": "Rendah"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +299,30 @@
         }
       },
       "display_direction": {
-        "name": "Arah Tampilan",
+        "name": "Orientasi Tampilan",
         "state": {
           "normal": "Normal",
-          "reversed": "Terbalik"
+          "reversed": "Diputar 180°"
         }
       },
       "displayed_temperature": {
         "name": "Suhu yang Ditampilkan",
         "state": {
-          "setpoint": "Suhu Target",
+          "setpoint": "Suhu yang Disetel",
           "measured": "Terukur"
         }
       },
       "terminal_type": {
-        "name": "Jenis Terminal",
+        "name": "Koneksi Sensor",
         "state": {
-          "not_connected": "Tidak Terhubung",
+          "not_connected": "Tidak Digunakan",
           "floor_sensor_connected": "Sensor Lantai Terhubung",
           "floor_sensor_used_for_regulation": "Sensor Lantai Digunakan untuk Regulasi",
-          "floor_sensor_displayed": "Sensor Lantai Ditampilkan",
-          "floor_sensor_displayed_and_used_for_regulation": "Sensor Lantai Ditampilkan dan Digunakan untuk Regulasi",
+          "floor_sensor_displayed": "Sensor Suhu Kabel (tanpa regulasi)",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensor Suhu Kabel (dengan regulasi)",
           "volt_free_sensor_connected": "Sensor Bebas Tegangan Terhubung",
-          "volt_free_sensor_connected_and_used_for_operation": "Sensor Bebas Tegangan Terhubung dan Digunakan untuk Operasi",
-          "outdoor_sensor_connected": "Sensor Luar Ruangan Terhubung"
+          "volt_free_sensor_connected_and_used_for_operation": "Kontak Bebas Potensial",
+          "outdoor_sensor_connected": "Sensor Suhu Luar Ruangan"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Jenis Pemanas",
         "state": {
           "floor_heating": "Pemanas Lantai",
-          "floor_heating_low_energy": "Pemanas Lantai (Hemat Energi)",
+          "floor_heating_low_energy": "Pemanas Lantai (Energi Rendah)",
           "radiator": "Radiator",
-          "convector_passive": "Konvektor (Pasif)",
-          "convector_active": "Konvektor (Aktif)",
-          "volt_free_heating": "Pemanas Bebas Tegangan"
+          "convector_passive": "Konvektor Pasif (tanpa kipas)",
+          "convector_active": "Konvektor Aktif (dengan kipas)",
+          "volt_free_heating": "Pemanas Sentral"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Tidak Ada",
           "pushbutton": "Tombol Tekan",
-          "switch": "Sakelar",
+          "switch": "Sakelar Rocker",
           "no_switch": "Tanpa Sakelar"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Mode Keluaran",
         "state": {
-          "attached": "Terpasang",
-          "detached": "Terlepas",
-          "detached_short_press": "Terlepas (Tekan Singkat)",
-          "detached_long_press": "Terlepas (Tekan Lama)",
+          "attached": "Terkopel",
+          "detached": "Terputus saat Tombol Ditekan",
+          "detached_short_press": "Terputus saat Tekan Singkat",
+          "detached_long_press": "Terputus saat Tekan Lama",
           "unsupported": "Tidak Didukung"
         }
       },
       "siren_sound_level": {
-        "name": "Tingkat Suara",
+        "name": "Volume Sirene",
         "state": {
-          "low": "Rendah",
+          "low": "Pelan",
           "medium": "Sedang",
-          "high": "Tinggi"
+          "high": "Keras"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Level Keamanan Sensitivitas Cerdas",
+        "name": "Sensitivitas untuk Sistem Alarm",
         "state": {
           "high": "Tinggi",
           "middle": "Sedang",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Level Kenyamanan Sensitivitas Cerdas",
+        "name": "Sensitivitas untuk Kasus Lain",
         "state": {
           "high": "Tinggi",
           "middle": "Sedang",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Kontrol Fase Dimmer",
         "state": {
-          "trailing": "Tepi Turun",
-          "leading": "Tepi Naik"
+          "trailing": "Pemotongan Fase Tepi Turun",
+          "leading": "Pemotongan Fase Tepi Naik"
         }
       },
       "installation_profile": {
-        "name": "Profil Instalasi",
+        "name": "Tujuan Penggunaan",
         "state": {
-          "generic": "Dalam Ruangan (Umum)",
+          "generic": "Standar",
           "outdoor": "Luar Ruangan",
           "light": "Lampu",
-          "heating_rcc": "Pemanas (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini PV"
+          "heating_rcc": "Pemanas",
+          "boiler": "Pemanas Sentral",
+          "mini_pv": "Sistem Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Deskripsi Kualitas Udara"
       },
       "communication_quality": {
-        "name": "Kualitas Komunikasi",
+        "name": "Kekuatan Sinyal",
         "state": {
           "good": "Baik",
           "normal": "Normal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Baterai"
+        "name": "Daya Baterai"
       },
       "siren_main_power": {
-        "name": "Sumber Daya",
+        "name": "Sumber Utama",
         "state": {
           "battery": "Baterai",
           "solar": "Surya",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Pemetaan tombol"
+        "name": "Penetapan Tombol"
       },
       "floor_temperature": {
         "name": "Suhu Lantai"
       },
       "purity": {
-        "name": "Kemurnian"
+        "name": "Kemurnian Udara"
       },
       "air_quality": {
         "name": "Kualitas Udara"
@@ -500,7 +500,7 @@
         "name": "Penilaian Kelembapan"
       },
       "purity_rating": {
-        "name": "Penilaian Kemurnian"
+        "name": "Penilaian Kemurnian Udara"
       },
       "energy_yield": {
         "name": "Hasil Energi"
@@ -509,7 +509,7 @@
         "name": "Hasil Daya"
       },
       "valve_tappet": {
-        "name": "Tapet Katup"
+        "name": "Posisi Katup"
       },
       "detection_test_state": {
         "name": "Status Uji Deteksi",
@@ -529,10 +529,10 @@
         "name": "Simulasi Berjalan Sejak"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Waktu Pergerakan Referensi (Bawah ke Atas)"
+        "name": "Waktu Membuka"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Waktu Pergerakan Referensi (Atas ke Bawah)"
+        "name": "Waktu Menutup"
       },
       "zigbee_routing_quality": {
         "name": "Kualitas Routing Zigbee",
@@ -588,10 +588,10 @@
         "name": "Penggantian Jadwal Aktif"
       },
       "summer_mode": {
-        "name": "Mode Musim Panas"
+        "name": "Jeda musim panas"
       },
       "ventilation_mode": {
-        "name": "Mode Ventilasi"
+        "name": "Ventilasi berkelanjutan"
       },
       "shutter_calibration_required": {
         "name": "Kalibrasi Diperlukan"
@@ -619,16 +619,16 @@
         "name": "Diaktifkan"
       },
       "pet_immunity_enabled": {
-        "name": "Kekebalan Hewan Peliharaan"
+        "name": "Hewan Peliharaan / Robot Penyedot Debu"
       },
       "smart_sensitivity_enabled": {
-        "name": "Sensitivitas Cerdas"
+        "name": "Sensitivitas Otomatis"
       },
       "tamper_protection_enabled": {
-        "name": "Perlindungan Anti-Rusak"
+        "name": "Deteksi Sabotase"
       },
       "silent_mode": {
-        "name": "Mode Senyap"
+        "name": "Mode Bisik"
       },
       "smartplug_routing": {
         "name": "Perluasan Jangkauan"
@@ -658,7 +658,7 @@
         "name": "Peringatan Kelembapan"
       },
       "swap_inputs": {
-        "name": "Tukar Input"
+        "name": "Ubah Penetapan Tombol"
       },
       "swap_outputs": {
         "name": "Tukar Output"
@@ -667,7 +667,7 @@
         "name": "Pra-Alarm"
       },
       "vibration_enabled": {
-        "name": "Getaran"
+        "name": "Deteksi Getaran"
       },
       "intrusion_alarm": {
         "name": "Alarm Penyusupan"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Lampu Gerak"
+        "name": "Lampu Orientasi"
       },
       "room_light_group": {
         "name": "Lampu"

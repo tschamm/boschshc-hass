@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Rooktest"
+        "name": "Testalarm"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Voorbeeld minimale helderheid"
       },
       "reset_energy_summation": {
-        "name": "Energieteller resetten"
+        "name": "Energieverbruik resetten"
       },
       "shutter_recalibrate": {
         "name": "Opnieuw kalibreren"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulslengte"
+        "name": "Pulslengte"
       },
       "temperature_drop_value": {
-        "name": "Temperatuurverlagingswaarde"
+        "name": "Temperatuurafwijking"
       },
       "energy_saving_power_threshold": {
         "name": "Energiebesparingsdrempel vermogen"
@@ -245,19 +245,19 @@
         "name": "Schermhelderheid"
       },
       "display_on_time": {
-        "name": "Scherm aan-tijd"
+        "name": "Inschakelduur scherm"
       },
       "siren_alarm_duration": {
-        "name": "Alarmduur"
+        "name": "Alarmduur sirenetoon"
       },
       "siren_flash_duration": {
-        "name": "Flitsduur"
+        "name": "Alarmduur flitslicht"
       },
       "siren_alarm_delay": {
-        "name": "Alarmvertraging"
+        "name": "Alarmvertraging sirenetoon"
       },
       "siren_flash_delay": {
-        "name": "Flitsvertraging"
+        "name": "Alarmvertraging flitslicht"
       },
       "bypass_timeout": {
         "name": "Overbruggingstime-out"
@@ -278,8 +278,8 @@
           "very_high": "Zeer hoog",
           "high": "Hoog",
           "medium": "Gemiddeld",
-          "low": "Laag",
-          "very_low": "Zeer laag"
+          "low": "Matig",
+          "very_low": "Laag"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +299,30 @@
         }
       },
       "display_direction": {
-        "name": "Schermrichting",
+        "name": "Schermoriëntatie",
         "state": {
           "normal": "Normaal",
-          "reversed": "Omgekeerd"
+          "reversed": "180° gedraaid"
         }
       },
       "displayed_temperature": {
         "name": "Weergegeven temperatuur",
         "state": {
-          "setpoint": "Instelpunt",
+          "setpoint": "Ingestelde temperatuur",
           "measured": "Gemeten"
         }
       },
       "terminal_type": {
-        "name": "Aansluitingstype",
+        "name": "Sensoraansluiting",
         "state": {
-          "not_connected": "Niet aangesloten",
+          "not_connected": "Niet gebruikt",
           "floor_sensor_connected": "Vloersensor aangesloten",
           "floor_sensor_used_for_regulation": "Vloersensor gebruikt voor regeling",
-          "floor_sensor_displayed": "Vloersensor weergegeven",
-          "floor_sensor_displayed_and_used_for_regulation": "Vloersensor weergegeven en gebruikt voor regeling",
+          "floor_sensor_displayed": "Kabeltemperatuursensor (zonder regeling)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeltemperatuursensor (met regeling)",
           "volt_free_sensor_connected": "Potentiaalvrije sensor aangesloten",
-          "volt_free_sensor_connected_and_used_for_operation": "Potentiaalvrije sensor aangesloten en gebruikt voor bediening",
-          "outdoor_sensor_connected": "Buitensensor aangesloten"
+          "volt_free_sensor_connected_and_used_for_operation": "Potentiaalvrij contact",
+          "outdoor_sensor_connected": "Buitentemperatuursensor"
         }
       },
       "valve_type": {
@@ -336,11 +336,11 @@
         "name": "Verwarmingstype",
         "state": {
           "floor_heating": "Vloerverwarming",
-          "floor_heating_low_energy": "Vloerverwarming (laag energieverbruik)",
+          "floor_heating_low_energy": "Vloerverwarming lage energie",
           "radiator": "Radiator",
-          "convector_passive": "Convector (passief)",
-          "convector_active": "Convector (actief)",
-          "volt_free_heating": "Potentiaalvrije verwarming"
+          "convector_passive": "Passieve convector (zonder ventilator)",
+          "convector_active": "Actieve convector (met ventilator)",
+          "volt_free_heating": "Centrale verwarming"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Geen",
           "pushbutton": "Drukknop",
-          "switch": "Schakelaar",
+          "switch": "Wipschakelaar",
           "no_switch": "Geen schakelaar"
         }
       },
@@ -364,16 +364,16 @@
         "name": "Uitvoermodus",
         "state": {
           "attached": "Gekoppeld",
-          "detached": "Ontkoppeld",
-          "detached_short_press": "Ontkoppeld (korte druk)",
-          "detached_long_press": "Ontkoppeld (lange druk)",
+          "detached": "Ontkoppeld bij elke toetsdruk",
+          "detached_short_press": "Ontkoppeld bij korte toetsdruk",
+          "detached_long_press": "Ontkoppeld bij lange toetsdruk",
           "unsupported": "Niet ondersteund"
         }
       },
       "siren_sound_level": {
-        "name": "Geluidsniveau",
+        "name": "Volume sirenetoon",
         "state": {
-          "low": "Laag",
+          "low": "Verlaagd",
           "medium": "Gemiddeld",
           "high": "Hoog"
         }
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity beveiligingsniveau",
+        "name": "Gevoeligheid voor alarmsysteem",
         "state": {
           "high": "Hoog",
           "middle": "Gemiddeld",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity comfortniveau",
+        "name": "Gevoeligheid voor overige gevallen",
         "state": {
           "high": "Hoog",
           "middle": "Gemiddeld",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer faseregeling",
         "state": {
-          "trailing": "Aflopende fase",
-          "leading": "Oplopende fase"
+          "trailing": "Fase-afsnijding",
+          "leading": "Fase-aansnijding"
         }
       },
       "installation_profile": {
-        "name": "Installatieprofiel",
+        "name": "Gebruiksdoel",
         "state": {
-          "generic": "Binnen (Algemeen)",
+          "generic": "Standaard",
           "outdoor": "Buiten",
-          "light": "Licht",
-          "heating_rcc": "Verwarming (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini-zonnepaneel"
+          "light": "Lamp",
+          "heating_rcc": "Verwarming",
+          "boiler": "Centrale verwarming",
+          "mini_pv": "Mini PV-systeem"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Luchtkwaliteitsbeschrijving"
       },
       "communication_quality": {
-        "name": "Communicatiekwaliteit",
+        "name": "Signaalsterkte",
         "state": {
           "good": "Goed",
           "normal": "Normaal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batterij"
+        "name": "Batterijlading"
       },
       "siren_main_power": {
-        "name": "Stroombron",
+        "name": "Primaire stroombron",
         "state": {
           "battery": "Batterij",
           "solar": "Zonne-energie",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Knoptoewijzing"
+        "name": "Bezetting van de toetsen"
       },
       "floor_temperature": {
         "name": "Vloertemperatuur"
       },
       "purity": {
-        "name": "Zuiverheid"
+        "name": "Luchtzuiverheid"
       },
       "air_quality": {
         "name": "Luchtkwaliteit"
@@ -500,7 +500,7 @@
         "name": "Vochtigheidsbeoordeling"
       },
       "purity_rating": {
-        "name": "Zuiverheidsbeoordeling"
+        "name": "Luchtzuiverheidsbeoordeling"
       },
       "energy_yield": {
         "name": "Energieopbrengst"
@@ -509,7 +509,7 @@
         "name": "Vermogensopbrengst"
       },
       "valve_tappet": {
-        "name": "Ventielstoterstang"
+        "name": "Klepstand"
       },
       "detection_test_state": {
         "name": "Detectietest status",
@@ -529,10 +529,10 @@
         "name": "Simulatie actief sinds"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referentie beweegtijd (onder naar boven)"
+        "name": "Openingstijd"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referentie beweegtijd (boven naar onder)"
+        "name": "Sluittijd"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee-routeringskwaliteit",
@@ -588,10 +588,10 @@
         "name": "Schema-overschrijving actief"
       },
       "summer_mode": {
-        "name": "Zomermodus"
+        "name": "Zomervakantie"
       },
       "ventilation_mode": {
-        "name": "Ventilatiemodus"
+        "name": "Duurzaam ventileren"
       },
       "shutter_calibration_required": {
         "name": "Kalibratie vereist"
@@ -619,16 +619,16 @@
         "name": "Ingeschakeld"
       },
       "pet_immunity_enabled": {
-        "name": "Huisdierimmuniteit"
+        "name": "Huisdier / robotstofzuiger"
       },
       "smart_sensitivity_enabled": {
-        "name": "Smart Sensitivity"
+        "name": "Automatische gevoeligheid"
       },
       "tamper_protection_enabled": {
-        "name": "Sabotagebescherming"
+        "name": "Sabotagedetectie"
       },
       "silent_mode": {
-        "name": "Stille modus"
+        "name": "Fluistermodus"
       },
       "smartplug_routing": {
         "name": "Bereikuitbreiding"
@@ -658,7 +658,7 @@
         "name": "Vochtigheidswaarschuwing"
       },
       "swap_inputs": {
-        "name": "Ingangen wisselen"
+        "name": "Toetsbezetting wijzigen"
       },
       "swap_outputs": {
         "name": "Uitgangen wisselen"
@@ -667,7 +667,7 @@
         "name": "Vooralarm"
       },
       "vibration_enabled": {
-        "name": "Trilling"
+        "name": "Trillingsdetectie"
       },
       "intrusion_alarm": {
         "name": "Inbraakalarm"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Bewegingslamp"
+        "name": "Oriëntatielicht"
       },
       "room_light_group": {
         "name": "Lamp"

@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Smoke Test"
+        "name": "Test alarm"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Preview Min Brightness"
       },
       "reset_energy_summation": {
-        "name": "Reset Energy Counter"
+        "name": "Reset energy consumption"
       },
       "shutter_recalibrate": {
         "name": "Recalibrate"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulse Length"
+        "name": "Pulse length"
       },
       "temperature_drop_value": {
-        "name": "Temperature Drop Value"
+        "name": "Temperature deviation"
       },
       "energy_saving_power_threshold": {
         "name": "Energy Saving Power Threshold"
@@ -245,19 +245,19 @@
         "name": "Display Brightness"
       },
       "display_on_time": {
-        "name": "Display On Time"
+        "name": "Display switch-on duration"
       },
       "siren_alarm_duration": {
-        "name": "Alarm Duration"
+        "name": "Siren alarm duration"
       },
       "siren_flash_duration": {
-        "name": "Flash Duration"
+        "name": "Flashing light alarm duration"
       },
       "siren_alarm_delay": {
-        "name": "Alarm Delay"
+        "name": "Siren alarm delay"
       },
       "siren_flash_delay": {
-        "name": "Flash Delay"
+        "name": "Flashing light alarm delay"
       },
       "bypass_timeout": {
         "name": "Bypass Timeout"
@@ -268,7 +268,7 @@
         "name": "Motion Sensitivity",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
@@ -278,8 +278,8 @@
           "very_high": "Very High",
           "high": "High",
           "medium": "Medium",
-          "low": "Low",
-          "very_low": "Very Low"
+          "low": "Moderate",
+          "very_low": "Low"
         }
       },
       "state_after_power_outage": {
@@ -294,35 +294,35 @@
         "name": "Smoke Sensitivity",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "display_direction": {
-        "name": "Display Direction",
+        "name": "Display orientation",
         "state": {
           "normal": "Normal",
-          "reversed": "Reversed"
+          "reversed": "Rotated by 180°"
         }
       },
       "displayed_temperature": {
         "name": "Displayed Temperature",
         "state": {
-          "setpoint": "Setpoint",
+          "setpoint": "Set temperature",
           "measured": "Measured"
         }
       },
       "terminal_type": {
-        "name": "Terminal Type",
+        "name": "Sensor connection",
         "state": {
-          "not_connected": "Not Connected",
+          "not_connected": "Not used",
           "floor_sensor_connected": "Floor Sensor Connected",
           "floor_sensor_used_for_regulation": "Floor Sensor Used for Regulation",
-          "floor_sensor_displayed": "Floor Sensor Displayed",
-          "floor_sensor_displayed_and_used_for_regulation": "Floor Sensor Displayed and Used for Regulation",
+          "floor_sensor_displayed": "Cable temperature sensor (without regulation)",
+          "floor_sensor_displayed_and_used_for_regulation": "Cable temperature sensor (with regulation)",
           "volt_free_sensor_connected": "Volt-Free Sensor Connected",
-          "volt_free_sensor_connected_and_used_for_operation": "Volt-Free Sensor Connected and Used for Operation",
-          "outdoor_sensor_connected": "Outdoor Sensor Connected"
+          "volt_free_sensor_connected_and_used_for_operation": "Potential-free contact",
+          "outdoor_sensor_connected": "Outdoor temperature sensor"
         }
       },
       "valve_type": {
@@ -335,20 +335,20 @@
       "heater_type": {
         "name": "Heater Type",
         "state": {
-          "floor_heating": "Floor Heating",
-          "floor_heating_low_energy": "Floor Heating (Low Energy)",
+          "floor_heating": "Underfloor heating",
+          "floor_heating_low_energy": "Underfloor heating low energy",
           "radiator": "Radiator",
-          "convector_passive": "Convector (Passive)",
-          "convector_active": "Convector (Active)",
-          "volt_free_heating": "Volt-Free Heating"
+          "convector_passive": "Passive convector (without fan)",
+          "convector_active": "Active convector (with fan)",
+          "volt_free_heating": "Central heating"
         }
       },
       "switch_type": {
         "name": "Switch Type",
         "state": {
           "none": "None",
-          "pushbutton": "Pushbutton",
-          "switch": "Switch",
+          "pushbutton": "Push button",
+          "switch": "Rocker switch",
           "no_switch": "No Switch"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Output Mode",
         "state": {
-          "attached": "Attached",
-          "detached": "Detached",
-          "detached_short_press": "Detached (Short Press)",
-          "detached_long_press": "Detached (Long Press)",
+          "attached": "Coupled",
+          "detached": "Disconnected on any key press",
+          "detached_short_press": "Disconnected on short press",
+          "detached_long_press": "Disconnected on long press",
           "unsupported": "Unsupported"
         }
       },
       "siren_sound_level": {
-        "name": "Sound Level",
+        "name": "Siren volume",
         "state": {
-          "low": "Low",
+          "low": "Reduced",
           "medium": "Medium",
-          "high": "High"
+          "high": "Loud"
         }
       },
       "orientation_light_response_time": {
@@ -386,37 +386,37 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity Security Level",
+        "name": "Sensitivity for alarm system",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity Comfort Level",
+        "name": "Sensitivity for other cases",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "dimmer_phase_control": {
         "name": "Dimmer Phase Control",
         "state": {
-          "trailing": "Trailing",
-          "leading": "Leading"
+          "trailing": "Trailing edge phase cut",
+          "leading": "Leading edge phase cut"
         }
       },
       "installation_profile": {
-        "name": "Installation Profile",
+        "name": "Purpose of use",
         "state": {
-          "generic": "Indoor (Generic)",
-          "outdoor": "Outdoor",
-          "light": "Light",
-          "heating_rcc": "Heating (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini PV"
+          "generic": "Standard",
+          "outdoor": "Outdoors",
+          "light": "Lamp",
+          "heating_rcc": "Heater",
+          "boiler": "Central heating",
+          "mini_pv": "Mini PV system"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Air Quality Description"
       },
       "communication_quality": {
-        "name": "Communication Quality",
+        "name": "Signal strength",
         "state": {
           "good": "Good",
           "normal": "Normal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Battery"
+        "name": "Battery charge"
       },
       "siren_main_power": {
-        "name": "Power Source",
+        "name": "Primary source",
         "state": {
           "battery": "Battery",
           "solar": "Solar",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Button mapping"
+        "name": "Key assignment"
       },
       "floor_temperature": {
         "name": "Floor Temperature"
       },
       "purity": {
-        "name": "Purity"
+        "name": "Air purity"
       },
       "air_quality": {
         "name": "Air Quality"
@@ -500,7 +500,7 @@
         "name": "Humidity Rating"
       },
       "purity_rating": {
-        "name": "Purity Rating"
+        "name": "Air purity rating"
       },
       "energy_yield": {
         "name": "Energy Yield"
@@ -509,7 +509,7 @@
         "name": "Power Yield"
       },
       "valve_tappet": {
-        "name": "Valve Tappet"
+        "name": "Valve position"
       },
       "detection_test_state": {
         "name": "Detection Test State",
@@ -529,10 +529,10 @@
         "name": "Simulation Running Until"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Reference Moving Time (Top to Bottom)"
+        "name": "Closing time"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Reference Moving Time (Bottom to Top)"
+        "name": "Opening time"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee Routing Quality",
@@ -588,10 +588,10 @@
         "name": "Schedule Override Active"
       },
       "summer_mode": {
-        "name": "Summer Mode"
+        "name": "Summer break"
       },
       "ventilation_mode": {
-        "name": "Ventilation Mode"
+        "name": "Sustainable ventilation"
       },
       "shutter_calibration_required": {
         "name": "Calibration Required"
@@ -622,16 +622,16 @@
         "name": "Enabled"
       },
       "pet_immunity_enabled": {
-        "name": "Pet Immunity"
+        "name": "Pet / robot vacuum cleaner"
       },
       "smart_sensitivity_enabled": {
-        "name": "Smart Sensitivity"
+        "name": "Automatic sensitivity"
       },
       "tamper_protection_enabled": {
-        "name": "Tamper Protection"
+        "name": "Sabotage detection"
       },
       "silent_mode": {
-        "name": "Silent Mode"
+        "name": "Whisper mode"
       },
       "smartplug_routing": {
         "name": "Range Extension"
@@ -661,7 +661,7 @@
         "name": "Humidity Warning"
       },
       "swap_inputs": {
-        "name": "Swap Inputs"
+        "name": "Change key assignment"
       },
       "swap_outputs": {
         "name": "Swap Outputs"
@@ -670,7 +670,7 @@
         "name": "Pre-Alarm"
       },
       "vibration_enabled": {
-        "name": "Vibration"
+        "name": "Vibration detection"
       },
       "intrusion_alarm": {
         "name": "Intrusion Alarm"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Motion Light"
+        "name": "Orientation light"
       },
       "room_light_group": {
         "name": "Light"

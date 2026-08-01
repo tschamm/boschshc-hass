@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Тест диму"
+        "name": "Тестова тривога"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Перегляд мінімальної яскравості"
       },
       "reset_energy_summation": {
-        "name": "Скинути лічильник енергії"
+        "name": "Скинути споживання енергії"
       },
       "shutter_recalibrate": {
         "name": "Перекалібрувати"
@@ -230,7 +230,7 @@
         "name": "Тривалість імпульсу"
       },
       "temperature_drop_value": {
-        "name": "Значення зниження температури"
+        "name": "Відхилення температури"
       },
       "energy_saving_power_threshold": {
         "name": "Порогова потужність енергозбереження"
@@ -245,19 +245,19 @@
         "name": "Яскравість дисплея"
       },
       "display_on_time": {
-        "name": "Час увімкнення дисплея"
+        "name": "Тривалість увімкнення дисплея"
       },
       "siren_alarm_duration": {
-        "name": "Тривалість тривоги"
+        "name": "Тривалість тривоги сирени"
       },
       "siren_flash_duration": {
-        "name": "Тривалість спалаху"
+        "name": "Тривалість світлового сигналу тривоги"
       },
       "siren_alarm_delay": {
-        "name": "Затримка тривоги"
+        "name": "Затримка тривоги сирени"
       },
       "siren_flash_delay": {
-        "name": "Затримка спалаху"
+        "name": "Затримка світлового сигналу тривоги"
       },
       "bypass_timeout": {
         "name": "Час очікування обходу"
@@ -278,8 +278,8 @@
           "very_high": "Дуже високий",
           "high": "Високий",
           "medium": "Середній",
-          "low": "Низький",
-          "very_low": "Дуже низький"
+          "low": "Помірний",
+          "very_low": "Низький"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Орієнтація дисплея",
         "state": {
           "normal": "Звичайний",
-          "reversed": "Перевернутий"
+          "reversed": "Повернуто на 180°"
         }
       },
       "displayed_temperature": {
         "name": "Температура на дисплеї",
         "state": {
-          "setpoint": "Задане значення",
+          "setpoint": "Задана температура",
           "measured": "Виміряне значення"
         }
       },
       "terminal_type": {
-        "name": "Тип клеми",
+        "name": "Підключення датчика",
         "state": {
-          "not_connected": "Не підключено",
+          "not_connected": "Не використовується",
           "floor_sensor_connected": "Підключено підлоговий датчик",
           "floor_sensor_used_for_regulation": "Підлоговий датчик використовується для регулювання",
-          "floor_sensor_displayed": "Підлоговий датчик відображається",
-          "floor_sensor_displayed_and_used_for_regulation": "Підлоговий датчик відображається та використовується для регулювання",
+          "floor_sensor_displayed": "Кабельний датчик температури (без регулювання)",
+          "floor_sensor_displayed_and_used_for_regulation": "Кабельний датчик температури (з регулюванням)",
           "volt_free_sensor_connected": "Підключено безпотенціальний датчик",
-          "volt_free_sensor_connected_and_used_for_operation": "Безпотенціальний датчик підключено та використовується для роботи",
-          "outdoor_sensor_connected": "Підключено зовнішній датчик"
+          "volt_free_sensor_connected_and_used_for_operation": "Безпотенціальний контакт",
+          "outdoor_sensor_connected": "Зовнішній датчик температури"
         }
       },
       "valve_type": {
@@ -338,9 +338,9 @@
           "floor_heating": "Тепла підлога",
           "floor_heating_low_energy": "Тепла підлога (низьке енергоспоживання)",
           "radiator": "Радіатор",
-          "convector_passive": "Конвектор (пасивний)",
-          "convector_active": "Конвектор (активний)",
-          "volt_free_heating": "Безпотенціальне опалення"
+          "convector_passive": "Пасивний конвектор (без вентилятора)",
+          "convector_active": "Активний конвектор (з вентилятором)",
+          "volt_free_heating": "Центральне опалення"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Немає",
           "pushbutton": "Кнопка",
-          "switch": "Перемикач",
+          "switch": "Клавішний вимикач",
           "no_switch": "Без перемикача"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Режим виходу",
         "state": {
-          "attached": "Приєднано",
-          "detached": "Відокремлено",
-          "detached_short_press": "Відокремлено (коротке натискання)",
-          "detached_long_press": "Відокремлено (довге натискання)",
+          "attached": "Пов'язано",
+          "detached": "Відокремлено при будь-якому натисканні",
+          "detached_short_press": "Відокремлено при короткому натисканні",
+          "detached_long_press": "Відокремлено при довгому натисканні",
           "unsupported": "Не підтримується"
         }
       },
       "siren_sound_level": {
-        "name": "Рівень гучності",
+        "name": "Гучність сирени",
         "state": {
-          "low": "Низький",
-          "medium": "Середній",
-          "high": "Високий"
+          "low": "Знижена",
+          "medium": "Середня",
+          "high": "Гучна"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Рівень безпеки розумної чутливості",
+        "name": "Чутливість для сигналізації",
         "state": {
           "high": "Високий",
           "middle": "Середній",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Рівень комфорту розумної чутливості",
+        "name": "Чутливість для інших випадків",
         "state": {
           "high": "Високий",
           "middle": "Середній",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Керування фазою диммера",
         "state": {
-          "trailing": "Керування заднім фронтом",
-          "leading": "Керування переднім фронтом"
+          "trailing": "Фазове регулювання по задньому фронту",
+          "leading": "Фазове регулювання по передньому фронту"
         }
       },
       "installation_profile": {
-        "name": "Профіль встановлення",
+        "name": "Призначення",
         "state": {
-          "generic": "Внутрішній (загальний)",
+          "generic": "Стандартний",
           "outdoor": "Зовнішній",
-          "light": "Освітлення",
-          "heating_rcc": "Опалення (RCC)",
-          "boiler": "Бойлер",
-          "mini_pv": "Міні-сонячна панель"
+          "light": "Лампа",
+          "heating_rcc": "Опалення",
+          "boiler": "Центральне опалення",
+          "mini_pv": "Система Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Опис якості повітря"
       },
       "communication_quality": {
-        "name": "Якість зв'язку",
+        "name": "Рівень сигналу",
         "state": {
           "good": "Хороша",
           "normal": "Нормальна",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Акумулятор"
+        "name": "Заряд акумулятора"
       },
       "siren_main_power": {
-        "name": "Джерело живлення",
+        "name": "Основне джерело",
         "state": {
           "battery": "Акумулятор",
           "solar": "Сонячна батарея",
@@ -488,7 +488,7 @@
         "name": "Температура підлоги"
       },
       "purity": {
-        "name": "Чистота"
+        "name": "Чистота повітря"
       },
       "air_quality": {
         "name": "Якість повітря"
@@ -500,7 +500,7 @@
         "name": "Оцінка вологості"
       },
       "purity_rating": {
-        "name": "Оцінка чистоти"
+        "name": "Оцінка чистоти повітря"
       },
       "energy_yield": {
         "name": "Вироблена енергія"
@@ -509,7 +509,7 @@
         "name": "Потужність"
       },
       "valve_tappet": {
-        "name": "Штовхач клапана"
+        "name": "Положення клапана"
       },
       "detection_test_state": {
         "name": "Стан тесту виявлення",
@@ -529,10 +529,10 @@
         "name": "Симуляція активна з"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Еталонний час руху (знизу вгору)"
+        "name": "Час відкриття"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Еталонний час руху (згори вниз)"
+        "name": "Час закриття"
       },
       "zigbee_routing_quality": {
         "name": "Якість маршрутизації Zigbee",
@@ -588,10 +588,10 @@
         "name": "Активне перевизначення розкладу"
       },
       "summer_mode": {
-        "name": "Літній режим"
+        "name": "Літня перерва"
       },
       "ventilation_mode": {
-        "name": "Режим вентиляції"
+        "name": "Екологічне провітрювання"
       },
       "shutter_calibration_required": {
         "name": "Потрібне калібрування"
@@ -619,16 +619,16 @@
         "name": "Увімкнено"
       },
       "pet_immunity_enabled": {
-        "name": "Ігнорування тварин"
+        "name": "Домашня тварина / робот-пилосос"
       },
       "smart_sensitivity_enabled": {
-        "name": "Розумна чутливість"
+        "name": "Автоматична чутливість"
       },
       "tamper_protection_enabled": {
-        "name": "Захист від втручання"
+        "name": "Виявлення саботажу"
       },
       "silent_mode": {
-        "name": "Безшумний режим"
+        "name": "Режим шепоту"
       },
       "smartplug_routing": {
         "name": "Розширення зони дії"
@@ -658,7 +658,7 @@
         "name": "Попередження про вологість"
       },
       "swap_inputs": {
-        "name": "Поміняти входи місцями"
+        "name": "Змінити призначення кнопок"
       },
       "swap_outputs": {
         "name": "Поміняти виходи місцями"
@@ -667,7 +667,7 @@
         "name": "Попередня тривога"
       },
       "vibration_enabled": {
-        "name": "Вібрація"
+        "name": "Виявлення вібрації"
       },
       "intrusion_alarm": {
         "name": "Тривога вторгнення"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Світло руху"
+        "name": "Орієнтаційне освітлення"
       },
       "room_light_group": {
         "name": "Світло"

@@ -1,6 +1,28 @@
 # Changelog
 
-## UNRELEASED — Shutter II no longer shows a stale movement direction for app/scenario moves
+## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
+
+- **All user-facing entity names and states re-checked against Bosch's own
+  app** — 66 English source strings corrected and re-translated across all
+  30 languages. Until now our wording was invented independently of Bosch;
+  it is now taken from the official app's own string tables (extracted from
+  two APK builds), so entity names match what users see in the Bosch app.
+  Highlights: the Motion Detector II's own indicator LED is the
+  **Orientation light** (Bosch's "motion light" is the separate service
+  that switches *other* lamps — we had been naming the wrong feature);
+  Shutter Contact II vibration sensitivity levels were **one step off**
+  Bosch's own scale (low/very low are Bosch's "Moderate"/"Low");
+  `communication_quality` is Bosch's **Signal strength**; the smart-plug
+  `installation_profile` is **Purpose of use** with Bosch's real option
+  names (Standard / Lamp / Heater / Central heating / Mini PV system), where
+  "Indoor (Generic)" had been factually wrong for plugs and relays; and the
+  Room Thermostat II terminal options now say what they actually do
+  ("Cable temperature sensor (with regulation)" instead of "Floor Sensor
+  Displayed and Used for Regulation"). Deliberately NOT adopted: Bosch's
+  "Burglar alarm" for our Smoke Detector II `intrusion_alarm` switch — ours
+  sounds that one detector's local siren, Bosch's term means the
+  whole-house alarm system, and adopting it would imply the switch arms
+  your alarm.
 
 - **Fixed: a Shutter II (`MICROMODULE_SHUTTER`) moved by a Bosch-app
   scenario, routine or the app itself reported the direction of the last
@@ -17,8 +39,6 @@
   no fresh press fall back to the level comparison as before — so
   physical-switch moves keep working exactly as they did, and
   app/scenario moves no longer show a wrong direction.
-
-## 0.12.14 — 18 switch/sensor entities no longer show raw untranslated names; new Summer Mode / Ventilation Mode sensors
 
 - **New: two diagnostic binary sensors on each thermostat/TRV room's virtual
   RoomClimateControl device** (#389): **Summer Mode** (heating disabled for

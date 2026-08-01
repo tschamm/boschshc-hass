@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Duman Testi"
+        "name": "Test Alarmı"
       },
       "walk_test": {
         "name": "Yürüyüş Testi"
@@ -207,7 +207,7 @@
         "name": "Minimum Parlaklık Önizlemesi"
       },
       "reset_energy_summation": {
-        "name": "Enerji Sayacını Sıfırla"
+        "name": "Enerji Tüketimini Sıfırla"
       },
       "shutter_recalibrate": {
         "name": "Yeniden Kalibre Et"
@@ -227,10 +227,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Darbe Süresi"
+        "name": "Darbe Uzunluğu"
       },
       "temperature_drop_value": {
-        "name": "Sıcaklık Düşüş Değeri"
+        "name": "Sıcaklık Sapması"
       },
       "energy_saving_power_threshold": {
         "name": "Enerji Tasarrufu Güç Eşiği"
@@ -245,19 +245,19 @@
         "name": "Ekran Parlaklığı"
       },
       "display_on_time": {
-        "name": "Ekran Açık Kalma Süresi"
+        "name": "Ekran Açılma Süresi"
       },
       "siren_alarm_duration": {
-        "name": "Alarm Süresi"
+        "name": "Siren Alarm Süresi"
       },
       "siren_flash_duration": {
-        "name": "Flaş Süresi"
+        "name": "Flaşörlü Işık Alarm Süresi"
       },
       "siren_alarm_delay": {
-        "name": "Alarm Gecikmesi"
+        "name": "Siren Alarm Gecikmesi"
       },
       "siren_flash_delay": {
-        "name": "Flaş Gecikmesi"
+        "name": "Flaşörlü Işık Alarm Gecikmesi"
       },
       "bypass_timeout": {
         "name": "Atlama Zaman Aşımı"
@@ -278,8 +278,8 @@
           "very_high": "Çok Yüksek",
           "high": "Yüksek",
           "medium": "Orta",
-          "low": "Düşük",
-          "very_low": "Çok Düşük"
+          "low": "Ilımlı",
+          "very_low": "Düşük"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Ekran Yönü",
         "state": {
           "normal": "Normal",
-          "reversed": "Ters"
+          "reversed": "180° Döndürülmüş"
         }
       },
       "displayed_temperature": {
         "name": "Gösterilen Sıcaklık",
         "state": {
-          "setpoint": "Ayar Noktası",
+          "setpoint": "Ayarlanan Sıcaklık",
           "measured": "Ölçülen"
         }
       },
       "terminal_type": {
-        "name": "Terminal Türü",
+        "name": "Sensör Bağlantısı",
         "state": {
-          "not_connected": "Bağlı Değil",
+          "not_connected": "Kullanılmıyor",
           "floor_sensor_connected": "Zemin Sensörü Bağlı",
           "floor_sensor_used_for_regulation": "Zemin Sensörü Düzenleme İçin Kullanılıyor",
-          "floor_sensor_displayed": "Zemin Sensörü Gösteriliyor",
-          "floor_sensor_displayed_and_used_for_regulation": "Zemin Sensörü Gösteriliyor ve Düzenleme İçin Kullanılıyor",
+          "floor_sensor_displayed": "Kablolu Sıcaklık Sensörü (Regülasyonsuz)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kablolu Sıcaklık Sensörü (Regülasyonlu)",
           "volt_free_sensor_connected": "Gerilimsiz Sensör Bağlı",
-          "volt_free_sensor_connected_and_used_for_operation": "Gerilimsiz Sensör Bağlı ve Çalıştırma İçin Kullanılıyor",
-          "outdoor_sensor_connected": "Dış Mekan Sensörü Bağlı"
+          "volt_free_sensor_connected_and_used_for_operation": "Potansiyelsiz Kontak",
+          "outdoor_sensor_connected": "Dış Mekan Sıcaklık Sensörü"
         }
       },
       "valve_type": {
@@ -335,12 +335,12 @@
       "heater_type": {
         "name": "Isıtıcı Türü",
         "state": {
-          "floor_heating": "Zemin Isıtma",
-          "floor_heating_low_energy": "Zemin Isıtma (Düşük Enerji)",
+          "floor_heating": "Yerden Isıtma",
+          "floor_heating_low_energy": "Yerden Isıtma Düşük Enerji",
           "radiator": "Radyatör",
-          "convector_passive": "Konvektör (Pasif)",
-          "convector_active": "Konvektör (Aktif)",
-          "volt_free_heating": "Gerilimsiz Isıtma"
+          "convector_passive": "Pasif Konvektör (Fansız)",
+          "convector_active": "Aktif Konvektör (Fanlı)",
+          "volt_free_heating": "Merkezi Isıtma"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Yok",
           "pushbutton": "Buton",
-          "switch": "Anahtar",
+          "switch": "Devirmeli Anahtar",
           "no_switch": "Anahtar Yok"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Çıkış Modu",
         "state": {
-          "attached": "Bağlı",
-          "detached": "Ayrık",
-          "detached_short_press": "Ayrık (Kısa Basış)",
-          "detached_long_press": "Ayrık (Uzun Basış)",
+          "attached": "Bağlantılı",
+          "detached": "Herhangi Bir Tuşa Basıldığında Ayrık",
+          "detached_short_press": "Kısa Basışta Ayrık",
+          "detached_long_press": "Uzun Basışta Ayrık",
           "unsupported": "Desteklenmiyor"
         }
       },
       "siren_sound_level": {
-        "name": "Ses Seviyesi",
+        "name": "Siren Ses Seviyesi",
         "state": {
-          "low": "Düşük",
+          "low": "Azaltılmış",
           "medium": "Orta",
-          "high": "Yüksek"
+          "high": "Yüksek Sesli"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Akıllı Hassasiyet Güvenlik Düzeyi",
+        "name": "Alarm Sistemi Hassasiyeti",
         "state": {
           "high": "Yüksek",
           "middle": "Orta",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Akıllı Hassasiyet Konfor Düzeyi",
+        "name": "Diğer Durumlar İçin Hassasiyet",
         "state": {
           "high": "Yüksek",
           "middle": "Orta",
@@ -404,19 +404,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer Faz Kontrolü",
         "state": {
-          "trailing": "Geriye Kesme",
-          "leading": "İleriye Kesme"
+          "trailing": "Düşen Kenar Faz Kesme",
+          "leading": "Yükselen Kenar Faz Kesme"
         }
       },
       "installation_profile": {
-        "name": "Kurulum Profili",
+        "name": "Kullanım Amacı",
         "state": {
-          "generic": "İç Mekan (Genel)",
+          "generic": "Standart",
           "outdoor": "Dış Mekan",
-          "light": "Işık",
-          "heating_rcc": "Isıtma (RCC)",
-          "boiler": "Kombi",
-          "mini_pv": "Mini Güneş Paneli"
+          "light": "Lamba",
+          "heating_rcc": "Isıtıcı",
+          "boiler": "Merkezi Isıtma",
+          "mini_pv": "Mini PV Sistemi"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Hava Kalitesi Açıklaması"
       },
       "communication_quality": {
-        "name": "İletişim Kalitesi",
+        "name": "Sinyal Gücü",
         "state": {
           "good": "İyi",
           "normal": "Normal",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Pil"
+        "name": "Pil Şarjı"
       },
       "siren_main_power": {
-        "name": "Güç Kaynağı",
+        "name": "Birincil Kaynak",
         "state": {
           "battery": "Pil",
           "solar": "Güneş",
@@ -482,13 +482,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Düğme eşlemesi"
+        "name": "Tuş Ataması"
       },
       "floor_temperature": {
         "name": "Zemin Sıcaklığı"
       },
       "purity": {
-        "name": "Saflık"
+        "name": "Hava Saflığı"
       },
       "air_quality": {
         "name": "Hava Kalitesi"
@@ -500,7 +500,7 @@
         "name": "Nem Değerlendirmesi"
       },
       "purity_rating": {
-        "name": "Saflık Değerlendirmesi"
+        "name": "Hava Saflığı Değerlendirmesi"
       },
       "energy_yield": {
         "name": "Enerji Verimi"
@@ -509,7 +509,7 @@
         "name": "Güç Verimi"
       },
       "valve_tappet": {
-        "name": "Valf İticisi"
+        "name": "Valf Konumu"
       },
       "detection_test_state": {
         "name": "Algılama Testi Durumu",
@@ -529,10 +529,10 @@
         "name": "Simülasyon Başlangıç Zamanı"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referans Hareket Süresi (Alttan Üste)"
+        "name": "Açılma Süresi"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referans Hareket Süresi (Üstten Alta)"
+        "name": "Kapanma Süresi"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee Yönlendirme Kalitesi",
@@ -588,10 +588,10 @@
         "name": "Program Geçersiz Kılma Etkin"
       },
       "summer_mode": {
-        "name": "Yaz Modu"
+        "name": "Yaz Molası"
       },
       "ventilation_mode": {
-        "name": "Havalandırma Modu"
+        "name": "Sürdürülebilir Havalandırma"
       },
       "shutter_calibration_required": {
         "name": "Kalibrasyon Gerekli"
@@ -619,16 +619,16 @@
         "name": "Etkin"
       },
       "pet_immunity_enabled": {
-        "name": "Evcil Hayvan Bağışıklığı"
+        "name": "Evcil Hayvan / Robot Süpürge"
       },
       "smart_sensitivity_enabled": {
-        "name": "Akıllı Hassasiyet"
+        "name": "Otomatik Hassasiyet"
       },
       "tamper_protection_enabled": {
-        "name": "Kurcalama Koruması"
+        "name": "Sabotaj Algılama"
       },
       "silent_mode": {
-        "name": "Sessiz Mod"
+        "name": "Fısıltı Modu"
       },
       "smartplug_routing": {
         "name": "Menzil Genişletme"
@@ -658,7 +658,7 @@
         "name": "Nem Uyarısı"
       },
       "swap_inputs": {
-        "name": "Girişleri Değiştir"
+        "name": "Tuş Atamasını Değiştir"
       },
       "swap_outputs": {
         "name": "Çıkışları Değiştir"
@@ -667,7 +667,7 @@
         "name": "Ön Alarm"
       },
       "vibration_enabled": {
-        "name": "Titreşim"
+        "name": "Titreşim Algılama"
       },
       "intrusion_alarm": {
         "name": "İzinsiz Giriş Alarmı"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Hareket Işığı"
+        "name": "Yönlendirme Işığı"
       },
       "room_light_group": {
         "name": "Işık"

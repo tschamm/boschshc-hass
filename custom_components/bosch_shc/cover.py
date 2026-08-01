@@ -148,6 +148,10 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         Residual, unchanged from before: a press that *stops* a movement is
         indistinguishable from one that starts one when its Keypad event
         arrives after the STOPPED update, so it stays armed for the next move.
+        It is one-shot — the next completed movement consumes it — and a
+        freshness window on eventTimestamp was deliberately NOT used to close
+        it, since that would make the working physical-switch path depend on
+        SHC-vs-HA clock agreement.
         """
         if self._device.device_model != "MICROMODULE_SHUTTER":
             return
@@ -162,6 +166,9 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                 ShutterControlService.State.MOVING,
                 ShutterControlService.State.OPENING,
                 ShutterControlService.State.CLOSING,
+                # endPositionAutoDetect devices end MOVING -> CALIBRATING ->
+                # STOPPED; without this the press would stay armed.
+                ShutterControlService.State.CALIBRATING,
             )
         ):
             self._keypad_event_pending = False

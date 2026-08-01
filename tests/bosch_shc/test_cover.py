@@ -804,6 +804,51 @@ class TestMicromoduleShutterStaleKeypadDirection:
         cover._update_attr()
         assert cover._attr_is_opening is True
 
+    def test_calibrating_end_also_consumes_the_press(self):
+        """Bughunt on #385: a move can end MOVING → CALIBRATING → STOPPED on
+        devices with endPositionAutoDetect. Keying consumption only off
+        MOVING/OPENING/CLOSING left the press armed, reproducing the very bug
+        being fixed on the next app/scenario move.
+        """
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+        )
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+
+        cover._device.operation_state = CALIBRATING
+        cover._update_attr()
+        cover._device.operation_state = STOPPED
+        cover._device.level = 1.0
+        cover._update_attr()
+        assert cover._keypad_event_pending is False
+
+    def test_late_stop_press_stays_armed_documented_residual(self):
+        """Pins the documented residual: a press that *stops* a move, whose
+        Keypad event lands after the STOPPED update, is indistinguishable from
+        one that starts a move and stays armed for the next one.
+
+        Deliberately NOT closed with an eventTimestamp freshness window — that
+        would make the working physical-switch path depend on SHC-vs-HA clock
+        agreement. It is one-shot: the next completed move consumes it.
+        """
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=STOPPED,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+            keypad_event_pending=False,
+        )
+        # Stop press arrives after the movement already ended.
+        cover._device.eventtimestamp = 2000
+        cover._update_attr()
+        assert cover._keypad_event_pending is True
+
     def test_movement_end_consumes_the_press(self):
         """MOVING → STOPPED consumes the press, so the next move re-evaluates."""
         cover = _make_cover(

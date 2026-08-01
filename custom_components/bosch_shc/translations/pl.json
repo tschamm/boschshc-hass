@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Test dymu"
+        "name": "Alarm testowy"
       },
       "walk_test": {
         "name": "Test ruchu"
@@ -207,7 +207,7 @@
         "name": "Podgląd minimalnej jasności"
       },
       "reset_energy_summation": {
-        "name": "Resetuj licznik energii"
+        "name": "Resetuj zużycie energii"
       },
       "shutter_recalibrate": {
         "name": "Kalibruj ponownie"
@@ -230,7 +230,7 @@
         "name": "Długość impulsu"
       },
       "temperature_drop_value": {
-        "name": "Wartość obniżenia temperatury"
+        "name": "Odchylenie temperatury"
       },
       "energy_saving_power_threshold": {
         "name": "Próg mocy trybu oszczędzania energii"
@@ -248,16 +248,16 @@
         "name": "Czas włączenia wyświetlacza"
       },
       "siren_alarm_duration": {
-        "name": "Czas trwania alarmu"
+        "name": "Czas trwania alarmu syreny"
       },
       "siren_flash_duration": {
-        "name": "Czas trwania błysku"
+        "name": "Czas trwania alarmu światła błyskowego"
       },
       "siren_alarm_delay": {
-        "name": "Opóźnienie alarmu"
+        "name": "Opóźnienie alarmu syreny"
       },
       "siren_flash_delay": {
-        "name": "Opóźnienie błysku"
+        "name": "Opóźnienie alarmu światła błyskowego"
       },
       "bypass_timeout": {
         "name": "Limit czasu pominięcia"
@@ -278,8 +278,8 @@
           "very_high": "Bardzo wysoka",
           "high": "Wysoka",
           "medium": "Średnia",
-          "low": "Niska",
-          "very_low": "Bardzo niska"
+          "low": "Umiarkowana",
+          "very_low": "Niska"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Orientacja wyświetlacza",
         "state": {
           "normal": "Normalny",
-          "reversed": "Odwrócony"
+          "reversed": "Obrócony o 180°"
         }
       },
       "displayed_temperature": {
         "name": "Wyświetlana temperatura",
         "state": {
-          "setpoint": "Zadana",
+          "setpoint": "Temperatura zadana",
           "measured": "Zmierzona"
         }
       },
       "terminal_type": {
-        "name": "Typ zacisku",
+        "name": "Podłączenie czujnika",
         "state": {
-          "not_connected": "Niepodłączony",
+          "not_connected": "Nieużywane",
           "floor_sensor_connected": "Podłączony czujnik podłogowy",
           "floor_sensor_used_for_regulation": "Czujnik podłogowy używany do regulacji",
-          "floor_sensor_displayed": "Wyświetlany czujnik podłogowy",
-          "floor_sensor_displayed_and_used_for_regulation": "Czujnik podłogowy wyświetlany i używany do regulacji",
+          "floor_sensor_displayed": "Przewodowy czujnik temperatury (bez regulacji)",
+          "floor_sensor_displayed_and_used_for_regulation": "Przewodowy czujnik temperatury (z regulacją)",
           "volt_free_sensor_connected": "Podłączony czujnik beznapięciowy",
-          "volt_free_sensor_connected_and_used_for_operation": "Czujnik beznapięciowy podłączony i używany do obsługi",
-          "outdoor_sensor_connected": "Podłączony czujnik zewnętrzny"
+          "volt_free_sensor_connected_and_used_for_operation": "Styk bezpotencjałowy",
+          "outdoor_sensor_connected": "Zewnętrzny czujnik temperatury"
         }
       },
       "valve_type": {
@@ -338,9 +338,9 @@
           "floor_heating": "Ogrzewanie podłogowe",
           "floor_heating_low_energy": "Ogrzewanie podłogowe (niskoenergetyczne)",
           "radiator": "Grzejnik",
-          "convector_passive": "Konwektor (pasywny)",
-          "convector_active": "Konwektor (aktywny)",
-          "volt_free_heating": "Ogrzewanie beznapięciowe"
+          "convector_passive": "Konwektor pasywny (bez wentylatora)",
+          "convector_active": "Konwektor aktywny (z wentylatorem)",
+          "volt_free_heating": "Centralne ogrzewanie"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Brak",
           "pushbutton": "Przycisk",
-          "switch": "Przełącznik",
+          "switch": "Przełącznik klawiszowy",
           "no_switch": "Brak przełącznika"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Tryb wyjścia",
         "state": {
-          "attached": "Dołączony",
-          "detached": "Odłączony",
-          "detached_short_press": "Odłączony (krótkie naciśnięcie)",
-          "detached_long_press": "Odłączony (długie naciśnięcie)",
+          "attached": "Sprzężony",
+          "detached": "Odłączony przy dowolnym naciśnięciu",
+          "detached_short_press": "Odłączony przy krótkim naciśnięciu",
+          "detached_long_press": "Odłączony przy długim naciśnięciu",
           "unsupported": "Nieobsługiwane"
         }
       },
       "siren_sound_level": {
-        "name": "Poziom dźwięku",
+        "name": "Głośność syreny",
         "state": {
-          "low": "Niski",
-          "medium": "Średni",
-          "high": "Wysoki"
+          "low": "Zmniejszona",
+          "medium": "Średnia",
+          "high": "Głośna"
         }
       },
       "orientation_light_response_time": {
@@ -386,37 +386,37 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Poziom bezpieczeństwa czułości inteligentnej",
+        "name": "Czułość dla systemu alarmowego",
         "state": {
           "high": "Wysoki",
-          "middle": "Średni",
+          "middle": "Średnia",
           "low": "Niski"
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Poziom komfortu czułości inteligentnej",
+        "name": "Czułość dla pozostałych przypadków",
         "state": {
           "high": "Wysoki",
-          "middle": "Średni",
+          "middle": "Średnia",
           "low": "Niski"
         }
       },
       "dimmer_phase_control": {
         "name": "Sterowanie fazą ściemniacza",
         "state": {
-          "trailing": "Faza opadająca",
-          "leading": "Faza narastająca"
+          "trailing": "Regulacja fazowa zboczem opadającym",
+          "leading": "Regulacja fazowa zboczem narastającym"
         }
       },
       "installation_profile": {
-        "name": "Profil instalacji",
+        "name": "Przeznaczenie",
         "state": {
-          "generic": "Wewnętrzny (ogólny)",
+          "generic": "Standardowy",
           "outdoor": "Zewnętrzny",
-          "light": "Światło",
-          "heating_rcc": "Ogrzewanie (RCC)",
-          "boiler": "Bojler",
-          "mini_pv": "Mini fotowoltaika"
+          "light": "Lampa",
+          "heating_rcc": "Ogrzewanie",
+          "boiler": "Centralne ogrzewanie",
+          "mini_pv": "System Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Opis jakości powietrza"
       },
       "communication_quality": {
-        "name": "Jakość komunikacji",
+        "name": "Siła sygnału",
         "state": {
           "good": "Dobra",
           "normal": "Normalna",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Bateria"
+        "name": "Naładowanie baterii"
       },
       "siren_main_power": {
-        "name": "Źródło zasilania",
+        "name": "Źródło główne",
         "state": {
           "battery": "Bateria",
           "solar": "Słoneczne",
@@ -488,7 +488,7 @@
         "name": "Temperatura podłogi"
       },
       "purity": {
-        "name": "Czystość"
+        "name": "Czystość powietrza"
       },
       "air_quality": {
         "name": "Jakość powietrza"
@@ -500,7 +500,7 @@
         "name": "Ocena wilgotności"
       },
       "purity_rating": {
-        "name": "Ocena czystości"
+        "name": "Ocena czystości powietrza"
       },
       "energy_yield": {
         "name": "Uzysk energii"
@@ -509,7 +509,7 @@
         "name": "Moc wyjściowa"
       },
       "valve_tappet": {
-        "name": "Popychacz zaworu"
+        "name": "Pozycja zaworu"
       },
       "detection_test_state": {
         "name": "Stan testu wykrywania",
@@ -529,10 +529,10 @@
         "name": "Symulacja aktywna od"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referencyjny czas ruchu (z dołu do góry)"
+        "name": "Czas otwierania"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referencyjny czas ruchu (z góry do dołu)"
+        "name": "Czas zamykania"
       },
       "zigbee_routing_quality": {
         "name": "Jakość routingu Zigbee",
@@ -588,10 +588,10 @@
         "name": "Nadpisanie harmonogramu aktywne"
       },
       "summer_mode": {
-        "name": "Tryb letni"
+        "name": "Przerwa letnia"
       },
       "ventilation_mode": {
-        "name": "Tryb wentylacji"
+        "name": "Zrównoważone wietrzenie"
       },
       "shutter_calibration_required": {
         "name": "Wymagana kalibracja"
@@ -619,16 +619,16 @@
         "name": "Włączone"
       },
       "pet_immunity_enabled": {
-        "name": "Odporność na zwierzęta domowe"
+        "name": "Zwierzę / robot sprzątający"
       },
       "smart_sensitivity_enabled": {
-        "name": "Inteligentna czułość"
+        "name": "Czułość automatyczna"
       },
       "tamper_protection_enabled": {
-        "name": "Ochrona przed sabotażem"
+        "name": "Wykrywanie sabotażu"
       },
       "silent_mode": {
-        "name": "Tryb cichy"
+        "name": "Tryb szeptu"
       },
       "smartplug_routing": {
         "name": "Rozszerzenie zasięgu"
@@ -658,7 +658,7 @@
         "name": "Ostrzeżenie o wilgotności"
       },
       "swap_inputs": {
-        "name": "Zamień wejścia"
+        "name": "Zmień przypisanie przycisków"
       },
       "swap_outputs": {
         "name": "Zamień wyjścia"
@@ -667,7 +667,7 @@
         "name": "Alarm wstępny"
       },
       "vibration_enabled": {
-        "name": "Wibracje"
+        "name": "Wykrywanie wibracji"
       },
       "intrusion_alarm": {
         "name": "Alarm włamaniowy"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Lampka ruchu"
+        "name": "Światło orientacyjne"
       },
       "room_light_group": {
         "name": "Lampka"

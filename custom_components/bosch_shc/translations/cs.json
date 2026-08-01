@@ -180,7 +180,7 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Test kouřového čidla"
+        "name": "Testovací alarm"
       },
       "walk_test": {
         "name": "Walk Test"
@@ -207,7 +207,7 @@
         "name": "Náhled minimálního jasu"
       },
       "reset_energy_summation": {
-        "name": "Resetovat počítadlo energie"
+        "name": "Resetovat spotřebu energie"
       },
       "shutter_recalibrate": {
         "name": "Rekalibrovat"
@@ -230,7 +230,7 @@
         "name": "Délka impulzu"
       },
       "temperature_drop_value": {
-        "name": "Hodnota poklesu teploty"
+        "name": "Odchylka teploty"
       },
       "energy_saving_power_threshold": {
         "name": "Práh výkonu pro úsporu energie"
@@ -245,19 +245,19 @@
         "name": "Jas displeje"
       },
       "display_on_time": {
-        "name": "Doba svícení displeje"
+        "name": "Doba zapnutí displeje"
       },
       "siren_alarm_duration": {
-        "name": "Doba trvání alarmu"
+        "name": "Doba trvání alarmu sirény"
       },
       "siren_flash_duration": {
-        "name": "Doba trvání blikání"
+        "name": "Doba trvání alarmu blikajícího světla"
       },
       "siren_alarm_delay": {
-        "name": "Zpoždění alarmu"
+        "name": "Zpoždění alarmu sirény"
       },
       "siren_flash_delay": {
-        "name": "Zpoždění blikání"
+        "name": "Zpoždění alarmu blikajícího světla"
       },
       "bypass_timeout": {
         "name": "Časový limit přemostění"
@@ -278,8 +278,8 @@
           "very_high": "Velmi vysoká",
           "high": "Vysoká",
           "medium": "Střední",
-          "low": "Nízká",
-          "very_low": "Velmi nízká"
+          "low": "Mírná",
+          "very_low": "Nízká"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +302,27 @@
         "name": "Orientace displeje",
         "state": {
           "normal": "Normální",
-          "reversed": "Obrácená"
+          "reversed": "Otočeno o 180°"
         }
       },
       "displayed_temperature": {
         "name": "Zobrazovaná teplota",
         "state": {
-          "setpoint": "Požadovaná hodnota",
+          "setpoint": "Nastavená teplota",
           "measured": "Naměřená"
         }
       },
       "terminal_type": {
-        "name": "Typ svorky",
+        "name": "Připojení čidla",
         "state": {
-          "not_connected": "Nepřipojeno",
+          "not_connected": "Nepoužito",
           "floor_sensor_connected": "Podlahové čidlo připojeno",
           "floor_sensor_used_for_regulation": "Podlahové čidlo použito pro regulaci",
-          "floor_sensor_displayed": "Podlahové čidlo zobrazeno",
-          "floor_sensor_displayed_and_used_for_regulation": "Podlahové čidlo zobrazeno a použito pro regulaci",
+          "floor_sensor_displayed": "Kabelové teplotní čidlo (bez regulace)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabelové teplotní čidlo (s regulací)",
           "volt_free_sensor_connected": "Beznapěťové čidlo připojeno",
-          "volt_free_sensor_connected_and_used_for_operation": "Beznapěťové čidlo připojeno a použito pro provoz",
-          "outdoor_sensor_connected": "Venkovní čidlo připojeno"
+          "volt_free_sensor_connected_and_used_for_operation": "Beznapěťový kontakt",
+          "outdoor_sensor_connected": "Venkovní teplotní čidlo"
         }
       },
       "valve_type": {
@@ -338,9 +338,9 @@
           "floor_heating": "Podlahové topení",
           "floor_heating_low_energy": "Podlahové topení (nízkoenergetické)",
           "radiator": "Radiátor",
-          "convector_passive": "Konvektor (pasivní)",
-          "convector_active": "Konvektor (aktivní)",
-          "volt_free_heating": "Beznapěťové topení"
+          "convector_passive": "Pasivní konvektor (bez ventilátoru)",
+          "convector_active": "Aktivní konvektor (s ventilátorem)",
+          "volt_free_heating": "Ústřední topení"
         }
       },
       "switch_type": {
@@ -348,7 +348,7 @@
         "state": {
           "none": "Žádný",
           "pushbutton": "Tlačítko",
-          "switch": "Spínač",
+          "switch": "Kolébkový vypínač",
           "no_switch": "Bez spínače"
         }
       },
@@ -363,19 +363,19 @@
       "output_mode": {
         "name": "Režim výstupu",
         "state": {
-          "attached": "Připojeno",
-          "detached": "Odpojeno",
-          "detached_short_press": "Odpojeno (krátké stisknutí)",
-          "detached_long_press": "Odpojeno (dlouhé stisknutí)",
+          "attached": "Spojeno",
+          "detached": "Odpojeno při libovolném stisknutí",
+          "detached_short_press": "Odpojeno při krátkém stisknutí",
+          "detached_long_press": "Odpojeno při dlouhém stisknutí",
           "unsupported": "Nepodporováno"
         }
       },
       "siren_sound_level": {
-        "name": "Hlasitost",
+        "name": "Hlasitost sirény",
         "state": {
-          "low": "Nízká",
+          "low": "Snížená",
           "medium": "Střední",
-          "high": "Vysoká"
+          "high": "Hlasitá"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +386,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Úroveň zabezpečení inteligentní citlivosti",
+        "name": "Citlivost pro alarmový systém",
         "state": {
           "high": "Vysoká",
           "middle": "Střední",
@@ -394,7 +394,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Úroveň komfortu inteligentní citlivosti",
+        "name": "Citlivost pro ostatní případy",
         "state": {
           "high": "Vysoká",
           "middle": "Střední",
@@ -409,14 +409,14 @@
         }
       },
       "installation_profile": {
-        "name": "Instalační profil",
+        "name": "Účel použití",
         "state": {
-          "generic": "Vnitřní (obecný)",
+          "generic": "Standardní",
           "outdoor": "Venkovní",
-          "light": "Světlo",
-          "heating_rcc": "Topení (RCC)",
-          "boiler": "Bojler",
-          "mini_pv": "Mini FV"
+          "light": "Lampa",
+          "heating_rcc": "Topení",
+          "boiler": "Ústřední topení",
+          "mini_pv": "Systém Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -449,7 +449,7 @@
         "name": "Popis kvality vzduchu"
       },
       "communication_quality": {
-        "name": "Kvalita komunikace",
+        "name": "Síla signálu",
         "state": {
           "good": "Dobrá",
           "normal": "Normální",
@@ -460,10 +460,10 @@
         }
       },
       "siren_battery": {
-        "name": "Baterie"
+        "name": "Nabití baterie"
       },
       "siren_main_power": {
-        "name": "Zdroj napájení",
+        "name": "Primární zdroj",
         "state": {
           "battery": "Baterie",
           "solar": "Solární",
@@ -488,7 +488,7 @@
         "name": "Teplota podlahy"
       },
       "purity": {
-        "name": "Čistota"
+        "name": "Čistota vzduchu"
       },
       "air_quality": {
         "name": "Kvalita vzduchu"
@@ -500,7 +500,7 @@
         "name": "Hodnocení vlhkosti"
       },
       "purity_rating": {
-        "name": "Hodnocení čistoty"
+        "name": "Hodnocení čistoty vzduchu"
       },
       "energy_yield": {
         "name": "Výnos energie"
@@ -509,7 +509,7 @@
         "name": "Výkon"
       },
       "valve_tappet": {
-        "name": "Zdvih ventilu"
+        "name": "Poloha ventilu"
       },
       "detection_test_state": {
         "name": "Stav testu detekce",
@@ -529,10 +529,10 @@
         "name": "Simulace běží od"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referenční doba pohybu (zdola nahoru)"
+        "name": "Doba otevírání"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referenční doba pohybu (shora dolů)"
+        "name": "Doba zavírání"
       },
       "zigbee_routing_quality": {
         "name": "Kvalita směrování Zigbee",
@@ -588,10 +588,10 @@
         "name": "Přepsání plánu aktivní"
       },
       "summer_mode": {
-        "name": "Letní režim"
+        "name": "Letní pauza"
       },
       "ventilation_mode": {
-        "name": "Režim větrání"
+        "name": "Udržitelné větrání"
       },
       "shutter_calibration_required": {
         "name": "Vyžadována kalibrace"
@@ -619,16 +619,16 @@
         "name": "Povoleno"
       },
       "pet_immunity_enabled": {
-        "name": "Imunita vůči domácím mazlíčkům"
+        "name": "Domácí mazlíček / robotický vysavač"
       },
       "smart_sensitivity_enabled": {
-        "name": "Chytrá citlivost"
+        "name": "Automatická citlivost"
       },
       "tamper_protection_enabled": {
-        "name": "Ochrana proti neoprávněné manipulaci"
+        "name": "Detekce sabotáže"
       },
       "silent_mode": {
-        "name": "Tichý režim"
+        "name": "Šeptací režim"
       },
       "smartplug_routing": {
         "name": "Rozšíření dosahu"
@@ -658,7 +658,7 @@
         "name": "Varování před vlhkostí"
       },
       "swap_inputs": {
-        "name": "Prohodit vstupy"
+        "name": "Změnit přiřazení tlačítek"
       },
       "swap_outputs": {
         "name": "Prohodit výstupy"
@@ -667,7 +667,7 @@
         "name": "Předalarm"
       },
       "vibration_enabled": {
-        "name": "Vibrace"
+        "name": "Detekce vibrací"
       },
       "intrusion_alarm": {
         "name": "Poplach při vloupání"
@@ -678,7 +678,7 @@
     },
     "light": {
       "motion_light": {
-        "name": "Pohybové světlo"
+        "name": "Orientační světlo"
       },
       "room_light_group": {
         "name": "Světlo"
