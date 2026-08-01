@@ -59,8 +59,16 @@ def _make_cover(
     operation_state=MOVING,
     eventtype=None,
     keycode=None,
+    eventtimestamp=1000,
+    keypad_event_pending=True,
 ):
-    """Build a ShutterControlCover bypassing SHCEntity.__init__."""
+    """Build a ShutterControlCover bypassing SHCEntity.__init__.
+
+    ``keypad_event_pending`` defaults to True, i.e. the keypad state carried by
+    the device double belongs to a press that just happened (the situation the
+    keypad-direction branches exist for). Pass False to simulate a *stale*
+    press left over from an earlier movement (#385).
+    """
     cover = ShutterControlCover.__new__(ShutterControlCover)
     cover._device = SimpleNamespace(
         device_model=device_model,
@@ -68,6 +76,7 @@ def _make_cover(
         operation_state=operation_state,
         eventtype=eventtype,
         keycode=keycode,
+        eventtimestamp=eventtimestamp,
         name="test-cover",
         async_stop=AsyncMock(),
         async_set_level=AsyncMock(),
@@ -84,6 +93,8 @@ def _make_cover(
     cover._attr_is_opening = None
     cover._attr_is_closing = None
     cover._attr_current_cover_position = None
+    cover._last_keypad_timestamp = eventtimestamp
+    cover._keypad_event_pending = keypad_event_pending
     return cover
 
 
@@ -686,6 +697,155 @@ class TestMicromoduleShutterMovingKeypadPressShortClose:
         assert cover._attr_is_opening is False
         assert cover._target_position == 0
         assert cover._last_position == 80  # round(0.8*100)
+
+
+# ---------------------------------------------------------------------------
+# #385: the SHC keeps reporting the LAST physical button press forever, so the
+# keypad-derived direction must only apply to the movement that press actually
+# started — not to later Bosch-app / scenario / routine moves.
+# ---------------------------------------------------------------------------
+
+
+class TestMicromoduleShutterStaleKeypadDirection:
+    """A stale press must not dictate the direction of a later movement."""
+
+    def test_stale_press_short_open_does_not_force_opening(self):
+        """#385: app/scenario close after an earlier open press → no "opening"."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.8,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+            keypad_event_pending=False,
+        )
+        cover._last_position = 80
+        cover._update_attr()
+        # Falls through to the level comparison, which is inconclusive while a
+        # Shutter II still reports the pre-movement level — but crucially it
+        # does NOT claim the shutter is opening.
+        assert cover._attr_is_opening is not True
+        assert cover._target_position == 80
+
+    def test_stale_switch_on_close_does_not_force_closing(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.2,
+            operation_state=MOVING,
+            eventtype=SWITCH_ON,
+            keycode=2,
+            keypad_event_pending=False,
+        )
+        cover._last_position = 20
+        cover._update_attr()
+        assert cover._attr_is_closing is not True
+        assert cover._target_position == 20
+
+    def test_stale_press_still_allows_level_based_direction(self):
+        """With a stale press, the level comparison decides the direction."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.9,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=2,  # stale "close" press
+            keypad_event_pending=False,
+        )
+        cover._last_position = 10  # level 90 > 10 → really opening
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+
+    def test_new_keypad_timestamp_marks_event_pending(self):
+        """A changed eventTimestamp = a fresh press → direction is trusted."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.3,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+            keypad_event_pending=False,
+        )
+        cover._device.eventtimestamp = 2000  # newer than the seeded 1000
+        cover._update_attr()
+        assert cover._keypad_event_pending is True
+        assert cover._last_keypad_timestamp == 2000
+        assert cover._attr_is_opening is True
+        assert cover._target_position == 100
+
+    def test_unchanged_timestamp_does_not_revive_stale_press(self):
+        """A replayed (identical) Keypad state must not re-arm the direction."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+            keypad_event_pending=False,
+        )
+        cover._update_attr()
+        assert cover._keypad_event_pending is False
+
+    def test_press_arriving_while_stopped_is_kept_for_the_move(self):
+        """Keypad event can overtake the ShutterControl one — keep it pending."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=STOPPED,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+            keypad_event_pending=False,
+        )
+        cover._device.eventtimestamp = 2000
+        cover._update_attr()  # STOPPED → STOPPED, must not consume
+        assert cover._keypad_event_pending is True
+
+        cover._device.operation_state = MOVING
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+
+    def test_movement_end_consumes_the_press(self):
+        """MOVING → STOPPED consumes the press, so the next move re-evaluates."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=MOVING,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+        )
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+
+        cover._device.operation_state = STOPPED
+        cover._device.level = 1.0
+        cover._update_attr()
+        assert cover._keypad_event_pending is False
+
+    @pytest.mark.parametrize("moving_state", [OPENING, CLOSING])
+    def test_directional_state_end_also_consumes_the_press(self, moving_state):
+        """Shutter II firmware reporting OPENING/CLOSING consumes it too."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=moving_state,
+            eventtype=PRESS_SHORT,
+            keycode=1,
+        )
+        cover._update_attr()
+        cover._device.operation_state = STOPPED
+        cover._update_attr()
+        assert cover._keypad_event_pending is False
+
+    def test_ha_command_clears_pending_press(self):
+        """A HA-issued command supersedes a pending physical press."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.5,
+            operation_state=STOPPED,
+        )
+        cover._keypad_event_pending = True
+        asyncio.run(cover.async_close_cover())
+        assert cover._keypad_event_pending is False
 
 
 # ---------------------------------------------------------------------------

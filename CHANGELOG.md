@@ -1,5 +1,23 @@
 # Changelog
 
+## UNRELEASED — Shutter II no longer shows a stale movement direction for app/scenario moves
+
+- **Fixed: a Shutter II (`MICROMODULE_SHUTTER`) moved by a Bosch-app
+  scenario, routine or the app itself reported the direction of the last
+  *physical* wall-switch press instead of the real one** (#385) — e.g. a
+  shutter closed by a "close all shutters" scenario kept showing
+  `is_opening` because the last button press had been an open press. The
+  SHC's `Keypad` service is sticky: it keeps reporting the last press
+  forever (and replays it on every long-poll resubscribe), so the
+  keycode-based direction detection added for physical-switch moves
+  applied that press to every later movement too, no matter what started
+  it. The keypad direction is now only used for the movement the press
+  actually started: a *new* `eventTimestamp` arms it, the end of the
+  movement (or any Home Assistant command) consumes it again. Moves with
+  no fresh press fall back to the level comparison as before — so
+  physical-switch moves keep working exactly as they did, and
+  app/scenario moves no longer show a wrong direction.
+
 ## 0.12.14 — 18 switch/sensor entities no longer show raw untranslated names; new Summer Mode / Ventilation Mode sensors
 
 - **New: two diagnostic binary sensors on each thermostat/TRV room's virtual
