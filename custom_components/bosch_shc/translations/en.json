@@ -680,7 +680,7 @@
         "name": "Swap outputs"
       },
       "pre_alarm_enabled": {
-        "name": "Pre-Alarm"
+        "name": "Pre-alarm"
       },
       "vibration_enabled": {
         "name": "Vibration detection"

@@ -3536,7 +3536,7 @@ class TestBatterySensorInit:
 #    battery device would ship with NO battery sensor and nobody would notice.
 # 2. The device_helper accessors used by those loops must actually be present
 #    in both binary_sensor.py and sensor.py (the binary "Battery" + enum
-#    "Battery Level" entities).
+#    "Battery level" entities).
 # 3. BatteryLevelService.State must stay exhaustive -- a new Bosch firmware
 #    enum value would otherwise slip through BatterySensor.is_on (`!= OK`)
 #    silently.
@@ -3567,7 +3567,7 @@ KNOWN_BATTERY_DEVICE_CLASSES = {
 }
 
 # device_helper accessors the battery loops iterate. Each must appear in BOTH
-# binary_sensor.py (binary "Battery") and sensor.py (enum "Battery Level").
+# binary_sensor.py (binary "Battery") and sensor.py (enum "Battery level").
 REQUIRED_BATTERY_ACCESSORS = {
     "motion_detectors",
     "motion_detectors2",

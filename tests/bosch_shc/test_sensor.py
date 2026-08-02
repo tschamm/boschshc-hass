@@ -1074,7 +1074,7 @@ class TestAirQualitySensorComfortZone:
         )
         sensor = AirQualitySensor.__new__(AirQualitySensor)
         sensor._device = dev
-        sensor._attr_name = "Air Quality"
+        sensor._attr_name = "Air quality"
         sensor._attr_unique_id = f"{dev.root_device_id}_{dev.id}_airquality"
         return sensor
 
@@ -2153,7 +2153,7 @@ def _make_battery_level_sensor(state):
         root_device_id="root-abc",
         id="dev-123",
     )
-    s._attr_name = "Battery Level"
+    s._attr_name = "Battery level"
     s._attr_unique_id = "root-abc_dev-123_battery_level"
     return s
 
@@ -2258,7 +2258,7 @@ class TestBatteryLevelSensorMetadata:
         assert self._sensor()._attr_unique_id == "root-abc_dev-123_battery_level"
 
     def test_name(self):
-        assert self._sensor()._attr_name == "Battery Level"
+        assert self._sensor()._attr_name == "Battery level"
 
 
 class _RaisingValue:
@@ -2649,7 +2649,7 @@ class TestWalkStateSensor:
         s = WalkStateSensor.__new__(WalkStateSensor)
         s._device = dev
         s._attr_unique_id = f"{dev.root_device_id}_{dev.id}_walk_state"
-        s._attr_name = "Walk Test State"
+        s._attr_name = "Walk test state"
         return s
 
     def test_unique_id(self):

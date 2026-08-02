@@ -1563,7 +1563,7 @@ class TestSHCWalkTestButtons:
         dev = _make_device(device_id=device_id, root_device_id=root)
         btn._device = dev
         suffix = "walk_test" if cls is SHCWalkTestButton else "walk_test_stop"
-        btn._attr_name = "Walk Test" if cls is SHCWalkTestButton else "Walk Test Stop"
+        btn._attr_name = "Walk test" if cls is SHCWalkTestButton else "Walk test stop"
         btn._attr_unique_id = f"{root}_{device_id}_{suffix}"
         return btn
 
@@ -1571,7 +1571,7 @@ class TestSHCWalkTestButtons:
 
     def test_walk_start_name(self):
         btn = self._make_walk(SHCWalkTestButton)
-        assert btn._attr_name == "Walk Test"
+        assert btn._attr_name == "Walk test"
 
     def test_walk_start_unique_id(self):
         btn = self._make_walk(SHCWalkTestButton, root="r1", device_id="d1")
@@ -1600,7 +1600,7 @@ class TestSHCWalkTestButtons:
 
     def test_walk_stop_name(self):
         btn = self._make_walk(SHCWalkTestStopButton)
-        assert btn._attr_name == "Walk Test Stop"
+        assert btn._attr_name == "Walk test stop"
 
     def test_walk_stop_unique_id(self):
         btn = self._make_walk(SHCWalkTestStopButton, root="r1", device_id="d1")
@@ -1769,7 +1769,7 @@ class TestSHCWalkTestButton:
         b = SHCWalkTestButton.__new__(SHCWalkTestButton)
         b._device = dev
         b._attr_unique_id = f"{dev.root_device_id}_{dev.id}_walk_test"
-        b._attr_name = "Walk Test"
+        b._attr_name = "Walk test"
         return b
 
     def test_unique_id(self):
@@ -1813,7 +1813,7 @@ class TestSHCWalkTestStopButton:
         b = SHCWalkTestStopButton.__new__(SHCWalkTestStopButton)
         b._device = dev
         b._attr_unique_id = f"{dev.root_device_id}_{dev.id}_walk_test_stop"
-        b._attr_name = "Walk Test Stop"
+        b._attr_name = "Walk test stop"
         return b
 
     def test_unique_id(self):
@@ -1867,16 +1867,16 @@ class TestSHCDetectionTestButtons:
             else "detection_test_stop"
         )
         btn._attr_name = (
-            "Detection Test"
+            "Detection test"
             if cls is SHCDetectionTestButton
-            else "Detection Test Stop"
+            else "Detection test stop"
         )
         btn._attr_unique_id = f"{root}_{device_id}_{suffix}"
         return btn
 
     def test_det_start_name(self):
         btn = self._make_det(SHCDetectionTestButton)
-        assert btn._attr_name == "Detection Test"
+        assert btn._attr_name == "Detection test"
 
     def test_det_start_unique_id(self):
         btn = self._make_det(SHCDetectionTestButton, root="r1", device_id="d1")
@@ -1905,7 +1905,7 @@ class TestSHCDetectionTestButtons:
 
     def test_det_stop_name(self):
         btn = self._make_det(SHCDetectionTestStopButton)
-        assert btn._attr_name == "Detection Test Stop"
+        assert btn._attr_name == "Detection test stop"
 
     def test_det_stop_unique_id(self):
         btn = self._make_det(SHCDetectionTestStopButton, root="r2", device_id="d2")
@@ -2070,13 +2070,13 @@ class TestSHCTamperResetButton:
         btn = SHCTamperResetButton.__new__(SHCTamperResetButton)
         dev = _make_device(device_id=device_id, root_device_id=root)
         btn._device = dev
-        btn._attr_name = "Reset Tamper"
+        btn._attr_name = "Reset tamper"
         btn._attr_unique_id = f"{root}_{device_id}_reset_tamper"
         return btn
 
     def test_attr_name(self):
         btn = self._make()
-        assert btn._attr_name == "Reset Tamper"
+        assert btn._attr_name == "Reset tamper"
 
     def test_unique_id_ends_reset_tamper(self):
         btn = self._make(root="r1", device_id="d1")

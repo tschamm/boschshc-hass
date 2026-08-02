@@ -2,6 +2,15 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Fixed `Pre-Alarm` missed by the sentence-case sweep above** — the
+  hyphenated compound wasn't matched by that pass's rename table. Now
+  "Pre-alarm", matching Bosch's own wording exactly (lowercase "alarm").
+  Caught by a pre-release verification pass, not a user report — also
+  brought 23 test fixtures across 4 test files back in line with the
+  shipped names (they were self-consistent and passing either way, since
+  they set their own expected value and assert against it, but no longer
+  reflected reality).
+
 - **All English entity names now use Home Assistant's sentence-case
   convention** ("Battery level", not "Battery Level"). The Bosch-terminology
   sweep above had already moved 66 names to sentence case because that is how
