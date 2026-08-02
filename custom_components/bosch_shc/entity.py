@@ -226,13 +226,19 @@ class SHCEntity(Entity):  # type: ignore[misc]
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={(DOMAIN, self._device.id)},
-            name=self.device_name,
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
             via_device=(DOMAIN, self._device.root_device_id),
         )
+        # #393: raw name is a Bosch-controller-supplied internal service
+        # identifier, not user-customizable — safe to override.
+        if self._device.device_model == "PRESENCE_SIMULATION_SERVICE":
+            info["translation_key"] = "presence_simulation"
+        else:
+            info["name"] = self.device_name
+        return info
 
     @property
     def available(self) -> bool:

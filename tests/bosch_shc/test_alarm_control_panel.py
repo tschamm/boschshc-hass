@@ -415,10 +415,20 @@ def test_device_info_structure():
     )
     info = panel.device_info
     assert ("bosch_shc", "ids-1") in info["identifiers"]
-    assert info["name"] == "Alarm Panel"
     assert info["manufacturer"] == "Bosch"
     assert info["model"] == "IDS"
     assert info["via_device"] == ("bosch_shc", "root-99")
+
+
+def test_device_info_uses_translation_key_not_raw_name():
+    """#393: the raw device name is a hardcoded boschshcpy literal
+    ("Intrusion Detection System"), not user-customizable — translated via
+    device.intrusion_system in strings.json instead.
+    """
+    panel = _panel(name="Intrusion Detection System")
+    info = panel.device_info
+    assert "name" not in info
+    assert info["translation_key"] == "intrusion_system"
 
 
 def test_available_true_when_system_available():
@@ -500,8 +510,10 @@ class TestAlarmPanelProperties:
         assert (DOMAIN, "dev-info") in info["identifiers"]
 
     def test_device_info_contains_name(self):
+        """#393: name is replaced by translation_key, not the raw device name."""
         p = _make_panel(name="Info Panel")
-        assert p.device_info["name"] == "Info Panel"
+        assert "name" not in p.device_info
+        assert p.device_info["translation_key"] == "intrusion_system"
 
     def test_device_info_contains_manufacturer(self):
         p = _make_panel(manufacturer="TestMfg")

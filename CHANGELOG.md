@@ -2,6 +2,18 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Fixed: three virtual "system" devices showed their raw internal
+  English name in Home Assistant's device list** (#393) — Presence
+  Simulation, the Intrusion Detection System, and the Water Alarm System.
+  Unlike a physical device, these are singleton system devices whose name
+  is either hardcoded in `boschshcpy` or supplied verbatim by the Bosch
+  controller as an internal service identifier, not something a user names
+  themselves — so it's now translated via Home Assistant's own
+  `DeviceInfo(translation_key=...)` mechanism, in all 30 languages. `EMMA`
+  was deliberately left as-is: it's a Bosch brand/product name, not a raw
+  internal identifier, matching how "Smart Sensitivity" was left
+  untranslated in an earlier release for the same reason.
+
 - **Proactive bug-hunt round** (not tied to a specific reporter issue): an
   unwrapped, non-`SHCException` error during setup (e.g. a malformed
   response deep in `boschshcpy`'s async API layer) crashed setup and leaked

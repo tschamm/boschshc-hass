@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Имитация присутствия"
+    },
+    "intrusion_system": {
+      "name": "Система обнаружения вторжений"
+    },
+    "water_alarm_system": {
+      "name": "Система водяной сигнализации"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

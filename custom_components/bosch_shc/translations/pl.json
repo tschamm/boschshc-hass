@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Symulacja obecności"
+    },
+    "intrusion_system": {
+      "name": "System wykrywania włamań"
+    },
+    "water_alarm_system": {
+      "name": "System alarmu zalania"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Urządzenie jest już skonfigurowane",

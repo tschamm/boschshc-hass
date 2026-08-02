@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Kohaloleku simulatsioon"
+    },
+    "intrusion_system": {
+      "name": "Sissetungi tuvastamise süsteem"
+    },
+    "water_alarm_system": {
+      "name": "Veehäire süsteem"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

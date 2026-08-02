@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Προσομοίωση Παρουσίας"
+    },
+    "intrusion_system": {
+      "name": "Σύστημα Ανίχνευσης Διάρρηξης"
+    },
+    "water_alarm_system": {
+      "name": "Σύστημα Συναγερμού Νερού"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

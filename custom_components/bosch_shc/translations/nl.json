@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Aanwezigheidssimulatie"
+    },
+    "intrusion_system": {
+      "name": "Inbraakdetectiesysteem"
+    },
+    "water_alarm_system": {
+      "name": "Waterlekalarmsysteem"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Apparaat is al geconfigureerd",

@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Ev Simülasyonu"
+    },
+    "intrusion_system": {
+      "name": "İzinsiz Giriş Algılama Sistemi"
+    },
+    "water_alarm_system": {
+      "name": "Su Alarm Sistemi"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

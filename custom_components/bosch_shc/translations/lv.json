@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Klātbūtnes simulācija"
+    },
+    "intrusion_system": {
+      "name": "Ielaušanās atklāšanas sistēma"
+    },
+    "water_alarm_system": {
+      "name": "Ūdens noplūdes trauksmes sistēma"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Ierīce jau pievienota Home Assistant.",

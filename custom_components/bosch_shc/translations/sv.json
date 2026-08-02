@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Närvarosimulering"
+    },
+    "intrusion_system": {
+      "name": "Inbrottslarmsystem"
+    },
+    "water_alarm_system": {
+      "name": "Vattenlarmsystem"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

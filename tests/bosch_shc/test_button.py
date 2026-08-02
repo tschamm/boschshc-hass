@@ -2571,13 +2571,17 @@ def test_intrusion_mute_button_press_wraps_shc_exception():
 
 
 def test_water_alarm_mute_button_device_info():
+    """#393: raw name is a hardcoded boschshcpy literal, not
+    user-customizable — translated via device.water_alarm_system instead.
+    """
     device = _make_alarm_device(
         id="/wateralarm", name="Water Alarm System", device_model="WATERALARM"
     )
     btn = SHCWaterAlarmMuteButton.__new__(SHCWaterAlarmMuteButton)
     btn._device = device
     info = btn.device_info
-    assert info["name"] == "Water Alarm System"
+    assert "name" not in info
+    assert info["translation_key"] == "water_alarm_system"
 
 
 def test_water_alarm_mute_button_press_calls_mute():

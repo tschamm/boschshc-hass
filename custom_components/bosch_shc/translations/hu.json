@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Jelenlét-szimuláció"
+    },
+    "intrusion_system": {
+      "name": "Behatolásjelző rendszer"
+    },
+    "water_alarm_system": {
+      "name": "Vízriasztó rendszer"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

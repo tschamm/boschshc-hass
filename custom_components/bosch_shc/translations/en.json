@@ -890,5 +890,16 @@
     "zigbee_topology_write_failed": {
       "message": "Could not write the Zigbee topology export to www/bosch_shc/."
     }
+  },
+  "device": {
+    "presence_simulation": {
+      "name": "Presence Simulation"
+    },
+    "intrusion_system": {
+      "name": "Intrusion Detection System"
+    },
+    "water_alarm_system": {
+      "name": "Water Alarm System"
+    }
   }
 }

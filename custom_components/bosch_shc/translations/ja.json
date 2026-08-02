@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "在宅シミュレーション"
+    },
+    "intrusion_system": {
+      "name": "侵入検知システム"
+    },
+    "water_alarm_system": {
+      "name": "水漏れ警報システム"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "デバイスはすでに設定されています",

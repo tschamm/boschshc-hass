@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Tilstedeværelsessimulering"
+    },
+    "intrusion_system": {
+      "name": "Innbruddsalarmsystem"
+    },
+    "water_alarm_system": {
+      "name": "Vannalarmsystem"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Enheten er allerede konfigurert",

@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Simulação de presença"
+    },
+    "intrusion_system": {
+      "name": "Sistema de detecção de intrusão"
+    },
+    "water_alarm_system": {
+      "name": "Sistema de alarme de água"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Dispositivo já está configurado",

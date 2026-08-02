@@ -704,6 +704,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Presence Simulation"
+    },
+    "intrusion_system": {
+      "name": "Intrusion Detection System"
+    },
+    "water_alarm_system": {
+      "name": "Water Alarm System"
+    }
+  },
   "exceptions": {
     "cert_cryptography_missing": {
       "message": "The cryptography library is not available. Please ensure it is installed."

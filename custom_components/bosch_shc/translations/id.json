@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Simulasi Kehadiran"
+    },
+    "intrusion_system": {
+      "name": "Sistem Deteksi Penyusup"
+    },
+    "water_alarm_system": {
+      "name": "Sistem Alarm Air"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Perangkat sudah dikonfigurasi",

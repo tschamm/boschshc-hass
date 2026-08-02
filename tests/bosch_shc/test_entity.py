@@ -213,6 +213,17 @@ class TestSHCEntityProperties:
         ent = _make_entity()
         assert ent.device_info["via_device"] == (DOMAIN, "root-456")
 
+    def test_device_info_uses_translation_key_for_presence_simulation(self):
+        """#393: PresenceSimulationSystem's raw name is a Bosch-controller-
+        supplied internal service identifier, not user-customizable —
+        translated via device.presence_simulation instead.
+        """
+        ent = _make_entity()
+        ent._device.device_model = "PRESENCE_SIMULATION_SERVICE"
+        info = ent.device_info
+        assert "name" not in info
+        assert info["translation_key"] == "presence_simulation"
+
     def test_available_when_status_available(self):
         ent = _make_entity(status="AVAILABLE")
         assert ent.available is True

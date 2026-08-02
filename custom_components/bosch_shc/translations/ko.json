@@ -1,4 +1,15 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "재실 시뮬레이션"
+    },
+    "intrusion_system": {
+      "name": "침입 감지 시스템"
+    },
+    "water_alarm_system": {
+      "name": "누수 경보 시스템"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "기기가 이미 구성되었습니다",

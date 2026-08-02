@@ -842,7 +842,9 @@ class SHCWaterAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
         """Return the device info (its own virtual device, linked to the SHC)."""
         info = DeviceInfo(
             identifiers={(DOMAIN, self._device.id)},
-            name=self._device.name,
+            # #393: this device's raw name ("Water Alarm System") is a
+            # hardcoded literal in boschshcpy, not user-customizable.
+            translation_key="water_alarm_system",
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
         )

@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Симуляція присутності"
+    },
+    "intrusion_system": {
+      "name": "Система виявлення вторгнення"
+    },
+    "water_alarm_system": {
+      "name": "Система водяної сигналізації"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

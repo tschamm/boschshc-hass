@@ -89,7 +89,9 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
         """Return the device info."""
         info = DeviceInfo(
             identifiers={(DOMAIN, self._device.id)},
-            name=self._device.name,
+            # #393: this device's raw name ("Intrusion Detection System") is
+            # a hardcoded literal in boschshcpy, not user-customizable.
+            translation_key="intrusion_system",
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
         )

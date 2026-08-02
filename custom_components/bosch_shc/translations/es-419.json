@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Simulación de presencia"
+    },
+    "intrusion_system": {
+      "name": "Sistema de detección de intrusión"
+    },
+    "water_alarm_system": {
+      "name": "Sistema de alarma de agua"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {

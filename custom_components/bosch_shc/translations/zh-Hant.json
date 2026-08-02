@@ -164,6 +164,17 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "在家模擬"
+    },
+    "intrusion_system": {
+      "name": "入侵偵測系統"
+    },
+    "water_alarm_system": {
+      "name": "淹水警報系統"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
