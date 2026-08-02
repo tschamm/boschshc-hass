@@ -57,7 +57,7 @@ custom_components/bosch_shc/diagnostics.py:41
 custom_components/bosch_shc/diagnostics.py:60
 custom_components/bosch_shc/entity.py:194
 custom_components/bosch_shc/event.py:151
-custom_components/bosch_shc/event.py:175
+custom_components/bosch_shc/event.py:178
 custom_components/bosch_shc/event.py:75
 custom_components/bosch_shc/light.py:106
 custom_components/bosch_shc/light.py:131

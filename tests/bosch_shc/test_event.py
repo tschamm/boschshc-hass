@@ -743,13 +743,14 @@ class TestUniversalSwitchEventInit:
         )
 
     def test_name_set_correctly(self):
-        # #393: name comes from a translation_key per key position, not a raw
-        # f-string of the untranslated enum literal.
+        # #393: translated per-key name, not a raw f-string of the enum
+        # literal — and _attr_name must not linger (it would win over translation_key).
         dev = self._make_dev(name="Living Room Switch", device_id="hdm:sw:42", root_device_id="root:x")
         entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
         with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "LOWER_BUTTON")
         assert entity._attr_translation_key == "key_lower"
+        assert not hasattr(entity, "_attr_name")
 
     def test_unique_id_set_correctly(self):
         dev = self._make_dev(name="SW", device_id="hdm:sw:99", root_device_id="root:r")
@@ -771,6 +772,7 @@ class TestUniversalSwitchEventInit:
         with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "LOWER_BUTTON")
         assert entity._attr_translation_key == "key_lower"
+        assert not hasattr(entity, "_attr_name")
         assert entity._attr_unique_id.endswith("_LOWER_BUTTON")
 
 

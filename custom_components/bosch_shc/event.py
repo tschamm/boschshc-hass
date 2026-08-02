@@ -154,6 +154,9 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         self._last_fired_timestamp: int = -1
 
         self._attr_translation_key = self._KEY_TRANSLATION_KEYS.get(key_id)
+        # SHCEntity only clears _attr_name for a CLASS-level translation_key;
+        # ours is per-instance, so it's never caught there (del it ourselves).
+        del self._attr_name
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
     async def async_added_to_hass(self) -> None:

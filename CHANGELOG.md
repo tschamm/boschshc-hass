@@ -2,6 +2,17 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Fixed the previous beta's own Universal Switch key-name fix — it didn't
+  actually work.** Live-testing on real hardware after shipping the fix
+  above found the key entities still showed just the device name, no key
+  suffix at all. Root cause, traced by reading Home Assistant core's own
+  `entity.py` on the live system: `SHCEntity.__init__` only clears its
+  default (unnamed) placeholder when a translation key is set at the
+  *class* level — this entity picks its translation key per key position at
+  *instance* construction time, so that placeholder silently survived and
+  won over the translation lookup every time. Fixed, and the regression
+  test that should have caught this the first time now actually does.
+
 - **Proactive follow-up audit** (five parallel passes cross-referencing every
   entity name against the decompiled Bosch app's own string tables, plus a
   cross-check against a real 61-device/435-entity Home Assistant install)
