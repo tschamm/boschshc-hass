@@ -800,10 +800,18 @@ class SHCIntrusionAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device info (shares the intrusion system's device)."""
+        """Return the device info (shares the intrusion system's device).
+
+        #393: must use the same translation_key as
+        IntrusionSystemAlarmControlPanel.device_info, not the raw device
+        name — Platform.BUTTON is set up after Platform.ALARM_CONTROL_PANEL
+        (see PLATFORMS in __init__.py), so this entity's device_info write
+        runs second and would otherwise silently overwrite the already
+        -translated name with the untranslated literal.
+        """
         info = DeviceInfo(
             identifiers={(DOMAIN, self._device.id)},
-            name=self._device.name,
+            translation_key="intrusion_system",
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
         )

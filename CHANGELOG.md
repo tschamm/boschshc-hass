@@ -2,6 +2,21 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Fixed the real remaining cause of #393's Intrusion Detection System
+  still showing its raw English name after the translation fix above.**
+  The device is shared by two entities — the alarm control panel itself,
+  and a separate "mute alarm" button — and the button's `device_info`
+  still passed the raw, untranslated device name instead of the same
+  `translation_key="intrusion_system"` its sibling uses. Home Assistant's
+  device registry overwrites a device's name on every entity's setup, so
+  whichever of the two entities finishes setup last silently clobbered the
+  correctly-translated name written by the other. Fixed by making both
+  entities use `translation_key` consistently, which also makes the fix
+  independent of platform setup order. (An earlier hypothesis in this same
+  investigation — that Home Assistant's translation cache needed manual
+  pre-warming — was tested and found unnecessary; the cache was already
+  warm, this device-registry overwrite was the actual bug.)
+
 - **Fixed: three virtual "system" devices showed their raw internal
   English name in Home Assistant's device list** (#393) — Presence
   Simulation, the Intrusion Detection System, and the Water Alarm System.

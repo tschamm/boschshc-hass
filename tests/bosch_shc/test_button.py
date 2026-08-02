@@ -2544,11 +2544,18 @@ def _make_alarm_device(**kw):
 
 
 def test_intrusion_mute_button_device_info():
+    """#393: must share IntrusionSystemAlarmControlPanel's translation_key,
+    not the raw device name — Platform.BUTTON sets up after
+    Platform.ALARM_CONTROL_PANEL, so a raw name here would silently
+    overwrite the already-translated device name (live-verified: this was
+    the actual bug, not a translation-cache warm-up issue).
+    """
     device = _make_alarm_device()
     btn = SHCIntrusionAlarmMuteButton.__new__(SHCIntrusionAlarmMuteButton)
     btn._device = device
     info = btn.device_info
-    assert info["name"] == "Intrusion Detection System"
+    assert "name" not in info
+    assert info["translation_key"] == "intrusion_system"
     assert info["via_device"] == ("bosch_shc", "hdm:root")
 
 
