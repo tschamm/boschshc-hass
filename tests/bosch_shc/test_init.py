@@ -669,6 +669,21 @@ class TestSetupConnectionErrors:
                 fake_hass, fake_entry, fake_session, SHCSessionError("bad state")
             )
 
+    def test_unexpected_error_on_async_init_raises_config_entry_not_ready_and_closes_session(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A non-SHCException error (e.g. an unwrapped JSONDecodeError deep in
+        the async API layer) must still close the session instead of crashing
+        setup uncaught and leaking the aiohttp ClientSession."""
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        fake_session.api.close = AsyncMock()
+
+        with pytest.raises(ConfigEntryNotReady):
+            self._setup_raising(fake_hass, fake_entry, fake_session, ValueError)
+
+        fake_session.api.close.assert_awaited_once()
+
 
 # ---------------------------------------------------------------------------
 # Tests: async_setup_entry — start_polling failures (subscribe is a network
@@ -710,6 +725,20 @@ class TestSetupStartPollingErrors:
         with pytest.raises(ConfigEntryNotReady):
             self._setup_with_start_polling_raising(
                 fake_hass, fake_entry, fake_session, exc
+            )
+
+        fake_session.api.close.assert_awaited_once()
+
+    def test_start_polling_unexpected_error_raises_config_entry_not_ready_and_closes_session(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A non-SHCException/JSONRPCError error from start_polling() must
+        still close the session instead of crashing setup uncaught."""
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        with pytest.raises(ConfigEntryNotReady):
+            self._setup_with_start_polling_raising(
+                fake_hass, fake_entry, fake_session, RuntimeError("boom")
             )
 
         fake_session.api.close.assert_awaited_once()

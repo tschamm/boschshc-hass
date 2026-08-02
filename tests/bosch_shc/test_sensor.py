@@ -595,6 +595,22 @@ def _temp_sensor(temperature):
     return s
 
 
+class _RaisingTemperatureDevice:
+    """Twinguard-like device whose .temperature raises KeyError.
+
+    Mimics AirQualityLevelService.temperature, which indexes
+    self.state["temperature"] directly rather than using .get() -- a real
+    property is needed (unlike SimpleNamespace) to reproduce the exception
+    being raised on attribute access.
+    """
+
+    name = "Twinguard"
+
+    @property
+    def temperature(self) -> float:
+        raise KeyError("temperature")
+
+
 class TestTemperatureSensor:
     def test_native_value(self):
         assert _temp_sensor(21.5).native_value == 21.5
@@ -613,6 +629,14 @@ class TestTemperatureSensor:
 
     def test_state_class(self):
         assert _temp_sensor(22.0).state_class == SensorStateClass.MEASUREMENT
+
+    def test_native_value_none_on_partial_poll_keyerror(self):
+        """A partial poll that omits "temperature" (Twinguard's
+        AirQualityLevelService) must degrade to None, not crash
+        native_value -- same bug class as the #352 Twinguard fixes."""
+        s = TemperatureSensor.__new__(TemperatureSensor)
+        s._device = _RaisingTemperatureDevice()
+        assert s.native_value is None
 
 
 def _terminal_temp_sensor(value):
@@ -904,6 +928,20 @@ def _purity_sensor(purity):
     return s
 
 
+class _RaisingPurityDevice:
+    """Twinguard-like device whose .purity raises KeyError (partial poll).
+
+    Mimics AirQualityLevelService.purity, which indexes
+    self.state["purity"] directly rather than using .get().
+    """
+
+    name = "Twinguard"
+
+    @property
+    def purity(self) -> int:
+        raise KeyError("purity")
+
+
 class TestPuritySensor:
     def test_native_value(self):
         assert _purity_sensor(800).native_value == 800
@@ -924,6 +962,13 @@ class TestPuritySensor:
 
     def test_unit(self):
         assert _purity_sensor(400).native_unit_of_measurement == CONCENTRATION_PARTS_PER_MILLION
+
+    def test_native_value_none_on_partial_poll_keyerror(self):
+        """A partial poll that omits "purity" must degrade to None, not
+        crash native_value -- same bug class as the #352 Twinguard fixes."""
+        s = PuritySensor.__new__(PuritySensor)
+        s._device = _RaisingPurityDevice()
+        assert s.native_value is None
 
 
 # ===========================================================================

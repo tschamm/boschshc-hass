@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.components.button import ButtonEntity
@@ -56,6 +56,7 @@ from custom_components.bosch_shc.const import (
     OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_EXCLUDED_DEVICES,
     OPT_SCENARIOS_AS_BUTTONS,
+    OPT_SCENARIOS_FILTER,
 )
 from custom_components.bosch_shc.entity import SHCEntity
 
@@ -120,10 +121,31 @@ def _run_setup(mock_config_entry, mock_session) -> list:
         mock_config_entry.unique_id = None
     if not hasattr(mock_config_entry.runtime_data, "shc_device"):
         mock_config_entry.runtime_data.shc_device = None
-    result = asyncio.run(
-        run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
-    )
+    with patch(
+        "custom_components.bosch_shc.button.async_remove_stale_entity",
+        new_callable=AsyncMock,
+    ):
+        result = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
     return _without_diagnostics_button(result)
+
+
+def _run_setup_with_remove_mock(mock_config_entry, mock_session) -> tuple[list, AsyncMock]:
+    """Same as `_run_setup`, but returns the async_remove_stale_entity mock too,
+    so a test can assert on stale-entity cleanup calls/args."""
+    if not hasattr(mock_config_entry, "unique_id"):
+        mock_config_entry.unique_id = None
+    if not hasattr(mock_config_entry.runtime_data, "shc_device"):
+        mock_config_entry.runtime_data.shc_device = None
+    with patch(
+        "custom_components.bosch_shc.button.async_remove_stale_entity",
+        new_callable=AsyncMock,
+    ) as remove_mock:
+        result = asyncio.run(
+            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        )
+    return _without_diagnostics_button(result), remove_mock
 
 
 def _button_device() -> SimpleNamespace:
@@ -1362,6 +1384,52 @@ class TestScenariosAsButtonsBlock:
         result = _run_setup(mock_config_entry, mock_session)
         assert result == []
 
+    def test_disabling_option_removes_stale_scenario_button(
+        self, mock_config_entry, mock_session
+    ):
+        """Toggling OPT_SCENARIOS_AS_BUTTONS off must clean up any
+        previously-created SHCScenarioButton, not just stop creating new
+        ones — otherwise the entity is orphaned in the registry forever
+        (same bug class as #356's MD2 indicator light)."""
+        sc = SimpleNamespace(id="sc-1", name="Away")
+        mock_session.scenarios = [sc]
+        mock_config_entry.options = {OPT_SCENARIOS_AS_BUTTONS: False}
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = None
+        entities, remove_mock = _run_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, SHCScenarioButton) for e in entities)
+        remove_mock.assert_awaited_once_with(ANY, "button", "uid-001_scenario_sc-1")
+
+    def test_narrowing_filter_removes_stale_scenario_button(
+        self, mock_config_entry, mock_session
+    ):
+        """A scenario dropped from OPT_SCENARIOS_FILTER (while the option
+        stays on) must also be cleaned up, not just newly-excluded scenarios
+        left uncreated."""
+        kept = SimpleNamespace(id="sc-keep", name="Keep")
+        dropped = SimpleNamespace(id="sc-drop", name="Drop")
+        mock_session.scenarios = [kept, dropped]
+        mock_config_entry.options = {
+            OPT_SCENARIOS_AS_BUTTONS: True,
+            OPT_SCENARIOS_FILTER: ["sc-keep"],
+        }
+        mock_config_entry.unique_id = "uid-001"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace(
+            identifiers={("bosch_shc", "uid-001")},
+            name="SHC",
+            manufacturer="Bosch",
+            model="SmartHomeController",
+        )
+        entities, remove_mock = _run_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        scenario_buttons = [e for e in entities if isinstance(e, SHCScenarioButton)]
+        assert len(scenario_buttons) == 1
+        assert scenario_buttons[0]._attr_name == "Keep"
+        remove_mock.assert_awaited_once_with(ANY, "button", "uid-001_scenario_sc-drop")
+
 
 class TestSHCScenarioButtonInit:
     """SHCScenarioButton.__init__ with entry_unique_id=None (prefix falls
@@ -2424,11 +2492,37 @@ class TestAutomationRuleButtonSetupEntry:
         mock_config_entry.unique_id = "uid"
         mock_config_entry.runtime_data.shc_device = SimpleNamespace()
         mock_session.automation_rules = [SimpleNamespace(id="r1", name="Rule 1")]
-        entities = asyncio.run(
-            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+        with patch(
+            "custom_components.bosch_shc.button.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ):
+            entities = asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+            )
+        assert not any(
+            isinstance(e, SHCAutomationRuleTriggerButton) for e in entities
+        )
+
+    def test_disabling_option_removes_stale_rule_trigger_button(
+        self, mock_config_entry, mock_session
+    ):
+        """Toggling OPT_AUTOMATION_RULES_AS_ENTITIES off must clean up any
+        previously-created SHCAutomationRuleTriggerButton, not just stop
+        creating new ones — otherwise the entity is orphaned in the registry
+        forever (same bug class as #356's MD2 indicator light)."""
+        mock_config_entry.unique_id = "uid"
+        mock_config_entry.entry_id = "E1"
+        mock_config_entry.runtime_data.shc_device = SimpleNamespace()
+        mock_config_entry.options = {OPT_AUTOMATION_RULES_AS_ENTITIES: False}
+        mock_session.automation_rules = [SimpleNamespace(id="r1", name="Rule 1")]
+        entities, remove_mock = _run_setup_with_remove_mock(
+            mock_config_entry, mock_session
         )
         assert not any(
             isinstance(e, SHCAutomationRuleTriggerButton) for e in entities
+        )
+        remove_mock.assert_awaited_once_with(
+            ANY, "button", "E1_automation_rule_r1_trigger"
         )
 
 

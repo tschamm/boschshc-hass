@@ -22,6 +22,7 @@ from homeassistant.components.button import (
     ButtonEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -36,7 +37,7 @@ from .const import (
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SCENARIOS_FILTER,
 )
-from .entity import SHCEntity, device_excluded
+from .entity import SHCEntity, async_remove_stale_entity, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -134,44 +135,75 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    if config_entry.options.get(OPT_SCENARIOS_AS_BUTTONS, False):
-        entry_unique_id = config_entry.unique_id
-        entry_id = config_entry.entry_id
-        shc_device: DeviceEntry = config_entry.runtime_data.shc_device
-        scenario_filter = config_entry.options.get(OPT_SCENARIOS_FILTER) or []
+    # entry_unique_id/entry_id computed unconditionally (not just when the
+    # option is on) so the stale-entity cleanup below can build the same
+    # unique_id a previously-created button would have had, regardless of
+    # the option's current value.
+    entry_unique_id = getattr(config_entry, "unique_id", None)
+    entry_id = config_entry.entry_id
+    scenario_prefix = entry_unique_id or entry_id
+    scenarios_enabled = config_entry.options.get(OPT_SCENARIOS_AS_BUTTONS, False)
+    scenario_filter = config_entry.options.get(OPT_SCENARIOS_FILTER) or []
 
-        def _make_scenario_button(scenario: Any) -> SHCScenarioButton | None:
-            """Build a SHCScenarioButton, returning None on malformed payload."""
-            try:
-                return SHCScenarioButton(
-                    scenario=scenario,
-                    entry_unique_id=entry_unique_id,
-                    entry_id=entry_id,
-                    shc_device=shc_device,
-                )
-            except (KeyError, AttributeError) as err:
-                # A malformed scenario payload must not take out the whole
-                # button platform — skip just that scenario.
-                LOGGER.warning("Skipping scenario button (bad payload): %s", err)
-                return None
-
-        entities.extend(
-            btn
-            for scenario in session.scenarios
-            if not scenario_filter or scenario.id in scenario_filter
-            if (btn := _make_scenario_button(scenario)) is not None
-        )
-
-    if config_entry.options.get(OPT_AUTOMATION_RULES_AS_ENTITIES, False):
-        shc_device_for_rules: DeviceEntry = config_entry.runtime_data.shc_device
-        entities.extend(
-            SHCAutomationRuleTriggerButton(
-                rule=rule,
-                entry_id=config_entry.entry_id,
-                shc_device=shc_device_for_rules,
+    def _make_scenario_button(scenario: Any) -> SHCScenarioButton | None:
+        """Build a SHCScenarioButton, returning None on malformed payload."""
+        try:
+            return SHCScenarioButton(
+                scenario=scenario,
+                entry_unique_id=entry_unique_id,
+                entry_id=entry_id,
+                shc_device=config_entry.runtime_data.shc_device,
             )
-            for rule in session.automation_rules
+        except (KeyError, AttributeError) as err:
+            # A malformed scenario payload must not take out the whole
+            # button platform — skip just that scenario.
+            LOGGER.warning("Skipping scenario button (bad payload): %s", err)
+            return None
+
+    # Toggling OPT_SCENARIOS_AS_BUTTONS off, or narrowing OPT_SCENARIOS_FILTER,
+    # reloads the config entry (OptionsFlowWithReload) but HA never removes a
+    # disabled/no-longer-applicable entity from the registry on its own —
+    # without this, a previously-created scenario button is orphaned forever
+    # (same bug class as #356's MD2 indicator light).
+    for scenario in getattr(session, "scenarios", None) or []:
+        try:
+            scenario_id = scenario.id
+        except (KeyError, AttributeError):
+            # Malformed payload — _make_scenario_button will (re-)hit the
+            # same error and skip it; nothing to clean up without a real id.
+            scenario_id = None
+        wanted = scenarios_enabled and (
+            not scenario_filter or scenario_id in scenario_filter
         )
+        if wanted:
+            btn = _make_scenario_button(scenario)
+            if btn is not None:
+                entities.append(btn)
+        elif scenario_id is not None:
+            await async_remove_stale_entity(
+                hass, Platform.BUTTON, f"{scenario_prefix}_scenario_{scenario_id}"
+            )
+
+    # Same stale-entity cleanup for automation-rule trigger buttons: toggling
+    # OPT_AUTOMATION_RULES_AS_ENTITIES off reloads the entry but leaves a
+    # previously-created button orphaned in the registry otherwise.
+    automation_rules_enabled = config_entry.options.get(
+        OPT_AUTOMATION_RULES_AS_ENTITIES, False
+    )
+    for rule in getattr(session, "automation_rules", None) or []:
+        rule_id = getattr(rule, "id", None)
+        if automation_rules_enabled:
+            entities.append(
+                SHCAutomationRuleTriggerButton(
+                    rule=rule,
+                    entry_id=entry_id,
+                    shc_device=config_entry.runtime_data.shc_device,
+                )
+            )
+        elif rule_id is not None:
+            await async_remove_stale_entity(
+                hass, Platform.BUTTON, f"{entry_id}_automation_rule_{rule_id}_trigger"
+            )
 
     # async_mute() existed but was unreachable (no HA mute hook/service) --
     # maps to the Bosch app's alarm-triggered "Stummschalten" option.

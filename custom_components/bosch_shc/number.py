@@ -290,7 +290,14 @@ def _offset_step_fn(device: _TemperatureOffsetDevice) -> float:
 
 
 def _impulse_length_value_fn(device: SHCMicromoduleRelay) -> float | None:
-    raw = getattr(device, "impulse_length", None)
+    # ImpulseSwitchService.impulse_length indexes the raw state dict
+    # directly (self.state["impulseLength"]) rather than using .get(), so a
+    # partial poll that omits the field raises KeyError, not just
+    # AttributeError -- a bare getattr(..., None) does not catch that.
+    try:
+        raw = device.impulse_length
+    except (AttributeError, KeyError):
+        return None
     if raw is None:
         return None
     # lib stores in tenths of seconds → divide by 10
@@ -650,9 +657,17 @@ async def async_setup_entry(  # noqa: C901
     for device in session.device_helper.micromodule_impulse_relays:
         if device_excluded(device, config_entry.options):
             continue
-        if not hasattr(device, "impulse_length"):
+        # hasattr() only swallows AttributeError; ImpulseSwitchService.
+        # impulse_length can raise KeyError on a partial poll (see
+        # _impulse_length_value_fn), which would otherwise propagate out of
+        # this loop and abort setup for every remaining entity.
+        try:
+            impulse_length = device.impulse_length
+        except AttributeError:
             continue
-        if device.impulse_length is None:
+        except KeyError:
+            impulse_length = None
+        if impulse_length is None:
             continue
         entities.append(
             SHCNumber(

@@ -846,6 +846,30 @@ def test_relay_no_load_is_on_returns_none():
     assert sw.is_on is None
 
 
+def test_relay_switchstate_keyerror_is_on_returns_none():
+    """is_on must return None (not raise) when the state dict omits the field.
+
+    Mirrors PowerSwitchService.value's bare ``self.state["switchState"]``
+    index (no ``.get()`` fallback, unlike every sibling *Service.value
+    property in boschshcpy) — a partial poll that omits switchState would
+    otherwise raise an uncaught KeyError and crash-loop the state writer,
+    the same bug class already fixed for ChildProtectionService.
+    childLockActive (#351/#362).
+    """
+    sw = SHCSwitch.__new__(SHCSwitch)
+    sw._device = type("D", (), {"switchstate": _raising_property(KeyError)})()
+    sw.entity_description = SWITCH_TYPES["micromodule_relay_switch"]
+    assert sw.is_on is None
+
+
+def test_relay_switchstate_valueerror_is_on_returns_none():
+    """is_on must return None (not raise) on an unrecognized switchState value."""
+    sw = SHCSwitch.__new__(SHCSwitch)
+    sw._device = type("D", (), {"switchstate": _raising_property(ValueError)})()
+    sw.entity_description = SWITCH_TYPES["micromodule_relay_switch"]
+    assert sw.is_on is None
+
+
 def test_relay_no_load_turn_on_does_not_raise():
     """async_turn_on must NOT propagate AttributeError when service is None."""
     sw = SHCSwitch.__new__(SHCSwitch)
@@ -4085,6 +4109,33 @@ class TestNoneGuardIsOn:
     def test_child_lock_thermostat_service_none_is_on(self):
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = _NoChildLock()
+        sw.entity_description = SWITCH_TYPES["child_lock_thermostat"]
+        assert sw.is_on is None
+
+    def test_child_lock_thermostat_keyerror_is_on_returns_none(self):
+        """is_on must return None (not raise) on a partial poll.
+
+        Mirrors ThermostatService.childLock's bare
+        ``self.State(self.state["childLock"])`` index (no ``.get()``
+        fallback, unlike AlarmService/ShutterContactService/VibrationSensor
+        Service/etc.'s equivalent ``value`` properties in boschshcpy) —
+        the Bosch API can omit "childLock" on a partial poll, and this
+        should degrade to unavailable rather than crash-loop the state
+        writer (same bug class as #351/#362).
+        """
+        sw = SHCSwitch.__new__(SHCSwitch)
+        sw._device = type(
+            "D", (), {"child_lock": _raising_property(KeyError)}
+        )()
+        sw.entity_description = SWITCH_TYPES["child_lock_thermostat"]
+        assert sw.is_on is None
+
+    def test_child_lock_thermostat_valueerror_is_on_returns_none(self):
+        """is_on must return None (not raise) on an unrecognized childLock value."""
+        sw = SHCSwitch.__new__(SHCSwitch)
+        sw._device = type(
+            "D", (), {"child_lock": _raising_property(ValueError)}
+        )()
         sw.entity_description = SWITCH_TYPES["child_lock_thermostat"]
         assert sw.is_on is None
 

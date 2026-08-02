@@ -1044,13 +1044,26 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
         switches), causing boschshcpy to crash with AttributeError on every
         state update. Return None (unavailable) instead of crash-looping the
         state writer. See mosandlt/boschshc-hass branch fix/code-quality-improvements.
+
+        Also defensive against KeyError/ValueError: some boschshcpy service
+        properties (e.g. ThermostatService.childLock read via
+        child_lock_thermostat's on_key, and PowerSwitchService.value read via
+        switchstate for every smartplug/lightswitch/micromodule_relay switch)
+        index the raw state dict directly without a `.get()` fallback or an
+        enum-conversion guard, and the Bosch API can omit a field it
+        considers "not set" on a partial poll or report an unrecognized value
+        (the same failure mode already fixed for ChildProtectionService.
+        childLockActive and SHCUserDefinedState.deleted, #351/#362-class bugs)
+        — without this guard, that KeyError/ValueError would propagate
+        uncaught and crash-loop the state writer instead of degrading to
+        unavailable.
         """
         try:
             return bool(
                 getattr(self._device, self.entity_description.on_key)
                 == self.entity_description.on_value
             )
-        except AttributeError:
+        except (AttributeError, KeyError, ValueError):
             return None
 
     async def async_turn_on(self, **kwargs: Any) -> None:

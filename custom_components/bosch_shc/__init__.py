@@ -498,6 +498,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         )
         await session.api.close()
         raise ConfigEntryNotReady from err
+    except Exception as err:
+        # Catches unwrapped errors (e.g. json.JSONDecodeError) that aren't a
+        # typed SHCException — otherwise this would crash setup AND leak the
+        # session, since only the except clauses above close it.
+        LOGGER.warning(
+            "Bosch SHC at %s failed to initialize unexpectedly, will retry: %s",
+            data.get(CONF_HOST),
+            err,
+        )
+        await session.api.close()
+        raise ConfigEntryNotReady from err
 
     shc_info = session.information
     # The async information object (_AsyncSHCInformation) does not expose
@@ -842,6 +853,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         # crash setup uncaught and leak the session's aiohttp ClientSession.
         LOGGER.warning(
             "Bosch SHC at %s failed to start polling, will retry: %s",
+            data.get(CONF_HOST),
+            err,
+        )
+        await session.api.close()
+        raise ConfigEntryNotReady from err
+    except Exception as err:  # same rationale as async_init's
+        # fallback above: an unexpected/unwrapped error here must not skip
+        # closing the session.
+        LOGGER.warning(
+            "Bosch SHC at %s failed to start polling unexpectedly, will retry: %s",
             data.get(CONF_HOST),
             err,
         )

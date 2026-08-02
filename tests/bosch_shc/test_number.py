@@ -191,6 +191,26 @@ def _impulse_device(impulse_length=100):
     )
 
 
+class _RaisingImpulseLengthDevice:
+    """Impulse relay whose impulse_length raises KeyError (partial poll).
+
+    Mimics boschshcpy's ImpulseSwitchService.impulse_length, which indexes
+    self.state["impulseLength"] directly rather than using .get() -- unlike
+    SimpleNamespace, a real property is needed to reproduce the exception
+    being raised on attribute access rather than missing entirely.
+    """
+
+    name = "Relay Impulse"
+    id = "hdm:HomeMaticIP:relay-raising"
+    root_device_id = "aa:bb:cc:00:00:09"
+    room_id = None
+    deleted = False
+
+    @property
+    def impulse_length(self) -> float:
+        raise KeyError("impulseLength")
+
+
 def _heating_circuit_svc(eco=18.0, comfort=21.0):
     """Fake HeatingCircuitService."""
     return SimpleNamespace(
@@ -1080,6 +1100,15 @@ class TestImpulseLengthNativeValue:
         num = _entity_for(IMPULSE_LENGTH, dev)
         assert num.native_value is None
 
+    def test_native_value_none_when_impulse_length_raises_keyerror(self):
+        """ImpulseSwitchService.impulse_length indexes state["impulseLength"]
+        directly; a partial poll that omits the field raises KeyError, not
+        AttributeError -- a bare getattr(device, "impulse_length", None)
+        would not catch that and would crash native_value."""
+        dev = _RaisingImpulseLengthDevice()
+        num = _entity_for(IMPULSE_LENGTH, dev)
+        assert num.native_value is None
+
 
 class TestImpulseLengthSetNativeValue:
     def test_set_value_converts_seconds_to_tenths(self):
@@ -1175,6 +1204,19 @@ class TestNumberSetupImpulseRelayNoAttr:
     def test_device_without_impulse_length_produces_no_entity(
         self, mock_config_entry, mock_session
     ):
+        entities = self._run(mock_config_entry, mock_session)
+        assert IMPULSE_LENGTH not in _keys(entities)
+
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [{"micromodule_impulse_relays": [_RaisingImpulseLengthDevice()]}],
+        indirect=True,
+    )
+    def test_device_with_keyerror_impulse_length_is_skipped_not_crashed(
+        self, mock_config_entry, mock_session
+    ):
+        """A partial-poll KeyError from impulse_length must not abort setup
+        for the rest of the platform (hasattr() alone would not catch it)."""
         entities = self._run(mock_config_entry, mock_session)
         assert IMPULSE_LENGTH not in _keys(entities)
 
