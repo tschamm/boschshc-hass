@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Ruumi kliimajuhtimine",
+        "name": "Ruumi temperatuuri reguleerimine",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Kiire kütmine",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Kõnnistest"
+        "name": "Alusta funktsioonitesti"
       },
       "walk_test_stop": {
-        "name": "Kõnnistesti lõpetamine"
+        "name": "Peata funktsioonitest"
       },
       "detection_test": {
-        "name": "Tuvastamistest"
+        "name": "Alusta funktsioonitesti"
       },
       "detection_test_stop": {
-        "name": "Tuvastamistesti lõpetamine"
+        "name": "Peata funktsioonitest"
       },
       "reset_tamper": {
         "name": "Lähtesta rikkumine"
@@ -221,10 +221,10 @@
         "name": "Minimaalse heleduse eelvaade"
       },
       "reset_energy_summation": {
-        "name": "Lähtesta energiatarbimine"
+        "name": "Lähtesta tarbimisväärtus"
       },
       "shutter_recalibrate": {
-        "name": "Kalibreeri uuesti"
+        "name": "Alusta automaatset kalibreerimist"
       },
       "enable_all_diagnostics": {
         "name": "Luba kõik diagnostikad"
@@ -274,7 +274,25 @@
         "name": "Vilkuri alarmi viivitus"
       },
       "bypass_timeout": {
-        "name": "Möödaviigu ajalimit"
+        "name": "Pausifunktsiooni ajalimiit"
+      },
+      "offset": {
+        "name": "Nihe"
+      },
+      "setpointeco": {
+        "name": "Eco-temperatuur"
+      },
+      "setpointcomfort": {
+        "name": "Mugavustemperatuur"
+      },
+      "dimmer_min": {
+        "name": "Minimaalne heledus"
+      },
+      "dimmer_max": {
+        "name": "Maksimaalne heledus"
+      },
+      "dimmer_speed": {
+        "name": "Hämardamise kiirus"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Avatud uksed/aknad"
+        "name": "Avatud uksed ja aknad"
       },
       "walk_test_state": {
-        "name": "Kõnnistesti olek",
+        "name": "Funktsioonitesti olek",
         "state": {
           "walk_test_started": "Käivitatud",
           "walk_test_stopped": "Peatatud",
@@ -539,7 +557,7 @@
         "name": "Klapi asend"
       },
       "detection_test_state": {
-        "name": "Tuvastustesti olek",
+        "name": "Funktsioonitesti olek",
         "state": {
           "detection_test_started": "Käivitatud",
           "detection_test_stopped": "Peatatud",
@@ -615,7 +633,7 @@
         "name": "Ajakava ülekirjutus aktiivne"
       },
       "summer_mode": {
-        "name": "Suvepaus"
+        "name": "Küttepaus"
       },
       "ventilation_mode": {
         "name": "Säästlik tuulutamine"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarmi möödaviik"
+        "name": "Pausifunktsioon"
       },
       "bypass_infinite": {
-        "name": "Möödaviik ilma aegumiseta"
+        "name": "Pausifunktsioon ei aegu kunagi"
       },
       "temperature_drop_enabled": {
         "name": "Temperatuuri langetus"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Klapp"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Alumine nupp"
+      },
+      "key_upper": {
+        "name": "Ülemine nupp"
+      },
+      "key_lower_left": {
+        "name": "Alumine vasak nupp"
+      },
+      "key_lower_right": {
+        "name": "Alumine parem nupp"
+      },
+      "key_upper_left": {
+        "name": "Ülemine vasak nupp"
+      },
+      "key_upper_right": {
+        "name": "Ülemine parem nupp"
       }
     }
   },

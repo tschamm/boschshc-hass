@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Oda iklim kontrolü",
+        "name": "Oda Sıcaklığı Kontrolü",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Hızlı Isıtma",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Test Alarmı"
       },
       "walk_test": {
-        "name": "Yürüyüş Testi"
+        "name": "Fonksiyon Testini Başlat"
       },
       "walk_test_stop": {
-        "name": "Yürüyüş Testini Durdur"
+        "name": "Fonksiyon Testini Durdur"
       },
       "detection_test": {
-        "name": "Algılama Testi"
+        "name": "Fonksiyon Testini Başlat"
       },
       "detection_test_stop": {
-        "name": "Algılama Testini Durdur"
+        "name": "Fonksiyon Testini Durdur"
       },
       "reset_tamper": {
         "name": "Müdahaleyi Sıfırla"
@@ -221,10 +221,10 @@
         "name": "Minimum Parlaklık Önizlemesi"
       },
       "reset_energy_summation": {
-        "name": "Enerji Tüketimini Sıfırla"
+        "name": "Tüketim Değerini Sıfırla"
       },
       "shutter_recalibrate": {
-        "name": "Yeniden Kalibre Et"
+        "name": "Otomatik Kalibrasyonu Başlat"
       },
       "enable_all_diagnostics": {
         "name": "Tüm Tanılamaları Etkinleştir"
@@ -274,7 +274,25 @@
         "name": "Flaşörlü Işık Alarm Gecikmesi"
       },
       "bypass_timeout": {
-        "name": "Atlama Zaman Aşımı"
+        "name": "Mola Fonksiyonu Zaman Aşımı"
+      },
+      "offset": {
+        "name": "Ofset"
+      },
+      "setpointeco": {
+        "name": "Eko Sıcaklığı"
+      },
+      "setpointcomfort": {
+        "name": "Konfor Sıcaklığı"
+      },
+      "dimmer_min": {
+        "name": "Minimum Parlaklık"
+      },
+      "dimmer_max": {
+        "name": "Maksimum Parlaklık"
+      },
+      "dimmer_speed": {
+        "name": "Karartma Hızı"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Açık kapılar/pencereler"
+        "name": "Açık Kapılar ve Pencereler"
       },
       "walk_test_state": {
-        "name": "Yürüyüş Testi Durumu",
+        "name": "Fonksiyon Testi Durumu",
         "state": {
           "walk_test_started": "Başladı",
           "walk_test_stopped": "Durduruldu",
@@ -539,7 +557,7 @@
         "name": "Valf Konumu"
       },
       "detection_test_state": {
-        "name": "Algılama Testi Durumu",
+        "name": "Fonksiyon Testi Durumu",
         "state": {
           "detection_test_started": "Başladı",
           "detection_test_stopped": "Durduruldu",
@@ -615,7 +633,7 @@
         "name": "Program Geçersiz Kılma Etkin"
       },
       "summer_mode": {
-        "name": "Yaz Molası"
+        "name": "Isıtma Molası"
       },
       "ventilation_mode": {
         "name": "Sürdürülebilir Havalandırma"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm atlama"
+        "name": "Mola Fonksiyonu"
       },
       "bypass_infinite": {
-        "name": "Atlama Asla Sona Ermez"
+        "name": "Mola Fonksiyonu Asla Sona Ermez"
       },
       "temperature_drop_enabled": {
         "name": "Sıcaklık Düşüşü"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Vana"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Alt Tuş"
+      },
+      "key_upper": {
+        "name": "Üst Tuş"
+      },
+      "key_lower_left": {
+        "name": "Sol Alt Tuş"
+      },
+      "key_lower_right": {
+        "name": "Sağ Alt Tuş"
+      },
+      "key_upper_left": {
+        "name": "Sol Üst Tuş"
+      },
+      "key_upper_right": {
+        "name": "Sağ Üst Tuş"
       }
     }
   },

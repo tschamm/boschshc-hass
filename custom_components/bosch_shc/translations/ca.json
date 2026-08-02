@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Control de clima de l'habitació",
+        "name": "Control de temperatura de l'habitació",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Escalfament ràpid",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Alarma de prova"
       },
       "walk_test": {
-        "name": "Prova de passada"
+        "name": "Inicia el test de funcionament"
       },
       "walk_test_stop": {
-        "name": "Atura la prova de passada"
+        "name": "Atura el test de funcionament"
       },
       "detection_test": {
-        "name": "Prova de detecció"
+        "name": "Inicia el test de funcionament"
       },
       "detection_test_stop": {
-        "name": "Atura la prova de detecció"
+        "name": "Atura el test de funcionament"
       },
       "reset_tamper": {
         "name": "Restableix la manipulació"
@@ -221,10 +221,10 @@
         "name": "Previsualitza la brillantor mínima"
       },
       "reset_energy_summation": {
-        "name": "Restableix el consum d'energia"
+        "name": "Restableix el valor de consum"
       },
       "shutter_recalibrate": {
-        "name": "Recalibra"
+        "name": "Inicia la calibració automàtica"
       },
       "enable_all_diagnostics": {
         "name": "Activa tots els diagnòstics"
@@ -274,7 +274,25 @@
         "name": "Retard de l'alarma del llum intermitent"
       },
       "bypass_timeout": {
-        "name": "Temps d'espera del bypass"
+        "name": "Temps d'espera de la funció de pausa"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Temperatura eco"
+      },
+      "setpointcomfort": {
+        "name": "Temperatura de confort"
+      },
+      "dimmer_min": {
+        "name": "Brillantor mínima"
+      },
+      "dimmer_max": {
+        "name": "Brillantor màxima"
+      },
+      "dimmer_speed": {
+        "name": "Velocitat d'atenuació"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Portes/finestres obertes"
+        "name": "Portes i finestres obertes"
       },
       "walk_test_state": {
-        "name": "Estat de la prova de passada",
+        "name": "Estat del test de funcionament",
         "state": {
           "walk_test_started": "Iniciat",
           "walk_test_stopped": "Aturat",
@@ -539,7 +557,7 @@
         "name": "Posició de la vàlvula"
       },
       "detection_test_state": {
-        "name": "Estat del test de detecció",
+        "name": "Estat del test de funcionament",
         "state": {
           "detection_test_started": "Iniciat",
           "detection_test_stopped": "Aturat",
@@ -615,7 +633,7 @@
         "name": "Anul·lació d'horari activa"
       },
       "summer_mode": {
-        "name": "Pausa d'estiu"
+        "name": "Pausa de calefacció"
       },
       "ventilation_mode": {
         "name": "Ventilació sostenible"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Bypass d'alarma"
+        "name": "Funció de pausa"
       },
       "bypass_infinite": {
-        "name": "Bypass sense caducitat"
+        "name": "La funció de pausa no caduca mai"
       },
       "temperature_drop_enabled": {
         "name": "Baixada de temperatura"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Vàlvula"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tecla inferior"
+      },
+      "key_upper": {
+        "name": "Tecla superior"
+      },
+      "key_lower_left": {
+        "name": "Tecla inferior esquerra"
+      },
+      "key_lower_right": {
+        "name": "Tecla inferior dreta"
+      },
+      "key_upper_left": {
+        "name": "Tecla superior esquerra"
+      },
+      "key_upper_right": {
+        "name": "Tecla superior dreta"
       }
     }
   },

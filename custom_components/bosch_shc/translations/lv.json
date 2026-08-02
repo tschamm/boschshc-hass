@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Telpas klimata vadība",
+        "name": "Telpas temperatūras regulēšana",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Ātra apsilde",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Testa trauksme"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Sākt funkciju testu"
       },
       "walk_test_stop": {
-        "name": "Walk Test apturēšana"
+        "name": "Apturēt funkciju testu"
       },
       "detection_test": {
-        "name": "Noteikšanas tests"
+        "name": "Sākt funkciju testu"
       },
       "detection_test_stop": {
-        "name": "Noteikšanas testa apturēšana"
+        "name": "Apturēt funkciju testu"
       },
       "reset_tamper": {
         "name": "Atiestatīt manipulācijas brīdinājumu"
@@ -221,10 +221,10 @@
         "name": "Minimālā spilgtuma priekšskatījums"
       },
       "reset_energy_summation": {
-        "name": "Atiestatīt enerģijas patēriņu"
+        "name": "Atiestatīt patēriņa vērtību"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrēt no jauna"
+        "name": "Sākt automātisko kalibrēšanu"
       },
       "enable_all_diagnostics": {
         "name": "Iespējot visu diagnostiku"
@@ -274,7 +274,25 @@
         "name": "Mirgojošās gaismas trauksmes aizkave"
       },
       "bypass_timeout": {
-        "name": "Apiešanas noildze"
+        "name": "Pauzes funkcijas noildze"
+      },
+      "offset": {
+        "name": "Nobīde"
+      },
+      "setpointeco": {
+        "name": "Eko temperatūra"
+      },
+      "setpointcomfort": {
+        "name": "Komforta temperatūra"
+      },
+      "dimmer_min": {
+        "name": "Minimālais spilgtums"
+      },
+      "dimmer_max": {
+        "name": "Maksimālais spilgtums"
+      },
+      "dimmer_speed": {
+        "name": "Aptumšošanas ātrums"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Atvērtas durvis/logi"
+        "name": "Atvērtas durvis un logi"
       },
       "walk_test_state": {
-        "name": "Walk Test stāvoklis",
+        "name": "Funkciju testa stāvoklis",
         "state": {
           "walk_test_started": "Sākts",
           "walk_test_stopped": "Apturēts",
@@ -539,7 +557,7 @@
         "name": "Vārsta pozīcija"
       },
       "detection_test_state": {
-        "name": "Detektēšanas testa stāvoklis",
+        "name": "Funkciju testa stāvoklis",
         "state": {
           "detection_test_started": "Sākts",
           "detection_test_stopped": "Apturēts",
@@ -615,7 +633,7 @@
         "name": "Grafika pārrakstīšana aktīva"
       },
       "summer_mode": {
-        "name": "Vasaras pārtraukums"
+        "name": "Apkures pārtraukums"
       },
       "ventilation_mode": {
         "name": "Ilgtspējīga vēdināšana"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Signalizācijas apiešana"
+        "name": "Pauzes funkcija"
       },
       "bypass_infinite": {
-        "name": "Apiešana nekad nebeidzas"
+        "name": "Pauzes funkcija nekad nebeidzas"
       },
       "temperature_drop_enabled": {
         "name": "Temperatūras pazemināšana"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Vārsts"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Apakšējā poga"
+      },
+      "key_upper": {
+        "name": "Augšējā poga"
+      },
+      "key_lower_left": {
+        "name": "Apakšējā kreisā poga"
+      },
+      "key_lower_right": {
+        "name": "Apakšējā labā poga"
+      },
+      "key_upper_left": {
+        "name": "Augšējā kreisā poga"
+      },
+      "key_upper_right": {
+        "name": "Augšējā labā poga"
       }
     }
   },

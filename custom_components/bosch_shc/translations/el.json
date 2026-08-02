@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Έλεγχος κλίματος δωματίου",
+        "name": "Έλεγχος θερμοκρασίας δωματίου",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Γρήγορη θέρμανση",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Δοκιμαστικός συναγερμός"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Έναρξη δοκιμής λειτουργίας"
       },
       "walk_test_stop": {
-        "name": "Διακοπή Walk Test"
+        "name": "Διακοπή δοκιμής λειτουργίας"
       },
       "detection_test": {
-        "name": "Δοκιμή ανίχνευσης"
+        "name": "Έναρξη δοκιμής λειτουργίας"
       },
       "detection_test_stop": {
-        "name": "Διακοπή δοκιμής ανίχνευσης"
+        "name": "Διακοπή δοκιμής λειτουργίας"
       },
       "reset_tamper": {
         "name": "Επαναφορά παραβίασης"
@@ -221,10 +221,10 @@
         "name": "Προεπισκόπηση Ελάχιστης Φωτεινότητας"
       },
       "reset_energy_summation": {
-        "name": "Επαναφορά κατανάλωσης ενέργειας"
+        "name": "Επαναφορά τιμής κατανάλωσης"
       },
       "shutter_recalibrate": {
-        "name": "Επαναβαθμονόμηση"
+        "name": "Έναρξη αυτόματης βαθμονόμησης"
       },
       "enable_all_diagnostics": {
         "name": "Ενεργοποίηση όλων των διαγνωστικών"
@@ -274,7 +274,25 @@
         "name": "Καθυστέρηση συναγερμού φωτός αναλαμπής"
       },
       "bypass_timeout": {
-        "name": "Χρονικό Όριο Παράκαμψης"
+        "name": "Χρονικό όριο λειτουργίας παύσης"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Θερμοκρασία Eco"
+      },
+      "setpointcomfort": {
+        "name": "Θερμοκρασία άνεσης"
+      },
+      "dimmer_min": {
+        "name": "Ελάχιστη φωτεινότητα"
+      },
+      "dimmer_max": {
+        "name": "Μέγιστη φωτεινότητα"
+      },
+      "dimmer_speed": {
+        "name": "Ταχύτητα ρύθμισης φωτεινότητας"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Ανοιχτές πόρτες/παράθυρα"
+        "name": "Ανοιχτές πόρτες και παράθυρα"
       },
       "walk_test_state": {
-        "name": "Κατάσταση Walk Test",
+        "name": "Κατάσταση δοκιμής λειτουργίας",
         "state": {
           "walk_test_started": "Ξεκίνησε",
           "walk_test_stopped": "Διακόπηκε",
@@ -539,7 +557,7 @@
         "name": "Θέση βαλβίδας"
       },
       "detection_test_state": {
-        "name": "Κατάσταση Δοκιμής Ανίχνευσης",
+        "name": "Κατάσταση δοκιμής λειτουργίας",
         "state": {
           "detection_test_started": "Ξεκίνησε",
           "detection_test_stopped": "Διακόπηκε",
@@ -615,7 +633,7 @@
         "name": "Παράκαμψη Προγράμματος Ενεργή"
       },
       "summer_mode": {
-        "name": "Θερινή παύση"
+        "name": "Παύση θέρμανσης"
       },
       "ventilation_mode": {
         "name": "Βιώσιμος αερισμός"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Παράκαμψη συναγερμού"
+        "name": "Λειτουργία παύσης"
       },
       "bypass_infinite": {
-        "name": "Παράκαμψη χωρίς λήξη"
+        "name": "Η λειτουργία παύσης δεν λήγει ποτέ"
       },
       "temperature_drop_enabled": {
         "name": "Πτώση θερμοκρασίας"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Βαλβίδα"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Κάτω πλήκτρο"
+      },
+      "key_upper": {
+        "name": "Πάνω πλήκτρο"
+      },
+      "key_lower_left": {
+        "name": "Κάτω αριστερό πλήκτρο"
+      },
+      "key_lower_right": {
+        "name": "Κάτω δεξί πλήκτρο"
+      },
+      "key_upper_left": {
+        "name": "Πάνω αριστερό πλήκτρο"
+      },
+      "key_upper_right": {
+        "name": "Πάνω δεξί πλήκτρο"
       }
     }
   },

@@ -128,6 +128,17 @@ async def async_setup_entry(
 class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC UniversalSwitch Entity."""
 
+    # Maps KeypadService.KeyState to a translated name (#393: a bare f-string
+    # of the raw enum was leaking untranslated into the UI).
+    _KEY_TRANSLATION_KEYS = {
+        "LOWER_BUTTON": "key_lower",
+        "UPPER_BUTTON": "key_upper",
+        "LOWER_LEFT_BUTTON": "key_lower_left",
+        "LOWER_RIGHT_BUTTON": "key_lower_right",
+        "UPPER_LEFT_BUTTON": "key_upper_left",
+        "UPPER_RIGHT_BUTTON": "key_upper_right",
+    }
+
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]
 
@@ -142,7 +153,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         # (same keyName, same eventTimestamp) does not trigger a duplicate event.
         self._last_fired_timestamp: int = -1
 
-        self._attr_name: str | None = f"Button {key_id}"  # type: ignore[assignment]
+        self._attr_translation_key = self._KEY_TRANSLATION_KEYS.get(key_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
     async def async_added_to_hass(self) -> None:

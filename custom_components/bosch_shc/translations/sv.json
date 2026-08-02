@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Rumsklimatstyrning",
+        "name": "Rumstemperaturstyrning",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Snabb uppvärmning",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Testlarm"
       },
       "walk_test": {
-        "name": "Gångtest"
+        "name": "Starta funktionstest"
       },
       "walk_test_stop": {
-        "name": "Stoppa gångtest"
+        "name": "Stoppa funktionstest"
       },
       "detection_test": {
-        "name": "Detektionstest"
+        "name": "Starta funktionstest"
       },
       "detection_test_stop": {
-        "name": "Stoppa detektionstest"
+        "name": "Stoppa funktionstest"
       },
       "reset_tamper": {
         "name": "Återställ sabotageindikering"
@@ -221,10 +221,10 @@
         "name": "Förhandsgranska minljusstyrka"
       },
       "reset_energy_summation": {
-        "name": "Återställ energiförbrukning"
+        "name": "Återställ förbrukningsvärde"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrera om"
+        "name": "Starta automatisk kalibrering"
       },
       "enable_all_diagnostics": {
         "name": "Aktivera all diagnostik"
@@ -274,7 +274,25 @@
         "name": "Larmfördröjning blixtljus"
       },
       "bypass_timeout": {
-        "name": "Tidsgräns för förbikoppling"
+        "name": "Tidsgräns för pausfunktion"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Ekotemperatur"
+      },
+      "setpointcomfort": {
+        "name": "Komforttemperatur"
+      },
+      "dimmer_min": {
+        "name": "Lägsta ljusstyrka"
+      },
+      "dimmer_max": {
+        "name": "Högsta ljusstyrka"
+      },
+      "dimmer_speed": {
+        "name": "Dimringshastighet"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Öppna dörrar/fönster"
+        "name": "Öppna dörrar och fönster"
       },
       "walk_test_state": {
-        "name": "Gångtestsstatus",
+        "name": "Funktionstestets status",
         "state": {
           "walk_test_started": "Startad",
           "walk_test_stopped": "Stoppad",
@@ -539,7 +557,7 @@
         "name": "Ventilläge"
       },
       "detection_test_state": {
-        "name": "Detekteringstestläge",
+        "name": "Funktionstestets status",
         "state": {
           "detection_test_started": "Startad",
           "detection_test_stopped": "Stoppad",
@@ -615,7 +633,7 @@
         "name": "Schemaåsidosättning aktiv"
       },
       "summer_mode": {
-        "name": "Sommarpaus"
+        "name": "Värmepaus"
       },
       "ventilation_mode": {
         "name": "Lufta hållbart"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Förbikoppling av larm"
+        "name": "Pausfunktion"
       },
       "bypass_infinite": {
-        "name": "Förbikoppling upphör aldrig"
+        "name": "Pausfunktionen upphör aldrig"
       },
       "temperature_drop_enabled": {
         "name": "Temperatursänkning"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Nedre knapp"
+      },
+      "key_upper": {
+        "name": "Övre knapp"
+      },
+      "key_lower_left": {
+        "name": "Nedre vänstra knappen"
+      },
+      "key_lower_right": {
+        "name": "Nedre högra knappen"
+      },
+      "key_upper_left": {
+        "name": "Övre vänstra knappen"
+      },
+      "key_upper_right": {
+        "name": "Övre högra knappen"
       }
     }
   },

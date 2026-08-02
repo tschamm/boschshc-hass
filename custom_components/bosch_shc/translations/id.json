@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Kontrol iklim ruangan",
+        "name": "Kontrol suhu ruangan",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Pemanasan cepat",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Uji Alarm"
       },
       "walk_test": {
-        "name": "Uji Jalan"
+        "name": "Mulai Uji Fungsi"
       },
       "walk_test_stop": {
-        "name": "Hentikan Uji Jalan"
+        "name": "Hentikan Uji Fungsi"
       },
       "detection_test": {
-        "name": "Uji Deteksi"
+        "name": "Mulai Uji Fungsi"
       },
       "detection_test_stop": {
-        "name": "Hentikan Uji Deteksi"
+        "name": "Hentikan Uji Fungsi"
       },
       "reset_tamper": {
         "name": "Reset Gangguan"
@@ -221,10 +221,10 @@
         "name": "Pratinjau Kecerahan Minimum"
       },
       "reset_energy_summation": {
-        "name": "Reset Konsumsi Energi"
+        "name": "Reset Nilai Konsumsi"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrasi Ulang"
+        "name": "Mulai Kalibrasi Otomatis"
       },
       "enable_all_diagnostics": {
         "name": "Aktifkan Semua Diagnostik"
@@ -274,7 +274,25 @@
         "name": "Penundaan Alarm Lampu Kilat"
       },
       "bypass_timeout": {
-        "name": "Batas Waktu Bypass"
+        "name": "Batas Waktu Fungsi Jeda"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Suhu eco"
+      },
+      "setpointcomfort": {
+        "name": "Suhu comfort"
+      },
+      "dimmer_min": {
+        "name": "Kecerahan minimum"
+      },
+      "dimmer_max": {
+        "name": "Kecerahan maksimum"
+      },
+      "dimmer_speed": {
+        "name": "Kecepatan peredupan"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Pintu/Jendela Terbuka"
+        "name": "Pintu dan Jendela Terbuka"
       },
       "walk_test_state": {
-        "name": "Status Uji Jalan",
+        "name": "Status Uji Fungsi",
         "state": {
           "walk_test_started": "Dimulai",
           "walk_test_stopped": "Dihentikan",
@@ -539,7 +557,7 @@
         "name": "Posisi Katup"
       },
       "detection_test_state": {
-        "name": "Status Uji Deteksi",
+        "name": "Status Uji Fungsi",
         "state": {
           "detection_test_started": "Dimulai",
           "detection_test_stopped": "Dihentikan",
@@ -615,7 +633,7 @@
         "name": "Penggantian Jadwal Aktif"
       },
       "summer_mode": {
-        "name": "Jeda musim panas"
+        "name": "Jeda pemanasan"
       },
       "ventilation_mode": {
         "name": "Ventilasi berkelanjutan"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Lewati alarm"
+        "name": "Fungsi Jeda"
       },
       "bypass_infinite": {
-        "name": "Lewati alarm tanpa batas waktu"
+        "name": "Fungsi Jeda tidak pernah kedaluwarsa"
       },
       "temperature_drop_enabled": {
         "name": "Penurunan Suhu"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Katup"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tombol bawah"
+      },
+      "key_upper": {
+        "name": "Tombol atas"
+      },
+      "key_lower_left": {
+        "name": "Tombol kiri bawah"
+      },
+      "key_lower_right": {
+        "name": "Tombol kanan bawah"
+      },
+      "key_upper_left": {
+        "name": "Tombol kiri atas"
+      },
+      "key_upper_right": {
+        "name": "Tombol kanan atas"
       }
     }
   },

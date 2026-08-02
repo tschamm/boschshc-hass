@@ -2,6 +2,47 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Proactive follow-up audit** (five parallel passes cross-referencing every
+  entity name against the decompiled Bosch app's own string tables, plus a
+  cross-check against a real 61-device/435-entity Home Assistant install)
+  found two real bugs and around a dozen more terminology corrections beyond
+  the #393 fixes above:
+  - **Two number entities' worth of raw English text were showing on every
+    non-English installation**: the temperature-offset number (12 TRVs + 3
+    THBs), the Heating Circuit's eco/comfort setpoint numbers, and the
+    Micromodule Dimmer's min/max brightness and dimming-speed numbers never
+    had a `translation_key` at all — just a hardcoded English `name=`,
+    unlike every other entity in the integration. Now translated in all 30
+    languages.
+  - **Universal Switch key-press event entities showed a raw internal
+    constant as their name** — e.g. "Button LOWER_LEFT_BUTTON" instead of a
+    real label. Now "Lower left key" (and the 5 other key positions),
+    translated in all 30 languages.
+  - **The Door/Window Contact II "Bypass" switch/timeout was the wrong
+    feature name entirely** — Bosch's own app calls this the "Break"/"Pause"
+    function, never "Bypass", for this device generation. Renamed to "Break
+    function" throughout, all 30 languages.
+  - Smaller corrections, same APK-verified basis: the climate "Boost" preset
+    is "Fast heating" in the real app; "Room climate control" is "Room
+    temperature control"; the "Summer break" sensor is "Heating break" (Bosch
+    renamed this feature in-app); the walk/detection-test sensors and buttons
+    are unified around "Function test" wording; "Open doors/windows" is
+    spelled out as "Open doors and windows"; the shutter recalibration button
+    is "Start automatic calibration"; the energy-reset button is "Reset
+    consumption value". All translated to all 30 languages.
+  - Two English-only casing fixes the earlier sentence-case sweep missed:
+    a few ENUM state values (`communication_quality`/`zigbee_routing_quality`)
+    and the valve/actuator "Normally Closed"/"Normally Open" options were
+    still Title Case.
+  - One issue was investigated and deliberately left alone rather than
+    guess-fixed: one of five real smart plugs is missing its
+    state-after-power-outage selector, most likely because its value was
+    still unset at integration startup on that poll cycle — the underlying
+    entity-creation pattern (skip creating the entity if the value isn't
+    available yet, with no re-check later) is shared by several selects in
+    this file, so a blind fix risked a wider regression without a live
+    rawscan to confirm the actual cause first.
+
 - **Corrected the Alarm System / Water Alarm device names, again** (#393
   follow-up) — the reporter pointed out the previous round's German names
   were still too literal/formal: it should be "Alarmsystem", not

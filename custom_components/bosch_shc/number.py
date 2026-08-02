@@ -376,7 +376,7 @@ async def _bypass_timeout_set_value_fn(
 NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     OFFSET: SHCNumberEntityDescription[_TemperatureOffsetDevice](
         key=OFFSET,
-        name="Offset",
+        translation_key=OFFSET,
         device_class=NumberDeviceClass.TEMPERATURE,
         entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -400,7 +400,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     HEATING_CIRCUIT_SETPOINT_ECO: SHCNumberEntityDescription[SHCHeatingCircuit](
         key=HEATING_CIRCUIT_SETPOINT_ECO,
-        name="Setpoint Eco Temperature",
+        translation_key=HEATING_CIRCUIT_SETPOINT_ECO,
         entity_category=EntityCategory.CONFIG,
         device_class=NumberDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -413,7 +413,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     HEATING_CIRCUIT_SETPOINT_COMFORT: SHCNumberEntityDescription[SHCHeatingCircuit](
         key=HEATING_CIRCUIT_SETPOINT_COMFORT,
-        name="Setpoint Comfort Temperature",
+        translation_key=HEATING_CIRCUIT_SETPOINT_COMFORT,
         entity_category=EntityCategory.CONFIG,
         device_class=NumberDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -503,7 +503,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     DIMMER_MIN: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_MIN,
-        name="Dimmer Min Brightness",
+        translation_key=DIMMER_MIN,
         entity_category=EntityCategory.CONFIG,
         native_min_value=0.0,
         native_max_value=100.0,
@@ -514,7 +514,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     DIMMER_MAX: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_MAX,
-        name="Dimmer Max Brightness",
+        translation_key=DIMMER_MAX,
         entity_category=EntityCategory.CONFIG,
         native_min_value=0.0,
         native_max_value=100.0,
@@ -525,7 +525,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     DIMMER_SPEED: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_SPEED,
-        name="Dimming Speed",
+        translation_key=DIMMER_SPEED,
         entity_category=EntityCategory.CONFIG,
         native_min_value=1.0,
         native_max_value=10.0,

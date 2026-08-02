@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Controle de clima do quarto",
+        "name": "Controle de temperatura ambiente",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Aquecimento rápido",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Alarme de teste"
       },
       "walk_test": {
-        "name": "Teste de Percurso"
+        "name": "Iniciar teste de funcionamento"
       },
       "walk_test_stop": {
-        "name": "Parar Teste de Percurso"
+        "name": "Parar teste de funcionamento"
       },
       "detection_test": {
-        "name": "Teste de Detecção"
+        "name": "Iniciar teste de funcionamento"
       },
       "detection_test_stop": {
-        "name": "Parar Teste de Detecção"
+        "name": "Parar teste de funcionamento"
       },
       "reset_tamper": {
         "name": "Redefinir Violação"
@@ -221,10 +221,10 @@
         "name": "Pré-visualizar brilho mínimo"
       },
       "reset_energy_summation": {
-        "name": "Redefinir consumo de energia"
+        "name": "Redefinir valor de consumo"
       },
       "shutter_recalibrate": {
-        "name": "Recalibrar"
+        "name": "Iniciar calibração automática"
       },
       "enable_all_diagnostics": {
         "name": "Ativar Todos os Diagnósticos"
@@ -274,7 +274,25 @@
         "name": "Atraso do alarme flash"
       },
       "bypass_timeout": {
-        "name": "Tempo limite do bypass"
+        "name": "Tempo limite da função de pausa"
+      },
+      "offset": {
+        "name": "Deslocamento"
+      },
+      "setpointeco": {
+        "name": "Temperatura Eco"
+      },
+      "setpointcomfort": {
+        "name": "Temperatura de conforto"
+      },
+      "dimmer_min": {
+        "name": "Brilho mínimo"
+      },
+      "dimmer_max": {
+        "name": "Brilho máximo"
+      },
+      "dimmer_speed": {
+        "name": "Velocidade de regulagem da luminosidade"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Portas/janelas abertas"
+        "name": "Portas e janelas abertas"
       },
       "walk_test_state": {
-        "name": "Estado do Teste de Percurso",
+        "name": "Status do teste de funcionamento",
         "state": {
           "walk_test_started": "Iniciado",
           "walk_test_stopped": "Parado",
@@ -539,7 +557,7 @@
         "name": "Posição da válvula"
       },
       "detection_test_state": {
-        "name": "Estado do teste de detecção",
+        "name": "Status do teste de funcionamento",
         "state": {
           "detection_test_started": "Iniciado",
           "detection_test_stopped": "Parado",
@@ -615,7 +633,7 @@
         "name": "Substituição de programação ativa"
       },
       "summer_mode": {
-        "name": "Férias de verão"
+        "name": "Pausa de aquecimento"
       },
       "ventilation_mode": {
         "name": "Ventilação sustentável"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Bypass de alarme"
+        "name": "Função de pausa"
       },
       "bypass_infinite": {
-        "name": "Bypass nunca expira"
+        "name": "Função de pausa nunca expira"
       },
       "temperature_drop_enabled": {
         "name": "Queda de temperatura"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Válvula"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tecla inferior"
+      },
+      "key_upper": {
+        "name": "Tecla superior"
+      },
+      "key_lower_left": {
+        "name": "Tecla inferior esquerda"
+      },
+      "key_lower_right": {
+        "name": "Tecla inferior direita"
+      },
+      "key_upper_left": {
+        "name": "Tecla superior esquerda"
+      },
+      "key_upper_right": {
+        "name": "Tecla superior direita"
       }
     }
   },

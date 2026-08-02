@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Sterowanie klimatem pokoju",
+        "name": "Regulacja temperatury pomieszczenia",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Szybkie ogrzewanie",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Alarm testowy"
       },
       "walk_test": {
-        "name": "Test ruchu"
+        "name": "Rozpocznij test funkcji"
       },
       "walk_test_stop": {
-        "name": "Zatrzymaj test ruchu"
+        "name": "Zatrzymaj test funkcji"
       },
       "detection_test": {
-        "name": "Test wykrywania"
+        "name": "Rozpocznij test funkcji"
       },
       "detection_test_stop": {
-        "name": "Zatrzymaj test wykrywania"
+        "name": "Zatrzymaj test funkcji"
       },
       "reset_tamper": {
         "name": "Resetuj sabotaż"
@@ -221,10 +221,10 @@
         "name": "Podgląd minimalnej jasności"
       },
       "reset_energy_summation": {
-        "name": "Resetuj zużycie energii"
+        "name": "Zresetuj wartość zużycia"
       },
       "shutter_recalibrate": {
-        "name": "Kalibruj ponownie"
+        "name": "Rozpocznij automatyczną kalibrację"
       },
       "enable_all_diagnostics": {
         "name": "Włącz wszystkie diagnostyki"
@@ -274,7 +274,25 @@
         "name": "Opóźnienie alarmu światła błyskowego"
       },
       "bypass_timeout": {
-        "name": "Limit czasu pominięcia"
+        "name": "Limit czasu funkcji przerwy"
+      },
+      "offset": {
+        "name": "Przesunięcie"
+      },
+      "setpointeco": {
+        "name": "Temperatura Eco"
+      },
+      "setpointcomfort": {
+        "name": "Temperatura komfortowa"
+      },
+      "dimmer_min": {
+        "name": "Minimalna jasność"
+      },
+      "dimmer_max": {
+        "name": "Maksymalna jasność"
+      },
+      "dimmer_speed": {
+        "name": "Szybkość ściemniania"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Otwarte drzwi/okna"
+        "name": "Otwarte drzwi i okna"
       },
       "walk_test_state": {
-        "name": "Stan testu ruchu",
+        "name": "Stan testu funkcji",
         "state": {
           "walk_test_started": "Rozpoczęty",
           "walk_test_stopped": "Zatrzymany",
@@ -539,7 +557,7 @@
         "name": "Pozycja zaworu"
       },
       "detection_test_state": {
-        "name": "Stan testu wykrywania",
+        "name": "Stan testu funkcji",
         "state": {
           "detection_test_started": "Rozpoczęty",
           "detection_test_stopped": "Zatrzymany",
@@ -615,7 +633,7 @@
         "name": "Nadpisanie harmonogramu aktywne"
       },
       "summer_mode": {
-        "name": "Przerwa letnia"
+        "name": "Przerwa w ogrzewaniu"
       },
       "ventilation_mode": {
         "name": "Zrównoważone wietrzenie"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Pominięcie alarmu"
+        "name": "Funkcja przerwy"
       },
       "bypass_infinite": {
-        "name": "Pominięcie nigdy nie wygasa"
+        "name": "Funkcja przerwy nigdy nie wygasa"
       },
       "temperature_drop_enabled": {
         "name": "Obniżenie temperatury"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Zawór"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Dolny przycisk"
+      },
+      "key_upper": {
+        "name": "Górny przycisk"
+      },
+      "key_lower_left": {
+        "name": "Dolny lewy przycisk"
+      },
+      "key_lower_right": {
+        "name": "Dolny prawy przycisk"
+      },
+      "key_upper_left": {
+        "name": "Górny lewy przycisk"
+      },
+      "key_upper_right": {
+        "name": "Górny prawy przycisk"
       }
     }
   },

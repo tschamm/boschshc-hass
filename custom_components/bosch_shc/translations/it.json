@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Controllo clima stanza",
+        "name": "Controllo della temperatura della stanza",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Riscaldamento rapido",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Prova di allarme"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Avvia test di funzionamento"
       },
       "walk_test_stop": {
-        "name": "Arresta Walk Test"
+        "name": "Arresta test di funzionamento"
       },
       "detection_test": {
-        "name": "Test rilevamento"
+        "name": "Avvia test di funzionamento"
       },
       "detection_test_stop": {
-        "name": "Arresta test rilevamento"
+        "name": "Arresta test di funzionamento"
       },
       "reset_tamper": {
         "name": "Ripristina manomissione"
@@ -221,10 +221,10 @@
         "name": "Anteprima luminosità minima"
       },
       "reset_energy_summation": {
-        "name": "Azzera consumo di energia"
+        "name": "Azzera valore di consumo"
       },
       "shutter_recalibrate": {
-        "name": "Ricalibra"
+        "name": "Avvia calibrazione automatica"
       },
       "enable_all_diagnostics": {
         "name": "Abilita tutte le diagnostiche"
@@ -274,7 +274,25 @@
         "name": "Ritardo allarme luce intermittente"
       },
       "bypass_timeout": {
-        "name": "Timeout bypass"
+        "name": "Timeout funzione pausa"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Temperatura eco"
+      },
+      "setpointcomfort": {
+        "name": "Temperatura comfort"
+      },
+      "dimmer_min": {
+        "name": "Luminosità minima"
+      },
+      "dimmer_max": {
+        "name": "Luminosità massima"
+      },
+      "dimmer_speed": {
+        "name": "Velocità di dimmerazione"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Porte/finestre aperte"
+        "name": "Porte e finestre aperte"
       },
       "walk_test_state": {
-        "name": "Stato Walk Test",
+        "name": "Stato test di funzionamento",
         "state": {
           "walk_test_started": "Avviato",
           "walk_test_stopped": "Arrestato",
@@ -539,7 +557,7 @@
         "name": "Posizione della valvola"
       },
       "detection_test_state": {
-        "name": "Stato test di rilevamento",
+        "name": "Stato test di funzionamento",
         "state": {
           "detection_test_started": "Avviato",
           "detection_test_stopped": "Arrestato",
@@ -615,7 +633,7 @@
         "name": "Sovrascrittura programma attiva"
       },
       "summer_mode": {
-        "name": "Pausa estiva"
+        "name": "Pausa riscaldamento"
       },
       "ventilation_mode": {
         "name": "Aerazione sostenibile"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Bypass allarme"
+        "name": "Funzione pausa"
       },
       "bypass_infinite": {
-        "name": "Bypass senza scadenza"
+        "name": "La funzione pausa non scade mai"
       },
       "temperature_drop_enabled": {
         "name": "Abbassamento temperatura"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Valvola"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tasto inferiore"
+      },
+      "key_upper": {
+        "name": "Tasto superiore"
+      },
+      "key_lower_left": {
+        "name": "Tasto inferiore sinistro"
+      },
+      "key_lower_right": {
+        "name": "Tasto inferiore destro"
+      },
+      "key_upper_left": {
+        "name": "Tasto superiore sinistro"
+      },
+      "key_upper_right": {
+        "name": "Tasto superiore destro"
       }
     }
   },

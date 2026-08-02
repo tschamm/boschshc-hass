@@ -429,11 +429,14 @@ class TestSHCNumberInit:
     """Cover SHCNumber.__init__."""
 
     def test_init_sets_name_from_description(self):
+        # OFFSET is now translation_key-driven (#393 audit); _attr_name is
+        # deleted so HA's translation lookup applies instead.
         dev = _fake_number_init_device()
         number = SHCNumber(
             device=dev, entity_description=NUMBER_DESCRIPTIONS[OFFSET], entry_id="test"
         )
-        assert number._attr_name == "Offset"
+        assert not hasattr(number, "_attr_name")
+        assert number.entity_description.translation_key == "offset"
 
     def test_init_sets_unique_id(self):
         dev = _fake_number_init_device()
@@ -466,7 +469,7 @@ class TestSHCNumberInit:
             device=dev, entity_description=NUMBER_DESCRIPTIONS[OFFSET], entry_id="e"
         )
         assert number._attr_unique_id == "root2_dev2_offset"
-        assert number._attr_name == "Offset"
+        assert not hasattr(number, "_attr_name")
 
     def test_init_translation_key_description_deletes_attr_name(self):
         """A description with a translation_key (not a literal name) must
@@ -904,13 +907,10 @@ class TestNumberSetupEntry:
         "device_buckets", [{"thermostats": [_number_device()]}], indirect=True
     )
     def test_attr_name_offset_applied(self, mock_config_entry, mock_session) -> None:
-        """async_setup_entry always uses the OFFSET description.
-
-        With _attr_has_entity_name=True, _attr_name holds only the feature
-        label; HA prepends the device name for display ('Test Thermostat Offset').
-        """
+        """async_setup_entry always uses the OFFSET description (translation_key-driven)."""
         result = self._run(mock_config_entry, mock_session)
-        assert result[0]._attr_name == "Offset"
+        assert not hasattr(result[0], "_attr_name")
+        assert result[0].entity_description.translation_key == "offset"
 
     @pytest.mark.parametrize(
         "device_buckets", [{"thermostats": [_number_device()]}], indirect=True
@@ -1704,9 +1704,9 @@ class TestNumberSetupNewEntities:
         assert len(result) == 2
         keys = {e.entity_description.key for e in result}
         assert keys == {HEATING_CIRCUIT_SETPOINT_ECO, HEATING_CIRCUIT_SETPOINT_COMFORT}
-        names = [e._attr_name for e in result]
-        assert "Setpoint Eco Temperature" in names
-        assert "Setpoint Comfort Temperature" in names
+        translation_keys = {e.entity_description.translation_key for e in result}
+        assert translation_keys == {HEATING_CIRCUIT_SETPOINT_ECO, HEATING_CIRCUIT_SETPOINT_COMFORT}
+        assert all(not hasattr(e, "_attr_name") for e in result)
 
     @pytest.mark.parametrize(
         "device_buckets",
@@ -2640,9 +2640,12 @@ def test_dimmer_number_has_correct_names():
         entity_description=NUMBER_DESCRIPTIONS[DIMMER_SPEED],
         entry_id="e1",
     )
-    assert n_min._attr_name == "Dimmer Min Brightness"
-    assert n_max._attr_name == "Dimmer Max Brightness"
-    assert n_spd._attr_name == "Dimming Speed"
+    assert not hasattr(n_min, "_attr_name")
+    assert not hasattr(n_max, "_attr_name")
+    assert not hasattr(n_spd, "_attr_name")
+    assert n_min.entity_description.translation_key == DIMMER_MIN
+    assert n_max.entity_description.translation_key == DIMMER_MAX
+    assert n_spd.entity_description.translation_key == DIMMER_SPEED
 
 
 def test_dimmer_number_unique_ids():

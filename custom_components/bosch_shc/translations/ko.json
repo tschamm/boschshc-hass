@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "실내 기후 제어",
+        "name": "실내 온도 제어",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "부스트",
+              "boost": "급속 난방",
               "eco": "에코"
             }
           }
@@ -197,16 +197,16 @@
         "name": "알람 테스트"
       },
       "walk_test": {
-        "name": "보행 테스트"
+        "name": "기능 테스트 시작"
       },
       "walk_test_stop": {
-        "name": "보행 테스트 중지"
+        "name": "기능 테스트 중지"
       },
       "detection_test": {
-        "name": "감지 테스트"
+        "name": "기능 테스트 시작"
       },
       "detection_test_stop": {
-        "name": "감지 테스트 중지"
+        "name": "기능 테스트 중지"
       },
       "reset_tamper": {
         "name": "변조 초기화"
@@ -221,10 +221,10 @@
         "name": "최소 밝기 미리보기"
       },
       "reset_energy_summation": {
-        "name": "에너지 소비량 초기화"
+        "name": "소비량 초기화"
       },
       "shutter_recalibrate": {
-        "name": "재보정"
+        "name": "자동 보정 시작"
       },
       "enable_all_diagnostics": {
         "name": "모든 진단 활성화"
@@ -274,7 +274,25 @@
         "name": "점멸등 알람 지연"
       },
       "bypass_timeout": {
-        "name": "바이패스 제한 시간"
+        "name": "일시 정지 기능 제한 시간"
+      },
+      "offset": {
+        "name": "오프셋"
+      },
+      "setpointeco": {
+        "name": "에코 온도"
+      },
+      "setpointcomfort": {
+        "name": "쾌적 온도"
+      },
+      "dimmer_min": {
+        "name": "최소 밝기"
+      },
+      "dimmer_max": {
+        "name": "최대 밝기"
+      },
+      "dimmer_speed": {
+        "name": "조광 속도"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "열린 문/창문"
+        "name": "열린 문과 창문"
       },
       "walk_test_state": {
-        "name": "보행 테스트 상태",
+        "name": "기능 테스트 상태",
         "state": {
           "walk_test_started": "시작됨",
           "walk_test_stopped": "중지됨",
@@ -539,7 +557,7 @@
         "name": "밸브 위치"
       },
       "detection_test_state": {
-        "name": "감지 테스트 상태",
+        "name": "기능 테스트 상태",
         "state": {
           "detection_test_started": "시작됨",
           "detection_test_stopped": "중지됨",
@@ -615,7 +633,7 @@
         "name": "일정 재정의 활성"
       },
       "summer_mode": {
-        "name": "여름 휴지"
+        "name": "난방 휴지"
       },
       "ventilation_mode": {
         "name": "지속 가능한 환기"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "알람 바이패스"
+        "name": "일시 정지 기능"
       },
       "bypass_infinite": {
-        "name": "바이패스 만료 없음"
+        "name": "일시 정지 기능이 만료되지 않음"
       },
       "temperature_drop_enabled": {
         "name": "온도 강하"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "밸브"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "아래 버튼"
+      },
+      "key_upper": {
+        "name": "위 버튼"
+      },
+      "key_lower_left": {
+        "name": "왼쪽 아래 버튼"
+      },
+      "key_lower_right": {
+        "name": "오른쪽 아래 버튼"
+      },
+      "key_upper_left": {
+        "name": "왼쪽 위 버튼"
+      },
+      "key_upper_right": {
+        "name": "오른쪽 위 버튼"
       }
     }
   },

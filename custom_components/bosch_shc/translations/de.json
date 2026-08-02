@@ -167,11 +167,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Raumklima",
+        "name": "Raumtemperaturregelung",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Aufheizen",
+              "boost": "Schnelles Aufheizen",
               "eco": "Eco"
             }
           }
@@ -183,16 +183,16 @@
         "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Begehungstest starten"
+        "name": "Funktionstest starten"
       },
       "walk_test_stop": {
-        "name": "Begehungstest stoppen"
+        "name": "Funktionstest stoppen"
       },
       "detection_test": {
-        "name": "Erkennungstest starten"
+        "name": "Funktionstest starten"
       },
       "detection_test_stop": {
-        "name": "Erkennungstest stoppen"
+        "name": "Funktionstest stoppen"
       },
       "reset_tamper": {
         "name": "Sabotage zurücksetzen"
@@ -207,10 +207,10 @@
         "name": "Vorschau minimale Helligkeit"
       },
       "reset_energy_summation": {
-        "name": "Energieverbrauch zurücksetzen"
+        "name": "Verbrauchswert zurücksetzen"
       },
       "shutter_recalibrate": {
-        "name": "Neu kalibrieren"
+        "name": "Automatische Kalibrierung starten"
       },
       "enable_all_diagnostics": {
         "name": "Alle Diagnosen aktivieren"
@@ -260,7 +260,25 @@
         "name": "Alarmverzögerung Blitzlicht"
       },
       "bypass_timeout": {
-        "name": "Bypass-Timeout"
+        "name": "Pause-Zeitbeschränkung"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco-Temperatur"
+      },
+      "setpointcomfort": {
+        "name": "Komfort-Temperatur"
+      },
+      "dimmer_min": {
+        "name": "Minimale Helligkeit"
+      },
+      "dimmer_max": {
+        "name": "Maximale Helligkeit"
+      },
+      "dimmer_speed": {
+        "name": "Dimmgeschwindigkeit"
       }
     },
     "select": {
@@ -355,7 +373,7 @@
       "actuator_type": {
         "name": "Aktor-Typ",
         "state": {
-          "normally_closed": "Stromlos geschlossen",
+          "normally_closed": "Normalerweise geschlossen",
           "normally_open": "Stromlos offen",
           "unsupported": "Nicht unterstützt"
         }
@@ -429,10 +447,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Offene Türen/Fenster"
+        "name": "Offene Türen und Fenster"
       },
       "walk_test_state": {
-        "name": "Begehungstest-Status",
+        "name": "Funktionstest-Status",
         "state": {
           "walk_test_started": "Gestartet",
           "walk_test_stopped": "Gestoppt",
@@ -525,7 +543,7 @@
         "name": "Ventilposition"
       },
       "detection_test_state": {
-        "name": "Erkennungstest-Status",
+        "name": "Funktionstest-Status",
         "state": {
           "detection_test_started": "Gestartet",
           "detection_test_stopped": "Gestoppt",
@@ -601,7 +619,7 @@
         "name": "Zeitplanüberschreibung aktiv"
       },
       "summer_mode": {
-        "name": "Sommerpause"
+        "name": "Heizpause"
       },
       "ventilation_mode": {
         "name": "Nachhaltiges Lüften"
@@ -620,10 +638,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm-Bypass"
+        "name": "Pause-Funktion"
       },
       "bypass_infinite": {
-        "name": "Bypass läuft nie ab"
+        "name": "Pause-Funktion läuft nie ab"
       },
       "temperature_drop_enabled": {
         "name": "Temperaturabsenkung"
@@ -700,6 +718,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Untere Taste"
+      },
+      "key_upper": {
+        "name": "Obere Taste"
+      },
+      "key_lower_left": {
+        "name": "Untere linke Taste"
+      },
+      "key_lower_right": {
+        "name": "Untere rechte Taste"
+      },
+      "key_upper_left": {
+        "name": "Obere linke Taste"
+      },
+      "key_upper_right": {
+        "name": "Obere rechte Taste"
       }
     }
   },

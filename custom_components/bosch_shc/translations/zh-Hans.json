@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "房间气候控制",
+        "name": "房间温度控制",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "加速",
+              "boost": "快速加热",
               "eco": "节能"
             }
           }
@@ -197,16 +197,16 @@
         "name": "测试警报"
       },
       "walk_test": {
-        "name": "步行测试"
+        "name": "启动功能测试"
       },
       "walk_test_stop": {
-        "name": "停止步行测试"
+        "name": "停止功能测试"
       },
       "detection_test": {
-        "name": "探测测试"
+        "name": "启动功能测试"
       },
       "detection_test_stop": {
-        "name": "停止探测测试"
+        "name": "停止功能测试"
       },
       "reset_tamper": {
         "name": "重置防拆报警"
@@ -221,10 +221,10 @@
         "name": "预览最小亮度"
       },
       "reset_energy_summation": {
-        "name": "重置能耗"
+        "name": "重置能耗值"
       },
       "shutter_recalibrate": {
-        "name": "重新校准"
+        "name": "启动自动校准"
       },
       "enable_all_diagnostics": {
         "name": "启用所有诊断"
@@ -274,7 +274,25 @@
         "name": "闪光报警延迟"
       },
       "bypass_timeout": {
-        "name": "旁路超时"
+        "name": "暂停功能超时"
+      },
+      "offset": {
+        "name": "偏移量"
+      },
+      "setpointeco": {
+        "name": "节能温度"
+      },
+      "setpointcomfort": {
+        "name": "舒适温度"
+      },
+      "dimmer_min": {
+        "name": "最小亮度"
+      },
+      "dimmer_max": {
+        "name": "最大亮度"
+      },
+      "dimmer_speed": {
+        "name": "调光速度"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "打开的门/窗"
+        "name": "打开的门窗"
       },
       "walk_test_state": {
-        "name": "步行测试状态",
+        "name": "功能测试状态",
         "state": {
           "walk_test_started": "已开始",
           "walk_test_stopped": "已停止",
@@ -539,7 +557,7 @@
         "name": "阀门位置"
       },
       "detection_test_state": {
-        "name": "检测测试状态",
+        "name": "功能测试状态",
         "state": {
           "detection_test_started": "已开始",
           "detection_test_stopped": "已停止",
@@ -615,7 +633,7 @@
         "name": "日程覆盖生效中"
       },
       "summer_mode": {
-        "name": "夏季暂停"
+        "name": "供暖暂停"
       },
       "ventilation_mode": {
         "name": "节能通风"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "警报旁路"
+        "name": "暂停功能"
       },
       "bypass_infinite": {
-        "name": "旁路永不过期"
+        "name": "暂停功能永不过期"
       },
       "temperature_drop_enabled": {
         "name": "温度下降"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "阀门"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "下按键"
+      },
+      "key_upper": {
+        "name": "上按键"
+      },
+      "key_lower_left": {
+        "name": "左下按键"
+      },
+      "key_lower_right": {
+        "name": "右下按键"
+      },
+      "key_upper_left": {
+        "name": "左上按键"
+      },
+      "key_upper_right": {
+        "name": "右上按键"
       }
     }
   },

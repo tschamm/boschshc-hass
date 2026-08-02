@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Regulace klimatu místnosti",
+        "name": "Regulace teploty místnosti",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Rychlé vytápění",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Testovací alarm"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Spustit funkční test"
       },
       "walk_test_stop": {
-        "name": "Zastavit Walk Test"
+        "name": "Zastavit funkční test"
       },
       "detection_test": {
-        "name": "Test detekce"
+        "name": "Spustit funkční test"
       },
       "detection_test_stop": {
-        "name": "Zastavit test detekce"
+        "name": "Zastavit funkční test"
       },
       "reset_tamper": {
         "name": "Resetovat sabotáž"
@@ -221,10 +221,10 @@
         "name": "Náhled minimálního jasu"
       },
       "reset_energy_summation": {
-        "name": "Resetovat spotřebu energie"
+        "name": "Resetovat hodnotu spotřeby"
       },
       "shutter_recalibrate": {
-        "name": "Rekalibrovat"
+        "name": "Spustit automatickou kalibraci"
       },
       "enable_all_diagnostics": {
         "name": "Povolit všechny diagnostiky"
@@ -274,7 +274,25 @@
         "name": "Zpoždění alarmu blikajícího světla"
       },
       "bypass_timeout": {
-        "name": "Časový limit přemostění"
+        "name": "Časový limit funkce pauzy"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco teplota"
+      },
+      "setpointcomfort": {
+        "name": "Komfortní teplota"
+      },
+      "dimmer_min": {
+        "name": "Minimální jas"
+      },
+      "dimmer_max": {
+        "name": "Maximální jas"
+      },
+      "dimmer_speed": {
+        "name": "Rychlost stmívání"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Otevřené dveře/okna"
+        "name": "Otevřené dveře a okna"
       },
       "walk_test_state": {
-        "name": "Stav Walk Testu",
+        "name": "Stav funkčního testu",
         "state": {
           "walk_test_started": "Spuštěno",
           "walk_test_stopped": "Zastaveno",
@@ -539,7 +557,7 @@
         "name": "Poloha ventilu"
       },
       "detection_test_state": {
-        "name": "Stav testu detekce",
+        "name": "Stav funkčního testu",
         "state": {
           "detection_test_started": "Spuštěno",
           "detection_test_stopped": "Zastaveno",
@@ -615,7 +633,7 @@
         "name": "Přepsání plánu aktivní"
       },
       "summer_mode": {
-        "name": "Letní pauza"
+        "name": "Pauza vytápění"
       },
       "ventilation_mode": {
         "name": "Udržitelné větrání"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Přemostění alarmu"
+        "name": "Funkce pauzy"
       },
       "bypass_infinite": {
-        "name": "Přemostění nikdy nevyprší"
+        "name": "Funkce pauzy nikdy nevyprší"
       },
       "temperature_drop_enabled": {
         "name": "Pokles teploty"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Dolní tlačítko"
+      },
+      "key_upper": {
+        "name": "Horní tlačítko"
+      },
+      "key_lower_left": {
+        "name": "Dolní levé tlačítko"
+      },
+      "key_lower_right": {
+        "name": "Dolní pravé tlačítko"
+      },
+      "key_upper_left": {
+        "name": "Horní levé tlačítko"
+      },
+      "key_upper_right": {
+        "name": "Horní pravé tlačítko"
       }
     }
   },

@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Romklimastyring",
+        "name": "Romtemperaturstyring",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Rask oppvarming",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Gangtest"
+        "name": "Start funksjonstest"
       },
       "walk_test_stop": {
-        "name": "Stopp gangtest"
+        "name": "Stopp funksjonstest"
       },
       "detection_test": {
-        "name": "Deteksjonstest"
+        "name": "Start funksjonstest"
       },
       "detection_test_stop": {
-        "name": "Stopp deteksjonstest"
+        "name": "Stopp funksjonstest"
       },
       "reset_tamper": {
         "name": "Tilbakestill sabotasjevarsel"
@@ -221,10 +221,10 @@
         "name": "Forhåndsvis minimal lysstyrke"
       },
       "reset_energy_summation": {
-        "name": "Nullstill energiforbruk"
+        "name": "Tilbakestill forbruksverdi"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrer på nytt"
+        "name": "Start automatisk kalibrering"
       },
       "enable_all_diagnostics": {
         "name": "Aktiver all diagnostikk"
@@ -274,7 +274,25 @@
         "name": "Alarmforsinkelse blitslys"
       },
       "bypass_timeout": {
-        "name": "Tidsavbrudd for forbikobling"
+        "name": "Tidsavbrudd for pausefunksjon"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Øko-temperatur"
+      },
+      "setpointcomfort": {
+        "name": "Komforttemperatur"
+      },
+      "dimmer_min": {
+        "name": "Minimum lysstyrke"
+      },
+      "dimmer_max": {
+        "name": "Maksimum lysstyrke"
+      },
+      "dimmer_speed": {
+        "name": "Dimmehastighet"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Åpne dører/vinduer"
+        "name": "Åpne dører og vinduer"
       },
       "walk_test_state": {
-        "name": "Gangtesttilstand",
+        "name": "Funksjonstest-status",
         "state": {
           "walk_test_started": "Startet",
           "walk_test_stopped": "Stoppet",
@@ -539,7 +557,7 @@
         "name": "Ventilposisjon"
       },
       "detection_test_state": {
-        "name": "Deteksjonstest tilstand",
+        "name": "Funksjonstest-status",
         "state": {
           "detection_test_started": "Startet",
           "detection_test_stopped": "Stoppet",
@@ -615,7 +633,7 @@
         "name": "Tidsplanoverstyring aktiv"
       },
       "summer_mode": {
-        "name": "Sommerpause"
+        "name": "Oppvarmingspause"
       },
       "ventilation_mode": {
         "name": "Bærekraftig lufting"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarmforbikobling"
+        "name": "Pausefunksjon"
       },
       "bypass_infinite": {
-        "name": "Forbikobling utløper aldri"
+        "name": "Pausefunksjon utløper aldri"
       },
       "temperature_drop_enabled": {
         "name": "Temperaturfall"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Nedre tast"
+      },
+      "key_upper": {
+        "name": "Øvre tast"
+      },
+      "key_lower_left": {
+        "name": "Nedre venstre tast"
+      },
+      "key_lower_right": {
+        "name": "Nedre høyre tast"
+      },
+      "key_upper_left": {
+        "name": "Øvre venstre tast"
+      },
+      "key_upper_right": {
+        "name": "Øvre høyre tast"
       }
     }
   },

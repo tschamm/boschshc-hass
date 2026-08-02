@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "室内環境制御",
+        "name": "室温制御",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "ブースト",
+              "boost": "急速暖房",
               "eco": "エコ"
             }
           }
@@ -197,16 +197,16 @@
         "name": "アラームテスト"
       },
       "walk_test": {
-        "name": "ウォークテスト"
+        "name": "機能テストを開始"
       },
       "walk_test_stop": {
-        "name": "ウォークテスト停止"
+        "name": "機能テストを停止"
       },
       "detection_test": {
-        "name": "検知テスト"
+        "name": "機能テストを開始"
       },
       "detection_test_stop": {
-        "name": "検知テスト停止"
+        "name": "機能テストを停止"
       },
       "reset_tamper": {
         "name": "不正開封リセット"
@@ -221,10 +221,10 @@
         "name": "最小輝度プレビュー"
       },
       "reset_energy_summation": {
-        "name": "エネルギー消費量リセット"
+        "name": "消費量をリセット"
       },
       "shutter_recalibrate": {
-        "name": "再キャリブレーション"
+        "name": "自動キャリブレーションを開始"
       },
       "enable_all_diagnostics": {
         "name": "すべての診断を有効化"
@@ -274,7 +274,25 @@
         "name": "フラッシュライト警報の遅延"
       },
       "bypass_timeout": {
-        "name": "バイパスタイムアウト"
+        "name": "休止機能のタイムアウト"
+      },
+      "offset": {
+        "name": "オフセット"
+      },
+      "setpointeco": {
+        "name": "エコ温度"
+      },
+      "setpointcomfort": {
+        "name": "快適温度"
+      },
+      "dimmer_min": {
+        "name": "最小輝度"
+      },
+      "dimmer_max": {
+        "name": "最大輝度"
+      },
+      "dimmer_speed": {
+        "name": "調光速度"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "開いているドア/窓"
+        "name": "開いているドアと窓"
       },
       "walk_test_state": {
-        "name": "ウォークテスト状態",
+        "name": "機能テスト状態",
         "state": {
           "walk_test_started": "開始",
           "walk_test_stopped": "停止",
@@ -539,7 +557,7 @@
         "name": "バルブ位置"
       },
       "detection_test_state": {
-        "name": "検知テスト状態",
+        "name": "機能テスト状態",
         "state": {
           "detection_test_started": "開始",
           "detection_test_stopped": "停止",
@@ -615,7 +633,7 @@
         "name": "スケジュールオーバーライド中"
       },
       "summer_mode": {
-        "name": "夏季休止"
+        "name": "暖房休止"
       },
       "ventilation_mode": {
         "name": "省エネ換気"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "アラームバイパス"
+        "name": "休止機能"
       },
       "bypass_infinite": {
-        "name": "バイパス無期限"
+        "name": "休止機能は期限切れになりません"
       },
       "temperature_drop_enabled": {
         "name": "温度低下"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "バルブ"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "下ボタン"
+      },
+      "key_upper": {
+        "name": "上ボタン"
+      },
+      "key_lower_left": {
+        "name": "左下ボタン"
+      },
+      "key_lower_right": {
+        "name": "右下ボタン"
+      },
+      "key_upper_left": {
+        "name": "左上ボタン"
+      },
+      "key_upper_right": {
+        "name": "右上ボタン"
       }
     }
   },

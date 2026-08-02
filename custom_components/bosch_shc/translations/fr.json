@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Régulation climatique de la pièce",
+        "name": "Régulation de la température de la pièce",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Chauffage rapide",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Alarme de test"
       },
       "walk_test": {
-        "name": "Test de déambulation"
+        "name": "Démarrer le test de fonctionnement"
       },
       "walk_test_stop": {
-        "name": "Arrêt du test de déambulation"
+        "name": "Arrêter le test de fonctionnement"
       },
       "detection_test": {
-        "name": "Test de détection"
+        "name": "Démarrer le test de fonctionnement"
       },
       "detection_test_stop": {
-        "name": "Arrêt du test de détection"
+        "name": "Arrêter le test de fonctionnement"
       },
       "reset_tamper": {
         "name": "Réinitialiser l'anti-sabotage"
@@ -221,10 +221,10 @@
         "name": "Prévisualiser la luminosité minimale"
       },
       "reset_energy_summation": {
-        "name": "Réinitialiser la consommation d'énergie"
+        "name": "Réinitialiser la valeur de consommation"
       },
       "shutter_recalibrate": {
-        "name": "Recalibrer"
+        "name": "Démarrer la calibration automatique"
       },
       "enable_all_diagnostics": {
         "name": "Activer tous les diagnostics"
@@ -274,7 +274,25 @@
         "name": "Temporisation d'alarme flash"
       },
       "bypass_timeout": {
-        "name": "Délai de contournement"
+        "name": "Délai de la fonction pause"
+      },
+      "offset": {
+        "name": "Décalage"
+      },
+      "setpointeco": {
+        "name": "Température éco"
+      },
+      "setpointcomfort": {
+        "name": "Température confort"
+      },
+      "dimmer_min": {
+        "name": "Luminosité minimale"
+      },
+      "dimmer_max": {
+        "name": "Luminosité maximale"
+      },
+      "dimmer_speed": {
+        "name": "Vitesse de gradation"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Portes/fenêtres ouvertes"
+        "name": "Portes et fenêtres ouvertes"
       },
       "walk_test_state": {
-        "name": "État du test de déambulation",
+        "name": "État du test de fonctionnement",
         "state": {
           "walk_test_started": "Démarré",
           "walk_test_stopped": "Arrêté",
@@ -539,7 +557,7 @@
         "name": "Position de vanne"
       },
       "detection_test_state": {
-        "name": "État du test de détection",
+        "name": "État du test de fonctionnement",
         "state": {
           "detection_test_started": "Démarré",
           "detection_test_stopped": "Arrêté",
@@ -615,7 +633,7 @@
         "name": "Dérogation de programme active"
       },
       "summer_mode": {
-        "name": "Pause estivale"
+        "name": "Pause de chauffage"
       },
       "ventilation_mode": {
         "name": "Aération durable"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Contournement d'alarme"
+        "name": "Fonction pause"
       },
       "bypass_infinite": {
-        "name": "Contournement permanent"
+        "name": "La fonction pause n'expire jamais"
       },
       "temperature_drop_enabled": {
         "name": "Baisse de température"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Vanne"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Touche inférieure"
+      },
+      "key_upper": {
+        "name": "Touche supérieure"
+      },
+      "key_lower_left": {
+        "name": "Touche inférieure gauche"
+      },
+      "key_lower_right": {
+        "name": "Touche inférieure droite"
+      },
+      "key_upper_left": {
+        "name": "Touche supérieure gauche"
+      },
+      "key_upper_right": {
+        "name": "Touche supérieure droite"
       }
     }
   },

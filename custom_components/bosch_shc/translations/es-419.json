@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Control de clima de habitación",
+        "name": "Control de temperatura de la habitación",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Calentamiento rápido",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Alarma de prueba"
       },
       "walk_test": {
-        "name": "Prueba de recorrido"
+        "name": "Iniciar prueba de funcionamiento"
       },
       "walk_test_stop": {
-        "name": "Detener prueba de recorrido"
+        "name": "Detener prueba de funcionamiento"
       },
       "detection_test": {
-        "name": "Prueba de detección"
+        "name": "Iniciar prueba de funcionamiento"
       },
       "detection_test_stop": {
-        "name": "Detener prueba de detección"
+        "name": "Detener prueba de funcionamiento"
       },
       "reset_tamper": {
         "name": "Restablecer manipulación"
@@ -221,10 +221,10 @@
         "name": "Vista previa de brillo mínimo"
       },
       "reset_energy_summation": {
-        "name": "Restablecer consumo de energía"
+        "name": "Restablecer valor de consumo"
       },
       "shutter_recalibrate": {
-        "name": "Recalibrar"
+        "name": "Iniciar calibración automática"
       },
       "enable_all_diagnostics": {
         "name": "Activar todos los diagnósticos"
@@ -274,7 +274,25 @@
         "name": "Retardo de alarma de destello"
       },
       "bypass_timeout": {
-        "name": "Tiempo de espera del bypass"
+        "name": "Tiempo de espera de la función de pausa"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Temperatura eco"
+      },
+      "setpointcomfort": {
+        "name": "Temperatura de confort"
+      },
+      "dimmer_min": {
+        "name": "Brillo mínimo"
+      },
+      "dimmer_max": {
+        "name": "Brillo máximo"
+      },
+      "dimmer_speed": {
+        "name": "Velocidad de atenuación"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Puertas/ventanas abiertas"
+        "name": "Puertas y ventanas abiertas"
       },
       "walk_test_state": {
-        "name": "Estado de prueba de recorrido",
+        "name": "Estado de la prueba de funcionamiento",
         "state": {
           "walk_test_started": "Iniciada",
           "walk_test_stopped": "Detenida",
@@ -539,7 +557,7 @@
         "name": "Posición de la válvula"
       },
       "detection_test_state": {
-        "name": "Estado de prueba de detección",
+        "name": "Estado de la prueba de funcionamiento",
         "state": {
           "detection_test_started": "Iniciada",
           "detection_test_stopped": "Detenida",
@@ -615,7 +633,7 @@
         "name": "Anulación de la programación activa"
       },
       "summer_mode": {
-        "name": "Vacaciones de verano"
+        "name": "Pausa de calefacción"
       },
       "ventilation_mode": {
         "name": "Ventilación sostenible"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Bypass de alarma"
+        "name": "Función de pausa"
       },
       "bypass_infinite": {
-        "name": "Bypass sin vencimiento"
+        "name": "La función de pausa nunca vence"
       },
       "temperature_drop_enabled": {
         "name": "Bajada de temperatura"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Válvula"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tecla inferior"
+      },
+      "key_upper": {
+        "name": "Tecla superior"
+      },
+      "key_lower_left": {
+        "name": "Tecla inferior izquierda"
+      },
+      "key_lower_right": {
+        "name": "Tecla inferior derecha"
+      },
+      "key_upper_left": {
+        "name": "Tecla superior izquierda"
+      },
+      "key_upper_right": {
+        "name": "Tecla superior derecha"
       }
     }
   },

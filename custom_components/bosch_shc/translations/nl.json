@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Kamerklimaat regeling",
+        "name": "Kamertemperatuurregeling",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Snel verwarmen",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Functietest starten"
       },
       "walk_test_stop": {
-        "name": "Walk Test stoppen"
+        "name": "Functietest stoppen"
       },
       "detection_test": {
-        "name": "Detectietest"
+        "name": "Functietest starten"
       },
       "detection_test_stop": {
-        "name": "Detectietest stoppen"
+        "name": "Functietest stoppen"
       },
       "reset_tamper": {
         "name": "Sabotage resetten"
@@ -221,10 +221,10 @@
         "name": "Voorbeeld minimale helderheid"
       },
       "reset_energy_summation": {
-        "name": "Energieverbruik resetten"
+        "name": "Verbruikswaarde resetten"
       },
       "shutter_recalibrate": {
-        "name": "Opnieuw kalibreren"
+        "name": "Automatische kalibratie starten"
       },
       "enable_all_diagnostics": {
         "name": "Alle diagnostiek inschakelen"
@@ -274,7 +274,25 @@
         "name": "Alarmvertraging flitslicht"
       },
       "bypass_timeout": {
-        "name": "Overbruggingstime-out"
+        "name": "Time-out pauzefunctie"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco-temperatuur"
+      },
+      "setpointcomfort": {
+        "name": "Comforttemperatuur"
+      },
+      "dimmer_min": {
+        "name": "Minimale helderheid"
+      },
+      "dimmer_max": {
+        "name": "Maximale helderheid"
+      },
+      "dimmer_speed": {
+        "name": "Dimsnelheid"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Open deuren/ramen"
+        "name": "Open deuren en ramen"
       },
       "walk_test_state": {
-        "name": "Walk Test-status",
+        "name": "Functietest-status",
         "state": {
           "walk_test_started": "Gestart",
           "walk_test_stopped": "Gestopt",
@@ -539,7 +557,7 @@
         "name": "Klepstand"
       },
       "detection_test_state": {
-        "name": "Detectietest status",
+        "name": "Functietest-status",
         "state": {
           "detection_test_started": "Gestart",
           "detection_test_stopped": "Gestopt",
@@ -615,7 +633,7 @@
         "name": "Schema-overschrijving actief"
       },
       "summer_mode": {
-        "name": "Zomervakantie"
+        "name": "Verwarmingspauze"
       },
       "ventilation_mode": {
         "name": "Duurzaam ventileren"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm overbruggen"
+        "name": "Pauzefunctie"
       },
       "bypass_infinite": {
-        "name": "Overbrugging verloopt nooit"
+        "name": "Pauzefunctie verloopt nooit"
       },
       "temperature_drop_enabled": {
         "name": "Temperatuurverlaging"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Klep"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Onderste toets"
+      },
+      "key_upper": {
+        "name": "Bovenste toets"
+      },
+      "key_lower_left": {
+        "name": "Onderste linker toets"
+      },
+      "key_lower_right": {
+        "name": "Onderste rechter toets"
+      },
+      "key_upper_left": {
+        "name": "Bovenste linker toets"
+      },
+      "key_upper_right": {
+        "name": "Bovenste rechter toets"
       }
     }
   },

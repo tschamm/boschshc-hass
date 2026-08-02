@@ -168,11 +168,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Room climate control",
+        "name": "Room temperature control",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Fast heating",
               "eco": "Eco"
             }
           }
@@ -184,16 +184,16 @@
         "name": "Test alarm"
       },
       "walk_test": {
-        "name": "Walk test"
+        "name": "Start function test"
       },
       "walk_test_stop": {
-        "name": "Walk test stop"
+        "name": "Stop function test"
       },
       "detection_test": {
-        "name": "Detection test"
+        "name": "Start function test"
       },
       "detection_test_stop": {
-        "name": "Detection test stop"
+        "name": "Stop function test"
       },
       "reset_tamper": {
         "name": "Reset tamper"
@@ -208,10 +208,10 @@
         "name": "Preview min brightness"
       },
       "reset_energy_summation": {
-        "name": "Reset energy consumption"
+        "name": "Reset consumption value"
       },
       "shutter_recalibrate": {
-        "name": "Recalibrate"
+        "name": "Start automatic calibration"
       },
       "enable_all_diagnostics": {
         "name": "Enable all diagnostics"
@@ -261,7 +261,25 @@
         "name": "Flashing light alarm delay"
       },
       "bypass_timeout": {
-        "name": "Bypass timeout"
+        "name": "Break function timeout"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco temperature"
+      },
+      "setpointcomfort": {
+        "name": "Comfort temperature"
+      },
+      "dimmer_min": {
+        "name": "Minimum brightness"
+      },
+      "dimmer_max": {
+        "name": "Maximum brightness"
+      },
+      "dimmer_speed": {
+        "name": "Dimming speed"
       }
     },
     "select": {
@@ -336,8 +354,8 @@
       "valve_type": {
         "name": "Valve type",
         "state": {
-          "normally_close": "Normally Closed",
-          "normally_open": "Normally Open"
+          "normally_close": "Normally closed",
+          "normally_open": "Normally open"
         }
       },
       "heater_type": {
@@ -363,8 +381,8 @@
       "actuator_type": {
         "name": "Actuator type",
         "state": {
-          "normally_closed": "Normally Closed",
-          "normally_open": "Normally Open",
+          "normally_closed": "Normally closed",
+          "normally_open": "Normally open",
           "unsupported": "Unsupported"
         }
       },
@@ -430,7 +448,7 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Open doors/windows"
+        "name": "Open doors and windows"
       },
       "floor_temperature": {
         "name": "Floor temperature"
@@ -460,7 +478,7 @@
         "name": "Valve position"
       },
       "walk_test_state": {
-        "name": "Walk test state",
+        "name": "Function test state",
         "state": {
           "walk_test_started": "Started",
           "walk_test_stopped": "Stopped",
@@ -490,7 +508,7 @@
         "name": "Air quality description"
       },
       "detection_test_state": {
-        "name": "Detection test state",
+        "name": "Function test state",
         "state": {
           "detection_test_started": "Started",
           "detection_test_stopped": "Stopped",
@@ -502,7 +520,7 @@
         "state": {
           "good": "Good",
           "normal": "Normal",
-          "not_supported": "Not Supported",
+          "not_supported": "Not supported",
           "bad": "Bad",
           "unknown": "Unknown",
           "fetching": "Fetching"
@@ -554,9 +572,9 @@
           "good": "Good",
           "medium": "Medium",
           "bad": "Bad",
-          "no_connection": "No Connection",
-          "device_not_initialized": "Device Not Initialized",
-          "not_supported": "Not Supported",
+          "no_connection": "No connection",
+          "device_not_initialized": "Device not initialized",
+          "not_supported": "Not supported",
           "unknown": "Unknown"
         }
       }
@@ -602,7 +620,7 @@
         "name": "Schedule override active"
       },
       "summer_mode": {
-        "name": "Summer break"
+        "name": "Heating break"
       },
       "ventilation_mode": {
         "name": "Sustainable ventilation"
@@ -629,10 +647,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm bypass"
+        "name": "Break function"
       },
       "bypass_infinite": {
-        "name": "Bypass never expires"
+        "name": "Break function never expires"
       },
       "child_lock": {
         "name": "Child lock"
@@ -701,6 +719,26 @@
     "valve": {
       "valve": {
         "name": "Valve"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Lower key"
+      },
+      "key_upper": {
+        "name": "Upper key"
+      },
+      "key_lower_left": {
+        "name": "Lower left key"
+      },
+      "key_lower_right": {
+        "name": "Lower right key"
+      },
+      "key_upper_left": {
+        "name": "Upper left key"
+      },
+      "key_upper_right": {
+        "name": "Upper right key"
       }
     }
   },

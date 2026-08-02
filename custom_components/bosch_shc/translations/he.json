@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "בקרת אקלים חדר",
+        "name": "בקרת טמפרטורת החדר",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "בוסט",
+              "boost": "חימום מהיר",
               "eco": "אקו"
             }
           }
@@ -197,16 +197,16 @@
         "name": "אזעקת בדיקה"
       },
       "walk_test": {
-        "name": "בדיקת הליכה"
+        "name": "התחל בדיקת תפקוד"
       },
       "walk_test_stop": {
-        "name": "עצירת בדיקת הליכה"
+        "name": "עצור בדיקת תפקוד"
       },
       "detection_test": {
-        "name": "בדיקת זיהוי"
+        "name": "התחל בדיקת תפקוד"
       },
       "detection_test_stop": {
-        "name": "עצירת בדיקת זיהוי"
+        "name": "עצור בדיקת תפקוד"
       },
       "reset_tamper": {
         "name": "איפוס חבלה"
@@ -221,10 +221,10 @@
         "name": "תצוגה מקדימה של בהירות מינימלית"
       },
       "reset_energy_summation": {
-        "name": "איפוס צריכת האנרגיה"
+        "name": "אפס את ערך הצריכה"
       },
       "shutter_recalibrate": {
-        "name": "כיול מחדש"
+        "name": "התחל כיול אוטומטי"
       },
       "enable_all_diagnostics": {
         "name": "הפעלת כל האבחונים"
@@ -274,7 +274,25 @@
         "name": "השהיית אזעקת נורית ההבזק"
       },
       "bypass_timeout": {
-        "name": "פסק זמן לעקיפה"
+        "name": "פסק זמן לפונקציית ההפסקה"
+      },
+      "offset": {
+        "name": "היסט"
+      },
+      "setpointeco": {
+        "name": "טמפרטורת חיסכון"
+      },
+      "setpointcomfort": {
+        "name": "טמפרטורת נוחות"
+      },
+      "dimmer_min": {
+        "name": "בהירות מינימלית"
+      },
+      "dimmer_max": {
+        "name": "בהירות מקסימלית"
+      },
+      "dimmer_speed": {
+        "name": "מהירות עמעום"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "דלתות/חלונות פתוחים"
+        "name": "דלתות וחלונות פתוחים"
       },
       "walk_test_state": {
-        "name": "מצב בדיקת הליכה",
+        "name": "מצב בדיקת תפקוד",
         "state": {
           "walk_test_started": "התחיל",
           "walk_test_stopped": "נעצר",
@@ -539,7 +557,7 @@
         "name": "מיקום השסתום"
       },
       "detection_test_state": {
-        "name": "מצב בדיקת גילוי",
+        "name": "מצב בדיקת תפקוד",
         "state": {
           "detection_test_started": "התחיל",
           "detection_test_stopped": "נעצר",
@@ -615,7 +633,7 @@
         "name": "עקיפת לוח זמנים פעילה"
       },
       "summer_mode": {
-        "name": "הפסקת קיץ"
+        "name": "הפסקת חימום"
       },
       "ventilation_mode": {
         "name": "אוורור בר-קיימא"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "עקיפת אזעקה"
+        "name": "פונקציית הפסקה"
       },
       "bypass_infinite": {
-        "name": "עקיפה ללא תפוגה"
+        "name": "פונקציית ההפסקה אינה פגה לעולם"
       },
       "temperature_drop_enabled": {
         "name": "הפחתת טמפרטורה"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "שסתום"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "מקש תחתון"
+      },
+      "key_upper": {
+        "name": "מקש עליון"
+      },
+      "key_lower_left": {
+        "name": "מקש תחתון שמאלי"
+      },
+      "key_lower_right": {
+        "name": "מקש תחתון ימני"
+      },
+      "key_upper_left": {
+        "name": "מקש עליון שמאלי"
+      },
+      "key_upper_right": {
+        "name": "מקש עליון ימני"
       }
     }
   },

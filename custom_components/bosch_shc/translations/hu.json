@@ -181,11 +181,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Szobaklimatizálás",
+        "name": "Szoba hőmérséklet-szabályozás",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Gyors fűtés",
               "eco": "Eco"
             }
           }
@@ -197,16 +197,16 @@
         "name": "Teszt riasztás"
       },
       "walk_test": {
-        "name": "Mozgásteszt"
+        "name": "Funkcióteszt indítása"
       },
       "walk_test_stop": {
-        "name": "Mozgásteszt leállítása"
+        "name": "Funkcióteszt leállítása"
       },
       "detection_test": {
-        "name": "Érzékelési teszt"
+        "name": "Funkcióteszt indítása"
       },
       "detection_test_stop": {
-        "name": "Érzékelési teszt leállítása"
+        "name": "Funkcióteszt leállítása"
       },
       "reset_tamper": {
         "name": "Illetéktelen hozzáférés jelzés visszaállítása"
@@ -221,10 +221,10 @@
         "name": "Minimális fényerő előnézet"
       },
       "reset_energy_summation": {
-        "name": "Energiafogyasztás nullázása"
+        "name": "Fogyasztási érték nullázása"
       },
       "shutter_recalibrate": {
-        "name": "Újrakalibrálás"
+        "name": "Automatikus kalibrálás indítása"
       },
       "enable_all_diagnostics": {
         "name": "Összes diagnosztika engedélyezése"
@@ -274,7 +274,25 @@
         "name": "Villogó fény riasztás késleltetése"
       },
       "bypass_timeout": {
-        "name": "Kihagyás időtúllépése"
+        "name": "Szünet funkció időtúllépése"
+      },
+      "offset": {
+        "name": "Eltolás"
+      },
+      "setpointeco": {
+        "name": "Eco hőmérséklet"
+      },
+      "setpointcomfort": {
+        "name": "Komfort hőmérséklet"
+      },
+      "dimmer_min": {
+        "name": "Minimális fényerő"
+      },
+      "dimmer_max": {
+        "name": "Maximális fényerő"
+      },
+      "dimmer_speed": {
+        "name": "Fényerőszabályozás sebessége"
       }
     },
     "select": {
@@ -443,10 +461,10 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Nyitott ajtók/ablakok"
+        "name": "Nyitott ajtók és ablakok"
       },
       "walk_test_state": {
-        "name": "Mozgásteszt állapota",
+        "name": "Funkcióteszt állapota",
         "state": {
           "walk_test_started": "Elindítva",
           "walk_test_stopped": "Leállítva",
@@ -539,7 +557,7 @@
         "name": "Szelepállás"
       },
       "detection_test_state": {
-        "name": "Érzékelési teszt állapota",
+        "name": "Funkcióteszt állapota",
         "state": {
           "detection_test_started": "Elindítva",
           "detection_test_stopped": "Leállítva",
@@ -615,7 +633,7 @@
         "name": "Ütemezés felülbírálása aktív"
       },
       "summer_mode": {
-        "name": "Nyári szünet"
+        "name": "Fűtési szünet"
       },
       "ventilation_mode": {
         "name": "Fenntartható szellőztetés"
@@ -634,10 +652,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Riasztás kihagyása"
+        "name": "Szünet funkció"
       },
       "bypass_infinite": {
-        "name": "Kihagyás lejárat nélkül"
+        "name": "A szünet funkció soha nem jár le"
       },
       "temperature_drop_enabled": {
         "name": "Hőmérséklet-csökkentés"
@@ -714,6 +732,26 @@
     "valve": {
       "valve": {
         "name": "Szelep"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Alsó gomb"
+      },
+      "key_upper": {
+        "name": "Felső gomb"
+      },
+      "key_lower_left": {
+        "name": "Bal alsó gomb"
+      },
+      "key_lower_right": {
+        "name": "Jobb alsó gomb"
+      },
+      "key_upper_left": {
+        "name": "Bal felső gomb"
+      },
+      "key_upper_right": {
+        "name": "Jobb felső gomb"
       }
     }
   },
