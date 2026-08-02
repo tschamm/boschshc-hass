@@ -36,7 +36,7 @@ custom_components/bosch_shc/climate.py:225
 custom_components/bosch_shc/climate.py:283
 custom_components/bosch_shc/climate.py:32
 custom_components/bosch_shc/climate.py:321
-custom_components/bosch_shc/climate.py:471
+custom_components/bosch_shc/climate.py:469
 custom_components/bosch_shc/climate.py:76
 custom_components/bosch_shc/config_flow.py:209
 custom_components/bosch_shc/config_flow.py:273

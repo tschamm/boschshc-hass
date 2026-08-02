@@ -383,24 +383,22 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
                 await self._device.async_set_low(False)
 
             if hvac_mode == HVACMode.AUTO:
-                # #394: summer_mode cleared LAST, else a device leaving OFF
-                # briefly shows its stale operation_mode (a real, separate write).
+                await self._device.async_set_summer_mode(False)
                 if self._device.supports_cooling:
                     await self._device.async_set_cooling_mode(False)
                 await self._device.async_set_operation_mode(
                     RoomClimateControlService.OperationMode.AUTOMATIC
                 )
-                await self._device.async_set_summer_mode(False)
             elif hvac_mode == HVACMode.HEAT:
+                await self._device.async_set_summer_mode(False)
                 if self._device.supports_cooling:
                     await self._device.async_set_cooling_mode(False)
                 await self._device.async_set_operation_mode(
                     RoomClimateControlService.OperationMode.MANUAL
                 )
-                await self._device.async_set_summer_mode(False)
             elif hvac_mode == HVACMode.COOL:
-                await self._device.async_set_cooling_mode(True)
                 await self._device.async_set_summer_mode(False)
+                await self._device.async_set_cooling_mode(True)
             elif hvac_mode == HVACMode.OFF:
                 if self._device.supports_cooling:
                     await self._device.async_set_cooling_mode(False)

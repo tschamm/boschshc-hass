@@ -2,17 +2,18 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
-- **Fixed a phantom "auto" entry briefly appearing in the activity log**
-  when switching a Room Climate Control entity from off to heating (#394).
-  The reporter's own suspicion was correct — it's a genuinely real,
-  momentary device state, not a UI glitch: `summer_mode`, `cooling_mode`
-  and `operation_mode` are three separate API writes, and the previous code
-  cleared `summer_mode` (which HA treats as "off overrides everything")
-  before writing the target `operation_mode` — briefly exposing whatever
-  mode was left over from before the device was turned off. Now the target
-  mode is always written first and `summer_mode` cleared last, so the
-  device jumps straight from off to the requested mode with no visible
-  detour through a stale one.
+- **Reverted the previous beta's #394 fix — it broke real heating
+  control.** The theory (reorder the writes so `operation_mode` is set
+  before clearing `summer_mode`, avoiding a momentary "auto" flicker in the
+  activity log) passed every unit test, since the mocked device accepts any
+  write order. Live-testing against the real SHC found the API itself
+  rejects that order outright — `WRONG_THERMOSTAT_GROUP_MODE` (HTTP 400) —
+  meaning `summer_mode` genuinely has to be cleared *before* the SHC will
+  accept an `operation_mode` change, not just as this integration's
+  convention. The original write order is restored; the momentary "auto"
+  log entry is a real, unavoidable consequence of the SHC's own two-step
+  API and not something this integration can fix without breaking the
+  ability to turn heating back on at all.
 
 - **Fixed the previous beta's own Universal Switch key-name fix — it didn't
   actually work.** Live-testing on real hardware after shipping the fix
