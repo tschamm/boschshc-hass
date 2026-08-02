@@ -2,6 +2,16 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **All English entity names now use Home Assistant's sentence-case
+  convention** ("Battery level", not "Battery Level"). The Bosch-terminology
+  sweep above had already moved 66 names to sentence case because that is how
+  Bosch writes them; the remaining 68 were still Title Case, leaving the
+  integration visibly inconsistent. Acronyms, brands and model designations
+  keep their capitals (LED, AC/DC, Zigbee, Smart Sensitivity, Shutter Control
+  II). Display text only — no entity IDs, keys or behaviour change, and other
+  languages are untouched since capitalisation follows each language's own
+  orthography rather than English convention.
+
 - **Two ENUM diagnostic sensors were showing raw internal slugs.**
   `battery_level` (5 states) and the Twinguard `combined_rating` (4 states)
   declared their options in code but shipped no translated `state` block, so
