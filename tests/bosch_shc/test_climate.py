@@ -965,6 +965,65 @@ class TestSetHvacModeNew:
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
         device.async_set_summer_mode.assert_awaited_with(True)
 
+    def test_set_hvac_mode_heat_clears_summer_mode_last(self):
+        """#394: summer_mode=False must be the LAST write for OFF->HEAT.
+
+        Writing it first would leave a real (not just UI) intermediate
+        device state — not-summer-mode but still the old operation_mode —
+        visible between the two API calls, showing up as a phantom AUTO
+        entry in the activity log if operation_mode was AUTOMATIC before OFF.
+        """
+        calls = []
+        device = _make_device(summer_mode=True, supports_cooling=False,
+                              operation_mode_value="AUTOMATIC")
+        device.async_set_summer_mode = AsyncMock(
+            side_effect=lambda v: calls.append(("summer_mode", v))
+        )
+        device.async_set_operation_mode = AsyncMock(
+            side_effect=lambda v: calls.append(("operation_mode", v))
+        )
+        entity = _make_entity(device)
+        _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
+        assert calls == [
+            ("operation_mode", OM_CC.MANUAL),
+            ("summer_mode", False),
+        ]
+
+    def test_set_hvac_mode_auto_clears_summer_mode_last(self):
+        """#394: same ordering fix applies to OFF->AUTO."""
+        calls = []
+        device = _make_device(summer_mode=True, supports_cooling=False,
+                              operation_mode_value="MANUAL")
+        device.async_set_summer_mode = AsyncMock(
+            side_effect=lambda v: calls.append(("summer_mode", v))
+        )
+        device.async_set_operation_mode = AsyncMock(
+            side_effect=lambda v: calls.append(("operation_mode", v))
+        )
+        entity = _make_entity(device)
+        _run_async(entity.async_set_hvac_mode(HVACMode.AUTO))
+        assert calls == [
+            ("operation_mode", OM_CC.AUTOMATIC),
+            ("summer_mode", False),
+        ]
+
+    def test_set_hvac_mode_cool_clears_summer_mode_last(self):
+        """#394: same ordering fix applies to OFF->COOL."""
+        calls = []
+        device = _make_device(summer_mode=True, supports_cooling=True, cooling_mode=False)
+        device.async_set_summer_mode = AsyncMock(
+            side_effect=lambda v: calls.append(("summer_mode", v))
+        )
+        device.async_set_cooling_mode = AsyncMock(
+            side_effect=lambda v: calls.append(("cooling_mode", v))
+        )
+        entity = _make_entity(device)
+        _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
+        assert calls == [
+            ("cooling_mode", True),
+            ("summer_mode", False),
+        ]
+
     def test_set_hvac_mode_exits_eco_first(self):
         """When device.low=True, set_hvac_mode must clear low before direction change."""
         device = _make_device(low=True, summer_mode=False, supports_cooling=False,

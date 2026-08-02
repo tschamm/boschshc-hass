@@ -2,6 +2,18 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Fixed a phantom "auto" entry briefly appearing in the activity log**
+  when switching a Room Climate Control entity from off to heating (#394).
+  The reporter's own suspicion was correct — it's a genuinely real,
+  momentary device state, not a UI glitch: `summer_mode`, `cooling_mode`
+  and `operation_mode` are three separate API writes, and the previous code
+  cleared `summer_mode` (which HA treats as "off overrides everything")
+  before writing the target `operation_mode` — briefly exposing whatever
+  mode was left over from before the device was turned off. Now the target
+  mode is always written first and `summer_mode` cleared last, so the
+  device jumps straight from off to the requested mode with no visible
+  detour through a stale one.
+
 - **Fixed the previous beta's own Universal Switch key-name fix — it didn't
   actually work.** Live-testing on real hardware after shipping the fix
   above found the key entities still showed just the device name, no key
