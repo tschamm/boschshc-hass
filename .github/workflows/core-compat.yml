@@ -30,3 +30,27 @@ jobs:
       - name: mypy (advisory)
         continue-on-error: true
         run: mypy custom_components/bosch_shc
+
+  ha-prerelease:
+    name: pytest against the newest HA pre-release (advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      # Answers "does the next HA release break us?" before it ships. Advisory:
+      # a red run here is a heads-up, not a reason to block master. Falls back
+      # to the newest stable when no pre-release is currently published.
+      - name: Install newest HA pre-release
+        run: |
+          pip install --upgrade --pre homeassistant
+          pip install pytest pytest-timeout pytest-cov "$(grep -E '^boschshcpy==' requirements_test.txt)"
+          python -c "from homeassistant.const import __version__; print('HA', __version__)"
+      - name: pytest (advisory)
+        continue-on-error: true
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: pytest tests/bosch_shc/ -q -o addopts=""
