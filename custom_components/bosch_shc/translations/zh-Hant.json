@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "淹水警報系統"
+    },
+    "energy_manager": {
+      "name": "能源管理器"
     }
   },
   "entity": {

@@ -9,10 +9,18 @@
   is either hardcoded in `boschshcpy` or supplied verbatim by the Bosch
   controller as an internal service identifier, not something a user names
   themselves — so it's now translated via Home Assistant's own
-  `DeviceInfo(translation_key=...)` mechanism, in all 30 languages. `EMMA`
-  was deliberately left as-is: it's a Bosch brand/product name, not a raw
-  internal identifier, matching how "Smart Sensitivity" was left
-  untranslated in an earlier release for the same reason.
+  `DeviceInfo(translation_key=...)` mechanism, in all 30 languages.
+
+- **Fixed: `EMMA` also showed its raw internal codename instead of a real
+  name** — a follow-up to the fix above. It was initially left untranslated
+  on the assumption it was a Bosch brand name, like "Smart Sensitivity".
+  The reporter corrected this with a screenshot of the official Bosch app
+  (screen titled "Energiemanager") and Bosch's own marketing page: EMMA is
+  an internal codename never shown to users, the real product name is
+  "Energiemanager" / "Energy Manager". Fixed the same way, in all 30
+  languages — and while in there, corrected `README.md`'s own wrong,
+  apparently invented expansion of the acronym ("Energy Management Module
+  A" — not a real Bosch term) to "Energy Manager (EMMA)".
 
 - **Proactive bug-hunt round** (not tied to a specific reporter issue): an
   unwrapped, non-`SHCException` error during setup (e.g. a malformed

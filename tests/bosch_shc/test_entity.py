@@ -224,6 +224,17 @@ class TestSHCEntityProperties:
         assert "name" not in info
         assert info["translation_key"] == "presence_simulation"
 
+    def test_device_info_uses_translation_key_for_emma(self):
+        """#393 follow-up: "EMMA" is an internal codename, not the product's
+        real name — Bosch calls it "Energiemanager"/"Energy Manager"
+        (confirmed via reporter screenshot + Bosch's own marketing page).
+        """
+        ent = _make_entity()
+        ent._device.device_model = "EMMA"
+        info = ent.device_info
+        assert "name" not in info
+        assert info["translation_key"] == "energy_manager"
+
     def test_available_when_status_available(self):
         ent = _make_entity(status="AVAILABLE")
         assert ent.available is True

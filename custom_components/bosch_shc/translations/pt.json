@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Sistema de Alarme de Água"
+    },
+    "energy_manager": {
+      "name": "Gestor de Energia"
     }
   },
   "entity": {

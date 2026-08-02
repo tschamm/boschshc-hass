@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Su Alarm Sistemi"
+    },
+    "energy_manager": {
+      "name": "Enerji Yöneticisi"
     }
   },
   "entity": {

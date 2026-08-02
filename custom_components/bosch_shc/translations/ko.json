@@ -8,6 +8,9 @@
     },
     "water_alarm_system": {
       "name": "누수 경보 시스템"
+    },
+    "energy_manager": {
+      "name": "에너지 매니저"
     }
   },
   "config": {

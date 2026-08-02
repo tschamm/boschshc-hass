@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Система водяної сигналізації"
+    },
+    "energy_manager": {
+      "name": "Менеджер енергії"
     }
   },
   "entity": {

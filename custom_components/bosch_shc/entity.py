@@ -236,6 +236,10 @@ class SHCEntity(Entity):  # type: ignore[misc]
         # identifier, not user-customizable — safe to override.
         if self._device.device_model == "PRESENCE_SIMULATION_SERVICE":
             info["translation_key"] = "presence_simulation"
+        elif self._device.device_model == "EMMA":
+            # #393 follow-up: "EMMA" is an internal codename, not the
+            # product's real name ("Energiemanager"/"Energy Manager").
+            info["translation_key"] = "energy_manager"
         else:
             info["name"] = self.device_name
         return info

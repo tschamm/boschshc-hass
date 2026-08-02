@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "מערכת אזעקת מים"
+    },
+    "energy_manager": {
+      "name": "מנהל האנרגיה"
     }
   },
   "entity": {

@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Vízriasztó rendszer"
+    },
+    "energy_manager": {
+      "name": "Energiakezelő"
     }
   },
   "entity": {

@@ -900,6 +900,9 @@
     },
     "water_alarm_system": {
       "name": "Wasseralarmsystem"
+    },
+    "energy_manager": {
+      "name": "Energiemanager"
     }
   }
 }

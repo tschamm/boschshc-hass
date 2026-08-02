@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Systém vodného alarmu"
+    },
+    "energy_manager": {
+      "name": "Správca energie"
     }
   },
   "entity": {

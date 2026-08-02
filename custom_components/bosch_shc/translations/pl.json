@@ -8,6 +8,9 @@
     },
     "water_alarm_system": {
       "name": "System alarmu zalania"
+    },
+    "energy_manager": {
+      "name": "Menedżer energii"
     }
   },
   "config": {

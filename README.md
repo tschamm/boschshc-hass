@@ -51,7 +51,7 @@ It talks directly to the controller over mutual-TLS on your LAN — **no cloud, 
 
 - 🔒 **Local & private** — mutual-TLS to the SHC, real-time push updates, nothing leaves your network.
 - 🧩 **Broad device coverage** — thermostats, shutters/blinds (with tilt), micromodules, plugs,
-  lights, cameras, Twinguard, smoke & intrusion, motion, contacts, water-leak, EMMA, and more.
+  lights, cameras, Twinguard, smoke & intrusion, motion, contacts, water-leak, Energy Manager (EMMA), and more.
 - 🔥 **Firmware updates in HA** — the controller and every firmware-capable device get a normal
   HA "Update available" notification with an Install button, no need to open the Bosch app.
 - 🤖 **Bosch's own automation rules as HA entities** (opt-in) — enable/disable and trigger any
@@ -305,7 +305,7 @@ not yet implemented in this integration).
 | Camera Eyes | `switch` (privacy, light, notification) |
 | Camera 360 | `switch` (privacy, notification) |
 | Outdoor Camera Gen2 | `switch` (privacy, front light, ambient light) |
-| EMMA (Energy Management Module A) | `sensor` (grid power) |
+| Energy Manager (EMMA) | `sensor` (grid power) |
 | Scenarios | `button` (optional, one per scenario), `event` (always, one per scenario) |
 | Bosch app automation rules | `switch` (enable/disable, optional), `button` (trigger now, optional) — one pair per rule |
 | User-Defined States | `switch` (one per user-defined state) |
@@ -631,7 +631,7 @@ trackers) and automatically lock/unlock thermostat controls when you leave or ar
 
 Smart Plugs and Compact Plugs expose real-time watt sensors and cumulative kWh sensors.
 Add these to the **HA Energy dashboard** (Settings → Energy) for appliance-level consumption
-tracking. The EMMA module can additionally report grid-level import/export power.
+tracking. The Energy Manager (EMMA) module can additionally report grid-level import/export power.
 
 ---
 

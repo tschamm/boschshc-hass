@@ -8,6 +8,9 @@
     },
     "water_alarm_system": {
       "name": "Sistema de alarme de água"
+    },
+    "energy_manager": {
+      "name": "Gerenciador de Energia"
     }
   },
   "config": {

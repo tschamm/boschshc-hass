@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Vattenlarmsystem"
+    },
+    "energy_manager": {
+      "name": "Energihanterare"
     }
   },
   "entity": {

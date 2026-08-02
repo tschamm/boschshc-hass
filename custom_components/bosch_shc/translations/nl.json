@@ -8,6 +8,9 @@
     },
     "water_alarm_system": {
       "name": "Waterlekalarmsysteem"
+    },
+    "energy_manager": {
+      "name": "Energiebeheerder"
     }
   },
   "config": {

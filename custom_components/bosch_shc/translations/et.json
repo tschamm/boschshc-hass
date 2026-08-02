@@ -173,6 +173,9 @@
     },
     "water_alarm_system": {
       "name": "Veehäire süsteem"
+    },
+    "energy_manager": {
+      "name": "Energiahaldur"
     }
   },
   "entity": {
