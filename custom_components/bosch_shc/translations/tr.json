@@ -169,10 +169,10 @@
       "name": "Ev Simülasyonu"
     },
     "intrusion_system": {
-      "name": "İzinsiz Giriş Algılama Sistemi"
+      "name": "Alarm sistemi"
     },
     "water_alarm_system": {
-      "name": "Su Alarm Sistemi"
+      "name": "Su alarmı"
     },
     "energy_manager": {
       "name": "Enerji Yöneticisi"

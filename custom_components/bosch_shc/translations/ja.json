@@ -4,10 +4,10 @@
       "name": "在宅シミュレーション"
     },
     "intrusion_system": {
-      "name": "侵入検知システム"
+      "name": "警報システム"
     },
     "water_alarm_system": {
-      "name": "水漏れ警報システム"
+      "name": "水漏れ警報"
     },
     "energy_manager": {
       "name": "エネルギーマネージャー"

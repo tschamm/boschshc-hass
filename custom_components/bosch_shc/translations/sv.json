@@ -169,10 +169,10 @@
       "name": "Närvarosimulering"
     },
     "intrusion_system": {
-      "name": "Inbrottslarmsystem"
+      "name": "Larmsystem"
     },
     "water_alarm_system": {
-      "name": "Vattenlarmsystem"
+      "name": "Vattenlarm"
     },
     "energy_manager": {
       "name": "Energihanterare"

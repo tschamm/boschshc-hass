@@ -4,10 +4,10 @@
       "name": "Simulasi Kehadiran"
     },
     "intrusion_system": {
-      "name": "Sistem Deteksi Penyusup"
+      "name": "Sistem Alarm"
     },
     "water_alarm_system": {
-      "name": "Sistem Alarm Air"
+      "name": "Alarm Air"
     },
     "energy_manager": {
       "name": "Manajer Energi"

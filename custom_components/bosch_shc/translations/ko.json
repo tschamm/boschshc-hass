@@ -4,10 +4,10 @@
       "name": "재실 시뮬레이션"
     },
     "intrusion_system": {
-      "name": "침입 감지 시스템"
+      "name": "경보 시스템"
     },
     "water_alarm_system": {
-      "name": "누수 경보 시스템"
+      "name": "누수 경보"
     },
     "energy_manager": {
       "name": "에너지 매니저"

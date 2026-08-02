@@ -896,10 +896,10 @@
       "name": "Anwesenheitssimulation"
     },
     "intrusion_system": {
-      "name": "Einbruchmeldesystem"
+      "name": "Alarmsystem"
     },
     "water_alarm_system": {
-      "name": "Wasseralarmsystem"
+      "name": "Wasseralarm"
     },
     "energy_manager": {
       "name": "Energiemanager"

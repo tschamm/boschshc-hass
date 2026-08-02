@@ -4,10 +4,10 @@
       "name": "Tilstedeværelsessimulering"
     },
     "intrusion_system": {
-      "name": "Innbruddsalarmsystem"
+      "name": "Alarmsystem"
     },
     "water_alarm_system": {
-      "name": "Vannalarmsystem"
+      "name": "Vannalarm"
     },
     "energy_manager": {
       "name": "Energimanager"

@@ -2,6 +2,24 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Corrected the Alarm System / Water Alarm device names, again** (#393
+  follow-up) — the reporter pointed out the previous round's German names
+  were still too literal/formal: it should be "Alarmsystem", not
+  "Einbruchmeldesystem", and "Wasseralarm", not "Wasseralarmsystem",
+  matching how the official Bosch app itself names these features
+  (confirmed against the decompiled APK string dump, which consistently
+  uses the short form throughout its UI). Same correction applied to
+  English ("Alarm system" / "Water alarm") and fanned out to all 28
+  other languages, then independently semantic-audited language by
+  language against the actual meaning of each device rather than just
+  checked for valid grammar. The audit also caught `translations/en.json`
+  silently duplicating the pre-fix long names (out of sync with
+  `strings.json`, HA's actual English source) and a mistranslated
+  Ukrainian water-alarm name that read as "watery alarm" rather than
+  "water leak alarm" — both fixed. cs/et/ja/lv/sk/pt phrasing was flagged
+  as acceptable-but-worth-a-native-speaker's-second-opinion; nothing
+  found to be semantically wrong in any of the 30 languages.
+
 - **Fixed the real remaining cause of #393's Intrusion Detection System
   still showing its raw English name after the translation fix above.**
   The device is shared by two entities — the alarm control panel itself,

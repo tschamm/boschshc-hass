@@ -4,10 +4,10 @@
       "name": "Simulazione presenza"
     },
     "intrusion_system": {
-      "name": "Sistema di rilevamento intrusioni"
+      "name": "Sistema di allarme"
     },
     "water_alarm_system": {
-      "name": "Sistema di allarme acqua"
+      "name": "Allarme acqua"
     },
     "energy_manager": {
       "name": "Gestore energia"

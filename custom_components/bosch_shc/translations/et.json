@@ -169,10 +169,10 @@
       "name": "Kohaloleku simulatsioon"
     },
     "intrusion_system": {
-      "name": "Sissetungi tuvastamise süsteem"
+      "name": "Alarmsüsteem"
     },
     "water_alarm_system": {
-      "name": "Veehäire süsteem"
+      "name": "Veehäire"
     },
     "energy_manager": {
       "name": "Energiahaldur"

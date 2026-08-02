@@ -4,10 +4,10 @@
       "name": "Aanwezigheidssimulatie"
     },
     "intrusion_system": {
-      "name": "Inbraakdetectiesysteem"
+      "name": "Alarmsysteem"
     },
     "water_alarm_system": {
-      "name": "Waterlekalarmsysteem"
+      "name": "Wateralarm"
     },
     "energy_manager": {
       "name": "Energiebeheerder"

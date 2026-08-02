@@ -169,10 +169,10 @@
       "name": "סימולציית נוכחות"
     },
     "intrusion_system": {
-      "name": "מערכת גילוי פריצה"
+      "name": "מערכת אזעקה"
     },
     "water_alarm_system": {
-      "name": "מערכת אזעקת מים"
+      "name": "אזעקת מים"
     },
     "energy_manager": {
       "name": "מנהל האנרגיה"

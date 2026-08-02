@@ -169,10 +169,10 @@
       "name": "Simulación de presencia"
     },
     "intrusion_system": {
-      "name": "Sistema de detección de intrusión"
+      "name": "Sistema de alarma"
     },
     "water_alarm_system": {
-      "name": "Sistema de alarma de agua"
+      "name": "Alarma de agua"
     },
     "energy_manager": {
       "name": "Administrador de energía"

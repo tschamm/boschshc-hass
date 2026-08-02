@@ -169,10 +169,10 @@
       "name": "Jelenlét-szimuláció"
     },
     "intrusion_system": {
-      "name": "Behatolásjelző rendszer"
+      "name": "Riasztórendszer"
     },
     "water_alarm_system": {
-      "name": "Vízriasztó rendszer"
+      "name": "Vízriasztó"
     },
     "energy_manager": {
       "name": "Energiakezelő"

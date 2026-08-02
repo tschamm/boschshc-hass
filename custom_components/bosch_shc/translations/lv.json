@@ -4,10 +4,10 @@
       "name": "Klātbūtnes simulācija"
     },
     "intrusion_system": {
-      "name": "Ielaušanās atklāšanas sistēma"
+      "name": "Trauksmes sistēma"
     },
     "water_alarm_system": {
-      "name": "Ūdens noplūdes trauksmes sistēma"
+      "name": "Ūdens trauksme"
     },
     "energy_manager": {
       "name": "Enerģijas pārvaldnieks"

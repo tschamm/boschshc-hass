@@ -169,10 +169,10 @@
       "name": "在家模擬"
     },
     "intrusion_system": {
-      "name": "入侵偵測系統"
+      "name": "警報系統"
     },
     "water_alarm_system": {
-      "name": "淹水警報系統"
+      "name": "淹水警報"
     },
     "energy_manager": {
       "name": "能源管理器"

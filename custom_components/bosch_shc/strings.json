@@ -709,10 +709,10 @@
       "name": "Presence Simulation"
     },
     "intrusion_system": {
-      "name": "Intrusion Detection System"
+      "name": "Alarm system"
     },
     "water_alarm_system": {
-      "name": "Water Alarm System"
+      "name": "Water alarm"
     },
     "energy_manager": {
       "name": "Energy Manager"
