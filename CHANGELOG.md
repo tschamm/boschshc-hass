@@ -2,6 +2,22 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Proactive bug-hunt round** (not tied to a specific reporter issue): an
+  unwrapped, non-`SHCException` error during setup (e.g. a malformed
+  response deep in `boschshcpy`'s async API layer) crashed setup and leaked
+  the underlying `aiohttp` session, since only the typed exception handlers
+  closed it. Several `boschshcpy` service properties that index the raw
+  Bosch API state dict directly, without a safe fallback, could crash-loop
+  or abort a whole platform's setup on a partial API poll: the smart-plug /
+  light-switch / relay `switch` state and the thermostat child-lock switch
+  (`switch.py`), the impulse-relay pulse-length `number` entity, and the
+  Twinguard temperature/purity `sensor` entities. Also: toggling the
+  scenario-buttons or automation-rule options off (or narrowing the
+  scenario filter) reloads the config entry but never removed the
+  now-unwanted button from the entity registry — the same orphaned-entity
+  bug class as #356's MD2 indicator light, just never applied to these two
+  button types until now.
+
 - **Fixed `Pre-Alarm` missed by the sentence-case sweep above** — the
   hyphenated compound wasn't matched by that pass's rename table. Now
   "Pre-alarm", matching Bosch's own wording exactly (lowercase "alarm").
