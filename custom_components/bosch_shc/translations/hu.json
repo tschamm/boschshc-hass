@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Akkumulátorszint"
+        "name": "Akkumulátorszint",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Alacsony",
+          "critical_low": "Kritikus",
+          "critically_low_battery": "Kritikusan alacsony",
+          "not_available": "Nem érhető el"
+        }
       },
       "combined_rating": {
-        "name": "Összesített értékelés"
+        "name": "Összesített értékelés",
+        "state": {
+          "good": "Jó",
+          "medium": "Közepes",
+          "bad": "Rossz",
+          "unknown": "Ismeretlen"
+        }
       },
       "air_quality_description": {
         "name": "Levegőminőség leírása"

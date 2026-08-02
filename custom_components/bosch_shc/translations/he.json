@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "רמת סוללה"
+        "name": "רמת סוללה",
+        "state": {
+          "ok": "תקין",
+          "low_battery": "נמוכה",
+          "critical_low": "קריטית",
+          "critically_low_battery": "נמוכה בצורה קריטית",
+          "not_available": "לא זמין"
+        }
       },
       "combined_rating": {
-        "name": "דירוג משולב"
+        "name": "דירוג משולב",
+        "state": {
+          "good": "טוב",
+          "medium": "בינוני",
+          "bad": "גרוע",
+          "unknown": "לא ידוע"
+        }
       },
       "air_quality_description": {
         "name": "תיאור איכות אוויר"

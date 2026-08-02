@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Ниво на батерията"
+        "name": "Ниво на батерията",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Ниско",
+          "critical_low": "Критично",
+          "critically_low_battery": "Критично ниско",
+          "not_available": "Не е налично"
+        }
       },
       "combined_rating": {
-        "name": "Обща оценка"
+        "name": "Обща оценка",
+        "state": {
+          "good": "Добра",
+          "medium": "Умерена",
+          "bad": "Лоша",
+          "unknown": "Неизвестно"
+        }
       },
       "air_quality_description": {
         "name": "Описание на качеството на въздуха"

@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Pil Seviyesi"
+        "name": "Pil Seviyesi",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Düşük",
+          "critical_low": "Kritik",
+          "critically_low_battery": "Kritik düzeyde düşük",
+          "not_available": "Kullanılamıyor"
+        }
       },
       "combined_rating": {
-        "name": "Birleşik Değerlendirme"
+        "name": "Birleşik Değerlendirme",
+        "state": {
+          "good": "İyi",
+          "medium": "Orta",
+          "bad": "Kötü",
+          "unknown": "Bilinmiyor"
+        }
       },
       "air_quality_description": {
         "name": "Hava Kalitesi Açıklaması"

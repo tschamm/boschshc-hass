@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Επίπεδο μπαταρίας"
+        "name": "Επίπεδο μπαταρίας",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Χαμηλό",
+          "critical_low": "Κρίσιμο",
+          "critically_low_battery": "Κρίσιμα χαμηλό",
+          "not_available": "Μη διαθέσιμο"
+        }
       },
       "combined_rating": {
-        "name": "Συνδυαστική αξιολόγηση"
+        "name": "Συνδυαστική αξιολόγηση",
+        "state": {
+          "good": "Καλή",
+          "medium": "Μέτρια",
+          "bad": "Κακή",
+          "unknown": "Άγνωστη"
+        }
       },
       "air_quality_description": {
         "name": "Περιγραφή ποιότητας αέρα"

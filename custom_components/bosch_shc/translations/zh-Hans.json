@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "电池电量"
+        "name": "电池电量",
+        "state": {
+          "ok": "正常",
+          "low_battery": "低",
+          "critical_low": "严重不足",
+          "critically_low_battery": "极度不足",
+          "not_available": "不可用"
+        }
       },
       "combined_rating": {
-        "name": "综合评级"
+        "name": "综合评级",
+        "state": {
+          "good": "良好",
+          "medium": "中等",
+          "bad": "较差",
+          "unknown": "未知"
+        }
       },
       "air_quality_description": {
         "name": "空气质量描述"

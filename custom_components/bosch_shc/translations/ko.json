@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "배터리 수준"
+        "name": "배터리 수준",
+        "state": {
+          "ok": "정상",
+          "low_battery": "낮음",
+          "critical_low": "위험",
+          "critically_low_battery": "위험할 정도로 낮음",
+          "not_available": "사용할 수 없음"
+        }
       },
       "combined_rating": {
-        "name": "종합 등급"
+        "name": "종합 등급",
+        "state": {
+          "good": "좋음",
+          "medium": "보통",
+          "bad": "나쁨",
+          "unknown": "알 수 없음"
+        }
       },
       "air_quality_description": {
         "name": "공기질 설명"

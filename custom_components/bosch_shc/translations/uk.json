@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Рівень заряду батареї"
+        "name": "Рівень заряду батареї",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Низький",
+          "critical_low": "Критичний",
+          "critically_low_battery": "Критично низький",
+          "not_available": "Недоступно"
+        }
       },
       "combined_rating": {
-        "name": "Загальна оцінка"
+        "name": "Загальна оцінка",
+        "state": {
+          "good": "Хороша",
+          "medium": "Помірна",
+          "bad": "Погана",
+          "unknown": "Невідома"
+        }
       },
       "air_quality_description": {
         "name": "Опис якості повітря"

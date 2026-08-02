@@ -2,6 +2,19 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Two ENUM diagnostic sensors were showing raw internal slugs.**
+  `battery_level` (5 states) and the Twinguard `combined_rating` (4 states)
+  declared their options in code but shipped no translated `state` block, so
+  Home Assistant rendered values like `critically_low_battery` verbatim.
+  Both now have proper labels in all 30 languages — the air-quality grades
+  follow Bosch's own wording ("Good"/"Moderate"/"Poor"). The
+  translation-completeness CI gate gained a check that cross-references every
+  ENUM entity's `options=[...]` in code against its `state` block, so this
+  class of gap fails the build instead of reaching users; key parity alone
+  could never catch it, since a key missing from all 30 files is
+  "consistent", just consistently untranslated. That new check immediately
+  found the `combined_rating` gap nobody had reported.
+
 - **All user-facing entity names and states re-checked against Bosch's own
   app** — 66 English source strings corrected and re-translated across all
   30 languages. Until now our wording was invented independently of Bosch;

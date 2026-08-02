@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "電池電量"
+        "name": "電池電量",
+        "state": {
+          "ok": "正常",
+          "low_battery": "低",
+          "critical_low": "嚴重不足",
+          "critically_low_battery": "極度不足",
+          "not_available": "無法取得"
+        }
       },
       "combined_rating": {
-        "name": "綜合評級"
+        "name": "綜合評級",
+        "state": {
+          "good": "良好",
+          "medium": "中等",
+          "bad": "較差",
+          "unknown": "未知"
+        }
       },
       "air_quality_description": {
         "name": "空氣品質描述"

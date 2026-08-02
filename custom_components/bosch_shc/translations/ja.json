@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "バッテリーレベル"
+        "name": "バッテリーレベル",
+        "state": {
+          "ok": "正常",
+          "low_battery": "低",
+          "critical_low": "危険",
+          "critically_low_battery": "危険なほど低い",
+          "not_available": "利用不可"
+        }
       },
       "combined_rating": {
-        "name": "総合評価"
+        "name": "総合評価",
+        "state": {
+          "good": "良好",
+          "medium": "普通",
+          "bad": "不良",
+          "unknown": "不明"
+        }
       },
       "air_quality_description": {
         "name": "空気品質の説明"

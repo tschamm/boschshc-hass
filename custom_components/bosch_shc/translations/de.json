@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Batteriestand"
+        "name": "Batteriestand",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Niedrig",
+          "critical_low": "Kritisch",
+          "critically_low_battery": "Kritisch niedrig",
+          "not_available": "Nicht verfügbar"
+        }
       },
       "combined_rating": {
-        "name": "Gesamtbewertung"
+        "name": "Gesamtbewertung",
+        "state": {
+          "good": "Gut",
+          "medium": "Mäßig",
+          "bad": "Schlecht",
+          "unknown": "Unbekannt"
+        }
       },
       "air_quality_description": {
         "name": "Luftqualitätsbeschreibung"

@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Уровень заряда батареи"
+        "name": "Уровень заряда батареи",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Низкий",
+          "critical_low": "Критический",
+          "critically_low_battery": "Критически низкий",
+          "not_available": "Недоступно"
+        }
       },
       "combined_rating": {
-        "name": "Общая оценка"
+        "name": "Общая оценка",
+        "state": {
+          "good": "Хорошая",
+          "medium": "Умеренная",
+          "bad": "Плохая",
+          "unknown": "Неизвестно"
+        }
       },
       "air_quality_description": {
         "name": "Описание качества воздуха"

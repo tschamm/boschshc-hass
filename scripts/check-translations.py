@@ -51,6 +51,51 @@ def flat_strings(d, prefix=""):
     return out
 
 
+# The body must not cross into the next description, or a key would be paired
+# with a later entry's options.
+OPTIONS_RE = re.compile(
+    r"translation_key=\"(?P<key>\w+)\""
+    r"(?P<body>(?:(?!translation_key=).)*?)"
+    r"options=\[(?P<opts>[^]]*)\]",
+    re.S,
+)
+OPT_ITEM_RE = re.compile(r"\"(\w+)\"")
+
+
+def check_enum_states(base, en):
+    """Every ENUM description with options=[...] needs a `state` block."""
+    errors = []
+    entity = en.get("entity", {})
+    for fname in sorted(os.listdir(base)):
+        if not fname.endswith(".py"):
+            continue
+        domain = fname[:-3]
+        if domain not in entity:
+            continue
+        with open(f"{base}/{fname}", encoding="utf-8") as f:
+            src = f.read()
+        for m in OPTIONS_RE.finditer(src):
+            key = m.group("key")
+            # Only entity descriptions, not unrelated later `options=` kwargs.
+            if "SensorDeviceClass.ENUM" not in m.group("body"):
+                continue
+            opts = set(OPT_ITEM_RE.findall(m.group("opts")))
+            if not opts:
+                continue
+            node = entity.get(domain, {}).get(key)
+            if node is None:
+                continue  # key parity check above owns this case
+            declared = set(node.get("state", {}))
+            missing = opts - declared
+            if missing:
+                errors.append(
+                    f"  en.json: entity.{domain}.{key} is an ENUM with "
+                    f"options={sorted(opts)} but its `state` block is missing "
+                    f"{sorted(missing)} — HA would show the raw slug"
+                )
+    return errors
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="custom_components/bosch_shc")
@@ -110,6 +155,12 @@ def main():
     if en_ent - s_ent:
         errors.append(f"  en.json: extra entity keys not in strings.json: "
                       f"{sorted(en_ent - s_ent)}")
+
+    # Every ENUM entity declaring options=[...] in code must ship a matching
+    # `state` block, otherwise HA renders the raw slug ("critically_low_battery").
+    # Key parity above cannot catch this: a key missing from ALL 30 files is
+    # consistent, just consistently untranslated.
+    errors.extend(check_enum_states(base, en))
 
     if errors:
         print("Translation completeness FAILED:")

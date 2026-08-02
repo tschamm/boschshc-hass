@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Batterijniveau"
+        "name": "Batterijniveau",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Laag",
+          "critical_low": "Kritiek",
+          "critically_low_battery": "Kritiek laag",
+          "not_available": "Niet beschikbaar"
+        }
       },
       "combined_rating": {
-        "name": "Gecombineerde beoordeling"
+        "name": "Gecombineerde beoordeling",
+        "state": {
+          "good": "Goed",
+          "medium": "Matig",
+          "bad": "Slecht",
+          "unknown": "Onbekend"
+        }
       },
       "air_quality_description": {
         "name": "Luchtkwaliteitsbeschrijving"

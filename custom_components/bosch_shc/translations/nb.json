@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Batterinivå"
+        "name": "Batterinivå",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Lavt",
+          "critical_low": "Kritisk",
+          "critically_low_battery": "Kritisk lavt",
+          "not_available": "Ikke tilgjengelig"
+        }
       },
       "combined_rating": {
-        "name": "Samlet vurdering"
+        "name": "Samlet vurdering",
+        "state": {
+          "good": "God",
+          "medium": "Middels",
+          "bad": "Dårlig",
+          "unknown": "Ukjent"
+        }
       },
       "air_quality_description": {
         "name": "Luftkvalitetsbeskrivelse"

@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Aku tase"
+        "name": "Aku tase",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Madal",
+          "critical_low": "Kriitiline",
+          "critically_low_battery": "Kriitiliselt madal",
+          "not_available": "Pole saadaval"
+        }
       },
       "combined_rating": {
-        "name": "Kombineeritud hinnang"
+        "name": "Kombineeritud hinnang",
+        "state": {
+          "good": "Hea",
+          "medium": "Keskmine",
+          "bad": "Halb",
+          "unknown": "Teadmata"
+        }
       },
       "air_quality_description": {
         "name": "Õhukvaliteedi kirjeldus"

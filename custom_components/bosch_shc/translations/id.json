@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Level Baterai"
+        "name": "Level Baterai",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Rendah",
+          "critical_low": "Kritis",
+          "critically_low_battery": "Sangat Rendah",
+          "not_available": "Tidak Tersedia"
+        }
       },
       "combined_rating": {
-        "name": "Penilaian Gabungan"
+        "name": "Penilaian Gabungan",
+        "state": {
+          "good": "Baik",
+          "medium": "Sedang",
+          "bad": "Buruk",
+          "unknown": "Tidak Diketahui"
+        }
       },
       "air_quality_description": {
         "name": "Deskripsi Kualitas Udara"

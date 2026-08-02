@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Akumulatora līmenis"
+        "name": "Akumulatora līmenis",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Zems",
+          "critical_low": "Kritisks",
+          "critically_low_battery": "Kritiski zems",
+          "not_available": "Nav pieejams"
+        }
       },
       "combined_rating": {
-        "name": "Apvienotais vērtējums"
+        "name": "Apvienotais vērtējums",
+        "state": {
+          "good": "Labs",
+          "medium": "Vidējs",
+          "bad": "Slikts",
+          "unknown": "Nezināms"
+        }
       },
       "air_quality_description": {
         "name": "Gaisa kvalitātes apraksts"

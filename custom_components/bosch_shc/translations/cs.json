@@ -440,10 +440,23 @@
         }
       },
       "battery_level": {
-        "name": "Úroveň baterie"
+        "name": "Úroveň baterie",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Nízká",
+          "critical_low": "Kritická",
+          "critically_low_battery": "Kriticky nízká",
+          "not_available": "Není k dispozici"
+        }
       },
       "combined_rating": {
-        "name": "Celkové hodnocení"
+        "name": "Celkové hodnocení",
+        "state": {
+          "good": "Dobré",
+          "medium": "Střední",
+          "bad": "Špatné",
+          "unknown": "Neznámé"
+        }
       },
       "air_quality_description": {
         "name": "Popis kvality vzduchu"
