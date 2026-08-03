@@ -612,13 +612,32 @@ def test_arming_state_armed_custom_protection_returns_armed_custom_bypass():
 
 
 def test_arming_state_armed_unknown_profile_returns_none():
-    """SYSTEM_ARMED with an unrecognised profile falls off all branches → None."""
+    """SYSTEM_ARMED with an unrecognised (non-Profile) value falls off all
+    branches → None. Note this is a mock-only scenario: the real
+    active_configuration_profile getter never returns an arbitrary string,
+    it returns Profile.UNKNOWN instead (see the next test)."""
     panel = _panel(
         alarm_state=AlarmState.ALARM_OFF,
         arming_state=ArmingState.SYSTEM_ARMED,
     )
     panel._device.active_configuration_profile = "GARBAGE_PROFILE"
     assert panel.alarm_state is None
+
+
+def test_arming_state_armed_profile_unknown_returns_armed_custom_bypass():
+    """Regression test: boschshcpy's active_configuration_profile
+    deliberately returns Profile.UNKNOWN (not None, not an exception) for
+    any IDS profileId beyond the 3 built-ins — a real, reachable value for a
+    genuinely-armed system with more than 3 configured profiles. Before the
+    fix, SYSTEM_ARMED + Profile.UNKNOWN fell through every branch and
+    alarm_state returned None (rendered as "unknown"/unavailable in HA)
+    despite the system actually being armed."""
+    panel = _panel(
+        alarm_state=AlarmState.ALARM_OFF,
+        arming_state=ArmingState.SYSTEM_ARMED,
+        profile=Profile.UNKNOWN,
+    )
+    assert panel.alarm_state == AlarmControlPanelState.ARMED_CUSTOM_BYPASS
 
 
 class TestAlarmStateBranchAlarmState:

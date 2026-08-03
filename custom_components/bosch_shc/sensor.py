@@ -440,28 +440,28 @@ async def async_setup_entry(  # noqa: C901
                 entry_id=config_entry.entry_id,
             )
         )
-        # WalkTest state sensor: only created when WalkTest service is present.
-        if (
-            getattr(sensor, "supports_walk_test", False)
-            and sensor.walk_state is not None
-        ):
-            entities.append(
-                WalkStateSensor(
-                    device=sensor,
-                    entry_id=config_entry.entry_id,
-                )
-            )
-        # DetectionTest state sensor: the local-API counterpart of WalkTest.
-        if getattr(sensor, "supports_detection_test", False):
-            entities.append(
-                DetectionStateSensor(
-                    device=sensor,
-                    entry_id=config_entry.entry_id,
-                )
-            )
         # Installation profile is exposed as a writable `select` entity
         # (InstallationProfileSelect), not a sensor — see select.py (#353).
         if diagnostic_enabled:
+            # WalkTest state sensor: only created when WalkTest service is present.
+            if (
+                getattr(sensor, "supports_walk_test", False)
+                and sensor.walk_state is not None
+            ):
+                entities.append(
+                    WalkStateSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
+            # DetectionTest state sensor: the local-API counterpart of WalkTest.
+            if getattr(sensor, "supports_detection_test", False):
+                entities.append(
+                    DetectionStateSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
             await async_migrate_to_new_unique_id(
                 hass,
                 Platform.SENSOR,
@@ -529,19 +529,22 @@ async def async_setup_entry(  # noqa: C901
                     )
                 )
 
-    for siren in getattr(session.device_helper, "outdoor_sirens", []):
-        if device_excluded(siren, config_entry.options):
-            continue
-        if getattr(siren, "supports_power_supply", False):
-            entities.append(
-                SirenBatterySensor(device=siren, entry_id=config_entry.entry_id)
-            )
-            entities.append(
-                SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id)
-            )
-            entities.append(
-                SirenSolarChargingSensor(device=siren, entry_id=config_entry.entry_id)
-            )
+    if diagnostic_enabled:
+        for siren in getattr(session.device_helper, "outdoor_sirens", []):
+            if device_excluded(siren, config_entry.options):
+                continue
+            if getattr(siren, "supports_power_supply", False):
+                entities.append(
+                    SirenBatterySensor(device=siren, entry_id=config_entry.entry_id)
+                )
+                entities.append(
+                    SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id)
+                )
+                entities.append(
+                    SirenSolarChargingSensor(
+                        device=siren, entry_id=config_entry.entry_id
+                    )
+                )
 
     # KeypadTrigger mapping (Universal Switch II button->scenario): diagnostic,
     # only created when the device actually exposes the service (spec-grounded).

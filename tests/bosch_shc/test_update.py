@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from boschshcpy.exceptions import SHCException
 from homeassistant.exceptions import HomeAssistantError
 
 from homeassistant.components.update import UpdateEntityFeature
+from homeassistant.const import Platform
 
 from custom_components.bosch_shc.const import OPT_EXCLUDED_DEVICES
 from custom_components.bosch_shc.update import (
@@ -655,9 +656,18 @@ class TestUpdateAsyncSetupEntry:
         # device_helper-bucket platforms the shared fixture was built for);
         # the shared mock_config_entry fixture doesn't set it, so wire it here.
         mock_config_entry.title = "Test SHC"
-        return asyncio.run(
-            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
-        )
+        # async_remove_stale_entity now runs for every excluded/unsupported
+        # device (regression fix for the orphaned-DeviceUpdate bug); the fake
+        # hass here isn't a real registry-backed instance, and these tests
+        # don't care about the removal call itself, so stub it out. Tests
+        # that DO care patch it themselves and assert on it directly.
+        with patch(
+            "custom_components.bosch_shc.update.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ):
+            return asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+            )
 
     def test_setup_entry_with_information_and_no_devices(
         self, mock_config_entry, mock_session
@@ -725,7 +735,60 @@ class TestUpdateExcludedDevice:
         dev = _fake_dev("excl1", device_model="TRV_GEN2")
         mock_session.devices = [dev]
         mock_config_entry.title = "Test SHC"
-        result = asyncio.run(
-            run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
-        )
+        with patch(
+            "custom_components.bosch_shc.update.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ):
+            result = asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+            )
         assert not any(isinstance(e, DeviceUpdate) for e in result)
+
+    def test_excluded_firmware_capable_device_removes_stale_entity(
+        self, mock_config_entry, mock_session
+    ):
+        """#356-class regression: a firmware-capable device (e.g. TRV_GEN2)
+        that becomes excluded via OPT_EXCLUDED_DEVICES/OPT_EXCLUDED_ROOMS
+        (an OptionsFlowWithReload option -> full entry reload) must have its
+        previously-created DeviceUpdate entity actively removed from the
+        registry, not just skipped on re-creation -- otherwise it is
+        orphaned there forever."""
+        dev = _fake_dev("excl1", device_model="TRV_GEN2")
+        mock_session.devices = [dev]
+        mock_config_entry.title = "Test SHC"
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["excl1"]}
+        with patch(
+            "custom_components.bosch_shc.update.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ) as remove_mock:
+            result = asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+            )
+        assert not any(isinstance(e, DeviceUpdate) for e in result)
+        remove_mock.assert_awaited_once()
+        args = remove_mock.await_args.args
+        assert args[1] == Platform.UPDATE
+        assert args[2] == "root1_excl1_software_update"
+
+    def test_no_longer_firmware_capable_device_removes_stale_entity(
+        self, mock_config_entry, mock_session
+    ):
+        """Same #356-class gap, but for the case where a device's model is
+        simply no longer in FIRMWARE_CAPABLE_MODELS across a session rebuild
+        (rather than an explicit exclusion) -- the stale entity must still
+        be actively removed, not just skipped."""
+        dev = _fake_dev("dev1", device_model="TestModel")
+        mock_session.devices = [dev]
+        mock_config_entry.title = "Test SHC"
+        with patch(
+            "custom_components.bosch_shc.update.async_remove_stale_entity",
+            new_callable=AsyncMock,
+        ) as remove_mock:
+            result = asyncio.run(
+                run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
+            )
+        assert not any(isinstance(e, DeviceUpdate) for e in result)
+        remove_mock.assert_awaited_once()
+        args = remove_mock.await_args.args
+        assert args[1] == Platform.UPDATE
+        assert args[2] == "root1_dev1_software_update"

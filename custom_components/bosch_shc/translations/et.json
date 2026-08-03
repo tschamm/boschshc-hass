@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Selle pealkirjaga laaditud Bosch SHC kirjet ei leitud."
     },
+    "rawscan_command_failed": {
+      "message": "Rawscan käsu täitmine ebaõnnestus."
+    },
     "scenario_not_found": {
       "message": "Stsenaariumi ei leitud."
     },

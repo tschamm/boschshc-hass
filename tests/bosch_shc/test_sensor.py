@@ -511,7 +511,7 @@ def _run_sensor_setup(session, options):
     return collected
 
 
-def _setup_sensors(md2_list):
+def _setup_sensors(md2_list, options=None):
     """Run sensor.py's async_setup_entry with a single list of MD2 devices."""
     entry_id = "E1"
     emma = SimpleNamespace(
@@ -549,7 +549,9 @@ def _setup_sensors(md2_list):
         manufacturer="Bosch",
         model="SHC",
     )
-    entry = SimpleNamespace(options={}, entry_id=entry_id, async_on_unload=MagicMock())
+    entry = SimpleNamespace(
+        options=options or {}, entry_id=entry_id, async_on_unload=MagicMock()
+    )
     entry.runtime_data = SimpleNamespace(
         session=session, shc_device=shc_device, title="Test SHC"
     )
@@ -2847,6 +2849,42 @@ class TestDetectionStateSensor:
         types = [type(e).__name__ for e in _setup_sensors([md2])]
         assert "DetectionStateSensor" not in types
 
+    def test_setup_skipped_when_diagnostic_disabled(self):
+        """WalkStateSensor/DetectionStateSensor are DIAGNOSTIC entities and must
+        be gated behind OPT_DIAGNOSTIC_ENTITIES, matching the sibling
+        CommunicationQualitySensor gate in the same motion_detectors2 loop."""
+        from boschshcpy.services_impl import DetectionTestService, WalkTestService
+
+        md2 = _fake_md2(
+            supports_walk_test=True,
+            walk_state=WalkTestService.WalkState.UNKNOWN,
+            supports_detection_test=True,
+            detection_state=DetectionTestService.DetectionState.DETECTION_TEST_STOPPED,
+        )
+        entities = _setup_sensors(
+            [md2], options={OPT_DIAGNOSTIC_ENTITIES: False}
+        )
+        types = [type(e).__name__ for e in entities]
+        assert "WalkStateSensor" not in types
+        assert "DetectionStateSensor" not in types
+
+    def test_setup_created_when_diagnostic_explicitly_enabled(self):
+        """Sanity check: explicitly enabling diagnostics still creates both."""
+        from boschshcpy.services_impl import DetectionTestService, WalkTestService
+
+        md2 = _fake_md2(
+            supports_walk_test=True,
+            walk_state=WalkTestService.WalkState.UNKNOWN,
+            supports_detection_test=True,
+            detection_state=DetectionTestService.DetectionState.DETECTION_TEST_STOPPED,
+        )
+        entities = _setup_sensors(
+            [md2], options={OPT_DIAGNOSTIC_ENTITIES: True}
+        )
+        types = [type(e).__name__ for e in entities]
+        assert "WalkStateSensor" in types
+        assert "DetectionStateSensor" in types
+
 # ===========================================================================
 # Siren sensors: SirenBatterySensor / SirenMainPowerSensor / SirenSolarChargingSensor
 # (hass#120 audit) + the 4 power-supply-fault binary_sensors that are gated on
@@ -3136,6 +3174,20 @@ class TestSensorSirenSetup:
         )
         types = [type(e).__name__ for e in collected]
         assert "SirenBatterySensor" not in types
+
+    def test_siren_power_supply_sensors_gated_by_diagnostic_option(self):
+        """Outdoor Siren power-supply sensors are DIAGNOSTIC-category and
+        enabled-by-default, so they must be gated behind OPT_DIAGNOSTIC_ENTITIES
+        like every other diagnostic sensor loop in this file. Turning the
+        option off must remove all 3, not just leave them dangling."""
+        siren = _fake_dev("s1", supports_power_supply=True, supports_batterylevel=False)
+        collected = self._run_sensor_setup_sirens(
+            [siren], options={OPT_DIAGNOSTIC_ENTITIES: False}
+        )
+        types = [type(e).__name__ for e in collected]
+        assert "SirenBatterySensor" not in types
+        assert "SirenMainPowerSensor" not in types
+        assert "SirenSolarChargingSensor" not in types
 
 
 # ===========================================================================

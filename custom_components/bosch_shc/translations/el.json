@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Δεν βρέθηκε φορτωμένη καταχώρηση Bosch SHC με αυτόν τον τίτλο."
     },
+    "rawscan_command_failed": {
+      "message": "Αποτυχία εκτέλεσης της εντολής rawscan."
+    },
     "zigbee_topology_no_data": {
       "message": "Δεν υπάρχουν ακόμη διαθέσιμα δεδομένα δρομολόγησης Zigbee για αυτόν τον ελεγκτή SHC (δεν έχουν συζευχθεί συσκευές Zigbee, ή η πρώτη 5λεπτη δημοσκόπηση δεν έχει ολοκληρωθεί από την εκκίνηση του Home Assistant)."
     },

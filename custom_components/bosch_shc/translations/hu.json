@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Nem található ilyen nevű betöltött Bosch SHC bejegyzés."
     },
+    "rawscan_command_failed": {
+      "message": "A rawscan parancs végrehajtása sikertelen volt."
+    },
     "scenario_not_found": {
       "message": "A forgatókönyv nem található."
     },

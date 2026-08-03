@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Aucune entrée Bosch SHC chargée avec ce titre n'a été trouvée."
     },
+    "rawscan_command_failed": {
+      "message": "Échec de l'exécution de la commande rawscan."
+    },
     "scenario_not_found": {
       "message": "Scénario introuvable."
     },

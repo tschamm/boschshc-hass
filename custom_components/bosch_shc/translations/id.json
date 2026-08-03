@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Tidak ada entri Bosch SHC yang dimuat dengan judul tersebut."
     },
+    "rawscan_command_failed": {
+      "message": "Gagal menjalankan perintah rawscan."
+    },
     "scenario_not_found": {
       "message": "Skenario tidak ditemukan."
     },

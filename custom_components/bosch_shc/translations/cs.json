@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Nenalezen žádný načtený záznam Bosch SHC s tímto názvem."
     },
+    "rawscan_command_failed": {
+      "message": "Nepodařilo se provést příkaz rawscan."
+    },
     "zigbee_topology_no_data": {
       "message": "Pro tento SHC controller zatím nejsou k dispozici žádná data o směrování Zigbee (nejsou spárována žádná zařízení Zigbee, nebo první 5minutové dotazování ještě nebylo dokončeno od spuštění Home Assistant)."
     },

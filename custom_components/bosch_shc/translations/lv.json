@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Nav atrasts ielādēts Bosch SHC ieraksts ar šādu nosaukumu."
     },
+    "rawscan_command_failed": {
+      "message": "Neizdevās izpildīt rawscan komandu."
+    },
     "scenario_not_found": {
       "message": "Scenārijs nav atrasts."
     },

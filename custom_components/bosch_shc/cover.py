@@ -190,9 +190,11 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
             self._attr_is_opening = False
 
         if self._current_operation_state is ShutterControlService.State.STOPPED:
-            self._attr_is_closing = False
-            self._attr_is_opening = False
             if not self._skip_update:
+                # Only clear direction on a trusted STOPPED — an unreliable
+                # HA-command echo (_skip_update) must not wipe it early.
+                self._attr_is_closing = False
+                self._attr_is_opening = False
                 # Refresh the reference position on every rest for level-based
                 # devices, so the next movement's direction is computed against the
                 # actual resting position. This must include physical-switch moves

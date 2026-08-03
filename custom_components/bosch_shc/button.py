@@ -81,36 +81,42 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    # WalkTest start + stop buttons for Motion Detector II (guarded — optional service).
+    # WalkTest start + stop buttons for Motion Detector II (optional service).
+    # Cleanup below matches the scenario/automation-rule stale-entity pattern.
     for button in getattr(session.device_helper, "motion_detectors2", []):
-        if device_excluded(button, config_entry.options):
-            continue
-        if not getattr(button, "supports_walk_test", False):
-            continue
-        if button.walk_state is None:
-            # WalkTest service not present on this device
-            continue
-        entities.append(
-            SHCWalkTestButton(
-                device=button,
-                entry_id=config_entry.entry_id,
-            )
+        walk_test_unique_id = f"{button.root_device_id}_{button.id}_walk_test"
+        walk_test_stop_unique_id = f"{walk_test_unique_id}_stop"
+        excluded = device_excluded(button, config_entry.options)
+        supports_walk_test = not excluded and getattr(
+            button, "supports_walk_test", False
         )
-        entities.append(
-            SHCWalkTestStopButton(
-                device=button,
-                entry_id=config_entry.entry_id,
+        if supports_walk_test and button.walk_state is not None:
+            entities.append(
+                SHCWalkTestButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
             )
-        )
+            entities.append(
+                SHCWalkTestStopButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        else:
+            await async_remove_stale_entity(hass, Platform.BUTTON, walk_test_unique_id)
+            await async_remove_stale_entity(
+                hass, Platform.BUTTON, walk_test_stop_unique_id
+            )
 
-    # DetectionTest start/stop + tamper reset for Motion Detector II.
-    # The local API exposes the walk test through the DetectionTest service
-    # (vs the APK-derived WalkTest service above); a given MD2 carries one or
-    # the other, so both are wired and each is guarded by its own service.
+    # DetectionTest start/stop + tamper reset for Motion Detector II — the
+    # local API's other walk-test service shape; same cleanup rationale.
     for button in getattr(session.device_helper, "motion_detectors2", []):
-        if device_excluded(button, config_entry.options):
-            continue
-        if getattr(button, "supports_detection_test", False):
+        excluded = device_excluded(button, config_entry.options)
+        detection_test_unique_id = f"{button.root_device_id}_{button.id}_detection_test"
+        detection_test_stop_unique_id = f"{detection_test_unique_id}_stop"
+        reset_tamper_unique_id = f"{button.root_device_id}_{button.id}_reset_tamper"
+        if not excluded and getattr(button, "supports_detection_test", False):
             entities.append(
                 SHCDetectionTestButton(
                     device=button,
@@ -123,16 +129,27 @@ async def async_setup_entry(  # noqa: C901
                     entry_id=config_entry.entry_id,
                 )
             )
+        else:
+            await async_remove_stale_entity(
+                hass, Platform.BUTTON, detection_test_unique_id
+            )
+            await async_remove_stale_entity(
+                hass, Platform.BUTTON, detection_test_stop_unique_id
+            )
         # resetTamperedState — reset_tampered_state()/async_reset_tampered_state()
         # are defined unconditionally on the class, so a plain hasattr() check
         # would never actually detect a device missing the LatestTamper
         # service; supports_tamper_reset checks the real service presence.
-        if getattr(button, "supports_tamper_reset", False):
+        if not excluded and getattr(button, "supports_tamper_reset", False):
             entities.append(
                 SHCTamperResetButton(
                     device=button,
                     entry_id=config_entry.entry_id,
                 )
+            )
+        else:
+            await async_remove_stale_entity(
+                hass, Platform.BUTTON, reset_tamper_unique_id
             )
 
     # entry_unique_id/entry_id computed unconditionally (not just when the

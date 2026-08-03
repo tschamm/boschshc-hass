@@ -25,6 +25,7 @@ from homeassistant.components.update import (
     UpdateEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
@@ -37,7 +38,7 @@ from .const import (
     ISSUE_UPDATE_CALIBRATION_REQUIRED,
     LOGGER,
 )
-from .entity import SHCEntity, device_excluded
+from .entity import SHCEntity, async_remove_stale_entity, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -123,10 +124,15 @@ async def async_setup_entry(
 
     device: SHCDevice
     for device in session.devices:
-        if device_excluded(device, config_entry.options):
+        unique_id = f"{device.root_device_id}_{device.id}_software_update"
+        if device_excluded(device, config_entry.options) or (
+            device.device_model not in FIRMWARE_CAPABLE_MODELS
+        ):
+            # Options-reload may exclude a device or drop its firmware-
+            # capable model; remove its stale entity (#356-class pattern).
+            await async_remove_stale_entity(hass, Platform.UPDATE, unique_id)
             continue
-        if device.device_model in FIRMWARE_CAPABLE_MODELS:
-            entities.append(DeviceUpdate(device, config_entry.entry_id))
+        entities.append(DeviceUpdate(device, config_entry.entry_id))
 
     # Without this, HA schedules the first poll a full SCAN_INTERVAL from now
     # (#373) -- entities would sit unset for up to 6h after every restart.

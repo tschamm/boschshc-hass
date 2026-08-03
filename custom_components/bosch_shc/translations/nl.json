@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Geen geladen Bosch SHC-vermelding met die titel gevonden."
     },
+    "rawscan_command_failed": {
+      "message": "Uitvoeren van rawscan-opdracht mislukt."
+    },
     "scenario_not_found": {
       "message": "Scenario niet gevonden."
     },

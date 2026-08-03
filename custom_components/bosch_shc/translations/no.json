@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Fant ingen lastet Bosch SHC-oppføring med den tittelen."
     },
+    "rawscan_command_failed": {
+      "message": "Kunne ikke kjøre rawscan-kommandoen."
+    },
     "scenario_not_found": {
       "message": "Scenario ikke funnet."
     },

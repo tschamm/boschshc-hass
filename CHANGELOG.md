@@ -2,6 +2,50 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Proactive bug-hunt round** (6 parallel finder agents across boschshc-hass
+  + boschshcpy, each confirmed finding independently adversarially verified
+  before being fixed) — 14 real bugs confirmed and fixed:
+  - `__init__.py`: the daily cert-check timer and the presence/silent-mode
+    state-change listeners were only ever unregistered inside
+    `async_unload_entry` — never called when a *later* step of the same
+    setup attempt (e.g. `start_polling()`) fails and raises
+    `ConfigEntryNotReady`. Every failed setup retry before an eventual
+    successful load permanently leaked one more timer/listener for the rest
+    of the HA process's life. Now registered via `entry.async_on_unload` so
+    HA's own failed-setup cleanup path tears them down too.
+  - `__init__.py`: the `trigger_rawscan` service could crash uncaught on an
+    API failure and didn't check the matched config entry was actually
+    loaded; now raises a proper translated error instead.
+  - `cover.py`: a HA-issued open/close command's optimistic
+    `is_opening`/`is_closing` flag was being clobbered by the SHC's own
+    unreliable first "STOPPED" echo that follows every command — in the
+    same direction-tracking area as the still-open #385 report.
+  - `sensor.py`: Outdoor Siren power-supply diagnostics and Motion Detector
+    II's walk/detection-state sensors were created unconditionally instead
+    of being gated behind the `diagnostic_enabled` option like their
+    siblings.
+  - `alarm_control_panel.py`: an armed intrusion system with an
+    unrecognized/custom configuration profile fell through to no state at
+    all instead of degrading sensibly.
+  - `update.py` / `button.py`: stale-entity cleanup and capability-flag
+    gating gaps for Device/Controller updates and Motion Detector II's
+    walk/detection/tamper-reset buttons.
+  - `event.py`: a Light/Shutter Control II's button-event entity was left
+    permanently orphaned in the registry after reconfiguring its switch
+    type away from push-button (which drops the underlying Keypad
+    service).
+  - boschshcpy (6 fixes, all the same bug class as the historical #351 fix):
+    `BinarySwitchService`, `MultiLevelSwitchService`,
+    `HueColorTemperatureService`/`HSBColorActuatorService`,
+    `ThermostatService.childLock`, and `PowerSwitchProgramService` all
+    indexed the raw SHC state dict directly instead of degrading
+    gracefully, so any of them could raise `KeyError`/`ValueError` on a
+    partial long-poll snapshot instead of falling back like their
+    already-hardened siblings in the same file.
+  - 10 further candidate findings were reviewed and rejected at
+    verification (mostly inconsistent, but not crash-prone, error-handling
+    conventions) — not included here.
+
 - **Reverted the previous beta's #394 fix — it broke real heating
   control.** The theory (reorder the writes so `operation_mode` is set
   before clearing `summer_mode`, avoiding a momentary "auto" flicker in the

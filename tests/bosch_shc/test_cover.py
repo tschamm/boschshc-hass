@@ -1361,6 +1361,34 @@ class TestBBLStoppedUpdateLastPosition:
         # _last_position must NOT be overwritten (skip_update branch)
         assert cover._last_position == 50
 
+    def test_bbl_stopped_skip_update_true_preserves_optimistic_direction(self):
+        """STOPPED + _skip_update=True must NOT clobber the optimistic
+        is_closing/is_opening flags set by async_close_cover/async_open_cover.
+
+        This is the unreliable "first STOPPED echo" of an HA-issued command
+        (see the _skip_update branch): _last_position is deliberately not
+        refreshed here for exactly that reason, and the direction flags must
+        get the same protection — otherwise a spurious first STOPPED poll
+        wipes the just-set direction to False/False, and if the following
+        MOVING update reports a level identical to _last_position (no visible
+        change yet), neither direction branch fires and the flags stay stuck
+        at False/False instead of recovering the correct direction.
+        """
+        cover = _make_cover(
+            device_model="BBL",
+            level=0.5,
+            operation_state=STOPPED,
+        )
+        cover._skip_update = True
+        cover._last_position = 50
+        # Simulate async_close_cover()'s optimistic state.
+        cover._attr_is_closing = True
+        cover._attr_is_opening = False
+        cover._update_attr()
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+        assert cover._skip_update is False
+
 
 class TestMicromoduleShutterStoppedUpdatesLastPosition:
     """Verify that a MICROMODULE_SHUTTER STOPPED (non-BBL, not app_command) does

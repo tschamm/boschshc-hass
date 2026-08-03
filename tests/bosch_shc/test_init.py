@@ -1000,6 +1000,11 @@ class TestServiceHandlers:
             _run(async_setup(hass, {}))
             _run(async_setup_entry(hass, entry))
 
+        # Real HA flips the entry to LOADED once async_setup_entry returns
+        # True; service handlers that gate on ConfigEntryState.LOADED (e.g.
+        # rawscan_service_call) need this to match production behavior.
+        entry.state = ConfigEntryState.LOADED
+
         # Wire async_entries so service handlers can look up runtime_data
         hass.config_entries.async_entries.return_value = [entry]
 
@@ -1168,6 +1173,71 @@ class TestServiceHandlers:
         })
         with pytest.raises(ServiceValidationError):
             _run(handler(call_obj))
+
+    def test_rawscan_service_skips_entry_not_loaded(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A matching-title entry whose state isn't LOADED (e.g. mid-reload,
+        after async_unload_entry already tore down the session but before
+        async_setup_entry re-assigns runtime_data) must be skipped, not
+        dispatched against — surfacing as the same clean
+        ServiceValidationError as "no entry found", never a raw exception
+        from a half-torn-down session/api.
+        """
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        handler = handlers[SERVICE_TRIGGER_RAWSCAN]
+
+        # Simulate the entry being mid-reload: runtime_data is still the
+        # stale object from before, but HA has already flipped the entry's
+        # own state away from LOADED.
+        entry.state = ConfigEntryState.SETUP_IN_PROGRESS
+
+        call_obj = self._make_service_call(**{
+            "title": "",
+            ATTR_COMMAND: "devices",
+            ATTR_DEVICE_ID: "",
+            "service_id": "",
+        })
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
+        session_obj.api.get_devices.assert_not_awaited()
+
+    def test_rawscan_service_wraps_connection_error(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A stale/torn-down session's API call raising SHCConnectionError
+        (or any sibling transport error) must surface as a clean
+        ServiceValidationError, matching every other device-facing call in
+        this module (scenario_service_call, _set_child_lock_one,
+        _set_silent_one) — not propagate as a raw/unhandled exception.
+        """
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_devices = AsyncMock(
+            side_effect=SHCConnectionError("session torn down mid-reload")
+        )
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        handler = handlers[SERVICE_TRIGGER_RAWSCAN]
+
+        call_obj = self._make_service_call(**{
+            "title": "",
+            ATTR_COMMAND: "devices",
+            ATTR_DEVICE_ID: "",
+            "service_id": "",
+        })
+        with pytest.raises(ServiceValidationError):
+            _run(handler(call_obj))
+        session_obj.api.get_devices.assert_awaited_once()
 
     # -- export_zigbee_topology service --
 
@@ -1768,6 +1838,12 @@ def _full_setup(*, fake_session=None, hass=None, entry=None, cert_return=None,
         patch(PATCH_IR_CREATE, pn_create or MagicMock()),
     ):
         result = _run(async_setup_entry(hass, entry))
+
+    # Real HA flips the entry to LOADED once async_setup_entry returns True;
+    # service handlers gating on ConfigEntryState.LOADED (e.g.
+    # rawscan_service_call) need this to match production behavior.
+    if result:
+        entry.state = ConfigEntryState.LOADED
 
     return result, hass, entry
 
@@ -2698,6 +2774,132 @@ class TestPresenceEnabled:
             capture_state_cb=True,
         )
         assert entry.runtime_data.presence_unsub is not None
+
+
+# ---------------------------------------------------------------------------
+# Regression: cert-check/presence/silent-mode listeners must not leak when
+# start_polling() fails and async_setup_entry raises ConfigEntryNotReady.
+#
+# async_unload_entry (the only place that used to unsub these) is never
+# called on this path since the entry never finishes loading -- HA just
+# retries async_setup_entry, which overwrites entry.runtime_data with a
+# fresh SHCData(), losing the only references that could cancel the
+# previous attempt's listeners. They must instead be registered via
+# entry.async_on_unload at creation time so HA's own on-setup-failure
+# cleanup (ConfigEntries.async_setup's `finally: if not result: ...
+# _async_process_on_unload(...)`) tears them down too.
+# ---------------------------------------------------------------------------
+
+class TestListenersRegisteredForCleanupOnStartPollingFailure:
+    def test_cert_check_and_presence_unsub_registered_via_async_on_unload(
+        self, fake_hass_presence, fake_session_presence, fake_entry
+    ):
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        fake_entry.options = {
+            OPT_PRESENCE_ENTITY: ["person.felix"],
+            OPT_CHILD_LOCK_ENABLED: True,
+        }
+        fake_hass_presence._set_state("person.felix", "home")
+
+        session = fake_session_presence
+        session.start_polling = AsyncMock(side_effect=SHCConnectionError("dropped"))
+        session.api = MagicMock()
+        session.api.close = AsyncMock()
+
+        cert_unsub = MagicMock(name="cert_check_unsub")
+        presence_unsub = MagicMock(name="presence_unsub")
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=cert_unsub),
+            patch(PATCH_TRACK_STATE, return_value=presence_unsub),
+        ):
+            with pytest.raises(ConfigEntryNotReady):
+                _run(async_setup_entry(fake_hass_presence, fake_entry))
+
+        # The bug: these were only ever unsubbed inside async_unload_entry,
+        # which is never invoked on this failure path. The fix: they must
+        # also be handed to entry.async_on_unload at registration time so
+        # HA's own setup-failure cleanup can cancel them. They're each
+        # wrapped (see _idempotent_unsub) rather than passed raw, so assert
+        # via the actually-stored runtime_data.*_unsub references (which ARE
+        # the exact wrapped callables handed to async_on_unload) instead of
+        # the raw underlying mocks.
+        registered = [c.args[0] for c in fake_entry.async_on_unload.call_args_list]
+        assert fake_entry.runtime_data.cert_check_unsub in registered, (
+            "cert_check_unsub was not registered via entry.async_on_unload "
+            "-- it leaks forever on a start_polling() retry failure"
+        )
+        assert fake_entry.runtime_data.presence_unsub in registered, (
+            "presence_unsub was not registered via entry.async_on_unload "
+            "-- it leaks forever on a start_polling() retry failure"
+        )
+
+        # And invoking the registered wrapper must actually reach the
+        # underlying HA-provided unsub (proving the fix really cancels the
+        # listener, not just records something inert).
+        fake_entry.runtime_data.cert_check_unsub()
+        fake_entry.runtime_data.presence_unsub()
+        cert_unsub.assert_called_once()
+        presence_unsub.assert_called_once()
+
+    def test_double_invocation_of_registered_unsub_is_safe(
+        self, fake_hass_presence, fake_session_presence, fake_entry
+    ):
+        """If a later real HA release ever DID call both the manual unload
+        path and the async_on_unload callback for the same listener (e.g. a
+        future refactor reintroduces async_unload_entry's own explicit
+        calls), calling the same registered unsub twice must not raise --
+        matching _idempotent_unsub's contract, since some underlying HA
+        unsub callables (state-change trackers) raise ValueError on a
+        second call."""
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        fake_entry.options = {
+            OPT_PRESENCE_ENTITY: ["person.felix"],
+            OPT_CHILD_LOCK_ENABLED: True,
+        }
+        fake_hass_presence._set_state("person.felix", "home")
+
+        session = fake_session_presence
+        session.start_polling = AsyncMock(side_effect=SHCConnectionError("dropped"))
+        session.api = MagicMock()
+        session.api.close = AsyncMock()
+
+        raises_on_second_call = MagicMock(name="state_change_unsub")
+        calls = []
+
+        def _unsub_side_effect():
+            calls.append(1)
+            if len(calls) > 1:
+                raise ValueError("list.remove(x): x not in list")
+
+        raises_on_second_call.side_effect = _unsub_side_effect
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+            patch(PATCH_TRACK_STATE, return_value=raises_on_second_call),
+        ):
+            with pytest.raises(ConfigEntryNotReady):
+                _run(async_setup_entry(fake_hass_presence, fake_entry))
+
+        registered_presence_unsub = fake_entry.runtime_data.presence_unsub
+        assert registered_presence_unsub is not None
+        # Calling the wrapped unsub twice must not raise, even though the
+        # underlying tracker's real unsub callable is not itself idempotent.
+        registered_presence_unsub()
+        registered_presence_unsub()
+        assert calls == [1], "underlying unsub was invoked more than once"
 
 
 # ---------------------------------------------------------------------------

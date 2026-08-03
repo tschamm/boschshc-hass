@@ -26,7 +26,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME
+from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME, Platform
 from homeassistant.util import slugify
 
 from boschshcpy.services_impl import KeypadService
@@ -277,15 +277,34 @@ def _wire_event_setup(mock_config_entry, mock_session, shc_device=None):
 
 def _run_event_setup(mock_config_entry, mock_session, shc_device=None):
     """Run event.py's async_setup_entry(hass, entry, async_add_entities) with
-    the wiring from _wire_event_setup, returning the collected entities."""
+    the wiring from _wire_event_setup, returning the collected entities.
+
+    async_remove_stale_entity is patched to an AsyncMock: the bare
+    SimpleNamespace() hass built by _wire_event_setup isn't a real HA `hass`,
+    so the un-mocked helper (which calls entity_registry.async_get(hass))
+    would blow up - its own cleanup side effects aren't under test here
+    (see TestEventSetupLightControlsStaleCleanup below for that)."""
+    entities, _ = _run_event_setup_with_remove_mock(
+        mock_config_entry, mock_session, shc_device
+    )
+    return entities
+
+
+def _run_event_setup_with_remove_mock(mock_config_entry, mock_session, shc_device=None):
+    """Same as _run_event_setup, but returns the async_remove_stale_entity
+    mock too, so a test can assert on stale-entity cleanup calls/args."""
     hass = _wire_event_setup(mock_config_entry, mock_session, shc_device)
     collected: list = []
 
     def add(entities, update_before_add=False):
         collected.extend(entities)
 
-    asyncio.run(async_setup_entry(hass, mock_config_entry, add))
-    return collected
+    with patch(
+        "custom_components.bosch_shc.event.async_remove_stale_entity",
+        new_callable=AsyncMock,
+    ) as remove_mock:
+        asyncio.run(async_setup_entry(hass, mock_config_entry, add))
+    return collected, remove_mock
 
 
 class TestAsyncSetupEntryUniversalSwitch:
@@ -654,7 +673,8 @@ class TestSmokeDetectorExcluded:
 
 
 class TestEventSetupLightControls:
-    """Lines 82-86: micromodule_light_controls loop - excluded and no-keypad branches."""
+    """Lines 78-97: micromodule_light_controls loop - excluded, no-keypad, and
+    stale-entity-cleanup branches."""
 
     @pytest.mark.parametrize(
         ("device_buckets", "mock_config_entry"),
@@ -687,6 +707,70 @@ class TestEventSetupLightControls:
         mock_session.device_helper.micromodule_light_controls = [dev]
         collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, LightControlButtonEvent) for e in collected)
+
+
+class TestEventSetupLightControlsStaleCleanup:
+    """Regression: a Light Control II's SwitchConfiguration can be flipped from
+    push-button to toggle-switch mode at runtime (select.py's SwitchTypeSelect,
+    which - unlike InstallationProfileSelect - does not itself trigger a
+    reload), dropping the device's Keypad service on the next reload/restart.
+    Before this fix, event.py's setup loop simply stopped *creating* a new
+    LightControlButtonEvent once has_keypad went False, but never removed the
+    previously-created one - leaving it permanently orphaned in the entity
+    registry, unlike the analogous MD2 indicator-light cleanup in light.py.
+    """
+
+    def test_keypad_lost_removes_previously_created_entity(
+        self, mock_config_entry, mock_session
+    ):
+        """has_keypad flips True -> False: the stale event entity must be
+        actively removed from the registry, not just skipped on creation."""
+        dev = _fake_dev(
+            "lc1", has_keypad=False, root_device_id="root1", name="LightControl"
+        )
+        mock_session.device_helper.micromodule_light_controls = [dev]
+        collected, remove_mock = _run_event_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, LightControlButtonEvent) for e in collected)
+        remove_mock.assert_awaited_once()
+        args = remove_mock.await_args.args
+        assert args[1] == Platform.EVENT
+        assert args[2] == "root1_lc1_button"
+
+    def test_excluded_light_control_removes_stale_entity(
+        self, mock_config_entry, mock_session
+    ):
+        """Excluding a previously-eligible Light Control II must also clean up
+        its stale event entity, not just skip re-creating it."""
+        dev = _fake_dev(
+            "lc1", has_keypad=True, root_device_id="root1", name="LightControl"
+        )
+        mock_session.device_helper.micromodule_light_controls = [dev]
+        mock_config_entry.options = {OPT_EXCLUDED_DEVICES: ["lc1"]}
+        collected, remove_mock = _run_event_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, LightControlButtonEvent) for e in collected)
+        remove_mock.assert_awaited_once()
+        args = remove_mock.await_args.args
+        assert args[1] == Platform.EVENT
+        assert args[2] == "root1_lc1_button"
+
+    def test_keypad_present_does_not_remove_entity(
+        self, mock_config_entry, mock_session
+    ):
+        """has_keypad=True (and not excluded): no stale-entity cleanup call at
+        all for this device - the entity is created instead."""
+        dev = _fake_dev(
+            "lc1", has_keypad=True, root_device_id="root1", name="LightControl"
+        )
+        mock_session.device_helper.micromodule_light_controls = [dev]
+        collected, remove_mock = _run_event_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert any(isinstance(e, LightControlButtonEvent) for e in collected)
+        remove_mock.assert_not_awaited()
 
 
 # ===========================================================================

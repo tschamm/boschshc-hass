@@ -1767,6 +1767,51 @@ class TestSHCWalkTestButtons:
         assert "root1_dev1_walk_test" in uids
         assert "root1_dev1_walk_test_stop" in uids
 
+    def test_supports_walk_test_flipping_false_removes_stale_buttons(
+        self, mock_config_entry, mock_session
+    ):
+        """An MD2 that previously supported WalkTest (so the buttons were
+        created + registered) must have both entities cleaned up on a
+        reload where supports_walk_test flips to False (e.g. an
+        installation-profile change) — not just stop being (re-)created,
+        same bug class as #356's MD2 indicator light."""
+        dev = _make_device(root_device_id="root1", device_id="dev1")
+        dev.supports_walk_test = False
+        dev.walk_state = None
+        dev.supports_detection_test = False
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = False
+        mock_session.device_helper.motion_detectors2 = [dev]
+        entities, remove_mock = _run_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, SHCWalkTestButton) for e in entities)
+        assert not any(isinstance(e, SHCWalkTestStopButton) for e in entities)
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_walk_test")
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_walk_test_stop")
+
+    def test_excluded_device_removes_stale_walk_test_buttons(
+        self, mock_config_entry, mock_session
+    ):
+        """A device excluded via options must also get its previously
+        created WalkTest buttons cleaned up, not just skipped."""
+        dev = _make_device(root_device_id="root1", device_id="dev1")
+        dev.supports_walk_test = True
+        dev.walk_state = "STOPPED"
+        dev.supports_detection_test = False
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = False
+        mock_session.device_helper.motion_detectors2 = [dev]
+        with patch(
+            "custom_components.bosch_shc.button.device_excluded", return_value=True
+        ):
+            entities, remove_mock = _run_setup_with_remove_mock(
+                mock_config_entry, mock_session
+            )
+        assert not any(isinstance(e, SHCWalkTestButton) for e in entities)
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_walk_test")
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_walk_test_stop")
+
 
 class TestWalkTestButtonSetup:
     """async_setup_entry wiring for the MD2 walk-test buttons (fixture-driven,
@@ -2041,6 +2086,75 @@ class TestSHCDetectionTestButtons:
         uids = [e._attr_unique_id for e in result]
         assert "root1_dev1_detection_test" in uids
         assert "root1_dev1_detection_test_stop" in uids
+
+    def test_supports_detection_test_flipping_false_removes_stale_buttons(
+        self, mock_config_entry, mock_session
+    ):
+        """An MD2 that previously supported DetectionTest (so the buttons
+        were created + registered) must have both entities cleaned up on a
+        reload where supports_detection_test flips to False (e.g. an
+        installation-profile change) — same bug class as #356's MD2
+        indicator light."""
+        dev = _make_device(root_device_id="root1", device_id="dev1")
+        dev.supports_walk_test = False
+        dev.walk_state = None
+        dev.supports_detection_test = False
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = False
+        mock_session.device_helper.motion_detectors2 = [dev]
+        entities, remove_mock = _run_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, SHCDetectionTestButton) for e in entities)
+        assert not any(isinstance(e, SHCDetectionTestStopButton) for e in entities)
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_detection_test")
+        remove_mock.assert_any_await(
+            ANY, "button", "root1_dev1_detection_test_stop"
+        )
+
+    def test_supports_tamper_reset_flipping_false_removes_stale_button(
+        self, mock_config_entry, mock_session
+    ):
+        """An MD2 that previously supported tamper reset must have that
+        button cleaned up when supports_tamper_reset flips to False."""
+        dev = _make_device(root_device_id="root1", device_id="dev1")
+        dev.supports_walk_test = False
+        dev.walk_state = None
+        dev.supports_detection_test = False
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = False
+        mock_session.device_helper.motion_detectors2 = [dev]
+        entities, remove_mock = _run_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, SHCTamperResetButton) for e in entities)
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_reset_tamper")
+
+    def test_excluded_device_removes_stale_detection_and_tamper_buttons(
+        self, mock_config_entry, mock_session
+    ):
+        """A device excluded via options must have its previously created
+        DetectionTest + TamperReset buttons cleaned up, not just skipped."""
+        dev = _make_device(root_device_id="root1", device_id="dev1")
+        dev.supports_walk_test = False
+        dev.walk_state = None
+        dev.supports_detection_test = True
+        dev.reset_tampered_state = lambda: None
+        dev.supports_tamper_reset = True
+        mock_session.device_helper.motion_detectors2 = [dev]
+        with patch(
+            "custom_components.bosch_shc.button.device_excluded", return_value=True
+        ):
+            entities, remove_mock = _run_setup_with_remove_mock(
+                mock_config_entry, mock_session
+            )
+        assert not any(isinstance(e, SHCDetectionTestButton) for e in entities)
+        assert not any(isinstance(e, SHCTamperResetButton) for e in entities)
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_detection_test")
+        remove_mock.assert_any_await(
+            ANY, "button", "root1_dev1_detection_test_stop"
+        )
+        remove_mock.assert_any_await(ANY, "button", "root1_dev1_reset_tamper")
 
 
 class TestButtonSetup:

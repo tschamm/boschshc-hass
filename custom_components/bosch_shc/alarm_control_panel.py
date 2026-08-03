@@ -138,10 +138,12 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
             ):
                 return AlarmControlPanelState.ARMED_HOME
 
-            if (
-                self._device.active_configuration_profile
-                == SHCIntrusionSystem.Profile.CUSTOM_PROTECTION
+            if self._device.active_configuration_profile in (
+                SHCIntrusionSystem.Profile.CUSTOM_PROTECTION,
+                SHCIntrusionSystem.Profile.UNKNOWN,
             ):
+                # UNKNOWN = a real custom IDS profile beyond the 3 built-ins;
+                # must not fall through to None while genuinely armed.
                 return AlarmControlPanelState.ARMED_CUSTOM_BYPASS
         return None
 

@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Nenašiel sa žiadny načítaný záznam Bosch SHC s týmto názvom."
     },
+    "rawscan_command_failed": {
+      "message": "Nepodarilo sa vykonať príkaz rawscan."
+    },
     "scenario_not_found": {
       "message": "Scenár sa nenašiel."
     },

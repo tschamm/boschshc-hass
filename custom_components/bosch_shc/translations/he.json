@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "לא נמצאה רשומת Bosch SHC טעונה עם כותרת זו."
     },
+    "rawscan_command_failed": {
+      "message": "ביצוע פקודת ה-rawscan נכשל."
+    },
     "scenario_not_found": {
       "message": "התרחיש לא נמצא."
     },

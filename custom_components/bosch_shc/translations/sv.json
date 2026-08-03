@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Ingen inläst Bosch SHC-post med den titeln hittades."
     },
+    "rawscan_command_failed": {
+      "message": "Det gick inte att köra rawscan-kommandot."
+    },
     "scenario_not_found": {
       "message": "Scenariot hittades inte."
     },

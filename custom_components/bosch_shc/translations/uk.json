@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "Не знайдено завантаженого запису Bosch SHC із такою назвою."
     },
+    "rawscan_command_failed": {
+      "message": "Не вдалося виконати команду rawscan."
+    },
     "scenario_not_found": {
       "message": "Сценарій не знайдено."
     },

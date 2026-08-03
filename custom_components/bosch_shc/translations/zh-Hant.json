@@ -897,6 +897,9 @@
     "rawscan_entry_not_found": {
       "message": "找不到具有該標題的已載入 Bosch SHC 項目。"
     },
+    "rawscan_command_failed": {
+      "message": "執行 rawscan 命令失敗。"
+    },
     "scenario_not_found": {
       "message": "找不到情境。"
     },
