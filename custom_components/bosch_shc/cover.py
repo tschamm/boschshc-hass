@@ -228,12 +228,8 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                         self._attr_is_closing = True
                         self._attr_is_opening = False
             elif self._device.device_model == "MICROMODULE_SHUTTER":
-                # SWITCH_ON = toggle/rocker switchType; PRESS_SHORT = PUSHBUTTON
-                # switchType (#385); PRESS_LONG = a PUSHBUTTON pair wired in
-                # outputMode DETACHED_LONG_PRESS, one physical button per
-                # direction (#385 follow-up) — all three share the same
-                # keycode 1=open/2=close mapping, confirmed against real
-                # hardware rawscans (keyCode 1 on the up button, 2 on down).
+                # SWITCH_ON (rocker) / PRESS_SHORT (PUSHBUTTON) / PRESS_LONG
+                # (detached long-press pair, #385) all share keycode 1=open/2=close.
                 if (
                     self._keypad_event_pending
                     and self._device.eventtype
