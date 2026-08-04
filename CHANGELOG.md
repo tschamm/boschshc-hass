@@ -2,6 +2,19 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Shutter Control II: physical long-press buttons (`outputMode:
+  DETACHED_LONG_PRESS`) now report movement direction** (#385 follow-up).
+  Direction detection previously only recognized `SWITCH_ON`
+  (toggle/rocker switchType) and `PRESS_SHORT` (PUSHBUTTON switchType)
+  Keypad events; a pair of PUSHBUTTON-type switches wired in
+  `DETACHED_LONG_PRESS` mode (one physical button per direction — the
+  common wiring for a hardware up/down rocker) instead fires `PRESS_LONG`,
+  which fell through unrecognized and left `is_opening`/`is_closing`
+  frozen at whatever they were before the press. Confirmed against real
+  hardware rawscans that this button pair uses the exact same keycode
+  1=open/2=close convention as the already-handled event types, so
+  `PRESS_LONG` was added to the existing keycode branch rather than
+  guessed at — no new heuristic, no risk of showing the wrong direction.
 - **Proactive bug-hunt round** (6 parallel finder agents across boschshc-hass
   + boschshcpy, each confirmed finding independently adversarially verified
   before being fixed) — 14 real bugs confirmed and fixed:

@@ -47,6 +47,7 @@ CALIBRATING = ShutterControlService.State.CALIBRATING
 SWITCH_ON = KeypadService.KeyEvent.SWITCH_ON
 SWITCH_OFF = KeypadService.KeyEvent.SWITCH_OFF
 PRESS_SHORT = KeypadService.KeyEvent.PRESS_SHORT
+PRESS_LONG = KeypadService.KeyEvent.PRESS_LONG
 
 
 # ---------------------------------------------------------------------------
@@ -700,6 +701,50 @@ class TestMicromoduleShutterMovingKeypadPressShortClose:
 
 
 # ---------------------------------------------------------------------------
+# MOVING MICROMODULE_SHUTTER keypad keycode 1/2 via PRESS_LONG (a pair of
+# PUSHBUTTON-type switches wired in outputMode DETACHED_LONG_PRESS, one per
+# direction, #385 follow-up) — confirmed against real hardware rawscans:
+# keyCode 1 on the up/open button, keyCode 2 on the down/close button, the
+# same convention as SWITCH_ON/PRESS_SHORT above.
+# ---------------------------------------------------------------------------
+
+
+class TestMicromoduleShutterMovingKeypadPressLongOpen:
+    def test_press_long_keycode1_sets_opening(self):
+        """PRESS_LONG keycode=1 → is_opening=True, target=100, last_position set."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.2,
+            operation_state=MOVING,
+            eventtype=PRESS_LONG,
+            keycode=1,
+        )
+        cover._last_position = 20  # should be overwritten
+        cover._update_attr()
+        assert cover._attr_is_opening is True
+        assert cover._attr_is_closing is False
+        assert cover._target_position == 100
+        assert cover._last_position == 20  # round(0.2*100)
+
+
+class TestMicromoduleShutterMovingKeypadPressLongClose:
+    def test_press_long_keycode2_sets_closing(self):
+        """PRESS_LONG keycode=2 → is_closing=True, target=0, last_position set."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.8,
+            operation_state=MOVING,
+            eventtype=PRESS_LONG,
+            keycode=2,
+        )
+        cover._update_attr()
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+        assert cover._target_position == 0
+        assert cover._last_position == 80  # round(0.8*100)
+
+
+# ---------------------------------------------------------------------------
 # #385: the SHC keeps reporting the LAST physical button press forever, so the
 # keypad-derived direction must only apply to the movement that press actually
 # started — not to later Bosch-app / scenario / routine moves.
@@ -740,6 +785,21 @@ class TestMicromoduleShutterStaleKeypadDirection:
         cover._update_attr()
         assert cover._attr_is_closing is not True
         assert cover._target_position == 20
+
+    def test_stale_press_long_open_does_not_force_opening(self):
+        """A stale PRESS_LONG press must not force direction either."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.8,
+            operation_state=MOVING,
+            eventtype=PRESS_LONG,
+            keycode=1,
+            keypad_event_pending=False,
+        )
+        cover._last_position = 80
+        cover._update_attr()
+        assert cover._attr_is_opening is not True
+        assert cover._target_position == 80
 
     def test_stale_press_still_allows_level_based_direction(self):
         """With a stale press, the level comparison decides the direction."""
