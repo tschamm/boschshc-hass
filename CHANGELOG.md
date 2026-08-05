@@ -2,6 +2,17 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Cover: `async_set_cover_position` overriding a position the cover is
+  already at left `is_opening`/`is_closing` stuck on an earlier move's
+  direction** (#395 follow-up to the fix below). Unlike `async_open_cover`/
+  `async_close_cover`, `async_set_cover_position` never set the direction
+  flags itself — it relied entirely on the next `MOVING` update's
+  target-vs-`_last_position` comparison, which leaves flags untouched when
+  target equals the current position (a no-op override, e.g. a limiting
+  automation re-asserting a bound the cover already satisfies). Fixed by
+  setting direction explicitly from the requested position vs. the live
+  baseline, same as `open`/`close`, so a no-op correctly clears stale flags
+  instead of leaving them from whatever real move happened before it.
 - **Cover: overriding an in-progress move with the opposite direction left
   `is_opening`/`is_closing` stuck on the first command's direction** (#395
   follow-up). `async_open_cover`/`async_close_cover`/`async_set_cover_position`

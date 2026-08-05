@@ -406,6 +406,17 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                 translation_domain=DOMAIN,
                 translation_key="cover_action_failed",
             ) from err
+        # Direction vs. the live baseline above (#395: a no-op override,
+        # e.g. re-asserting a limit already met, must clear stale flags).
+        if position > self._last_position:
+            self._attr_is_opening = True
+            self._attr_is_closing = False
+        elif position < self._last_position:
+            self._attr_is_closing = True
+            self._attr_is_opening = False
+        else:
+            self._attr_is_opening = False
+            self._attr_is_closing = False
         self._target_position = position
         self._skip_update = True
         self._app_command = True
@@ -489,6 +500,16 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
                 translation_domain=DOMAIN,
                 translation_key="cover_action_failed",
             ) from err
+        # See ShutterControlCover.async_set_cover_position (#395).
+        if position > self._last_position:
+            self._attr_is_opening = True
+            self._attr_is_closing = False
+        elif position < self._last_position:
+            self._attr_is_closing = True
+            self._attr_is_opening = False
+        else:
+            self._attr_is_opening = False
+            self._attr_is_closing = False
         self._target_position = position
         self._skip_update = True
         self._app_command = True

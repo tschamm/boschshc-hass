@@ -692,6 +692,26 @@ class TestMicromoduleShutterOverrideDirection:
         assert cover._attr_is_closing is True
         assert cover._attr_is_opening is False
 
+    def test_set_cover_position_noop_override_clears_stale_direction(self):
+        """#395 follow-up: a set_cover_position override to the position the
+        cover is ALREADY at (e.g. a limiting automation re-asserting a bound
+        it's already within) must clear stale is_opening/is_closing left by
+        an earlier real move, not leave them stuck."""
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.4,
+            operation_state=STOPPED,
+        )
+        # Stale flags from an earlier real move to 40%.
+        cover._attr_is_opening = True
+        cover._attr_is_closing = False
+
+        asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 40}))
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False
+        assert cover._target_position == 40
+        assert cover._last_position == 40
+
 
 # ---------------------------------------------------------------------------
 # MOVING MICROMODULE_SHUTTER keypad keycode 1/2 via PRESS_SHORT (PUSHBUTTON
