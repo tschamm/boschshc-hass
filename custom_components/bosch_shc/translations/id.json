@@ -119,7 +119,8 @@
               "suppress_camera_switches": "Sembunyikan sakelar kamera Bosch",
               "room_light_groups": "Aktifkan grup lampu per ruangan",
               "automation_rules_as_entities": "Tampilkan aturan otomatisasi Bosch sebagai entitas",
-              "temperature_drop_entities": "Aktifkan entitas penurunan suhu"
+              "temperature_drop_entities": "Aktifkan entitas penurunan suhu",
+              "keypad_ha_bridge": "Jembatani tombol fisik untuk otomasi HA"
             },
             "data_description": {
               "scenarios_as_buttons": "Jika AKTIF: setiap skenario Bosch SHC juga muncul sebagai entitas tombol di Home Assistant (selain layanan trigger_scenario). Berguna untuk ubin dasbor dan otomasi yang memicu skenario secara langsung. Default: nonaktif.",
@@ -135,7 +136,8 @@
               "suppress_camera_switches": "Saat AKTIF: sakelar privasi, lampu, dan notifikasi untuk kamera Bosch (Eyes / 360 / Outdoor Gen2) tidak dibuat. Gunakan dengan Bosch Camera Tool. Default: nonaktif.",
               "room_light_groups": "Saat AKTIF: membuat satu entitas agregat `light` per ruangan SHC yang memiliki 2 atau lebih lampu dim/warna (dimmer LEDVANCE, Hue, Light/Shutter Control II), sehingga Anda dapat menyalakan/mematikan semua lampu di suatu ruangan dari satu entitas — mencerminkan kontrol tingkat ruangan yang sudah dimiliki pemanas melalui Room Climate Control. Hanya nyala/mati, tanpa agregasi kecerahan/warna. Default: nonaktif (tidak ada entitas baru).",
               "automation_rules_as_entities": "Jika AKTIF: membuat sakelar (aktifkan/nonaktifkan) dan tombol (picu manual) untuk setiap aturan otomatisasi yang dikonfigurasi di aplikasi Bosch — mesin aturan lokal milik Bosch sendiri, sepenuhnya terpisah dari otomatisasi Home Assistant sendiri. Default: nonaktif (tidak ada entitas baru).",
-              "temperature_drop_entities": "Jika AKTIF: membuat sakelar (aktifkan/nonaktifkan) dan angka (nilai penurunan) untuk layanan penurunan suhu (anti-beku/jendela terbuka) setiap ruangan. Sebagian besar pemasangan tidak menggunakan fitur ini. Default: nonaktif (tidak ada entitas baru)."
+              "temperature_drop_entities": "Jika AKTIF: membuat sakelar (aktifkan/nonaktifkan) dan angka (nilai penurunan) untuk layanan penurunan suhu (anti-beku/jendela terbuka) setiap ruangan. Sebagian besar pemasangan tidak menggunakan fitur ini. Default: nonaktif (tidak ada entitas baru).",
+              "keypad_ha_bridge": "Jika AKTIF: untuk setiap perangkat Shutter/Light Control II dengan tombol tekan fisik terpisah, membuat otomasi kecil langsung di Bosch Smart Home Controller yang memicu denyut status hidup/mati virtual saat tombol ditekan. Status tersebut sudah muncul sebagai entitas switch biasa — gunakan transisi hidup/mati-nya sebagai pemicu dalam otomasi Home Assistant Anda sendiri. Menonaktifkan ini akan menghapus otomasi dan status yang dibuatnya. Default: nonaktif (tidak ada entitas baru, tidak ada yang dibuat di Controller)."
             }
           },
           "presence": {

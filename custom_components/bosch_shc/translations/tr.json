@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Bosch kamera anahtarlarını gizle",
               "room_light_groups": "Oda başına ışık gruplarını etkinleştir",
               "automation_rules_as_entities": "Bosch otomasyon kurallarını varlık olarak göster",
-              "temperature_drop_entities": "Sıcaklık düşüşü varlıklarını etkinleştir"
+              "temperature_drop_entities": "Sıcaklık düşüşü varlıklarını etkinleştir",
+              "keypad_ha_bridge": "Fiziksel butonları HA otomasyonlarına köprüle"
             },
             "data_description": {
               "scenarios_as_buttons": "AÇIK olduğunda: her Bosch SHC senaryosu Home Assistant'ta ayrıca bir düğme varlığı olarak da görünür (trigger_scenario hizmetine ek olarak). Senaryoları doğrudan tetikleyen pano kutucukları ve otomasyonlar için kullanışlıdır. Varsayılan: kapalı.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "AÇIK olduğunda: Bosch kameraları (Eyes / 360 / Outdoor Gen2) için gizlilik, ışık ve bildirim anahtarları oluşturulmaz. Bosch Camera Tool ile birlikte kullanın. Varsayılan: kapalı.",
               "room_light_groups": "AÇIK olduğunda: 2 veya daha fazla kısılabilir/renkli ışığa sahip (LEDVANCE, Hue, Light/Shutter Control II dimmerleri) her SHC odası için tek bir toplu `light` varlığı oluşturur ve bir odanın tüm ışıklarını tek bir varlıktan açıp kapatmanızı sağlar — ısıtmanın Room Climate Control ile zaten sahip olduğu oda düzeyinde kontrolü yansıtır. Sadece açma/kapama, parlaklık veya renk toplanması yoktur. Varsayılan: kapalı (yeni varlık oluşturulmaz).",
               "automation_rules_as_entities": "AÇIK olduğunda: Bosch uygulamasında yapılandırılan her otomasyon kuralı için bir anahtar (etkinleştir/devre dışı bırak) ve bir düğme (manuel tetikle) oluşturur — Home Assistant'ın kendi otomasyonlarından tamamen ayrı, Bosch'un kendi yerel kural motoru. Varsayılan: kapalı (yeni varlık yok).",
-              "temperature_drop_entities": "AÇIK olduğunda: her odanın sıcaklık düşüşü (donma önleme/açık pencere) hizmeti için bir anahtar (etkinleştir/devre dışı bırak) ve bir sayı (düşüş değeri) oluşturur. Çoğu kurulum bu özelliği kullanmaz. Varsayılan: kapalı (yeni varlık yok)."
+              "temperature_drop_entities": "AÇIK olduğunda: her odanın sıcaklık düşüşü (donma önleme/açık pencere) hizmeti için bir anahtar (etkinleştir/devre dışı bırak) ve bir sayı (düşüş değeri) oluşturur. Çoğu kurulum bu özelliği kullanmaz. Varsayılan: kapalı (yeni varlık yok).",
+              "keypad_ha_bridge": "AÇIK olduğunda: fiziksel ayrık bir butonu olan her Shutter/Light Control II cihazı için, buton basıldığında sanal bir açma/kapama durumunu tetikleyen küçük bir otomasyonu doğrudan Bosch Smart Home Controller üzerinde oluşturur. Bu durum zaten normal bir anahtar varlığı olarak görünür — kendi Home Assistant otomasyonlarınızda tetikleyici olarak açma/kapama geçişlerini kullanın. Bunu kapatmak, oluşturulan otomasyonları ve durumları kaldırır. Varsayılan: kapalı (yeni varlık yok, kumandada hiçbir şey oluşturulmaz)."
             }
           },
           "presence": {

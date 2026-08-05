@@ -77,6 +77,7 @@ from .const import (
     LOGGER,
     OPT_CHILD_LOCK_ENABLED,
     OPT_ENABLE_RAWSCAN,
+    OPT_KEYPAD_HA_BRIDGE,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_SILENT_MODE_ENABLED,
@@ -92,6 +93,7 @@ from .const import (
 )
 from .coordinator import SHCZigbeeRoutingCoordinator
 from .data import SHCData
+from .keypad_bridge import async_sync_keypad_bridge
 from .zigbee_topology import (
     build_topology_graph,
     topology_to_html,
@@ -581,6 +583,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         title=entry.title,
         zigbee_routing_coordinator=zigbee_routing_coordinator,
     )
+
+    # #395: before platforms are set up, so a freshly-created UserDefinedState
+    # is already in session.userdefinedstates by the time switch.py enumerates.
+    try:
+        await async_sync_keypad_bridge(
+            hass, entry, entry.options.get(OPT_KEYPAD_HA_BRIDGE, False)
+        )
+    except SHCException as err:
+        LOGGER.warning("Keypad bridge sync failed: %s", err)
 
     # Backgrounded (sequential live per-device queries can take minutes) so
     # setup isn't delayed; task kept so unload can cancel it before stop_polling().

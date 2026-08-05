@@ -119,7 +119,8 @@
               "suppress_camera_switches": "Slēpt Bosch kameras slēdžus",
               "room_light_groups": "Iespējot telpu gaismas grupas",
               "automation_rules_as_entities": "Rādīt Bosch automatizācijas noteikumus kā entītijas",
-              "temperature_drop_entities": "Iespējot temperatūras pazemināšanās entītijas"
+              "temperature_drop_entities": "Iespējot temperatūras pazemināšanās entītijas",
+              "keypad_ha_bridge": "Savienot fiziskās pogas ar HA automatizācijām"
             },
             "data_description": {
               "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
@@ -135,7 +136,8 @@
               "suppress_camera_switches": "Kad IESLĒGTS: Bosch kameru (Eyes / 360 / Outdoor Gen2) privātuma, gaismas un paziņojumu slēdži netiek izveidoti. Izmantojiet ar Bosch Camera Tool. Nokluājums: izslēgts.",
               "room_light_groups": "Kad IESLĒGTS: katrai SHC telpai ar 2 vai vairāk regulējamas spilgtuma/krāsu gaismas ķermeņiem (LEDVANCE, Hue, Light/Shutter Control II dimmeri) tiek izveidota viena apkopota `light` entītija, ļaujot ieslēgt/izslēgt visas telpas gaismas no vienas entītijas — tas atspoguļo telpas līmeņa vadību, kāda apkurei jau ir, izmantojot Room Climate Control. Tikai ieslēgšana/izslēgšana, bez spilgtuma/krāsas apkopošanas. Noklusējums: izslēgts (jaunu entītiju nav).",
               "automation_rules_as_entities": "Ja IESLĒGTS: katram Bosch lietotnē konfigurētajam automatizācijas noteikumam tiek izveidots slēdzis (iespējot/atspējot) un poga (manuāla palaišana) — Bosch pašas lokālais noteikumu dzinējs, pilnībā atdalīts no Home Assistant automatizācijām. Noklusējums: izslēgts (jaunu entīciju nav).",
-              "temperature_drop_entities": "Ja IESLĒGTS: izveido slēdzi (iespējot/atspējot) un skaitli (pazemināšanās vērtība) katras istabas temperatūras pazemināšanās (aizsardzība pret salu/atvērts logs) pakalpojumam. Lielākā daļa uzstādījumu neizmanto šo funkciju. Noklusējums: izslēgts (nav jaunu entītiju)."
+              "temperature_drop_entities": "Ja IESLĒGTS: izveido slēdzi (iespējot/atspējot) un skaitli (pazemināšanās vērtība) katras istabas temperatūras pazemināšanās (aizsardzība pret salu/atvērts logs) pakalpojumam. Lielākā daļa uzstādījumu neizmanto šo funkciju. Noklusējums: izslēgts (nav jaunu entītiju).",
+              "keypad_ha_bridge": "Ja IESLĒGTS: katrai Shutter/Light Control II ierīcei ar pievienotu fizisko pogu tiek izveidota neliela automatizācija tieši uz Bosch Smart Home Controller, kas pogas nospiešanas brīdī pārslēdz virtuālu ieslēgšanas/izslēgšanas stāvokli. Šis stāvoklis jau parādās kā parasta slēdža entītija — izmantojiet tās ieslēgšanas/izslēgšanas pārejas kā aktivizētāju savās Home Assistant automatizācijās. Izslēdzot šo opciju, tiek noņemtas tās izveidotās automatizācijas un stāvokļi. Noklusējums: izslēgts (nav jaunu entītiju, uz kontroliera nekas netiek izveidots)."
             }
           },
           "presence": {

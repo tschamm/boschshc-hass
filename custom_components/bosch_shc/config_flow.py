@@ -56,6 +56,7 @@ from .const import (
     OPT_ENABLE_RAWSCAN,
     OPT_EXCLUDED_DEVICES,
     OPT_EXCLUDED_ROOMS,
+    OPT_KEYPAD_HA_BRIDGE,
     OPT_LIGHTS_AS_LIGHT,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
@@ -96,6 +97,7 @@ OPTIONS_SECTIONS: dict[str, list[str]] = {
         OPT_ROOM_LIGHT_GROUPS,
         OPT_AUTOMATION_RULES_AS_ENTITIES,
         OPT_TEMPERATURE_DROP_ENTITIES,
+        OPT_KEYPAD_HA_BRIDGE,
     ],
     "presence": [
         OPT_CHILD_LOCK_ENABLED,
@@ -717,6 +719,15 @@ class OptionsFlowHandler(config_entries.OptionsFlowWithReload):  # type: ignore[
             vol.Optional(
                 OPT_TEMPERATURE_DROP_ENTITIES,
                 default=current.get(OPT_TEMPERATURE_DROP_ENTITIES, False),
+            )
+        ] = BooleanSelector()
+
+        # #395: bridge Shutter/Light Control II physical pushbuttons into a
+        # regular HA entity via a small SHC-side automation per button.
+        features_fields[
+            vol.Optional(
+                OPT_KEYPAD_HA_BRIDGE,
+                default=current.get(OPT_KEYPAD_HA_BRIDGE, False),
             )
         ] = BooleanSelector()
 

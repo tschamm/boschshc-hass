@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése",
               "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése",
               "automation_rules_as_entities": "Bosch automatizálási szabályok megjelenítése entitásként",
-              "temperature_drop_entities": "Hőmérséklet-csökkentési entitások engedélyezése"
+              "temperature_drop_entities": "Hőmérséklet-csökkentési entitások engedélyezése",
+              "keypad_ha_bridge": "Fizikai nyomógombok áthidalása HA automatizálásokhoz"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki.",
               "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások).",
               "automation_rules_as_entities": "Ha BE van kapcsolva: minden, a Bosch alkalmazásban beállított automatizálási szabályhoz létrejön egy kapcsoló (engedélyezés/letiltás) és egy gomb (kézi indítás) — ez a Bosch saját helyi szabálymotorja, teljesen független a Home Assistant saját automatizálásaitól. Alapértelmezett: ki (nincs új entitás).",
-              "temperature_drop_entities": "Ha BE van kapcsolva: létrehoz egy kapcsolót (engedélyezés/letiltás) és egy számot (csökkentési érték) minden szoba hőmérséklet-csökkentési (fagyvédelem/nyitott ablak) szolgáltatásához. A legtöbb rendszer nem használja ezt a funkciót. Alapértelmezett: ki (nincs új entitás)."
+              "temperature_drop_entities": "Ha BE van kapcsolva: létrehoz egy kapcsolót (engedélyezés/letiltás) és egy számot (csökkentési érték) minden szoba hőmérséklet-csökkentési (fagyvédelem/nyitott ablak) szolgáltatásához. A legtöbb rendszer nem használja ezt a funkciót. Alapértelmezett: ki (nincs új entitás).",
+              "keypad_ha_bridge": "Ha BE van kapcsolva: minden fizikai leválasztott nyomógombbal rendelkező Shutter/Light Control II eszközhöz létrejön egy kis automatizálás közvetlenül a Bosch Smart Home Controlleren, amely gombnyomáskor egy virtuális be/ki állapotot impulzusszerűen vált. Ez az állapot már megjelenik egy szokásos switch entitásként — használja annak be/ki átmeneteit triggerként a saját Home Assistant automatizálásaiban. Ha kikapcsolja ezt, eltávolítja az általa létrehozott automatizálásokat és állapotokat. Alapértelmezett: ki (nincs új entitás, semmi nem jön létre a Controlleren)."
             }
           },
           "presence": {

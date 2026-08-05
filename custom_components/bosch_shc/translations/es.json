@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Suprimir los interruptores de cámara Bosch",
               "room_light_groups": "Habilitar grupos de luces por habitación",
               "automation_rules_as_entities": "Exponer las reglas de automatización de Bosch como entidades",
-              "temperature_drop_entities": "Habilitar entidades de caída de temperatura"
+              "temperature_drop_entities": "Habilitar entidades de caída de temperatura",
+              "keypad_ha_bridge": "Conectar pulsadores físicos con automatizaciones de HA"
             },
             "data_description": {
               "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario Bosch SHC aparece también como entidad de botón en Home Assistant (además del servicio `trigger_scenario`). Útil para tarjetas de panel y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Cuando está ACTIVADO: los interruptores de privacidad, luz y notificación para las cámaras Bosch (Eyes / 360 / Outdoor Gen2) no se crean. Úsalo con Bosch Camera Tool. Predeterminado: desactivado.",
               "room_light_groups": "Cuando está ACTIVADO: crea una entidad `light` agregada por cada habitación del SHC con 2 o más luces regulables/de color (LEDVANCE, Hue, reguladores Light/Shutter Control II), permitiendo encender o apagar todas las luces de una habitación desde una sola entidad — reflejando el control por habitación que la calefacción ya tiene mediante Room Climate Control. Solo encendido/apagado, sin agregación de brillo/color. Predeterminado: desactivado (sin entidades nuevas).",
               "automation_rules_as_entities": "Cuando está ACTIVADO: crea un interruptor (activar/desactivar) y un botón (activar manualmente) para cada regla de automatización configurada en la app de Bosch — el motor de reglas local propio de Bosch, totalmente independiente de las automatizaciones de Home Assistant. Predeterminado: desactivado (sin entidades nuevas).",
-              "temperature_drop_entities": "Cuando esté ACTIVADO: crea un interruptor (activar/desactivar) y un número (valor de caída) para el servicio de caída de temperatura (anticongelante/ventana abierta) de cada habitación. La mayoría de las instalaciones no usan esta función. Predeterminado: desactivado (sin entidades nuevas)."
+              "temperature_drop_entities": "Cuando esté ACTIVADO: crea un interruptor (activar/desactivar) y un número (valor de caída) para el servicio de caída de temperatura (anticongelante/ventana abierta) de cada habitación. La mayoría de las instalaciones no usan esta función. Predeterminado: desactivado (sin entidades nuevas).",
+              "keypad_ha_bridge": "Cuando esté ACTIVADO: para cada dispositivo Shutter/Light Control II con un pulsador físico separado, crea una pequeña automatización directamente en el Bosch Smart Home Controller que genera un pulso de un estado virtual de encendido/apagado al pulsar el botón. Ese estado ya aparece como una entidad de interruptor normal — usa sus transiciones de encendido/apagado como disparador en tus propias automatizaciones de Home Assistant. Al desactivar esto se eliminan las automatizaciones y estados que creó. Predeterminado: desactivado (sin entidades nuevas, no se crea nada en el controlador)."
             }
           },
           "presence": {

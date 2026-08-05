@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Suppress Bosch camera switches",
               "room_light_groups": "Enable per-room light groups",
               "automation_rules_as_entities": "Expose Bosch automation rules as entities",
-              "temperature_drop_entities": "Enable temperature-drop entities"
+              "temperature_drop_entities": "Enable temperature-drop entities",
+              "keypad_ha_bridge": "Bridge physical pushbuttons for HA automations"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "When ON: privacy-mode, light, and notification switch entities for Bosch cameras (Eyes / 360 / Outdoor Gen2) are not created. Use this when the Bosch Camera Tool is also active to avoid duplicate controls. Default: off.",
               "room_light_groups": "When ON: creates one aggregate `light` entity per SHC room with 2+ dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers), letting you turn all of a room's lights on/off from a single entity — mirroring the room-level control heating already has via Room Climate Control. On/off only, no brightness/colour aggregation. Default: off (no new entities).",
               "automation_rules_as_entities": "When ON: creates a switch (enable/disable) and a button (manually trigger) for every automation rule configured in the Bosch app — Bosch's own local rule engine, entirely separate from Home Assistant's own automations. Default: off (no new entities).",
-              "temperature_drop_entities": "When ON: creates a switch (enable/disable) and a number (drop value) for each room's temperature-drop (anti-frost/window-open) service. Most setups don't use this feature. Default: off (no new entities)."
+              "temperature_drop_entities": "When ON: creates a switch (enable/disable) and a number (drop value) for each room's temperature-drop (anti-frost/window-open) service. Most setups don't use this feature. Default: off (no new entities).",
+              "keypad_ha_bridge": "When ON: for every Shutter/Light Control II device with a physical detached pushbutton, creates a small automation directly on the Bosch Smart Home Controller that pulses a virtual on/off state when a button is pressed. That state already appears as a regular switch entity — use its on/off transitions as a trigger in your own Home Assistant automations. Turning this off removes the automations and states it created. Default: off (no new entities, nothing created on the Controller)."
             }
           },
           "presence": {

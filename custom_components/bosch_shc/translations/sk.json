@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Skryť prepínače kamery Bosch",
               "room_light_groups": "Povoliť skupiny osvetlenia podľa miestností",
               "automation_rules_as_entities": "Zobraziť automatizačné pravidlá Bosch ako entity",
-              "temperature_drop_entities": "Povoliť entity poklesu teploty"
+              "temperature_drop_entities": "Povoliť entity poklesu teploty",
+              "keypad_ha_bridge": "Prepojiť fyzické tlačidlá s automatizáciami HA"
             },
             "data_description": {
               "scenarios_as_buttons": "Keď ZAP: každý scenár Bosch SHC sa zobrazí aj ako tlačidlová entita v Home Assistant (okrem služby trigger_scenario). Užitočné pre dlaždice panela a automatizácie, ktoré priamo spúšťajú scenáre. Predvolené: vyp.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Keď ZAPNUTÉ: prepínače ochrany súkromia, svetla a oznámení pre kamery Bosch (Eyes / 360 / Outdoor Gen2) sa nevytvoria. Použite s Bosch Camera Tool. Predvolené: vypnuté.",
               "room_light_groups": "Keď ZAPNUTÉ: vytvorí sa jedna agregovaná entita `light` pre každú miestnosť SHC s 2 a viacerými stmievateľnými/farebnými svetlami (stmievače LEDVANCE, Hue, Light/Shutter Control II), čo umožňuje zapnúť/vypnúť všetky svetlá v miestnosti z jednej entity — podobne ako už funguje riadenie kúrenia na úrovni miestnosti cez Room Climate Control. Iba zapnutie/vypnutie, bez agregácie jasu alebo farby. Predvolené: vypnuté (žiadne nové entity).",
               "automation_rules_as_entities": "Keď je ZAPNUTÉ: pre každé automatizačné pravidlo nakonfigurované v aplikácii Bosch sa vytvorí prepínač (povoliť/zakázať) a tlačidlo (ručné spustenie) — vlastný lokálny nástroj pre pravidlá Bosch, úplne oddelený od automatizácií Home Assistant. Predvolené: vypnuté (žiadne nové entity).",
-              "temperature_drop_entities": "Keď je ZAPNUTÉ: vytvorí prepínač (povoliť/zakázať) a číslo (hodnota poklesu) pre službu poklesu teploty (ochrana proti mrazu/otvorené okno) každej miestnosti. Väčšina inštalácií túto funkciu nepoužíva. Predvolené: vypnuté (žiadne nové entity)."
+              "temperature_drop_entities": "Keď je ZAPNUTÉ: vytvorí prepínač (povoliť/zakázať) a číslo (hodnota poklesu) pre službu poklesu teploty (ochrana proti mrazu/otvorené okno) každej miestnosti. Väčšina inštalácií túto funkciu nepoužíva. Predvolené: vypnuté (žiadne nové entity).",
+              "keypad_ha_bridge": "Keď je ZAPNUTÉ: pre každé zariadenie Shutter/Light Control II s fyzickým samostatným tlačidlom vytvorí malú automatizáciu priamo na Bosch Smart Home Controller, ktorá pri stlačení tlačidla prepne virtuálny stav zap/vyp. Tento stav sa už zobrazuje ako bežná entita prepínača — použite jeho prechody zap/vyp ako spúšťač vo vlastných automatizáciách Home Assistant. Vypnutím tejto voľby sa odstránia vytvorené automatizácie a stavy. Predvolené: vypnuté (žiadne nové entity, na ovládači sa nič nevytvára)."
             }
           },
           "presence": {

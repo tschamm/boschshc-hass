@@ -2,6 +2,24 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **New opt-in: bridge a physical Shutter/Light Control II pushbutton into
+  a regular HA entity** (#395). When enabled, for every device with a
+  detached pushbutton (Keypad service), the integration creates a small
+  automation directly on the Bosch Smart Home Controller — Bosch's own
+  local rule engine (`automation_rules_as_entities` above exposes the read
+  side of the same engine), entirely separate from Home Assistant's own
+  automations — that pulses a `UserDefinedState` when the button is
+  pressed. That state already appears as a regular `switch` entity (no new
+  HA platform code needed), so its on/off transitions can be used directly
+  as a trigger in your own Home Assistant automations. Uses two
+  previously-undocumented local API endpoints, `POST /automation/rules`
+  and `POST /userdefinedstates`, traced via APK decompile and confirmed
+  live against a real Controller — see
+  `bosch-shc-api-docs/best_practice/undocumented-local-endpoints.md` §10.
+  Fully self-managed: disabling the option removes everything it created;
+  a device becoming excluded cleans up just that device's entries. Default:
+  off (no SHC-side objects created, no new entities). Requires
+  `boschshcpy` 0.6.8+.
 - **Cover: `async_set_cover_position` overriding a position the cover is
   already at left `is_opening`/`is_closing` stuck on an earlier move's
   direction** (#395 follow-up to the fix below). Unlike `async_open_cover`/

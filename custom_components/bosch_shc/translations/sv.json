@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Dölj Bosch-kameraomkopplare",
               "room_light_groups": "Aktivera ljusgrupper per rum",
               "automation_rules_as_entities": "Visa Bosch-automatiseringsregler som entiteter",
-              "temperature_drop_entities": "Aktivera enheter för temperatursänkning"
+              "temperature_drop_entities": "Aktivera enheter för temperatursänkning",
+              "keypad_ha_bridge": "Koppla fysiska tryckknappar till HA-automatiseringar"
             },
             "data_description": {
               "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "När PÅ: sekretess-, ljus- och aviseringsomkopplare för Bosch-kameror (Eyes / 360 / Outdoor Gen2) skapas inte. Använd med Bosch Camera Tool. Standard: av.",
               "room_light_groups": "När PÅ: skapar en aggregerad `light`-entitet per SHC-rum med 2 eller fler dimbara/färgbara lampor (LEDVANCE-, Hue-, Light/Shutter Control II-dimrar), så att du kan slå på/av alla lampor i ett rum från en enda entitet — på samma sätt som värmen redan har rumsstyrning via Room Climate Control. Endast på/av, ingen aggregering av ljusstyrka eller färg. Standard: av (inga nya entiteter).",
               "automation_rules_as_entities": "Vid PÅ: skapar en brytare (aktivera/inaktivera) och en knapp (utlös manuellt) för varje automatiseringsregel som konfigurerats i Bosch-appen — Boschs egen lokala regelmotor, helt separat från Home Assistants egna automatiseringar. Standard: av (inga nya entiteter).",
-              "temperature_drop_entities": "När PÅ: skapar en brytare (aktivera/inaktivera) och ett tal (sänkningsvärde) för varje rums tjänst för temperatursänkning (frostskydd/öppet fönster). De flesta installationer använder inte denna funktion. Standard: av (inga nya enheter)."
+              "temperature_drop_entities": "När PÅ: skapar en brytare (aktivera/inaktivera) och ett tal (sänkningsvärde) för varje rums tjänst för temperatursänkning (frostskydd/öppet fönster). De flesta installationer använder inte denna funktion. Standard: av (inga nya enheter).",
+              "keypad_ha_bridge": "När PÅ: för varje Shutter/Light Control II-enhet med en fysisk fristående tryckknapp skapas en liten automatisering direkt på Bosch Smart Home Controller som växlar ett virtuellt på/av-tillstånd när en knapp trycks in. Det tillståndet visas redan som en vanlig brytarenhet — använd dess på/av-övergångar som utlösare i dina egna Home Assistant-automatiseringar. Om du stänger av detta tas de skapade automatiseringarna och tillstånden bort. Standard: av (inga nya enheter, inget skapas på styrenheten)."
             }
           },
           "presence": {

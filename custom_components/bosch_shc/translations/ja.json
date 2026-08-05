@@ -119,7 +119,8 @@
               "suppress_camera_switches": "Boschカメラのスイッチを非表示にする",
               "room_light_groups": "部屋ごとのライトグループを有効にする",
               "automation_rules_as_entities": "Bosch のオートメーションルールをエンティティとして公開",
-              "temperature_drop_entities": "温度低下エンティティを有効にする"
+              "temperature_drop_entities": "温度低下エンティティを有効にする",
+              "keypad_ha_bridge": "物理押しボタンをHAオートメーションに橋渡し"
             },
             "data_description": {
               "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
@@ -135,7 +136,8 @@
               "suppress_camera_switches": "ONにすると、Boschカメラ（Eyes/360/Outdoor Gen2）のプライバシー、ライト、通知スイッチエンティティが作成されません。Bosch Camera Toolと併用してください。デフォルト：オフ。",
               "room_light_groups": "ONにすると、調光/カラー対応ライト（LEDVANCE、Hue、Light/Shutter Control IIの調光器）が2台以上あるSHCの部屋ごとに、集約された`light`エンティティを1つ作成し、1つのエンティティから部屋の照明をまとめてオン/オフできるようになります。暖房がRoom Climate Controlを通じてすでに持っている部屋単位の制御と同様の仕組みです。オン/オフのみで、明るさや色の集約は行いません。デフォルト：オフ（新しいエンティティは作成されません）。",
               "automation_rules_as_entities": "オンにすると、Bosch アプリで設定された各オートメーションルールに対して、スイッチ（有効/無効）とボタン（手動実行）が作成されます — Home Assistant 自身のオートメーションとは完全に独立した、Bosch 独自のローカルルールエンジンです。デフォルト: オフ（新しいエンティティなし）。",
-              "temperature_drop_entities": "オンにすると、各部屋の温度低下サービス（凍結防止／窓開放）用にスイッチ（有効／無効）と数値（低下値）が作成されます。ほとんどの設置環境ではこの機能は使用されません。デフォルト：オフ（新しいエンティティなし）。"
+              "temperature_drop_entities": "オンにすると、各部屋の温度低下サービス（凍結防止／窓開放）用にスイッチ（有効／無効）と数値（低下値）が作成されます。ほとんどの設置環境ではこの機能は使用されません。デフォルト：オフ（新しいエンティティなし）。",
+              "keypad_ha_bridge": "オンの場合：物理的な独立押しボタンを備えた各Shutter/Light Control IIデバイスに対し、ボタンが押されたときに仮想オン/オフ状態をパルスするオートメーションをBosch Smart Home Controller上に直接作成します。この状態はすでに通常のswitchエンティティとして表示されます — そのオン/オフの遷移を、ご自身のHome Assistantオートメーションのトリガーとして使用してください。この設定をオフにすると、作成されたオートメーションと状態は削除されます。デフォルト：オフ(新しいエンティティは作成されず、コントローラー上にも何も作成されません)。"
             }
           },
           "presence": {

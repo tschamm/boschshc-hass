@@ -119,7 +119,8 @@
               "suppress_camera_switches": "Bosch 카메라 스위치 숨기기",
               "room_light_groups": "방별 조명 그룹 활성화",
               "automation_rules_as_entities": "Bosch 자동화 규칙을 엔티티로 노출",
-              "temperature_drop_entities": "온도 하강 엔터티 활성화"
+              "temperature_drop_entities": "온도 하강 엔터티 활성화",
+              "keypad_ha_bridge": "물리적 푸시버튼을 HA 자동화에 연결"
             },
             "data_description": {
               "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
@@ -135,7 +136,8 @@
               "suppress_camera_switches": "켜짐: Bosch 카메라(Eyes / 360 / Outdoor Gen2)의 개인 정보 보호, 조명 및 알림 스위치 엔티티가 생성되지 않습니다. Bosch Camera Tool과 함께 사용하세요. 기본값: 꺼짐.",
               "room_light_groups": "켜짐: 조광/컬러 조명(LEDVANCE, Hue, Light/Shutter Control II 디머)이 2개 이상 있는 SHC 방마다 집계된 `light` 엔티티를 하나씩 생성하여, 하나의 엔티티로 방 전체 조명을 켜고 끌 수 있습니다 — 난방이 Room Climate Control을 통해 이미 제공하는 방 단위 제어와 동일한 방식입니다. 켜기/끄기만 지원하며 밝기·색상은 집계되지 않습니다. 기본값: 꺼짐(새 엔티티 없음).",
               "automation_rules_as_entities": "켜짐으로 설정하면 Bosch 앱에 구성된 각 자동화 규칙에 대해 스위치(활성화/비활성화)와 버튼(수동 실행)이 생성됩니다 — Home Assistant 자체 자동화와는 완전히 별개인 Bosch 자체 로컬 규칙 엔진입니다. 기본값: 꺼짐(새 엔티티 없음).",
-              "temperature_drop_entities": "켜면 각 방의 온도 하강(서리 방지/창문 열림) 서비스에 대한 스위치(활성화/비활성화)와 숫자(하강 값)가 생성됩니다. 대부분의 설치에서는 이 기능을 사용하지 않습니다. 기본값: 꺼짐(새 엔터티 없음)."
+              "temperature_drop_entities": "켜면 각 방의 온도 하강(서리 방지/창문 열림) 서비스에 대한 스위치(활성화/비활성화)와 숫자(하강 값)가 생성됩니다. 대부분의 설치에서는 이 기능을 사용하지 않습니다. 기본값: 꺼짐(새 엔터티 없음).",
+              "keypad_ha_bridge": "켜짐: 물리적인 분리형 푸시버튼이 있는 각 Shutter/Light Control II 장치에 대해, 버튼을 누르면 가상 켜기/끄기 상태를 펄스로 전달하는 작은 자동화를 Bosch Smart Home Controller에 직접 생성합니다. 이 상태는 이미 일반 switch 엔티티로 표시됩니다 — 이 켜기/끄기 전환을 사용자의 Home Assistant 자동화에서 트리거로 사용하세요. 이 옵션을 끄면 생성된 자동화와 상태가 제거됩니다. 기본값: 꺼짐(새 엔티티 없음, 컨트롤러에 아무것도 생성되지 않음)."
             }
           },
           "presence": {

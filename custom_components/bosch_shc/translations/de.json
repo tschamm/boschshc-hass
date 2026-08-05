@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Bosch-Kamera-Schalter unterdrücken",
               "room_light_groups": "Raum-Lichtgruppen aktivieren",
               "automation_rules_as_entities": "Bosch-Automatisierungsregeln als Entitäten anzeigen",
-              "temperature_drop_entities": "Temperaturabsenkungs-Entitäten aktivieren"
+              "temperature_drop_entities": "Temperaturabsenkungs-Entitäten aktivieren",
+              "keypad_ha_bridge": "Physische Tasten für HA-Automatisierungen bereitstellen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Wenn AN: Datenschutz-, Licht- und Benachrichtigungs-Schalter für Bosch-Kameras (Eyes / 360 / Outdoor Gen2) werden nicht angelegt. Nützlich, wenn das Bosch Camera Tool ebenfalls aktiv ist. Standard: aus.",
               "room_light_groups": "Wenn AN: erstellt für jeden SHC-Raum mit 2 oder mehr dimmbaren/farbigen Lampen (LEDVANCE, Hue, Light/Shutter Control II Dimmer) eine gebündelte `light`-Entität, mit der sich alle Lampen eines Raums über eine einzige Entität ein- und ausschalten lassen – analog zur Raumsteuerung, die die Heizung über die Raumklimasteuerung bereits hat. Nur Ein/Aus, keine Helligkeits-/Farbbündelung. Standard: aus (keine neuen Entitäten).",
               "automation_rules_as_entities": "Bei AN: erstellt für jede in der Bosch-App konfigurierte Automatisierungsregel einen Schalter (aktivieren/deaktivieren) und eine Schaltfläche (manuell auslösen) — Boschs eigene lokale Regel-Engine, komplett getrennt von den Automatisierungen von Home Assistant. Standard: aus (keine neuen Entitäten).",
-              "temperature_drop_entities": "Wenn AN: erstellt einen Schalter (aktivieren/deaktivieren) und eine Zahl (Absenkwert) für den Temperaturabsenkungsdienst (Frostschutz/Fenster offen) jedes Raums. Die meisten Installationen nutzen dieses Feature nicht. Standard: aus (keine neuen Entitäten)."
+              "temperature_drop_entities": "Wenn AN: erstellt einen Schalter (aktivieren/deaktivieren) und eine Zahl (Absenkwert) für den Temperaturabsenkungsdienst (Frostschutz/Fenster offen) jedes Raums. Die meisten Installationen nutzen dieses Feature nicht. Standard: aus (keine neuen Entitäten).",
+              "keypad_ha_bridge": "Wenn AN: erstellt für jedes Rollladen-/Lichtsteuerungs-II-Gerät mit physischer Auf-Putz-Taste eine kleine Automatisierung direkt auf dem Bosch Smart Home Controller, die bei einem Tastendruck einen virtuellen Ein/Aus-Zustand kurz aktiviert. Dieser Zustand erscheint bereits als normale Schalter-Entität — nutze dessen Ein/Aus-Wechsel als Trigger in eigenen Home-Assistant-Automatisierungen. Wird diese Option ausgeschaltet, werden die dafür angelegten Automatisierungen und Zustände wieder entfernt. Standard: aus (keine neuen Entitäten, nichts wird auf dem Controller angelegt)."
             }
           },
           "presence": {

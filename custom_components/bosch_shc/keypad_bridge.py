@@ -1,0 +1,206 @@
+"""#395: bridge a device's physical detached pushbutton into a regular HA entity.
+
+Pushes a small SHC-side automation per button (Bosch's own local rule
+engine, distinct from Home Assistant's automations -- see
+automation_rules_as_entities in switch.py for the read side of that same
+engine) that pulses a UserDefinedState on press. The UserDefinedState is
+already unconditionally exposed as a switch entity (switch.py), so its
+on/off transitions are directly usable as an HA automation trigger with no
+new HA platform code.
+
+Endpoints undocumented in the official OpenAPI spec; traced via APK
+decompile and confirmed live against a real Controller. See
+bosch-shc-api-docs/best_practice/undocumented-local-endpoints.md #10 for
+the trigger/action JSON shapes this builds.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+from boschshcpy.exceptions import SHCException
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+
+from .const import LOGGER
+from .entity import async_remove_stale_entity, device_excluded
+
+DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
+
+# DETACHED_LONG_PRESS two-button convention (cover.py, #385/#395): keycode 1/2.
+_KEY_CODES = (1, 2)
+_BUTTON_EVENTS = ("PRESS_SHORT", "PRESS_LONG")
+# Auto-reset so the switch's "turned on" transition is the trigger, not a
+# sticky on state (mirrors real Bosch-app automations' delayed reset action).
+_RESET_DELAY_SECONDS = 2
+# UserDefinedState.name is capped at 30 chars by the Controller itself
+# (live-confirmed; a longer name gets a bare 400). Automation.name has no such limit.
+_UDS_NAME_MAX_LEN = 30
+_UDS_NAME_SUFFIX = " Btn{}"  # shortest unambiguous per-button suffix
+
+
+def _uds_name(device_name: str, key_code: int) -> str:
+    suffix = _UDS_NAME_SUFFIX.format(key_code)
+    return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
+
+
+def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
+    """Devices with a Keypad service.
+
+    From the buckets already used elsewhere for keypad-derived direction
+    detection / button events (cover.py, event.py) -- not excluded by the
+    device/room filter.
+    """
+    devices: list[Any] = []
+    for bucket in (
+        "shutter_controls",
+        "micromodule_shutter_controls",
+        "micromodule_blinds",
+        "micromodule_light_controls",
+    ):
+        for device in getattr(session.device_helper, bucket, []):
+            if device_excluded(device, options):
+                continue
+            if getattr(device, "has_keypad", False):
+                devices.append(device)
+    return devices
+
+
+def _build_automation(
+    name: str, device_id: str, key_code: int, userdefinedstate_id: str
+) -> dict[str, Any]:
+    triggers = [
+        {
+            "type": "KeypadButtonPressTrigger",
+            "configuration": json.dumps(
+                {
+                    "deviceId": device_id,
+                    "keyName": "UNDEFINED_BUTTON",
+                    "keyCode": key_code,
+                    "buttonEvent": button_event,
+                }
+            ),
+        }
+        for button_event in _BUTTON_EVENTS
+    ]
+    actions = [
+        {
+            "type": "UserDefinedStateAction",
+            "delayInSeconds": 0,
+            "configuration": json.dumps(
+                {"stateId": userdefinedstate_id, "state": "ACTIVE"}
+            ),
+        },
+        {
+            "type": "UserDefinedStateAction",
+            "delayInSeconds": _RESET_DELAY_SECONDS,
+            "configuration": json.dumps(
+                {"stateId": userdefinedstate_id, "state": "INACTIVE"}
+            ),
+        },
+    ]
+    return {"name": name, "triggers": triggers, "actions": actions}
+
+
+async def async_sync_keypad_bridge(
+    hass: HomeAssistant, entry: ConfigEntry, enabled: bool
+) -> None:
+    """Create or tear down the keypad-bridge SHC objects to match `enabled`.
+
+    Idempotent: only creates what's missing for currently-eligible devices,
+    and removes entries for devices no longer eligible (excluded, or the
+    feature turned off) using the ids persisted in `entry.data`. Best-effort
+    on delete -- a manually-removed SHC object shouldn't block cleanup of
+    the rest of the map.
+    """
+    session = entry.runtime_data.session
+    bridge_map: dict[str, dict[str, str]] = dict(
+        entry.data.get(DATA_KEYPAD_BRIDGE_MAP, {})
+    )
+
+    wanted_keys: set[str] = set()
+    if enabled:
+        for device in _keypad_capable_devices(session, entry.options):
+            for key_code in _KEY_CODES:
+                wanted_keys.add(f"{device.id}_{key_code}")
+
+    # Remove entries no longer wanted (disabled, or device excluded/gone).
+    mac = session.information.macAddress if bridge_map else None
+    for key in list(bridge_map):
+        if key in wanted_keys:
+            continue
+        entry_ids = bridge_map.pop(key)
+        try:
+            await session.async_delete_automation_rule(entry_ids["automation_id"])
+        except SHCException as err:
+            LOGGER.debug(
+                "Keypad bridge cleanup: failed to delete automation for %s: %s",
+                key,
+                err,
+            )
+        uds_id = entry_ids["userdefinedstate_id"]
+        try:
+            await session.async_delete_userdefinedstate(uds_id)
+        except SHCException as err:
+            LOGGER.debug(
+                "Keypad bridge cleanup: failed to delete state for %s: %s", key, err
+            )
+        # The now-deleted UserDefinedState's switch entity (switch.py) would
+        # otherwise linger as a permanently "unavailable" registry ghost.
+        if mac is not None:
+            await async_remove_stale_entity(hass, Platform.SWITCH, f"{mac}_{uds_id}")
+
+    # Create entries that are missing.
+    if enabled:
+        for device in _keypad_capable_devices(session, entry.options):
+            for key_code in _KEY_CODES:
+                key = f"{device.id}_{key_code}"
+                if key in bridge_map:
+                    continue
+                label = f"{device.name} Button {key_code}"
+                try:
+                    userdefinedstate = await session.async_create_userdefinedstate(
+                        _uds_name(device.name, key_code)
+                    )
+                except SHCException as err:
+                    LOGGER.warning(
+                        "Keypad bridge: failed to create state for %s: %s", label, err
+                    )
+                    continue
+                try:
+                    automation_spec = _build_automation(
+                        f"[HA] {label}", device.id, key_code, userdefinedstate.id
+                    )
+                    automation = await session.async_create_automation_rule(
+                        automation_spec["name"],
+                        triggers=automation_spec["triggers"],
+                        actions=automation_spec["actions"],
+                    )
+                except SHCException as err:
+                    LOGGER.warning(
+                        "Keypad bridge: failed to create automation for %s: %s",
+                        label,
+                        err,
+                    )
+                    # Roll back the just-created state so a partial failure
+                    # doesn't leak an orphaned, untracked UserDefinedState.
+                    try:
+                        await session.async_delete_userdefinedstate(userdefinedstate.id)
+                    except SHCException as cleanup_err:
+                        LOGGER.debug(
+                            "Keypad bridge: rollback delete failed for %s: %s",
+                            label,
+                            cleanup_err,
+                        )
+                    continue
+                bridge_map[key] = {
+                    "userdefinedstate_id": userdefinedstate.id,
+                    "automation_id": automation.id,
+                }
+
+    if bridge_map != entry.data.get(DATA_KEYPAD_BRIDGE_MAP, {}):
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, DATA_KEYPAD_BRIDGE_MAP: bridge_map}
+        )

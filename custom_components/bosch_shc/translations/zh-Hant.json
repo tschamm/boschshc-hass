@@ -105,7 +105,8 @@
               "suppress_camera_switches": "隱藏 Bosch 攝影機開關",
               "room_light_groups": "啟用依房間分組的燈光",
               "automation_rules_as_entities": "將 Bosch 自動化規則公開為實體",
-              "temperature_drop_entities": "啟用降溫實體"
+              "temperature_drop_entities": "啟用降溫實體",
+              "keypad_ha_bridge": "將實體按鍵橋接至 HA 自動化"
             },
             "data_description": {
               "scenarios_as_buttons": "開啟時：每個 Bosch SHC 情境也會在 Home Assistant 中顯示為按鈕實體（除了 trigger_scenario 服務之外）。適用於直接觸發情境的儀表板圖塊和自動化。預設：關閉。",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "開啟後：Bosch 攝影機（Eyes / 360 / Outdoor Gen2）的隱私模式、燈光和通知開關實體不會被建立。與 Bosch Camera Tool一起使用。預設：關閉。",
               "room_light_groups": "開啟後：為每個擁有 2 個以上可調光/彩色燈具（LEDVANCE、Hue、Light/Shutter Control II 調光器）的 SHC 房間建立一個彙總 `light` 實體，可透過單一實體一次開關整個房間的所有燈具——效果類似 Room Climate Control 已提供的房間層級暖氣控制。僅支援開關，不彙總亮度或色彩。預設：關閉（不會建立新實體）。",
               "automation_rules_as_entities": "開啟後：會為 Bosch 應用程式中設定的每條自動化規則建立一個開關（啟用/停用）和一個按鈕（手動觸發）——這是 Bosch 自有的本機規則引擎，與 Home Assistant 自身的自動化完全獨立。預設：關閉（不新增實體）。",
-              "temperature_drop_entities": "開啟後：為每個房間的降溫（防凍/開窗）服務建立一個開關（啟用/停用）與一個數值（降溫值）。大多數安裝不會使用此功能。預設：關閉（不建立新實體）。"
+              "temperature_drop_entities": "開啟後：為每個房間的降溫（防凍/開窗）服務建立一個開關（啟用/停用）與一個數值（降溫值）。大多數安裝不會使用此功能。預設：關閉（不建立新實體）。",
+              "keypad_ha_bridge": "開啟後：為每個具備實體獨立按鍵的 Shutter/Light Control II 裝置，直接在 Bosch Smart Home Controller 上建立一個小型自動化，於按下按鍵時切換虛擬開/關狀態。該狀態已以一般開關實體呈現——可在您自己的 Home Assistant 自動化中將其開/關轉換作為觸發條件。關閉此選項會移除已建立的自動化與狀態。預設：關閉（不建立新實體，控制器上不會建立任何內容）。"
             }
           },
           "presence": {

@@ -119,7 +119,8 @@
               "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken",
               "room_light_groups": "Lichtgroepen per kamer inschakelen",
               "automation_rules_as_entities": "Bosch-automatiseringsregels als entiteiten weergeven",
-              "temperature_drop_entities": "Temperatuurdaling-entiteiten inschakelen"
+              "temperature_drop_entities": "Temperatuurdaling-entiteiten inschakelen",
+              "keypad_ha_bridge": "Fysieke drukknoppen koppelen aan HA-automatiseringen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
@@ -135,7 +136,8 @@
               "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool. Standaard: uit.",
               "room_light_groups": "Wanneer AAN: er wordt per SHC-kamer met 2 of meer dimbare/kleurenlampen (LEDVANCE, Hue, Light/Shutter Control II-dimmers) één gecombineerde `light`-entiteit aangemaakt, waarmee u alle lampen van een kamer met één entiteit aan/uit kunt zetten — vergelijkbaar met de kamergebonden regeling die verwarming al heeft via Kamerklimaat regeling. Alleen aan/uit, geen samenvoeging van helderheid/kleur. Standaard: uit (geen nieuwe entiteiten).",
               "automation_rules_as_entities": "Indien AAN: er wordt een schakelaar (in-/uitschakelen) en een knop (handmatig activeren) aangemaakt voor elke automatiseringsregel die in de Bosch-app is geconfigureerd — Bosch's eigen lokale regel-engine, volledig los van de automatiseringen van Home Assistant zelf. Standaard: uit (geen nieuwe entiteiten).",
-              "temperature_drop_entities": "Indien AAN: creëert een schakelaar (in-/uitschakelen) en een getal (dalingswaarde) voor de temperatuurdaling-service (vorstbescherming/open raam) van elke kamer. De meeste installaties gebruiken deze functie niet. Standaard: uit (geen nieuwe entiteiten)."
+              "temperature_drop_entities": "Indien AAN: creëert een schakelaar (in-/uitschakelen) en een getal (dalingswaarde) voor de temperatuurdaling-service (vorstbescherming/open raam) van elke kamer. De meeste installaties gebruiken deze functie niet. Standaard: uit (geen nieuwe entiteiten).",
+              "keypad_ha_bridge": "Indien AAN: voor elk Shutter/Light Control II-apparaat met een fysieke losse drukknop wordt een kleine automatisering rechtstreeks op de Bosch Smart Home Controller aangemaakt, die een virtuele aan/uit-status pulseert wanneer een knop wordt ingedrukt. Die status verschijnt al als een gewone schakelaarentiteit — gebruik de aan/uit-overgangen ervan als trigger in je eigen Home Assistant-automatiseringen. Als je dit uitschakelt, worden de automatiseringen en statussen die het heeft aangemaakt verwijderd. Standaard: uit (geen nieuwe entiteiten, niets aangemaakt op de Controller)."
             }
           },
           "presence": {
