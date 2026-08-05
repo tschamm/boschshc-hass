@@ -2,6 +2,14 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Home Assistant floor bumped to 2026.8** (`hacs.json` + `requirements_test.txt`)
+  — proactive, following HA 2026.8.0's release. Verified clean (full test
+  suite + mypy + pylint) against the real 2026.8.0 package; no code changes
+  needed, none of its breaking changes/deprecations (legacy Service class
+  removal, vacuum battery properties, `CONCENTRATION_*` constants — already
+  migrated to `UnitOfRatio`) touch anything this integration uses. **Breaking
+  for users still on HA < 2026.8**: HACS will block installs/updates until
+  they upgrade Home Assistant. Python floor unchanged (still >=3.14.2).
 - **Keypad bridge (#395): short and long press now get separate entities.**
   Reported after the initial release: combining `PRESS_SHORT`/`PRESS_LONG`
   into one automation with two triggers meant both press types pulsed the
