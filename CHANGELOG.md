@@ -2,6 +2,9 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Bumps `boschshcpy` to 0.6.8** (promoted from the 0.6.8b1 beta pinned
+  above to the now-stable release — no code change, same live-tested
+  Automation-rule/UserDefinedState create+delete layer).
 - **New opt-in: bridge a physical Shutter/Light Control II pushbutton into
   a regular HA entity** (#395). When enabled, for every device with a
   detached pushbutton (Keypad service), the integration creates a small
