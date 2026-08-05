@@ -2,6 +2,16 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Keypad bridge (#395): short and long press now get separate entities.**
+  Reported after the initial release: combining `PRESS_SHORT`/`PRESS_LONG`
+  into one automation with two triggers meant both press types pulsed the
+  *same* `UserDefinedState`, making them indistinguishable to a downstream
+  HA automation. Each button now gets two independent bridge entities
+  (`... Btn1S`/`... Btn1L`, etc.) — four per keypad-capable device instead
+  of two, each with its own single-trigger automation. Live-tested: a long
+  press now only pulses its own switch, confirmed not to affect the short-
+  press one. `UserDefinedState` names still respect the Controller's
+  30-character limit.
 - **Bumps `boschshcpy` to 0.6.8** (promoted from the 0.6.8b1 beta pinned
   above to the now-stable release — no code change, same live-tested
   Automation-rule/UserDefinedState create+delete layer).

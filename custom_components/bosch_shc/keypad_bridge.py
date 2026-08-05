@@ -31,18 +31,21 @@ DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
 
 # DETACHED_LONG_PRESS two-button convention (cover.py, #385/#395): keycode 1/2.
 _KEY_CODES = (1, 2)
+# One bridge entity per (key_code, event) -- short/long must stay
+# distinguishable (#395 follow-up: combining them fired the same switch).
 _BUTTON_EVENTS = ("PRESS_SHORT", "PRESS_LONG")
+_BUTTON_EVENT_SUFFIX = {"PRESS_SHORT": "S", "PRESS_LONG": "L"}
 # Auto-reset so the switch's "turned on" transition is the trigger, not a
 # sticky on state (mirrors real Bosch-app automations' delayed reset action).
 _RESET_DELAY_SECONDS = 2
 # UserDefinedState.name is capped at 30 chars by the Controller itself
 # (live-confirmed; a longer name gets a bare 400). Automation.name has no such limit.
 _UDS_NAME_MAX_LEN = 30
-_UDS_NAME_SUFFIX = " Btn{}"  # shortest unambiguous per-button suffix
+_UDS_NAME_SUFFIX = " Btn{}{}"  # shortest unambiguous per-button-per-event suffix
 
 
-def _uds_name(device_name: str, key_code: int) -> str:
-    suffix = _UDS_NAME_SUFFIX.format(key_code)
+def _uds_name(device_name: str, key_code: int, button_event: str) -> str:
+    suffix = _UDS_NAME_SUFFIX.format(key_code, _BUTTON_EVENT_SUFFIX[button_event])
     return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
 
 
@@ -69,7 +72,11 @@ def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
 
 
 def _build_automation(
-    name: str, device_id: str, key_code: int, userdefinedstate_id: str
+    name: str,
+    device_id: str,
+    key_code: int,
+    button_event: str,
+    userdefinedstate_id: str,
 ) -> dict[str, Any]:
     triggers = [
         {
@@ -83,7 +90,6 @@ def _build_automation(
                 }
             ),
         }
-        for button_event in _BUTTON_EVENTS
     ]
     actions = [
         {
@@ -124,7 +130,8 @@ async def async_sync_keypad_bridge(
     if enabled:
         for device in _keypad_capable_devices(session, entry.options):
             for key_code in _KEY_CODES:
-                wanted_keys.add(f"{device.id}_{key_code}")
+                for button_event in _BUTTON_EVENTS:
+                    wanted_keys.add(f"{device.id}_{key_code}_{button_event}")
 
     # Remove entries no longer wanted (disabled, or device excluded/gone).
     mac = session.information.macAddress if bridge_map else None
@@ -156,49 +163,58 @@ async def async_sync_keypad_bridge(
     if enabled:
         for device in _keypad_capable_devices(session, entry.options):
             for key_code in _KEY_CODES:
-                key = f"{device.id}_{key_code}"
-                if key in bridge_map:
-                    continue
-                label = f"{device.name} Button {key_code}"
-                try:
-                    userdefinedstate = await session.async_create_userdefinedstate(
-                        _uds_name(device.name, key_code)
-                    )
-                except SHCException as err:
-                    LOGGER.warning(
-                        "Keypad bridge: failed to create state for %s: %s", label, err
-                    )
-                    continue
-                try:
-                    automation_spec = _build_automation(
-                        f"[HA] {label}", device.id, key_code, userdefinedstate.id
-                    )
-                    automation = await session.async_create_automation_rule(
-                        automation_spec["name"],
-                        triggers=automation_spec["triggers"],
-                        actions=automation_spec["actions"],
-                    )
-                except SHCException as err:
-                    LOGGER.warning(
-                        "Keypad bridge: failed to create automation for %s: %s",
-                        label,
-                        err,
-                    )
-                    # Roll back the just-created state so a partial failure
-                    # doesn't leak an orphaned, untracked UserDefinedState.
+                for button_event in _BUTTON_EVENTS:
+                    key = f"{device.id}_{key_code}_{button_event}"
+                    if key in bridge_map:
+                        continue
+                    label = f"{device.name} Button {key_code} {button_event}"
                     try:
-                        await session.async_delete_userdefinedstate(userdefinedstate.id)
-                    except SHCException as cleanup_err:
-                        LOGGER.debug(
-                            "Keypad bridge: rollback delete failed for %s: %s",
-                            label,
-                            cleanup_err,
+                        userdefinedstate = await session.async_create_userdefinedstate(
+                            _uds_name(device.name, key_code, button_event)
                         )
-                    continue
-                bridge_map[key] = {
-                    "userdefinedstate_id": userdefinedstate.id,
-                    "automation_id": automation.id,
-                }
+                    except SHCException as err:
+                        LOGGER.warning(
+                            "Keypad bridge: failed to create state for %s: %s",
+                            label,
+                            err,
+                        )
+                        continue
+                    try:
+                        automation_spec = _build_automation(
+                            f"[HA] {label}",
+                            device.id,
+                            key_code,
+                            button_event,
+                            userdefinedstate.id,
+                        )
+                        automation = await session.async_create_automation_rule(
+                            automation_spec["name"],
+                            triggers=automation_spec["triggers"],
+                            actions=automation_spec["actions"],
+                        )
+                    except SHCException as err:
+                        LOGGER.warning(
+                            "Keypad bridge: failed to create automation for %s: %s",
+                            label,
+                            err,
+                        )
+                        # Roll back the just-created state so a partial
+                        # failure doesn't leak an orphaned, untracked state.
+                        try:
+                            await session.async_delete_userdefinedstate(
+                                userdefinedstate.id
+                            )
+                        except SHCException as cleanup_err:
+                            LOGGER.debug(
+                                "Keypad bridge: rollback delete failed for %s: %s",
+                                label,
+                                cleanup_err,
+                            )
+                        continue
+                    bridge_map[key] = {
+                        "userdefinedstate_id": userdefinedstate.id,
+                        "automation_id": automation.id,
+                    }
 
     if bridge_map != entry.data.get(DATA_KEYPAD_BRIDGE_MAP, {}):
         hass.config_entries.async_update_entry(
