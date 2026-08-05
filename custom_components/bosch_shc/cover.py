@@ -357,6 +357,9 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
         self._micromodule_keypad_switch_off()
+        # Live level, not current_cover_position (#395: that echoes a
+        # still-in-flight prior command's own target while _app_command is set).
+        self._last_position = round(float(self._device.level) * 100.0)
         try:
             await self._device.async_set_level(1.0)
         except SHCException as err:
@@ -374,6 +377,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
         self._micromodule_keypad_switch_off()
+        self._last_position = round(float(self._device.level) * 100.0)
         try:
             await self._device.async_set_level(0.0)
         except SHCException as err:
@@ -392,7 +396,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         """Move the cover to a specific position."""
         if self._device.device_model == "MICROMODULE_SHUTTER":
             self._micromodule_keypad_switch_off()
-            self._last_position = self.current_cover_position
+        self._last_position = round(float(self._device.level) * 100.0)
         position = kwargs[ATTR_POSITION]
         try:
             await self._device.async_set_level(position / 100.0)
@@ -440,6 +444,8 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover (lift) via ShutterControl.level."""
+        # See ShutterControlCover.async_open_cover (#395).
+        self._last_position = round(float(self._device.level) * 100.0)
         try:
             await self._device.async_set_level(1.0)
         except SHCException as err:
@@ -456,6 +462,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover (lift) via ShutterControl.level."""
+        self._last_position = round(float(self._device.level) * 100.0)
         try:
             await self._device.async_set_level(0.0)
         except SHCException as err:
@@ -472,6 +479,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the cover (lift) to a specific position via ShutterControl.level."""
+        self._last_position = round(float(self._device.level) * 100.0)
         position = kwargs[ATTR_POSITION]
         try:
             await self._device.async_set_level(position / 100.0)

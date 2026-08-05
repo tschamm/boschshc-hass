@@ -2,6 +2,20 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Cover: overriding an in-progress move with the opposite direction left
+  `is_opening`/`is_closing` stuck on the first command's direction** (#395
+  follow-up). `async_open_cover`/`async_close_cover`/`async_set_cover_position`
+  set the direction flags optimistically, but only `async_set_cover_position`
+  (and only for `MICROMODULE_SHUTTER`) refreshed `_last_position` — and even
+  then via `current_cover_position`, which echoes the *previous* command's own
+  still-in-flight target while `_app_command` is set. The next long-poll
+  `MOVING` update's level-comparison fallback then recomputed the OLD
+  direction from that stale baseline, clobbering the flags just set. Fixed by
+  snapshotting `_last_position` from the live device level at the start of
+  all three write methods, on both `ShutterControlCover` (BBL +
+  `MICROMODULE_SHUTTER`) and `BlindsControlCover` (which had no
+  `_last_position` refresh at all). New regression test simulating a
+  close-overriding-an-in-progress-open sequence end to end.
 - **Bumps `boschshcpy` to 0.6.7** — pure diagnostics addition, no behavior
   change: outgoing PUT/POST requests and their responses (e.g. the Shutter
   Control II recalibrate button's `resetCalibrationAndOpen`) are now

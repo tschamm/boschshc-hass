@@ -658,6 +658,41 @@ class TestMicromoduleShutterMovingElseBranch:
         assert cover._attr_is_opening is False
 
 
+class TestMicromoduleShutterOverrideDirection:
+    """#395: overriding an in-progress HA-issued move with the opposite
+    direction must not leave is_opening/is_closing stuck on the first
+    command's direction once the next MOVING update arrives.
+    """
+
+    def test_close_overrides_in_progress_open(self):
+        cover = _make_cover(
+            device_model="MICROMODULE_SHUTTER",
+            level=0.3,  # mid-move, opening from an earlier command
+            operation_state=MOVING,
+            eventtype=SWITCH_OFF,  # no fresh keypad press — the else-branch
+            keycode=0,
+            keypad_event_pending=False,
+        )
+        # Simulate the state left behind by the first (opening) command.
+        cover._last_position = 0
+        cover._target_position = 100
+        cover._app_command = True
+        cover._attr_is_opening = True
+        cover._attr_is_closing = False
+
+        asyncio.run(cover.async_close_cover())
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+
+        # The next long-poll MOVING update (still mid-move at the same live
+        # level) must not revert the flags back to "opening" via the stale
+        # _last_position=0 baseline from the overridden first command.
+        cover._device.level = 0.28
+        cover._update_attr()
+        assert cover._attr_is_closing is True
+        assert cover._attr_is_opening is False
+
+
 # ---------------------------------------------------------------------------
 # MOVING MICROMODULE_SHUTTER keypad keycode 1/2 via PRESS_SHORT (PUSHBUTTON
 # switchType, #385) — mirrors the SWITCH_ON (toggle/rocker switchType) tests
@@ -1961,17 +1996,20 @@ class TestSetCoverPosition:
 
 class TestSetCoverPositionBBLBranch:
     """async_set_cover_position — non-MICROMODULE_SHUTTER (BBL): no
-    keypad_switch_off call, no _last_position save (covers the else-path of
-    the device_model check).
+    keypad_switch_off call, but _last_position IS still refreshed from the
+    live level (covers the else-path of the device_model check, #395: BBL
+    uses the same target-vs-_last_position MOVING fallback as MICROMODULE_
+    SHUTTER, so it needs the same override-safe baseline refresh).
     """
 
-    def test_bbl_set_cover_position_does_not_save_last_position(self):
-        """BBL async_set_cover_position skips the MICROMODULE_SHUTTER last-position block."""
+    def test_bbl_set_cover_position_refreshes_last_position_from_live_level(self):
+        """BBL async_set_cover_position still refreshes _last_position (#395)."""
         cover = _make_cover(device_model="BBL", level=0.5, operation_state=STOPPED)
-        cover._last_position = 99  # should stay untouched
+        cover._last_position = 99  # stale — must be refreshed from live level
         asyncio.run(cover.async_set_cover_position(**{ATTR_POSITION: 70}))
-        # BBL path does NOT call _micromodule_keypad_switch_off or save last_position
-        assert cover._last_position == 99
+        # BBL path does NOT call _micromodule_keypad_switch_off, but DOES
+        # refresh _last_position from the live level (0.5 -> 50).
+        assert cover._last_position == 50
         assert cover._target_position == 70
         cover._device.async_set_level.assert_awaited_once_with(pytest.approx(0.70))
         assert cover._skip_update is True
