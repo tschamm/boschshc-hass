@@ -2,6 +2,12 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Bumps `boschshcpy` to 0.6.7** — pure diagnostics addition, no behavior
+  change: outgoing PUT/POST requests and their responses (e.g. the Shutter
+  Control II recalibrate button's `resetCalibrationAndOpen`) are now
+  visible in the debug log when `boschshcpy: debug` is enabled. Previously
+  only the long-poll read stream showed up at debug level, leaving no
+  trace of what the SHC actually returned for a write (#396 investigation).
 - **Shutter Control II: physical long-press buttons (`outputMode:
   DETACHED_LONG_PRESS`) now report movement direction** (#385 follow-up).
   Direction detection previously only recognized `SWITCH_ON`
