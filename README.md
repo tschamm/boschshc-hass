@@ -206,6 +206,7 @@ Options marked with ★ are shown only when the relevant devices are connected t
 | Enable per-room light groups | off | One aggregate `light` entity per SHC room with 2+ dimmable/color lights, to turn a whole room's lights on/off from a single entity — on/off only |
 | Automation rules as entities | off | One `switch` (enable/disable) + one `button` (trigger now) per Bosch-app-native automation rule you've built in the Bosch Smart Home app. No-op if the SHC reports zero rules |
 | Temperature-drop entities ★ | off | Per-room `switch` (enable/disable) + `number` (drop amount) for the room-climate temperature-drop (anti-frost/window-open) service — off by default since it needs its own poll (not delivered by the long-poll stream) |
+| Bridge physical pushbuttons for HA automations ★ | off | For every Shutter/Light Control II device with a physical detached pushbutton, creates a small automation directly on the SHC (Bosch's own local rule engine) that pulses a virtual `switch` entity per button *and* press type (short/long) — e.g. `... Btn1S`, `... Btn1L`. Use that switch's on/off transition as a trigger in your own Home Assistant automations. Turning this off removes everything it created on the SHC and the corresponding entities |
 
 #### Presence & silent mode
 
