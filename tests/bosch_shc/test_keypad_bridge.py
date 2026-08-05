@@ -12,6 +12,7 @@ from boschshcpy.exceptions import SHCException
 
 from custom_components.bosch_shc.keypad_bridge import (
     DATA_KEYPAD_BRIDGE_MAP,
+    _SCHEMA_VERSION,
     _build_automation,
     _uds_name,
     async_sync_keypad_bridge,
@@ -56,7 +57,6 @@ def _make_session(devices):
         shutter_controls=devices,
         micromodule_shutter_controls=[],
         micromodule_blinds=[],
-        micromodule_light_controls=[],
     )
     session.information = SimpleNamespace(macAddress="AA:BB:CC:DD:EE:FF")
     session.async_create_userdefinedstate = AsyncMock()
@@ -72,10 +72,10 @@ def _run(coro):
 
 # All 4 keys created for a single keypad-capable device.
 _D1_ALL_KEYS = (
-    "d1_1_PRESS_SHORT",
-    "d1_1_PRESS_LONG",
-    "d1_2_PRESS_SHORT",
-    "d1_2_PRESS_LONG",
+    f"d1_1_PRESS_SHORT_{_SCHEMA_VERSION}",
+    f"d1_1_PRESS_LONG_{_SCHEMA_VERSION}",
+    f"d1_2_PRESS_SHORT_{_SCHEMA_VERSION}",
+    f"d1_2_PRESS_LONG_{_SCHEMA_VERSION}",
 )
 
 
@@ -95,7 +95,7 @@ class TestDisabledNoOp:
         entry = _make_entry(
             data={
                 DATA_KEYPAD_BRIDGE_MAP: {
-                    "d1_1_PRESS_SHORT": {
+                    f"d1_1_PRESS_SHORT_{_SCHEMA_VERSION}": {
                         "userdefinedstate_id": "u1",
                         "automation_id": "a1",
                     }
@@ -121,7 +121,7 @@ class TestDisabledNoOp:
         entry = _make_entry(
             data={
                 DATA_KEYPAD_BRIDGE_MAP: {
-                    "d1_1_PRESS_SHORT": {
+                    f"d1_1_PRESS_SHORT_{_SCHEMA_VERSION}": {
                         "userdefinedstate_id": "u1",
                         "automation_id": "a1",
                     }
@@ -160,10 +160,10 @@ class TestEnabledCreatesForEligibleDevices:
         sent_data = hass.config_entries.async_update_entry.call_args.kwargs["data"]
         bridge_map = sent_data[DATA_KEYPAD_BRIDGE_MAP]
         for key in (
-            "hdm:ZigBee:abc_1_PRESS_SHORT",
-            "hdm:ZigBee:abc_1_PRESS_LONG",
-            "hdm:ZigBee:abc_2_PRESS_SHORT",
-            "hdm:ZigBee:abc_2_PRESS_LONG",
+            f"hdm:ZigBee:abc_1_PRESS_SHORT_{_SCHEMA_VERSION}",
+            f"hdm:ZigBee:abc_1_PRESS_LONG_{_SCHEMA_VERSION}",
+            f"hdm:ZigBee:abc_2_PRESS_SHORT_{_SCHEMA_VERSION}",
+            f"hdm:ZigBee:abc_2_PRESS_LONG_{_SCHEMA_VERSION}",
         ):
             assert key in bridge_map
 
@@ -283,9 +283,13 @@ class TestAutomationCreateFailureRollsBackState:
 
 class TestAutomationBodyShape:
     def test_trigger_and_action_configuration_shape(self):
-        """The built automation must match the live-confirmed KeypadButtonPressTrigger
-        / UserDefinedStateAction envelope (bosch-shc-api-docs #10), with exactly
-        one trigger — short/long press get separate automations (#395 follow-up)."""
+        """The built automation must match the live-confirmed
+        KeypadMicromoduleShadingTrigger / UserDefinedStateAction envelope
+        (bosch-shc-api-docs #10), with exactly one trigger — short/long press
+        get separate automations (#395 follow-up). The generic
+        KeypadButtonPressTrigger the feature originally shipped with was
+        rejected by the Bosch app as an invalid trigger for shading devices
+        (#385 follow-up)."""
         spec = _build_automation(
             "[HA] Test Button 1", "hdm:ZigBee:abc", 1, "PRESS_SHORT", "uds-1"
         )
@@ -293,11 +297,12 @@ class TestAutomationBodyShape:
         assert spec["name"] == "[HA] Test Button 1"
         assert len(spec["triggers"]) == 1
         trigger = spec["triggers"][0]
-        assert trigger["type"] == "KeypadButtonPressTrigger"
+        assert trigger["type"] == "KeypadMicromoduleShadingTrigger"
         config = json.loads(trigger["configuration"])
         assert config["deviceId"] == "hdm:ZigBee:abc"
-        assert config["keyCode"] == 1
+        assert config["buttonId"] == 1
         assert config["buttonEvent"] == "PRESS_SHORT"
+        assert "keyName" not in config
 
         assert len(spec["actions"]) == 2
         active_action = next(
@@ -360,9 +365,9 @@ class TestFailureHandling:
         for key in _D1_ALL_KEYS:
             assert key not in bridge_map
         for key in (
-            "d2_1_PRESS_SHORT",
-            "d2_1_PRESS_LONG",
-            "d2_2_PRESS_SHORT",
-            "d2_2_PRESS_LONG",
+            f"d2_1_PRESS_SHORT_{_SCHEMA_VERSION}",
+            f"d2_1_PRESS_LONG_{_SCHEMA_VERSION}",
+            f"d2_2_PRESS_SHORT_{_SCHEMA_VERSION}",
+            f"d2_2_PRESS_LONG_{_SCHEMA_VERSION}",
         ):
             assert key in bridge_map

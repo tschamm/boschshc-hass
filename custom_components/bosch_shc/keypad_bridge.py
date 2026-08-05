@@ -29,6 +29,10 @@ from .entity import async_remove_stale_entity, device_excluded
 
 DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
 
+# Bumped once (#395 follow-up: wrong trigger type shipped first) to force
+# existing bridge entries to be recreated rather than left stale.
+_SCHEMA_VERSION = "v2"
+
 # DETACHED_LONG_PRESS two-button convention (cover.py, #385/#395): keycode 1/2.
 _KEY_CODES = (1, 2)
 # One bridge entity per (key_code, event) -- short/long must stay
@@ -50,18 +54,20 @@ def _uds_name(device_name: str, key_code: int, button_event: str) -> str:
 
 
 def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
-    """Devices with a Keypad service.
+    """Shading devices with a Keypad service.
 
-    From the buckets already used elsewhere for keypad-derived direction
-    detection / button events (cover.py, event.py) -- not excluded by the
-    device/room filter.
+    Only the shutter/blinds buckets -- confirmed via a real automation on a
+    real device that this device class needs KeypadMicromoduleShadingTrigger,
+    not the generic KeypadButtonPressTrigger. Light Control II is left out
+    for now: it likely needs its own KeypadMicromoduleLightTrigger (a real,
+    distinct type -- confirmed to exist), but its field shape is unverified,
+    and guessing it risks repeating this exact bug for that device class too.
     """
     devices: list[Any] = []
     for bucket in (
         "shutter_controls",
         "micromodule_shutter_controls",
         "micromodule_blinds",
-        "micromodule_light_controls",
     ):
         for device in getattr(session.device_helper, bucket, []):
             if device_excluded(device, options):
@@ -80,12 +86,11 @@ def _build_automation(
 ) -> dict[str, Any]:
     triggers = [
         {
-            "type": "KeypadButtonPressTrigger",
+            "type": "KeypadMicromoduleShadingTrigger",
             "configuration": json.dumps(
                 {
                     "deviceId": device_id,
-                    "keyName": "UNDEFINED_BUTTON",
-                    "keyCode": key_code,
+                    "buttonId": key_code,
                     "buttonEvent": button_event,
                 }
             ),
@@ -131,7 +136,9 @@ async def async_sync_keypad_bridge(
         for device in _keypad_capable_devices(session, entry.options):
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
-                    wanted_keys.add(f"{device.id}_{key_code}_{button_event}")
+                    wanted_keys.add(
+                        f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
+                    )
 
     # Remove entries no longer wanted (disabled, or device excluded/gone).
     mac = session.information.macAddress if bridge_map else None
@@ -164,7 +171,7 @@ async def async_sync_keypad_bridge(
         for device in _keypad_capable_devices(session, entry.options):
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
-                    key = f"{device.id}_{key_code}_{button_event}"
+                    key = f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
                     if key in bridge_map:
                         continue
                     label = f"{device.name} Button {key_code} {button_event}"

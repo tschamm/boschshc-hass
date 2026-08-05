@@ -41,6 +41,21 @@
   a device becoming excluded cleans up just that device's entries. Default:
   off (no SHC-side objects created, no new entities). Requires
   `boschshcpy` 0.6.8+.
+- **Keypad bridge (#385): the Bosch app rejected our created triggers as
+  "Ungültiges Auslöseereignis" (invalid trigger event).** Root cause: the
+  feature used the generic `KeypadButtonPressTrigger` type (fields
+  `deviceId`/`keyName`/`keyCode`/`buttonEvent`, `keyName` hardcoded to a
+  placeholder), but shading devices (Shutter/Blinds Control) require the
+  device-class-specific `KeypadMicromoduleShadingTrigger` type (fields
+  `deviceId`/`buttonId`/`buttonEvent`, no `keyName`) — confirmed against a
+  real pre-existing automation on the same physical device. Fixed by
+  switching to the correct trigger type. Light Control II support is
+  dropped from this feature for now: its own `KeypadMicromoduleLightTrigger`
+  type is confirmed to exist but its field shape wasn't found via decompile,
+  and guessing risked repeating this exact bug — it needs its own
+  ground-truth confirmation before being added back. A schema-version bump
+  makes existing bridge entries (created with the wrong trigger type) get
+  automatically recreated with the correct one; no manual cleanup needed.
 - **Cover: `async_set_cover_position` overriding a position the cover is
   already at left `is_opening`/`is_closing` stuck on an earlier move's
   direction** (#395 follow-up to the fix below). Unlike `async_open_cover`/
