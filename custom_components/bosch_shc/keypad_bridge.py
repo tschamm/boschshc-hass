@@ -8,6 +8,11 @@ already unconditionally exposed as a switch entity (switch.py), so its
 on/off transitions are directly usable as an HA automation trigger with no
 new HA platform code.
 
+Also covers Door/Window Contact II (SWD2/SWD2_PLUS/SWD2_DUAL, hass#245/#342/
+#376): those have no Keypad service, so they use a different trigger type
+(ShutterContactButtonPressTrigger) with a different field shape, but the
+same UserDefinedState-bridge mechanism.
+
 Endpoints undocumented in the official OpenAPI spec; traced via APK
 decompile and confirmed live against a real Controller. See
 bosch-shc-api-docs/best_practice/undocumented-local-endpoints.md #10 for
@@ -17,7 +22,8 @@ the trigger/action JSON shapes this builds.
 from __future__ import annotations
 
 import json
-from typing import Any
+from functools import partial
+from typing import Any, Callable
 
 from boschshcpy.exceptions import SHCException
 from homeassistant.config_entries import ConfigEntry
@@ -32,6 +38,11 @@ DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
 # Bumped once (#395 follow-up: wrong trigger type shipped first) to force
 # existing bridge entries to be recreated rather than left stale.
 _SCHEMA_VERSION = "v2"
+
+# SWD2 has no Keypad service; ShutterContactButtonPressTrigger is its own
+# type, keyed by shutterContactId + buttonPressState (see module docstring).
+_SWD2_BUTTON_STATES = ("ON_SHORT_PRESS", "ON_LONG_PRESS")
+_SWD2_BUTTON_STATE_SUFFIX = {"ON_SHORT_PRESS": "S", "ON_LONG_PRESS": "L"}
 
 # DETACHED_LONG_PRESS two-button convention (cover.py, #385/#395): keycode 1/2.
 _KEY_CODES = (1, 2)
@@ -50,6 +61,11 @@ _UDS_NAME_SUFFIX = " Btn{}{}"  # shortest unambiguous per-button-per-event suffi
 
 def _uds_name(device_name: str, key_code: int, button_event: str) -> str:
     suffix = _UDS_NAME_SUFFIX.format(key_code, _BUTTON_EVENT_SUFFIX[button_event])
+    return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
+
+
+def _swd2_uds_name(device_name: str, button_press_state: str) -> str:
+    suffix = " Btn" + _SWD2_BUTTON_STATE_SUFFIX[button_press_state]
     return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
 
 
@@ -75,6 +91,15 @@ def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
             if getattr(device, "has_keypad", False):
                 devices.append(device)
     return devices
+
+
+def _swd2_button_devices(session: Any, options: Any) -> list[Any]:
+    """Door/Window Contact II devices (SWD2/SWD2_PLUS/SWD2_DUAL)."""
+    return [
+        device
+        for device in getattr(session.device_helper, "shutter_contacts2", [])
+        if not device_excluded(device, options)
+    ]
 
 
 def _build_automation(
@@ -115,6 +140,83 @@ def _build_automation(
     return {"name": name, "triggers": triggers, "actions": actions}
 
 
+def _build_swd2_automation(
+    name: str,
+    device_id: str,
+    button_press_state: str,
+    userdefinedstate_id: str,
+) -> dict[str, Any]:
+    triggers = [
+        {
+            "type": "ShutterContactButtonPressTrigger",
+            "configuration": json.dumps(
+                {
+                    "shutterContactId": device_id,
+                    "buttonPressState": button_press_state,
+                }
+            ),
+        }
+    ]
+    actions = [
+        {
+            "type": "UserDefinedStateAction",
+            "delayInSeconds": 0,
+            "configuration": json.dumps(
+                {"stateId": userdefinedstate_id, "state": "ACTIVE"}
+            ),
+        },
+        {
+            "type": "UserDefinedStateAction",
+            "delayInSeconds": _RESET_DELAY_SECONDS,
+            "configuration": json.dumps(
+                {"stateId": userdefinedstate_id, "state": "INACTIVE"}
+            ),
+        },
+    ]
+    return {"name": name, "triggers": triggers, "actions": actions}
+
+
+async def _create_bridge_entry(
+    session: Any,
+    bridge_map: dict[str, dict[str, str]],
+    key: str,
+    *,
+    label: str,
+    uds_name: str,
+    build_spec: Callable[[str], dict[str, Any]],
+) -> None:
+    """Create one UserDefinedState + Automation pair, recording it on success.
+
+    Rolls back the just-created state if the automation create fails, so a
+    partial failure doesn't leak an orphaned, untracked state.
+    """
+    try:
+        userdefinedstate = await session.async_create_userdefinedstate(uds_name)
+    except SHCException as err:
+        LOGGER.warning("Keypad bridge: failed to create state for %s: %s", label, err)
+        return
+    try:
+        spec = build_spec(userdefinedstate.id)
+        automation = await session.async_create_automation_rule(
+            spec["name"], triggers=spec["triggers"], actions=spec["actions"]
+        )
+    except SHCException as err:
+        LOGGER.warning(
+            "Keypad bridge: failed to create automation for %s: %s", label, err
+        )
+        try:
+            await session.async_delete_userdefinedstate(userdefinedstate.id)
+        except SHCException as cleanup_err:
+            LOGGER.debug(
+                "Keypad bridge: rollback delete failed for %s: %s", label, cleanup_err
+            )
+        return
+    bridge_map[key] = {
+        "userdefinedstate_id": userdefinedstate.id,
+        "automation_id": automation.id,
+    }
+
+
 async def async_sync_keypad_bridge(
     hass: HomeAssistant, entry: ConfigEntry, enabled: bool
 ) -> None:
@@ -139,6 +241,11 @@ async def async_sync_keypad_bridge(
                     wanted_keys.add(
                         f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
                     )
+        for device in _swd2_button_devices(session, entry.options):
+            for button_press_state in _SWD2_BUTTON_STATES:
+                wanted_keys.add(
+                    f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
+                )
 
     # Remove entries no longer wanted (disabled, or device excluded/gone).
     mac = session.information.macAddress if bridge_map else None
@@ -175,53 +282,40 @@ async def async_sync_keypad_bridge(
                     if key in bridge_map:
                         continue
                     label = f"{device.name} Button {key_code} {button_event}"
-                    try:
-                        userdefinedstate = await session.async_create_userdefinedstate(
-                            _uds_name(device.name, key_code, button_event)
-                        )
-                    except SHCException as err:
-                        LOGGER.warning(
-                            "Keypad bridge: failed to create state for %s: %s",
-                            label,
-                            err,
-                        )
-                        continue
-                    try:
-                        automation_spec = _build_automation(
+                    await _create_bridge_entry(
+                        session,
+                        bridge_map,
+                        key,
+                        label=label,
+                        uds_name=_uds_name(device.name, key_code, button_event),
+                        build_spec=partial(
+                            _build_automation,
                             f"[HA] {label}",
                             device.id,
                             key_code,
                             button_event,
-                            userdefinedstate.id,
-                        )
-                        automation = await session.async_create_automation_rule(
-                            automation_spec["name"],
-                            triggers=automation_spec["triggers"],
-                            actions=automation_spec["actions"],
-                        )
-                    except SHCException as err:
-                        LOGGER.warning(
-                            "Keypad bridge: failed to create automation for %s: %s",
-                            label,
-                            err,
-                        )
-                        # Roll back the just-created state so a partial
-                        # failure doesn't leak an orphaned, untracked state.
-                        try:
-                            await session.async_delete_userdefinedstate(
-                                userdefinedstate.id
-                            )
-                        except SHCException as cleanup_err:
-                            LOGGER.debug(
-                                "Keypad bridge: rollback delete failed for %s: %s",
-                                label,
-                                cleanup_err,
-                            )
-                        continue
-                    bridge_map[key] = {
-                        "userdefinedstate_id": userdefinedstate.id,
-                        "automation_id": automation.id,
-                    }
+                        ),
+                    )
+
+        for device in _swd2_button_devices(session, entry.options):
+            for button_press_state in _SWD2_BUTTON_STATES:
+                key = f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
+                if key in bridge_map:
+                    continue
+                label = f"{device.name} Button {button_press_state}"
+                await _create_bridge_entry(
+                    session,
+                    bridge_map,
+                    key,
+                    label=label,
+                    uds_name=_swd2_uds_name(device.name, button_press_state),
+                    build_spec=partial(
+                        _build_swd2_automation,
+                        f"[HA] {label}",
+                        device.id,
+                        button_press_state,
+                    ),
+                )
 
     if bridge_map != entry.data.get(DATA_KEYPAD_BRIDGE_MAP, {}):
         hass.config_entries.async_update_entry(

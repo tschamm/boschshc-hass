@@ -2,6 +2,21 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Keypad bridge (#395/#245/#342/#376): extended to Door/Window Contact II
+  (SWD2/SWD2_PLUS/SWD2_DUAL) physical pushbuttons.** These devices have no
+  Keypad service and were previously invisible to the local API for their
+  button — two independent rawscans (#245, #342) found nothing, and #376
+  documented it as a known limitation. Live-confirmed today: mapping a real
+  SWD2 button to a Scenario via the official Bosch app and reading it back
+  via `GET /automation/rules` revealed a dedicated, previously-undocumented
+  trigger type, `ShutterContactButtonPressTrigger` (fields
+  `shutterContactId`/`buttonPressState`, values `ON_SHORT_PRESS`/
+  `ON_LONG_PRESS`) — a different shape from the Keypad-service devices'
+  `KeypadMicromoduleShadingTrigger`, but the same bridge mechanism: a small
+  SHC-side automation pulses a `UserDefinedState`, already exposed as a
+  regular HA `switch` entity. Covered by the same opt-in option
+  (`keypad_ha_bridge`), same self-managed create/cleanup lifecycle. See
+  `bosch-shc-api-docs/best_practice/undocumented-local-endpoints.md` §10.
 - **Home Assistant floor bumped to 2026.8** (`hacs.json` + `requirements_test.txt`)
   — proactive, following HA 2026.8.0's release. Verified clean (full test
   suite + mypy + pylint) against the real 2026.8.0 package; no code changes

@@ -14,6 +14,8 @@ from custom_components.bosch_shc.keypad_bridge import (
     DATA_KEYPAD_BRIDGE_MAP,
     _SCHEMA_VERSION,
     _build_automation,
+    _build_swd2_automation,
+    _swd2_uds_name,
     _uds_name,
     async_sync_keypad_bridge,
 )
@@ -51,12 +53,13 @@ def _make_hass():
     return hass
 
 
-def _make_session(devices):
+def _make_session(devices, swd2_devices=None):
     session = SimpleNamespace()
     session.device_helper = SimpleNamespace(
         shutter_controls=devices,
         micromodule_shutter_controls=[],
         micromodule_blinds=[],
+        shutter_contacts2=swd2_devices or [],
     )
     session.information = SimpleNamespace(macAddress="AA:BB:CC:DD:EE:FF")
     session.async_create_userdefinedstate = AsyncMock()
@@ -334,6 +337,160 @@ class TestAutomationBodyShape:
         ]
         assert short_event == "PRESS_SHORT"
         assert long_event == "PRESS_LONG"
+
+
+class TestSWD2ButtonBridge:
+    """hass#245/#342/#376: Door/Window Contact II (SWD2) has no Keypad
+    service but does fire ShutterContactButtonPressTrigger, live-confirmed
+    2026-08-06 (bosch-shc-api-docs #10)."""
+
+    def test_creates_one_entry_per_press_type(self):
+        device = _make_device("hdm:ZigBee:swd2a", "Speisekammer-Fenster")
+        session = _make_session([], swd2_devices=[device])
+        session.async_create_userdefinedstate.side_effect = [
+            SimpleNamespace(id="u1"),
+            SimpleNamespace(id="u2"),
+        ]
+        session.async_create_automation_rule.side_effect = [
+            SimpleNamespace(id="a1"),
+            SimpleNamespace(id="a2"),
+        ]
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_create_userdefinedstate.await_count == 2
+        assert session.async_create_automation_rule.await_count == 2
+        sent_data = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        bridge_map = sent_data[DATA_KEYPAD_BRIDGE_MAP]
+        for key in (
+            f"hdm:ZigBee:swd2a_swd2_ON_SHORT_PRESS_{_SCHEMA_VERSION}",
+            f"hdm:ZigBee:swd2a_swd2_ON_LONG_PRESS_{_SCHEMA_VERSION}",
+        ):
+            assert key in bridge_map
+
+    def test_skips_excluded_swd2_device(self):
+        device = _make_device("d1", "Excluded Window")
+        session = _make_session([], swd2_devices=[device])
+        entry = _make_entry(session=session, options={"excluded_devices": ["d1"]})
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+
+    def test_idempotent_skips_already_created_entries(self):
+        device = _make_device("d1", "Already bridged window")
+        session = _make_session([], swd2_devices=[device])
+        entry = _make_entry(
+            data={
+                DATA_KEYPAD_BRIDGE_MAP: {
+                    f"d1_swd2_ON_SHORT_PRESS_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u1",
+                        "automation_id": "a1",
+                    },
+                    f"d1_swd2_ON_LONG_PRESS_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u2",
+                        "automation_id": "a2",
+                    },
+                }
+            },
+            session=session,
+        )
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+        session.async_create_automation_rule.assert_not_awaited()
+        hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_uds_name_truncation_and_distinctness(self):
+        short_name = _swd2_uds_name("Speisekammer-Fenster", "ON_SHORT_PRESS")
+        long_name = _swd2_uds_name("Speisekammer-Fenster", "ON_LONG_PRESS")
+        assert short_name == "Speisekammer-Fenster BtnS"
+        assert long_name == "Speisekammer-Fenster BtnL"
+        assert len(short_name) <= 30
+        assert len(long_name) <= 30
+
+    def test_automation_body_shape(self):
+        """Live-confirmed shape (real button mapped via the official app,
+        read back via GET /automation/rules, 2026-08-06): shutterContactId +
+        buttonPressState, no buttonId/keyCode/keyName unlike the Keypad-
+        service trigger types."""
+        spec = _build_swd2_automation(
+            "[HA] Test Window Button",
+            "hdm:ZigBee:swd2a",
+            "ON_SHORT_PRESS",
+            "uds-1",
+        )
+
+        assert len(spec["triggers"]) == 1
+        trigger = spec["triggers"][0]
+        assert trigger["type"] == "ShutterContactButtonPressTrigger"
+        config = json.loads(trigger["configuration"])
+        assert config["shutterContactId"] == "hdm:ZigBee:swd2a"
+        assert config["buttonPressState"] == "ON_SHORT_PRESS"
+        assert "buttonId" not in config
+        assert "keyName" not in config
+
+        assert len(spec["actions"]) == 2
+        active_action = next(
+            a
+            for a in spec["actions"]
+            if json.loads(a["configuration"])["state"] == "ACTIVE"
+        )
+        inactive_action = next(
+            a
+            for a in spec["actions"]
+            if json.loads(a["configuration"])["state"] == "INACTIVE"
+        )
+        assert active_action["delayInSeconds"] == 0
+        assert inactive_action["delayInSeconds"] > 0
+
+    def test_removes_stale_entries_for_now_excluded_swd2_device(self):
+        device = _make_device("d1", "Now excluded window")
+        session = _make_session([], swd2_devices=[device])
+        entry = _make_entry(
+            data={
+                DATA_KEYPAD_BRIDGE_MAP: {
+                    f"d1_swd2_ON_SHORT_PRESS_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u1",
+                        "automation_id": "a1",
+                    },
+                    f"d1_swd2_ON_LONG_PRESS_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u2",
+                        "automation_id": "a2",
+                    },
+                }
+            },
+            options={"excluded_devices": ["d1"]},
+            session=session,
+        )
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_delete_automation_rule.await_count == 2
+        assert session.async_delete_userdefinedstate.await_count == 2
+        sent_data = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        assert sent_data[DATA_KEYPAD_BRIDGE_MAP] == {}
+
+    def test_rolls_back_state_when_automation_create_fails(self):
+        """The shared _create_bridge_entry rollback must also fire on the
+        SWD2 path, not just the original Keypad-device path."""
+        device = _make_device("d1", "Rollback window")
+        session = _make_session([], swd2_devices=[device])
+        session.async_create_userdefinedstate.return_value = SimpleNamespace(id="u1")
+        session.async_create_automation_rule.side_effect = SHCException("boom")
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_delete_userdefinedstate.await_count == 2
+        hass.config_entries.async_update_entry.assert_not_called()
 
 
 class TestFailureHandling:
