@@ -22,8 +22,9 @@ the trigger/action JSON shapes this builds.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 from boschshcpy.exceptions import SHCException
 from homeassistant.config_entries import ConfigEntry
@@ -102,6 +103,30 @@ def _swd2_button_devices(session: Any, options: Any) -> list[Any]:
     ]
 
 
+def _reset_actions(userdefinedstate_id: str) -> list[dict[str, Any]]:
+    """Pulse a UserDefinedState on, then auto-reset it off.
+
+    Shared by both trigger types below -- only the trigger itself differs
+    per device class.
+    """
+    return [
+        {
+            "type": "UserDefinedStateAction",
+            "delayInSeconds": 0,
+            "configuration": json.dumps(
+                {"stateId": userdefinedstate_id, "state": "ACTIVE"}
+            ),
+        },
+        {
+            "type": "UserDefinedStateAction",
+            "delayInSeconds": _RESET_DELAY_SECONDS,
+            "configuration": json.dumps(
+                {"stateId": userdefinedstate_id, "state": "INACTIVE"}
+            ),
+        },
+    ]
+
+
 def _build_automation(
     name: str,
     device_id: str,
@@ -121,23 +146,11 @@ def _build_automation(
             ),
         }
     ]
-    actions = [
-        {
-            "type": "UserDefinedStateAction",
-            "delayInSeconds": 0,
-            "configuration": json.dumps(
-                {"stateId": userdefinedstate_id, "state": "ACTIVE"}
-            ),
-        },
-        {
-            "type": "UserDefinedStateAction",
-            "delayInSeconds": _RESET_DELAY_SECONDS,
-            "configuration": json.dumps(
-                {"stateId": userdefinedstate_id, "state": "INACTIVE"}
-            ),
-        },
-    ]
-    return {"name": name, "triggers": triggers, "actions": actions}
+    return {
+        "name": name,
+        "triggers": triggers,
+        "actions": _reset_actions(userdefinedstate_id),
+    }
 
 
 def _build_swd2_automation(
@@ -157,23 +170,11 @@ def _build_swd2_automation(
             ),
         }
     ]
-    actions = [
-        {
-            "type": "UserDefinedStateAction",
-            "delayInSeconds": 0,
-            "configuration": json.dumps(
-                {"stateId": userdefinedstate_id, "state": "ACTIVE"}
-            ),
-        },
-        {
-            "type": "UserDefinedStateAction",
-            "delayInSeconds": _RESET_DELAY_SECONDS,
-            "configuration": json.dumps(
-                {"stateId": userdefinedstate_id, "state": "INACTIVE"}
-            ),
-        },
-    ]
-    return {"name": name, "triggers": triggers, "actions": actions}
+    return {
+        "name": name,
+        "triggers": triggers,
+        "actions": _reset_actions(userdefinedstate_id),
+    }
 
 
 async def _create_bridge_entry(

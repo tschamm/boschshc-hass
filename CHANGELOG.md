@@ -2,6 +2,10 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Keypad bridge: dedupe the reset-action builder.** `_build_automation`
+  and `_build_swd2_automation` (added in beta.26) built an identical
+  `UserDefinedStateAction` on/off pair inline; factored into a shared
+  `_reset_actions()` helper. Cosmetic only, no behavior change.
 - **Keypad bridge (#395/#245/#342/#376): extended to Door/Window Contact II
   (SWD2/SWD2_PLUS/SWD2_DUAL) physical pushbuttons.** These devices have no
   Keypad service and were previously invisible to the local API for their
