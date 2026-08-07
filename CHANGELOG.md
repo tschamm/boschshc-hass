@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.15 — Revert Home Assistant floor back to 2026.7 (#399)
+
+- **Home Assistant floor reverted from 2026.8 back to 2026.7** (`hacs.json`,
+  `manifest.json`, `README.md`, `requirements_test.txt`). The 2026.8 bump in
+  0.12.14 (originally beta.24) was proactive only — verified clean against
+  2026.8.0 but not actually required by any code change. Per #399, many users
+  wait for a HA `.1`/`.2` patch release before upgrading, so a same-day floor
+  bump to a brand-new HA release needlessly blocked HACS installs/updates for
+  them. No code changes; Python floor unchanged (still >=3.14.2).
+
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
 - **Beta→stable promotion is now a manual maintainer step**, not an automated
