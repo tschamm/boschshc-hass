@@ -110,13 +110,13 @@ promoted to a stable release. Betas run through the exact same test/quality gate
 stable release, so they're safe to try — this is how you can help test a fix before it
 reaches everyone, or get a feature slightly earlier.
 
-The latest beta is automatically promoted to a stable release every **Friday at 18:00
-(Europe/Berlin)**, giving each beta at least a few days of real-world testing before it
-becomes the default version everyone gets. In short, there are two release trains:
+Promotion from beta to stable is a **manual step by the maintainer**, done once a beta
+has had some real-world testing — there's no fixed schedule. In short, there are two
+release trains:
 
 - **beta** — released as fixes/features land, for anyone who wants updates sooner.
-- **stable** — a collection of that week's beta updates, promoted automatically every
-  Friday. If a week has no new betas, there's no stable release that week either.
+- **stable** — promoted from a beta by the maintainer once it's had some testing time.
+  Cadence varies; there's no guaranteed weekly stable release.
 
 By default HACS only shows stable releases. To opt in to betas for this integration:
 

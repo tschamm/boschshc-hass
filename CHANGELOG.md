@@ -2,6 +2,12 @@
 
 ## 0.12.14 — Bosch-app terminology sweep across all 30 languages; Shutter II direction fix; new room-climate sensors
 
+- **Beta→stable promotion is now a manual maintainer step**, not an automated
+  weekly one. The `promote-beta.yml` (Friday auto-promotion) and
+  `auto-tag-beta.yml` (auto-tag on manifest version bump) workflows have been
+  removed after repeated reliability issues. README's "Beta releases" section
+  updated accordingly — there's no longer a guaranteed weekly stable release
+  cadence.
 - **Keypad bridge: dedupe the reset-action builder.** `_build_automation`
   and `_build_swd2_automation` (added in beta.26) built an identical
   `UserDefinedStateAction` on/off pair inline; factored into a shared
