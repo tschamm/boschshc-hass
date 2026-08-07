@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Use this template to request support for a new Bosch SHC device or a new feature.
-        Check [existing issues](https://github.com/tschamm/boschshc-hass/issues) and [Discussions](https://github.com/tschamm/boschshc-hass/discussions) for duplicates first.
+        Check [existing issues](https://github.com/tschamm/boschshc-hass/issues) for duplicates first.
 
   - type: input
     id: device_or_feature
@@ -54,7 +54,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I searched existing issues and discussions for duplicates
+        - label: I searched existing issues for duplicates
           required: true
         - label: This request contains no real serial numbers or credentials
           required: true
