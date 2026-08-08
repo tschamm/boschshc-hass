@@ -1673,7 +1673,6 @@ class SHCOpenWindowsSensor(SensorEntity):  # type: ignore[misc]
     _attr_has_entity_name = True
     _attr_translation_key = "open_windows_doors"
     _attr_should_poll = True
-    _attr_native_unit_of_measurement = "doors/windows"
 
     def __init__(
         self,

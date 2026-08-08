@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.16 — Fix untranslated unit on the Open Doors/Windows sensor (#400)
+
+- **SmartHomeController "Open doors and windows" sensor no longer shows an
+  untranslated unit suffix** (e.g. "0 doors/windows" for non-English users).
+  `SHCOpenWindowsSensor` set `native_unit_of_measurement` to the hardcoded
+  English literal `"doors/windows"`; Home Assistant does not localize custom
+  (non-standard) units, so it always rendered as-is regardless of the user's
+  language. The entity's name is already fully translated via its
+  `translation_key`, so the fake unit was dropped entirely rather than
+  translated — it added nothing but the untranslated suffix.
+
 ## 0.12.15 — Revert Home Assistant floor back to 2026.7 (#399)
 
 - **Home Assistant floor reverted from 2026.8 back to 2026.7** (`hacs.json`,
