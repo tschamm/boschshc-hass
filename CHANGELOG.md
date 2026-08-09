@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.17 — Allow removing a stale/"ghost" device from the HA UI (#401)
+
+- **A device the SHC no longer reports (e.g. unpaired in the Bosch app,
+  leaving a "ghost" entry behind) can now be removed manually from Home
+  Assistant's own device-registry UI.** Implements the standard
+  `async_remove_config_entry_device` hook: a device is only offered for
+  removal once it's no longer among the devices the SHC currently reports;
+  the Controller (bridge) device itself is never removable this way. This
+  only covers the HA-side cleanup — actually telling the physical SHC
+  controller to forget a device has no known local-API endpoint yet and is
+  not part of this change; see #401 for the open follow-up.
+
 ## 0.12.16 — Fix untranslated unit on the Open Doors/Windows sensor (#400)
 
 - **SmartHomeController "Open doors and windows" sensor no longer shows an

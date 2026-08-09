@@ -50,6 +50,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
@@ -1063,6 +1064,29 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING)
 
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Allow removing a device no longer reported by the SHC.
+
+    The Controller itself (the bridge device) is never removable this way;
+    for everything else, only a device the SHC no longer knows about (e.g.
+    unpaired in the Bosch app, leaving a "ghost" entry behind, #401) may be
+    removed.
+    """
+    if not hasattr(entry, "runtime_data"):
+        return False
+    runtime: SHCData = entry.runtime_data
+    if device_entry.id == runtime.shc_device.id:
+        return False
+    live_device_ids = {device.id for device in runtime.session.devices}
+    return not any(
+        identifier[1] in live_device_ids
+        for identifier in device_entry.identifiers
+        if identifier[0] == DOMAIN
+    )
 
 
 class SwitchDeviceEventListener:

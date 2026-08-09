@@ -5003,3 +5003,80 @@ def test_smokedetector_alarmstate_target_scoped_to_integration():
     target = services["smokedetector_alarmstate"]["target"]
     assert "entity" in target
     assert target["entity"].get("integration") == "bosch_shc"
+
+
+# ---------------------------------------------------------------------------
+# Tests: async_remove_config_entry_device (#401 — ghost device removal)
+# ---------------------------------------------------------------------------
+
+
+class TestAsyncRemoveConfigEntryDevice:
+    def _run_it(self, live_ids, shc_device_id, target_identifiers, target_id="target"):
+        from custom_components.bosch_shc.__init__ import async_remove_config_entry_device
+        from custom_components.bosch_shc.const import DOMAIN
+
+        runtime = SimpleNamespace(
+            session=SimpleNamespace(
+                devices=[SimpleNamespace(id=device_id) for device_id in live_ids]
+            ),
+            shc_device=SimpleNamespace(id=shc_device_id),
+        )
+        entry = SimpleNamespace(runtime_data=runtime)
+        device_entry = SimpleNamespace(id=target_id, identifiers=target_identifiers)
+
+        return _run(
+            async_remove_config_entry_device(SimpleNamespace(), entry, device_entry)
+        )
+
+    def test_stale_device_is_removable(self):
+        """A device no longer reported by the SHC (a "ghost") may be removed."""
+        from custom_components.bosch_shc.const import DOMAIN
+
+        result = self._run_it(
+            live_ids=["live-1", "live-2"],
+            shc_device_id="controller-id",
+            target_identifiers={(DOMAIN, "gone-device")},
+        )
+        assert result is True
+
+    def test_live_device_is_not_removable(self):
+        """A device the SHC still reports must not be removable."""
+        from custom_components.bosch_shc.const import DOMAIN
+
+        result = self._run_it(
+            live_ids=["live-1", "live-2"],
+            shc_device_id="controller-id",
+            target_identifiers={(DOMAIN, "live-1")},
+        )
+        assert result is False
+
+    def test_controller_device_is_never_removable(self):
+        """The Controller/bridge device itself is never removable this way,
+        even though it never appears in session.devices."""
+        from custom_components.bosch_shc.const import DOMAIN
+
+        result = self._run_it(
+            live_ids=["live-1", "live-2"],
+            shc_device_id="controller-id",
+            target_identifiers={(DOMAIN, "controller-id")},
+            target_id="controller-id",
+        )
+        assert result is False
+
+    def test_missing_runtime_data_returns_false(self):
+        """A device-delete click during an entry reload/setup-retry window
+        (runtime_data not yet/no longer set) must fail closed, not raise."""
+        from custom_components.bosch_shc.__init__ import (
+            async_remove_config_entry_device,
+        )
+        from custom_components.bosch_shc.const import DOMAIN
+
+        entry = SimpleNamespace()  # no runtime_data attribute at all
+        device_entry = SimpleNamespace(
+            id="target", identifiers={(DOMAIN, "gone-device")}
+        )
+
+        result = _run(
+            async_remove_config_entry_device(SimpleNamespace(), entry, device_entry)
+        )
+        assert result is False

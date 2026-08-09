@@ -1,15 +1,15 @@
 # Known comment-length violations, accepted as pre-existing debt.
 # Format: path:line — do NOT add new entries; fix new violations instead.
-# Regenerated 2026-08-05 after the #395 keypad-bridge feature shifted line
-# numbers in __init__.py/config_flow.py — same pre-existing comment
+# Regenerated 2026-08-08 after the #401 async_remove_config_entry_device
+# addition shifted line numbers in __init__.py — same pre-existing comment
 # content, no new prose added.
-custom_components/bosch_shc/__init__.py:546
-custom_components/bosch_shc/__init__.py:667
-custom_components/bosch_shc/__init__.py:767
-custom_components/bosch_shc/__init__.py:780
-custom_components/bosch_shc/__init__.py:969
-custom_components/bosch_shc/__init__.py:1097
-custom_components/bosch_shc/__init__.py:1152
+custom_components/bosch_shc/__init__.py:547
+custom_components/bosch_shc/__init__.py:668
+custom_components/bosch_shc/__init__.py:768
+custom_components/bosch_shc/__init__.py:781
+custom_components/bosch_shc/__init__.py:970
+custom_components/bosch_shc/__init__.py:1121
+custom_components/bosch_shc/__init__.py:1176
 custom_components/bosch_shc/binary_sensor.py:186
 custom_components/bosch_shc/binary_sensor.py:345
 custom_components/bosch_shc/binary_sensor.py:363
