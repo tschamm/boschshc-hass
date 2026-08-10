@@ -18,6 +18,12 @@ on:
 permissions:
   contents: read
 
+# A workflow_dispatch re-run racing the original push-triggered run (or two
+# overlapping dispatches) would otherwise let the loser's `gh release create`
+# fail outright once the winner has created the release.
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+
 jobs:
   quality:
     name: Quality gate
@@ -74,9 +80,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      # ref pinned to the resolved tag (not the default github.ref) — a
+      # workflow_dispatch re-release of an OLD tag would otherwise check out
+      # current HEAD, so the zip built below would carry the wrong
+      # manifest.json version for the tag it's attached to.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
 
       - name: Resolve tag
         id: tag
@@ -143,6 +154,14 @@ jobs:
             mv /tmp/release-notes-full.md /tmp/release-notes.md
           fi
 
+      # hacs.json sets zip_release: true — HACS downloads this asset instead
+      # of the full-repo source zipball, so it must contain the integration's
+      # files directly at the zip root (not nested under custom_components/).
+      - name: Build integration zip
+        run: |
+          cd custom_components/bosch_shc
+          zip -r ../../bosch_shc.zip . -x '__pycache__/*' '*/__pycache__/*'
+
       - name: Create or update release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -165,8 +184,15 @@ jobs:
               --title "$TITLE" \
               $NOTES_FLAG \
               $PRERELEASE_FLAG
+            # Pre-existing release (a workflow_dispatch re-run) — no way to
+            # attach an asset in the same call as `gh release edit`.
+            gh release upload "$TAG" bosch_shc.zip \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
           else
-            gh release create "$TAG" \
+            # Asset attached in the same call as creation so the release
+            # never goes live (possibly as "Latest") without its zip.
+            gh release create "$TAG" bosch_shc.zip \
               --repo "$GITHUB_REPOSITORY" \
               --title "$TITLE" \
               --verify-tag \

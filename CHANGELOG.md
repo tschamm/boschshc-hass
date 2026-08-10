@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.18 — Switch HACS installs to a dedicated release zip
+
+- **HACS now installs from a dedicated `bosch_shc.zip` release asset** instead
+  of GitHub's auto-generated full-repo source zipball. `hacs.json` sets
+  `zip_release: true` / `filename: bosch_shc.zip`, and the release workflow
+  builds that zip from `custom_components/bosch_shc/` (contents at the zip
+  root, not nested) and attaches it to every tagged release. Smaller,
+  faster HACS installs/updates; no change to what's installed on disk.
+
 ## 0.12.17 — Allow removing a stale/"ghost" device from the HA UI (#401)
 
 - **A device the SHC no longer reports (e.g. unpaired in the Bosch app,
