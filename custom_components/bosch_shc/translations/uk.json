@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Положення клапана"
       },
+      "valve_tappet_state": {
+        "name": "Стан двигуна клапана",
+        "state": {
+          "valve_adaption_successful": "Адаптацію успішно завершено",
+          "valve_adaption_in_progress": "Триває адаптація",
+          "valve_adaption_requested": "Запитано адаптацію",
+          "range_too_big": "Діапазон завеликий",
+          "range_too_small": "Діапазон замалий",
+          "run_to_start_position": "Перехід у початкове положення",
+          "start_position_requested": "Запитано початкове положення",
+          "in_start_position": "У початковому положенні",
+          "not_available": "Недоступно",
+          "no_valve_body_error": "Немає помилки корпусу клапана",
+          "no_motor_error": "Немає помилки двигуна",
+          "valve_too_tight": "Клапан затягнутий занадто туго",
+          "fix_motor_logic_requested": "Запитано виправлення логіки двигуна",
+          "fix_motor_logic_in_progress": "Триває виправлення логіки двигуна",
+          "fix_motor_logic_successful": "Виправлення логіки двигуна успішне",
+          "error": "Помилка",
+          "unknown": "Невідомо"
+        }
+      },
       "detection_test_state": {
         "name": "Стан функціонального тесту",
         "state": {

@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Θέση βαλβίδας"
       },
+      "valve_tappet_state": {
+        "name": "Κατάσταση κινητήρα βαλβίδας",
+        "state": {
+          "valve_adaption_successful": "Η προσαρμογή ολοκληρώθηκε",
+          "valve_adaption_in_progress": "Η προσαρμογή βρίσκεται σε εξέλιξη",
+          "valve_adaption_requested": "Ζητήθηκε προσαρμογή",
+          "range_too_big": "Το εύρος είναι πολύ μεγάλο",
+          "range_too_small": "Το εύρος είναι πολύ μικρό",
+          "run_to_start_position": "Μετακίνηση στην αρχική θέση",
+          "start_position_requested": "Ζητήθηκε αρχική θέση",
+          "in_start_position": "Στην αρχική θέση",
+          "not_available": "Μη διαθέσιμο",
+          "no_valve_body_error": "Χωρίς σφάλμα σώματος βαλβίδας",
+          "no_motor_error": "Χωρίς σφάλμα κινητήρα",
+          "valve_too_tight": "Η βαλβίδα είναι πολύ σφιχτή",
+          "fix_motor_logic_requested": "Ζητήθηκε διόρθωση λογικής κινητήρα",
+          "fix_motor_logic_in_progress": "Η διόρθωση λογικής κινητήρα βρίσκεται σε εξέλιξη",
+          "fix_motor_logic_successful": "Η διόρθωση λογικής κινητήρα ολοκληρώθηκε",
+          "error": "Σφάλμα",
+          "unknown": "Άγνωστο"
+        }
+      },
       "detection_test_state": {
         "name": "Κατάσταση δοκιμής λειτουργίας",
         "state": {

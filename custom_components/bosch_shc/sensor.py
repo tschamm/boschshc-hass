@@ -159,6 +159,12 @@ async def async_setup_entry(  # noqa: C901
                     entry_id=config_entry.entry_id,
                 )
             )
+            entities.append(
+                ValveTappetStateSensor(
+                    device=sensor,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in list(session.device_helper.wallthermostats) + list(
         session.device_helper.roomthermostats
@@ -650,6 +656,7 @@ ENERGY_SENSOR = "energy"
 ENERGY_YIELD_SENSOR = "energy_yield"
 POWER_YIELD_SENSOR = "power_yield"
 VALVE_TAPPET_SENSOR = "valvetappet"
+VALVE_TAPPET_STATE_SENSOR = "valve_tappet_state"
 ILLUMINANCE_SENSOR = "illuminance"
 BATTERY_LEVEL_SENSOR = "battery_level"
 COMBINED_RATING_SENSOR = "combined_rating"
@@ -815,6 +822,23 @@ def _battery_level_value(device: SHCBatteryDevice) -> str | None:
         return str(device.batterylevel.value.lower())
     except (ValueError, AttributeError) as err:
         LOGGER.warning("Unknown battery level for %s: %s", device.name, err)
+        return None
+
+
+def _valve_tappet_state_value(device: SHCThermostat) -> str | None:
+    """Return the valve motor status enum string, or None on unknown value.
+
+    Dedicated ENUM sensor for ValveTappetService.State (#410) — the same
+    value ValveTappetSensor already surfaces as the buried
+    valve_tappet_state extra_state_attribute, which can't be used as an
+    automation trigger/condition. This exposes it as a first-class state so
+    valve motor errors (VALVE_TOO_TIGHT, NO_MOTOR_ERROR, ...) can be alerted
+    on directly.
+    """
+    try:
+        return str(device.valvestate.name.lower())
+    except (ValueError, AttributeError) as err:
+        LOGGER.warning("Unknown valve tappet state for %s: %s", device.name, err)
         return None
 
 
@@ -1038,6 +1062,35 @@ SENSOR_DESCRIPTIONS: dict[str, SHCSensorEntityDescription[Any]] = {
         suggested_display_precision=0,
         value_fn=lambda device: device.position,
         attributes_fn=_valve_tappet_attributes,
+    ),
+    VALVE_TAPPET_STATE_SENSOR: SHCSensorEntityDescription[SHCThermostat](
+        # First-class, alertable ENUM sensor for ValveTappetService.State
+        # (#410) — distinct from ValveTappetSensor's buried attribute above.
+        key=VALVE_TAPPET_STATE_SENSOR,
+        translation_key="valve_tappet_state",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        # Mirrors boschshcpy's ValveTappetService.State members (services_impl.py).
+        options=[
+            "valve_adaption_successful",
+            "valve_adaption_in_progress",
+            "valve_adaption_requested",
+            "range_too_big",
+            "range_too_small",
+            "run_to_start_position",
+            "start_position_requested",
+            "in_start_position",
+            "not_available",
+            "no_valve_body_error",
+            "no_motor_error",
+            "valve_too_tight",
+            "fix_motor_logic_requested",
+            "fix_motor_logic_in_progress",
+            "fix_motor_logic_successful",
+            "error",
+            "unknown",
+        ],
+        value_fn=_valve_tappet_state_value,
     ),
     ILLUMINANCE_SENSOR: SHCSensorEntityDescription[_IlluminanceDevice](
         # Metadata (state_class/device_class/unit) stays static; native_value
@@ -1484,6 +1537,16 @@ class ValveTappetSensor(SHCSensor[SHCThermostat]):  # type: ignore[misc]
 
     def __init__(self, device: SHCThermostat, entry_id: str) -> None:
         """Initialize an SHC valve tappet reporting sensor."""
+        super().__init__(device, self.entity_description, entry_id)
+
+
+class ValveTappetStateSensor(SHCSensor[SHCThermostat]):  # type: ignore[misc]
+    """Diagnostic ENUM sensor for the valve motor status (#410)."""
+
+    entity_description = SENSOR_DESCRIPTIONS[VALVE_TAPPET_STATE_SENSOR]
+
+    def __init__(self, device: SHCThermostat, entry_id: str) -> None:
+        """Initialize a valve tappet state sensor."""
         super().__init__(device, self.entity_description, entry_id)
 
 

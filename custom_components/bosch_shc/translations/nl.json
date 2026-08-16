@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Klepstand"
       },
+      "valve_tappet_state": {
+        "name": "Klepmotorstatus",
+        "state": {
+          "valve_adaption_successful": "Aanpassing geslaagd",
+          "valve_adaption_in_progress": "Aanpassing bezig",
+          "valve_adaption_requested": "Aanpassing aangevraagd",
+          "range_too_big": "Bereik te groot",
+          "range_too_small": "Bereik te klein",
+          "run_to_start_position": "Beweegt naar startpositie",
+          "start_position_requested": "Startpositie aangevraagd",
+          "in_start_position": "In startpositie",
+          "not_available": "Niet beschikbaar",
+          "no_valve_body_error": "Geen klephuisfout",
+          "no_motor_error": "Geen motorfout",
+          "valve_too_tight": "Klep te strak",
+          "fix_motor_logic_requested": "Motorlogica-correctie aangevraagd",
+          "fix_motor_logic_in_progress": "Motorlogica-correctie bezig",
+          "fix_motor_logic_successful": "Motorlogica-correctie geslaagd",
+          "error": "Fout",
+          "unknown": "Onbekend"
+        }
+      },
       "detection_test_state": {
         "name": "Functietest-status",
         "state": {

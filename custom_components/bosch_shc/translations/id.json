@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Posisi Katup"
       },
+      "valve_tappet_state": {
+        "name": "Status motor katup",
+        "state": {
+          "valve_adaption_successful": "Adaptasi berhasil",
+          "valve_adaption_in_progress": "Adaptasi sedang berlangsung",
+          "valve_adaption_requested": "Adaptasi diminta",
+          "range_too_big": "Rentang terlalu besar",
+          "range_too_small": "Rentang terlalu kecil",
+          "run_to_start_position": "Bergerak ke posisi awal",
+          "start_position_requested": "Posisi awal diminta",
+          "in_start_position": "Di posisi awal",
+          "not_available": "Tidak tersedia",
+          "no_valve_body_error": "Tidak ada kesalahan badan katup",
+          "no_motor_error": "Tidak ada kesalahan motor",
+          "valve_too_tight": "Katup terlalu kencang",
+          "fix_motor_logic_requested": "Perbaikan logika motor diminta",
+          "fix_motor_logic_in_progress": "Perbaikan logika motor sedang berlangsung",
+          "fix_motor_logic_successful": "Perbaikan logika motor berhasil",
+          "error": "Kesalahan",
+          "unknown": "Tidak diketahui"
+        }
+      },
       "detection_test_state": {
         "name": "Status Uji Fungsi",
         "state": {

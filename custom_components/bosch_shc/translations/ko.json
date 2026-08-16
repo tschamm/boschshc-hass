@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "밸브 위치"
       },
+      "valve_tappet_state": {
+        "name": "밸브 모터 상태",
+        "state": {
+          "valve_adaption_successful": "적응 성공",
+          "valve_adaption_in_progress": "적응 진행 중",
+          "valve_adaption_requested": "적응 요청됨",
+          "range_too_big": "범위가 너무 큼",
+          "range_too_small": "범위가 너무 작음",
+          "run_to_start_position": "시작 위치로 이동 중",
+          "start_position_requested": "시작 위치 요청됨",
+          "in_start_position": "시작 위치에 있음",
+          "not_available": "사용할 수 없음",
+          "no_valve_body_error": "밸브 몸체 오류 없음",
+          "no_motor_error": "모터 오류 없음",
+          "valve_too_tight": "밸브가 너무 조임",
+          "fix_motor_logic_requested": "모터 로직 수정 요청됨",
+          "fix_motor_logic_in_progress": "모터 로직 수정 진행 중",
+          "fix_motor_logic_successful": "모터 로직 수정 성공",
+          "error": "오류",
+          "unknown": "알 수 없음"
+        }
+      },
       "detection_test_state": {
         "name": "기능 테스트 상태",
         "state": {

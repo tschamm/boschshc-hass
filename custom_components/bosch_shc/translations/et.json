@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Klapi asend"
       },
+      "valve_tappet_state": {
+        "name": "Klapimootori olek",
+        "state": {
+          "valve_adaption_successful": "Kohandamine õnnestus",
+          "valve_adaption_in_progress": "Kohandamine käib",
+          "valve_adaption_requested": "Kohandamine taotletud",
+          "range_too_big": "Vahemik on liiga suur",
+          "range_too_small": "Vahemik on liiga väike",
+          "run_to_start_position": "Liigub alguspositsiooni",
+          "start_position_requested": "Alguspositsioon taotletud",
+          "in_start_position": "Alguspositsioonis",
+          "not_available": "Pole saadaval",
+          "no_valve_body_error": "Klapikeha viga puudub",
+          "no_motor_error": "Mootori viga puudub",
+          "valve_too_tight": "Klapp on liiga pingul",
+          "fix_motor_logic_requested": "Mootoriloogika parandamine taotletud",
+          "fix_motor_logic_in_progress": "Mootoriloogika parandamine käib",
+          "fix_motor_logic_successful": "Mootoriloogika parandamine õnnestus",
+          "error": "Viga",
+          "unknown": "Teadmata"
+        }
+      },
       "detection_test_state": {
         "name": "Funktsioonitesti olek",
         "state": {

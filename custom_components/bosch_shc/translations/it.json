@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Posizione della valvola"
       },
+      "valve_tappet_state": {
+        "name": "Stato motore valvola",
+        "state": {
+          "valve_adaption_successful": "Adattamento riuscito",
+          "valve_adaption_in_progress": "Adattamento in corso",
+          "valve_adaption_requested": "Adattamento richiesto",
+          "range_too_big": "Intervallo troppo ampio",
+          "range_too_small": "Intervallo troppo piccolo",
+          "run_to_start_position": "Spostamento verso la posizione iniziale",
+          "start_position_requested": "Posizione iniziale richiesta",
+          "in_start_position": "In posizione iniziale",
+          "not_available": "Non disponibile",
+          "no_valve_body_error": "Nessun errore corpo valvola",
+          "no_motor_error": "Nessun errore motore",
+          "valve_too_tight": "Valvola troppo stretta",
+          "fix_motor_logic_requested": "Correzione logica motore richiesta",
+          "fix_motor_logic_in_progress": "Correzione logica motore in corso",
+          "fix_motor_logic_successful": "Correzione logica motore riuscita",
+          "error": "Errore",
+          "unknown": "Sconosciuto"
+        }
+      },
       "detection_test_state": {
         "name": "Stato test di funzionamento",
         "state": {

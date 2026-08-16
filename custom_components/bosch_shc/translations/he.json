@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "מיקום השסתום"
       },
+      "valve_tappet_state": {
+        "name": "מצב מנוע השסתום",
+        "state": {
+          "valve_adaption_successful": "ההתאמה הצליחה",
+          "valve_adaption_in_progress": "ההתאמה בתהליך",
+          "valve_adaption_requested": "התבקשה התאמה",
+          "range_too_big": "הטווח גדול מדי",
+          "range_too_small": "הטווח קטן מדי",
+          "run_to_start_position": "נע למיקום ההתחלה",
+          "start_position_requested": "התבקש מיקום התחלה",
+          "in_start_position": "במיקום ההתחלה",
+          "not_available": "לא זמין",
+          "no_valve_body_error": "אין שגיאת גוף שסתום",
+          "no_motor_error": "אין שגיאת מנוע",
+          "valve_too_tight": "השסתום הדוק מדי",
+          "fix_motor_logic_requested": "התבקש תיקון לוגיקת מנוע",
+          "fix_motor_logic_in_progress": "תיקון לוגיקת מנוע בתהליך",
+          "fix_motor_logic_successful": "תיקון לוגיקת מנוע הצליח",
+          "error": "שגיאה",
+          "unknown": "לא ידוע"
+        }
+      },
       "detection_test_state": {
         "name": "מצב בדיקת תפקוד",
         "state": {

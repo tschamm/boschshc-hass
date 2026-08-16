@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "閥門位置"
       },
+      "valve_tappet_state": {
+        "name": "閥門馬達狀態",
+        "state": {
+          "valve_adaption_successful": "適應成功",
+          "valve_adaption_in_progress": "適應進行中",
+          "valve_adaption_requested": "已請求適應",
+          "range_too_big": "範圍過大",
+          "range_too_small": "範圍過小",
+          "run_to_start_position": "正在移動到起始位置",
+          "start_position_requested": "已請求起始位置",
+          "in_start_position": "位於起始位置",
+          "not_available": "不可用",
+          "no_valve_body_error": "無閥體錯誤",
+          "no_motor_error": "無馬達錯誤",
+          "valve_too_tight": "閥門過緊",
+          "fix_motor_logic_requested": "已請求修復馬達邏輯",
+          "fix_motor_logic_in_progress": "正在修復馬達邏輯",
+          "fix_motor_logic_successful": "馬達邏輯修復成功",
+          "error": "錯誤",
+          "unknown": "未知"
+        }
+      },
       "detection_test_state": {
         "name": "功能測試狀態",
         "state": {

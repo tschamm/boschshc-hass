@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Vārsta pozīcija"
       },
+      "valve_tappet_state": {
+        "name": "Vārsta motora statuss",
+        "state": {
+          "valve_adaption_successful": "Adaptācija veiksmīga",
+          "valve_adaption_in_progress": "Notiek adaptācija",
+          "valve_adaption_requested": "Pieprasīta adaptācija",
+          "range_too_big": "Diapazons ir pārāk liels",
+          "range_too_small": "Diapazons ir pārāk mazs",
+          "run_to_start_position": "Pāriet uz sākuma pozīciju",
+          "start_position_requested": "Pieprasīta sākuma pozīcija",
+          "in_start_position": "Sākuma pozīcijā",
+          "not_available": "Nav pieejams",
+          "no_valve_body_error": "Nav vārsta korpusa kļūdas",
+          "no_motor_error": "Nav motora kļūdas",
+          "valve_too_tight": "Vārsts ir pārāk cieši nospriegots",
+          "fix_motor_logic_requested": "Pieprasīts motora loģikas labojums",
+          "fix_motor_logic_in_progress": "Notiek motora loģikas labojums",
+          "fix_motor_logic_successful": "Motora loģikas labojums veiksmīgs",
+          "error": "Kļūda",
+          "unknown": "Nezināms"
+        }
+      },
       "detection_test_state": {
         "name": "Funkciju testa stāvoklis",
         "state": {

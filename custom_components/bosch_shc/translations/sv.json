@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Ventilläge"
       },
+      "valve_tappet_state": {
+        "name": "Ventilmotorstatus",
+        "state": {
+          "valve_adaption_successful": "Anpassning lyckades",
+          "valve_adaption_in_progress": "Anpassning pågår",
+          "valve_adaption_requested": "Anpassning begärd",
+          "range_too_big": "Intervallet är för stort",
+          "range_too_small": "Intervallet är för litet",
+          "run_to_start_position": "Kör till startläge",
+          "start_position_requested": "Startläge begärt",
+          "in_start_position": "I startläge",
+          "not_available": "Inte tillgänglig",
+          "no_valve_body_error": "Inget fel på ventilhuset",
+          "no_motor_error": "Inget motorfel",
+          "valve_too_tight": "Ventilen är för hårt åtdragen",
+          "fix_motor_logic_requested": "Åtgärd av motorlogik begärd",
+          "fix_motor_logic_in_progress": "Åtgärd av motorlogik pågår",
+          "fix_motor_logic_successful": "Åtgärd av motorlogik lyckades",
+          "error": "Fel",
+          "unknown": "Okänt"
+        }
+      },
       "detection_test_state": {
         "name": "Funktionstestets status",
         "state": {

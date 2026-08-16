@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "阀门位置"
       },
+      "valve_tappet_state": {
+        "name": "阀门电机状态",
+        "state": {
+          "valve_adaption_successful": "适配成功",
+          "valve_adaption_in_progress": "适配进行中",
+          "valve_adaption_requested": "已请求适配",
+          "range_too_big": "范围过大",
+          "range_too_small": "范围过小",
+          "run_to_start_position": "正在移动到起始位置",
+          "start_position_requested": "已请求起始位置",
+          "in_start_position": "处于起始位置",
+          "not_available": "不可用",
+          "no_valve_body_error": "无阀体错误",
+          "no_motor_error": "无电机错误",
+          "valve_too_tight": "阀门过紧",
+          "fix_motor_logic_requested": "已请求修复电机逻辑",
+          "fix_motor_logic_in_progress": "正在修复电机逻辑",
+          "fix_motor_logic_successful": "电机逻辑修复成功",
+          "error": "错误",
+          "unknown": "未知"
+        }
+      },
       "detection_test_state": {
         "name": "功能测试状态",
         "state": {

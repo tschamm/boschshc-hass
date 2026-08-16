@@ -479,6 +479,28 @@
       "valve_tappet": {
         "name": "Valve position"
       },
+      "valve_tappet_state": {
+        "name": "Valve motor status",
+        "state": {
+          "valve_adaption_successful": "Adaption successful",
+          "valve_adaption_in_progress": "Adaption in progress",
+          "valve_adaption_requested": "Adaption requested",
+          "range_too_big": "Range too big",
+          "range_too_small": "Range too small",
+          "run_to_start_position": "Running to start position",
+          "start_position_requested": "Start position requested",
+          "in_start_position": "In start position",
+          "not_available": "Not available",
+          "no_valve_body_error": "No valve body error",
+          "no_motor_error": "No motor error",
+          "valve_too_tight": "Valve too tight",
+          "fix_motor_logic_requested": "Motor logic fix requested",
+          "fix_motor_logic_in_progress": "Motor logic fix in progress",
+          "fix_motor_logic_successful": "Motor logic fix successful",
+          "error": "Error",
+          "unknown": "Unknown"
+        }
+      },
       "walk_test_state": {
         "name": "Function test state",
         "state": {

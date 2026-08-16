@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Posició de la vàlvula"
       },
+      "valve_tappet_state": {
+        "name": "Estat del motor de la vàlvula",
+        "state": {
+          "valve_adaption_successful": "Adaptació correcta",
+          "valve_adaption_in_progress": "Adaptació en curs",
+          "valve_adaption_requested": "Adaptació sol·licitada",
+          "range_too_big": "Interval massa gran",
+          "range_too_small": "Interval massa petit",
+          "run_to_start_position": "Movent-se a la posició inicial",
+          "start_position_requested": "Posició inicial sol·licitada",
+          "in_start_position": "En posició inicial",
+          "not_available": "No disponible",
+          "no_valve_body_error": "Sense error del cos de la vàlvula",
+          "no_motor_error": "Sense error del motor",
+          "valve_too_tight": "Vàlvula massa ajustada",
+          "fix_motor_logic_requested": "Correcció de la lògica del motor sol·licitada",
+          "fix_motor_logic_in_progress": "Correcció de la lògica del motor en curs",
+          "fix_motor_logic_successful": "Correcció de la lògica del motor correcta",
+          "error": "Error",
+          "unknown": "Desconegut"
+        }
+      },
       "detection_test_state": {
         "name": "Estat del test de funcionament",
         "state": {

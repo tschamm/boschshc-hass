@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Ventilposisjon"
       },
+      "valve_tappet_state": {
+        "name": "Ventilmotorstatus",
+        "state": {
+          "valve_adaption_successful": "Tilpasning vellykket",
+          "valve_adaption_in_progress": "Tilpasning pågår",
+          "valve_adaption_requested": "Tilpasning forespurt",
+          "range_too_big": "Området er for stort",
+          "range_too_small": "Området er for lite",
+          "run_to_start_position": "Kjører til startposisjon",
+          "start_position_requested": "Startposisjon forespurt",
+          "in_start_position": "I startposisjon",
+          "not_available": "Ikke tilgjengelig",
+          "no_valve_body_error": "Ingen feil på ventilhus",
+          "no_motor_error": "Ingen motorfeil",
+          "valve_too_tight": "Ventilen er for stram",
+          "fix_motor_logic_requested": "Retting av motorlogikk forespurt",
+          "fix_motor_logic_in_progress": "Retting av motorlogikk pågår",
+          "fix_motor_logic_successful": "Retting av motorlogikk vellykket",
+          "error": "Feil",
+          "unknown": "Ukjent"
+        }
+      },
       "detection_test_state": {
         "name": "Funksjonstest-status",
         "state": {

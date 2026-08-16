@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Valf Konumu"
       },
+      "valve_tappet_state": {
+        "name": "Vana motoru durumu",
+        "state": {
+          "valve_adaption_successful": "Adaptasyon başarılı",
+          "valve_adaption_in_progress": "Adaptasyon devam ediyor",
+          "valve_adaption_requested": "Adaptasyon istendi",
+          "range_too_big": "Aralık çok büyük",
+          "range_too_small": "Aralık çok küçük",
+          "run_to_start_position": "Başlangıç pozisyonuna gidiyor",
+          "start_position_requested": "Başlangıç pozisyonu istendi",
+          "in_start_position": "Başlangıç pozisyonunda",
+          "not_available": "Kullanılamıyor",
+          "no_valve_body_error": "Vana gövdesi hatası yok",
+          "no_motor_error": "Motor hatası yok",
+          "valve_too_tight": "Vana çok sıkı",
+          "fix_motor_logic_requested": "Motor mantığı düzeltmesi istendi",
+          "fix_motor_logic_in_progress": "Motor mantığı düzeltmesi devam ediyor",
+          "fix_motor_logic_successful": "Motor mantığı düzeltmesi başarılı",
+          "error": "Hata",
+          "unknown": "Bilinmiyor"
+        }
+      },
       "detection_test_state": {
         "name": "Fonksiyon Testi Durumu",
         "state": {

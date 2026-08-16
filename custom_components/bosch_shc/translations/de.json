@@ -544,6 +544,28 @@
       "valve_tappet": {
         "name": "Ventilposition"
       },
+      "valve_tappet_state": {
+        "name": "Ventilmotor-Status",
+        "state": {
+          "valve_adaption_successful": "Anpassung erfolgreich",
+          "valve_adaption_in_progress": "Anpassung läuft",
+          "valve_adaption_requested": "Anpassung angefordert",
+          "range_too_big": "Bereich zu groß",
+          "range_too_small": "Bereich zu klein",
+          "run_to_start_position": "Fährt zur Startposition",
+          "start_position_requested": "Startposition angefordert",
+          "in_start_position": "In Startposition",
+          "not_available": "Nicht verfügbar",
+          "no_valve_body_error": "Kein Ventilkörper-Fehler",
+          "no_motor_error": "Kein Motorfehler",
+          "valve_too_tight": "Ventil zu stramm",
+          "fix_motor_logic_requested": "Motorlogik-Korrektur angefordert",
+          "fix_motor_logic_in_progress": "Motorlogik-Korrektur läuft",
+          "fix_motor_logic_successful": "Motorlogik-Korrektur erfolgreich",
+          "error": "Fehler",
+          "unknown": "Unbekannt"
+        }
+      },
       "detection_test_state": {
         "name": "Funktionstest-Status",
         "state": {

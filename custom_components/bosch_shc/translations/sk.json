@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Poloha ventilu"
       },
+      "valve_tappet_state": {
+        "name": "Stav motora ventilu",
+        "state": {
+          "valve_adaption_successful": "Adaptácia úspešná",
+          "valve_adaption_in_progress": "Prebieha adaptácia",
+          "valve_adaption_requested": "Vyžiadaná adaptácia",
+          "range_too_big": "Rozsah je príliš veľký",
+          "range_too_small": "Rozsah je príliš malý",
+          "run_to_start_position": "Presun do východiskovej polohy",
+          "start_position_requested": "Vyžiadaná východisková poloha",
+          "in_start_position": "Vo východiskovej polohe",
+          "not_available": "Nedostupné",
+          "no_valve_body_error": "Žiadna chyba telesa ventilu",
+          "no_motor_error": "Žiadna chyba motora",
+          "valve_too_tight": "Ventil je príliš utiahnutý",
+          "fix_motor_logic_requested": "Vyžiadaná oprava logiky motora",
+          "fix_motor_logic_in_progress": "Prebieha oprava logiky motora",
+          "fix_motor_logic_successful": "Oprava logiky motora úspešná",
+          "error": "Chyba",
+          "unknown": "Neznáme"
+        }
+      },
       "detection_test_state": {
         "name": "Stav funkčného testu",
         "state": {

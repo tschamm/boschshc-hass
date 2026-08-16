@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.20-beta.1 — Expose valve motor status as a diagnostic sensor (#410)
+
+- **New opt-in diagnostic sensor "Valve motor status"** for every
+  thermostat (TRV) device, exposing `ValveTappetService.State` (e.g.
+  `VALVE_TOO_TIGHT`, `NO_MOTOR_ERROR`, `VALVE_ADAPTION_IN_PROGRESS`) as a
+  first-class ENUM state. Previously this was only visible buried inside
+  the "Valve position" sensor's `valve_tappet_state` extra attribute,
+  which can't be used as an automation trigger/condition — this makes
+  valve motor errors directly alertable in HA.
+
 ## 0.12.19-beta.1 — Shutter II calibration actually calibrates (#396)
 
 - **Shutter Control II recalibration button now triggers a full

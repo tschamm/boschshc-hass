@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Szelepállás"
       },
+      "valve_tappet_state": {
+        "name": "Szelepmotor állapota",
+        "state": {
+          "valve_adaption_successful": "Adaptáció sikeres",
+          "valve_adaption_in_progress": "Adaptáció folyamatban",
+          "valve_adaption_requested": "Adaptáció kérve",
+          "range_too_big": "A tartomány túl nagy",
+          "range_too_small": "A tartomány túl kicsi",
+          "run_to_start_position": "Kiindulási helyzetbe áll",
+          "start_position_requested": "Kiindulási helyzet kérve",
+          "in_start_position": "Kiindulási helyzetben",
+          "not_available": "Nem elérhető",
+          "no_valve_body_error": "Nincs szeleptest hiba",
+          "no_motor_error": "Nincs motorhiba",
+          "valve_too_tight": "A szelep túl szoros",
+          "fix_motor_logic_requested": "Motorlogika javítása kérve",
+          "fix_motor_logic_in_progress": "Motorlogika javítása folyamatban",
+          "fix_motor_logic_successful": "Motorlogika javítása sikeres",
+          "error": "Hiba",
+          "unknown": "Ismeretlen"
+        }
+      },
       "detection_test_state": {
         "name": "Funkcióteszt állapota",
         "state": {

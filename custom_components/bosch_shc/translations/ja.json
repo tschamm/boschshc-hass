@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "バルブ位置"
       },
+      "valve_tappet_state": {
+        "name": "バルブモーターの状態",
+        "state": {
+          "valve_adaption_successful": "アダプション成功",
+          "valve_adaption_in_progress": "アダプション実行中",
+          "valve_adaption_requested": "アダプション要求済み",
+          "range_too_big": "範囲が広すぎます",
+          "range_too_small": "範囲が狭すぎます",
+          "run_to_start_position": "開始位置へ移動中",
+          "start_position_requested": "開始位置が要求されました",
+          "in_start_position": "開始位置にあります",
+          "not_available": "利用不可",
+          "no_valve_body_error": "バルブ本体エラーなし",
+          "no_motor_error": "モーターエラーなし",
+          "valve_too_tight": "バルブがきつすぎます",
+          "fix_motor_logic_requested": "モーターロジックの修正が要求されました",
+          "fix_motor_logic_in_progress": "モーターロジックの修正を実行中",
+          "fix_motor_logic_successful": "モーターロジックの修正に成功しました",
+          "error": "エラー",
+          "unknown": "不明"
+        }
+      },
       "detection_test_state": {
         "name": "機能テスト状態",
         "state": {

@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Pozycja zaworu"
       },
+      "valve_tappet_state": {
+        "name": "Stan silnika zaworu",
+        "state": {
+          "valve_adaption_successful": "Adaptacja zakończona sukcesem",
+          "valve_adaption_in_progress": "Trwa adaptacja",
+          "valve_adaption_requested": "Zażądano adaptacji",
+          "range_too_big": "Zakres zbyt duży",
+          "range_too_small": "Zakres zbyt mały",
+          "run_to_start_position": "Powrót do pozycji początkowej",
+          "start_position_requested": "Zażądano pozycji początkowej",
+          "in_start_position": "W pozycji początkowej",
+          "not_available": "Niedostępne",
+          "no_valve_body_error": "Brak błędu korpusu zaworu",
+          "no_motor_error": "Brak błędu silnika",
+          "valve_too_tight": "Zawór zbyt ciasny",
+          "fix_motor_logic_requested": "Zażądano naprawy logiki silnika",
+          "fix_motor_logic_in_progress": "Trwa naprawa logiki silnika",
+          "fix_motor_logic_successful": "Naprawa logiki silnika zakończona sukcesem",
+          "error": "Błąd",
+          "unknown": "Nieznany"
+        }
+      },
       "detection_test_state": {
         "name": "Stan testu funkcji",
         "state": {

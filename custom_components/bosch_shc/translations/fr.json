@@ -558,6 +558,28 @@
       "valve_tappet": {
         "name": "Position de vanne"
       },
+      "valve_tappet_state": {
+        "name": "État du moteur de vanne",
+        "state": {
+          "valve_adaption_successful": "Adaptation réussie",
+          "valve_adaption_in_progress": "Adaptation en cours",
+          "valve_adaption_requested": "Adaptation demandée",
+          "range_too_big": "Plage trop grande",
+          "range_too_small": "Plage trop petite",
+          "run_to_start_position": "Déplacement vers la position de départ",
+          "start_position_requested": "Position de départ demandée",
+          "in_start_position": "En position de départ",
+          "not_available": "Non disponible",
+          "no_valve_body_error": "Pas d'erreur de corps de vanne",
+          "no_motor_error": "Pas d'erreur moteur",
+          "valve_too_tight": "Vanne trop serrée",
+          "fix_motor_logic_requested": "Correction de la logique moteur demandée",
+          "fix_motor_logic_in_progress": "Correction de la logique moteur en cours",
+          "fix_motor_logic_successful": "Correction de la logique moteur réussie",
+          "error": "Erreur",
+          "unknown": "Inconnu"
+        }
+      },
       "detection_test_state": {
         "name": "État du test de fonctionnement",
         "state": {

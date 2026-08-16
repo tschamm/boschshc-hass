@@ -73,6 +73,7 @@ from custom_components.bosch_shc.sensor import (
     TwinguardCombinedRatingSensor,
     TwinguardDescriptionSensor,
     ValveTappetSensor,
+    ValveTappetStateSensor,
     WalkStateSensor,
     ZigbeeRoutingQualitySensor,
     async_setup_entry,
@@ -2036,6 +2037,108 @@ class TestValveTappetSensorExtraAttrs:
 
 
 # ===========================================================================
+# ValveTappetStateSensor (#410)
+# ===========================================================================
+
+
+def _valve_tappet_state_sensor(valvestate_name):
+    """Build ValveTappetStateSensor with a fake enum that has a fixed .name."""
+
+    class _FakeState:
+        name = valvestate_name
+
+    s = ValveTappetStateSensor.__new__(ValveTappetStateSensor)
+    s._device = SimpleNamespace(
+        valvestate=_FakeState(),
+        name="thermostat-1",
+        root_device_id="root-abc",
+        id="dev-123",
+    )
+    s._attr_name = "Valve motor status"
+    s._attr_unique_id = "root-abc_dev-123_valve_tappet_state"
+    return s
+
+
+class TestValveTappetStateSensorNativeValue:
+    def test_valve_too_tight(self):
+        assert _valve_tappet_state_sensor("VALVE_TOO_TIGHT").native_value == "valve_too_tight"
+
+    def test_no_motor_error(self):
+        assert _valve_tappet_state_sensor("NO_MOTOR_ERROR").native_value == "no_motor_error"
+
+    def test_in_start_position(self):
+        assert (
+            _valve_tappet_state_sensor("IN_START_POSITION").native_value == "in_start_position"
+        )
+
+
+class _BadValveState:
+    """Simulates an unknown enum variant: .name raises ValueError."""
+
+    @property
+    def name(self):
+        raise ValueError("Unknown valve state X")
+
+
+class TestValveTappetStateSensorGuard:
+    def test_value_error_returns_none(self):
+        s = ValveTappetStateSensor.__new__(ValveTappetStateSensor)
+        s._device = SimpleNamespace(valvestate=_BadValveState(), name="thermostat-1")
+        assert s.native_value is None
+
+    def test_attribute_error_returns_none(self):
+        s = ValveTappetStateSensor.__new__(ValveTappetStateSensor)
+        s._device = SimpleNamespace(valvestate=None, name="thermostat-1")
+        assert s.native_value is None
+
+
+class TestValveTappetStateSensorMetadata:
+    def _sensor(self):
+        return _valve_tappet_state_sensor("VALVE_ADAPTION_SUCCESSFUL")
+
+    def test_device_class_enum(self):
+        assert self._sensor().device_class == SensorDeviceClass.ENUM
+
+    def test_entity_category_diagnostic(self):
+        assert self._sensor().entity_category == EntityCategory.DIAGNOSTIC
+
+    def test_options_covers_all_service_states(self):
+        opts = set(self._sensor().options)
+        for member in [
+            "valve_adaption_successful",
+            "valve_adaption_in_progress",
+            "valve_adaption_requested",
+            "range_too_big",
+            "range_too_small",
+            "run_to_start_position",
+            "start_position_requested",
+            "in_start_position",
+            "not_available",
+            "no_valve_body_error",
+            "no_motor_error",
+            "valve_too_tight",
+            "fix_motor_logic_requested",
+            "fix_motor_logic_in_progress",
+            "fix_motor_logic_successful",
+            "error",
+            "unknown",
+        ]:
+            assert member in opts
+
+    def test_unique_id_suffix(self):
+        """Exercise the real __init__ derivation, not a hardcoded stand-in."""
+        device = MagicMock()
+        device.id = "dev-123"
+        device.root_device_id = "root-abc"
+        device.name = "thermostat-1"
+
+        sensor = ValveTappetStateSensor.__new__(ValveTappetStateSensor)
+        ValveTappetStateSensor.__init__(sensor, device=device, entry_id="eid1")
+
+        assert sensor._attr_unique_id == "root-abc_dev-123_valve_tappet_state"
+
+
+# ===========================================================================
 # IlluminanceLevelSensor
 # ===========================================================================
 
@@ -3313,11 +3416,12 @@ class TestAsyncSetupEntryEntityCounts:
         dev = _fake_device(name="TRV1", device_id="hdm:TRV:001")
         session = _make_fake_session(thermostats=[dev])
         entities = _run_setup(session)
-        # 2 from thermostat + 1 EMMA
-        assert len(entities) == 4
+        # 3 from thermostat (Temp+Valve+ValveState) + 1 EMMA
+        assert len(entities) == 5
         types = [type(e) for e in entities]
         assert TemperatureSensor in types
         assert ValveTappetSensor in types
+        assert ValveTappetStateSensor in types
         assert EmmaPowerSensor in types
 
     def test_two_thermostats_yield_four_sensors_plus_emma(self):
@@ -3327,9 +3431,10 @@ class TestAsyncSetupEntryEntityCounts:
         ]
         session = _make_fake_session(thermostats=devs)
         entities = _run_setup(session)
-        assert len(entities) == 6  # 2×(Temp+Valve) + EMMA
+        assert len(entities) == 8  # 2×(Temp+Valve+ValveState) + EMMA
         assert sum(isinstance(e, TemperatureSensor) for e in entities) == 2
         assert sum(isinstance(e, ValveTappetSensor) for e in entities) == 2
+        assert sum(isinstance(e, ValveTappetStateSensor) for e in entities) == 2
 
     def test_one_wallthermostat_yields_temperature_and_humidity(self):
         dev = _fake_device(name="WT1", device_id="hdm:WT:001")
