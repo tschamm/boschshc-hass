@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.19-beta.1 — Shutter II calibration actually calibrates (#396)
+
+- **Shutter Control II recalibration button now triggers a full
+  calibration sweep** instead of the shutter just nudging toward open and
+  stopping without ever entering `CALIBRATING`. Bumps `boschshcpy` to
+  `0.6.9b1`, which fixes the underlying cause — see that library's
+  changelog for the full root-cause writeup. **Needs real-hardware
+  confirmation**; if you're hitting #396, please test this beta and report
+  back.
+
 ## 0.12.18 — Switch HACS installs to a dedicated release zip
 
 - **HACS now installs from a dedicated `bosch_shc.zip` release asset** instead
