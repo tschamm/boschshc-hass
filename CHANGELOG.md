@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.12.22-beta.2 — Shutter II calibration: remove the counterproductive priming step (#396)
+
+- **Bumps `boschshcpy` to `0.6.9b2`**, which removes the "priming" PUT
+  (fake `referenceMovingTimes` + `level: 0.0`, plus a forced 5s-sleep-
+  then-STOP) that `0.6.9b1`/`0.12.19-beta.1` added for the Shutter II
+  recalibration button. A real debug-log capture proved that priming step
+  was actively counterproductive: the device accepted the fake values as
+  literal calibration data without moving at all, and
+  `resetCalibrationAndOpen` itself reset that fake state right back to
+  `false` anyway — so priming accomplished nothing, while the follow-up
+  write triggered an unrelated close move that got forcibly interrupted
+  before the real calibration drive even started. The recalibrate button
+  now just triggers `resetCalibrationAndOpen` directly, letting the
+  device run its own sequence uninterrupted. **Needs real-hardware
+  confirmation** — this removes a confirmed self-inflicted bug, but it
+  isn't yet confirmed this alone makes calibration complete successfully.
+  If you're hitting #396, please test this beta and report back.
+
 ## 0.12.21-beta.1 — Shutter covers no longer get stuck "opening"/"closing" forever (#406)
 
 - **Shutter/blind cover entities now self-correct if the SHC drops the
