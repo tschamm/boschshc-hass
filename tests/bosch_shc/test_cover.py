@@ -2447,3 +2447,77 @@ def test_parallel_updates_is_one():
         "cover.py is missing module-level PARALLEL_UPDATES"
     )
     assert cover_module.PARALLEL_UPDATES == 1
+
+
+# ---------------------------------------------------------------------------
+# #406: stuck-state safety net (_schedule_stuck_check / _async_check_stuck)
+# ---------------------------------------------------------------------------
+
+
+class TestStuckStateSafetyNet:
+    def test_check_stuck_no_hass_does_not_raise(self):
+        """_schedule_stuck_check must no-op (not crash) without a real hass."""
+        cover = _make_cover(device_model="BBL", level=1.0, operation_state=MOVING)
+        cover.hass = None
+        cover._attr_is_opening = True
+        cover._schedule_stuck_check()
+        assert cover._stuck_check_unsub is None
+
+    def test_forced_refresh_landing_on_stopped_clears_stuck_flags(self):
+        """Regression (#406): a forced refresh whose FIRST push is STOPPED
+        (the SHC never sent any earlier push at all, so _skip_update is
+        still True from the original command) must still be trusted and
+        clear is_opening — not get treated as the untrusted "first echo"
+        and leave the entity stuck.
+        """
+        cover = _make_cover(device_model="BBL", level=1.0, operation_state=MOVING)
+        cover.hass = None
+        cover._current_operation_state = MOVING
+        cover._attr_is_opening = True
+        cover._attr_is_closing = False
+        cover._skip_update = True  # set by async_open_cover, never yet reset
+        cover._app_command = True
+
+        async def _fake_async_update(fire_callbacks=False):
+            cover._device.operation_state = STOPPED
+            cover._device.level = 1.0
+            if fire_callbacks:
+                cover._update_attr()
+
+        cover._device.async_update = _fake_async_update
+        asyncio.run(cover._async_check_stuck(None))
+
+        assert cover._attr_is_opening is False
+        assert cover._attr_is_closing is False
+        assert cover._skip_update is False
+        assert cover._stuck_check_unsub is None
+
+    def test_still_moving_reschedules(self):
+        """If the forced refresh still finds MOVING, it must re-arm, not
+        give up (otherwise a genuinely slow shutter goes unmonitored)."""
+        cover = _make_cover(device_model="BBL", level=0.4, operation_state=MOVING)
+        cover.hass = None
+        cover._current_operation_state = MOVING
+        cover._skip_update = True
+
+        async def _fake_async_update(fire_callbacks=False):
+            cover._device.operation_state = MOVING
+            if fire_callbacks:
+                cover._update_attr()
+
+        cover._device.async_update = _fake_async_update
+        with patch.object(cover, "_schedule_stuck_check") as mock_schedule:
+            asyncio.run(cover._async_check_stuck(None))
+        mock_schedule.assert_called_once()
+
+    def test_refresh_failure_reschedules_instead_of_giving_up(self):
+        """A failed force-refresh (device unreachable) must retry later,
+        not silently abandon the entity in its stuck state (#406 review)."""
+        from boschshcpy.exceptions import SHCException
+
+        cover = _make_cover(device_model="BBL", level=1.0, operation_state=MOVING)
+        cover.hass = None
+        cover._device.async_update = AsyncMock(side_effect=SHCException("offline"))
+        with patch.object(cover, "_schedule_stuck_check") as mock_schedule:
+            asyncio.run(cover._async_check_stuck(None))
+        mock_schedule.assert_called_once()

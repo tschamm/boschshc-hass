@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.12.21-beta.1 — Shutter covers no longer get stuck "opening"/"closing" forever (#406)
+
+- **Shutter/blind cover entities now self-correct if the SHC drops the
+  push confirming a move finished.** `async_open_cover`/`async_close_cover`/
+  `async_set_cover_position` set `is_opening`/`is_closing` optimistically
+  and normally rely on the SHC's own long-poll push to correct them —
+  #406 showed the SHC can silently drop that push (seen there as a brief
+  `CommunicationQuality` blip coinciding with a scene moving sibling
+  shutters), leaving the cover stuck "opening" indefinitely with only a
+  manual nudge as a workaround. Each HA-initiated move now arms a 90s
+  safety-net timer that force-refreshes the device directly (bypassing
+  long-poll) if no confirmation arrived, re-arming itself if the device
+  is still genuinely moving/calibrating, and retrying rather than giving
+  up if that refresh itself fails. **Needs real-hardware confirmation**;
+  if you're hitting #406, please test this beta and report back.
+
 ## 0.12.20-beta.1 — Expose valve motor status as a diagnostic sensor (#410)
 
 - **New opt-in diagnostic sensor "Valve motor status"** for every

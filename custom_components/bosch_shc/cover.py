@@ -22,14 +22,19 @@ from homeassistant.components.cover import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
 from .const import DOMAIN, LOGGER
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
+
+# #406: seconds to wait for the SHC's own push before force-refreshing;
+# real full travel tops out ~25-30s (#396 calibration rawscans).
+STUCK_STATE_TIMEOUT = 90
 
 
 async def async_setup_entry(
@@ -84,6 +89,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
     _last_position = None
     _skip_update = False
     _app_command = False
+    _stuck_check_unsub: CALLBACK_TYPE | None = None
     # Keypad state is sticky on the SHC — these track whether the reported press
     # belongs to the movement running now (see _refresh_keypad_event_state, #385).
     _last_keypad_timestamp: int | None = None
@@ -108,6 +114,53 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._last_keypad_timestamp = getattr(device, "eventtimestamp", None)
         super().__init__(device, entry_id)
         self._device: SHCMicromoduleShutterControl = device  # type: ignore[assignment]
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe from SHC events and cancel any pending stuck-check."""
+        await super().async_will_remove_from_hass()
+        self._cancel_stuck_check()
+
+    def _cancel_stuck_check(self) -> None:
+        if self._stuck_check_unsub is not None:
+            self._stuck_check_unsub()
+            self._stuck_check_unsub = None
+
+    def _schedule_stuck_check(self) -> None:
+        """Arm a one-shot force-refresh in case the SHC's terminal push never arrives (#406)."""
+        self._cancel_stuck_check()
+        if self.hass is None:
+            # Not yet (or no longer) added to hass — e.g. direct unit-test
+            # construction without the full entity-platform lifecycle.
+            return
+        self._stuck_check_unsub = async_call_later(
+            self.hass, STUCK_STATE_TIMEOUT, self._async_check_stuck
+        )
+
+    async def _async_check_stuck(self, _now: Any) -> None:
+        """Force-refresh via direct GET, bypassing long-poll (#183 fire_callbacks=True mechanism)."""
+        self._stuck_check_unsub = None
+        # Without this, a STOPPED from the forced refresh below hits the
+        # untrusted "first echo" branch and stays stuck anyway (#406 review).
+        self._skip_update = False
+        try:
+            await self._device.async_update(fire_callbacks=True)
+        except SHCException as err:
+            LOGGER.debug(
+                "Stuck-state refresh failed for %s, retrying later: %s",
+                self._device.name,
+                err,
+            )
+            self._schedule_stuck_check()
+            return
+        # Still genuinely moving/calibrating (a real slow shutter, not a
+        # dropped push) — re-arm rather than leaving it unmonitored.
+        if self._current_operation_state in (
+            ShutterControlService.State.MOVING,
+            ShutterControlService.State.OPENING,
+            ShutterControlService.State.CLOSING,
+            ShutterControlService.State.CALIBRATING,
+        ):
+            self._schedule_stuck_check()
 
     def _micromodule_keypad_switch_off(self) -> None:
         if self._device.device_model == "MICROMODULE_SHUTTER":
@@ -209,6 +262,9 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
                 ):
                     self._last_position = self.current_cover_position
                     self._app_command = False
+                # A trusted STOPPED means the SHC did confirm completion —
+                # the #406 safety net below is no longer needed for this move.
+                self._cancel_stuck_check()
             else:
                 # In case of HA commands, the first STOPPED state is not reliable, so we skip it and reset the flag for the next update
                 self._skip_update = False
@@ -345,6 +401,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._attr_is_closing = False
         self._skip_update = True
         self._app_command = True
+        self._cancel_stuck_check()
 
     @property
     def is_closed(self) -> bool:
@@ -373,6 +430,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._target_position = 100
         self._skip_update = True
         self._app_command = True
+        self._schedule_stuck_check()
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
@@ -391,6 +449,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._target_position = 0
         self._skip_update = True
         self._app_command = True
+        self._schedule_stuck_check()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the cover to a specific position."""
@@ -420,6 +479,7 @@ class ShutterControlCover(SHCEntity, CoverEntity):  # type: ignore[misc]
         self._target_position = position
         self._skip_update = True
         self._app_command = True
+        self._schedule_stuck_check()
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -470,6 +530,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         self._target_position = 100
         self._skip_update = True
         self._app_command = True
+        self._schedule_stuck_check()
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover (lift) via ShutterControl.level."""
@@ -487,6 +548,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         self._target_position = 0
         self._skip_update = True
         self._app_command = True
+        self._schedule_stuck_check()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the cover (lift) to a specific position via ShutterControl.level."""
@@ -513,6 +575,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         self._target_position = position
         self._skip_update = True
         self._app_command = True
+        self._schedule_stuck_check()
 
     @property
     def current_cover_position(self) -> int:
@@ -549,6 +612,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         self._attr_is_closing = False
         self._skip_update = True
         self._app_command = True
+        self._cancel_stuck_check()
 
     async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
         """Stop the cover tilt.
@@ -568,6 +632,7 @@ class BlindsControlCover(ShutterControlCover, CoverEntity):  # type: ignore[misc
         self._attr_is_closing = False
         self._skip_update = True
         self._app_command = True
+        self._cancel_stuck_check()
 
     @property
     def current_cover_tilt_position(self) -> int:
