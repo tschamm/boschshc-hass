@@ -8,11 +8,12 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from boschshcpy import SwitchConfiguration
 from boschshcpy.exceptions import SHCException
 
 from custom_components.bosch_shc.keypad_bridge import (
-    DATA_KEYPAD_BRIDGE_MAP,
     _SCHEMA_VERSION,
+    DATA_KEYPAD_BRIDGE_MAP,
     _build_automation,
     _build_swd2_automation,
     _swd2_uds_name,
@@ -37,6 +38,19 @@ def _make_device(device_id: str, name: str, has_keypad: bool = True) -> SimpleNa
     return SimpleNamespace(id=device_id, name=name, has_keypad=has_keypad, room_id=None)
 
 
+def _make_light_control_device(
+    device_id: str,
+    name: str,
+    switch_type: SwitchConfiguration.SwitchType | None = (
+        SwitchConfiguration.SwitchType.PUSHBUTTON
+    ),
+    has_keypad: bool = False,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=device_id, name=name, switch_type=switch_type, has_keypad=has_keypad, room_id=None
+    )
+
+
 def _make_entry(data=None, options=None, session=None):
     entry = SimpleNamespace(
         data=data or {},
@@ -53,13 +67,14 @@ def _make_hass():
     return hass
 
 
-def _make_session(devices, swd2_devices=None):
+def _make_session(devices, swd2_devices=None, light_control_devices=None):
     session = SimpleNamespace()
     session.device_helper = SimpleNamespace(
         shutter_controls=devices,
         micromodule_shutter_controls=[],
         micromodule_blinds=[],
         shutter_contacts2=swd2_devices or [],
+        micromodule_light_controls=light_control_devices or [],
     )
     session.information = SimpleNamespace(macAddress="AA:BB:CC:DD:EE:FF")
     session.async_create_userdefinedstate = AsyncMock()
@@ -324,9 +339,7 @@ class TestAutomationBodyShape:
         assert inactive_action["delayInSeconds"] > 0
 
     def test_short_and_long_press_build_distinct_triggers(self):
-        short_spec = _build_automation(
-            "x", "hdm:ZigBee:abc", 1, "PRESS_SHORT", "uds-1"
-        )
+        short_spec = _build_automation("x", "hdm:ZigBee:abc", 1, "PRESS_SHORT", "uds-1")
         long_spec = _build_automation("x", "hdm:ZigBee:abc", 1, "PRESS_LONG", "uds-1")
 
         short_event = json.loads(short_spec["triggers"][0]["configuration"])[
@@ -337,6 +350,186 @@ class TestAutomationBodyShape:
         ]
         assert short_event == "PRESS_SHORT"
         assert long_event == "PRESS_LONG"
+
+    def test_trigger_type_is_overridable(self):
+        """#282: Light Control II needs KeypadMicromoduleLightTrigger instead
+        of the shading type, with the same field shape (decompile-confirmed
+        both share SimpleButtonPressTriggerConfiguration)."""
+        spec = _build_automation(
+            "x",
+            "hdm:ZigBee:abc",
+            1,
+            "PRESS_SHORT",
+            "uds-1",
+            trigger_type="KeypadMicromoduleLightTrigger",
+        )
+
+        assert spec["triggers"][0]["type"] == "KeypadMicromoduleLightTrigger"
+        config = json.loads(spec["triggers"][0]["configuration"])
+        assert config == {
+            "deviceId": "hdm:ZigBee:abc",
+            "buttonId": 1,
+            "buttonEvent": "PRESS_SHORT",
+        }
+
+
+class TestLightControlPushbuttonBridge:
+    """#282: Light Control II has no live Keypad service in practice, so
+    eligibility is gated on switch_type == PUSHBUTTON instead of
+    has_keypad (has_keypad=True devices are explicitly excluded too, to
+    avoid a duplicate entity if that ever does happen)."""
+
+    def test_creates_entries_for_pushbutton_configured_device(self):
+        device = _make_light_control_device("lc1", "Licht Flur")
+        session = _make_session([], light_control_devices=[device])
+        session.async_create_userdefinedstate.side_effect = [
+            SimpleNamespace(id=f"u{i}") for i in range(4)
+        ]
+        session.async_create_automation_rule.side_effect = [
+            SimpleNamespace(id=f"a{i}") for i in range(4)
+        ]
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_create_userdefinedstate.await_count == 4
+        for call in session.async_create_automation_rule.await_args_list:
+            trigger = call.kwargs["triggers"][0]
+            assert trigger["type"] == "KeypadMicromoduleLightTrigger"
+
+        sent_data = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        bridge_map = sent_data[DATA_KEYPAD_BRIDGE_MAP]
+        for key in (
+            f"lc1_1_PRESS_SHORT_{_SCHEMA_VERSION}",
+            f"lc1_1_PRESS_LONG_{_SCHEMA_VERSION}",
+            f"lc1_2_PRESS_SHORT_{_SCHEMA_VERSION}",
+            f"lc1_2_PRESS_LONG_{_SCHEMA_VERSION}",
+        ):
+            assert key in bridge_map
+
+    def test_skips_device_not_configured_as_pushbutton(self):
+        device = _make_light_control_device(
+            "lc1", "Licht Flur", switch_type=SwitchConfiguration.SwitchType.SWITCH
+        )
+        session = _make_session([], light_control_devices=[device])
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+
+    def test_skips_device_with_no_switch_type(self):
+        device = _make_light_control_device("lc1", "Licht Flur", switch_type=None)
+        session = _make_session([], light_control_devices=[device])
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+
+    def test_skips_excluded_device(self):
+        device = _make_light_control_device("lc1", "Licht Flur")
+        session = _make_session([], light_control_devices=[device])
+        entry = _make_entry(session=session, options={"excluded_devices": ["lc1"]})
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+
+    def test_skips_device_with_live_keypad_service(self):
+        """A device that DOES have a live Keypad service already gets a
+        working entity from event.py's LightControlButtonEvent -- bridging
+        it too would just be a redundant duplicate for the same button."""
+        device = _make_light_control_device("lc1", "Licht Flur", has_keypad=True)
+        session = _make_session([], light_control_devices=[device])
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+
+    def test_idempotent_skips_already_created_entries(self):
+        device = _make_light_control_device("lc1", "Already bridged")
+        session = _make_session([], light_control_devices=[device])
+        entry = _make_entry(
+            data={
+                DATA_KEYPAD_BRIDGE_MAP: {
+                    f"lc1_1_PRESS_SHORT_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u0",
+                        "automation_id": "a0",
+                    },
+                    f"lc1_1_PRESS_LONG_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u1",
+                        "automation_id": "a1",
+                    },
+                    f"lc1_2_PRESS_SHORT_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u2",
+                        "automation_id": "a2",
+                    },
+                    f"lc1_2_PRESS_LONG_{_SCHEMA_VERSION}": {
+                        "userdefinedstate_id": "u3",
+                        "automation_id": "a3",
+                    },
+                }
+            },
+            session=session,
+        )
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_create_userdefinedstate.assert_not_awaited()
+        session.async_create_automation_rule.assert_not_awaited()
+        hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_rolls_back_state_when_automation_create_fails(self):
+        device = _make_light_control_device("lc1", "Licht Flur")
+        session = _make_session([], light_control_devices=[device])
+        session.async_create_userdefinedstate.return_value = SimpleNamespace(id="u1")
+        session.async_create_automation_rule.side_effect = SHCException("boom")
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_delete_userdefinedstate.await_count == 4
+        hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_shading_and_light_control_devices_together_get_correct_trigger_types(
+        self,
+    ):
+        """A regression guard for the trigger_type threading: a session
+        with both device classes present must not cross-wire triggers."""
+        shading_device = _make_device("hdm:ZigBee:shutter1", "Rollladen")
+        light_device = _make_light_control_device("lc1", "Licht Flur")
+        session = _make_session([shading_device], light_control_devices=[light_device])
+        session.async_create_userdefinedstate.side_effect = [
+            SimpleNamespace(id=f"u{i}") for i in range(8)
+        ]
+        session.async_create_automation_rule.side_effect = [
+            SimpleNamespace(id=f"a{i}") for i in range(8)
+        ]
+        entry = _make_entry(session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_create_userdefinedstate.await_count == 8
+        trigger_types_by_device: dict[str, set[str]] = {}
+        for call in session.async_create_automation_rule.await_args_list:
+            config = json.loads(call.kwargs["triggers"][0]["configuration"])
+            trigger_types_by_device.setdefault(config["deviceId"], set()).add(
+                call.kwargs["triggers"][0]["type"]
+            )
+        assert trigger_types_by_device["hdm:ZigBee:shutter1"] == {
+            "KeypadMicromoduleShadingTrigger"
+        }
+        assert trigger_types_by_device["lc1"] == {"KeypadMicromoduleLightTrigger"}
 
 
 class TestSWD2ButtonBridge:

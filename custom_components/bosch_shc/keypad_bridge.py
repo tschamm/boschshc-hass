@@ -13,6 +13,17 @@ Also covers Door/Window Contact II (SWD2/SWD2_PLUS/SWD2_DUAL, hass#245/#342/
 (ShutterContactButtonPressTrigger) with a different field shape, but the
 same UserDefinedState-bridge mechanism.
 
+Light Control II (hass#282) is also covered: every device rawscanned for
+that issue never got a live Keypad service (event.py's has_keypad-gated
+LightControlButtonEvent doesn't fire in practice), so eligibility here is
+gated on SwitchConfiguration.switch_type == PUSHBUTTON instead -- excluding
+has_keypad=True devices to avoid a duplicate entity if some other
+firmware/config combination does expose a real Keypad service. It uses the
+same KeypadMicromoduleXTrigger family as shading: KeypadMicromoduleLightTrigger,
+decompile-confirmed to share the exact same SimpleButtonPressTriggerConfiguration
+field shape (deviceId/buttonId/buttonEvent) as the already-live-verified
+shading trigger -- only the `@type` differs.
+
 Endpoints undocumented in the official OpenAPI spec; traced via APK
 decompile and confirmed live against a real Controller. See
 bosch-shc-api-docs/best_practice/undocumented-local-endpoints.md #10 for
@@ -26,6 +37,7 @@ from collections.abc import Callable
 from functools import partial
 from typing import Any
 
+from boschshcpy import SwitchConfiguration
 from boschshcpy.exceptions import SHCException
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -39,6 +51,9 @@ DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
 # Bumped once (#395 follow-up: wrong trigger type shipped first) to force
 # existing bridge entries to be recreated rather than left stale.
 _SCHEMA_VERSION = "v2"
+
+_SHADING_TRIGGER_TYPE = "KeypadMicromoduleShadingTrigger"
+_LIGHT_TRIGGER_TYPE = "KeypadMicromoduleLightTrigger"
 
 # SWD2 has no Keypad service; ShutterContactButtonPressTrigger is its own
 # type, keyed by shutterContactId + buttonPressState (see module docstring).
@@ -70,15 +85,12 @@ def _swd2_uds_name(device_name: str, button_press_state: str) -> str:
     return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
 
 
-def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
+def _shading_keypad_devices(session: Any, options: Any) -> list[Any]:
     """Shading devices with a Keypad service.
 
     Only the shutter/blinds buckets -- confirmed via a real automation on a
     real device that this device class needs KeypadMicromoduleShadingTrigger,
-    not the generic KeypadButtonPressTrigger. Light Control II is left out
-    for now: it likely needs its own KeypadMicromoduleLightTrigger (a real,
-    distinct type -- confirmed to exist), but its field shape is unverified,
-    and guessing it risks repeating this exact bug for that device class too.
+    not the generic KeypadButtonPressTrigger.
     """
     devices: list[Any] = []
     for bucket in (
@@ -91,6 +103,31 @@ def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
                 continue
             if getattr(device, "has_keypad", False):
                 devices.append(device)
+    return devices
+
+
+def _light_control_pushbutton_devices(session: Any, options: Any) -> list[Any]:
+    """Light Control II devices configured as a non-switching push-button.
+
+    #282: on every device rawscanned for that issue, has_keypad never came
+    back True even after configuring PUSHBUTTON, so event.py's has_keypad-
+    gated LightControlButtonEvent never fires in practice. That's not
+    proven universal though, so this bucket excludes has_keypad=True
+    devices too -- if some firmware/config combination does expose a real
+    Keypad service, the existing entity already covers it and this bridge
+    would just be a redundant duplicate for the same button.
+    """
+    devices: list[Any] = []
+    for device in getattr(session.device_helper, "micromodule_light_controls", []):
+        if device_excluded(device, options):
+            continue
+        if getattr(device, "has_keypad", False):
+            continue
+        if (
+            getattr(device, "switch_type", None)
+            == SwitchConfiguration.SwitchType.PUSHBUTTON
+        ):
+            devices.append(device)
     return devices
 
 
@@ -133,10 +170,12 @@ def _build_automation(
     key_code: int,
     button_event: str,
     userdefinedstate_id: str,
+    *,
+    trigger_type: str = _SHADING_TRIGGER_TYPE,
 ) -> dict[str, Any]:
     triggers = [
         {
-            "type": "KeypadMicromoduleShadingTrigger",
+            "type": trigger_type,
             "configuration": json.dumps(
                 {
                     "deviceId": device_id,
@@ -234,9 +273,17 @@ async def async_sync_keypad_bridge(
         entry.data.get(DATA_KEYPAD_BRIDGE_MAP, {})
     )
 
+    keycode_devices: list[tuple[Any, str]] = [
+        (device, _SHADING_TRIGGER_TYPE)
+        for device in _shading_keypad_devices(session, entry.options)
+    ] + [
+        (device, _LIGHT_TRIGGER_TYPE)
+        for device in _light_control_pushbutton_devices(session, entry.options)
+    ]
+
     wanted_keys: set[str] = set()
     if enabled:
-        for device in _keypad_capable_devices(session, entry.options):
+        for device, _trigger_type in keycode_devices:
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     wanted_keys.add(
@@ -276,7 +323,7 @@ async def async_sync_keypad_bridge(
 
     # Create entries that are missing.
     if enabled:
-        for device in _keypad_capable_devices(session, entry.options):
+        for device, trigger_type in keycode_devices:
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     key = f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
@@ -295,6 +342,7 @@ async def async_sync_keypad_bridge(
                             device.id,
                             key_code,
                             button_event,
+                            trigger_type=trigger_type,
                         ),
                     )
 

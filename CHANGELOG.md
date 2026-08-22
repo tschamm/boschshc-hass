@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.12.23-beta.1 — Bridge Light Control II's physical pushbutton into HA (#282)
+
+- **Extends the keypad-bridge feature (#395) to Light Control II devices**
+  configured as a non-switching push-button. Investigation into #282 found
+  that Light Control II never actually gets a live `Keypad` service from
+  the SHC in practice, so the original 0.6.0 `event.py` entity
+  (`LightControlButtonEvent`, gated on `has_keypad`) never fires for real
+  users — matching reports that no button entity appears no matter how the
+  device is configured. Instead of polling a service that isn't there,
+  this reuses the same SHC-local-automation-rule mechanism already shipped
+  for Shutter/Blinds Control II and Door/Window Contact II: a small
+  automation is created directly on the Controller with trigger type
+  `KeypadMicromoduleLightTrigger`, pulsing a `UserDefinedState` that
+  surfaces as a switch entity usable as an HA automation trigger.
+  Eligibility is gated on `SwitchConfiguration.switch_type == PUSHBUTTON`
+  (the "detach" option in the Bosch app) instead of `has_keypad`, and
+  explicitly skips any device that *does* report `has_keypad=True`, so the
+  older entity and the new bridge can never both fire for the same button.
+  The trigger's field shape (`deviceId`/`buttonId`/`buttonEvent`) was
+  decompile-confirmed to be identical to the already-live-verified
+  shading trigger — only the `@type` differs. **Needs real-hardware
+  confirmation** — the button-count assumption (2 buttons per device,
+  matching the shading convention) and the eligibility gate itself are
+  not yet confirmed on real Light Control II hardware. If you're hitting
+  #282, please test this beta and report back, ideally with a
+  `bosch_shc.trigger_rawscan` dump of the device.
+
 ## 0.12.22-beta.2 — Shutter II calibration: remove the counterproductive priming step (#396)
 
 - **Bumps `boschshcpy` to `0.6.9b2`**, which removes the "priming" PUT
