@@ -29,6 +29,7 @@ import pytest
 from homeassistant.const import ATTR_DEVICE_ID, ATTR_ID, ATTR_NAME, Platform
 from homeassistant.util import slugify
 
+from boschshcpy import SwitchConfiguration
 from boschshcpy.services_impl import KeypadService
 
 from custom_components.bosch_shc.const import (
@@ -771,6 +772,31 @@ class TestEventSetupLightControlsStaleCleanup:
         )
         assert any(isinstance(e, LightControlButtonEvent) for e in collected)
         remove_mock.assert_not_awaited()
+
+    def test_pushbutton_with_keypad_removes_stale_entity_for_keypad_bridge(
+        self, mock_config_entry, mock_session
+    ):
+        """#282: a PUSHBUTTON-configured device with has_keypad=True is now
+        covered by keypad_bridge.py's per-keyCode bridge instead -- this
+        ambiguous, keyCode-blind entity must not be created (and any
+        previously-created one must be cleaned up), to avoid a confusing
+        duplicate for the exact same button presses."""
+        dev = _fake_dev(
+            "lc1",
+            has_keypad=True,
+            switch_type=SwitchConfiguration.SwitchType.PUSHBUTTON,
+            root_device_id="root1",
+            name="LightControl",
+        )
+        mock_session.device_helper.micromodule_light_controls = [dev]
+        collected, remove_mock = _run_event_setup_with_remove_mock(
+            mock_config_entry, mock_session
+        )
+        assert not any(isinstance(e, LightControlButtonEvent) for e in collected)
+        remove_mock.assert_awaited_once()
+        args = remove_mock.await_args.args
+        assert args[1] == Platform.EVENT
+        assert args[2] == "root1_lc1_button"
 
 
 # ===========================================================================

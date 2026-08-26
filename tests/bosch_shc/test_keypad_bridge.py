@@ -374,10 +374,10 @@ class TestAutomationBodyShape:
 
 
 class TestLightControlPushbuttonBridge:
-    """#282: Light Control II has no live Keypad service in practice, so
-    eligibility is gated on switch_type == PUSHBUTTON instead of
-    has_keypad (has_keypad=True devices are explicitly excluded too, to
-    avoid a duplicate entity if that ever does happen)."""
+    """#282: eligibility is gated on switch_type == PUSHBUTTON, regardless
+    of has_keypad -- a real two-button Light Control II unit was confirmed
+    to report has_keypad=True (issue #282 comments 5429216118/5429752272),
+    so has_keypad is no longer used to exclude devices here."""
 
     def test_creates_entries_for_pushbutton_configured_device(self):
         device = _make_light_control_device("lc1", "Licht Flur")
@@ -440,18 +440,29 @@ class TestLightControlPushbuttonBridge:
 
         session.async_create_userdefinedstate.assert_not_awaited()
 
-    def test_skips_device_with_live_keypad_service(self):
-        """A device that DOES have a live Keypad service already gets a
-        working entity from event.py's LightControlButtonEvent -- bridging
-        it too would just be a redundant duplicate for the same button."""
-        device = _make_light_control_device("lc1", "Licht Flur", has_keypad=True)
+    def test_creates_entries_for_pushbutton_device_with_live_keypad_service(self):
+        """A PUSHBUTTON-configured device with a live Keypad service (e.g.
+        a two-button Light Control II, #282 comments 5429216118/5429752076)
+        is still bridged -- has_keypad no longer excludes it."""
+        device = _make_light_control_device(
+            "lc1", "Wohnzimmerdeckenbeleuchtung", has_keypad=True
+        )
         session = _make_session([], light_control_devices=[device])
+        session.async_create_userdefinedstate.side_effect = [
+            SimpleNamespace(id=f"u{i}") for i in range(4)
+        ]
+        session.async_create_automation_rule.side_effect = [
+            SimpleNamespace(id=f"a{i}") for i in range(4)
+        ]
         entry = _make_entry(session=session)
         hass = _make_hass()
 
         _run(async_sync_keypad_bridge(hass, entry, enabled=True))
 
-        session.async_create_userdefinedstate.assert_not_awaited()
+        assert session.async_create_userdefinedstate.await_count == 4
+        for call in session.async_create_automation_rule.await_args_list:
+            trigger = call.kwargs["triggers"][0]
+            assert trigger["type"] == "KeypadMicromoduleLightTrigger"
 
     def test_idempotent_skips_already_created_entries(self):
         device = _make_light_control_device("lc1", "Already bridged")

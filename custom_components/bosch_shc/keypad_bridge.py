@@ -13,16 +13,24 @@ Also covers Door/Window Contact II (SWD2/SWD2_PLUS/SWD2_DUAL, hass#245/#342/
 (ShutterContactButtonPressTrigger) with a different field shape, but the
 same UserDefinedState-bridge mechanism.
 
-Light Control II (hass#282) is also covered: every device rawscanned for
-that issue never got a live Keypad service (event.py's has_keypad-gated
-LightControlButtonEvent doesn't fire in practice), so eligibility here is
-gated on SwitchConfiguration.switch_type == PUSHBUTTON instead -- excluding
-has_keypad=True devices to avoid a duplicate entity if some other
-firmware/config combination does expose a real Keypad service. It uses the
-same KeypadMicromoduleXTrigger family as shading: KeypadMicromoduleLightTrigger,
-decompile-confirmed to share the exact same SimpleButtonPressTriggerConfiguration
-field shape (deviceId/buttonId/buttonEvent) as the already-live-verified
-shading trigger -- only the `@type` differs.
+Light Control II (hass#282) is also covered: eligibility is gated on
+SwitchConfiguration.switch_type == PUSHBUTTON. Originally this bucket also
+excluded has_keypad=True devices, on the assumption that no PUSHBUTTON-
+configured Light Control II ever exposed a live Keypad service in
+practice, and that event.py's has_keypad-gated LightControlButtonEvent
+already covered any that did. #282 comments 5429216118/5429752272
+disproved both halves of that assumption: a real Light Control II unit
+with two physical switches reports has_keypad=True, distinguished only by
+`keyCode` (1 vs 2) -- and LightControlButtonEvent doesn't read keyCode at
+all, so it can't tell the two buttons apart either. The exclusion was
+removed accordingly; has_keypad is no longer consulted here, only
+switch_type == PUSHBUTTON. It uses the same KeypadMicromoduleXTrigger
+family as shading: KeypadMicromoduleLightTrigger, decompile-confirmed to
+share the exact same SimpleButtonPressTriggerConfiguration field shape
+(deviceId/buttonId/buttonEvent) as the already-live-verified shading
+trigger -- only the `@type` differs. Unlike shading, this trigger type is
+NOT YET live-verified to actually discriminate by buttonId at fire time;
+treat as unverified until confirmed on real two-button hardware.
 
 Endpoints undocumented in the official OpenAPI spec; traced via APK
 decompile and confirmed live against a real Controller. See
@@ -109,19 +117,13 @@ def _shading_keypad_devices(session: Any, options: Any) -> list[Any]:
 def _light_control_pushbutton_devices(session: Any, options: Any) -> list[Any]:
     """Light Control II devices configured as a non-switching push-button.
 
-    #282: on every device rawscanned for that issue, has_keypad never came
-    back True even after configuring PUSHBUTTON, so event.py's has_keypad-
-    gated LightControlButtonEvent never fires in practice. That's not
-    proven universal though, so this bucket excludes has_keypad=True
-    devices too -- if some firmware/config combination does expose a real
-    Keypad service, the existing entity already covers it and this bridge
-    would just be a redundant duplicate for the same button.
+    #282: eligibility is switch_type == PUSHBUTTON regardless of
+    has_keypad -- see module docstring for why the earlier has_keypad
+    exclusion was removed.
     """
     devices: list[Any] = []
     for device in getattr(session.device_helper, "micromodule_light_controls", []):
         if device_excluded(device, options):
-            continue
-        if getattr(device, "has_keypad", False):
             continue
         if (
             getattr(device, "switch_type", None)

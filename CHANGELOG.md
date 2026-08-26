@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.23-beta.2 — Bridge Light Control II devices with a live Keypad service too (#282)
+
+- **Removes the `has_keypad` exclusion** added in beta.1's keypad-bridge
+  eligibility check. beta.1 assumed no PUSHBUTTON-configured Light Control II
+  ever reports a live `Keypad` service; #282 comments from a real two-button
+  unit (distinguished only by `keyCode` 1 vs 2) disproved that, so those
+  devices got zero bridge entities instead of the expected 4. Eligibility is
+  now `switch_type == PUSHBUTTON` alone. The pre-existing `event.py`
+  `LightControlButtonEvent` entity (which can't tell the two buttons apart)
+  is now suppressed for the same PUSHBUTTON+`has_keypad` devices, since
+  keypad-bridge's per-`keyCode` automations replace it for that case. **Still
+  needs real-hardware confirmation** that the SHC's automation engine
+  actually discriminates by `buttonId` for `KeypadMicromoduleLightTrigger` at
+  fire time (unlike shading, this hasn't been live round-tripped) — if
+  you're on #282 with a live-Keypad device, please test and confirm pressing
+  each button only triggers its own automation.
+
 ## 0.12.23-beta.1 — Bridge Light Control II's physical pushbutton into HA (#282)
 
 - **Extends the keypad-bridge feature (#395) to Light Control II devices**

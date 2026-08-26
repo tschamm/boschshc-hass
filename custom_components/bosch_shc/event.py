@@ -13,6 +13,7 @@ from boschshcpy import (
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
     SHCUniversalSwitch,
+    SwitchConfiguration,
 )
 from homeassistant.components.event import (
     EventDeviceClass,
@@ -73,18 +74,22 @@ async def async_setup_entry(
             )
         )
 
-    # #282: Light Control II configured as a non-switching push-button emits
-    # Keypad events the user can react to. Only create the entity when the
-    # device actually exposes a Keypad service.
+    # #282: Light Control II Keypad events. PUSHBUTTON-configured devices are
+    # excluded -- keypad_bridge.py bridges those with per-keyCode disambiguation.
     for light_control in getattr(
         session.device_helper, "micromodule_light_controls", []
     ):
         unique_id = f"{light_control.root_device_id}_{light_control.id}_button"
-        if device_excluded(light_control, entry.options) or not getattr(
-            light_control, "has_keypad", False
+        is_pushbutton = (
+            getattr(light_control, "switch_type", None)
+            == SwitchConfiguration.SwitchType.PUSHBUTTON
+        )
+        if (
+            device_excluded(light_control, entry.options)
+            or not getattr(light_control, "has_keypad", False)
+            or is_pushbutton
         ):
-            # Excluded, or a runtime SwitchConfiguration change dropped the
-            # Keypad service (#282) — clean up any previously created entity.
+            # Excluded, keypad dropped at runtime, or now bridged instead (#282).
             await async_remove_stale_entity(hass, Platform.EVENT, unique_id)
             continue
         entities.append(
