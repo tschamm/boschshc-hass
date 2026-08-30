@@ -40,6 +40,7 @@ the trigger/action JSON shapes this builds.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Callable
 from functools import partial
@@ -81,16 +82,29 @@ _RESET_DELAY_SECONDS = 2
 # (live-confirmed; a longer name gets a bare 400). Automation.name has no such limit.
 _UDS_NAME_MAX_LEN = 30
 _UDS_NAME_SUFFIX = " Btn{}{}"  # shortest unambiguous per-button-per-event suffix
+# Trailing-number names (e.g. "... II 17"/"... II 3") collide once truncated
+# to _UDS_NAME_MAX_LEN; a device.id tag keeps them distinct (hass#282).
+_UDS_DEVICE_TAG_LEN = 6
 
 
-def _uds_name(device_name: str, key_code: int, button_event: str) -> str:
+def _uds_device_tag(device_id: str) -> str:
+    return hashlib.sha1(device_id.encode()).hexdigest()[:_UDS_DEVICE_TAG_LEN]
+
+
+def _uds_name(
+    device_name: str, device_id: str, key_code: int, button_event: str
+) -> str:
     suffix = _UDS_NAME_SUFFIX.format(key_code, _BUTTON_EVENT_SUFFIX[button_event])
-    return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
+    tag = " " + _uds_device_tag(device_id)
+    prefix_len = _UDS_NAME_MAX_LEN - len(suffix) - len(tag)
+    return device_name[:prefix_len] + tag + suffix
 
 
-def _swd2_uds_name(device_name: str, button_press_state: str) -> str:
+def _swd2_uds_name(device_name: str, device_id: str, button_press_state: str) -> str:
     suffix = " Btn" + _SWD2_BUTTON_STATE_SUFFIX[button_press_state]
-    return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
+    tag = " " + _uds_device_tag(device_id)
+    prefix_len = _UDS_NAME_MAX_LEN - len(suffix) - len(tag)
+    return device_name[:prefix_len] + tag + suffix
 
 
 def _shading_keypad_devices(session: Any, options: Any) -> list[Any]:
@@ -337,7 +351,9 @@ async def async_sync_keypad_bridge(
                         bridge_map,
                         key,
                         label=label,
-                        uds_name=_uds_name(device.name, key_code, button_event),
+                        uds_name=_uds_name(
+                            device.name, device.id, key_code, button_event
+                        ),
                         build_spec=partial(
                             _build_automation,
                             f"[HA] {label}",
@@ -359,7 +375,7 @@ async def async_sync_keypad_bridge(
                     bridge_map,
                     key,
                     label=label,
-                    uds_name=_swd2_uds_name(device.name, button_press_state),
+                    uds_name=_swd2_uds_name(device.name, device.id, button_press_state),
                     build_spec=partial(
                         _build_swd2_automation,
                         f"[HA] {label}",

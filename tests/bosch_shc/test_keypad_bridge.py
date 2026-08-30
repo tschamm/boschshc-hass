@@ -254,16 +254,34 @@ class TestUserDefinedStateNameLength:
     def test_long_device_name_is_truncated_to_30_chars(self):
         """UserDefinedState.name is capped at 30 chars by the Controller
         itself -- a longer name gets a bare 400 (live-confirmed, #395)."""
-        name = _uds_name("A Very Long Shutter Device Name Indeed", 1, "PRESS_SHORT")
+        name = _uds_name(
+            "A Very Long Shutter Device Name Indeed", "d1", 1, "PRESS_SHORT"
+        )
         assert len(name) <= 30
         assert name.endswith(" Btn1S")
 
     def test_short_and_long_press_produce_different_names(self):
-        short_name = _uds_name("Shutter", 2, "PRESS_SHORT")
-        long_name = _uds_name("Shutter", 2, "PRESS_LONG")
-        assert short_name == "Shutter Btn2S"
-        assert long_name == "Shutter Btn2L"
+        short_name = _uds_name("Shutter", "d1", 2, "PRESS_SHORT")
+        long_name = _uds_name("Shutter", "d1", 2, "PRESS_LONG")
         assert short_name != long_name
+        assert short_name.endswith(" Btn2S")
+        assert long_name.endswith(" Btn2L")
+
+    def test_same_name_prefix_different_device_ids_stay_distinct(self):
+        """hass#282 comment 5470304865: multiple devices sharing the same
+        truncated name prefix (e.g. "Licht-/Rollladensteuerung II 17" vs
+        "... 3") must not collide on the same UserDefinedState name -- that
+        caused every device but the first to fail with
+        USERDEFINEDSTATE_NAME_EXISTS and silently get no bridge at all."""
+        name_a = _uds_name(
+            "Licht-/Rollladensteuerung II 17", "dev-a", 1, "PRESS_SHORT"
+        )
+        name_b = _uds_name(
+            "Licht-/Rollladensteuerung II 3", "dev-b", 1, "PRESS_SHORT"
+        )
+        assert len(name_a) <= 30
+        assert len(name_b) <= 30
+        assert name_a != name_b
 
     def test_creates_state_with_truncated_name(self):
         device = _make_device(
@@ -611,10 +629,11 @@ class TestSWD2ButtonBridge:
         hass.config_entries.async_update_entry.assert_not_called()
 
     def test_uds_name_truncation_and_distinctness(self):
-        short_name = _swd2_uds_name("Speisekammer-Fenster", "ON_SHORT_PRESS")
-        long_name = _swd2_uds_name("Speisekammer-Fenster", "ON_LONG_PRESS")
-        assert short_name == "Speisekammer-Fenster BtnS"
-        assert long_name == "Speisekammer-Fenster BtnL"
+        short_name = _swd2_uds_name("Speisekammer-Fenster", "d1", "ON_SHORT_PRESS")
+        long_name = _swd2_uds_name("Speisekammer-Fenster", "d1", "ON_LONG_PRESS")
+        assert short_name != long_name
+        assert short_name.endswith(" BtnS")
+        assert long_name.endswith(" BtnL")
         assert len(short_name) <= 30
         assert len(long_name) <= 30
 

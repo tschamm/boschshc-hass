@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.12.23-beta.3 — Fix keypad-bridge name collisions across same-family devices (#282)
+
+- **Fixes a naming collision in the keypad-bridge feature (#395)** that
+  silently dropped bridge entities for most devices sharing a name prefix.
+  The SHC-side `UserDefinedState.name` is capped at 30 characters, and the
+  previous code truncated the device's friendly name to fit — but many real
+  device names differ only in a trailing number (e.g. "Licht-/Rollladen­
+  steuerung II 17" vs "... II 3"), which the truncation chopped off
+  entirely. Every device in such a family beyond the first then failed to
+  create its state with `USERDEFINEDSTATE_NAME_EXISTS` (HTTP 400), leaving
+  it with no keypad-bridge switch entity at all and only a WARNING log line
+  as a symptom. Live-confirmed via a real user's debug log (#282 comment
+  5470304865) showing 12 devices in a row failing this way. Fixed by
+  appending a short device-id-derived tag before truncating, so the name
+  stays unique per device regardless of where its distinguishing text sits.
+  Affects the shading, Light Control II, and Door/Window Contact II (SWD2)
+  keypad-bridge buckets alike. No config-entry migration needed — devices
+  that already succeeded keep their existing bridge untouched; only
+  previously-failing devices get (re-)created with the new naming on the
+  next sync.
+
 ## 0.12.23-beta.2 — Bridge Light Control II devices with a live Keypad service too (#282)
 
 - **Removes the `has_keypad` exclusion** added in beta.1's keypad-bridge
