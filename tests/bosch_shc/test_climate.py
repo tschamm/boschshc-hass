@@ -120,6 +120,7 @@ def _make_device(
         async_set_low=AsyncMock(),
         async_set_summer_mode=AsyncMock(),
         async_set_cooling_mode=AsyncMock(),
+        async_set_hvac_control_mode=AsyncMock(),
         async_set_boost_mode=AsyncMock(),
         async_set_operation_mode=AsyncMock(),
         async_set_setpoint_temperature=AsyncMock(),
@@ -160,6 +161,7 @@ def _make_device_cooling(
         async_set_low=AsyncMock(),
         async_set_summer_mode=AsyncMock(),
         async_set_cooling_mode=AsyncMock(),
+        async_set_hvac_control_mode=AsyncMock(),
         async_set_boost_mode=AsyncMock(),
         async_set_operation_mode=AsyncMock(),
         async_set_setpoint_temperature=AsyncMock(),
@@ -197,6 +199,7 @@ def _make_cc_device(
         async_set_low=AsyncMock(),
         async_set_summer_mode=AsyncMock(),
         async_set_cooling_mode=AsyncMock(),
+        async_set_hvac_control_mode=AsyncMock(),
         async_set_boost_mode=AsyncMock(),
         async_set_operation_mode=AsyncMock(),
         async_set_setpoint_temperature=AsyncMock(),
@@ -416,6 +419,7 @@ def _make_climate_control(*, summer_mode=False, low=False, boost_mode=False, sup
         async_set_low=AsyncMock(),
         async_set_summer_mode=AsyncMock(),
         async_set_cooling_mode=AsyncMock(),
+        async_set_hvac_control_mode=AsyncMock(),
         async_set_boost_mode=AsyncMock(),
         async_set_operation_mode=AsyncMock(),
         async_set_setpoint_temperature=AsyncMock(),
@@ -785,8 +789,7 @@ class TestCoolingHvacMode:
         device = _make_device_cooling(supports_cooling=True, cooling_mode=False)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
-        device.async_set_cooling_mode.assert_awaited_with(True)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("COOLING")
 
     def test_hvac_modes_includes_auto(self):
         # #334: AUTO is always present in hvac_modes for ClimateControl
@@ -799,14 +802,13 @@ class TestCoolingHvacMode:
                                       operation_mode_value="MANUAL")
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
-        device.async_set_cooling_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
 
     def test_set_hvac_mode_off_clears_cooling_mode(self):
         device = _make_device_cooling(supports_cooling=True, cooling_mode=True)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
-        device.async_set_cooling_mode.assert_awaited_with(False)
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
 
 # ===========================================================================
@@ -941,7 +943,7 @@ class TestSetHvacModeNew:
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.AUTO))
         device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
 
     def test_set_hvac_mode_heat_sets_manual(self):
         """#334: HEAT sets operationMode=MANUAL."""
@@ -950,20 +952,19 @@ class TestSetHvacModeNew:
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.HEAT))
         device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
 
     def test_set_hvac_mode_cool_sets_cooling_true(self):
         device = _make_device(summer_mode=False, cooling_mode=False, supports_cooling=True)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.COOL))
-        device.async_set_cooling_mode.assert_awaited_with(True)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("COOLING")
 
     def test_set_hvac_mode_off_sets_summer_true(self):
         device = _make_device(summer_mode=False, supports_cooling=False)
         entity = _make_entity(device)
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
     def test_set_hvac_mode_exits_eco_first(self):
         """When device.low=True, set_hvac_mode must clear low before direction change."""
@@ -977,18 +978,18 @@ class TestSetHvacModeNew:
         async def _set_low(val):
             call_order.append(("low", val))
 
-        async def _set_summer(val):
-            call_order.append(("summer_mode", val))
+        async def _set_hvac_control_mode(val):
+            call_order.append(("hvac_control_mode", val))
 
         device.async_set_low = _set_low
-        device.async_set_summer_mode = _set_summer
+        device.async_set_hvac_control_mode = _set_hvac_control_mode
 
         _run_async(entity.async_set_hvac_mode(HVACMode.OFF))
         assert "low" in [k for k, _ in call_order], "low must be cleared when exiting ECO"
         keys = [k for k, _ in call_order]
         low_idx = keys.index("low")
-        summer_idx = keys.index("summer_mode")
-        assert low_idx < summer_idx, "low=False must be written before summer_mode=True"
+        summer_idx = keys.index("hvac_control_mode")
+        assert low_idx < summer_idx, "low=False must be written before hvac_control_mode=OFF"
 
 
 class TestSetPresetModeNew:
@@ -1046,15 +1047,15 @@ class TestTurnOnOff334:
         device = _make_device(summer_mode=True, supports_cooling=False)
         entity = _make_entity(device)
         _run_async(entity.async_turn_on())
-        # AUTO sets summer_mode=False and operationMode=AUTOMATIC
-        device.async_set_summer_mode.assert_awaited_with(False)
+        # AUTO sets hvac_control_mode=HEATING and operationMode=AUTOMATIC
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
 
     def test_turn_off_sets_summer_mode(self):
         device = _make_device(summer_mode=False, operation_mode_value="AUTOMATIC")
         entity = _make_entity(device)
         _run_async(entity.async_turn_off())
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
 
 # ===========================================================================
@@ -1064,10 +1065,10 @@ class TestTurnOnOff334:
 
 
 class TestClimateSupportsCoolingAutoMode:
-    """Line 338: supports_cooling=True → async_set_cooling_mode(False) called on AUTO."""
+    """#394: AUTO writes hvac_control_mode=HEATING atomically (no separate cooling_mode clear)."""
 
     def test_set_hvac_mode_auto_with_cooling(self):
-        """Line 338: AUTO mode + supports_cooling → async_set_cooling_mode called."""
+        """AUTO mode + supports_cooling → hvac_control_mode="HEATING" called, no cooling_mode write."""
         ent = ClimateControl.__new__(ClimateControl)
 
         device = MagicMock()
@@ -1078,13 +1079,14 @@ class TestClimateSupportsCoolingAutoMode:
         device.supports_eco = False
         device.async_set_summer_mode = AsyncMock()
         device.async_set_cooling_mode = AsyncMock()
+        device.async_set_hvac_control_mode = AsyncMock()
         device.async_set_operation_mode = AsyncMock()
         ent._device = device
 
         _run(ent.async_set_hvac_mode(HVACMode.AUTO))
 
-        device.async_set_cooling_mode.assert_called_once_with(False)
-        device.async_set_summer_mode.assert_called()
+        device.async_set_hvac_control_mode.assert_called_once_with("HEATING")
+        device.async_set_cooling_mode.assert_not_called()
 
 
 # ===========================================================================
@@ -1291,8 +1293,8 @@ class TestSetTemperatureGuards:
         _run(entity.async_set_temperature(
             **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.HEAT}
         ))
-        # HEAT writes summer_mode=False and operationMode=MANUAL
-        device.async_set_summer_mode.assert_awaited_with(False)
+        # HEAT writes hvac_control_mode=HEATING and operationMode=MANUAL
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_setpoint_temperature.assert_awaited_with(22.0)
 
     def test_hvac_mode_kwarg_none_does_not_crash(self):
@@ -1395,6 +1397,7 @@ class TestClimateSetTemperatureManualSwitch:
             async_set_low=AsyncMock(),
             async_set_summer_mode=AsyncMock(),
             async_set_cooling_mode=AsyncMock(),
+            async_set_hvac_control_mode=AsyncMock(),
             async_set_boost_mode=AsyncMock(),
             async_set_operation_mode=AsyncMock(),
             async_set_setpoint_temperature=AsyncMock(),
@@ -1496,8 +1499,8 @@ class TestClimateSetTemperatureManualSwitch:
     def test_set_temperature_explicit_heat_writes_setpoint_despite_stale_off_cache(self):
         """Regression: boschshcpy's async_put_state_element() only awaits the
         HTTP PUT, it never updates the local device cache — so right after
-        async_set_hvac_mode(HEAT) awaits async_set_summer_mode(False), the
-        device's cached summer_mode is still stale True until the next
+        async_set_hvac_mode(HEAT) awaits async_set_hvac_control_mode("HEATING"),
+        the device's cached summer_mode is still stale True until the next
         long-poll. set_temperature(hvac_mode="heat", temperature=21) on a
         device that was OFF must still write the setpoint — it must not
         re-read the stale cache and bail out via the OFF guard, silently
@@ -1509,7 +1512,7 @@ class TestClimateSetTemperatureManualSwitch:
             **{ATTR_TEMPERATURE: 21.0, ATTR_HVAC_MODE: HVACMode.HEAT}
         ))
 
-        ent._device.async_set_summer_mode.assert_awaited_with(False)
+        ent._device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         ent._device.async_set_setpoint_temperature.assert_awaited_with(21.0)
 
     def test_set_temperature_explicit_heat_write_failure_falls_back_to_stale_cache_off_guard(self):
@@ -1521,7 +1524,7 @@ class TestClimateSetTemperatureManualSwitch:
         instead of attempting (and failing) it a second time."""
         ent = self._make_entity(operation_mode=_MANUAL)
         ent._device.summer_mode = True  # device is genuinely OFF
-        ent._device.async_set_summer_mode = AsyncMock(
+        ent._device.async_set_hvac_control_mode = AsyncMock(
             side_effect=JSONRPCError(-1, "network error")
         )
 
@@ -1547,21 +1550,21 @@ class TestSetHvacModeNoCooling:
     """
 
     def test_auto_mode_sets_automatic_operation_mode(self):
-        """#334: AUTO sets operationMode=AUTOMATIC + summer_mode=False."""
+        """#334: AUTO sets operationMode=AUTOMATIC + hvac_control_mode=HEATING."""
         device = _make_cc_device(summer_mode=False, supports_cooling=False,
                                  operation_mode_value="MANUAL")
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.AUTO))
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
 
     def test_heat_mode_no_cooling_sets_manual_operation_mode(self):
-        """#334: HEAT sets operationMode=MANUAL + summer_mode=False."""
+        """#334: HEAT sets operationMode=MANUAL + hvac_control_mode=HEATING."""
         device = _make_cc_device(summer_mode=False, supports_cooling=False,
                                  operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
 
     def test_off_mode_no_cooling_sets_summer_mode(self):
@@ -1569,17 +1572,19 @@ class TestSetHvacModeNoCooling:
                                  operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.OFF))
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
         device.async_set_cooling_mode.assert_not_awaited()
 
     def test_off_mode_with_cooling_clears_cooling_first(self):
-        """OFF mode + supports_cooling=True → cooling_mode=False first, then summer."""
+        """#394: OFF mode writes hvac_control_mode=OFF atomically -- no separate
+        cooling_mode clear (that intermediate step is exactly what caused the
+        spurious activity-log entry the atomic endpoint avoids)."""
         device = _make_cc_device(summer_mode=False, supports_cooling=True,
                                  cooling_mode=True, operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.OFF))
-        device.async_set_cooling_mode.assert_awaited_with(False)
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_cooling_mode.assert_not_awaited()
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
     def test_cool_mode_not_available_without_support(self):
         """COOL not in hvac_modes when supports_cooling=False → noop."""
@@ -1599,14 +1604,14 @@ class TestSetHvacModeNoCooling:
     def test_shcexception_in_hvac_mode_swallowed(self):
         """SHCException from async setter in async_set_hvac_mode must not propagate."""
         device = _make_cc_device(summer_mode=False, supports_cooling=False, low=False)
-        device.async_set_summer_mode = AsyncMock(side_effect=SHCException("conn error"))
+        device.async_set_hvac_control_mode = AsyncMock(side_effect=SHCException("conn error"))
         entity = _make_cc(device)
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
 
     def test_jsonrpcerror_in_hvac_mode_swallowed(self):
         """JSONRPCError in async_set_hvac_mode must not propagate."""
         device = _make_cc_device(summer_mode=False, supports_cooling=False, low=False)
-        device.async_set_summer_mode = AsyncMock(
+        device.async_set_hvac_control_mode = AsyncMock(
             side_effect=JSONRPCError(-32001, "timeout")
         )
         entity = _make_cc(device)
@@ -1623,8 +1628,8 @@ class TestSetHvacModeNoCooling:
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
         # ECO exit: low must be cleared
         device.async_set_low.assert_awaited_with(False)
-        # HEAT direction: summer_mode=False + operationMode=MANUAL
-        device.async_set_summer_mode.assert_awaited_with(False)
+        # HEAT direction: hvac_control_mode=HEATING + operationMode=MANUAL
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
 
 
@@ -1661,7 +1666,7 @@ class TestSetHvacModeEcoGuard:
 
         # ECO is exited first, then HEAT is applied
         device.async_set_low.assert_awaited_with(False)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
 
 
@@ -1682,10 +1687,10 @@ class TestTurnOffFromEco:
         _run(entity.async_turn_off())
 
         device.async_set_low.assert_awaited_with(False)
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
     def test_set_hvac_mode_off_from_eco_clears_eco(self):
-        """async_set_hvac_mode(OFF) in ECO must clear low before setting summer_mode."""
+        """async_set_hvac_mode(OFF) in ECO must clear low before setting hvac_control_mode."""
         device = _make_cc_device(low=True, summer_mode=False,
                                  operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
@@ -1693,12 +1698,12 @@ class TestTurnOffFromEco:
         _run(entity.async_set_hvac_mode(HVACMode.OFF))
 
         device.async_set_low.assert_awaited_with(False)
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
     def test_set_hvac_mode_heat_from_eco_clears_eco(self):
         """async_set_hvac_mode(HEAT) in ECO must clear low before setting mode.
 
-        #334: HEAT sets operationMode=MANUAL + summer_mode=False.
+        #334: HEAT sets operationMode=MANUAL + hvac_control_mode=HEATING.
         """
         device = _make_cc_device(low=True, summer_mode=False,
                                  operation_mode_value="AUTOMATIC")
@@ -1707,7 +1712,7 @@ class TestTurnOffFromEco:
         _run(entity.async_set_hvac_mode(HVACMode.HEAT))
 
         device.async_set_low.assert_awaited_with(False)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.MANUAL)
 
     def test_set_hvac_mode_auto_from_eco_clears_eco(self):
@@ -1736,7 +1741,7 @@ class TestTurnOffFromEco:
 
 
 class TestCoolSetsDirectionAxis:
-    """#334: COOL sets cooling_mode=True + summer_mode=False (direction axis).
+    """#334/#394: COOL atomically sets hvac_control_mode=COOLING (direction axis).
     operationMode is NOT touched by set_hvac_mode(COOL).
     """
 
@@ -1751,8 +1756,7 @@ class TestCoolSetsDirectionAxis:
 
         _run(entity.async_set_hvac_mode(HVACMode.COOL))
 
-        device.async_set_cooling_mode.assert_awaited_with(True)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("COOLING")
         # COOL does NOT touch operationMode
         device.async_set_operation_mode.assert_not_awaited()
 
@@ -1770,8 +1774,7 @@ class TestCoolSetsDirectionAxis:
         _run(entity.async_set_hvac_mode(HVACMode.COOL))
 
         device.async_set_low.assert_awaited_with(False)
-        device.async_set_cooling_mode.assert_awaited_with(True)
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("COOLING")
 
 
 class TestEcoGatedOnSupportsEco:
@@ -1973,7 +1976,7 @@ class TestTurnOnOffClimate:
         device = _make_cc_device(summer_mode=True, low=False)
         entity = _make_cc(device)
         _run(entity.async_turn_on())
-        device.async_set_summer_mode.assert_awaited_with(False)
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
 
     def test_turn_on_when_already_auto_is_noop(self):
@@ -1991,11 +1994,11 @@ class TestTurnOnOffClimate:
         device.async_set_summer_mode.assert_not_awaited()
 
     def test_turn_off_when_on_sets_summer_mode(self):
-        """Mode=AUTO (not OFF) → turn_off sets summer_mode=True."""
+        """Mode=AUTO (not OFF) → turn_off sets hvac_control_mode=OFF."""
         device = _make_cc_device(summer_mode=False, operation_mode_value="AUTOMATIC")
         entity = _make_cc(device)
         _run(entity.async_turn_off())
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
     def test_turn_off_when_already_off_is_noop(self):
         """summer_mode=True (already OFF) → turn_off is noop."""
@@ -2015,8 +2018,8 @@ class TestTurnOnOff:
 
         _run(entity.async_turn_on())
 
-        # AUTO sets summer_mode=False and operationMode=AUTOMATIC
-        device.async_set_summer_mode.assert_awaited_with(False)
+        # AUTO sets hvac_control_mode=HEATING and operationMode=AUTOMATIC
+        device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
         device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
 
     def test_turn_on_noop_when_already_on_auto(self):
@@ -2042,7 +2045,7 @@ class TestTurnOnOff:
 
         _run(entity.async_turn_off())
 
-        device.async_set_summer_mode.assert_awaited_with(True)
+        device.async_set_hvac_control_mode.assert_awaited_with("OFF")
 
     def test_turn_off_noop_when_already_off(self):
         device = _make_cc_device(summer_mode=True)
@@ -2176,7 +2179,7 @@ class TestClimateControlHvacModeErrors:
         PR #329: AUTO is no longer an hvac_mode, use HEAT instead.
         """
         entity = _make_climate_control(summer_mode=False, low=False)
-        entity._device.async_set_summer_mode = AsyncMock(side_effect=_JRPC("timeout"))
+        entity._device.async_set_hvac_control_mode = AsyncMock(side_effect=_JRPC("timeout"))
 
         with patch("custom_components.bosch_shc.climate.LOGGER") as mock_log:
             asyncio.run(entity.async_set_hvac_mode(HVACMode.HEAT))
@@ -2185,7 +2188,7 @@ class TestClimateControlHvacModeErrors:
 
     def test_shc_exception_is_caught_and_logged(self):
         entity = _make_climate_control(summer_mode=False, low=False)
-        entity._device.async_set_summer_mode = AsyncMock(
+        entity._device.async_set_hvac_control_mode = AsyncMock(
             side_effect=SHCException("conn")
         )
 

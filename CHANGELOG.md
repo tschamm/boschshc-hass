@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.24-beta.1 — Room Climate Control: atomic off/heating/cooling write (#394)
+
+- **Fixes the root cause of #394's spurious "auto" activity-log entry**
+  on every off→heating (or off→cooling) transition. Traced via APK
+  decompile of the official Bosch app: it never writes `summerMode` and
+  then `operationMode`/`roomControlMode` separately to move a room out of
+  off — it sends the target state (`HEATING`/`COOLING`/`OFF`) in a single
+  atomic call instead. `climate.py` now uses boschshcpy's new
+  `async_set_hvac_control_mode()` (requires boschshcpy 0.6.10b1+) for
+  every hvac_mode change, eliminating the momentary intermediate device
+  state the old two-step write exposed on the Controller. beta.14's
+  earlier fix attempt (just reordering the same two writes, since
+  reverted in beta.15) hit a hard `WRONG_THERMOSTAT_GROUP_MODE` rejection
+  because it used the wrong write path entirely, not just the wrong
+  order. **Needs real-hardware confirmation before this ships as stable**
+  — if you're hitting #394, please update and report back.
+
 ## 0.12.23-beta.3 — Fix keypad-bridge name collisions across same-family devices (#282)
 
 - **Fixes a naming collision in the keypad-bridge feature (#395)** that

@@ -382,27 +382,22 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
             if self.preset_mode == PRESET_ECO:
                 await self._device.async_set_low(False)
 
+            # #394: off<->heating/cooling written atomically (matches the
+            # app) to avoid the momentary state that leaked a spurious "auto" log entry.
             if hvac_mode == HVACMode.AUTO:
-                await self._device.async_set_summer_mode(False)
-                if self._device.supports_cooling:
-                    await self._device.async_set_cooling_mode(False)
+                await self._device.async_set_hvac_control_mode("HEATING")
                 await self._device.async_set_operation_mode(
                     RoomClimateControlService.OperationMode.AUTOMATIC
                 )
             elif hvac_mode == HVACMode.HEAT:
-                await self._device.async_set_summer_mode(False)
-                if self._device.supports_cooling:
-                    await self._device.async_set_cooling_mode(False)
+                await self._device.async_set_hvac_control_mode("HEATING")
                 await self._device.async_set_operation_mode(
                     RoomClimateControlService.OperationMode.MANUAL
                 )
             elif hvac_mode == HVACMode.COOL:
-                await self._device.async_set_summer_mode(False)
-                await self._device.async_set_cooling_mode(True)
+                await self._device.async_set_hvac_control_mode("COOLING")
             elif hvac_mode == HVACMode.OFF:
-                if self._device.supports_cooling:
-                    await self._device.async_set_cooling_mode(False)
-                await self._device.async_set_summer_mode(True)
+                await self._device.async_set_hvac_control_mode("OFF")
         except (JSONRPCError, SHCException) as err:
             LOGGER.warning(
                 "Failed to set HVAC mode on device %s: %s",
