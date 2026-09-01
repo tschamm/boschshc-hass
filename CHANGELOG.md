@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.24-beta.2 — Clarify ambiguous TRV valve motor error states (#410)
+
+- **Reworded two `valve_tappet_state` enum states that read as the opposite
+  of what they mean.** `NO_VALVE_BODY_ERROR` and `NO_MOTOR_ERROR` are Bosch
+  error codes (valve body / motor not detected), but the English strings
+  "No valve body error" / "No motor error" read like "there is no error" —
+  exactly backwards for #410's use case of alerting on TRV valve motor
+  problems. Now "Error: no valve body detected" / "Error: no motor
+  detected". Confirmed working sensor itself; this only clarifies wording
+  the reporter flagged as unclear.
+
 ## 0.12.24-beta.1 — Room Climate Control: atomic off/heating/cooling write (#394)
 
 - **Fixes the root cause of #394's spurious "auto" activity-log entry**
