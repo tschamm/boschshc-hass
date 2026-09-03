@@ -230,8 +230,21 @@ class SHCEntity(Entity):  # type: ignore[misc]
             identifiers={(DOMAIN, self._device.id)},
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
-            via_device=(DOMAIN, self._device.root_device_id),
         )
+        # boschshcpy may render the hub identifier and a device's
+        # root_device_id differently, so the lookup can miss; link only
+        # when it resolves instead of raising out of setup (matches
+        # ha-core#177711's via_device -> via_device_id migration).
+        if hub := get_dev_reg(self.hass).async_get_device_by_identifier(
+            (DOMAIN, self._device.root_device_id), self._entry_id
+        ):
+            info["via_device_id"] = hub.id
+        else:
+            LOGGER.debug(
+                "No hub device found for root_device_id %s (device %s)",
+                self._device.root_device_id,
+                self._device.id,
+            )
         # #393: raw name is a Bosch-controller-supplied internal service
         # identifier, not user-customizable — safe to override.
         if self._device.device_model == "PRESENCE_SIMULATION_SERVICE":

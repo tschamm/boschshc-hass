@@ -35,6 +35,21 @@ from custom_components.bosch_shc.alarm_control_panel import (
 )
 from custom_components.bosch_shc.const import DOMAIN
 
+def _patch_dev_reg(hub_id=None):
+    """Patch alarm_control_panel.get_dev_reg for the device_info hub lookup.
+
+    Returns a hub with `hub_id`, or None (lookup miss) when omitted.
+    """
+    fake_registry = MagicMock()
+    fake_registry.async_get_device_by_identifier.return_value = (
+        SimpleNamespace(id=hub_id) if hub_id is not None else None
+    )
+    return patch(
+        "custom_components.bosch_shc.alarm_control_panel.get_dev_reg",
+        return_value=fake_registry,
+    )
+
+
 AlarmState = SHCIntrusionSystem.AlarmState
 ArmingState = SHCIntrusionSystem.ArmingState
 Profile = SHCIntrusionSystem.Profile
@@ -67,6 +82,7 @@ def _panel(
         root_device_id=root_device_id,
         id=device_id,
     )
+    panel._entry_id = "entry-x"
     return panel
 
 
@@ -413,11 +429,12 @@ def test_device_info_structure():
         root_device_id="root-99",
         device_id="ids-1",
     )
-    info = panel.device_info
+    with _patch_dev_reg(hub_id="hub-99"):
+        info = panel.device_info
     assert ("bosch_shc", "ids-1") in info["identifiers"]
     assert info["manufacturer"] == "Bosch"
     assert info["model"] == "IDS"
-    assert info["via_device"] == ("bosch_shc", "root-99")
+    assert info["via_device_id"] == "hub-99"
 
 
 def test_device_info_uses_translation_key_not_raw_name():
@@ -426,7 +443,8 @@ def test_device_info_uses_translation_key_not_raw_name():
     device.intrusion_system in strings.json instead.
     """
     panel = _panel(name="Intrusion Detection System")
-    info = panel.device_info
+    with _patch_dev_reg():
+        info = panel.device_info
     assert "name" not in info
     assert info["translation_key"] == "intrusion_system"
 
@@ -506,26 +524,36 @@ class TestAlarmPanelProperties:
 
     def test_device_info_contains_identifiers(self):
         p = _make_panel(device_id="dev-info")
-        info = p.device_info
+        with _patch_dev_reg():
+            info = p.device_info
         assert (DOMAIN, "dev-info") in info["identifiers"]
 
     def test_device_info_contains_name(self):
         """#393: name is replaced by translation_key, not the raw device name."""
         p = _make_panel(name="Info Panel")
-        assert "name" not in p.device_info
-        assert p.device_info["translation_key"] == "intrusion_system"
+        with _patch_dev_reg():
+            info = p.device_info
+        assert "name" not in info
+        assert info["translation_key"] == "intrusion_system"
 
     def test_device_info_contains_manufacturer(self):
         p = _make_panel(manufacturer="TestMfg")
-        assert p.device_info["manufacturer"] == "TestMfg"
+        with _patch_dev_reg():
+            assert p.device_info["manufacturer"] == "TestMfg"
 
     def test_device_info_contains_model(self):
         p = _make_panel(device_model="TestModel")
-        assert p.device_info["model"] == "TestModel"
+        with _patch_dev_reg():
+            assert p.device_info["model"] == "TestModel"
 
-    def test_device_info_via_device_is_root_device_id(self):
+    def test_device_info_via_device_id_resolves_hub(self):
+        """#415: via_device (tuple) migrated to via_device_id (registry-
+        resolved hub id) for ha-core's via_device_id/2027.8 deprecation."""
         p = _make_panel(root_device_id="root-via")
-        assert p.device_info["via_device"] == (DOMAIN, "root-via")
+        with _patch_dev_reg(hub_id="hub-via"):
+            info = p.device_info
+        assert info["via_device_id"] == "hub-via"
+        assert "via_device" not in info
 
 
 # ---------------------------------------------------------------------------

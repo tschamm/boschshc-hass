@@ -1157,14 +1157,31 @@ class SwitchDeviceEventListener:
     async def async_setup(self) -> None:
         """Set up the listener."""
         device_registry = dr.async_get(self.hass)
-        device_entry = device_registry.async_get_or_create(
-            config_entry_id=self.entry.entry_id,
-            name=self._device.name,
-            identifiers={(DOMAIN, self._device.id)},
-            manufacturer=self._device.manufacturer,
-            model=self._device.device_model,
-            via_device=(DOMAIN, self._device.root_device_id),
-        )
+        device_info: dict[str, Any] = {
+            "config_entry_id": self.entry.entry_id,
+            "name": self._device.name,
+            "identifiers": {(DOMAIN, self._device.id)},
+            "manufacturer": self._device.manufacturer,
+            "model": self._device.device_model,
+        }
+        # boschshcpy may render the hub identifier and a device's
+        # root_device_id differently, so the lookup can miss; link only
+        # when it resolves instead of raising out of setup (matches
+        # ha-core#177711's via_device -> via_device_id migration). Passing
+        # via_device_id=None explicitly (instead of omitting the key) would
+        # clear an existing link on a later reload, since HA's registry
+        # only skips fields left at their UNDEFINED default.
+        if hub := device_registry.async_get_device_by_identifier(
+            (DOMAIN, self._device.root_device_id), self.entry.entry_id
+        ):
+            device_info["via_device_id"] = hub.id
+        else:
+            LOGGER.debug(
+                "No hub device found for root_device_id %s (device %s)",
+                self._device.root_device_id,
+                self._device.id,
+            )
+        device_entry = device_registry.async_get_or_create(**device_info)
         self.device_id = device_entry.id
         if self._keypad_service is not None:
             self._keypad_service.subscribe_callback(

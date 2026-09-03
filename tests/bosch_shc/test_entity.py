@@ -30,6 +30,21 @@ def _make_device(device_id="dev-1", room_id="room-1"):
     return SimpleNamespace(id=device_id, room_id=room_id, name="Test Device")
 
 
+def _patch_dev_reg(hub_id=None):
+    """Patch entity.get_dev_reg to resolve the hub lookup used by device_info.
+
+    Returns a hub with `hub_id`, or None (lookup miss) when omitted.
+    """
+    fake_registry = MagicMock()
+    fake_registry.async_get_device_by_identifier.return_value = (
+        SimpleNamespace(id=hub_id) if hub_id is not None else None
+    )
+    return patch(
+        "custom_components.bosch_shc.entity.get_dev_reg",
+        return_value=fake_registry,
+    )
+
+
 def _make_entity(status="AVAILABLE", deleted=False, device_services=None):
     """Create a bare SHCEntity bypassing __init__, with a fake device."""
     ent = SHCEntity.__new__(SHCEntity)
@@ -194,24 +209,40 @@ class TestSHCEntityProperties:
 
     def test_device_info_identifiers(self):
         ent = _make_entity()
-        info = ent.device_info
+        with _patch_dev_reg():
+            info = ent.device_info
         assert info["identifiers"] == {(DOMAIN, "dev-123")}
 
     def test_device_info_name(self):
         ent = _make_entity()
-        assert ent.device_info["name"] == "Test Device"
+        with _patch_dev_reg():
+            assert ent.device_info["name"] == "Test Device"
 
     def test_device_info_manufacturer(self):
         ent = _make_entity()
-        assert ent.device_info["manufacturer"] == "Bosch"
+        with _patch_dev_reg():
+            assert ent.device_info["manufacturer"] == "Bosch"
 
     def test_device_info_model(self):
         ent = _make_entity()
-        assert ent.device_info["model"] == "TEST-001"
+        with _patch_dev_reg():
+            assert ent.device_info["model"] == "TEST-001"
 
-    def test_device_info_via_device(self):
+    def test_device_info_via_device_id_resolves_hub(self):
+        """#415: via_device (tuple) migrated to via_device_id (registry-
+        resolved hub id) for ha-core's via_device_id/2027.8 deprecation."""
         ent = _make_entity()
-        assert ent.device_info["via_device"] == (DOMAIN, "root-456")
+        with _patch_dev_reg(hub_id="hub-registry-id"):
+            info = ent.device_info
+        assert info["via_device_id"] == "hub-registry-id"
+        assert "via_device" not in info
+
+    def test_device_info_via_device_id_absent_when_hub_unresolved(self):
+        """#415: a lookup miss must not raise or set via_device_id."""
+        ent = _make_entity()
+        with _patch_dev_reg():
+            info = ent.device_info
+        assert "via_device_id" not in info
 
     def test_device_info_uses_translation_key_for_presence_simulation(self):
         """#393: PresenceSimulationSystem's raw name is a Bosch-controller-
@@ -220,7 +251,8 @@ class TestSHCEntityProperties:
         """
         ent = _make_entity()
         ent._device.device_model = "PRESENCE_SIMULATION_SERVICE"
-        info = ent.device_info
+        with _patch_dev_reg():
+            info = ent.device_info
         assert "name" not in info
         assert info["translation_key"] == "presence_simulation"
 
@@ -231,7 +263,8 @@ class TestSHCEntityProperties:
         """
         ent = _make_entity()
         ent._device.device_model = "EMMA"
-        info = ent.device_info
+        with _patch_dev_reg():
+            info = ent.device_info
         assert "name" not in info
         assert info["translation_key"] == "energy_manager"
 

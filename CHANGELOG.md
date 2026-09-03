@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.12.24-beta.3 — Migrate device_info to via_device_id (#415)
+
+- **Fixes the `via_device` deprecation warning (and, for the `update`
+  platform, an outright `RuntimeError` crash on entity setup) reported on
+  HA 2026.9.0.** HA 2026.8 deprecated `DeviceInfo["via_device"]` in favor
+  of a registry-resolved `via_device_id`, removal targeted for 2027.8.
+  All six `device_info` call sites (`entity.py`'s shared `SHCEntity` base
+  — covering `event.py`/`number.py`/`sensor.py`/`switch.py`/`select.py`
+  and every other platform through it — plus `alarm_control_panel.py`,
+  `button.py`'s two alarm-mute buttons, `light.py`'s room-light group, and
+  `__init__.py`'s switch-device hub link) now resolve the hub device via
+  `DeviceRegistry.async_get_device_by_identifier` and set `via_device_id`
+  instead, only when the lookup succeeds (boschshcpy's hub identifier can
+  render differently from a device's `root_device_id`, so a miss no
+  longer raises out of setup). **Raises the `homeassistant` floor to
+  2026.8.0** — both APIs this relies on ship there for the first time, so
+  no earlier HA version can run this build.
+
 ## 0.12.24-beta.2 — Clarify ambiguous TRV valve motor error states (#410)
 
 - **Reworded two `valve_tappet_state` enum states that read as the opposite

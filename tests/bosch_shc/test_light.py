@@ -107,6 +107,8 @@ def _run_light_setup(mock_config_entry, mock_session) -> list:
 def _run_light_setup_with_remove_mock(mock_config_entry, mock_session) -> tuple[list, AsyncMock]:
     """Same as _run_light_setup, but returns the async_remove_stale_entity mock
     too, so a test can assert on stale-entity cleanup calls/args."""
+    fake_dev_reg = MagicMock()
+    fake_dev_reg.async_get_device_by_identifier.return_value = None
     with (
         patch(
             "custom_components.bosch_shc.light.async_migrate_to_new_unique_id",
@@ -116,6 +118,10 @@ def _run_light_setup_with_remove_mock(mock_config_entry, mock_session) -> tuple[
             "custom_components.bosch_shc.light.async_remove_stale_entity",
             new_callable=AsyncMock,
         ) as remove_mock,
+        patch(
+            "custom_components.bosch_shc.light.get_dev_reg",
+            return_value=fake_dev_reg,
+        ),
     ):
         entities = asyncio.run(
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
@@ -2042,23 +2048,47 @@ def _make_room(room_id: str, name: str) -> SimpleNamespace:
     return SimpleNamespace(id=room_id, name=name)
 
 
+def _make_room_light_group(
+    devices, *, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1", hub_id=None
+) -> "SHCRoomLightGroup":
+    """Build a SHCRoomLightGroup with its hub-lookup (get_dev_reg) patched.
+
+    Returns a hub with `hub_id`, or None (lookup miss) when omitted.
+    """
+    fake_registry = MagicMock()
+    fake_registry.async_get_device_by_identifier.return_value = (
+        SimpleNamespace(id=hub_id) if hub_id is not None else None
+    )
+    with patch(
+        "custom_components.bosch_shc.light.get_dev_reg",
+        return_value=fake_registry,
+    ):
+        return SHCRoomLightGroup(
+            hass=SimpleNamespace(),
+            devices=devices,
+            room_id=room_id,
+            room_name=room_name,
+            entry_id=entry_id,
+        )
+
+
 # ── SHCRoomLightGroup: pure entity behaviour ─────────────────────────────────
 
 def test_unique_id_and_device_info():
     devices = [_make_room_light_device(device_id="d1"), _make_room_light_device(device_id="d2")]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1", hub_id="hub-shc"
     )
     assert group.unique_id == "room_hz_1_light_group"
     assert group.device_info["identifiers"] == {(DOMAIN, "room_hz_1_light")}
     assert group.device_info["name"] == "Wohnzimmer"
-    assert group.device_info["via_device"] == (DOMAIN, "aa:bb:cc:00:00:03")
+    assert group.device_info["via_device_id"] == "hub-shc"
 
 
 def test_color_mode_is_onoff():
     devices = [_make_room_light_device(device_id="d1"), _make_room_light_device(device_id="d2")]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     assert group.color_mode == ColorMode.ONOFF
     assert group.supported_color_modes == {ColorMode.ONOFF}
@@ -2069,8 +2099,8 @@ def test_is_on_true_when_any_member_on():
         _make_room_light_device(device_id="d1", binarystate=False),
         _make_room_light_device(device_id="d2", binarystate=True),
     ]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     assert group.is_on is True
 
@@ -2080,8 +2110,8 @@ def test_is_on_false_when_all_members_off():
         _make_room_light_device(device_id="d1", binarystate=False),
         _make_room_light_device(device_id="d2", binarystate=False),
     ]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     assert group.is_on is False
 
@@ -2091,8 +2121,8 @@ def test_is_on_none_when_all_members_unknown():
         _make_room_light_device(device_id="d1", binarystate=None),
         _make_room_light_device(device_id="d2", binarystate=None),
     ]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     assert group.is_on is None
 
@@ -2102,8 +2132,8 @@ def test_available_true_when_any_member_available():
         _make_room_light_device(device_id="d1", status="UNAVAILABLE"),
         _make_room_light_device(device_id="d2", status="AVAILABLE"),
     ]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     assert group.available is True
 
@@ -2113,8 +2143,8 @@ def test_available_false_when_no_member_available():
         _make_room_light_device(device_id="d1", status="UNAVAILABLE"),
         _make_room_light_device(device_id="d2", status="UNAVAILABLE"),
     ]
-    group = SHCRoomLightGroup(
-        devices=devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        devices, room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     assert group.available is False
 
@@ -2122,8 +2152,8 @@ def test_available_false_when_no_member_available():
 def test_turn_on_sets_binarystate_true_on_all_members():
     d1 = _make_room_light_device(device_id="d1")
     d2 = _make_room_light_device(device_id="d2")
-    group = SHCRoomLightGroup(
-        devices=[d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        [d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     asyncio.run(group.async_turn_on())
     d1.async_set_binarystate.assert_awaited_once_with(True)
@@ -2133,8 +2163,8 @@ def test_turn_on_sets_binarystate_true_on_all_members():
 def test_turn_off_sets_binarystate_false_on_all_members():
     d1 = _make_room_light_device(device_id="d1")
     d2 = _make_room_light_device(device_id="d2")
-    group = SHCRoomLightGroup(
-        devices=[d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        [d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     asyncio.run(group.async_turn_off())
     d1.async_set_binarystate.assert_awaited_once_with(False)
@@ -2149,8 +2179,8 @@ def test_turn_on_one_member_failure_does_not_block_others():
 
     d1 = _make_room_light_device(device_id="d1", async_set_binarystate=_raise)
     d2 = _make_room_light_device(device_id="d2")
-    group = SHCRoomLightGroup(
-        devices=[d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        [d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     asyncio.run(group.async_turn_on())  # must not raise
     d2.async_set_binarystate.assert_awaited_once_with(True)
@@ -2166,8 +2196,8 @@ def test_subscribes_to_every_member_device_and_service_on_add():
     d1.device_services = [service]
     d1.subscribe_callback = MagicMock()
     d1.unsubscribe_callback = MagicMock()
-    group = SHCRoomLightGroup(
-        devices=[d1], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        [d1], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     group.entity_id = "light.wohnzimmer_light"
     group.hass = SimpleNamespace()
@@ -2195,8 +2225,8 @@ def test_device_deletion_triggers_config_entry_reload():
     d2 = _make_room_light_device(device_id="d2")
     d1.subscribe_callback = MagicMock()
     d2.subscribe_callback = MagicMock()
-    group = SHCRoomLightGroup(
-        devices=[d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        [d1, d2], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     group.entity_id = "light.wohnzimmer_light"
     group.hass = SimpleNamespace(
@@ -2218,8 +2248,8 @@ def test_device_change_without_deletion_just_refreshes_state():
     """A non-deletion device-level update must NOT trigger a reload."""
     d1 = _make_room_light_device(device_id="d1")
     d1.subscribe_callback = MagicMock()
-    group = SHCRoomLightGroup(
-        devices=[d1], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
+    group = _make_room_light_group(
+        [d1], room_id="hz_1", room_name="Wohnzimmer", entry_id="E1"
     )
     group.entity_id = "light.wohnzimmer_light"
     group.hass = SimpleNamespace(async_create_task=MagicMock())

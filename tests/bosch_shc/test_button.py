@@ -2667,10 +2667,19 @@ def test_intrusion_mute_button_device_info():
     device = _make_alarm_device()
     btn = SHCIntrusionAlarmMuteButton.__new__(SHCIntrusionAlarmMuteButton)
     btn._device = device
-    info = btn.device_info
+    btn._entry_id = "entry-x"
+    fake_registry = MagicMock()
+    fake_registry.async_get_device_by_identifier.return_value = SimpleNamespace(
+        id="hub-root"
+    )
+    with patch(
+        "custom_components.bosch_shc.button.get_dev_reg",
+        return_value=fake_registry,
+    ):
+        info = btn.device_info
     assert "name" not in info
     assert info["translation_key"] == "intrusion_system"
-    assert info["via_device"] == ("bosch_shc", "hdm:root")
+    assert info["via_device_id"] == "hub-root"
 
 
 def test_intrusion_mute_button_press_calls_mute():
@@ -2700,7 +2709,14 @@ def test_water_alarm_mute_button_device_info():
     )
     btn = SHCWaterAlarmMuteButton.__new__(SHCWaterAlarmMuteButton)
     btn._device = device
-    info = btn.device_info
+    btn._entry_id = "entry-x"
+    fake_registry = MagicMock()
+    fake_registry.async_get_device_by_identifier.return_value = None
+    with patch(
+        "custom_components.bosch_shc.button.get_dev_reg",
+        return_value=fake_registry,
+    ):
+        info = btn.device_info
     assert "name" not in info
     assert info["translation_key"] == "water_alarm_system"
 

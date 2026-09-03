@@ -18,9 +18,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, LOGGER
 from .entity import async_migrate_to_new_unique_id
 
 PARALLEL_UPDATES = 1
@@ -96,8 +97,22 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
             model=self._device.device_model,
         )
         root_device_id = self._device.root_device_id
-        if root_device_id is not None:
-            info["via_device"] = (DOMAIN, root_device_id)
+        # boschshcpy may render the hub identifier and a device's
+        # root_device_id differently, so the lookup can miss; link only
+        # when it resolves instead of raising out of setup (matches
+        # ha-core#177711's via_device -> via_device_id migration).
+        if root_device_id is not None and (
+            hub := get_dev_reg(self.hass).async_get_device_by_identifier(
+                (DOMAIN, root_device_id), self._entry_id
+            )
+        ):
+            info["via_device_id"] = hub.id
+        else:
+            LOGGER.debug(
+                "No hub device found for root_device_id %s (device %s)",
+                root_device_id,
+                self._device.id,
+            )
         return info
 
     @property
