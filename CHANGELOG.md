@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.24-beta.5 — Fix test_device_trigger.py fallout from beta.4's migration (#415)
+
+- **CI-only follow-up to beta.4, no source changes.** beta.4's source fix
+  was correct and already verified by two independent review passes, but
+  `local-ci.sh` excludes `tests/bosch_shc/test_device_trigger.py` from its
+  pytest run (a longstanding exclusion, unrelated to this fix), so its
+  stale mocks — still keyed to the old `async_get_device(identifiers=...,
+  connections=...)` shape and, in several cases, config-entry mocks with
+  no `entry_id` at all — went unnoticed locally and broke remote CI's
+  `Tests` workflow after beta.4 published. Updated every mock in that file
+  to the `async_get_device_by_identifier(identifier, config_entry_id)`
+  shape beta.4 introduced. No `custom_components/` changes in this release.
+
 ## 0.12.24-beta.4 — Migrate remaining device_registry lookups off async_get_device (#415)
 
 - **Fixes the one deprecation warning that survived beta.3's `device_info`

@@ -63,14 +63,16 @@ from custom_components.bosch_shc.device_trigger import (
 
 def _make_hass(sessions=None):
     """Return a minimal hass mock whose config_entries.async_entries(DOMAIN)
-    yields one fake ConfigEntry (carrying .runtime_data.session) per session
-    in `sessions` — get_device_from_id() iterates hass.config_entries
-    .async_entries(DOMAIN) and reads entry.runtime_data.session for each,
-    skipping any entry that lacks a runtime_data attribute entirely."""
+    yields one fake ConfigEntry (carrying .runtime_data.session and its own
+    .entry_id) per session in `sessions` — get_device_from_id() iterates
+    hass.config_entries.async_entries(DOMAIN) and reads entry.runtime_data
+    .session plus entry.entry_id (used to scope the device-registry lookup
+    to that entry) for each, skipping any entry that lacks a runtime_data
+    attribute entirely."""
     hass = MagicMock()
     entries = [
-        SimpleNamespace(runtime_data=SimpleNamespace(session=s))
-        for s in (sessions or [])
+        SimpleNamespace(entry_id=f"entry-{i}", runtime_data=SimpleNamespace(session=s))
+        for i, s in enumerate(sessions or [])
     ]
     hass.config_entries = MagicMock()
     hass.config_entries.async_entries = MagicMock(return_value=entries)
@@ -120,15 +122,16 @@ def _build_hass_with_device(
 
     hass = _make_hass(sessions=[session])
 
-    # dr.async_get(hass).async_get_device → return ha_device for matching id
-    def fake_async_get_device(identifiers, connections):
-        for _, dev_id in identifiers:
-            if dev_id == shc_device_id:
-                return ha_device
+    # dr.async_get(hass).async_get_device_by_identifier → return ha_device
+    # for matching id
+    def fake_async_get_device(identifier, config_entry_id):
+        _, dev_id = identifier
+        if dev_id == shc_device_id:
+            return ha_device
         return None
 
     mock_registry = MagicMock()
-    mock_registry.async_get_device = fake_async_get_device
+    mock_registry.async_get_device_by_identifier = fake_async_get_device
 
     return hass, ha_device, session, mock_registry
 
@@ -186,7 +189,7 @@ class TestGetDeviceFromId:
         hass = _make_hass(sessions=[session])
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device.return_value = None
+        mock_registry.async_get_device_by_identifier.return_value = None
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -207,14 +210,14 @@ class TestGetDeviceFromId:
         ha_device = MagicMock()
         ha_device.id = "ha-dev-1"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "shc-1":
-                    return ha_device
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "shc-1":
+                return ha_device
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -235,14 +238,14 @@ class TestGetDeviceFromId:
         ha_device = MagicMock()
         ha_device.id = "ha-ids-dev"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "ids-1":
-                    return ha_device
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "ids-1":
+                return ha_device
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -260,14 +263,14 @@ class TestGetDeviceFromId:
         ha_shc = MagicMock()
         ha_shc.id = "ha-shc-controller"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "shc-serial-99":
-                    return ha_shc
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "shc-serial-99":
+                return ha_shc
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -284,7 +287,7 @@ class TestGetDeviceFromId:
         hass = _make_hass(sessions=[session])
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device.return_value = None
+        mock_registry.async_get_device_by_identifier.return_value = None
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -304,14 +307,14 @@ class TestGetDeviceFromId:
         ha_device = MagicMock()
         ha_device.id = "ha-md-dev"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "shc-2":
-                    return ha_device
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "shc-2":
+                return ha_device
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -334,16 +337,16 @@ class TestGetDeviceFromId:
         ha_device_b = MagicMock()
         ha_device_b.id = "ha-dev-b"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "shc-a":
-                    return ha_device_a
-                if dev_id == "shc-b":
-                    return ha_device_b
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "shc-a":
+                return ha_device_a
+            if dev_id == "shc-b":
+                return ha_device_b
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -396,7 +399,9 @@ class TestDeviceTriggerGetDeviceFromId:
         fake_reg_device.id = "reg-id-OTHER"  # different from target device_id
 
         dev_registry = MagicMock()
-        dev_registry.async_get_device = MagicMock(return_value=fake_reg_device)
+        dev_registry.async_get_device_by_identifier = MagicMock(
+            return_value=fake_reg_device
+        )
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -425,15 +430,15 @@ class TestDeviceTriggerGetDeviceFromId:
         shc_reg_device = MagicMock()
         shc_reg_device.id = "shc-reg-OTHER"
 
-        def get_device(identifiers, connections):
-            ident = dict(identifiers)
-            if ident.get("bosch_shc") == "shc-device-abc":
+        def get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "shc-device-abc":
                 return fake_reg_device
             # SHC controller device
             return shc_reg_device
 
         dev_registry = MagicMock()
-        dev_registry.async_get_device = MagicMock(side_effect=get_device)
+        dev_registry.async_get_device_by_identifier = MagicMock(side_effect=get_device)
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -464,14 +469,14 @@ class TestAsyncGetTriggers:
         ha_device = MagicMock()
         ha_device.id = ha_device_id
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == shc_device_id:
-                    return ha_device
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == shc_device_id:
+                return ha_device
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -559,14 +564,14 @@ class TestAsyncGetTriggers:
         ha_shc = MagicMock()
         ha_shc.id = "ha-shc"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "shc-serial-001":
-                    return ha_shc
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "shc-serial-001":
+                return ha_shc
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -591,7 +596,7 @@ class TestAsyncGetTriggers:
         session = _make_session(devices=[])
         hass = _make_hass(sessions=[session])
         mock_registry = MagicMock()
-        mock_registry.async_get_device.return_value = None
+        mock_registry.async_get_device_by_identifier.return_value = None
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -635,14 +640,14 @@ class TestSwitch2BranchCoverage:
         ha_device = MagicMock()
         ha_device.id = "ha-sw2"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "sw2-1":
-                    return ha_device
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "sw2-1":
+                return ha_device
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
@@ -701,14 +706,14 @@ class TestIDSDeviceTriggers:
         ha_ids = MagicMock()
         ha_ids.id = "ha-ids-1"
 
-        def fake_get_device(identifiers, connections):
-            for _, dev_id in identifiers:
-                if dev_id == "ids-device-1":
-                    return ha_ids
+        def fake_get_device(identifier, config_entry_id):
+            _, dev_id = identifier
+            if dev_id == "ids-device-1":
+                return ha_ids
             return None
 
         mock_registry = MagicMock()
-        mock_registry.async_get_device = fake_get_device
+        mock_registry.async_get_device_by_identifier = fake_get_device
 
         with patch(
             "custom_components.bosch_shc.device_trigger.dr.async_get",
