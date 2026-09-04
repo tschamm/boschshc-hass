@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.12.24-beta.4 — Migrate remaining device_registry lookups off async_get_device (#415)
+
+- **Fixes the one deprecation warning that survived beta.3's `device_info`
+  fix**, reported by a #415 commenter after upgrading: `entity.py:80`
+  (`device_registry.async_get_device`, deprecated because identifiers/
+  connections are no longer unique across config entries — removal
+  targeted for 2027.8.0). beta.3 only migrated the `device_info` property;
+  every other lookup in the integration still called the deprecated API.
+  Migrated all of them to `DeviceRegistry.async_get_device_by_identifier`,
+  scoped to the device's own config entry: `entity.py`'s
+  `async_get_device_id`/`async_remove_devices` helpers (now take an
+  `entry_id`), `binary_sensor.py`'s three `async_added_to_hass` callers
+  (`self._entry_id`), `light.py`'s HUE/Ledvance suppression lookups and
+  `switch.py`'s camera suppression lookup (`config_entry.entry_id`), and
+  `device_trigger.py`'s three `get_device_from_id` lookups (`entry.entry_id`
+  from the enclosing config-entries loop — this also fixes a latent
+  cross-entry ambiguity the old unscoped lookup had for multi-hub setups).
+  No `async_get_device` call sites remain in the integration.
+
 ## 0.12.24-beta.3 — Migrate device_info to via_device_id (#415)
 
 - **Fixes the `via_device` deprecation warning (and, for the `update`

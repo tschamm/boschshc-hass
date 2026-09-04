@@ -66,8 +66,8 @@ async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, 
         session: SHCSession = entry.runtime_data.session
 
         for shc_device in session.devices:
-            device = dev_registry.async_get_device(
-                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            device = dev_registry.async_get_device_by_identifier(
+                (DOMAIN, shc_device.id), entry.entry_id
             )
             if device is None or device.id != device_id:
                 continue
@@ -75,22 +75,18 @@ async def get_device_from_id(hass: HomeAssistant, device_id: str) -> tuple[Any, 
 
         ids = session.intrusion_system
         if ids:
-            device = dev_registry.async_get_device(
-                identifiers={(DOMAIN, ids.id)}, connections=set()
+            device = dev_registry.async_get_device_by_identifier(
+                (DOMAIN, ids.id), entry.entry_id
             )
             if device is not None and device.id == device_id:
                 return ids, "IDS"
 
-        device = dev_registry.async_get_device(
-            identifiers={
-                (
-                    DOMAIN,
-                    (session.information.unique_id or "")
-                    if session.information
-                    else "",
-                )
-            },
-            connections=set(),
+        device = dev_registry.async_get_device_by_identifier(
+            (
+                DOMAIN,
+                (session.information.unique_id or "") if session.information else "",
+            ),
+            entry.entry_id,
         )
         if device is not None and device.id == device_id:
             return session, "SHC"

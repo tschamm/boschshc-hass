@@ -791,7 +791,9 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events and cache device_id."""
         await super().async_added_to_hass()
-        self._cached_device_id = await async_get_device_id(self.hass, self._device.id)
+        self._cached_device_id = await async_get_device_id(
+            self.hass, self._device.id, self._entry_id
+        )
         # Subscribe AFTER device_id is cached so events never fire with
         # device_id=None during the startup window (#288-cluster).
         if self._service is not None:
@@ -917,7 +919,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events and cache device_id."""
         await super().async_added_to_hass()
-        self._cached_device_id = await async_get_device_id(self._hass, self._device.id)
+        self._cached_device_id = await async_get_device_id(
+            self._hass, self._device.id, self._entry_id
+        )
         # Subscribe AFTER device_id is cached so events never fire with
         # device_id=None during the startup window (#288-cluster).
         if self._service is not None:
@@ -1104,7 +1108,9 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events and cache device_id."""
         await super().async_added_to_hass()
-        self._cached_device_id = await async_get_device_id(self._hass, self._device.id)
+        self._cached_device_id = await async_get_device_id(
+            self._hass, self._device.id, self._entry_id
+        )
         # Subscribe AFTER device_id is cached so events never fire with
         # device_id=None during the startup window (#288-cluster).
         if self._service is not None:

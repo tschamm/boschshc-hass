@@ -1178,7 +1178,7 @@ class TestLightSetupHueSuppressWithRegistry:
         mock_session.device_helper.hue_lights = [dev]
         dev_entry = SimpleNamespace(id="reg_id_hue1")
         dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
+        dr_mock.async_get_device_by_identifier = MagicMock(return_value=dev_entry)
         dr_mock.async_update_device = MagicMock()
 
         _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
@@ -1192,7 +1192,7 @@ class TestLightSetupHueSuppressWithRegistry:
         dev = _fake_dev("hue1")
         mock_session.device_helper.hue_lights = [dev]
         dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=None)
+        dr_mock.async_get_device_by_identifier = MagicMock(return_value=None)
         dr_mock.async_update_device = MagicMock()
 
         _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
@@ -1213,7 +1213,7 @@ class TestLightSetupLedvanceSuppressWithRegistry:
         mock_session.device_helper.ledvance_lights = [dev]
         dev_entry = SimpleNamespace(id="reg_led1")
         dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
+        dr_mock.async_get_device_by_identifier = MagicMock(return_value=dev_entry)
         dr_mock.async_update_device = MagicMock()
 
         _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)
@@ -1227,7 +1227,7 @@ class TestLightSetupLedvanceSuppressWithRegistry:
         dev = _fake_dev("led1")
         mock_session.device_helper.ledvance_lights = [dev]
         dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=None)
+        dr_mock.async_get_device_by_identifier = MagicMock(return_value=None)
         dr_mock.async_update_device = MagicMock()
 
         _run_light_setup_with_dev_reg(mock_config_entry, mock_session, dr_mock)

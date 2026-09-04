@@ -581,8 +581,8 @@ async def async_setup_entry(  # noqa: C901
             + list(session.device_helper.camera_360)
             + list(session.device_helper.camera_outdoor_gen2)
         ):
-            dev_entry = dev_registry.async_get_device(
-                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            dev_entry = dev_registry.async_get_device_by_identifier(
+                (DOMAIN, shc_device.id), config_entry.entry_id
             )
             if dev_entry is not None:
                 dev_registry.async_update_device(

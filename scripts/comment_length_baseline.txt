@@ -6,6 +6,9 @@
 # migration's own new comment blocks (__init__.py, alarm_control_panel.py,
 # button.py x2, entity.py, light.py) — genuine design-rationale
 # documentation referencing ha-core#177711, not over-explained prose.
+# Re-shifted 2026-09-04: #415 follow-up (async_get_device_by_identifier
+# migration for the remaining deprecated async_get_device call sites)
+# added lines ahead of binary_sensor.py's baselined blocks.
 custom_components/bosch_shc/__init__.py:547
 custom_components/bosch_shc/__init__.py:668
 custom_components/bosch_shc/__init__.py:768
@@ -20,13 +23,13 @@ custom_components/bosch_shc/binary_sensor.py:345
 custom_components/bosch_shc/binary_sensor.py:363
 custom_components/bosch_shc/binary_sensor.py:769
 custom_components/bosch_shc/binary_sensor.py:777
-custom_components/bosch_shc/binary_sensor.py:857
-custom_components/bosch_shc/binary_sensor.py:900
-custom_components/bosch_shc/binary_sensor.py:979
-custom_components/bosch_shc/binary_sensor.py:1087
-custom_components/bosch_shc/binary_sensor.py:1223
-custom_components/bosch_shc/binary_sensor.py:1309
-custom_components/bosch_shc/binary_sensor.py:1338
+custom_components/bosch_shc/binary_sensor.py:859
+custom_components/bosch_shc/binary_sensor.py:902
+custom_components/bosch_shc/binary_sensor.py:983
+custom_components/bosch_shc/binary_sensor.py:1091
+custom_components/bosch_shc/binary_sensor.py:1229
+custom_components/bosch_shc/binary_sensor.py:1315
+custom_components/bosch_shc/binary_sensor.py:1344
 custom_components/bosch_shc/button.py:140
 custom_components/bosch_shc/button.py:156
 custom_components/bosch_shc/button.py:181

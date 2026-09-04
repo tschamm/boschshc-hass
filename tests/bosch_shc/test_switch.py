@@ -4837,7 +4837,7 @@ class TestSwitchSuppressCamerasRegistry:
 
         dev_entry = SimpleNamespace(id="reg_cam1")
         dr_mock = MagicMock()
-        dr_mock.async_get_device = MagicMock(return_value=dev_entry)
+        dr_mock.async_get_device_by_identifier = MagicMock(return_value=dev_entry)
         dr_mock.async_update_device = MagicMock()
 
         hass = _fake_hass(session=session)

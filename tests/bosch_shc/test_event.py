@@ -2993,7 +2993,7 @@ class TestAsyncGetDeviceId:
     def test_returns_device_id_when_found(self):
         fake_device = SimpleNamespace(id="reg-device-id-42")
         fake_registry = SimpleNamespace(
-            async_get_device=MagicMock(return_value=fake_device)
+            async_get_device_by_identifier=MagicMock(return_value=fake_device)
         )
 
         async def _run_get():
@@ -3001,14 +3001,14 @@ class TestAsyncGetDeviceId:
                 "custom_components.bosch_shc.entity.get_dev_reg",
                 return_value=fake_registry,
             ):
-                return await async_get_device_id(object(), "dev-123")
+                return await async_get_device_id(object(), "dev-123", "entry-E1")
 
         result = asyncio.run(_run_get())
         assert result == "reg-device-id-42"
 
     def test_returns_none_when_not_found(self):
         fake_registry = SimpleNamespace(
-            async_get_device=MagicMock(return_value=None)
+            async_get_device_by_identifier=MagicMock(return_value=None)
         )
 
         async def _run_get():
@@ -3016,14 +3016,14 @@ class TestAsyncGetDeviceId:
                 "custom_components.bosch_shc.entity.get_dev_reg",
                 return_value=fake_registry,
             ):
-                return await async_get_device_id(object(), "dev-missing")
+                return await async_get_device_id(object(), "dev-missing", "entry-E1")
 
         result = asyncio.run(_run_get())
         assert result is None
 
     def test_passes_correct_identifiers(self):
         fake_registry = SimpleNamespace(
-            async_get_device=MagicMock(return_value=None)
+            async_get_device_by_identifier=MagicMock(return_value=None)
         )
 
         async def _run_get():
@@ -3031,11 +3031,11 @@ class TestAsyncGetDeviceId:
                 "custom_components.bosch_shc.entity.get_dev_reg",
                 return_value=fake_registry,
             ):
-                await async_get_device_id(object(), "dev-xyz")
+                await async_get_device_id(object(), "dev-xyz", "entry-E1")
 
         asyncio.run(_run_get())
-        call_kwargs = fake_registry.async_get_device.call_args
-        assert call_kwargs[1]["identifiers"] == {(DOMAIN, "dev-xyz")}
+        call_args = fake_registry.async_get_device_by_identifier.call_args
+        assert call_args[0] == ((DOMAIN, "dev-xyz"), "entry-E1")
 
 
 class TestAsyncRemoveDevices:
@@ -3048,7 +3048,7 @@ class TestAsyncRemoveDevices:
         fake_device = SimpleNamespace(id="reg-id-99")
         update_calls = []
         fake_registry = SimpleNamespace(
-            async_get_device=MagicMock(return_value=fake_device),
+            async_get_device_by_identifier=MagicMock(return_value=fake_device),
             async_update_device=lambda dev_id, remove_config_entry_id=None: update_calls.append(
                 (dev_id, remove_config_entry_id)
             ),
@@ -3068,7 +3068,7 @@ class TestAsyncRemoveDevices:
     def test_no_update_when_device_not_found(self):
         update_calls = []
         fake_registry = SimpleNamespace(
-            async_get_device=MagicMock(return_value=None),
+            async_get_device_by_identifier=MagicMock(return_value=None),
             async_update_device=lambda *a, **kw: update_calls.append(a),
         )
         entity = self._make_entity_ns(device_id="hdm:dev:missing")
