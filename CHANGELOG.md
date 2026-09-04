@@ -1,67 +1,6 @@
 # Changelog
 
-## 0.12.24-beta.5 — Fix test_device_trigger.py fallout from beta.4's migration (#415)
-
-- **CI-only follow-up to beta.4, no source changes.** beta.4's source fix
-  was correct and already verified by two independent review passes, but
-  `local-ci.sh` excludes `tests/bosch_shc/test_device_trigger.py` from its
-  pytest run (a longstanding exclusion, unrelated to this fix), so its
-  stale mocks — still keyed to the old `async_get_device(identifiers=...,
-  connections=...)` shape and, in several cases, config-entry mocks with
-  no `entry_id` at all — went unnoticed locally and broke remote CI's
-  `Tests` workflow after beta.4 published. Updated every mock in that file
-  to the `async_get_device_by_identifier(identifier, config_entry_id)`
-  shape beta.4 introduced. No `custom_components/` changes in this release.
-
-## 0.12.24-beta.4 — Migrate remaining device_registry lookups off async_get_device (#415)
-
-- **Fixes the one deprecation warning that survived beta.3's `device_info`
-  fix**, reported by a #415 commenter after upgrading: `entity.py:80`
-  (`device_registry.async_get_device`, deprecated because identifiers/
-  connections are no longer unique across config entries — removal
-  targeted for 2027.8.0). beta.3 only migrated the `device_info` property;
-  every other lookup in the integration still called the deprecated API.
-  Migrated all of them to `DeviceRegistry.async_get_device_by_identifier`,
-  scoped to the device's own config entry: `entity.py`'s
-  `async_get_device_id`/`async_remove_devices` helpers (now take an
-  `entry_id`), `binary_sensor.py`'s three `async_added_to_hass` callers
-  (`self._entry_id`), `light.py`'s HUE/Ledvance suppression lookups and
-  `switch.py`'s camera suppression lookup (`config_entry.entry_id`), and
-  `device_trigger.py`'s three `get_device_from_id` lookups (`entry.entry_id`
-  from the enclosing config-entries loop — this also fixes a latent
-  cross-entry ambiguity the old unscoped lookup had for multi-hub setups).
-  No `async_get_device` call sites remain in the integration.
-
-## 0.12.24-beta.3 — Migrate device_info to via_device_id (#415)
-
-- **Fixes the `via_device` deprecation warning (and, for the `update`
-  platform, an outright `RuntimeError` crash on entity setup) reported on
-  HA 2026.9.0.** HA 2026.8 deprecated `DeviceInfo["via_device"]` in favor
-  of a registry-resolved `via_device_id`, removal targeted for 2027.8.
-  All six `device_info` call sites (`entity.py`'s shared `SHCEntity` base
-  — covering `event.py`/`number.py`/`sensor.py`/`switch.py`/`select.py`
-  and every other platform through it — plus `alarm_control_panel.py`,
-  `button.py`'s two alarm-mute buttons, `light.py`'s room-light group, and
-  `__init__.py`'s switch-device hub link) now resolve the hub device via
-  `DeviceRegistry.async_get_device_by_identifier` and set `via_device_id`
-  instead, only when the lookup succeeds (boschshcpy's hub identifier can
-  render differently from a device's `root_device_id`, so a miss no
-  longer raises out of setup). **Raises the `homeassistant` floor to
-  2026.8.0** — both APIs this relies on ship there for the first time, so
-  no earlier HA version can run this build.
-
-## 0.12.24-beta.2 — Clarify ambiguous TRV valve motor error states (#410)
-
-- **Reworded two `valve_tappet_state` enum states that read as the opposite
-  of what they mean.** `NO_VALVE_BODY_ERROR` and `NO_MOTOR_ERROR` are Bosch
-  error codes (valve body / motor not detected), but the English strings
-  "No valve body error" / "No motor error" read like "there is no error" —
-  exactly backwards for #410's use case of alerting on TRV valve motor
-  problems. Now "Error: no valve body detected" / "Error: no motor
-  detected". Confirmed working sensor itself; this only clarifies wording
-  the reporter flagged as unclear.
-
-## 0.12.24-beta.1 — Room Climate Control: atomic off/heating/cooling write (#394)
+## 0.12.24 — Room Climate Control atomic write, via_device_id/device_registry migration, TRV wording (#394, #415, #410)
 
 - **Fixes the root cause of #394's spurious "auto" activity-log entry**
   on every off→heating (or off→cooling) transition. Traced via APK
@@ -71,12 +10,50 @@
   atomic call instead. `climate.py` now uses boschshcpy's new
   `async_set_hvac_control_mode()` (requires boschshcpy 0.6.10b1+) for
   every hvac_mode change, eliminating the momentary intermediate device
-  state the old two-step write exposed on the Controller. beta.14's
-  earlier fix attempt (just reordering the same two writes, since
-  reverted in beta.15) hit a hard `WRONG_THERMOSTAT_GROUP_MODE` rejection
+  state the old two-step write exposed on the Controller. An earlier fix
+  attempt (just reordering the same two writes, shipped then reverted in
+  an earlier cycle) hit a hard `WRONG_THERMOSTAT_GROUP_MODE` rejection
   because it used the wrong write path entirely, not just the wrong
-  order. **Needs real-hardware confirmation before this ships as stable**
-  — if you're hitting #394, please update and report back.
+  order. Promoted to stable without a real-hardware confirmation reply on
+  #394 — if you hit anything unexpected on an off/heating/cooling
+  transition, please open a fresh report with a debug log.
+- **Reworded two `valve_tappet_state` enum states that read as the
+  opposite of what they mean.** `NO_VALVE_BODY_ERROR` and
+  `NO_MOTOR_ERROR` are Bosch error codes (valve body / motor not
+  detected), but the English strings "No valve body error" / "No motor
+  error" read like "there is no error" — exactly backwards for #410's use
+  case of alerting on TRV valve motor problems. Now "Error: no valve body
+  detected" / "Error: no motor detected". Confirmed working sensor
+  itself; this only clarifies wording the reporter flagged as unclear.
+- **Fixes the `via_device` deprecation warning (and, for the `update`
+  platform, an outright `RuntimeError` crash on entity setup) reported on
+  HA 2026.9.0, plus every other device_registry lookup in the integration
+  that hit the same deprecation** (#415). HA 2026.8 deprecated
+  `DeviceInfo["via_device"]` in favor of a registry-resolved
+  `via_device_id`, and separately deprecated
+  `DeviceRegistry.async_get_device(identifiers=..., connections=...)` in
+  favor of `async_get_device_by_identifier`, both removal-targeted for
+  2027.8. All `device_info` call sites (`entity.py`'s shared `SHCEntity`
+  base — covering `event.py`/`number.py`/`sensor.py`/`switch.py`/
+  `select.py` and every other platform through it — plus
+  `alarm_control_panel.py`, `button.py`'s two alarm-mute buttons,
+  `light.py`'s room-light group, and `__init__.py`'s switch-device hub
+  link) now resolve the hub device via `async_get_device_by_identifier`
+  and set `via_device_id` instead, only when the lookup succeeds
+  (boschshcpy's hub identifier can render differently from a device's
+  `root_device_id`, so a miss no longer raises out of setup). Every other
+  lookup — `entity.py`'s `async_get_device_id`/`async_remove_devices`
+  helpers (now take an `entry_id`), `binary_sensor.py`'s three
+  `async_added_to_hass` callers (`self._entry_id`), `light.py`'s
+  HUE/Ledvance suppression lookups and `switch.py`'s camera suppression
+  lookup (`config_entry.entry_id`), and `device_trigger.py`'s three
+  `get_device_from_id` lookups (`entry.entry_id` from the enclosing
+  config-entries loop — this also fixes a latent cross-entry ambiguity
+  the old unscoped lookup had for multi-hub setups) — is migrated the
+  same way. No `async_get_device` call sites remain in the integration.
+  **Raises the `homeassistant` floor to 2026.8.0** — both APIs this
+  relies on ship there for the first time, so no earlier HA version can
+  run this build.
 
 ## 0.12.23-beta.3 — Fix keypad-bridge name collisions across same-family devices (#282)
 
