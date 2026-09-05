@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.12.25 — Keypad bridge diagnostic logging (#282)
+
+- **`async_sync_keypad_bridge` was completely silent on every non-error
+  path** — option disabled, a device excluded by the room/device filter,
+  a device simply not eligible, and a fully successful entity creation
+  all produced identical (empty) debug output, making a reporter's debug
+  log useless for telling these cases apart. Added a debug line logging
+  whether the bridge is enabled and which devices were found eligible
+  (keycode-based and SWD2) each time this runs. No behavior change.
+  Filed while investigating #282's report of zero keypad-bridge switch
+  entities for a Light Control II device despite the bridge option
+  reportedly being on; this is a diagnostic step, not a fix for that
+  symptom — one more debug log from the reporter with this in place will
+  show definitively whether the option was actually enabled for that run
+  and whether the device was found eligible.
+
 ## 0.12.24 — Room Climate Control atomic write, via_device_id/device_registry migration, TRV wording (#394, #415, #410)
 
 - **Fixes the root cause of #394's spurious "auto" activity-log entry**

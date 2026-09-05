@@ -296,6 +296,17 @@ async def async_sync_keypad_bridge(
         (device, _LIGHT_TRIGGER_TYPE)
         for device in _light_control_pushbutton_devices(session, entry.options)
     ]
+    swd2_devices = _swd2_button_devices(session, entry.options)
+
+    # #282: every non-error path here was previously silent, indistinguishable in a debug log.
+    LOGGER.debug(
+        "Keypad bridge sync: enabled=%s, eligible_keycode_devices=%s, "
+        "eligible_swd2_devices=%s, existing_bridge_entries=%d",
+        enabled,
+        [device.id for device, _trigger_type in keycode_devices],
+        [device.id for device in swd2_devices],
+        len(bridge_map),
+    )
 
     wanted_keys: set[str] = set()
     if enabled:
@@ -305,7 +316,7 @@ async def async_sync_keypad_bridge(
                     wanted_keys.add(
                         f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
                     )
-        for device in _swd2_button_devices(session, entry.options):
+        for device in swd2_devices:
             for button_press_state in _SWD2_BUTTON_STATES:
                 wanted_keys.add(
                     f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
@@ -364,7 +375,7 @@ async def async_sync_keypad_bridge(
                         ),
                     )
 
-        for device in _swd2_button_devices(session, entry.options):
+        for device in swd2_devices:
             for button_press_state in _SWD2_BUTTON_STATES:
                 key = f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
                 if key in bridge_map:
