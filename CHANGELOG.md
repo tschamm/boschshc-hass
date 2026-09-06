@@ -1,7 +1,20 @@
 # Changelog
 
-## 0.12.25 — Keypad bridge diagnostic logging (#282)
+## 0.12.25 — Keypad bridge diagnostic logging + self-healing fix (#282)
 
+- **Root cause of #282's zero-entities report found and fixed**: `async_sync_keypad_bridge`
+  trusted its persisted `bridge_map` (which device/button keys already have an
+  SHC-side Automation + UserDefinedState) forever once written, with no check
+  that those objects still actually exist on the Controller. If they were ever
+  removed out-of-band — via the Bosch app, a controller restore, or a factory
+  reset — the integration would permanently believe the bridge switch already
+  existed and never recreate it, with no error anywhere (exactly what the
+  reporter's beta.1 debug log showed: `enabled=True`, the device eligible, but
+  `existing_bridge_entries` already covering every possible key). Now each
+  bridge_map entry is cross-checked against the SHC's live UserDefinedState
+  and Automation-rule lists (already held in session memory, no extra API
+  calls) before being trusted; a stale entry is transparently recreated on
+  the next reload/restart.
 - **`async_sync_keypad_bridge` was completely silent on every non-error
   path** — option disabled, a device excluded by the room/device filter,
   a device simply not eligible, and a fully successful entity creation

@@ -67,7 +67,13 @@ def _make_hass():
     return hass
 
 
-def _make_session(devices, swd2_devices=None, light_control_devices=None):
+def _make_session(
+    devices,
+    swd2_devices=None,
+    light_control_devices=None,
+    userdefinedstates=None,
+    automation_rules=None,
+):
     session = SimpleNamespace()
     session.device_helper = SimpleNamespace(
         shutter_controls=devices,
@@ -77,11 +83,21 @@ def _make_session(devices, swd2_devices=None, light_control_devices=None):
         micromodule_light_controls=light_control_devices or [],
     )
     session.information = SimpleNamespace(macAddress="AA:BB:CC:DD:EE:FF")
+    # #282: async_sync_keypad_bridge cross-checks bridge_map entries against
+    # these two live collections before trusting them as already-created.
+    session.userdefinedstates = userdefinedstates or []
+    session.automation_rules = automation_rules or []
     session.async_create_userdefinedstate = AsyncMock()
     session.async_create_automation_rule = AsyncMock()
     session.async_delete_automation_rule = AsyncMock()
     session.async_delete_userdefinedstate = AsyncMock()
     return session
+
+
+def _ids(*ids: str) -> list[SimpleNamespace]:
+    """Build the [SimpleNamespace(id=...), ...] shape session.userdefinedstates/
+    automation_rules use, from a plain list of ids."""
+    return [SimpleNamespace(id=i) for i in ids]
 
 
 def _run(coro):
@@ -207,7 +223,11 @@ class TestEnabledCreatesForEligibleDevices:
 
     def test_idempotent_skips_already_created_entries(self):
         device = _make_device("d1", "Already bridged")
-        session = _make_session([device])
+        session = _make_session(
+            [device],
+            userdefinedstates=_ids("u0", "u1", "u2", "u3"),
+            automation_rules=_ids("a0", "a1", "a2", "a3"),
+        )
         entry = _make_entry(
             data={
                 DATA_KEYPAD_BRIDGE_MAP: {
@@ -224,6 +244,41 @@ class TestEnabledCreatesForEligibleDevices:
         session.async_create_userdefinedstate.assert_not_awaited()
         session.async_create_automation_rule.assert_not_awaited()
         hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_recreates_entry_deleted_out_of_band(self):
+        """#282: a bridge_map entry whose SHC objects were deleted outside HA
+        (Bosch app, controller restore/reset) must be recreated, not trusted
+        forever."""
+        device = _make_device("d1", "Already bridged")
+        session = _make_session(
+            [device],
+            userdefinedstates=[],
+            automation_rules=[],
+        )
+        session.async_create_userdefinedstate.return_value = SimpleNamespace(id="new_u")
+        session.async_create_automation_rule.return_value = SimpleNamespace(id="new_a")
+        entry = _make_entry(
+            data={
+                DATA_KEYPAD_BRIDGE_MAP: {
+                    key: {"userdefinedstate_id": f"u{i}", "automation_id": f"a{i}"}
+                    for i, key in enumerate(_D1_ALL_KEYS)
+                }
+            },
+            session=session,
+        )
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        assert session.async_create_userdefinedstate.await_count == 4
+        assert session.async_create_automation_rule.await_count == 4
+        sent_data = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        bridge_map = sent_data[DATA_KEYPAD_BRIDGE_MAP]
+        for key in _D1_ALL_KEYS:
+            assert bridge_map[key] == {
+                "userdefinedstate_id": "new_u",
+                "automation_id": "new_a",
+            }
 
     def test_removes_stale_entries_for_now_excluded_device(self):
         """A device excluded after being bridged must have its entries
@@ -484,7 +539,12 @@ class TestLightControlPushbuttonBridge:
 
     def test_idempotent_skips_already_created_entries(self):
         device = _make_light_control_device("lc1", "Already bridged")
-        session = _make_session([], light_control_devices=[device])
+        session = _make_session(
+            [],
+            light_control_devices=[device],
+            userdefinedstates=_ids("u0", "u1", "u2", "u3"),
+            automation_rules=_ids("a0", "a1", "a2", "a3"),
+        )
         entry = _make_entry(
             data={
                 DATA_KEYPAD_BRIDGE_MAP: {
@@ -604,7 +664,12 @@ class TestSWD2ButtonBridge:
 
     def test_idempotent_skips_already_created_entries(self):
         device = _make_device("d1", "Already bridged window")
-        session = _make_session([], swd2_devices=[device])
+        session = _make_session(
+            [],
+            swd2_devices=[device],
+            userdefinedstates=_ids("u1", "u2"),
+            automation_rules=_ids("a1", "a2"),
+        )
         entry = _make_entry(
             data={
                 DATA_KEYPAD_BRIDGE_MAP: {

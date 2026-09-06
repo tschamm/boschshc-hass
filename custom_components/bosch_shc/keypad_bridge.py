@@ -273,16 +273,31 @@ async def _create_bridge_entry(
     }
 
 
+def _bridge_entry_exists(session: Any, entry_ids: dict[str, str]) -> bool:
+    """True if the SHC still has both objects a bridge_map entry claims exist.
+
+    #282: bridge_map is otherwise trusted forever once written, so a
+    UserDefinedState/Automation removed out-of-band (Bosch app, controller
+    restore, factory reset) leaves a permanent phantom entry that blocks
+    recreation. Both collections are already loaded in session memory, so
+    this costs no extra API call.
+    """
+    return entry_ids["userdefinedstate_id"] in {
+        state.id for state in session.userdefinedstates
+    } and entry_ids["automation_id"] in {rule.id for rule in session.automation_rules}
+
+
 async def async_sync_keypad_bridge(
     hass: HomeAssistant, entry: ConfigEntry, enabled: bool
 ) -> None:
     """Create or tear down the keypad-bridge SHC objects to match `enabled`.
 
-    Idempotent: only creates what's missing for currently-eligible devices,
-    and removes entries for devices no longer eligible (excluded, or the
-    feature turned off) using the ids persisted in `entry.data`. Best-effort
-    on delete -- a manually-removed SHC object shouldn't block cleanup of
-    the rest of the map.
+    Idempotent: only creates what's missing for currently-eligible devices
+    -- including a bridge_map entry whose SHC objects were deleted out-of-
+    band (#282, see _bridge_entry_exists) -- and removes entries for devices
+    no longer eligible (excluded, or the feature turned off) using the ids
+    persisted in `entry.data`. Best-effort on delete -- a manually-removed
+    SHC object shouldn't block cleanup of the rest of the map.
     """
     session = entry.runtime_data.session
     bridge_map: dict[str, dict[str, str]] = dict(
@@ -354,7 +369,9 @@ async def async_sync_keypad_bridge(
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     key = f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
-                    if key in bridge_map:
+                    if key in bridge_map and _bridge_entry_exists(
+                        session, bridge_map[key]
+                    ):
                         continue
                     label = f"{device.name} Button {key_code} {button_event}"
                     await _create_bridge_entry(
@@ -378,7 +395,7 @@ async def async_sync_keypad_bridge(
         for device in swd2_devices:
             for button_press_state in _SWD2_BUTTON_STATES:
                 key = f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
-                if key in bridge_map:
+                if key in bridge_map and _bridge_entry_exists(session, bridge_map[key]):
                     continue
                 label = f"{device.name} Button {button_press_state}"
                 await _create_bridge_entry(
