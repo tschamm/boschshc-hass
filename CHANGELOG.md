@@ -1,7 +1,20 @@
 # Changelog
 
-## 0.12.25 — Keypad bridge diagnostic logging + self-healing fix (#282)
+## 0.12.25 — Keypad bridge diagnostic logging + self-healing fix + device grouping (#282)
 
+- **Keypad-bridge switch entities now group under their real source device**
+  (e.g. the actual shutter or Light Control II) instead of the generic
+  "Bosch Smart Home Controller" device, and show a readable name (e.g.
+  "Button 1 Short") instead of the raw, hash-tagged Controller-side name.
+  Requested by #282's reporter after the self-healing fix below got their
+  entities showing up for the first time, but grouped under the hub with
+  names like "Licht-/Rollladensteuerung 1c7486 Btn1S". The source device is
+  resolved directly from the live session (not the HA device registry,
+  which has no ordering guarantee relative to other platforms) with a
+  transparent fallback to the previous hub-grouping if that device can't be
+  found. `bridge_map`'s schema is bumped again (v2 → v3) to record each
+  entry's source `device_id`/friendly name, forcing existing entries to be
+  recreated once.
 - **Root cause of #282's zero-entities report found and fixed**: `async_sync_keypad_bridge`
   trusted its persisted `bridge_map` (which device/button keys already have an
   SHC-side Automation + UserDefinedState) forever once written, with no check

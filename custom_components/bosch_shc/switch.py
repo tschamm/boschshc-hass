@@ -7,6 +7,7 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
+from types import SimpleNamespace
 from typing import Any
 
 import aiohttp
@@ -54,6 +55,7 @@ from .entity import (
     device_excluded,
     light_switch_as_light,
 )
+from .keypad_bridge import DATA_KEYPAD_BRIDGE_MAP
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1164,21 +1166,69 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
         self._session = session
         self._entry_id = entry_id
         self.entity_description = description
-        # UDS entity: the state name IS the entity's distinguishing name.
-        # With has_entity_name=True and _attr_name=None HA would show the SHC hub
-        # name only; set _attr_name to the UDS state name so the entity is
-        # identifiable (e.g. "Vacation Mode").
-        self._attr_name = device.name if attr_name is None else attr_name
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        bridge_info = self._keypad_bridge_info(config_entry, device.id)
+
+        # has_entity_name=True + _attr_name=None would show the hub name only;
+        # use the state's name, or (#282) its keypad-bridge friendly name.
+        if attr_name is not None:
+            self._attr_name = attr_name
+        elif bridge_info is not None:
+            self._attr_name = bridge_info["attr_name"]
+        else:
+            self._attr_name = device.name
 
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        self._shc: DeviceEntry = hass.config_entries.async_get_entry(
-            entry_id
-        ).runtime_data.shc_device  # type: ignore[union-attr]
+        # #282: group under the real source device (via the session, not the
+        # HA device registry -- platforms run concurrently, no ordering guarantee).
+        source_device = (
+            self._source_device(session, bridge_info["device_id"])
+            if bridge_info is not None
+            else None
+        )
+        self._shc: DeviceEntry = (
+            source_device
+            if source_device is not None
+            else config_entry.runtime_data.shc_device  # type: ignore[union-attr]
+        )
         self._has_async_update = hasattr(self._device, "async_update")  # [S3]
+
+    @staticmethod
+    def _keypad_bridge_info(
+        config_entry: Any, userdefinedstate_id: str
+    ) -> dict[str, str] | None:
+        """Find this state's keypad-bridge entry (#282), if it has one."""
+        if config_entry is None:
+            return None
+        bridge_map = getattr(config_entry, "data", {}).get(DATA_KEYPAD_BRIDGE_MAP, {})
+        return next(
+            (
+                entry_ids
+                for entry_ids in bridge_map.values()
+                if entry_ids.get("userdefinedstate_id") == userdefinedstate_id
+                and "device_id" in entry_ids
+            ),
+            None,
+        )
+
+    @staticmethod
+    def _source_device(session: SHCSession, device_id: str) -> SimpleNamespace | None:
+        """Look up a keypad-bridge entry's source device, if it still exists."""
+        try:
+            device = session.device(device_id)
+        except KeyError:
+            return None
+        return SimpleNamespace(
+            id=device.id,
+            name=device.name,
+            identifiers={(DOMAIN, device.id)},
+            manufacturer=device.manufacturer,
+            model=device.device_model,
+        )
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events."""

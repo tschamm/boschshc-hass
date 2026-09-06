@@ -275,10 +275,9 @@ class TestEnabledCreatesForEligibleDevices:
         sent_data = hass.config_entries.async_update_entry.call_args.kwargs["data"]
         bridge_map = sent_data[DATA_KEYPAD_BRIDGE_MAP]
         for key in _D1_ALL_KEYS:
-            assert bridge_map[key] == {
-                "userdefinedstate_id": "new_u",
-                "automation_id": "new_a",
-            }
+            assert bridge_map[key]["userdefinedstate_id"] == "new_u"
+            assert bridge_map[key]["automation_id"] == "new_a"
+            assert bridge_map[key]["device_id"] == "d1"
 
     def test_removes_stale_entries_for_now_excluded_device(self):
         """A device excluded after being bridged must have its entries

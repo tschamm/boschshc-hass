@@ -61,6 +61,7 @@ from custom_components.bosch_shc.const import (
     OPT_SUPPRESS_CAMERA_SWITCHES,
     OPT_TEMPERATURE_DROP_ENTITIES,
 )
+from custom_components.bosch_shc.keypad_bridge import DATA_KEYPAD_BRIDGE_MAP
 from custom_components.bosch_shc.switch import (
     SWITCH_TYPES,
     SHCAutomationRuleSwitch,
@@ -70,7 +71,6 @@ from custom_components.bosch_shc.switch import (
 )
 
 from .conftest import run_setup_entry
-
 
 
 def _make_switch(description, **device_attrs):
@@ -249,8 +249,13 @@ def _switch(description, child_lock_value):
 
 
 def _fake_device(**kwargs):
-    defaults = dict(name="Dev", id="dev1", root_device_id="root1", serial="SER1",
-                    supports_silentmode=False)
+    defaults = dict(
+        name="Dev",
+        id="dev1",
+        root_device_id="root1",
+        serial="SER1",
+        supports_silentmode=False,
+    )
     defaults.update(kwargs)
     return SimpleNamespace(**defaults)
 
@@ -313,8 +318,13 @@ def _keys(entities):
 EXCLUDED_ID = "excl-001"
 
 
-def _dev(device_id=EXCLUDED_ID, root_id="root1", serial="serial1",
-         supports_silentmode=False, has_child_lock=True):
+def _dev(
+    device_id=EXCLUDED_ID,
+    root_id="root1",
+    serial="serial1",
+    supports_silentmode=False,
+    has_child_lock=True,
+):
     """Build a minimal device SimpleNamespace."""
     d = SimpleNamespace(
         id=device_id,
@@ -421,6 +431,7 @@ PATCH_DEVICE_EXCLUDED = "custom_components.bosch_shc.switch.device_excluded"
 
 async def _run_setup(hass, entry, async_add_entities):
     from custom_components.bosch_shc.switch import async_setup_entry
+
     await async_setup_entry(hass, entry, async_add_entities)
 
 
@@ -584,7 +595,10 @@ def _fake_hass(entry_id="E1", session=None, shc=None, options=None):
     this integration no longer uses hass.data[DOMAIN])."""
     shc_obj = shc or SimpleNamespace(
         identifiers={("bosch_shc", "shc")},
-        name="SHC", manufacturer="Bosch", model="SHC", id="shc1",
+        name="SHC",
+        manufacturer="Bosch",
+        model="SHC",
+        id="shc1",
     )
     h = MagicMock()
     h.data = {}
@@ -656,8 +670,6 @@ def _fake_md2(**kwargs):
     )
     defaults.update(kwargs)
     return SimpleNamespace(**defaults)
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -748,7 +760,9 @@ def test_should_poll_smartplug_is_false():
     assert sw.should_poll is False
 
 
-def test_setup_smart_plugs_creates_two_entities_per_plug(mock_config_entry, mock_session):
+def test_setup_smart_plugs_creates_two_entities_per_plug(
+    mock_config_entry, mock_session
+):
     plug = _fake_setup_device(name="Plug A", dev_id="plug1")
     mock_session.device_helper.smart_plugs = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
@@ -776,9 +790,7 @@ def test_shcswitch_unique_id_for_smartplug(mock_config_entry, mock_session):
     plug = _fake_setup_device(name="Plug A", dev_id="plugX", root_id="rootY")
     mock_session.device_helper.smart_plugs = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
-    smartplug_ent = next(
-        e for e in entities if e.entity_description.key == "smartplug"
-    )
+    smartplug_ent = next(e for e in entities if e.entity_description.key == "smartplug")
     assert smartplug_ent._attr_unique_id == "rootY_plugX"
 
 
@@ -790,8 +802,6 @@ def test_shcswitch_unique_id_for_routing(mock_config_entry, mock_session):
         e for e in entities if e.entity_description.key == "smartplug_routing"
     )
     assert routing_ent._attr_unique_id == "rootQ_plugZ_routing"
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -817,8 +827,6 @@ def test_setup_smart_plug_compact_one_entity(mock_config_entry, mock_session):
     entities = _setup_switch(mock_config_entry, mock_session)
     assert len(entities) == 1
     assert entities[0].entity_description.key == "smartplugcompact"
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -921,8 +929,6 @@ def test_setup_micromodule_relay_creates_two_entities(mock_config_entry, mock_se
     assert "child_lock" in keys
 
 
-
-
 # ---------------------------------------------------------------------------
 # LightSwitch
 # ---------------------------------------------------------------------------
@@ -1021,7 +1027,11 @@ class TestSwitchLightRelayOptInSkip:
             ),
         ):
             collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+            _run(
+                async_setup_entry(
+                    hass, entry, lambda ents, **kw: collected.extend(ents)
+                )
+            )
         return collected
 
     def test_relay_opted_in_as_light_skipped_in_switch(self):
@@ -1081,8 +1091,6 @@ class TestSHCSwitchTurnOnClientError:
         dev.async_set_switchstate = AsyncMock(side_effect=aiohttp.ClientError("err"))
         sw._device = dev
         _run(sw.async_turn_off())  # must not raise
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -1182,9 +1190,7 @@ def test_should_poll_cameraeyes_frontlight_is_true():
 
 def test_cameraeyes_on_value_is_privacy_disabled():
     """Camera-on = privacy DISABLED (inverted logic)."""
-    assert SWITCH_TYPES["cameraeyes"].on_value is (
-        PrivacyModeService.State.DISABLED
-    )
+    assert SWITCH_TYPES["cameraeyes"].on_value is (PrivacyModeService.State.DISABLED)
 
 
 def test_setup_camera_eyes_three_entities(mock_config_entry, mock_session):
@@ -1219,8 +1225,6 @@ def test_shcswitch_unique_id_for_camera_notification(mock_config_entry, mock_ses
         e for e in entities if e.entity_description.key == "cameraeyes_notification"
     )
     assert notif_ent._attr_unique_id == "rootA_camA_notification"
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -1262,9 +1266,7 @@ def test_should_poll_camera360_is_true():
 
 
 def test_camera360_on_value_is_privacy_disabled():
-    assert SWITCH_TYPES["camera360"].on_value is (
-        PrivacyModeService.State.DISABLED
-    )
+    assert SWITCH_TYPES["camera360"].on_value is (PrivacyModeService.State.DISABLED)
 
 
 def test_camera360_no_privacy_service_is_on_returns_none():
@@ -1327,8 +1329,6 @@ def test_setup_camera_360_two_entities(mock_config_entry, mock_session):
     assert keys == {"camera360", "camera360_notification"}
 
 
-
-
 # ---------------------------------------------------------------------------
 # CameraOutdoorGen2 (privacy / frontlight / ambientlight)
 # ---------------------------------------------------------------------------
@@ -1365,7 +1365,8 @@ def test_cameraoutdoorgen2_frontlight_off():
 def test_cameraoutdoorgen2_ambientlight_on():
     State = CameraAmbientLightService.State
     sw = _make_switch(
-        SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"], cameraambientlight=State.ON
+        SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
+        cameraambientlight=State.ON,
     )
     assert sw.is_on is True
 
@@ -1373,7 +1374,8 @@ def test_cameraoutdoorgen2_ambientlight_on():
 def test_cameraoutdoorgen2_ambientlight_off():
     State = CameraAmbientLightService.State
     sw = _make_switch(
-        SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"], cameraambientlight=State.OFF
+        SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
+        cameraambientlight=State.OFF,
     )
     assert sw.is_on is False
 
@@ -1445,8 +1447,6 @@ def test_setup_camera_outdoor_gen2_attr_names(mock_config_entry, mock_session):
     )
 
 
-
-
 # ---------------------------------------------------------------------------
 # PresenceSimulation
 # ---------------------------------------------------------------------------
@@ -1505,8 +1505,6 @@ def test_setup_presence_simulation_absent(mock_config_entry, mock_session):
     assert entities == []
 
 
-
-
 # ---------------------------------------------------------------------------
 # Bypass (bypass / bypass_infinite)
 # ---------------------------------------------------------------------------
@@ -1531,9 +1529,7 @@ def test_should_poll_bypass_is_false():
 
 
 def test_bypass_on_value_is_bypass_active():
-    assert SWITCH_TYPES["bypass"].on_value is (
-        BypassService.State.BYPASS_ACTIVE
-    )
+    assert SWITCH_TYPES["bypass"].on_value is (BypassService.State.BYPASS_ACTIVE)
 
 
 def test_setup_shutter_contact2_base_two_entities(mock_config_entry, mock_session):
@@ -1629,7 +1625,11 @@ def test_md2_config_switches_use_translation_key(switch_type, attr_name):
         ("camera360_notification", "Notification", "camera_notification"),
         ("cameraoutdoorgen2_camerafrontlight", "Frontlight", "camera_frontlight"),
         ("cameraoutdoorgen2_cameraambientlight", "AmbientLight", "camera_ambientlight"),
-        ("energy_saving_mode_enabled", "EnergySavingMode", "energy_saving_mode_enabled"),
+        (
+            "energy_saving_mode_enabled",
+            "EnergySavingMode",
+            "energy_saving_mode_enabled",
+        ),
         ("warning_suppressed", "WarningSuppressed", "warning_suppressed"),
         ("nightly_promise_enabled", "NightlyPromise", "nightly_promise_enabled"),
         ("humidity_warning_enabled", "HumidityWarning", "humidity_warning_enabled"),
@@ -1766,19 +1766,24 @@ class TestThermostatChildLockIncluded:
 
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: [EXCLUDED_ID]})
         shc_dev = SimpleNamespace(
-            name="SHC", id="shcid",
+            name="SHC",
+            id="shcid",
             identifiers={(DOMAIN, "mac1")},
-            manufacturer="Bosch", model="SHC2",
+            manufacturer="Bosch",
+            model="SHC2",
         )
         hass = _make_hass(session, entry, shc_dev)
         added: list = []
-        async_add_entities = MagicMock(side_effect=lambda ents, **kw: added.extend(ents))
+        async_add_entities = MagicMock(
+            side_effect=lambda ents, **kw: added.extend(ents)
+        )
 
         with patch(PATCH_MIGRATE, new=AsyncMock(return_value=None)):
             _run(_run_setup(hass, entry, async_add_entities))
 
         child_lock_entities = [
-            e for e in added
+            e
+            for e in added
             if isinstance(e, SHCSwitch)
             and e.entity_description.key == "child_lock_thermostat"
         ]
@@ -1808,26 +1813,32 @@ class TestChildProtectionBoolDeviceIncluded:
 
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: [EXCLUDED_ID]})
         shc_dev = SimpleNamespace(
-            name="SHC", id="shcid",
+            name="SHC",
+            id="shcid",
             identifiers={(DOMAIN, "mac1")},
-            manufacturer="Bosch", model="SHC2",
+            manufacturer="Bosch",
+            model="SHC2",
         )
         hass = _make_hass(session, entry, shc_dev)
         added: list = []
-        async_add_entities = MagicMock(side_effect=lambda ents, **kw: added.extend(ents))
+        async_add_entities = MagicMock(
+            side_effect=lambda ents, **kw: added.extend(ents)
+        )
 
         with patch(PATCH_MIGRATE, new=AsyncMock(return_value=None)):
             _run(_run_setup(hass, entry, async_add_entities))
 
         child_lock_entities = [
-            e for e in added
-            if isinstance(e, SHCSwitch)
-            and e.entity_description.key == "child_lock"
+            e
+            for e in added
+            if isinstance(e, SHCSwitch) and e.entity_description.key == "child_lock"
         ]
         assert len(child_lock_entities) >= 1
 
 
-def test_setup_thermostat_without_silentmode_only_child_lock(mock_config_entry, mock_session):
+def test_setup_thermostat_without_silentmode_only_child_lock(
+    mock_config_entry, mock_session
+):
     th = _fake_thermostat(name="Thermo2", dev_id="th2", silent=False)
     mock_session.device_helper.thermostats = [th]
     entities = _setup_switch(mock_config_entry, mock_session)
@@ -1861,7 +1872,9 @@ def test_setup_wallthermostat_uses_enum_description(mock_config_entry, mock_sess
     wt.child_lock = "ON"  # boschshcpy >= 0.2.119 exposes child_lock on wall thermostats
     mock_session.device_helper.wallthermostats = [wt]
     entities = _setup_switch(mock_config_entry, mock_session)
-    cl_entities = [e for e in entities if e.entity_description.key == "child_lock_thermostat"]
+    cl_entities = [
+        e for e in entities if e.entity_description.key == "child_lock_thermostat"
+    ]
     assert len(cl_entities) == 1
     assert cl_entities[0].entity_description.on_value == ThermostatService.State.ON
 
@@ -1898,7 +1911,9 @@ def test_setup_micromodule_dimmer_child_lock(mock_config_entry, mock_session):
     assert "child_lock" in keys
 
 
-def test_setup_wallthermostat_without_child_lock_skipped_old_lib(mock_config_entry, mock_session):
+def test_setup_wallthermostat_without_child_lock_skipped_old_lib(
+    mock_config_entry, mock_session
+):
     """Guard (0.4.112): a wall thermostat from an older boschshcpy (no child_lock
     attribute) must be skipped, not crash, when the lib is pinned to 0.2.117.
     """
@@ -1910,8 +1925,6 @@ def test_setup_wallthermostat_without_child_lock_skipped_old_lib(mock_config_ent
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = {e.entity_description.key for e in entities}
     assert "child_lock_thermostat" not in keys
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -1930,13 +1943,17 @@ class TestMotionDetectors2IncludedPath:
         # Still exclude all other devices to isolate this test
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: [EXCLUDED_ID]})
         shc_dev = SimpleNamespace(
-            name="SHC", id="shcid",
+            name="SHC",
+            id="shcid",
             identifiers={(DOMAIN, "mac1")},
-            manufacturer="Bosch", model="SHC2",
+            manufacturer="Bosch",
+            model="SHC2",
         )
         hass = _make_hass(session, entry, shc_dev)
         added: list = []
-        async_add_entities = MagicMock(side_effect=lambda ents, **kw: added.extend(ents))
+        async_add_entities = MagicMock(
+            side_effect=lambda ents, **kw: added.extend(ents)
+        )
         migrate_calls: list = []
 
         async def _fake_migrate(**kwargs):
@@ -1953,7 +1970,8 @@ class TestMotionDetectors2IncludedPath:
 
         added, _ = self._setup_motion_included()
         pet_entities = [
-            e for e in added
+            e
+            for e in added
             if isinstance(e, SHCSwitch)
             and e.entity_description.key == "pet_immunity_enabled"
         ]
@@ -1983,7 +2001,11 @@ class TestPetImmunitySwitch:
 
     def test_entity_category_is_config(self):
         from homeassistant.helpers.entity import EntityCategory
-        assert SWITCH_TYPES["pet_immunity_enabled"].entity_category == EntityCategory.CONFIG
+
+        assert (
+            SWITCH_TYPES["pet_immunity_enabled"].entity_category
+            == EntityCategory.CONFIG
+        )
 
     def test_is_on_when_enabled(self):
         sw = _make_pet_switch(pet_immunity_enabled=True)
@@ -2021,9 +2043,7 @@ class TestPetImmunitySwitch:
 
     def test_attr_name_with_pet_immunity_suffix(self):
         """unique_id uses lowercased attr_name suffix 'petimmunity'."""
-        dev = _make_md2_device(
-            name="Motion Sensor", root_device_id="rootA", id="devB"
-        )
+        dev = _make_md2_device(name="Motion Sensor", root_device_id="rootA", id="devB")
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = dev
         sw.entity_description = SWITCH_TYPES["pet_immunity_enabled"]
@@ -2035,55 +2055,66 @@ class TestPetImmunitySwitch:
         assert sw._attr_unique_id == "rootA_devB_petimmunity"
 
 
-
-
 # ---------------------------------------------------------------------------
 # EnergySavingMode
 # ---------------------------------------------------------------------------
 
 
 class TestEnergySavingModeGuard:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
         """supports_energy_saving_mode=False → entity NOT created even with value."""
-        plug = _fake_device(energy_saving_mode_enabled=True,
-                            supports_energy_saving_mode=False)
+        plug = _fake_device(
+            energy_saving_mode_enabled=True, supports_energy_saving_mode=False
+        )
         mock_session.device_helper.smart_plugs = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "energy_saving_mode_enabled" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
         """supports_energy_saving_mode=True but value=None → entity NOT created."""
-        plug = _fake_device(energy_saving_mode_enabled=None,
-                            supports_energy_saving_mode=True)
+        plug = _fake_device(
+            energy_saving_mode_enabled=None, supports_energy_saving_mode=True
+        )
         mock_session.device_helper.smart_plugs = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "energy_saving_mode_enabled" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
         """supports=True and value not None → entity created."""
-        plug = _fake_device(energy_saving_mode_enabled=False,
-                            supports_energy_saving_mode=True)
+        plug = _fake_device(
+            energy_saving_mode_enabled=False, supports_energy_saving_mode=True
+        )
         mock_session.device_helper.smart_plugs = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "energy_saving_mode_enabled" in _keys(entities)
 
-    def test_supports_false_value_present_skipped_compact(self, mock_config_entry, mock_session):
-        plug = _fake_device(energy_saving_mode_enabled=True,
-                            supports_energy_saving_mode=False)
+    def test_supports_false_value_present_skipped_compact(
+        self, mock_config_entry, mock_session
+    ):
+        plug = _fake_device(
+            energy_saving_mode_enabled=True, supports_energy_saving_mode=False
+        )
         mock_session.device_helper.smart_plugs_compact = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "energy_saving_mode_enabled" not in _keys(entities)
 
-    def test_supports_true_value_none_skipped_compact(self, mock_config_entry, mock_session):
-        plug = _fake_device(energy_saving_mode_enabled=None,
-                            supports_energy_saving_mode=True)
+    def test_supports_true_value_none_skipped_compact(
+        self, mock_config_entry, mock_session
+    ):
+        plug = _fake_device(
+            energy_saving_mode_enabled=None, supports_energy_saving_mode=True
+        )
         mock_session.device_helper.smart_plugs_compact = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "energy_saving_mode_enabled" not in _keys(entities)
 
 
 def test_smartplug_with_energy_saving_creates_entity(mock_config_entry, mock_session):
-    plug = _fake_device(energy_saving_mode_enabled=False, supports_energy_saving_mode=True)
+    plug = _fake_device(
+        energy_saving_mode_enabled=False, supports_energy_saving_mode=True
+    )
     mock_session.device_helper.smart_plugs = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = [e.entity_description.key for e in entities]
@@ -2099,10 +2130,14 @@ def test_smartplug_without_energy_saving_skipped(mock_config_entry, mock_session
 
 
 def test_smartplug_energy_saving_unique_id(mock_config_entry, mock_session):
-    plug = _fake_device(id="plug1", energy_saving_mode_enabled=True, supports_energy_saving_mode=True)
+    plug = _fake_device(
+        id="plug1", energy_saving_mode_enabled=True, supports_energy_saving_mode=True
+    )
     mock_session.device_helper.smart_plugs = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
-    esm = next(e for e in entities if e.entity_description.key == "energy_saving_mode_enabled")
+    esm = next(
+        e for e in entities if e.entity_description.key == "energy_saving_mode_enabled"
+    )
     assert esm._attr_unique_id == "root1_plug1_energysavingmode"
 
 
@@ -2124,15 +2159,21 @@ def test_smartplug_energy_saving_is_on_false():
     assert sw.is_on is False
 
 
-def test_smartplugcompact_with_energy_saving_creates_entity(mock_config_entry, mock_session):
-    plug = _fake_device(energy_saving_mode_enabled=False, supports_energy_saving_mode=True)
+def test_smartplugcompact_with_energy_saving_creates_entity(
+    mock_config_entry, mock_session
+):
+    plug = _fake_device(
+        energy_saving_mode_enabled=False, supports_energy_saving_mode=True
+    )
     mock_session.device_helper.smart_plugs_compact = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = [e.entity_description.key for e in entities]
     assert "energy_saving_mode_enabled" in keys
 
 
-def test_smartplugcompact_without_energy_saving_skipped(mock_config_entry, mock_session):
+def test_smartplugcompact_without_energy_saving_skipped(
+    mock_config_entry, mock_session
+):
     plug = _fake_device()
     mock_session.device_helper.smart_plugs_compact = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
@@ -2142,9 +2183,11 @@ def test_smartplugcompact_without_energy_saving_skipped(mock_config_entry, mock_
 
 def test_energy_saving_mode_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
-    assert SWITCH_TYPES["energy_saving_mode_enabled"].entity_category == EntityCategory.CONFIG
 
-
+    assert (
+        SWITCH_TYPES["energy_saving_mode_enabled"].entity_category
+        == EntityCategory.CONFIG
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2153,43 +2196,50 @@ def test_energy_saving_mode_entity_category_config():
 
 
 class TestWarningSuppressedGuard:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        plug = _fake_device(warning_suppressed=True,
-                            supports_power_switch_warning=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        plug = _fake_device(
+            warning_suppressed=True, supports_power_switch_warning=False
+        )
         mock_session.device_helper.smart_plugs = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "warning_suppressed" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        plug = _fake_device(warning_suppressed=None,
-                            supports_power_switch_warning=True)
+        plug = _fake_device(warning_suppressed=None, supports_power_switch_warning=True)
         mock_session.device_helper.smart_plugs = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "warning_suppressed" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        plug = _fake_device(warning_suppressed=False,
-                            supports_power_switch_warning=True)
+        plug = _fake_device(
+            warning_suppressed=False, supports_power_switch_warning=True
+        )
         mock_session.device_helper.smart_plugs = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "warning_suppressed" in _keys(entities)
 
     def test_supports_false_skipped_compact(self, mock_config_entry, mock_session):
-        plug = _fake_device(warning_suppressed=False,
-                            supports_power_switch_warning=False)
+        plug = _fake_device(
+            warning_suppressed=False, supports_power_switch_warning=False
+        )
         mock_session.device_helper.smart_plugs_compact = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "warning_suppressed" not in _keys(entities)
 
-    def test_supports_true_value_none_skipped_compact(self, mock_config_entry, mock_session):
-        plug = _fake_device(warning_suppressed=None,
-                            supports_power_switch_warning=True)
+    def test_supports_true_value_none_skipped_compact(
+        self, mock_config_entry, mock_session
+    ):
+        plug = _fake_device(warning_suppressed=None, supports_power_switch_warning=True)
         mock_session.device_helper.smart_plugs_compact = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "warning_suppressed" not in _keys(entities)
 
 
-def test_smartplug_with_warning_suppressed_creates_entity(mock_config_entry, mock_session):
+def test_smartplug_with_warning_suppressed_creates_entity(
+    mock_config_entry, mock_session
+):
     plug = _fake_device(warning_suppressed=False, supports_power_switch_warning=True)
     mock_session.device_helper.smart_plugs = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
@@ -2224,7 +2274,9 @@ def test_smartplug_warning_suppressed_is_on_false():
 
 
 def test_smartplug_warning_suppressed_unique_id(mock_config_entry, mock_session):
-    plug = _fake_device(id="plug1", warning_suppressed=False, supports_power_switch_warning=True)
+    plug = _fake_device(
+        id="plug1", warning_suppressed=False, supports_power_switch_warning=True
+    )
     mock_session.device_helper.smart_plugs = [plug]
     entities = _setup_switch(mock_config_entry, mock_session)
     ws = next(e for e in entities if e.entity_description.key == "warning_suppressed")
@@ -2233,31 +2285,39 @@ def test_smartplug_warning_suppressed_unique_id(mock_config_entry, mock_session)
 
 def test_warning_suppressed_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
+
     assert SWITCH_TYPES["warning_suppressed"].entity_category == EntityCategory.CONFIG
 
 
 class TestSwitchSmartPlugCompactWarningSuppressed:
     """switch.py line 411 — warning_suppressed hasattr block on smart_plugs_compact."""
 
-    def test_compact_plug_with_warning_suppressed_creates_entity(self, mock_config_entry, mock_session):
-        plug = _fake_device_gaps(id="cp1", warning_suppressed=False,
-                            supports_power_switch_warning=True)
+    def test_compact_plug_with_warning_suppressed_creates_entity(
+        self, mock_config_entry, mock_session
+    ):
+        plug = _fake_device_gaps(
+            id="cp1", warning_suppressed=False, supports_power_switch_warning=True
+        )
         mock_session.device_helper.smart_plugs_compact = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
-        keys = [getattr(e, "entity_description", None) and e.entity_description.key
-                for e in entities]
+        keys = [
+            getattr(e, "entity_description", None) and e.entity_description.key
+            for e in entities
+        ]
         assert "warning_suppressed" in keys
 
-    def test_compact_plug_without_warning_suppressed_no_entity(self, mock_config_entry, mock_session):
+    def test_compact_plug_without_warning_suppressed_no_entity(
+        self, mock_config_entry, mock_session
+    ):
         # No warning_suppressed attr → hasattr check at line 410 is False
         plug = _fake_device_gaps(id="cp2")
         mock_session.device_helper.smart_plugs_compact = [plug]
         entities = _setup_switch(mock_config_entry, mock_session)
-        keys = [getattr(e, "entity_description", None) and e.entity_description.key
-                for e in entities]
+        keys = [
+            getattr(e, "entity_description", None) and e.entity_description.key
+            for e in entities
+        ]
         assert "warning_suppressed" not in keys
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -2266,23 +2326,22 @@ class TestSwitchSmartPlugCompactWarningSuppressed:
 
 
 class TestNightlyPromiseGuard:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        tg = _fake_device(nightly_promise_enabled=True,
-                          supports_nightly_promise=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        tg = _fake_device(nightly_promise_enabled=True, supports_nightly_promise=False)
         mock_session.device_helper.twinguards = [tg]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "nightly_promise_enabled" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        tg = _fake_device(nightly_promise_enabled=None,
-                          supports_nightly_promise=True)
+        tg = _fake_device(nightly_promise_enabled=None, supports_nightly_promise=True)
         mock_session.device_helper.twinguards = [tg]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "nightly_promise_enabled" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        tg = _fake_device(nightly_promise_enabled=True,
-                          supports_nightly_promise=True)
+        tg = _fake_device(nightly_promise_enabled=True, supports_nightly_promise=True)
         mock_session.device_helper.twinguards = [tg]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "nightly_promise_enabled" in _keys(entities)
@@ -2314,16 +2373,23 @@ def test_twinguard_nightly_promise_is_on():
 
 
 def test_twinguard_nightly_promise_unique_id(mock_config_entry, mock_session):
-    tg = _fake_device(id="tg1", nightly_promise_enabled=False, supports_nightly_promise=True)
+    tg = _fake_device(
+        id="tg1", nightly_promise_enabled=False, supports_nightly_promise=True
+    )
     mock_session.device_helper.twinguards = [tg]
     entities = _setup_switch(mock_config_entry, mock_session)
-    np = next(e for e in entities if e.entity_description.key == "nightly_promise_enabled")
+    np = next(
+        e for e in entities if e.entity_description.key == "nightly_promise_enabled"
+    )
     assert np._attr_unique_id == "root1_tg1_nightlypromise"
 
 
 def test_nightly_promise_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
-    assert SWITCH_TYPES["nightly_promise_enabled"].entity_category == EntityCategory.CONFIG
+
+    assert (
+        SWITCH_TYPES["nightly_promise_enabled"].entity_category == EntityCategory.CONFIG
+    )
 
 
 class TestSwitchTwinguardsDeviceExcluded:
@@ -2338,61 +2404,73 @@ class TestSwitchTwinguardsDeviceExcluded:
         assert "tg-excl" not in ids
 
 
-
-
 # ---------------------------------------------------------------------------
 # HumidityWarning
 # ---------------------------------------------------------------------------
 
 
 class TestHumidityWarningGuardThermostat:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        therm = _fake_device(humidity_warning_enabled=True,
-                             supports_display_configuration=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        therm = _fake_device(
+            humidity_warning_enabled=True, supports_display_configuration=False
+        )
         mock_session.device_helper.thermostats = [therm]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "humidity_warning_enabled" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        therm = _fake_device(humidity_warning_enabled=None,
-                             supports_display_configuration=True)
+        therm = _fake_device(
+            humidity_warning_enabled=None, supports_display_configuration=True
+        )
         mock_session.device_helper.thermostats = [therm]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "humidity_warning_enabled" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        therm = _fake_device(humidity_warning_enabled=False,
-                             supports_display_configuration=True)
+        therm = _fake_device(
+            humidity_warning_enabled=False, supports_display_configuration=True
+        )
         mock_session.device_helper.thermostats = [therm]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "humidity_warning_enabled" in _keys(entities)
 
 
 class TestHumidityWarningGuardRoomThermostat:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        rth = _fake_device(humidity_warning_enabled=True,
-                           supports_display_configuration=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        rth = _fake_device(
+            humidity_warning_enabled=True, supports_display_configuration=False
+        )
         mock_session.device_helper.roomthermostats = [rth]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "humidity_warning_enabled" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        rth = _fake_device(humidity_warning_enabled=None,
-                           supports_display_configuration=True)
+        rth = _fake_device(
+            humidity_warning_enabled=None, supports_display_configuration=True
+        )
         mock_session.device_helper.roomthermostats = [rth]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "humidity_warning_enabled" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        rth = _fake_device(humidity_warning_enabled=True,
-                           supports_display_configuration=True)
+        rth = _fake_device(
+            humidity_warning_enabled=True, supports_display_configuration=True
+        )
         mock_session.device_helper.roomthermostats = [rth]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "humidity_warning_enabled" in _keys(entities)
 
 
-def test_thermostat_with_humidity_warning_creates_entity(mock_config_entry, mock_session):
-    therm = _fake_device(humidity_warning_enabled=False, supports_display_configuration=True)
+def test_thermostat_with_humidity_warning_creates_entity(
+    mock_config_entry, mock_session
+):
+    therm = _fake_device(
+        humidity_warning_enabled=False, supports_display_configuration=True
+    )
     mock_session.device_helper.thermostats = [therm]
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = [e.entity_description.key for e in entities]
@@ -2407,8 +2485,12 @@ def test_thermostat_without_humidity_warning_skipped(mock_config_entry, mock_ses
     assert "humidity_warning_enabled" not in keys
 
 
-def test_roomthermostat_with_humidity_warning_creates_entity(mock_config_entry, mock_session):
-    rth = _fake_device(humidity_warning_enabled=True, supports_display_configuration=True)
+def test_roomthermostat_with_humidity_warning_creates_entity(
+    mock_config_entry, mock_session
+):
+    rth = _fake_device(
+        humidity_warning_enabled=True, supports_display_configuration=True
+    )
     mock_session.device_helper.roomthermostats = [rth]
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = [e.entity_description.key for e in entities]
@@ -2425,18 +2507,24 @@ def test_humidity_warning_is_on_true():
 
 
 def test_humidity_warning_unique_id(mock_config_entry, mock_session):
-    therm = _fake_device(id="t1", humidity_warning_enabled=False, supports_display_configuration=True)
+    therm = _fake_device(
+        id="t1", humidity_warning_enabled=False, supports_display_configuration=True
+    )
     mock_session.device_helper.thermostats = [therm]
     entities = _setup_switch(mock_config_entry, mock_session)
-    hw = next(e for e in entities if e.entity_description.key == "humidity_warning_enabled")
+    hw = next(
+        e for e in entities if e.entity_description.key == "humidity_warning_enabled"
+    )
     assert hw._attr_unique_id == "root1_t1_humiditywarning"
 
 
 def test_humidity_warning_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
-    assert SWITCH_TYPES["humidity_warning_enabled"].entity_category == EntityCategory.CONFIG
 
-
+    assert (
+        SWITCH_TYPES["humidity_warning_enabled"].entity_category
+        == EntityCategory.CONFIG
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2445,53 +2533,59 @@ def test_humidity_warning_entity_category_config():
 
 
 class TestSwapInputsGuardRelay:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        relay = _fake_device(swap_inputs=True, child_lock=False,
-                             supports_switch_configuration=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        relay = _fake_device(
+            swap_inputs=True, child_lock=False, supports_switch_configuration=False
+        )
         mock_session.device_helper.micromodule_relays = [relay]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_inputs" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        relay = _fake_device(swap_inputs=None, child_lock=False,
-                             supports_switch_configuration=True)
+        relay = _fake_device(
+            swap_inputs=None, child_lock=False, supports_switch_configuration=True
+        )
         mock_session.device_helper.micromodule_relays = [relay]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_inputs" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        relay = _fake_device(swap_inputs=False, child_lock=False,
-                             supports_switch_configuration=True)
+        relay = _fake_device(
+            swap_inputs=False, child_lock=False, supports_switch_configuration=True
+        )
         mock_session.device_helper.micromodule_relays = [relay]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_inputs" in _keys(entities)
 
 
 class TestSwapInputsGuardLightControl:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        lc = _fake_device(swap_inputs=True,
-                          supports_switch_configuration=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        lc = _fake_device(swap_inputs=True, supports_switch_configuration=False)
         mock_session.device_helper.micromodule_light_controls = [lc]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_inputs" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        lc = _fake_device(swap_inputs=None,
-                          supports_switch_configuration=True)
+        lc = _fake_device(swap_inputs=None, supports_switch_configuration=True)
         mock_session.device_helper.micromodule_light_controls = [lc]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_inputs" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        lc = _fake_device(swap_inputs=False,
-                          supports_switch_configuration=True)
+        lc = _fake_device(swap_inputs=False, supports_switch_configuration=True)
         mock_session.device_helper.micromodule_light_controls = [lc]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_inputs" in _keys(entities)
 
 
 def test_relay_with_swap_inputs_creates_entity(mock_config_entry, mock_session):
-    relay = _fake_device(swap_inputs=False, child_lock=False, supports_switch_configuration=True)
+    relay = _fake_device(
+        swap_inputs=False, child_lock=False, supports_switch_configuration=True
+    )
     mock_session.device_helper.micromodule_relays = [relay]
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = [e.entity_description.key for e in entities]
@@ -2525,8 +2619,13 @@ def test_swap_inputs_is_on_false():
 
 
 def test_swap_inputs_unique_id(mock_config_entry, mock_session):
-    relay = _fake_device(id="r1", swap_inputs=False, swap_outputs=False,
-                         child_lock=False, supports_switch_configuration=True)
+    relay = _fake_device(
+        id="r1",
+        swap_inputs=False,
+        swap_outputs=False,
+        child_lock=False,
+        supports_switch_configuration=True,
+    )
     mock_session.device_helper.micromodule_relays = [relay]
     entities = _setup_switch(mock_config_entry, mock_session)
     si = next(e for e in entities if e.entity_description.key == "swap_inputs")
@@ -2551,9 +2650,8 @@ def test_light_control_without_swap_inputs_skipped(mock_config_entry, mock_sessi
 
 def test_swap_inputs_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
+
     assert SWITCH_TYPES["swap_inputs"].entity_category == EntityCategory.CONFIG
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -2562,53 +2660,59 @@ def test_swap_inputs_entity_category_config():
 
 
 class TestSwapOutputsGuardRelay:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        relay = _fake_device(swap_outputs=True, child_lock=False,
-                             supports_switch_configuration=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        relay = _fake_device(
+            swap_outputs=True, child_lock=False, supports_switch_configuration=False
+        )
         mock_session.device_helper.micromodule_relays = [relay]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_outputs" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        relay = _fake_device(swap_outputs=None, child_lock=False,
-                             supports_switch_configuration=True)
+        relay = _fake_device(
+            swap_outputs=None, child_lock=False, supports_switch_configuration=True
+        )
         mock_session.device_helper.micromodule_relays = [relay]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_outputs" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        relay = _fake_device(swap_outputs=False, child_lock=False,
-                             supports_switch_configuration=True)
+        relay = _fake_device(
+            swap_outputs=False, child_lock=False, supports_switch_configuration=True
+        )
         mock_session.device_helper.micromodule_relays = [relay]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_outputs" in _keys(entities)
 
 
 class TestSwapOutputsGuardLightControl:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        lc = _fake_device(swap_outputs=True,
-                          supports_switch_configuration=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        lc = _fake_device(swap_outputs=True, supports_switch_configuration=False)
         mock_session.device_helper.micromodule_light_controls = [lc]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_outputs" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        lc = _fake_device(swap_outputs=None,
-                          supports_switch_configuration=True)
+        lc = _fake_device(swap_outputs=None, supports_switch_configuration=True)
         mock_session.device_helper.micromodule_light_controls = [lc]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_outputs" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        lc = _fake_device(swap_outputs=False,
-                          supports_switch_configuration=True)
+        lc = _fake_device(swap_outputs=False, supports_switch_configuration=True)
         mock_session.device_helper.micromodule_light_controls = [lc]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "swap_outputs" in _keys(entities)
 
 
 def test_relay_with_swap_outputs_creates_entity(mock_config_entry, mock_session):
-    relay = _fake_device(swap_outputs=True, child_lock=False, supports_switch_configuration=True)
+    relay = _fake_device(
+        swap_outputs=True, child_lock=False, supports_switch_configuration=True
+    )
     mock_session.device_helper.micromodule_relays = [relay]
     entities = _setup_switch(mock_config_entry, mock_session)
     keys = [e.entity_description.key for e in entities]
@@ -2633,8 +2737,13 @@ def test_swap_outputs_is_on_true():
 
 
 def test_swap_outputs_unique_id(mock_config_entry, mock_session):
-    relay = _fake_device(id="r1", swap_inputs=False, swap_outputs=False,
-                         child_lock=False, supports_switch_configuration=True)
+    relay = _fake_device(
+        id="r1",
+        swap_inputs=False,
+        swap_outputs=False,
+        child_lock=False,
+        supports_switch_configuration=True,
+    )
     mock_session.device_helper.micromodule_relays = [relay]
     entities = _setup_switch(mock_config_entry, mock_session)
     so = next(e for e in entities if e.entity_description.key == "swap_outputs")
@@ -2643,30 +2752,38 @@ def test_swap_outputs_unique_id(mock_config_entry, mock_session):
 
 def test_swap_outputs_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
+
     assert SWITCH_TYPES["swap_outputs"].entity_category == EntityCategory.CONFIG
 
 
 class TestSwitchMicromoduleLightControlsSwapOutputs:
     """switch.py line 465 — swap_outputs hasattr block on micromodule_light_controls."""
 
-    def test_light_control_with_swap_outputs_creates_entity(self, mock_config_entry, mock_session):
-        dev = _fake_device_gaps(id="mlc1", swap_outputs=False,
-                           supports_switch_configuration=True)
+    def test_light_control_with_swap_outputs_creates_entity(
+        self, mock_config_entry, mock_session
+    ):
+        dev = _fake_device_gaps(
+            id="mlc1", swap_outputs=False, supports_switch_configuration=True
+        )
         mock_session.device_helper.micromodule_light_controls = [dev]
         entities = _setup_switch(mock_config_entry, mock_session)
-        keys = [getattr(e, "entity_description", None) and e.entity_description.key
-                for e in entities]
+        keys = [
+            getattr(e, "entity_description", None) and e.entity_description.key
+            for e in entities
+        ]
         assert "swap_outputs" in keys
 
-    def test_light_control_without_swap_outputs_no_entity(self, mock_config_entry, mock_session):
+    def test_light_control_without_swap_outputs_no_entity(
+        self, mock_config_entry, mock_session
+    ):
         dev = _fake_device_gaps(id="mlc2")  # no swap_outputs attr
         mock_session.device_helper.micromodule_light_controls = [dev]
         entities = _setup_switch(mock_config_entry, mock_session)
-        keys = [getattr(e, "entity_description", None) and e.entity_description.key
-                for e in entities]
+        keys = [
+            getattr(e, "entity_description", None) and e.entity_description.key
+            for e in entities
+        ]
         assert "swap_outputs" not in keys
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -2675,46 +2792,44 @@ class TestSwitchMicromoduleLightControlsSwapOutputs:
 
 
 class TestPreAlarmGuardTwinguard:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        tg = _fake_device(pre_alarm_enabled=True,
-                          supports_smoke_sensitivity=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        tg = _fake_device(pre_alarm_enabled=True, supports_smoke_sensitivity=False)
         mock_session.device_helper.twinguards = [tg]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "pre_alarm_enabled" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        tg = _fake_device(pre_alarm_enabled=None,
-                          supports_smoke_sensitivity=True)
+        tg = _fake_device(pre_alarm_enabled=None, supports_smoke_sensitivity=True)
         mock_session.device_helper.twinguards = [tg]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "pre_alarm_enabled" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        tg = _fake_device(pre_alarm_enabled=False,
-                          supports_smoke_sensitivity=True)
+        tg = _fake_device(pre_alarm_enabled=False, supports_smoke_sensitivity=True)
         mock_session.device_helper.twinguards = [tg]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "pre_alarm_enabled" in _keys(entities)
 
 
 class TestPreAlarmGuardSmokeDetector:
-    def test_supports_false_value_present_skipped(self, mock_config_entry, mock_session):
-        sd = _fake_device(pre_alarm_enabled=True,
-                          supports_smoke_sensitivity=False)
+    def test_supports_false_value_present_skipped(
+        self, mock_config_entry, mock_session
+    ):
+        sd = _fake_device(pre_alarm_enabled=True, supports_smoke_sensitivity=False)
         mock_session.device_helper.smoke_detectors = [sd]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "pre_alarm_enabled" not in _keys(entities)
 
     def test_supports_true_value_none_skipped(self, mock_config_entry, mock_session):
-        sd = _fake_device(pre_alarm_enabled=None,
-                          supports_smoke_sensitivity=True)
+        sd = _fake_device(pre_alarm_enabled=None, supports_smoke_sensitivity=True)
         mock_session.device_helper.smoke_detectors = [sd]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "pre_alarm_enabled" not in _keys(entities)
 
     def test_both_present_created(self, mock_config_entry, mock_session):
-        sd = _fake_device(pre_alarm_enabled=False,
-                          supports_smoke_sensitivity=True)
+        sd = _fake_device(pre_alarm_enabled=False, supports_smoke_sensitivity=True)
         mock_session.device_helper.smoke_detectors = [sd]
         entities = _setup_switch(mock_config_entry, mock_session)
         assert "pre_alarm_enabled" in _keys(entities)
@@ -2772,6 +2887,7 @@ def test_pre_alarm_is_on_false():
 
 def test_pre_alarm_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
+
     assert SWITCH_TYPES["pre_alarm_enabled"].entity_category == EntityCategory.CONFIG
 
 
@@ -2785,8 +2901,6 @@ class TestSwitchSmokeDetectorsDeviceExcluded:
         entities = _setup_switch(mock_config_entry, mock_session)
         ids = [getattr(getattr(e, "_device", None), "id", None) for e in entities]
         assert "sd-excl" not in ids
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -2832,19 +2946,24 @@ def test_smart_sensitivity_is_on_false():
 
 
 def test_smart_sensitivity_unique_id(mock_config_entry, mock_session):
-    md2 = _fake_device(id="md1", pet_immunity_enabled=False,
-                       smart_sensitivity_enabled=False)
+    md2 = _fake_device(
+        id="md1", pet_immunity_enabled=False, smart_sensitivity_enabled=False
+    )
     mock_session.device_helper.motion_detectors2 = [md2]
     entities = _setup_switch(mock_config_entry, mock_session)
-    ss = next(e for e in entities if e.entity_description.key == "smart_sensitivity_enabled")
+    ss = next(
+        e for e in entities if e.entity_description.key == "smart_sensitivity_enabled"
+    )
     assert ss._attr_unique_id == "root1_md1_smartsensitivity"
 
 
 def test_smart_sensitivity_entity_category_config():
     from homeassistant.helpers.entity import EntityCategory
-    assert SWITCH_TYPES["smart_sensitivity_enabled"].entity_category == EntityCategory.CONFIG
 
-
+    assert (
+        SWITCH_TYPES["smart_sensitivity_enabled"].entity_category
+        == EntityCategory.CONFIG
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2891,10 +3010,16 @@ class TestSwitchMotionDetector2TamperProtection:
         entry = _fake_entry(hass=hass, options=options or {})
         entry.async_on_unload = MagicMock()
 
-        with patch("custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock):
+        with patch(
+            "custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
+            new_callable=AsyncMock,
+        ):
             collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+            _run(
+                async_setup_entry(
+                    hass, entry, lambda ents, **kw: collected.extend(ents)
+                )
+            )
         return collected
 
     def test_motion_detector2_with_tamper_protection_switch(self):
@@ -2947,8 +3072,6 @@ class TestTamperProtectionSwitch:
         dev.async_set_tamper_protection_enabled.assert_called_once_with(False)
 
 
-
-
 # ---------------------------------------------------------------------------
 # SilentMode
 # ---------------------------------------------------------------------------
@@ -2973,9 +3096,7 @@ def test_should_poll_silent_mode_is_false():
 
 
 def test_silent_mode_on_value_is_mode_silent():
-    assert SWITCH_TYPES["silent_mode"].on_value is (
-        SilentModeService.State.MODE_SILENT
-    )
+    assert SWITCH_TYPES["silent_mode"].on_value is (SilentModeService.State.MODE_SILENT)
 
 
 def test_silent_mode_on_value_is_mode_silent_enum():
@@ -2992,8 +3113,6 @@ def test_setup_thermostat_with_silentmode_two_entities(mock_config_entry, mock_s
     keys = {e.entity_description.key for e in entities}
     assert "silent_mode" in keys
     assert "child_lock_thermostat" in keys
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -3018,8 +3137,6 @@ def test_should_poll_vibration_enabled_is_false():
 
 def test_vibration_enabled_on_value_is_bool_true():
     assert SWITCH_TYPES["vibration_enabled"].on_value is True
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -3069,8 +3186,11 @@ class TestSHCUserDefinedStateSwitch:
             async_set_state=mock_set,
         )
         shc_entry = SimpleNamespace(
-            name="SHC", id="shcid", identifiers=set(),
-            manufacturer="Bosch", model="SHC2",
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
         )
         fake_entry = SimpleNamespace(entry_id="entry1")
         fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
@@ -3103,8 +3223,11 @@ class TestSHCUserDefinedStateSwitch:
             async_set_state=mock_set,
         )
         shc_entry = SimpleNamespace(
-            name="SHC", id="shcid", identifiers=set(),
-            manufacturer="Bosch", model="SHC2",
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
         )
         fake_entry = SimpleNamespace(entry_id="entry1")
         fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
@@ -3136,8 +3259,11 @@ class TestSHCUserDefinedStateSwitch:
             async_set_state=AsyncMock(side_effect=SHCException("rejected")),
         )
         shc_entry = SimpleNamespace(
-            name="SHC", id="shcid", identifiers=set(),
-            manufacturer="Bosch", model="SHC2",
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
         )
         fake_entry = SimpleNamespace(entry_id="entry1")
         fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
@@ -3169,8 +3295,11 @@ class TestSHCUserDefinedStateSwitch:
             async_set_state=AsyncMock(side_effect=SHCConnectionError("no route")),
         )
         shc_entry = SimpleNamespace(
-            name="SHC", id="shcid", identifiers=set(),
-            manufacturer="Bosch", model="SHC2",
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
         )
         fake_entry = SimpleNamespace(entry_id="entry1")
         fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
@@ -3249,8 +3378,11 @@ class TestSHCUserDefinedStateSwitch:
             async_update = AsyncMock()
 
         shc_entry = SimpleNamespace(
-            name="SHC", id="shcid", identifiers=set(),
-            manufacturer="Bosch", model="SHC2",
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
         )
         fake_entry = SimpleNamespace(entry_id="entry1")
         fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
@@ -3271,6 +3403,131 @@ class TestSHCUserDefinedStateSwitch:
         asyncio.run(sw.async_update())
         sw._device.async_update.assert_awaited_once()
 
+    def test_keypad_bridge_state_groups_under_source_device(self):
+        """#282: a keypad-bridge-created UDS attaches to its source device
+        (not the SHC hub) and shows a readable name, not the raw hashed one."""
+        device = SimpleNamespace(
+            name="Licht-/Rollladensteuerung 1c7486 Btn1S",
+            id="uds1",
+            root_device_id="mac1",
+            deleted=False,
+            state=False,
+        )
+        shc_entry = SimpleNamespace(
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
+        )
+        source_device = SimpleNamespace(
+            name="Licht-/Rollladensteuerung",
+            id="hdm:ZigBee:abc",
+            manufacturer="Bosch",
+            device_model="MICROMODULE_LIGHT_CONTROL",
+        )
+        fake_entry = SimpleNamespace(
+            entry_id="entry1",
+            data={
+                DATA_KEYPAD_BRIDGE_MAP: {
+                    "hdm:ZigBee:abc_1_PRESS_SHORT_v3": {
+                        "userdefinedstate_id": "uds1",
+                        "automation_id": "a1",
+                        "device_id": "hdm:ZigBee:abc",
+                        "attr_name": "Button 1 Short",
+                    }
+                }
+            },
+        )
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
+
+        def _lookup_device(device_id: str) -> SimpleNamespace:
+            if device_id == "hdm:ZigBee:abc":
+                return source_device
+            raise KeyError(device_id)
+
+        session = SimpleNamespace(
+            subscribe_userdefinedstate_callback=lambda *a, **kw: None,
+            unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
+            device=_lookup_device,
+        )
+        sw = SHCUserDefinedStateSwitch(
+            device=device,
+            hass=hass,
+            session=session,
+            entry_id="entry1",
+            description=SWITCH_TYPES["user_defined_state"],
+        )
+        assert sw._attr_name == "Button 1 Short"
+        assert sw._shc.id == "hdm:ZigBee:abc"
+        assert sw._shc.identifiers == {(DOMAIN, "hdm:ZigBee:abc")}
+        assert sw._shc.name == "Licht-/Rollladensteuerung"
+
+    def test_keypad_bridge_state_falls_back_when_source_device_gone(self):
+        """#282: if the source device can't be found (e.g. a device-registry
+        ordering race, or it was removed), fall back to hub-grouping rather
+        than crashing."""
+        device = SimpleNamespace(
+            name="Licht-/Rollladensteuerung 1c7486 Btn1S",
+            id="uds1",
+            root_device_id="mac1",
+            deleted=False,
+            state=False,
+        )
+        shc_entry = SimpleNamespace(
+            name="SHC",
+            id="shcid",
+            identifiers=set(),
+            manufacturer="Bosch",
+            model="SHC2",
+        )
+        fake_entry = SimpleNamespace(
+            entry_id="entry1",
+            data={
+                DATA_KEYPAD_BRIDGE_MAP: {
+                    "hdm:ZigBee:abc_1_PRESS_SHORT_v3": {
+                        "userdefinedstate_id": "uds1",
+                        "automation_id": "a1",
+                        "device_id": "hdm:ZigBee:abc",
+                        "attr_name": "Button 1 Short",
+                    }
+                }
+            },
+        )
+        fake_entry.runtime_data = SimpleNamespace(shc_device=shc_entry)
+        hass = SimpleNamespace(
+            config_entries=SimpleNamespace(async_get_entry=lambda eid: fake_entry)
+        )
+
+        def _lookup_device(device_id: str) -> SimpleNamespace:
+            raise KeyError(device_id)
+
+        session = SimpleNamespace(
+            subscribe_userdefinedstate_callback=lambda *a, **kw: None,
+            unsubscribe_userdefinedstate_callbacks=lambda *a, **kw: None,
+            device=_lookup_device,
+        )
+        sw = SHCUserDefinedStateSwitch(
+            device=device,
+            hass=hass,
+            session=session,
+            entry_id="entry1",
+            description=SWITCH_TYPES["user_defined_state"],
+        )
+        # Name still uses the friendly bridge label; only device grouping falls back.
+        assert sw._attr_name == "Button 1 Short"
+        assert sw._shc is shc_entry
+
+    def test_non_bridge_state_still_groups_under_shc_hub(self):
+        """A UDS not created by the keypad bridge (e.g. a Bosch app scenario
+        toggle) keeps the existing hub-grouping/raw-name behavior."""
+        sw = _make_uds_switch(name="Vacation Mode")
+        assert sw._attr_name == "Vacation Mode"
+        assert sw._shc.id == "shc_device_id"
+
 
 class TestUserDefinedStatesPath:
     """session.userdefinedstates items each produce a SHCUserDefinedStateSwitch."""
@@ -3280,13 +3537,17 @@ class TestUserDefinedStatesPath:
         # Exclude all regular device-type devices to isolate UDS path
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: [EXCLUDED_ID]})
         shc_dev = SimpleNamespace(
-            name="SHC Hub", id="shcid",
+            name="SHC Hub",
+            id="shcid",
             identifiers={(DOMAIN, "mac1")},
-            manufacturer="Bosch", model="SHC2",
+            manufacturer="Bosch",
+            model="SHC2",
         )
         hass = _make_hass(session, entry, shc_dev)
         added: list = []
-        async_add_entities = MagicMock(side_effect=lambda ents, **kw: added.extend(ents))
+        async_add_entities = MagicMock(
+            side_effect=lambda ents, **kw: added.extend(ents)
+        )
 
         with patch(PATCH_MIGRATE, new=AsyncMock(return_value=None)):
             _run(_run_setup(hass, entry, async_add_entities))
@@ -3393,8 +3654,11 @@ def test_uds_switch_turn_on_sets_state():
     """async_turn_on awaits device.async_set_state(True)."""
     mock_set = AsyncMock()
     device = SimpleNamespace(
-        name="X", id="u1", root_device_id="mac1",
-        state=False, async_set_state=mock_set,
+        name="X",
+        id="u1",
+        root_device_id="mac1",
+        state=False,
+        async_set_state=mock_set,
     )
     shc_dev = SimpleNamespace(
         name="SHC",
@@ -3419,8 +3683,11 @@ def test_uds_switch_turn_off_sets_state():
     """async_turn_off awaits device.async_set_state(False)."""
     mock_set = AsyncMock()
     device = SimpleNamespace(
-        name="Y", id="u2", root_device_id="mac2",
-        state=True, async_set_state=mock_set,
+        name="Y",
+        id="u2",
+        root_device_id="mac2",
+        state=True,
+        async_set_state=mock_set,
     )
     shc_dev = SimpleNamespace(
         name="SHC",
@@ -3519,8 +3786,12 @@ def test_uds_switch_async_added_subscribes_callbacks():
     session = SimpleNamespace(
         subscribe=MagicMock(),
         _subscribers=[],
-        subscribe_userdefinedstate_callback=lambda dev_id, fn: subscribed.append((dev_id, fn)),
-        unsubscribe_userdefinedstate_callbacks=lambda dev_id: unsubscribed.append(dev_id),
+        subscribe_userdefinedstate_callback=lambda dev_id, fn: subscribed.append(
+            (dev_id, fn)
+        ),
+        unsubscribe_userdefinedstate_callbacks=lambda dev_id: unsubscribed.append(
+            dev_id
+        ),
     )
     uds = _fake_uds(name="Night", dev_id="uds_sub1", root_id="mac1")
     shc_dev = SimpleNamespace(
@@ -3565,7 +3836,9 @@ def test_uds_switch_async_will_remove_unsubscribes():
         subscribe=MagicMock(),
         _subscribers=[],
         subscribe_userdefinedstate_callback=MagicMock(),
-        unsubscribe_userdefinedstate_callbacks=lambda dev_id: unsubscribed.append(dev_id),
+        unsubscribe_userdefinedstate_callbacks=lambda dev_id: unsubscribed.append(
+            dev_id
+        ),
     )
     uds = _fake_uds(name="Away", dev_id="uds_unsub1", root_id="mac2")
     shc_dev = SimpleNamespace(
@@ -3768,13 +4041,12 @@ class TestUDSSwitchAvailableProperty:
 
     def test_available_reflects_deleted_flag(self):
         from custom_components.bosch_shc.switch import SHCUserDefinedStateSwitch
+
         sw = SHCUserDefinedStateSwitch.__new__(SHCUserDefinedStateSwitch)
         sw._device = SimpleNamespace(deleted=False)
         assert sw.available is True
         sw._device.deleted = True
         assert sw.available is False
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -3821,22 +4093,27 @@ class TestSwitchSmokeDetectorIntrusionAlarm:
         entry = _fake_entry(hass=hass, options=options or {})
         entry.async_on_unload = MagicMock()
 
-        with patch("custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock):
+        with patch(
+            "custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
+            new_callable=AsyncMock,
+        ):
             collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+            _run(
+                async_setup_entry(
+                    hass, entry, lambda ents, **kw: collected.extend(ents)
+                )
+            )
         return collected
 
     def test_smoke_detector_with_intrusion_alarm_switch(self):
         """Line 860: supports_intrusion_alarm=True → intrusion alarm switch added."""
-        dev = _fake_dev("sd1", supports_intrusion_alarm=True,
-                        supports_smoke_sensitivity=False)
+        dev = _fake_dev(
+            "sd1", supports_intrusion_alarm=True, supports_smoke_sensitivity=False
+        )
         collected = self._run_switch_setup_smoke_detectors([dev])
         unique_ids = [getattr(e, "_attr_unique_id", "") for e in collected]
         # SHCSwitch uses attr_name.lower() in unique_id → "intrusionalarm"
         assert any("intrusionalarm" in uid for uid in unique_ids)
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -3941,13 +4218,17 @@ class TestSwitchTypeMetadata:
         assert SWITCH_TYPES["smartplug"].device_class == SwitchDeviceClass.OUTLET
 
     def test_smartplug_routing_device_class_switch(self):
-        assert SWITCH_TYPES["smartplug_routing"].device_class == SwitchDeviceClass.SWITCH
+        assert (
+            SWITCH_TYPES["smartplug_routing"].device_class == SwitchDeviceClass.SWITCH
+        )
 
     def test_smartplug_routing_icon(self):
         assert SWITCH_TYPES["smartplug_routing"].icon == "mdi:wifi"
 
     def test_smartplug_routing_entity_category_config(self):
-        assert SWITCH_TYPES["smartplug_routing"].entity_category == EntityCategory.CONFIG
+        assert (
+            SWITCH_TYPES["smartplug_routing"].entity_category == EntityCategory.CONFIG
+        )
 
     def test_cameraeyes_icon(self):
         assert SWITCH_TYPES["cameraeyes"].icon == "mdi:video"
@@ -3989,7 +4270,10 @@ class TestSwitchTypeMetadata:
         )
 
     def test_cameraoutdoorgen2_ambientlight_icon(self):
-        assert SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"].icon == "mdi:wall-sconce-flat"
+        assert (
+            SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"].icon
+            == "mdi:wall-sconce-flat"
+        )
 
     def test_child_lock_icon(self):
         assert SWITCH_TYPES["child_lock"].icon == "mdi:lock"
@@ -4002,7 +4286,8 @@ class TestSwitchTypeMetadata:
 
     def test_child_lock_thermostat_entity_category_config(self):
         assert (
-            SWITCH_TYPES["child_lock_thermostat"].entity_category == EntityCategory.CONFIG
+            SWITCH_TYPES["child_lock_thermostat"].entity_category
+            == EntityCategory.CONFIG
         )
 
     def test_pet_immunity_icon(self):
@@ -4015,7 +4300,9 @@ class TestSwitchTypeMetadata:
         assert SWITCH_TYPES["silent_mode"].entity_category == EntityCategory.CONFIG
 
     def test_presencesimulation_device_class(self):
-        assert SWITCH_TYPES["presencesimulation"].device_class == SwitchDeviceClass.SWITCH
+        assert (
+            SWITCH_TYPES["presencesimulation"].device_class == SwitchDeviceClass.SWITCH
+        )
 
     def test_bypass_translation_key_not_hardcoded_icon(self):
         """#342: bypass is clearly named via translation_key; icon lives in
@@ -4043,7 +4330,9 @@ class TestEdgeStateIsOn:
     def test_cameraeyes_cameralight_none_is_off(self):
         """CameraLight.NONE → is_on False."""
         State = CameraLightService.State
-        sw = _make_switch(SWITCH_TYPES["cameraeyes_cameralight"], cameralight=State.NONE)
+        sw = _make_switch(
+            SWITCH_TYPES["cameraeyes_cameralight"], cameralight=State.NONE
+        )
         assert sw.is_on is False
 
     def test_cameraoutdoorgen2_frontlight_none_is_off(self):
@@ -4081,11 +4370,15 @@ class TestEdgeStateIsOn:
         assert sw.is_on is False
 
     def test_pet_immunity_false_is_off(self):
-        sw = _make_switch(SWITCH_TYPES["pet_immunity_enabled"], pet_immunity_enabled=False)
+        sw = _make_switch(
+            SWITCH_TYPES["pet_immunity_enabled"], pet_immunity_enabled=False
+        )
         assert sw.is_on is False
 
     def test_pet_immunity_true_is_on(self):
-        sw = _make_switch(SWITCH_TYPES["pet_immunity_enabled"], pet_immunity_enabled=True)
+        sw = _make_switch(
+            SWITCH_TYPES["pet_immunity_enabled"], pet_immunity_enabled=True
+        )
         assert sw.is_on is True
 
     def test_camera360_cameranotification_disabled_is_off(self):
@@ -4124,18 +4417,14 @@ class TestNoneGuardIsOn:
         writer (same bug class as #351/#362).
         """
         sw = SHCSwitch.__new__(SHCSwitch)
-        sw._device = type(
-            "D", (), {"child_lock": _raising_property(KeyError)}
-        )()
+        sw._device = type("D", (), {"child_lock": _raising_property(KeyError)})()
         sw.entity_description = SWITCH_TYPES["child_lock_thermostat"]
         assert sw.is_on is None
 
     def test_child_lock_thermostat_valueerror_is_on_returns_none(self):
         """is_on must return None (not raise) on an unrecognized childLock value."""
         sw = SHCSwitch.__new__(SHCSwitch)
-        sw._device = type(
-            "D", (), {"child_lock": _raising_property(ValueError)}
-        )()
+        sw._device = type("D", (), {"child_lock": _raising_property(ValueError)})()
         sw.entity_description = SWITCH_TYPES["child_lock_thermostat"]
         assert sw.is_on is None
 
@@ -4565,6 +4854,7 @@ class TestSHCSwitchUpdate:
     def test_update_calls_device_update(self):
         import asyncio
         from unittest.mock import AsyncMock
+
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = SimpleNamespace(async_update=AsyncMock())
         sw._has_async_update = True
@@ -4576,6 +4866,7 @@ class TestSHCSwitchUpdate:
         """async_update() works for polling switches (cameras) too."""
         import asyncio
         from unittest.mock import AsyncMock
+
         sw = SHCSwitch.__new__(SHCSwitch)
         sw._device = SimpleNamespace(async_update=AsyncMock())
         sw._has_async_update = True
@@ -4597,7 +4888,9 @@ class TestShouldPollRemaining:
 
     def test_micromodule_relay_should_poll_false(self):
         State = PowerSwitchService.State
-        sw = _make_switch(SWITCH_TYPES["micromodule_relay_switch"], switchstate=State.OFF)
+        sw = _make_switch(
+            SWITCH_TYPES["micromodule_relay_switch"], switchstate=State.OFF
+        )
         assert sw.should_poll is False
 
     def test_lightswitch_should_poll_false(self):
@@ -4611,7 +4904,9 @@ class TestShouldPollRemaining:
         assert sw.should_poll is False
 
     def test_pet_immunity_should_poll_false(self):
-        sw = _make_switch(SWITCH_TYPES["pet_immunity_enabled"], pet_immunity_enabled=False)
+        sw = _make_switch(
+            SWITCH_TYPES["pet_immunity_enabled"], pet_immunity_enabled=False
+        )
         assert sw.should_poll is False
 
     def test_smartplug_routing_should_poll_false(self):
@@ -4677,13 +4972,17 @@ class TestAllDeviceTypesExcluded:
         session = _make_exclusion_session()
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: [EXCLUDED_ID]})
         shc_dev = SimpleNamespace(
-            name="SHC", id="shcid",
+            name="SHC",
+            id="shcid",
             identifiers={(DOMAIN, "mac1")},
-            manufacturer="Bosch", model="SHC2",
+            manufacturer="Bosch",
+            model="SHC2",
         )
         hass = _make_hass(session, entry, shc_dev)
         added: list = []
-        async_add_entities = MagicMock(side_effect=lambda ents, **kw: added.extend(ents))
+        async_add_entities = MagicMock(
+            side_effect=lambda ents, **kw: added.extend(ents)
+        )
 
         with patch(PATCH_MIGRATE, new=AsyncMock(return_value=None)):
             _run(_run_setup(hass, entry, async_add_entities))
@@ -4707,13 +5006,17 @@ class TestAllDeviceTypesExcluded:
         session = _make_exclusion_session()
         entry = _make_entry(options={OPT_EXCLUDED_DEVICES: [EXCLUDED_ID]})
         shc_dev = SimpleNamespace(
-            name="SHC", id="shcid",
+            name="SHC",
+            id="shcid",
             identifiers={(DOMAIN, "mac1")},
-            manufacturer="Bosch", model="SHC2",
+            manufacturer="Bosch",
+            model="SHC2",
         )
         hass = _make_hass(session, entry, shc_dev)
         added: list = []
-        async_add_entities = MagicMock(side_effect=lambda ents, **kw: added.extend(ents))
+        async_add_entities = MagicMock(
+            side_effect=lambda ents, **kw: added.extend(ents)
+        )
 
         with patch(PATCH_MIGRATE, new=AsyncMock(return_value=None)):
             _run(_run_setup(hass, entry, async_add_entities))
@@ -4770,7 +5073,9 @@ def test_setup_unload_removes_subscriber(mock_config_entry, mock_session):
     assert subscriber not in mock_session._subscribers
 
 
-def test_setup_unload_no_error_when_subscriber_already_gone(mock_config_entry, mock_session):
+def test_setup_unload_no_error_when_subscriber_already_gone(
+    mock_config_entry, mock_session
+):
     """Unload closure must not raise if subscriber was already removed."""
     unload_fn = None
 
@@ -4791,6 +5096,7 @@ def test_shcswitch_update_calls_device_update():
     """SHCSwitch.async_update() must call device.async_update() (#335)."""
     import asyncio
     from unittest.mock import AsyncMock
+
     sw = SHCSwitch.__new__(SHCSwitch)
     sw._device = SimpleNamespace(async_update=AsyncMock())
     sw._has_async_update = True
@@ -4844,12 +5150,21 @@ class TestSwitchSuppressCamerasRegistry:
         entry = _fake_entry(hass=hass, options=options)
         entry.async_on_unload = MagicMock()
 
-        with patch("custom_components.bosch_shc.switch.get_dev_reg",
-                   return_value=dr_mock), \
-             patch("custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
-                   new_callable=AsyncMock):
+        with (
+            patch(
+                "custom_components.bosch_shc.switch.get_dev_reg", return_value=dr_mock
+            ),
+            patch(
+                "custom_components.bosch_shc.switch.async_migrate_to_new_unique_id",
+                new_callable=AsyncMock,
+            ),
+        ):
             collected = []
-            _run(async_setup_entry(hass, entry, lambda ents, **kw: collected.extend(ents)))
+            _run(
+                async_setup_entry(
+                    hass, entry, lambda ents, **kw: collected.extend(ents)
+                )
+            )
 
         return dr_mock
 
@@ -4897,8 +5212,10 @@ class TestSHCSwitchAsyncUpdateFallback:
 
 def _make_rule_switch(rule=None, shc_device=None):
     sw = SHCAutomationRuleSwitch.__new__(SHCAutomationRuleSwitch)
-    sw._rule = rule if rule is not None else SimpleNamespace(
-        id="r1", name="TV aus", enabled=True
+    sw._rule = (
+        rule
+        if rule is not None
+        else SimpleNamespace(id="r1", name="TV aus", enabled=True)
     )
     sw._shc_device = shc_device
     return sw
@@ -5152,9 +5469,7 @@ class TestTemperatureDropSwitchSetupEntry:
         )
         mock_session.device_helper.climate_controls = [climate]
         room = MagicMock()
-        room.async_temperature_drop_service = AsyncMock(
-            side_effect=SHCException("404")
-        )
+        room.async_temperature_drop_service = AsyncMock(side_effect=SHCException("404"))
         mock_session.room = MagicMock(return_value=room)
         mock_session.userdefinedstates = []
         mock_session.subscribe = MagicMock()

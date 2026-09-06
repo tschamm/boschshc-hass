@@ -9,6 +9,10 @@
 # Re-shifted 2026-09-04: #415 follow-up (async_get_device_by_identifier
 # migration for the remaining deprecated async_get_device call sites)
 # added lines ahead of binary_sensor.py's baselined blocks.
+# Re-shifted 2026-09-06: #282 device-grouping fix added a
+# DATA_KEYPAD_BRIDGE_MAP import + _keypad_bridge_info lookup ahead of
+# switch.py's baselined blocks; one pre-existing 4-line block there was
+# also condensed to 2 lines as part of the same change, dropping out.
 custom_components/bosch_shc/__init__.py:547
 custom_components/bosch_shc/__init__.py:668
 custom_components/bosch_shc/__init__.py:768
@@ -110,18 +114,17 @@ custom_components/bosch_shc/sensor.py:1214
 custom_components/bosch_shc/sensor.py:1229
 custom_components/bosch_shc/sensor.py:1251
 custom_components/bosch_shc/sensor.py:1310
-custom_components/bosch_shc/switch.py:198
-custom_components/bosch_shc/switch.py:209
-custom_components/bosch_shc/switch.py:237
-custom_components/bosch_shc/switch.py:447
-custom_components/bosch_shc/switch.py:452
-custom_components/bosch_shc/switch.py:669
-custom_components/bosch_shc/switch.py:697
-custom_components/bosch_shc/switch.py:804
-custom_components/bosch_shc/switch.py:906
-custom_components/bosch_shc/switch.py:993
-custom_components/bosch_shc/switch.py:1028
-custom_components/bosch_shc/switch.py:1167
-custom_components/bosch_shc/switch.py:1193
-custom_components/bosch_shc/switch.py:1265
+custom_components/bosch_shc/switch.py:200
+custom_components/bosch_shc/switch.py:211
+custom_components/bosch_shc/switch.py:239
+custom_components/bosch_shc/switch.py:449
+custom_components/bosch_shc/switch.py:454
+custom_components/bosch_shc/switch.py:671
+custom_components/bosch_shc/switch.py:699
+custom_components/bosch_shc/switch.py:806
+custom_components/bosch_shc/switch.py:908
+custom_components/bosch_shc/switch.py:995
+custom_components/bosch_shc/switch.py:1030
+custom_components/bosch_shc/switch.py:1243
+custom_components/bosch_shc/switch.py:1315
 custom_components/bosch_shc/valve.py:79
