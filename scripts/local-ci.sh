@@ -29,6 +29,14 @@ run_hass() {
   _banner "pylint"
   if PYTHONPATH="$HASS_DIR:$LIB_DIR" pylint --rcfile=pyproject.toml custom_components/bosch_shc; then _ok "pylint"; else _fail "pylint"; fi
 
+  _banner "mypy (hass)"
+  # Matches .github/workflows/quality.yml's Type check step exactly -- this
+  # target previously only ran mypy for the lib, letting a real hass-side
+  # type error (switch.py, #282 device-grouping fix) reach remote CI unseen.
+  if PYTHONPATH="$HASS_DIR:$LIB_DIR" mypy custom_components/bosch_shc/; then
+    _ok "mypy hass"
+  else _fail "mypy hass"; fi
+
   _banner "quality scale (gold)"
   if python3 scripts/check-quality-scale.py --tier gold; then _ok "quality scale"; else _fail "quality scale"; fi
 

@@ -1191,7 +1191,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
             else None
         )
         self._shc: DeviceEntry = (
-            source_device
+            source_device  # type: ignore[assignment]
             if source_device is not None
             else config_entry.runtime_data.shc_device  # type: ignore[union-attr]
         )
