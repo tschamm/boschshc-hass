@@ -42,8 +42,8 @@ custom_components/bosch_shc/button.py:262
 custom_components/bosch_shc/button.py:342
 custom_components/bosch_shc/button.py:400
 custom_components/bosch_shc/button.py:434
-custom_components/bosch_shc/button.py:837
-custom_components/bosch_shc/button.py:892
+custom_components/bosch_shc/button.py:850
+custom_components/bosch_shc/button.py:905
 custom_components/bosch_shc/climate.py:32
 custom_components/bosch_shc/climate.py:76
 custom_components/bosch_shc/climate.py:109

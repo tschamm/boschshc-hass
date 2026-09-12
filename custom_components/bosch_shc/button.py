@@ -738,16 +738,29 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
             if entity_entry.entity_category == EntityCategory.DIAGNOSTIC
             and entity_entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
         ]
+        if not to_enable:
+            # #417: log at INFO (not debug) so a silent no-op -- nothing
+            # left disabled-by-default to enable -- is still visible.
+            LOGGER.info(
+                "Enable-all-diagnostics: no disabled-by-default diagnostic "
+                "entities found for this SHC; nothing to enable"
+            )
+            return
         for entity_id in to_enable:
             registry.async_update_entity(entity_id, disabled_by=None)
-        if to_enable:
-            # Newly-enabled entities only actually start after a reload.
-            # Guarded above against overlapping reloads from a rapid double-press.
-            self._reload_in_progress = True
-            try:
-                await self.hass.config_entries.async_reload(self._entry_id)
-            finally:
-                self._reload_in_progress = False
+        LOGGER.info(
+            "Enable-all-diagnostics: enabled %d previously-disabled diagnostic "
+            "entities, reloading integration: %s",
+            len(to_enable),
+            ", ".join(to_enable),
+        )
+        # Newly-enabled entities only actually start after a reload.
+        # Guarded above against overlapping reloads from a rapid double-press.
+        self._reload_in_progress = True
+        try:
+            await self.hass.config_entries.async_reload(self._entry_id)
+        finally:
+            self._reload_in_progress = False
 
 
 class SHCAutomationRuleTriggerButton(ButtonEntity):  # type: ignore[misc]

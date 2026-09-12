@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.26 — Enable-all-diagnostics button feedback (#417)
+
+- **"Alle Diagnosen aktivieren" / "Enable All Diagnostics" button now logs
+  what it did.** Reported (#417) as "not working" with zero indication either
+  way. Live testing found the button itself works correctly, but was
+  completely silent when there was nothing disabled-by-default left to
+  enable (already enabled, or disabled by the user instead, which the button
+  intentionally leaves alone) — indistinguishable from "broken" without
+  debug logging on. Now logs at INFO (visible without enabling debug first):
+  either that nothing needed enabling, or how many entities were enabled
+  before the reload. No change to the enable/reload logic itself.
+
 ## 0.12.25 — Keypad bridge diagnostic logging + self-healing fix + device grouping (#282)
 
 - **Keypad-bridge switch entities now group under their real source device**
