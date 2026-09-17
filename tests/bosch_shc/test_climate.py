@@ -696,17 +696,19 @@ class TestEcoPreset:
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
         device.async_set_low.assert_awaited_once_with(False)
 
-    def test_eco_and_automatic_set_temperature_clears_low_and_manual(self):
+    def test_eco_and_automatic_set_temperature_clears_low_only(self):
         """#73: the exact reported scenario — a room left in eco/reduced
-        (open window) AND still on the AUTOMATIC schedule. Both the low
-        state and the operation mode must be cleared before the setpoint
-        write, or the SHC still rejects it with
-        WRONG_THERMOSTAT_GROUP_MODE."""
+        (open window) AND still on the AUTOMATIC schedule. The low state
+        must still be cleared before the setpoint write (the SHC rejects it
+        with WRONG_THERMOSTAT_GROUP_MODE while low=True, independent of
+        operationMode); #422 removed the operation-mode switch, which is no
+        longer needed for the AUTOMATIC write itself."""
         device = _make_device(low=True, operation_mode_value="AUTOMATIC")
         entity = _make_entity(device)
         _run_async(entity.async_set_temperature(**{ATTR_TEMPERATURE: 19.0}))
         device.async_set_low.assert_awaited_once_with(False)
         device.async_set_setpoint_temperature.assert_awaited_with(19.0)
+        device.async_set_operation_mode.assert_not_awaited()
 
     def test_not_eco_does_not_call_async_set_low(self):
         device = _make_device(low=False, operation_mode_value="MANUAL")
@@ -1363,12 +1365,17 @@ class TestSetTemperatureGuards:
 
 
 # ===========================================================================
-# ClimateControl — async_set_temperature: AUTOMATIC → MANUAL switch (extra coverage)
+# ClimateControl — async_set_temperature: bare call stays in AUTOMATIC (#422)
 # ===========================================================================
 
 class TestClimateSetTemperatureManualSwitch:
-    """async_set_temperature must switch AUTOMATIC → MANUAL first when no
-    ATTR_HVAC_MODE kwarg is given."""
+    """#422: a bare set_temperature (no ATTR_HVAC_MODE kwarg) must NOT switch
+    AUTOMATIC to MANUAL first. #180's original MANUAL-first workaround
+    assumed the SHC always rejects a setpoint write while
+    operationMode=AUTOMATIC; live-tested 2026-09-17 (real SHC, rawscan) and
+    confirmed the write succeeds (HTTP 204) with operationMode staying
+    AUTOMATIC — same firmware behavior #369 already found for an explicit
+    hvac_mode=auto call."""
 
     def _make_entity(self, operation_mode=_AUTO):
         """Build a ClimateControl bypassing __init__ via __new__."""
@@ -1410,41 +1417,23 @@ class TestClimateSetTemperatureManualSwitch:
         ent._enable_turn_on_off_backwards_compatibility = False
         return ent
 
-    def test_set_temperature_auto_mode_switches_to_manual_first(self):
-        """When operation_mode==AUTOMATIC and no ATTR_HVAC_MODE in kwargs,
-        async_set_temperature must call async_set_operation_mode(MANUAL)
-        BEFORE the setpoint write.
+    def test_set_temperature_auto_mode_bare_call_stays_automatic(self):
+        """#422: a bare call (no ATTR_HVAC_MODE) while operation_mode==AUTOMATIC
+        must NOT call async_set_operation_mode(MANUAL) — the setpoint is
+        written directly, same as the already-fixed explicit hvac_mode=auto
+        case (#369).
         """
         ent = self._make_entity(operation_mode=_AUTO)
 
-        # Track call order
-        call_order = []
-
-        async def _set_op_mode(val):
-            call_order.append(("operation_mode", val))
-
-        async def _set_setpoint(val):
-            call_order.append(("setpoint_temperature", val))
-
-        ent._device.async_set_operation_mode = _set_op_mode
-        ent._device.async_set_setpoint_temperature = _set_setpoint
-
         asyncio.run(ent.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
 
-        assert ("operation_mode", _MANUAL) in call_order, (
-            f"Expected async_set_operation_mode(MANUAL) to be called, got {call_order}"
-        )
-        keys = [k for k, _ in call_order]
-        assert "operation_mode" in keys
-        assert "setpoint_temperature" in keys
-        op_idx = keys.index("operation_mode")
-        sp_idx = keys.index("setpoint_temperature")
-        assert op_idx < sp_idx, (
-            "async_set_operation_mode(MANUAL) must be called before async_set_setpoint_temperature"
-        )
+        for c in ent._device.async_set_operation_mode.await_args_list:
+            assert c != call(_MANUAL), (
+                "#422: a bare set_temperature call must NOT switch to MANUAL"
+            )
 
     def test_set_temperature_auto_mode_then_writes_setpoint(self):
-        """After switching to MANUAL, the setpoint must be written."""
+        """A bare call while AUTOMATIC must still write the setpoint."""
         ent = self._make_entity(operation_mode=_AUTO)
 
         asyncio.run(ent.async_set_temperature(**{ATTR_TEMPERATURE: 22.0}))
@@ -1452,9 +1441,7 @@ class TestClimateSetTemperatureManualSwitch:
         ent._device.async_set_setpoint_temperature.assert_awaited_with(22.0)
 
     def test_set_temperature_with_explicit_hvac_mode_skips_manual_switch(self):
-        """When ATTR_HVAC_MODE is explicitly provided, the MANUAL switch must NOT happen.
-        This ensures the (kwargs.get(ATTR_HVAC_MODE) is None) guard works.
-        """
+        """When ATTR_HVAC_MODE is explicitly provided, the MANUAL switch must NOT happen."""
         ent = self._make_entity(operation_mode=_AUTO)
 
         asyncio.run(ent.async_set_temperature(

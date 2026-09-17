@@ -329,16 +329,8 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
                 if getattr(self._device, "low", False):
                     await self._device.async_set_low(False)
 
-                # #180's MANUAL-first switch for a bare call; #369 showed the
-                # app itself never does this for an explicit hvac_mode=auto.
-                if (
-                    kwargs.get(ATTR_HVAC_MODE) is None
-                    and self._device.operation_mode
-                    == RoomClimateControlService.OperationMode.AUTOMATIC
-                ):
-                    await self._device.async_set_operation_mode(
-                        RoomClimateControlService.OperationMode.MANUAL
-                    )
+                # #422: a bare call no longer drops AUTOMATIC to MANUAL first
+                # — live-tested against the real SHC, the write succeeds.
                 await self._device.async_set_setpoint_temperature(
                     float(round(temperature * 2.0) / 2.0)
                 )

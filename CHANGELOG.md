@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.12.27 — Room climate stays in Auto on a bare temperature change (#422)
+
+- **A bare `climate.set_temperature` call (no explicit `hvac_mode` — e.g.
+  Scheduler Card, or the UI's temperature slider) no longer force-switches a
+  RoomClimateControl entity from Auto to Heat.** This was a leftover
+  workaround from #180 (2026): the SHC used to reject a bare setpoint write
+  while `operationMode=AUTOMATIC` with `WRONG_THERMOSTAT_GROUP_MODE`, so the
+  integration pre-emptively switched to MANUAL first. #369 later found the
+  SHC accepts the write while staying in AUTOMATIC when `hvac_mode=auto` is
+  passed explicitly, and fixed that case — the bare-call path was left
+  untouched at the time out of caution. Live-tested 2026-09-17 against a
+  real SHC: the bare-call write now succeeds (HTTP 204) with `operationMode`
+  confirmed staying `AUTOMATIC` on read-back, so the same fix now applies to
+  the bare-call path too. Explicit HVAC-mode changes (switching Heat↔Auto
+  yourself) are unaffected.
+
 ## 0.12.26 — Enable-all-diagnostics button feedback (#417)
 
 - **"Alle Diagnosen aktivieren" / "Enable All Diagnostics" button now logs
