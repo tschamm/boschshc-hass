@@ -13,6 +13,10 @@
 # DATA_KEYPAD_BRIDGE_MAP import + _keypad_bridge_info lookup ahead of
 # switch.py's baselined blocks; one pre-existing 4-line block there was
 # also condensed to 2 lines as part of the same change, dropping out.
+# Re-shifted 2026-09-21: #396 real-calibration fix (async_calibrate() call +
+# AttributeError guard on ShutterRecalibrateButton.async_press) added lines
+# ahead of button.py's baselined blocks; the guard's own new 4-line comment
+# was condensed to 2 lines rather than added here.
 custom_components/bosch_shc/__init__.py:547
 custom_components/bosch_shc/__init__.py:668
 custom_components/bosch_shc/__init__.py:768
@@ -41,9 +45,9 @@ custom_components/bosch_shc/button.py:205
 custom_components/bosch_shc/button.py:262
 custom_components/bosch_shc/button.py:342
 custom_components/bosch_shc/button.py:400
-custom_components/bosch_shc/button.py:434
-custom_components/bosch_shc/button.py:850
-custom_components/bosch_shc/button.py:905
+custom_components/bosch_shc/button.py:436
+custom_components/bosch_shc/button.py:861
+custom_components/bosch_shc/button.py:916
 custom_components/bosch_shc/climate.py:32
 custom_components/bosch_shc/climate.py:76
 custom_components/bosch_shc/climate.py:109

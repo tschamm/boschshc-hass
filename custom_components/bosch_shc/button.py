@@ -417,11 +417,13 @@ class ResetEnergySummationButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class ShutterRecalibrateButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     """Button that triggers a Shutter Control II end-position (re)calibration run.
 
-    Fully modeled in boschshcpy (ShutterControlService.
-    async_reset_calibration_and_open / SHCShutterControl.
-    async_reset_calibration_and_open) but never wired into an HA entity.
-    Confirmed via APK decompile (ShutterControlInteractor.
-    RESET_CALIBRATION_AND_OPEN_COMMAND) that the operation takes no params.
+    hass#396: `resetCalibrationAndOpen` does NOT calibrate — confirmed by
+    Bosch (2026-09-21), it only resets the calibration flag and drives the
+    shutter fully open, meant to give the calibration wizard a defined
+    starting position (no PUT-operation existed for device services when the
+    original shutter integration was written). The real calibration run is
+    triggered via `SHCShutterControl.async_calibrate()`, which PUTs the
+    ShutterControl DeviceServiceState with `operationState: "CALIBRATING"`.
     """
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -439,10 +441,19 @@ class ShutterRecalibrateButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
     async def async_press(self) -> None:
         """Trigger the end-position (re)calibration run."""
         try:
-            await self._device.async_reset_calibration_and_open()
+            await self._device.async_calibrate()
         except SHCException as err:
             raise HomeAssistantError(
                 f"Shutter recalibration failed for {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="button_press_failed",
+            ) from err
+        except AttributeError as err:
+            # async_calibrate() needs boschshcpy>=0.6.11 (hass#396) — a stale
+            # pin would otherwise let this escape as a raw AttributeError.
+            raise HomeAssistantError(
+                f"Shutter recalibration requires a newer boschshcpy library "
+                f"for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
                 translation_key="button_press_failed",
             ) from err

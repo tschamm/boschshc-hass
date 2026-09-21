@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.12.28 — Shutter II calibration: the actual fix (#396)
+
+**Needs real-hardware confirmation before promoting to stable.**
+
+- **The "Recalibrate" button on a Shutter Control II now actually
+  calibrates.** Confirmed by Bosch directly (2026-09-21): the operation
+  used since 0.9-era (`resetCalibrationAndOpen`) never calibrated
+  anything — it only resets the calibration flag and drives the shutter
+  fully open, meant to give the calibration wizard a defined starting
+  position. The real calibration run needs a PUT of the device's
+  `operationState` to `CALIBRATING`, now exposed as
+  `boschshcpy` 0.6.11+'s `ShutterControlService.async_calibrate()` /
+  `SHCShutterControl.async_calibrate()`. Requires bumping the `boschshcpy`
+  pin to `0.6.11-beta.1`.
+- Added a translated error (instead of a raw traceback) if the button is
+  pressed against a stale `boschshcpy` install without `async_calibrate()`.
+- `ShutterRecalibrateButton` is also created for Shutter Control I, which
+  has no `operationState` field to gate on — left as-is rather than guessed
+  at, pending real-hardware verification of what (if anything) breaks there.
+
 ## 0.12.27 — Room climate stays in Auto on a bare temperature change (#422)
 
 - **A bare `climate.set_temperature` call (no explicit `hvac_mode` — e.g.

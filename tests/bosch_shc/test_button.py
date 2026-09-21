@@ -1019,24 +1019,33 @@ class TestShutterRecalibrateButton:
         btn = self._make()
         assert btn._attr_translation_key == "shutter_recalibrate"
 
-    def test_press_calls_async_reset_calibration_and_open(self):
+    def test_press_calls_async_calibrate(self):
         btn = self._make()
         called = []
 
-        async def _recalibrate():
+        async def _calibrate():
             called.append(True)
 
-        btn._device.async_reset_calibration_and_open = _recalibrate
+        btn._device.async_calibrate = _calibrate
         asyncio.run(btn.async_press())
         assert called == [True]
 
     def test_press_shc_exception_raises_home_assistant_error(self):
         btn = self._make()
 
-        async def _recalibrate():
+        async def _calibrate():
             raise SHCException("rejected")
 
-        btn._device.async_reset_calibration_and_open = _recalibrate
+        btn._device.async_calibrate = _calibrate
+        with pytest.raises(HomeAssistantError):
+            asyncio.run(btn.async_press())
+
+    def test_press_attribute_error_raises_home_assistant_error(self):
+        """hass#396 bug-hunt: a stale boschshcpy pin without async_calibrate
+        raises AttributeError, which must not escape as a raw traceback.
+        `_make_device()` never sets `async_calibrate`, so this reproduces
+        the real stale-pin failure mode without stubbing anything."""
+        btn = self._make()
         with pytest.raises(HomeAssistantError):
             asyncio.run(btn.async_press())
 
