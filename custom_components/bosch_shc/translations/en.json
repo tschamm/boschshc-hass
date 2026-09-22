@@ -235,10 +235,10 @@
         "name": "Temperature deviation"
       },
       "energy_saving_power_threshold": {
-        "name": "Energy saving power threshold"
+        "name": "Energy-saving power threshold"
       },
       "energy_saving_enter_duration": {
-        "name": "Energy saving enter duration"
+        "name": "Energy-saving enter duration"
       },
       "led_brightness": {
         "name": "LED brightness"
@@ -704,7 +704,7 @@
         "name": "Ambient light"
       },
       "energy_saving_mode_enabled": {
-        "name": "Energy saving mode"
+        "name": "Energy-saving mode"
       },
       "warning_suppressed": {
         "name": "Warning suppressed"

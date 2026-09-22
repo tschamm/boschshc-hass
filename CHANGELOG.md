@@ -19,6 +19,10 @@
 - `ShutterRecalibrateButton` is also created for Shutter Control I, which
   has no `operationState` field to gate on — left as-is rather than guessed
   at, pending real-hardware verification of what (if anything) breaks there.
+- Hyphenated "Energy-saving mode", "Energy-saving power threshold", and
+  "Energy-saving enter duration" for consistent compound-modifier grammar,
+  matching a wording fix requested during review of the equivalent ha-core
+  port (home-assistant/core#182873).
 
 ## 0.12.27 — Room climate stays in Auto on a bare temperature change (#422)
 
