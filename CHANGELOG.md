@@ -2,7 +2,11 @@
 
 ## 0.12.28 — Shutter II calibration: the actual fix (#396)
 
-**Needs real-hardware confirmation before promoting to stable.**
+**Promoted to stable at Thomas's explicit request. The real calibration
+drive (`async_calibrate()` below) has not yet been confirmed against real
+Shutter Control II hardware** — the reporter's last update was "not
+working, will grab a log" with no follow-up since. Watch #396 for
+confirmation and be ready to revert if it turns out broken.
 
 - **The "Recalibrate" button on a Shutter Control II now actually
   calibrates.** Confirmed by Bosch directly (2026-09-21): the operation
@@ -23,6 +27,17 @@
   "Energy-saving enter duration" for consistent compound-modifier grammar,
   matching a wording fix requested during review of the equivalent ha-core
   port (home-assistant/core#182873).
+- Bumped `boschshcpy` pin to `0.6.13` and switched the 4 Keypad/LatestMotion/
+  SurveillanceAlarm/Alarm event-unsubscribe paths in `event.py` to its new
+  public `SHCDeviceService.unregister_event()`, replacing a private
+  `_event_callbacks.pop(...)` access — same finding raised during review of
+  the equivalent ha-core port (home-assistant/core#183139).
+- Fixed a startup-replay bug in `MotionDetectorEvent`: the dedup baseline
+  was seeded as empty instead of from the device's current `latestmotion`,
+  so a restart with a pre-existing timestamp could replay it as a fresh
+  motion event on the first push.
+- Added `NumberDeviceClass.DURATION` to the Micromodule Relay impulse-length
+  number entity.
 
 ## 0.12.27 — Room climate stays in Auto on a bare temperature change (#422)
 

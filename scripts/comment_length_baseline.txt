@@ -92,12 +92,12 @@ custom_components/bosch_shc/number.py:84
 custom_components/bosch_shc/number.py:110
 custom_components/bosch_shc/number.py:247
 custom_components/bosch_shc/number.py:293
-custom_components/bosch_shc/number.py:551
-custom_components/bosch_shc/number.py:660
+custom_components/bosch_shc/number.py:552
+custom_components/bosch_shc/number.py:661
 custom_components/bosch_shc/select.py:96
 custom_components/bosch_shc/select.py:194
 custom_components/bosch_shc/select.py:764
-custom_components/bosch_shc/select.py:850
+custom_components/bosch_shc/select.py:843
 custom_components/bosch_shc/sensor.py:102
 custom_components/bosch_shc/sensor.py:193
 custom_components/bosch_shc/sensor.py:343

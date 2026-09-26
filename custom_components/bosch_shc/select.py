@@ -809,14 +809,7 @@ async def async_setup_entry(  # noqa: C901
 
 
 class SHCSelect[_DeviceT: SHCDevice](SHCEntity, SelectEntity):  # type: ignore[misc]
-    """Generic SHC select entity, driven by a SHCSelectEntityDescription.
-
-    `current_option`/`async_select_option` delegate to the description's
-    `current_option_fn`/`select_option_fn`, so a single class covers every
-    select type — the per-type behavior (which attribute to read, which enum
-    to look values up in, which async setter to call) lives in the
-    description, not in a dedicated subclass.
-    """
+    """Generic SHC select entity, driven by a SHCSelectEntityDescription."""
 
     entity_description: SHCSelectEntityDescription[_DeviceT]
 

@@ -80,6 +80,7 @@ def _run(coro):
 # Generic hass fakes
 # ---------------------------------------------------------------------------
 
+
 def _make_hass_direct():
     """Hass whose call_soon_threadsafe executes fn synchronously."""
     hass = MagicMock(name="hass")
@@ -125,6 +126,7 @@ def _make_sync_hass(shc_device=None):
     resolves to a fake config entry carrying it on runtime_data.shc_device -
     read directly by SHCScenarioEvent.__init__.
     """
+
     def _sync_call_soon_threadsafe(fn, *args):
         fn(*args)
 
@@ -144,6 +146,7 @@ def _make_sync_hass(shc_device=None):
 # Shared fixture helpers (async_setup_entry style: hass/entry with
 # runtime_data.session, plus a generic fake device)
 # ---------------------------------------------------------------------------
+
 
 def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
     base = dict(
@@ -169,8 +172,9 @@ def _fake_dev(dev_id="dev1", root_id="root1", serial="SER1", **kw):
 # ===========================================================================
 
 
-def _make_fake_switch(name="Switch A", dev_id="hdm:sw:1", root_id="root:1",
-                      keystates=("UPPER_BUTTON",)):
+def _make_fake_switch(
+    name="Switch A", dev_id="hdm:sw:1", root_id="root:1", keystates=("UPPER_BUTTON",)
+):
     """Return a minimal fake universal switch device."""
     return SimpleNamespace(
         name=name,
@@ -269,7 +273,9 @@ def _wire_event_setup(mock_config_entry, mock_session, shc_device=None):
         mock_session.unsubscribe_scenario_callback = MagicMock()
 
     mock_config_entry.runtime_data.session = mock_session
-    mock_config_entry.runtime_data.shc_device = shc_device or _make_fake_shc_device_entry()
+    mock_config_entry.runtime_data.shc_device = (
+        shc_device or _make_fake_shc_device_entry()
+    )
 
     return SimpleNamespace(
         config_entries=SimpleNamespace(async_get_entry=lambda eid: mock_config_entry)
@@ -404,9 +410,7 @@ class TestAsyncSetupEntryMotionAndSmoke:
         collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, SmokeDetectionSystemEvent) for e in collected)
 
-    def test_no_smoke_detection_system_when_none(
-        self, mock_config_entry, mock_session
-    ):
+    def test_no_smoke_detection_system_when_none(self, mock_config_entry, mock_session):
         """Falsy smoke_detection_system (the fixture default) -> no SmokeDetectionSystemEvent."""
         collected = _run_event_setup(mock_config_entry, mock_session)
         assert not any(isinstance(e, SmokeDetectionSystemEvent) for e in collected)
@@ -502,7 +506,9 @@ class TestUniversalSwitchExcluded:
             (
                 {
                     "universal_switches": [
-                        _make_switch_device(device_id="excl-sw", keystates=["KEY1", "KEY2"])
+                        _make_switch_device(
+                            device_id="excl-sw", keystates=["KEY1", "KEY2"]
+                        )
                     ]
                 },
                 {"options": {OPT_EXCLUDED_DEVICES: ["excl-sw"]}},
@@ -520,7 +526,13 @@ class TestUniversalSwitchExcluded:
 
     @pytest.mark.parametrize(
         "device_buckets",
-        [{"universal_switches": [_make_switch_device(device_id="keep-sw", keystates=["KEY1", "KEY2"])]}],
+        [
+            {
+                "universal_switches": [
+                    _make_switch_device(device_id="keep-sw", keystates=["KEY1", "KEY2"])
+                ]
+            }
+        ],
         indirect=True,
     )
     def test_non_excluded_switch_produces_events(self, mock_config_entry, mock_session):
@@ -531,7 +543,9 @@ class TestUniversalSwitchExcluded:
             f"Expected 2 UniversalSwitchEvent (one per keystate), got {len(sw_events)}"
         )
 
-    def test_mixed_switches_only_excluded_is_skipped(self, mock_config_entry, mock_session):
+    def test_mixed_switches_only_excluded_is_skipped(
+        self, mock_config_entry, mock_session
+    ):
         """One excluded switch + one non-excluded: only non-excluded events appear."""
         keep = _make_switch_device(device_id="sw-keep", keystates=["K1"])
         excl = _make_switch_device(device_id="sw-excl", keystates=["K1"])
@@ -567,7 +581,9 @@ class TestMotionDetectorExcluded:
         [{"motion_detectors": [_make_motion_device(device_id="keep-md")]}],
         indirect=True,
     )
-    def test_non_excluded_motion_detector_is_added(self, mock_config_entry, mock_session):
+    def test_non_excluded_motion_detector_is_added(
+        self, mock_config_entry, mock_session
+    ):
         """Non-excluded motion detector must produce a MotionDetectorEvent."""
         collected = _run_event_setup(mock_config_entry, mock_session)
         md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
@@ -594,13 +610,17 @@ class TestMotionDetectorExcluded:
         [{"motion_detectors2": [_make_motion_device(device_id="keep-md2")]}],
         indirect=True,
     )
-    def test_non_excluded_motion_detector2_is_added(self, mock_config_entry, mock_session):
+    def test_non_excluded_motion_detector2_is_added(
+        self, mock_config_entry, mock_session
+    ):
         """Non-excluded MD2 must produce a MotionDetectorEvent."""
         collected = _run_event_setup(mock_config_entry, mock_session)
         md_events = [e for e in collected if isinstance(e, MotionDetectorEvent)]
         assert len(md_events) == 1
 
-    def test_mixed_motion_detectors_only_excluded_skipped(self, mock_config_entry, mock_session):
+    def test_mixed_motion_detectors_only_excluded_skipped(
+        self, mock_config_entry, mock_session
+    ):
         """One excluded + one non-excluded MD: only non-excluded appears."""
         keep = _make_motion_device(device_id="md-keep")
         excl = _make_motion_device(device_id="md-excl")
@@ -636,13 +656,17 @@ class TestSmokeDetectorExcluded:
         [{"smoke_detectors": [_make_smoke_detector(device_id="keep-sd")]}],
         indirect=True,
     )
-    def test_non_excluded_smoke_detector_is_added(self, mock_config_entry, mock_session):
+    def test_non_excluded_smoke_detector_is_added(
+        self, mock_config_entry, mock_session
+    ):
         """Non-excluded smoke detector must produce a SmokeDetectorEvent."""
         collected = _run_event_setup(mock_config_entry, mock_session)
         sd_events = [e for e in collected if isinstance(e, SmokeDetectorEvent)]
         assert len(sd_events) == 1
 
-    def test_mixed_smoke_detectors_only_excluded_skipped(self, mock_config_entry, mock_session):
+    def test_mixed_smoke_detectors_only_excluded_skipped(
+        self, mock_config_entry, mock_session
+    ):
         """One excluded + one non-excluded SD: only non-excluded appears."""
         keep = _make_smoke_detector(device_id="sd-keep")
         excl = _make_smoke_detector(device_id="sd-excl")
@@ -653,7 +677,9 @@ class TestSmokeDetectorExcluded:
         assert all(e._device is not excl for e in sd_events)
         assert any(e._device is keep for e in sd_events)
 
-    def test_excluded_smoke_detector_alongside_non_excluded(self, mock_config_entry, mock_session):
+    def test_excluded_smoke_detector_alongside_non_excluded(
+        self, mock_config_entry, mock_session
+    ):
         """Regression: excluding one SD must not affect the other in the same list."""
         keep1 = _make_smoke_detector(device_id="sd-a")
         keep2 = _make_smoke_detector(device_id="sd-b")
@@ -704,7 +730,9 @@ class TestEventSetupLightControls:
 
     def test_light_control_with_keypad_added(self, mock_config_entry, mock_session):
         """Lines 86-90: has_keypad=True -> LightControlButtonEvent added."""
-        dev = _fake_dev("lc1", has_keypad=True, root_device_id="root1", name="LightControl")
+        dev = _fake_dev(
+            "lc1", has_keypad=True, root_device_id="root1", name="LightControl"
+        )
         mock_session.device_helper.micromodule_light_controls = [dev]
         collected = _run_event_setup(mock_config_entry, mock_session)
         assert any(isinstance(e, LightControlButtonEvent) for e in collected)
@@ -855,7 +883,9 @@ class TestUniversalSwitchEventInit:
     def test_name_set_correctly(self):
         # #393: translated per-key name, not a raw f-string of the enum
         # literal — and _attr_name must not linger (it would win over translation_key).
-        dev = self._make_dev(name="Living Room Switch", device_id="hdm:sw:42", root_device_id="root:x")
+        dev = self._make_dev(
+            name="Living Room Switch", device_id="hdm:sw:42", root_device_id="root:x"
+        )
         entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
         with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "LOWER_BUTTON")
@@ -877,7 +907,9 @@ class TestUniversalSwitchEventInit:
         assert entity._last_fired_timestamp == -1
 
     def test_lower_button_key_id_in_name_and_uid(self):
-        dev = self._make_dev(name="Hallway SW", device_id="hdm:sw:5", root_device_id="root:5")
+        dev = self._make_dev(
+            name="Hallway SW", device_id="hdm:sw:5", root_device_id="root:5"
+        )
         entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
         with patch.object(UniversalSwitchEvent, "_update_attr", lambda self: None):
             UniversalSwitchEvent.__init__(entity, dev, "entry1", "LOWER_BUTTON")
@@ -985,7 +1017,9 @@ class TestUniversalSwitchEventValueError:
     """_trigger_event raising ValueError must be caught; schedule_update not called."""
 
     def test_value_error_is_caught_no_schedule_update(self):
-        entity = _make_universal_switch_entity(eventtype=_PRESS_SHORT, eventtimestamp=200)
+        entity = _make_universal_switch_entity(
+            eventtype=_PRESS_SHORT, eventtimestamp=200
+        )
         entity._trigger_event = MagicMock(side_effect=ValueError("bad type"))
         entity._event_callback()
         entity._trigger_event.assert_called_once()
@@ -993,18 +1027,24 @@ class TestUniversalSwitchEventValueError:
 
     def test_value_error_timestamp_still_advanced(self):
         """Even on ValueError the timestamp guard advances to prevent re-raise on replay."""
-        entity = _make_universal_switch_entity(eventtype=_PRESS_SHORT, eventtimestamp=300)
+        entity = _make_universal_switch_entity(
+            eventtype=_PRESS_SHORT, eventtimestamp=300
+        )
         entity._trigger_event = MagicMock(side_effect=ValueError("bad"))
         entity._event_callback()
         assert entity._last_fired_timestamp == 300
 
     def test_press_long_value_error_does_not_propagate(self):
-        entity = _make_universal_switch_entity(eventtype=_PRESS_LONG, eventtimestamp=400)
+        entity = _make_universal_switch_entity(
+            eventtype=_PRESS_LONG, eventtimestamp=400
+        )
         entity._trigger_event = MagicMock(side_effect=ValueError("bad"))
         entity._event_callback()  # must not raise
 
     def test_press_long_released_value_error_does_not_propagate(self):
-        entity = _make_universal_switch_entity(eventtype=_PRESS_LONG_RELEASED, eventtimestamp=500)
+        entity = _make_universal_switch_entity(
+            eventtype=_PRESS_LONG_RELEASED, eventtimestamp=500
+        )
         entity._trigger_event = MagicMock(side_effect=ValueError("bad"))
         entity._event_callback()  # must not raise
 
@@ -1014,8 +1054,10 @@ class TestUniversalSwitchEventPayload:
 
     def test_press_short_payload(self):
         entity = _make_universal_switch_entity(
-            eventtype=_PRESS_SHORT, eventtimestamp=7000,
-            device_id="hdm:sw:77", name="Kitchen Switch",
+            eventtype=_PRESS_SHORT,
+            eventtimestamp=7000,
+            device_id="hdm:sw:77",
+            name="Kitchen Switch",
         )
         entity._event_callback()
         event_type, attrs = entity._trigger_event.call_args[0]
@@ -1027,8 +1069,10 @@ class TestUniversalSwitchEventPayload:
 
     def test_press_long_payload(self):
         entity = _make_universal_switch_entity(
-            eventtype=_PRESS_LONG, eventtimestamp=8000,
-            device_id="hdm:sw:88", name="Hallway Switch",
+            eventtype=_PRESS_LONG,
+            eventtimestamp=8000,
+            device_id="hdm:sw:88",
+            name="Hallway Switch",
         )
         entity._event_callback()
         event_type, attrs = entity._trigger_event.call_args[0]
@@ -1038,14 +1082,16 @@ class TestUniversalSwitchEventPayload:
 
     def test_press_long_released_payload(self):
         entity = _make_universal_switch_entity(
-            eventtype=_PRESS_LONG_RELEASED, eventtimestamp=9000,
+            eventtype=_PRESS_LONG_RELEASED,
+            eventtimestamp=9000,
         )
         entity._event_callback()
         assert entity._trigger_event.call_args[0][0] == "PRESS_LONG_RELEASED"
 
     def test_device_id_in_attrs(self):
         entity = _make_universal_switch_entity(
-            eventtype=_PRESS_SHORT, eventtimestamp=100,
+            eventtype=_PRESS_SHORT,
+            eventtimestamp=100,
             device_id="hdm:sw:id99",
         )
         entity._event_callback()
@@ -1100,8 +1146,9 @@ class TestUniversalSwitchEventDispatch:
         entity.schedule_update_ha_state.assert_not_called()
 
 
-def _make_bare_usw(eventtype=_PRESS_SHORT, eventtimestamp=1000,
-                   last_fired=-1, device_id="hdm:sw:x"):
+def _make_bare_usw(
+    eventtype=_PRESS_SHORT, eventtimestamp=1000, last_fired=-1, device_id="hdm:sw:x"
+):
     entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
     entity._device = SimpleNamespace(
         name="SW",
@@ -1146,32 +1193,42 @@ class TestUniversalSwitchEventDedupGuards:
 
     def test_duplicate_timestamp_skips_event(self):
         """Same eventtimestamp as _last_fired_timestamp -> duplicate guard fires, no trigger."""
-        entity = _make_bare_usw(eventtype=_PRESS_SHORT, eventtimestamp=500, last_fired=500)
+        entity = _make_bare_usw(
+            eventtype=_PRESS_SHORT, eventtimestamp=500, last_fired=500
+        )
         entity._event_callback()
         entity._trigger_event.assert_not_called()
         entity.schedule_update_ha_state.assert_not_called()
 
     def test_duplicate_timestamp_does_not_advance_timestamp(self):
         """Duplicate guard: _last_fired_timestamp stays at the existing value."""
-        entity = _make_bare_usw(eventtype=_PRESS_SHORT, eventtimestamp=500, last_fired=500)
+        entity = _make_bare_usw(
+            eventtype=_PRESS_SHORT, eventtimestamp=500, last_fired=500
+        )
         entity._event_callback()
         assert entity._last_fired_timestamp == 500
 
     def test_new_timestamp_advances_last_fired(self):
         """New eventtimestamp (different from last_fired) advances _last_fired_timestamp."""
-        entity = _make_bare_usw(eventtype=_PRESS_SHORT, eventtimestamp=1001, last_fired=1000)
+        entity = _make_bare_usw(
+            eventtype=_PRESS_SHORT, eventtimestamp=1001, last_fired=1000
+        )
         entity._event_callback()
         assert entity._last_fired_timestamp == 1001
 
     def test_first_press_short_fires_trigger(self):
         """First genuine PRESS_SHORT with fresh timestamp fires _trigger_event."""
-        entity = _make_bare_usw(eventtype=_PRESS_SHORT, eventtimestamp=2000, last_fired=-1)
+        entity = _make_bare_usw(
+            eventtype=_PRESS_SHORT, eventtimestamp=2000, last_fired=-1
+        )
         entity._event_callback()
         entity._trigger_event.assert_called_once()
 
     def test_non_press_type_motor_switch_on_no_trigger(self):
         """SWITCH_ON (motor event) must not trigger an event entity fire."""
-        entity = _make_bare_usw(eventtype=SimpleNamespace(name="SWITCH_OFF"), eventtimestamp=9)
+        entity = _make_bare_usw(
+            eventtype=SimpleNamespace(name="SWITCH_OFF"), eventtimestamp=9
+        )
         entity._event_callback()
         entity._trigger_event.assert_not_called()
 
@@ -1183,7 +1240,9 @@ class TestUniversalSwitchEventNoneEarlyReturn:
         entity = UniversalSwitchEvent.__new__(UniversalSwitchEvent)
         entity.hass = _make_hass_capturing()
         entity._device = SimpleNamespace(
-            name="Switch", id="sw-1", root_device_id="root-1",
+            name="Switch",
+            id="sw-1",
+            root_device_id="root-1",
             eventtype=None,
             eventtimestamp=1000,
         )
@@ -1284,8 +1343,8 @@ class TestTimestampGuard:
     def test_second_call_same_ts_does_not_fire(self):
         """Battery-update replaying the same stale Keypad state -> must be swallowed."""
         entity = _make_entity(eventtype=_PRESS_SHORT, eventtimestamp=5000)
-        entity._event_callback()   # first: fires
-        entity._event_callback()   # second: same ts -> phantom, must NOT fire again
+        entity._event_callback()  # first: fires
+        entity._event_callback()  # second: same ts -> phantom, must NOT fire again
         assert entity._trigger_event.call_count == 1
 
     def test_new_ts_fires_again(self):
@@ -1462,6 +1521,7 @@ class TestLightControlButtonEvent:
 
     def test_is_event_entity(self):
         from homeassistant.components.event import EventEntity
+
         assert issubclass(LightControlButtonEvent, EventEntity)
 
 
@@ -1471,8 +1531,11 @@ class TestLightControlButtonEventCallback:
     def _make_entity(self, event_type_raw, ts, last_ts=-1):
         ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
         ent._attr_event_types = [
-            "PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED",
-            "SWITCH_ON", "SWITCH_OFF",
+            "PRESS_SHORT",
+            "PRESS_LONG",
+            "PRESS_LONG_RELEASED",
+            "SWITCH_ON",
+            "SWITCH_OFF",
         ]
         ent._last_fired_timestamp = last_ts
         ent._device = SimpleNamespace(
@@ -1586,10 +1649,7 @@ class TestLightControlButtonEventUnsubscribe:
 
 
 # ---------------------------------------------------------------------------
-# Fake service double shared by the Unsubscribe suites above (register_event
-# has no matching unregister_event upstream; SHCEntity's
-# async_will_remove_from_hass must clean up the private _event_callbacks dict
-# via subscribe_callback/unsubscribe_callback pairing instead).
+# Fake service double shared by the Unsubscribe suites above.
 # ---------------------------------------------------------------------------
 
 
@@ -1609,6 +1669,9 @@ class FakeService:
 
     def register_event(self, event, callback):
         self._event_callbacks[event] = callback
+
+    def unregister_event(self, event):
+        self._event_callbacks.pop(event, None)
 
 
 # ===========================================================================
@@ -1706,14 +1769,15 @@ class TestSHCScenarioEventCallback:
         )
         entry_id = "e1"
         shc = SimpleNamespace(
-            id="shc-id", name="SHC", identifiers={(DOMAIN, "shc-id")},
-            manufacturer="Bosch", model="SHC",
+            id="shc-id",
+            name="SHC",
+            identifiers={(DOMAIN, "shc-id")},
+            manufacturer="Bosch",
+            model="SHC",
         )
         hass_init = MagicMock(name="hass_init")
         hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
+            return_value=SimpleNamespace(runtime_data=SimpleNamespace(shc_device=shc))
         )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_capturing()
@@ -1775,14 +1839,15 @@ class TestSHCScenarioEventSubscribe:
         )
         entry_id = "e1"
         shc = SimpleNamespace(
-            id="shc-sub", name="SHC", identifiers={(DOMAIN, "shc-sub")},
-            manufacturer="Bosch", model="SHC",
+            id="shc-sub",
+            name="SHC",
+            identifiers={(DOMAIN, "shc-sub")},
+            manufacturer="Bosch",
+            model="SHC",
         )
         hass_init = MagicMock()
         hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
+            return_value=SimpleNamespace(runtime_data=SimpleNamespace(shc_device=shc))
         )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
@@ -1806,14 +1871,15 @@ class TestSHCScenarioEventSubscribe:
         )
         entry_id = "e1"
         shc = SimpleNamespace(
-            id="shc-fire", name="SHC", identifiers={(DOMAIN, "shc-fire")},
-            manufacturer="Bosch", model="SHC",
+            id="shc-fire",
+            name="SHC",
+            identifiers={(DOMAIN, "shc-fire")},
+            manufacturer="Bosch",
+            model="SHC",
         )
         hass_init = MagicMock()
         hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
+            return_value=SimpleNamespace(runtime_data=SimpleNamespace(shc_device=shc))
         )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
@@ -1825,7 +1891,11 @@ class TestSHCScenarioEventSubscribe:
                 await SHCScenarioEvent.async_added_to_hass(entity)
 
         asyncio.run(_run_added())
-        event_data = {"id": "sc-fire", "name": "Evening", "lastTimeTriggered": "2026-06-20"}
+        event_data = {
+            "id": "sc-fire",
+            "name": "Evening",
+            "lastTimeTriggered": "2026-06-20",
+        }
         subscriptions["sc-fire"](event_data)
         entity._trigger_event.assert_called_once()
         assert entity._trigger_event.call_args[0][0] == "SCENARIO"
@@ -1839,14 +1909,15 @@ class TestSHCScenarioEventSubscribe:
         )
         entry_id = "e1"
         shc = SimpleNamespace(
-            id="shc-pay", name="SHC", identifiers={(DOMAIN, "shc-pay")},
-            manufacturer="Bosch", model="SHC",
+            id="shc-pay",
+            name="SHC",
+            identifiers={(DOMAIN, "shc-pay")},
+            manufacturer="Bosch",
+            model="SHC",
         )
         hass_init = MagicMock()
         hass_init.config_entries.async_get_entry = MagicMock(
-            return_value=SimpleNamespace(
-                runtime_data=SimpleNamespace(shc_device=shc)
-            )
+            return_value=SimpleNamespace(runtime_data=SimpleNamespace(shc_device=shc))
         )
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
@@ -1859,7 +1930,9 @@ class TestSHCScenarioEventSubscribe:
 
         asyncio.run(_run_added())
         ts = "2026-06-20T12:00:00"
-        subscriptions["sc-pay"]({"id": "sc-pay", "name": "Night Mode", "lastTimeTriggered": ts})
+        subscriptions["sc-pay"](
+            {"id": "sc-pay", "name": "Night Mode", "lastTimeTriggered": ts}
+        )
         attrs = entity._trigger_event.call_args[0][1]
         assert attrs[ATTR_EVENT_TYPE] == "SCENARIO"
         assert attrs[ATTR_ID] == "sc-pay"
@@ -1986,7 +2059,11 @@ class TestSHCScenarioEventAsyncAddedToHass:
         asyncio.run(_run_added())
         registered_cb = session.subscribe_scenario_callback.call_args[0][1]
         # Fire it directly to confirm it's the real _event_callback
-        event_data = {"id": "scn:88", "name": "Night Mode", "lastTimeTriggered": "2026-01-01T00:00:00"}
+        event_data = {
+            "id": "scn:88",
+            "name": "Night Mode",
+            "lastTimeTriggered": "2026-01-01T00:00:00",
+        }
         registered_cb(event_data)
         entity._trigger_event.assert_called_once()
 
@@ -1996,31 +2073,41 @@ class TestSHCScenarioEventCallbackPayload:
 
     def test_fires_scenario_event_type(self):
         entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:1", "name": "Away", "lastTimeTriggered": "ts1"})
+        entity._event_callback(
+            {"id": "scn:1", "name": "Away", "lastTimeTriggered": "ts1"}
+        )
         entity._trigger_event.assert_called_once()
         assert entity._trigger_event.call_args[0][0] == "SCENARIO"
 
     def test_callback_payload_event_type_attr(self):
         entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:2", "name": "Night", "lastTimeTriggered": "ts2"})
+        entity._event_callback(
+            {"id": "scn:2", "name": "Night", "lastTimeTriggered": "ts2"}
+        )
         attrs = entity._trigger_event.call_args[0][1]
         assert attrs[ATTR_EVENT_TYPE] == "SCENARIO"
 
     def test_callback_payload_id_attr(self):
         entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:42", "name": "Night", "lastTimeTriggered": "ts"})
+        entity._event_callback(
+            {"id": "scn:42", "name": "Night", "lastTimeTriggered": "ts"}
+        )
         attrs = entity._trigger_event.call_args[0][1]
         assert attrs[ATTR_ID] == "scn:42"
 
     def test_callback_payload_name_attr(self):
         entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:3", "name": "Vacation", "lastTimeTriggered": "ts"})
+        entity._event_callback(
+            {"id": "scn:3", "name": "Vacation", "lastTimeTriggered": "ts"}
+        )
         attrs = entity._trigger_event.call_args[0][1]
         assert attrs[ATTR_NAME] == "Vacation"
 
     def test_callback_payload_last_time_triggered(self):
         entity, _, _ = _make_scenario_entity_v2()
-        entity._event_callback({"id": "scn:4", "name": "X", "lastTimeTriggered": "2026-06-01T10:00:00"})
+        entity._event_callback(
+            {"id": "scn:4", "name": "X", "lastTimeTriggered": "2026-06-01T10:00:00"}
+        )
         attrs = entity._trigger_event.call_args[0][1]
         assert attrs[ATTR_LAST_TIME_TRIGGERED] == "2026-06-01T10:00:00"
 
@@ -2179,7 +2266,9 @@ class TestMotionDetectorEvent:
         """A service with id != 'LatestMotion' must not be registered."""
         lms = FakeLatestMotionService()
         other = SimpleNamespace(id="Battery", subscribe_callback=lambda eid, cb: None)
-        entity = _make_motion_entity(device_id="hdm:motion:11", extra_services=[other, lms])
+        entity = _make_motion_entity(
+            device_id="hdm:motion:11", extra_services=[other, lms]
+        )
 
         async def _run_added():
             with patch(_SHC_ENTITY_ADDED, return_value=None):
@@ -2202,18 +2291,41 @@ class TestMotionDetectorEvent:
                 await MotionDetectorEvent.async_added_to_hass(entity)
 
         asyncio.run(_run_added())
+        entity._device.latestmotion = "2026-06-01T08:30:00"
         lms.registered["hdm:motion:55"]()
         entity._trigger_event.assert_called_once()
         assert entity._trigger_event.call_args[0][0] == "MOTION"
+
+    def test_no_replay_on_startup_with_existing_latestmotion(self):
+        """A pre-existing latestmotion value must not replay as a new event on startup."""
+        lms = FakeLatestMotionService()
+        entity = _make_motion_entity(
+            device_id="hdm:motion:56",
+            latestmotion="2026-06-01T08:00:00",
+            extra_services=[lms],
+        )
+
+        async def _run_added():
+            with patch(_SHC_ENTITY_ADDED, return_value=None):
+                await MotionDetectorEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        lms.registered["hdm:motion:56"]()
+        entity._trigger_event.assert_not_called()
 
 
 def _make_motion_event_entity():
     entity = MotionDetectorEvent.__new__(MotionDetectorEvent)
     entity._device = SimpleNamespace(
-        name="Motion", id="hdm:motion:d1", root_device_id="root:m",
+        name="Motion",
+        id="hdm:motion:d1",
+        root_device_id="root:m",
         latestmotion="2026-06-20T10:00:00.000Z",
-        device_services=[], deleted=False, manufacturer="Bosch",
-        device_model="MD", status="AVAILABLE",
+        device_services=[],
+        deleted=False,
+        manufacturer="Bosch",
+        device_model="MD",
+        status="AVAILABLE",
     )
     entity._attr_unique_id = "root:m_hdm:motion:d1"
     entity.hass = _make_hass_direct()
@@ -2412,7 +2524,9 @@ class TestSmokeDetectionSystemEvent:
         assert entity._trigger_event.call_args[0][0] == "ALARM"
 
     def test_callback_payload_event_type(self):
-        entity = _make_smoke_system_entity(device_id="hdm:smoke:1", name="House Smoke System")
+        entity = _make_smoke_system_entity(
+            device_id="hdm:smoke:1", name="House Smoke System"
+        )
         entity._event_callback()
         attrs = entity._trigger_event.call_args[0][1]
         assert attrs[ATTR_EVENT_TYPE] == "ALARM"
@@ -2491,10 +2605,15 @@ class TestSmokeDetectionSystemEvent:
 def _make_smoke_system_event_entity(alarm_name="ALARM_ON"):
     entity = SmokeDetectionSystemEvent.__new__(SmokeDetectionSystemEvent)
     entity._device = SimpleNamespace(
-        name="Smoke System", id="hdm:smoke:sys:1", root_device_id="root:ss",
+        name="Smoke System",
+        id="hdm:smoke:sys:1",
+        root_device_id="root:ss",
         alarm=SimpleNamespace(name=alarm_name),
-        device_services=[], deleted=False, manufacturer="Bosch",
-        device_model="SDS", status="AVAILABLE",
+        device_services=[],
+        deleted=False,
+        manufacturer="Bosch",
+        device_model="SDS",
+        status="AVAILABLE",
     )
     entity._attr_unique_id = "root:ss_hdm:smoke:sys:1"
     entity.hass = _make_hass_direct()
@@ -2789,10 +2908,15 @@ class TestSmokeDetectorEvent:
 def _make_smoke_detector_event_entity(alarmstate_name="PRIMARY_ALARM"):
     entity = SmokeDetectorEvent.__new__(SmokeDetectorEvent)
     entity._device = SimpleNamespace(
-        name="Smoke Det", id="hdm:smoke:d1", root_device_id="root:sd",
+        name="Smoke Det",
+        id="hdm:smoke:d1",
+        root_device_id="root:sd",
         alarmstate=SimpleNamespace(name=alarmstate_name),
-        device_services=[], deleted=False, manufacturer="Bosch",
-        device_model="SD", status="AVAILABLE",
+        device_services=[],
+        deleted=False,
+        manufacturer="Bosch",
+        device_model="SD",
+        status="AVAILABLE",
     )
     entity._attr_unique_id = "root:sd_hdm:smoke:d1"
     entity.hass = _make_hass_direct()
@@ -2920,7 +3044,11 @@ class TestEventEntityStructure:
     def test_universal_switch_event_types_on_instance(self):
         entity = _make_universal_switch_entity()
         # HA stores _attr_event_types as a property; access via instance
-        assert entity._attr_event_types == ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]
+        assert entity._attr_event_types == [
+            "PRESS_SHORT",
+            "PRESS_LONG",
+            "PRESS_LONG_RELEASED",
+        ]
 
     def test_motion_detector_event_types_on_instance(self):
         entity = _make_motion_entity()
@@ -2936,28 +3064,34 @@ class TestEventEntityStructure:
 
     def test_universal_switch_device_class_on_instance(self):
         from homeassistant.components.event import EventDeviceClass
+
         entity = _make_universal_switch_entity()
         assert entity._attr_device_class == EventDeviceClass.BUTTON
 
     def test_motion_detector_device_class_on_instance(self):
         from homeassistant.components.event import EventDeviceClass
+
         entity = _make_motion_entity()
         assert entity._attr_device_class == EventDeviceClass.MOTION
 
     def test_universal_switch_is_event_entity(self):
         from homeassistant.components.event import EventEntity
+
         assert issubclass(UniversalSwitchEvent, EventEntity)
 
     def test_motion_detector_is_event_entity(self):
         from homeassistant.components.event import EventEntity
+
         assert issubclass(MotionDetectorEvent, EventEntity)
 
     def test_smoke_detection_system_is_event_entity(self):
         from homeassistant.components.event import EventEntity
+
         assert issubclass(SmokeDetectionSystemEvent, EventEntity)
 
     def test_smoke_detector_is_event_entity(self):
         from homeassistant.components.event import EventEntity
+
         assert issubclass(SmokeDetectorEvent, EventEntity)
 
 
@@ -3049,8 +3183,8 @@ class TestAsyncRemoveDevices:
         update_calls = []
         fake_registry = SimpleNamespace(
             async_get_device_by_identifier=MagicMock(return_value=fake_device),
-            async_update_device=lambda dev_id, remove_config_entry_id=None: update_calls.append(
-                (dev_id, remove_config_entry_id)
+            async_update_device=lambda dev_id, remove_config_entry_id=None: (
+                update_calls.append((dev_id, remove_config_entry_id))
             ),
         )
         entity = self._make_entity_ns(device_id="hdm:dev:77")
@@ -3103,10 +3237,10 @@ class TestAsyncMigrateToNewUniqueId:
                 "custom_components.bosch_shc.entity.entity_registry.async_get",
                 return_value=ent_registry,
             ):
-                dev = self._make_device(serial="OLD-SER", dev_id="hdm:new:id", root_id="root:new")
-                await async_migrate_to_new_unique_id(
-                    object(), "sensor", dev
+                dev = self._make_device(
+                    serial="OLD-SER", dev_id="hdm:new:id", root_id="root:new"
                 )
+                await async_migrate_to_new_unique_id(object(), "sensor", dev)
 
         asyncio.run(_run_migrate())
         ent_registry.async_update_entity.assert_called_once()
@@ -3137,7 +3271,9 @@ class TestAsyncMigrateToNewUniqueId:
                 "custom_components.bosch_shc.entity.entity_registry.async_get",
                 return_value=ent_registry,
             ):
-                dev = self._make_device(serial="SER", dev_id="hdm:d:1", root_id="root:r")
+                dev = self._make_device(
+                    serial="SER", dev_id="hdm:d:1", root_id="root:r"
+                )
                 await async_migrate_to_new_unique_id(
                     object(), "sensor", dev, attr_name="Temperature"
                 )
@@ -3287,7 +3423,9 @@ class TestUpdateEntityInformationElseBranch:
 
         update_entity_information = dev_callbacks[0]
         update_entity_information()
-        assert add_job_calls == [], "hass.add_job must NOT be called for non-deleted device"
+        assert add_job_calls == [], (
+            "hass.add_job must NOT be called for non-deleted device"
+        )
 
 
 # ===========================================================================

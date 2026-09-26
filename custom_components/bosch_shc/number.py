@@ -390,6 +390,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
         key=IMPULSE_LENGTH,
         translation_key=IMPULSE_LENGTH,
         entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.SECONDS,
         native_min_value=0.1,
         native_max_value=60.0,
