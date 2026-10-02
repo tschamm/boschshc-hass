@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.30 — Hassfest requirement fix
+
+- **`boschshcpy` requirement is now `>=0.6.13`.** 0.12.29 used `>=0.6.14`,
+  which hassfest rejects because it must stay compatible with the
+  `boschshcpy==0.6.13` pin that Home Assistant Core itself uses. The light-smoke
+  `PRE_ALARM` state from 0.12.29 only takes effect where `boschshcpy` 0.6.14 or
+  newer is installed; `requirements_test.txt` keeps the exact `0.6.14` pin.
+- **Smoke events no longer replay stale state.** Smoke detector and smoke
+  detection system events skip unchanged alarm states instead of re-firing the
+  current one on unrelated long-poll updates (shipped unannounced in 0.12.29).
+
 ## 0.12.29 — Smoke detection system pre-alarm + hassfest pin fix
 
 - **Light-smoke pre-alarm is now reported.** The Bosch app treats `PRE_ALARM`
