@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Ielaušanās trauksme notīrīta",
       "ALARM_OFF": "Trauksme izslēgta",
       "ALARM_ON": "Trauksme ieslēgta",
-      "ALARM_MUTED": "Trauksme apklusināta"
+      "ALARM_MUTED": "Trauksme apklusināta",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} īsi nospiesta",

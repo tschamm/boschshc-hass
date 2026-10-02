@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "入侵警報已清除",
       "ALARM_OFF": "警報關閉",
       "ALARM_ON": "警報開啟",
-      "ALARM_MUTED": "警報已靜音"
+      "ALARM_MUTED": "警報已靜音",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} 短按",

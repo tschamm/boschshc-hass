@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Inbrottslarm rensat",
       "ALARM_OFF": "Larm av",
       "ALARM_ON": "Larm på",
-      "ALARM_MUTED": "Larm tystat"
+      "ALARM_MUTED": "Larm tystat",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} kortklickad",

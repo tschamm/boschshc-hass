@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Behatolási riasztás törölve",
       "ALARM_OFF": "Riasztás kikapcsolva",
       "ALARM_ON": "Riasztás bekapcsolva",
-      "ALARM_MUTED": "Riasztás elnémítva"
+      "ALARM_MUTED": "Riasztás elnémítva",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} röviden megnyomva",

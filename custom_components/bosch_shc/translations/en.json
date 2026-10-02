@@ -781,7 +781,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Intrusion alarm cleared",
       "ALARM_OFF": "Alarm off",
       "ALARM_ON": "Alarm on",
-      "ALARM_MUTED": "Alarm muted"
+      "ALARM_MUTED": "Alarm muted",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} short clicked",

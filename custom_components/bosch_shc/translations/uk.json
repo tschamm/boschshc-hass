@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Тривогу вторгнення скинуто",
       "ALARM_OFF": "Тривога вимкнена",
       "ALARM_ON": "Тривога увімкнена",
-      "ALARM_MUTED": "Тривога заглушена"
+      "ALARM_MUTED": "Тривога заглушена",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} коротке натискання",

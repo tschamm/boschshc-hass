@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Inbraakalarm gewist",
       "ALARM_OFF": "Alarm uit",
       "ALARM_ON": "Alarm aan",
-      "ALARM_MUTED": "Alarm gedempt"
+      "ALARM_MUTED": "Alarm gedempt",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} kort ingedrukt",

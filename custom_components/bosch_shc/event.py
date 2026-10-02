@@ -438,6 +438,9 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC smoke detection system event entity."""
 
     _attr_event_types = ["ALARM"]
+    # Dedup guard (#192): phantom events replay the current alarm state
+    # on unrelated long-poll updates (e.g. battery level).
+    _last_fired_subtype: str = ""
 
     def __init__(
         self,
@@ -453,6 +456,10 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         """Call when entity is added to hass."""
         await super().async_added_to_hass()
 
+        try:
+            self._last_fired_subtype = self._device.alarm.name
+        except (ValueError, KeyError):
+            self._last_fired_subtype = ""
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
                 service.register_event(self._device.id, self._event_callback)
@@ -470,6 +477,9 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         except (ValueError, KeyError):
             LOGGER.warning("Unexpected alarm value for %s", self._device.name)
             return
+        if subtype == self._last_fired_subtype:
+            return
+        self._last_fired_subtype = subtype
         event_type = "ALARM"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
@@ -493,6 +503,9 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC smoke detector event entity."""
 
     _attr_event_types = ["ALARM"]
+    # Dedup guard (#192): phantom events replay the current alarmstate
+    # on unrelated long-poll updates (e.g. battery level).
+    _last_fired_subtype: str = ""
 
     def __init__(
         self,
@@ -508,6 +521,10 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         """Call when entity is added to hass."""
         await super().async_added_to_hass()
 
+        try:
+            self._last_fired_subtype = self._device.alarmstate.name
+        except (ValueError, KeyError):
+            self._last_fired_subtype = ""
         for service in self._device.device_services:
             if service.id == "Alarm":
                 service.register_event(self._device.id, self._event_callback)
@@ -525,6 +542,9 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         except (ValueError, KeyError):
             LOGGER.warning("Unexpected alarmstate value for %s", self._device.name)
             return
+        if subtype == self._last_fired_subtype:
+            return
+        self._last_fired_subtype = subtype
         event_type = "ALARM"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,

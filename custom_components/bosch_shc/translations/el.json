@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Ο συναγερμός εισβολής εκκαθαρίστηκε",
       "ALARM_OFF": "Συναγερμός off",
       "ALARM_ON": "Συναγερμός on",
-      "ALARM_MUTED": "Συναγερμός σε σίγαση"
+      "ALARM_MUTED": "Συναγερμός σε σίγαση",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "Σύντομο πάτημα {subtype}",

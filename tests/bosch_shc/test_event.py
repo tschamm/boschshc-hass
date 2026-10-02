@@ -2588,6 +2588,44 @@ class TestSmokeDetectionSystemEvent:
         sas = FakeSurveillanceAlarmService()
         entity = _make_smoke_system_entity(
             device_id="hdm:smoke:sys:30",
+            alarm_name="IDLE_OFF",
+            extra_services=[sas],
+        )
+
+        async def _run_added():
+            with patch(_SHC_ENTITY_ADDED, return_value=None):
+                await SmokeDetectionSystemEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        entity._device.alarm = SimpleNamespace(name="ALARM")
+        sas.registered["hdm:smoke:sys:30"]()
+        entity._trigger_event.assert_called_once()
+        assert entity._trigger_event.call_args[0][0] == "ALARM"
+
+    def test_pre_alarm_fires_event_with_pre_alarm_subtype(self):
+        """Light-smoke PRE_ALARM must surface as its own subtype, not as off."""
+        sas = FakeSurveillanceAlarmService()
+        entity = _make_smoke_system_entity(
+            device_id="hdm:smoke:sys:32",
+            alarm_name="ALARM_OFF",
+            extra_services=[sas],
+        )
+
+        async def _run_added():
+            with patch(_SHC_ENTITY_ADDED, return_value=None):
+                await SmokeDetectionSystemEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        entity._device.alarm = SimpleNamespace(name="PRE_ALARM")
+        sas.registered["hdm:smoke:sys:32"]()
+        entity._trigger_event.assert_called_once()
+        assert entity._trigger_event.call_args[0][1][ATTR_EVENT_SUBTYPE] == "PRE_ALARM"
+
+    def test_no_replay_on_startup_with_existing_alarm(self):
+        """A pre-existing alarm state must not replay as a new event on registration."""
+        sas = FakeSurveillanceAlarmService()
+        entity = _make_smoke_system_entity(
+            device_id="hdm:smoke:sys:31",
             alarm_name="ALARM",
             extra_services=[sas],
         )
@@ -2597,9 +2635,8 @@ class TestSmokeDetectionSystemEvent:
                 await SmokeDetectionSystemEvent.async_added_to_hass(entity)
 
         asyncio.run(_run_added())
-        sas.registered["hdm:smoke:sys:30"]()
-        entity._trigger_event.assert_called_once()
-        assert entity._trigger_event.call_args[0][0] == "ALARM"
+        sas.registered["hdm:smoke:sys:31"]()
+        entity._trigger_event.assert_not_called()
 
 
 def _make_smoke_system_event_entity(alarm_name="ALARM_ON"):
@@ -2891,6 +2928,24 @@ class TestSmokeDetectorEvent:
         als = FakeAlarmService()
         entity = _make_smoke_detector_entity(
             device_id="hdm:smoke:det:30",
+            alarmstate_name="IDLE_OFF",
+            extra_services=[als],
+        )
+
+        async def _run_added():
+            with patch(_SHC_ENTITY_ADDED, return_value=None):
+                await SmokeDetectorEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        entity._device.alarmstate = SimpleNamespace(name="PRIMARY_SMOKE_ALARM")
+        als.registered["hdm:smoke:det:30"]()
+        entity._trigger_event.assert_called_once()
+
+    def test_no_replay_on_startup_with_existing_alarmstate(self):
+        """A pre-existing alarmstate must not replay as a new event on registration."""
+        als = FakeAlarmService()
+        entity = _make_smoke_detector_entity(
+            device_id="hdm:smoke:det:31",
             alarmstate_name="PRIMARY_SMOKE_ALARM",
             extra_services=[als],
         )
@@ -2900,9 +2955,8 @@ class TestSmokeDetectorEvent:
                 await SmokeDetectorEvent.async_added_to_hass(entity)
 
         asyncio.run(_run_added())
-        als.registered["hdm:smoke:det:30"]()
-        entity._trigger_event.assert_called_once()
-        assert entity._trigger_event.call_args[0][0] == "ALARM"
+        als.registered["hdm:smoke:det:31"]()
+        entity._trigger_event.assert_not_called()
 
 
 def _make_smoke_detector_event_entity(alarmstate_name="PRIMARY_ALARM"):

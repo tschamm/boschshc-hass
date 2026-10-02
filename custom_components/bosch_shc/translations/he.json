@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "אזעקת הפריצה נוקתה",
       "ALARM_OFF": "אזעקה כבויה",
       "ALARM_ON": "אזעקה פעילה",
-      "ALARM_MUTED": "אזעקה מושתקת"
+      "ALARM_MUTED": "אזעקה מושתקת",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} נלחץ לחיצה קצרה",

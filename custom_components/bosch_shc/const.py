@@ -135,4 +135,5 @@ ALARM_EVENTS_SUBTYPES_SDS = {
     "ALARM_OFF",
     "ALARM_ON",
     "ALARM_MUTED",
+    "PRE_ALARM",
 }

@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Alarma d'intrusió esborrada",
       "ALARM_OFF": "Alarma desactivada",
       "ALARM_ON": "Alarma activada",
-      "ALARM_MUTED": "Alarma silenciada"
+      "ALARM_MUTED": "Alarma silenciada",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} premut breument",

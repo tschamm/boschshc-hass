@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Sissetungimisalarm kustutatud",
       "ALARM_OFF": "Alarm väljas",
       "ALARM_ON": "Alarm sees",
-      "ALARM_MUTED": "Alarm vaigistatud"
+      "ALARM_MUTED": "Alarm vaigistatud",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} lühike vajutus",

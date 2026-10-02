@@ -781,7 +781,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Einbruchalarm zurückgesetzt",
       "ALARM_OFF": "Alarm aus",
       "ALARM_ON": "Alarm an",
-      "ALARM_MUTED": "Alarm stummgeschaltet"
+      "ALARM_MUTED": "Alarm stummgeschaltet",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} kurz gedrückt",

@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Poplašné zariadenie proti vlámaniu vymazané",
       "ALARM_OFF": "Alarm VYP",
       "ALARM_ON": "Alarm ZAP",
-      "ALARM_MUTED": "Alarm stlmený"
+      "ALARM_MUTED": "Alarm stlmený",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} krátko kliknuté",

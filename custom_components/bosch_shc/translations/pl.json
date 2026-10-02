@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "Alarm włamania wyczyszczony",
       "ALARM_OFF": "Alarm wyłączony",
       "ALARM_ON": "Alarm włączony",
-      "ALARM_MUTED": "Alarm wyciszony"
+      "ALARM_MUTED": "Alarm wyciszony",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} krótkie naciśnięcie",

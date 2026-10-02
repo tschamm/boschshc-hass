@@ -795,7 +795,8 @@
       "INTRUSION_ALARM_OFF_REQUESTED": "침입 알람 해제됨",
       "ALARM_OFF": "알람 꺼짐",
       "ALARM_ON": "알람 켜짐",
-      "ALARM_MUTED": "알람 음소거"
+      "ALARM_MUTED": "알람 음소거",
+      "PRE_ALARM": "Light smoke pre-alarm"
     },
     "trigger_type": {
       "PRESS_SHORT": "{subtype} 짧게 누름",

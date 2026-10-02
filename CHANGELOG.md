@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.29 — Smoke detection system pre-alarm + hassfest pin fix
+
+- **Light-smoke pre-alarm is now reported.** The Bosch app treats `PRE_ALARM`
+  as its own smoke-alarm state; it was previously shown as "off". The smoke
+  detection system event, device trigger and alarm sensor now surface it
+  (needs `boschshcpy` 0.6.14).
+- **`boschshcpy` requirement is now a minimum version (`>=0.6.14`).** Hassfest
+  rejects an exact pin on a package Home Assistant Core itself depends on,
+  which turned the scheduled Validate run red. `requirements_test.txt` keeps
+  the exact pin.
+- Non-English locales show the English label "Light smoke pre-alarm" until
+  translated.
+
 ## 0.12.28 — Shutter II calibration: the actual fix (#396)
 
 **Promoted to stable at Thomas's explicit request. The real calibration
