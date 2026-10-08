@@ -5,7 +5,10 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-import voluptuous as vol
+try:
+    import probatio as vol
+except ImportError:  # HA < 2026.10
+    import voluptuous as vol  # type: ignore[no-redef]
 from boschshcpy import SHCSession
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.device_automation.exceptions import (

@@ -10,6 +10,9 @@
   switch is removed on the next start.
 - **Presence-based child lock skips such devices** instead of logging a
   warning per device on every presence change.
+- **Home Assistant 2026.10 schema library.** Config-flow, service and
+  device-trigger schemas use `probatio` where available (HA 2026.10 replaced
+  `voluptuous`), falling back to `voluptuous` on older Home Assistant.
 
 ## 0.12.30 — Hassfest requirement fix
 

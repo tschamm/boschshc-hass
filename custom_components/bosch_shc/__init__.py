@@ -14,7 +14,11 @@ from pathlib import Path
 from typing import Any
 
 import aiohttp
-import voluptuous as vol
+
+try:
+    import probatio as vol
+except ImportError:  # HA < 2026.10
+    import voluptuous as vol  # type: ignore[no-redef]
 from boschshcpy import SHCSessionAsync, SHCUniversalSwitch
 from boschshcpy.api import JSONRPCError
 from boschshcpy.api_async import build_ssl_context

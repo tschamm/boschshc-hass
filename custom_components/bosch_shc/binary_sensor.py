@@ -9,7 +9,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
+
+try:
+    import probatio as vol
+except ImportError:  # HA < 2026.10
+    import voluptuous as vol  # type: ignore[no-redef]
 from boschshcpy import (
     AlarmService,
     BatteryLevelService,
