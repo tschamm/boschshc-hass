@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.31 — No child-lock switch without ChildProtection
+
+- **Fixes a failed child-lock switch on SHC I light and shutter controls.**
+  Devices without the `ChildProtection` service no longer get a child-lock
+  switch. Before, the entity failed to be added, and its leftover callbacks
+  made the polling thread log `'NoneType' object has no attribute 'loop'`
+  on every state update (core issue 184907). An already-registered orphan
+  switch is removed on the next start.
+- **Presence-based child lock skips such devices** instead of logging a
+  warning per device on every presence change.
+
 ## 0.12.30 — Hassfest requirement fix
 
 - **`boschshcpy` requirement is now `>=0.6.13`.** 0.12.29 used `>=0.6.14`,

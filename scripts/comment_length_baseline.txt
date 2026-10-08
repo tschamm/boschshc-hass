@@ -19,12 +19,12 @@
 # was condensed to 2 lines rather than added here.
 custom_components/bosch_shc/__init__.py:547
 custom_components/bosch_shc/__init__.py:668
-custom_components/bosch_shc/__init__.py:768
-custom_components/bosch_shc/__init__.py:781
-custom_components/bosch_shc/__init__.py:970
-custom_components/bosch_shc/__init__.py:1121
-custom_components/bosch_shc/__init__.py:1167
-custom_components/bosch_shc/__init__.py:1193
+custom_components/bosch_shc/__init__.py:774
+custom_components/bosch_shc/__init__.py:787
+custom_components/bosch_shc/__init__.py:976
+custom_components/bosch_shc/__init__.py:1127
+custom_components/bosch_shc/__init__.py:1173
+custom_components/bosch_shc/__init__.py:1199
 custom_components/bosch_shc/alarm_control_panel.py:100
 custom_components/bosch_shc/binary_sensor.py:186
 custom_components/bosch_shc/binary_sensor.py:345
@@ -126,9 +126,9 @@ custom_components/bosch_shc/switch.py:454
 custom_components/bosch_shc/switch.py:671
 custom_components/bosch_shc/switch.py:699
 custom_components/bosch_shc/switch.py:806
-custom_components/bosch_shc/switch.py:908
-custom_components/bosch_shc/switch.py:995
-custom_components/bosch_shc/switch.py:1030
-custom_components/bosch_shc/switch.py:1243
-custom_components/bosch_shc/switch.py:1315
+custom_components/bosch_shc/switch.py:917
+custom_components/bosch_shc/switch.py:1004
+custom_components/bosch_shc/switch.py:1039
+custom_components/bosch_shc/switch.py:1252
+custom_components/bosch_shc/switch.py:1324
 custom_components/bosch_shc/valve.py:79

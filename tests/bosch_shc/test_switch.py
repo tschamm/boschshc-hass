@@ -1051,6 +1051,31 @@ class TestSwitchLightRelayOptInSkip:
         )
 
 
+class TestChildLockRequiresChildProtectionService:
+    """Light Control I (SHC I) has no ChildProtection service -> no child-lock switch."""
+
+    def _childlock_ids(self, service_ids):
+        dev = _fake_device_gaps(
+            id="bsm1",
+            switchstate=True,
+            child_lock=False,
+            device_service_ids=service_ids,
+        )
+        helper = TestSwitchLightRelayOptInSkip()
+        collected = helper._run_switch_setup([dev], options={})
+        return [
+            getattr(e, "_attr_unique_id", "")
+            for e in collected
+            if "childlock" in getattr(e, "_attr_unique_id", "").lower()
+        ]
+
+    def test_no_child_lock_without_childprotection_service(self):
+        assert self._childlock_ids({"PowerSwitch"}) == []
+
+    def test_child_lock_created_with_childprotection_service(self):
+        assert len(self._childlock_ids({"PowerSwitch", "ChildProtection"})) == 1
+
+
 class TestSHCSwitchTurnOnClientError:
     """Lines 991-992: SHCSwitch.async_turn_on aiohttp.ClientError branch."""
 

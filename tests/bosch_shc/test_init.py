@@ -2468,6 +2468,7 @@ def _make_device(device_id="dev-001"):
     """Make a fake SHC device with async_set_child_lock as an AsyncMock."""
     dev = MagicMock()
     dev.id = device_id
+    dev.device_service_ids = {"ChildProtection"}
     dev.async_set_child_lock = AsyncMock()
     # child_lock attribute tracks the last value written via the AsyncMock
     # We simulate the setter storing the value by side_effect

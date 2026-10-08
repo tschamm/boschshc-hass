@@ -817,6 +817,15 @@ async def async_setup_entry(  # noqa: C901
     ):
         if device_excluded(switch, config_entry.options):
             continue
+        # SHC I light/shutter controls may lack the ChildProtection service.
+        service_ids = getattr(switch, "device_service_ids", None)
+        if service_ids is not None and "ChildProtection" not in service_ids:
+            await async_remove_stale_entity(
+                hass,
+                Platform.SWITCH,
+                f"{switch.root_device_id}_{switch.id}_childlock",
+            )
+            continue
         entities.append(
             SHCSwitch(
                 device=switch,

@@ -703,6 +703,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 + dh.micromodule_dimmers
                 + dh.light_switches_bsm
             )
+            bool_devices = [
+                d
+                for d in bool_devices
+                if "ChildProtection"
+                in getattr(d, "device_service_ids", ("ChildProtection",))
+            ]
             return thermostats, bool_devices
 
         async def _set_child_lock_one(device: Any, lock_state: bool) -> None:
