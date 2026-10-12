@@ -515,6 +515,7 @@ change occurs, then responds immediately with the changed values. This gives
 | `invalid_auth` | Wrong system password | Re-enter the password set during initial SHC app setup |
 | `RequirementsNotFound: boschshcpy` | PyPI mirror lag after a release | Wait 5–10 min and reload; or manually install the pinned version |
 | Entities not appearing after adding a device | SHC API does not push device-added events | **Bosch SHC → ⋮ → Reload** |
+| No climate entity for a room, although its thermostats are present | After a Bosch update the controller can lose a room's Room Climate Control (the room is missing under the Bosch app's **Services → Climate Manager → Heating pause & cooling**) | In the Bosch app create a new room, move one of the room's radiator thermostats into it, then reload **Bosch SHC** in Home Assistant ([#386](https://github.com/tschamm/boschshc-hass/issues/386)) |
 | Certificate expiry repair issue | Client cert expires after ~10 years | Follow the repair flow or use **Reconfigure → Re-pair** |
 
 ### Bug reports
