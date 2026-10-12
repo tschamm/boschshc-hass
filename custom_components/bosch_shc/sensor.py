@@ -1058,7 +1058,6 @@ SENSOR_DESCRIPTIONS: dict[str, SHCSensorEntityDescription[Any]] = {
         native_unit_of_measurement=UnitOfRatio.PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
         suggested_display_precision=0,
         value_fn=lambda device: device.position,
         attributes_fn=_valve_tappet_attributes,

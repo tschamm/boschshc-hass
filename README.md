@@ -194,7 +194,7 @@ Options marked with ★ are shown only when the relevant devices are connected t
 |---|---|---|
 | Scenarios as buttons | off | Expose each SHC scenario as a `button` entity |
 | Scenario filter ★ | (all) | Allow-list — only the selected scenarios become buttons; stale IDs are auto-cleared |
-| Diagnostic entities | on | Create battery-level, valve-tappet, comm-quality and Zigbee-routing-quality diagnostic sensors — they're disabled by default in the entity registry regardless; press the **Enable All Diagnostics** button to enable every one for this SHC at once |
+| Diagnostic entities | on | Create battery-level, valve-tappet, comm-quality and Zigbee-routing-quality diagnostic sensors — battery, comm-quality and Zigbee-routing-quality sensors are disabled by default in the entity registry (valve position and valve motor status are enabled); press the **Enable All Diagnostics** button to enable every one for this SHC at once |
 | Rawscan service | on | Register the `bosch_shc.trigger_rawscan` action; turn off to hide it |
 | Suppress power sensors | off | Hide the watt + kWh sensors on Smart Plugs, Compact Plugs, and EMMA |
 | Suppress camera switches ★ | off | Hide the privacy / light / notification switches for Camera Eyes, 360, and Outdoor Gen2 |

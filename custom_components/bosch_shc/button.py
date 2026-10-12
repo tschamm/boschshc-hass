@@ -700,7 +700,7 @@ class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
     """Button that enables every disabled-by-default diagnostic entity for this SHC.
 
-    Diagnostic entities (Zigbee routing quality, communication quality,
+    Most diagnostic entities (Zigbee routing quality, communication quality,
     etc.) ship with entity_registry_enabled_default=False, HA's convention
     for advanced/noisy sensors. Not an SHC device, so this does not inherit
     SHCEntity — scoped to the config entry like SHCScenarioButton.

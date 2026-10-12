@@ -3427,6 +3427,7 @@ class TestUpdateEntityInformationElseBranch:
         ent._attr_name = "Dev"
         ent._attr_unique_id = "root1_dev1"
         ent.entity_id = "switch.test"
+        ent.hass = MagicMock()
         ent.update_attr_calls = 0
         ent.schedule_calls = 0
 

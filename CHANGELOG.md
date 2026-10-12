@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.32 — Valve position sensor enabled by default
+
+- **The valve position sensor of radiator thermostats is now enabled by
+  default** for newly created entities (reported on the Bosch community
+  forum). Existing installs keep their current state; press **Enable All
+  Diagnostics** or enable the entity once per thermostat.
+- **Entities whose add failed no longer log errors.** Their leftover SHC
+  callbacks are ignored instead of raising `'NoneType' object has no
+  attribute 'loop'` on every state update.
+
 ## 0.12.31 — No child-lock switch without ChildProtection
 
 - **Fixes a failed child-lock switch on SHC I light and shutter controls.**

@@ -439,6 +439,7 @@ class TestOnStateChangedCallback:
         ent._attr_name = "Dev"
         ent._attr_unique_id = "root1_dev1"
         ent.entity_id = "switch.test"
+        ent.hass = MagicMock()
         ent.update_attr_calls = 0
         ent.schedule_calls = 0
         return ent, svc, device_calls
@@ -449,6 +450,19 @@ class TestOnStateChangedCallback:
             new=AsyncMock(return_value=None),
         ):
             asyncio.run(ent.async_added_to_hass())
+
+    def test_callbacks_ignored_when_hass_is_none(self):
+        """An entity whose add failed (hass reset) must not raise on updates."""
+        ent, svc, device_calls = self._make_tracking_entity()
+        self._wire(ent)
+        ent.hass = None
+
+        svc_cb = [c for c in svc.calls if c[0] == "subscribe"][0][2]
+        dev_cb = device_calls[0][2]
+        svc_cb()
+        dev_cb()
+        assert ent.update_attr_calls == 0
+        assert ent.schedule_calls == 0
 
     def test_on_state_changed_calls_update_attr(self):
         ent, svc, _ = self._make_tracking_entity()

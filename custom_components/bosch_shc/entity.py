@@ -186,10 +186,14 @@ class SHCEntity(Entity):  # type: ignore[misc]
         await super().async_added_to_hass()
 
         def on_state_changed() -> None:
+            if self.hass is None:
+                return
             self._update_attr()
             self.schedule_update_ha_state()
 
         def update_entity_information() -> None:
+            if self.hass is None:
+                return
             if self._device.deleted:
                 # This callback fires on the event loop (SHCSessionAsync's
                 # long-poll is an asyncio.Task, not a background thread), but
