@@ -17,9 +17,12 @@
 - **Child-lock and silent-mode updates can no longer overwrite a newer
   setting** when presence changes quickly.
 - **No listener leak for disabled motion and smoke sensors** across reloads.
-- **Needs boschshcpy 0.6.16-beta.1**: a raising callback no longer stops
-  polling, polling can restart, stale short-poll answers no longer overwrite
-  newer state, and brightness-range writes are serialized.
+- **boschshcpy 0.6.16-beta.1 fixes (optional).** `requirements_test.txt` is
+  pinned to it; the manifest stays `>=0.6.13` because hassfest requires
+  compatibility with Home Assistant Core's own pin. With 0.6.16-beta.1
+  installed, a raising callback no longer stops polling, polling can restart,
+  stale short-poll answers no longer overwrite newer state, and
+  brightness-range writes are serialized.
 
 ## 0.12.32 — Valve position sensor enabled by default
 
