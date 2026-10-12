@@ -219,13 +219,13 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     def _dispatch_event(
         self, event_type: str, event_attributes: dict[str, Any]
     ) -> None:
-        """Dispatch the event on the event loop (thread-safe)."""
+        """Dispatch the event; must run on the event loop (write_ha_state)."""
         try:
             self._trigger_event(event_type, event_attributes)
         except ValueError:
             LOGGER.warning("Invalid event type %s for %s", event_type, self.entity_id)
             return
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()
 
 
 class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
@@ -293,13 +293,13 @@ class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     def _dispatch_event(
         self, event_type: str, event_attributes: dict[str, Any]
     ) -> None:
-        """Dispatch the event on the event loop (thread-safe)."""
+        """Dispatch the event; must run on the event loop (write_ha_state)."""
         try:
             self._trigger_event(event_type, event_attributes)
         except ValueError:
             LOGGER.warning("Invalid event type %s for %s", event_type, self.entity_id)
             return
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()
 
 
 class SHCScenarioEvent(EventEntity):  # type: ignore[misc]
@@ -373,9 +373,9 @@ class SHCScenarioEvent(EventEntity):  # type: ignore[misc]
     def _dispatch_event(
         self, event_type: str, event_attributes: dict[str, Any]
     ) -> None:
-        """Dispatch the event on the event loop (thread-safe)."""
+        """Dispatch the event; must run on the event loop (write_ha_state)."""
         self._trigger_event(event_type, event_attributes)
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()
 
 
 class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
@@ -429,9 +429,9 @@ class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     def _dispatch_event(
         self, event_type: str, event_attributes: dict[str, Any]
     ) -> None:
-        """Dispatch the event on the event loop (thread-safe)."""
+        """Dispatch the event; must run on the event loop (write_ha_state)."""
         self._trigger_event(event_type, event_attributes)
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()
 
 
 class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
@@ -494,9 +494,9 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     def _dispatch_event(
         self, event_type: str, event_attributes: dict[str, Any]
     ) -> None:
-        """Dispatch the event on the event loop (thread-safe)."""
+        """Dispatch the event; must run on the event loop (write_ha_state)."""
         self._trigger_event(event_type, event_attributes)
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()
 
 
 class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
@@ -559,6 +559,6 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     def _dispatch_event(
         self, event_type: str, event_attributes: dict[str, Any]
     ) -> None:
-        """Dispatch the event on the event loop (thread-safe)."""
+        """Dispatch the event; must run on the event loop (write_ha_state)."""
         self._trigger_event(event_type, event_attributes)
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()

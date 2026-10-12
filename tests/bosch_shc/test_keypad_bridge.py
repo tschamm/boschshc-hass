@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from boschshcpy import SwitchConfiguration
 from boschshcpy.exceptions import SHCException
+from homeassistant.const import Platform
 
 from custom_components.bosch_shc.keypad_bridge import (
     _SCHEMA_VERSION,
@@ -815,3 +816,99 @@ class TestFailureHandling:
             f"d2_2_PRESS_LONG_{_SCHEMA_VERSION}",
         ):
             assert key in bridge_map
+
+
+class TestCleanupRetainsLeakedIds:
+    """Codex findings: failed deletes / partial survivors must not lose ids."""
+
+    def test_failed_delete_keeps_ids_for_retry(self):
+        session = _make_session(
+            [], userdefinedstates=_ids("u1"), automation_rules=_ids("a1")
+        )
+        session.async_delete_automation_rule.side_effect = SHCException("x")
+        session.async_delete_userdefinedstate.side_effect = SHCException("x")
+        key = f"d1_1_PRESS_SHORT_{_SCHEMA_VERSION}"
+        old = {key: {"userdefinedstate_id": "u1", "automation_id": "a1"}}
+        entry = _make_entry(data={DATA_KEYPAD_BRIDGE_MAP: old}, session=session)
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=False))
+
+        hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_partial_survivor_is_deleted_before_recreate(
+        self, mock_remove_stale_entity
+    ):
+        device = _make_device("d1", "Shutter")
+        # Rule missing out-of-band, state "u0" survived.
+        session = _make_session([device], userdefinedstates=_ids("u0"))
+        order: list[str] = []
+
+        async def delete_state(uds_id):
+            order.append(f"delete:{uds_id}")
+            session.userdefinedstates[:] = [
+                s for s in session.userdefinedstates if s.id != uds_id
+            ]
+
+        async def create_state(*args, **kwargs):
+            order.append("create")
+            return SimpleNamespace(id="nu")
+
+        session.async_delete_userdefinedstate.side_effect = delete_state
+        session.async_create_userdefinedstate.side_effect = create_state
+        session.async_create_automation_rule.return_value = SimpleNamespace(id="na")
+        key = _D1_ALL_KEYS[0]
+        entry = _make_entry(
+            data={DATA_KEYPAD_BRIDGE_MAP: {
+                key: {"userdefinedstate_id": "u0", "automation_id": "a0"}}},
+            session=session,
+        )
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        session.async_delete_automation_rule.assert_not_awaited()
+        assert order.index("delete:u0") < order.index("create")
+        sent = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        replaced = sent[DATA_KEYPAD_BRIDGE_MAP][key]
+        assert replaced["userdefinedstate_id"] == "nu"
+        assert replaced["automation_id"] == "na"
+        # The replaced state's switch registry entry is removed, no ghost.
+        mock_remove_stale_entity.assert_any_await(
+            hass, Platform.SWITCH, "AA:BB:CC:DD:EE:FF_u0"
+        )
+
+    def test_undeletable_survivor_blocks_replacement(self):
+        device = _make_device("d1", "Shutter")
+        session = _make_session([device], userdefinedstates=_ids("u0"))
+        session.async_delete_userdefinedstate.side_effect = SHCException("x")
+        session.async_create_userdefinedstate.return_value = SimpleNamespace(id="nu")
+        session.async_create_automation_rule.return_value = SimpleNamespace(id="na")
+        key = _D1_ALL_KEYS[0]
+        entry = _make_entry(
+            data={DATA_KEYPAD_BRIDGE_MAP: {
+                key: {"userdefinedstate_id": "u0", "automation_id": "a0"}}},
+            session=session,
+        )
+        hass = _make_hass()
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        # The 3 other keys are created; the survivor key keeps its old ids.
+        sent = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        assert sent[DATA_KEYPAD_BRIDGE_MAP][key]["userdefinedstate_id"] == "u0"
+
+    def test_failed_rollback_is_tracked_as_pending(self):
+        device = _make_device("d1", "Shutter")
+        session = _make_session([device])
+        session.async_create_userdefinedstate.return_value = SimpleNamespace(id="u9")
+        session.async_create_automation_rule.side_effect = SHCException("boom")
+        session.async_delete_userdefinedstate.side_effect = SHCException("boom")
+        hass = _make_hass()
+        entry = _make_entry(session=session)
+
+        _run(async_sync_keypad_bridge(hass, entry, enabled=True))
+
+        sent = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        pending = sent[DATA_KEYPAD_BRIDGE_MAP]["pending_u9"]
+        assert pending["userdefinedstate_id"] == "u9"

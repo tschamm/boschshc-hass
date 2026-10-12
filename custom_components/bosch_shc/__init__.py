@@ -733,11 +733,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                     err,
                 )
 
+        _child_lock_batch = asyncio.Lock()
+
         async def _apply_child_lock(lock_state: bool) -> None:
-            """Set child lock on all SHC devices (async; on the event loop)."""
-            thermostats, bool_devices = _child_lock_devices(session)
-            for device in thermostats + bool_devices:
-                await _set_child_lock_one(device, lock_state)
+            """Set child lock on all SHC devices (async; on the event loop).
+
+            Batches run one at a time and stop once superseded, so an older
+            batch can't overwrite devices a newer one already set.
+            """
+            async with _child_lock_batch:
+                thermostats, bool_devices = _child_lock_devices(session)
+                for device in thermostats + bool_devices:
+                    if _last_lock_state[0] != lock_state:
+                        return
+                    await _set_child_lock_one(device, lock_state)
 
         @callback  # type: ignore[untyped-decorator]
         def _evaluate_child_lock(*_args: Any) -> None:
@@ -856,6 +865,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                     err,
                 )
 
+        _silent_batch = asyncio.Lock()
+
         async def _apply_silent(silent_on: bool) -> None:
             """Set silent mode on all capable SHC devices (async; on the loop)."""
             dh = session.device_helper
@@ -866,8 +877,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 for d in (list(dh.thermostats) + list(dh.roomthermostats))
                 if getattr(d, "supports_silentmode", False)
             ]
-            for device in devices:
-                await _set_silent_one(device, silent_on)
+            async with _silent_batch:
+                for device in devices:
+                    if _last_silent_state[0] != silent_on:
+                        return  # superseded by a newer batch
+                    await _set_silent_one(device, silent_on)
 
         @callback  # type: ignore[untyped-decorator]
         def _evaluate_silent(*_args: Any) -> None:
@@ -970,22 +984,40 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
 
     session.subscribe_scenario_callback("shc", _scenario_trigger)
 
-    for switch_device in (
-        session.device_helper.universal_switches if session.device_helper else []
-    ):
-        event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
-        await event_listener.async_setup()
-        entry.runtime_data.switch_event_listeners.append(event_listener)
+    try:
+        for switch_device in (
+            session.device_helper.universal_switches if session.device_helper else []
+        ):
+            event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
+            await event_listener.async_setup()
+            entry.runtime_data.switch_event_listeners.append(event_listener)
 
-    # Register rawscan diagnostic service when the option is enabled (default: on).
-    # The service is domain-scoped but opt-in: only register when at least one
-    # entry enables it; unregister when the last enabling entry is unloaded.
-    if entry.options.get(OPT_ENABLE_RAWSCAN, True):
-        _register_rawscan_service(hass)
-    _register_export_zigbee_topology_service(hass)
-    _register_refresh_zigbee_routing_service(hass)
+        # Register rawscan diagnostic service when the option is enabled (default: on).
+        # The service is domain-scoped but opt-in: only register when at least one
+        # entry enables it; unregister when the last enabling entry is unloaded.
+        if entry.options.get(OPT_ENABLE_RAWSCAN, True):
+            _register_rawscan_service(hass)
+        _register_export_zigbee_topology_service(hass)
+        _register_refresh_zigbee_routing_service(hass)
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except BaseException:
+        # Polling already runs; async_unload_entry is not called for a failed
+        # setup, so tear it down here (listeners, scenario cb, session).
+        session.unsubscribe_scenario_callback("shc")
+        for listener in entry.runtime_data.switch_event_listeners:
+            listener.shutdown()
+        entry.runtime_data.switch_event_listeners.clear()
+        if entry.runtime_data.polling_handler is not None:
+            entry.runtime_data.polling_handler()
+        task = entry.runtime_data.zigbee_routing_refresh_task
+        if task is not None:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await task
+        with contextlib.suppress(Exception):
+            await session.stop_polling()
+        raise
 
     # Surface a dismissible tip when cameras are present and the dedicated
     # Camera Tool is not already installed; remove it otherwise.
@@ -1017,6 +1049,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     runtime: SHCData = entry.runtime_data
+    # Platforms first: if they refuse to unload the entities stay, so the
+    # session/polling they depend on must stay alive too.
+    unload_ok = bool(await hass.config_entries.async_unload_platforms(entry, PLATFORMS))
+    if not unload_ok:
+        return False
     runtime.session.unsubscribe_scenario_callback("shc")
 
     if runtime.polling_handler is not None:
@@ -1041,7 +1078,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await runtime.zigbee_routing_refresh_task
     await runtime.session.stop_polling()
 
-    unload_ok = bool(await hass.config_entries.async_unload_platforms(entry, PLATFORMS))
     if unload_ok:
         # Issue ids are scoped per entry (see async_setup_entry) so a removed
         # controller's warnings don't linger in Repairs forever.

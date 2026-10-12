@@ -1295,6 +1295,22 @@ class TestMotionDetectionSensorInit:
         asyncio.run(_add())
         assert "md-init2_eventlistener" in cb_store
 
+    def test_stop_listener_registered_on_add_not_in_init(self):
+        """A disabled entity is never added, so __init__ must not listen."""
+        dev = _make_base_device("md-stop", device_services=[])
+        dev.latestmotion = None
+        hass = _make_hass()
+        hass.bus.async_listen_once = MagicMock(return_value=MagicMock())
+        sensor = MotionDetectionSensor(hass=hass, device=dev, entry_id="E1")
+        hass.bus.async_listen_once.assert_not_called()
+
+        with patch(
+            "custom_components.bosch_shc.binary_sensor.async_get_device_id",
+            return_value="ha-device-id",
+        ):
+            asyncio.run(sensor.async_added_to_hass())
+        hass.bus.async_listen_once.assert_called_once()
+
     def test_input_events_handler_fires_event(self):
         fired = []
         lm_svc = _make_service("LatestMotion")

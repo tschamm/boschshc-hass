@@ -1212,6 +1212,117 @@ class TestCreateCredentialsAndValidate:
                     hass, "192.168.1.1", self._user_input(), MagicMock()
                 )
 
+    def test_failed_repair_restores_existing_pem_files(self, tmp_path):
+        """A failed re-pair must keep the previous cert/key, not delete them."""
+        import os
+
+        hass = _new_make_hass(str(tmp_path))
+        os.makedirs(tmp_path / DOMAIN)
+        cert = tmp_path / DOMAIN / f"{CONF_SHC_CERT}_h.pem"
+        key = tmp_path / DOMAIN / f"{CONF_SHC_KEY}_h.pem"
+        cert.write_bytes(b"OLDCERT")
+        key.write_bytes(b"OLDKEY")
+        session_mock = MagicMock()
+        session_mock.authenticate.side_effect = SHCConnectionError()
+
+        def fake_write(h, filename, asset):
+            (tmp_path / DOMAIN / filename).write_bytes(asset)
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.SHCRegisterClient",
+        ) as reg_cls, patch(
+            "custom_components.bosch_shc.config_flow.SHCSession",
+            return_value=session_mock,
+        ), patch(
+            "custom_components.bosch_shc.config_flow.write_tls_asset",
+            side_effect=fake_write,
+        ):
+            reg_cls.return_value.register = MagicMock(
+                return_value={"token": "p:h", "cert": b"NEWC", "key": b"NEWK"}
+            )
+            with pytest.raises(SHCConnectionError):
+                create_credentials_and_validate(
+                    hass, "192.168.1.1", self._user_input(), MagicMock()
+                )
+
+        assert cert.read_bytes() == b"OLDCERT"
+        assert key.read_bytes() == b"OLDKEY"
+
+    def test_key_write_failure_restores_cert_and_key(self, tmp_path):
+        """A failing key write after the cert write must not leave a mixed pair."""
+        import os
+
+        hass = _new_make_hass(str(tmp_path))
+        os.makedirs(tmp_path / DOMAIN)
+        cert = tmp_path / DOMAIN / f"{CONF_SHC_CERT}_h.pem"
+        key = tmp_path / DOMAIN / f"{CONF_SHC_KEY}_h.pem"
+        cert.write_bytes(b"OLDCERT")
+        key.write_bytes(b"OLDKEY")
+
+        def fake_write(h, filename, asset):
+            if CONF_SHC_KEY in filename:
+                raise OSError("disk full")
+            (tmp_path / DOMAIN / filename).write_bytes(asset)
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.SHCRegisterClient",
+        ) as reg_cls, patch(
+            "custom_components.bosch_shc.config_flow.write_tls_asset",
+            side_effect=fake_write,
+        ):
+            reg_cls.return_value.register = MagicMock(
+                return_value={"token": "p:h", "cert": b"NEWC", "key": b"NEWK"}
+            )
+            with pytest.raises(OSError, match="disk full"):
+                create_credentials_and_validate(
+                    hass, "192.168.1.1", self._user_input(), MagicMock()
+                )
+
+        assert cert.read_bytes() == b"OLDCERT"
+        assert key.read_bytes() == b"OLDKEY"
+
+    def test_restore_failure_does_not_mask_original_error(self, tmp_path):
+        """A failing restore of one file is swallowed; the other is still restored."""
+        import os
+
+        hass = _new_make_hass(str(tmp_path))
+        os.makedirs(tmp_path / DOMAIN)
+        cert = tmp_path / DOMAIN / f"{CONF_SHC_CERT}_h.pem"
+        key = tmp_path / DOMAIN / f"{CONF_SHC_KEY}_h.pem"
+        cert.write_bytes(b"OLDCERT")
+        key.write_bytes(b"OLDKEY")
+        session_mock = MagicMock()
+        session_mock.authenticate.side_effect = SHCAuthenticationError()
+
+        def fake_write(h, filename, asset):
+            (tmp_path / DOMAIN / filename).write_bytes(asset)
+
+        real_open = os.open
+
+        def flaky_open(path, *args, **kwargs):
+            if str(path) == str(cert):
+                raise OSError("read-only")
+            return real_open(path, *args, **kwargs)
+
+        with patch(
+            "custom_components.bosch_shc.config_flow.SHCRegisterClient",
+        ) as reg_cls, patch(
+            "custom_components.bosch_shc.config_flow.SHCSession",
+            return_value=session_mock,
+        ), patch(
+            "custom_components.bosch_shc.config_flow.write_tls_asset",
+            side_effect=fake_write,
+        ), patch("custom_components.bosch_shc.config_flow.os.open", flaky_open):
+            reg_cls.return_value.register = MagicMock(
+                return_value={"token": "p:h", "cert": b"NEWC", "key": b"NEWK"}
+            )
+            with pytest.raises(SHCAuthenticationError):
+                create_credentials_and_validate(
+                    hass, "192.168.1.1", self._user_input(), MagicMock()
+                )
+
+        assert key.read_bytes() == b"OLDKEY"
+
     def test_propagates_connection_error(self):
         hass = _new_make_hass()
         register_mock = MagicMock(side_effect=SHCConnectionError())
@@ -1644,7 +1755,7 @@ class TestAsyncStepRepairCredentials:
             )
 
         flow.async_update_reload_and_abort.assert_called_once()
-        new_data = flow.async_update_reload_and_abort.call_args[1]["data"]
+        new_data = flow.async_update_reload_and_abort.call_args[1]["data_updates"]
         assert new_data[CONF_TOKEN] == "pfx:newhostname"
         assert new_data[CONF_HOSTNAME] == "newhostname"
         assert "newhostname" in new_data[CONF_SSL_CERTIFICATE]
@@ -2484,7 +2595,7 @@ class TestAsyncStepCredentialsExtraCoverage:
         flow.async_update_reload_and_abort.assert_called_once()
         call_args = flow.async_update_reload_and_abort.call_args
         assert call_args[0][0] is existing_entry
-        data = call_args[1]["data"]
+        data = call_args[1]["data_updates"]
         assert data[CONF_TOKEN] == "tok:newhostname"
 
     def test_auth_error_shows_invalid_auth(self):
@@ -3210,7 +3321,8 @@ class TestRepairCredentials:
         call_args = flow.async_update_reload_and_abort.call_args
         # First positional arg is the entry
         assert call_args[0][0] is entry
-        new_data = call_args[1]["data"]
+        assert "data" not in call_args[1]  # data= would wipe keypad_bridge_map
+        new_data = call_args[1]["data_updates"]
         assert new_data[CONF_TOKEN] == "new-token:newhostname"
         assert new_data[CONF_HOSTNAME] == "newhostname"
         assert "newhostname" in new_data[CONF_SSL_CERTIFICATE]

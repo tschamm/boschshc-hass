@@ -270,6 +270,11 @@ async def _create_bridge_entry(
             LOGGER.debug(
                 "Keypad bridge: rollback delete failed for %s: %s", label, cleanup_err
             )
+            # Track the leaked state so a later sync retries its deletion.
+            bridge_map[f"{_PENDING_PREFIX}{userdefinedstate.id}"] = {
+                "userdefinedstate_id": userdefinedstate.id,
+                "automation_id": "",
+            }
         return
     bridge_map[key] = {
         "userdefinedstate_id": userdefinedstate.id,
@@ -277,6 +282,43 @@ async def _create_bridge_entry(
         "device_id": device_id,
         "attr_name": attr_name,
     }
+
+
+_PENDING_PREFIX = "pending_"
+
+
+async def _delete_bridge_objects(
+    session: Any, key: str, entry_ids: dict[str, str], *, only_present: bool
+) -> bool:
+    """Best-effort delete of a bridge entry's rule + state; True if both are gone.
+
+    A failed delete leaves the id in the session's collections (they are only
+    pruned on success), which is how a leftover is told from "already gone".
+    """
+    automation_id = entry_ids.get("automation_id", "")
+    uds_id = entry_ids["userdefinedstate_id"]
+    if automation_id and (
+        not only_present or automation_id in {r.id for r in session.automation_rules}
+    ):
+        try:
+            await session.async_delete_automation_rule(automation_id)
+        except SHCException as err:
+            LOGGER.debug(
+                "Keypad bridge cleanup: failed to delete automation for %s: %s",
+                key,
+                err,
+            )
+    if not only_present or uds_id in {s.id for s in session.userdefinedstates}:
+        try:
+            await session.async_delete_userdefinedstate(uds_id)
+        except SHCException as err:
+            LOGGER.debug(
+                "Keypad bridge cleanup: failed to delete state for %s: %s", key, err
+            )
+    return not (
+        (automation_id and automation_id in {r.id for r in session.automation_rules})
+        or uds_id in {s.id for s in session.userdefinedstates}
+    )
 
 
 def _bridge_entry_exists(session: Any, entry_ids: dict[str, str]) -> bool:
@@ -291,6 +333,27 @@ def _bridge_entry_exists(session: Any, entry_ids: dict[str, str]) -> bool:
     return entry_ids["userdefinedstate_id"] in {
         state.id for state in session.userdefinedstates
     } and entry_ids["automation_id"] in {rule.id for rule in session.automation_rules}
+
+
+async def _keep_or_clear_entry(
+    hass: HomeAssistant,
+    session: Any,
+    bridge_map: dict[str, dict[str, str]],
+    key: str,
+    mac: str | None,
+) -> bool:
+    """True to keep the entry as is; False once a broken one is cleared."""
+    entry_ids = bridge_map[key]
+    if _bridge_entry_exists(session, entry_ids):
+        return True
+    if not await _delete_bridge_objects(session, key, entry_ids, only_present=True):
+        return True
+    # The replaced state's switch entity would otherwise stay as a ghost.
+    if mac is not None:
+        await async_remove_stale_entity(
+            hass, Platform.SWITCH, f"{mac}_{entry_ids['userdefinedstate_id']}"
+        )
+    return False
 
 
 async def async_sync_keypad_bridge(
@@ -348,22 +411,14 @@ async def async_sync_keypad_bridge(
     for key in list(bridge_map):
         if key in wanted_keys:
             continue
-        entry_ids = bridge_map.pop(key)
-        try:
-            await session.async_delete_automation_rule(entry_ids["automation_id"])
-        except SHCException as err:
-            LOGGER.debug(
-                "Keypad bridge cleanup: failed to delete automation for %s: %s",
-                key,
-                err,
-            )
+        entry_ids = bridge_map[key]
+        if not await _delete_bridge_objects(
+            session, key, entry_ids, only_present=False
+        ):
+            # Keep the ids so the next sync retries instead of leaking them.
+            continue
+        del bridge_map[key]
         uds_id = entry_ids["userdefinedstate_id"]
-        try:
-            await session.async_delete_userdefinedstate(uds_id)
-        except SHCException as err:
-            LOGGER.debug(
-                "Keypad bridge cleanup: failed to delete state for %s: %s", key, err
-            )
         # The now-deleted UserDefinedState's switch entity (switch.py) would
         # otherwise linger as a permanently "unavailable" registry ghost.
         if mac is not None:
@@ -375,8 +430,8 @@ async def async_sync_keypad_bridge(
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     key = f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
-                    if key in bridge_map and _bridge_entry_exists(
-                        session, bridge_map[key]
+                    if key in bridge_map and await _keep_or_clear_entry(
+                        hass, session, bridge_map, key, mac
                     ):
                         continue
                     label = f"{device.name} Button {key_code} {button_event}"
@@ -404,7 +459,9 @@ async def async_sync_keypad_bridge(
         for device in swd2_devices:
             for button_press_state in _SWD2_BUTTON_STATES:
                 key = f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
-                if key in bridge_map and _bridge_entry_exists(session, bridge_map[key]):
+                if key in bridge_map and await _keep_or_clear_entry(
+                    hass, session, bridge_map, key, mac
+                ):
                     continue
                 label = f"{device.name} Button {button_press_state}"
                 press = "Short" if button_press_state == "ON_SHORT_PRESS" else "Long"

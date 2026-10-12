@@ -184,6 +184,26 @@ def write_tls_asset(hass: core.HomeAssistant, filename: str, asset: bytes) -> No
         os.fsync(file_handle.fileno())
 
 
+def _read_bytes_or_none(path: str) -> bytes | None:
+    """Return the file's bytes, or None if it can't be read."""
+    try:
+        with open(path, "rb") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
+def _restore_file(path: str, old_bytes: bytes | None) -> None:
+    """Put back a file's previous bytes, or remove it if it did not exist."""
+    if old_bytes is None:
+        with suppress(FileNotFoundError):
+            os.remove(path)
+        return
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "wb") as restored:
+        restored.write(old_bytes)
+
+
 def create_credentials_and_validate(
     hass: core.HomeAssistant,
     host: str,
@@ -198,25 +218,28 @@ def create_credentials_and_validate(
         hostname = result["token"].split(":", 1)[1]
         cert_path = hass.config.path(DOMAIN, CONF_SHC_CERT + "_" + hostname + ".pem")
         key_path = hass.config.path(DOMAIN, CONF_SHC_KEY + "_" + hostname + ".pem")
-        write_tls_asset(hass, CONF_SHC_CERT + "_" + hostname + ".pem", result["cert"])
-        write_tls_asset(hass, CONF_SHC_KEY + "_" + hostname + ".pem", result["key"])
-
-        session = SHCSession(
-            host,
-            cert_path,
-            key_path,
-            True,
-            zeroconf_instance,
-        )
+        # Re-pairing the same SHC reuses these paths; keep the old bytes so a
+        # failed attempt restores them instead of deleting a working pair.
+        previous = {path: _read_bytes_or_none(path) for path in (cert_path, key_path)}
         try:
+            write_tls_asset(
+                hass, CONF_SHC_CERT + "_" + hostname + ".pem", result["cert"]
+            )
+            write_tls_asset(hass, CONF_SHC_KEY + "_" + hostname + ".pem", result["key"])
+            session = SHCSession(
+                host,
+                cert_path,
+                key_path,
+                True,
+                zeroconf_instance,
+            )
             session.authenticate()
         except Exception:
-            # Don't leave an orphaned cert/key pair on disk for a pairing
-            # attempt that didn't complete — the caller's except clauses
-            # handle showing the user an error; re-raise unchanged.
-            for path in (cert_path, key_path):
-                with suppress(FileNotFoundError):
-                    os.remove(path)
+            # Restore each file on its own so one failure cannot skip the
+            # other or mask the original error, which is re-raised unchanged.
+            for path, old_bytes in previous.items():
+                with suppress(OSError):
+                    _restore_file(path, old_bytes)
             raise
 
     return result
@@ -404,7 +427,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
                     }
                     return self.async_update_reload_and_abort(
                         entry,
-                        data=new_entry_data,
+                        data_updates=new_entry_data,
                     )
 
         current_host = entry.data.get(CONF_HOST, "")
@@ -503,7 +526,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
                     if existing_entry:
                         return self.async_update_reload_and_abort(
                             existing_entry,
-                            data=entry_data,
+                            data_updates=entry_data,
                         )
 
                     return self.async_create_entry(

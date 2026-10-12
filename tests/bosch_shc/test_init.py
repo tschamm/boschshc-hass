@@ -933,6 +933,58 @@ class TestAsyncUnloadEntry:
         _, hass, entry, _, _ = self._setup_and_unload(fake_hass, fake_entry, fake_session)
         hass.config_entries.async_unload_platforms.assert_called_once()
 
+    def test_failed_platform_setup_stops_polling(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """A raise after polling started must not leave polling running."""
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        dr_mock = _make_fake_device_registry()
+        poll_handler = MagicMock()
+        fake_hass.bus.async_listen_once = MagicMock(return_value=poll_handler)
+        fake_hass.config_entries.async_forward_entry_setups = AsyncMock(
+            side_effect=ImportError("boom")
+        )
+        with (
+            patch(PATCH_SESSION, return_value=fake_session),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            with pytest.raises(ImportError):
+                _run(async_setup_entry(fake_hass, fake_entry))
+
+        fake_session.stop_polling.assert_awaited()
+        fake_session.unsubscribe_scenario_callback.assert_called_with("shc")
+        poll_handler.assert_called_once()
+
+    def test_rejected_platform_unload_keeps_session_alive(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """If platforms refuse to unload, polling/session must stay running."""
+        from custom_components.bosch_shc.__init__ import (
+            async_setup_entry,
+            async_unload_entry,
+        )
+
+        dr_mock = _make_fake_device_registry()
+        fake_hass.bus.async_listen_once = MagicMock(return_value=MagicMock())
+        with (
+            patch(PATCH_SESSION, return_value=fake_session),
+            patch(PATCH_DR_GET, return_value=dr_mock),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            _run(async_setup_entry(fake_hass, fake_entry))
+        fake_hass.config_entries.async_unload_platforms = AsyncMock(
+            return_value=False
+        )
+        before = fake_session.stop_polling.await_count
+
+        assert _run(async_unload_entry(fake_hass, fake_entry)) is False
+        assert fake_session.stop_polling.await_count == before
+        fake_session.unsubscribe_scenario_callback.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # Tests: B2 — no update listener (options-flow auto-reload)
@@ -5081,3 +5133,34 @@ class TestAsyncRemoveConfigEntryDevice:
             async_remove_config_entry_device(SimpleNamespace(), entry, device_entry)
         )
         assert result is False
+
+
+class TestSupersededChildLockBatch:
+    def test_older_batch_does_not_overwrite_newer_state(
+        self, fake_hass_presence, fake_entry, fake_session_presence
+    ):
+        """A batch superseded mid-run must stop instead of writing stale state."""
+        dev1, dev2 = _make_device("d1"), _make_device("d2")
+        fake_session_presence.device_helper.thermostats = [dev1, dev2]
+        hass, entry, state_cb = _do_setup(
+            fake_hass_presence, fake_entry, fake_session_presence,
+            {OPT_PRESENCE_ENTITY: ["person.felix"]},
+            capture_state_cb=True,
+            hass_states={"person.felix": "home"},
+        )
+        # Startup scheduled the lock=True batch as the first task.
+        older = hass.async_create_task.call_args_list[0][0][0]
+        hass.async_create_task.reset_mock()
+
+        async def _flip_then_write(value):
+            # Presence changes while the first write is in flight.
+            hass._set_state("person.felix", "not_home")
+            state_cb(_state_event("not_home", "home"))
+
+        dev1.async_set_child_lock.side_effect = _flip_then_write
+        _run(older)
+        newer = hass.async_create_task.call_args[0][0]
+        dev1.async_set_child_lock.side_effect = None
+        _run(newer)
+
+        dev2.async_set_child_lock.assert_awaited_once_with(False)

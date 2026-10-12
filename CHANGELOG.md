@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.12.33 — Setup, unload and pairing robustness
+
+- **Failed setup no longer leaves polling running.** If loading the
+  platforms fails, the session, listeners and background tasks are stopped.
+  Unloading now stops the session only after the platforms unloaded.
+- **Re-pairing keeps your certificate on failure.** A failed validation
+  restores the previous certificate and key instead of deleting them.
+- **Reauth and credential repair keep the keypad-bridge map**, so the
+  bridged rules and states are no longer orphaned.
+- **Keypad bridge cleanup is retried.** Failed deletes and rollbacks are
+  tracked and retried on the next sync, and a half-missing rule or state is
+  cleaned up (including its old switch entity) before it is recreated.
+- **Two button events in one poll are both delivered**, for example a long
+  press followed by its release.
+- **Child-lock and silent-mode updates can no longer overwrite a newer
+  setting** when presence changes quickly.
+- **No listener leak for disabled motion and smoke sensors** across reloads.
+- **Needs boschshcpy 0.6.16-beta.1**: a raising callback no longer stops
+  polling, polling can restart, stale short-poll answers no longer overwrite
+  newer state, and brightness-range writes are serialized.
+
 ## 0.12.32 — Valve position sensor enabled by default
 
 - **The valve position sensor of radiator thermostats is now enabled by

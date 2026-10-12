@@ -788,13 +788,14 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
                 self._service = service
                 break
 
-        self._ha_stop_unsub = hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
-        )
-
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events and cache device_id."""
         await super().async_added_to_hass()
+        # Here, not in __init__: HA never calls async_will_remove_from_hass
+        # for a disabled entity, which would leak the listener.
+        self._ha_stop_unsub = self.hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
         self._cached_device_id = await async_get_device_id(
             self.hass, self._device.id, self._entry_id
         )
@@ -916,13 +917,16 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
                 self._service = service
                 break
 
-        self._ha_stop_unsub: Callable[[], None] | None = hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
-        )
+        self._ha_stop_unsub: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events and cache device_id."""
         await super().async_added_to_hass()
+        # Here, not in __init__: HA never calls async_will_remove_from_hass
+        # for a disabled entity, which would leak the listener.
+        self._ha_stop_unsub = self._hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
         self._cached_device_id = await async_get_device_id(
             self._hass, self._device.id, self._entry_id
         )
@@ -1105,13 +1109,16 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
                 self._service = service
                 break
 
-        self._ha_stop_unsub: Callable[[], None] | None = hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
-        )
+        self._ha_stop_unsub: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events and cache device_id."""
         await super().async_added_to_hass()
+        # Here, not in __init__: HA never calls async_will_remove_from_hass
+        # for a disabled entity, which would leak the listener.
+        self._ha_stop_unsub = self._hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop
+        )
         self._cached_device_id = await async_get_device_id(
             self._hass, self._device.id, self._entry_id
         )

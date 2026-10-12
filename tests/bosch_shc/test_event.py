@@ -103,7 +103,7 @@ def _make_hass_sync():
     """Return a minimal hass mock whose call_soon_threadsafe executes the fn immediately.
 
     This allows unit tests that drive _event_callback() directly to still verify
-    _trigger_event/schedule_update_ha_state without needing a real event loop.
+    _trigger_event/async_write_ha_state without needing a real event loop.
     """
     hass = MagicMock(name="hass")
 
@@ -861,7 +861,7 @@ def _make_universal_switch_entity(
     entity.entity_id = f"event.{name.lower().replace(' ', '_')}_button_{key_id.lower()}"
     entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
@@ -1023,7 +1023,7 @@ class TestUniversalSwitchEventValueError:
         entity._trigger_event = MagicMock(side_effect=ValueError("bad type"))
         entity._event_callback()
         entity._trigger_event.assert_called_once()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_value_error_timestamp_still_advanced(self):
         """Even on ValueError the timestamp guard advances to prevent re-raise on replay."""
@@ -1117,7 +1117,7 @@ class TestUniversalSwitchEventDispatch:
         entity.entity_id = "event.test_switch_button_upper_button"
         entity._attr_unique_id = "root-1_sw-1_UPPER_BUTTON"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_event_callback_calls_dispatch_directly(self):
@@ -1135,7 +1135,7 @@ class TestUniversalSwitchEventDispatch:
     def test_dispatch_event_calls_schedule_update(self):
         entity = self._make_entity()
         entity._dispatch_event("PRESS_SHORT", {"ATTR_EVENT_TYPE": "PRESS_SHORT"})
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_dispatch_event_value_error_logs_warning(self):
         entity = self._make_entity()
@@ -1143,7 +1143,7 @@ class TestUniversalSwitchEventDispatch:
         with patch("custom_components.bosch_shc.event.LOGGER") as mock_log:
             entity._dispatch_event("PRESS_SHORT", {})
             mock_log.warning.assert_called_once()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
 
 def _make_bare_usw(
@@ -1167,7 +1167,7 @@ def _make_bare_usw(
     entity._attr_unique_id = f"root:x_{device_id}_UPPER_BUTTON"
     entity.entity_id = "event.sw_button_upper_button"
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     # _event_callback dispatches via hass.loop.call_soon_threadsafe; use a
     # synchronous shim so _trigger_event assertions work in unit tests.
     entity.hass = _make_hass_sync()
@@ -1182,14 +1182,14 @@ class TestUniversalSwitchEventDedupGuards:
         entity = _make_bare_usw(eventtype=None)
         entity._event_callback()
         entity._trigger_event.assert_not_called()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_switch_on_non_press_type_returns_early(self):
         """SWITCH_ON is not in press types -> return early."""
         entity = _make_bare_usw(eventtype=_SWITCH_ON, eventtimestamp=999)
         entity._event_callback()
         entity._trigger_event.assert_not_called()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_duplicate_timestamp_skips_event(self):
         """Same eventtimestamp as _last_fired_timestamp -> duplicate guard fires, no trigger."""
@@ -1198,7 +1198,7 @@ class TestUniversalSwitchEventDedupGuards:
         )
         entity._event_callback()
         entity._trigger_event.assert_not_called()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_duplicate_timestamp_does_not_advance_timestamp(self):
         """Duplicate guard: _last_fired_timestamp stays at the existing value."""
@@ -1251,7 +1251,7 @@ class TestUniversalSwitchEventNoneEarlyReturn:
         entity._attr_unique_id = "root-1_sw-1_UPPER_BUTTON"
         entity.entity_id = "event.switch_button_upper_button"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_none_eventtype_no_call_soon_threadsafe(self):
@@ -1267,7 +1267,7 @@ class TestUniversalSwitchEventNoneEarlyReturn:
     def test_none_eventtype_no_schedule_update(self):
         entity = self._make_entity_none()
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_none_eventtype_last_fired_unchanged(self):
         entity = self._make_entity_none()
@@ -1300,7 +1300,7 @@ def _make_entity(eventtype, eventtimestamp, root_device_id="root1", device_id="d
 
     # HA EventEntity methods we need to observe / stub
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     # device_id is a property on SHCEntity reading _device.id - already set above
 
     # Wire up a sync hass so call_soon_threadsafe executes immediately in tests
@@ -1316,19 +1316,19 @@ class TestEventTypeGuard:
         entity = _make_entity(eventtype=_SWITCH_ON, eventtimestamp=1000)
         entity._event_callback()
         entity._trigger_event.assert_not_called()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_switch_off_does_not_fire(self):
         entity = _make_entity(eventtype=_SWITCH_OFF, eventtimestamp=1001)
         entity._event_callback()
         entity._trigger_event.assert_not_called()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
     def test_none_eventtype_does_not_fire(self):
         entity = _make_entity(eventtype=None, eventtimestamp=1002)
         entity._event_callback()
         entity._trigger_event.assert_not_called()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
 
 class TestTimestampGuard:
@@ -1402,13 +1402,13 @@ class TestPressTypesFire:
     def test_schedule_update_called_on_fire(self):
         entity = _make_entity(eventtype=_PRESS_SHORT, eventtimestamp=400)
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_schedule_update_not_called_when_suppressed(self):
         """When callback is suppressed (non-press), schedule_update must not be called."""
         entity = _make_entity(eventtype=_SWITCH_ON, eventtimestamp=500)
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_not_called()
+        entity.async_write_ha_state.assert_not_called()
 
 
 class TestBatteryUpdateSimulation:
@@ -1481,7 +1481,7 @@ def _make_light_control_event(
     entity.entity_id = "event.lichtsteuerung_button"
     entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
@@ -1587,10 +1587,10 @@ class TestLightControlDispatchEventValueError:
         ent = LightControlButtonEvent.__new__(LightControlButtonEvent)
         ent.entity_id = "event.lc"
         ent._trigger_event = MagicMock(side_effect=ValueError("bad type"))
-        ent.schedule_update_ha_state = MagicMock()
+        ent.async_write_ha_state = MagicMock()
 
         ent._dispatch_event("BAD_TYPE", {})
-        ent.schedule_update_ha_state.assert_not_called()
+        ent.async_write_ha_state.assert_not_called()
 
 
 class TestEventLightControlAddedToHass:
@@ -1713,7 +1713,7 @@ def _make_scenario_entity(
     entity = SHCScenarioEvent(scenario, session, hass, entry_id=entry_id)
     entity.hass = _make_hass_direct()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
@@ -1782,7 +1782,7 @@ class TestSHCScenarioEventCallback:
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_capturing()
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_event_callback_calls_dispatch_directly(self):
@@ -1801,7 +1801,7 @@ class TestSHCScenarioEventCallback:
 
 
 class TestSHCScenarioEventDispatch:
-    """_dispatch_event must call _trigger_event and schedule_update_ha_state."""
+    """_dispatch_event must call _trigger_event and async_write_ha_state."""
 
     def test_dispatch_calls_trigger_event(self):
         entity = _make_scenario_entity()
@@ -1811,7 +1811,7 @@ class TestSHCScenarioEventDispatch:
     def test_dispatch_calls_schedule_update(self):
         entity = _make_scenario_entity()
         entity._dispatch_event("SCENARIO", {})
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_dispatch_passes_event_type(self):
         entity = _make_scenario_entity()
@@ -1852,7 +1852,7 @@ class TestSHCScenarioEventSubscribe:
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
 
         async def _run_added():
             with patch(_EVENTENTITY_ADDED, return_value=None):
@@ -1884,7 +1884,7 @@ class TestSHCScenarioEventSubscribe:
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
 
         async def _run_added():
             with patch(_EVENTENTITY_ADDED, return_value=None):
@@ -1922,7 +1922,7 @@ class TestSHCScenarioEventSubscribe:
         entity = SHCScenarioEvent(scenario, session, hass_init, entry_id=entry_id)
         entity.hass = _make_hass_direct()
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
 
         async def _run_added():
             with patch(_EVENTENTITY_ADDED, return_value=None):
@@ -1969,7 +1969,7 @@ def _make_scenario_entity_v2(
     hass = _make_sync_hass(shc_device=shc_entry)
     entity = SHCScenarioEvent(scenario, session, hass, entry_id="entry1")
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     # SHCScenarioEvent inherits EventEntity (not SHCEntity); the HA infrastructure
     # normally sets entity.hass after async_added_to_hass.  Inject a synchronous
     # shim so _event_callback tests can call the method directly without a real
@@ -2114,7 +2114,7 @@ class TestSHCScenarioEventCallbackPayload:
     def test_callback_calls_schedule_update(self):
         entity, _, _ = _make_scenario_entity_v2()
         entity._event_callback({"id": "scn:5", "name": "Y", "lastTimeTriggered": "ts5"})
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
 
 class TestSHCScenarioEventUnsubscribe:
@@ -2174,7 +2174,7 @@ def _make_motion_entity(
     entity._entry_id = "entry1"
     entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     entity._last_fired_timestamp = ""  # dedup guard - must differ from latestmotion
     return entity
 
@@ -2248,7 +2248,7 @@ class TestMotionDetectorEvent:
     def test_callback_calls_schedule_update(self):
         entity = _make_motion_entity()
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_latest_motion_service_registered(self):
         lms = FakeLatestMotionService()
@@ -2330,12 +2330,12 @@ def _make_motion_event_entity():
     entity._attr_unique_id = "root:m_hdm:motion:d1"
     entity.hass = _make_hass_direct()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
 class TestMotionDetectorEventDispatch:
-    """_dispatch_event must call _trigger_event and schedule_update_ha_state."""
+    """_dispatch_event must call _trigger_event and async_write_ha_state."""
 
     def test_dispatch_calls_trigger_event(self):
         entity = _make_motion_event_entity()
@@ -2350,7 +2350,7 @@ class TestMotionDetectorEventDispatch:
     def test_dispatch_calls_schedule_update(self):
         entity = _make_motion_event_entity()
         entity._dispatch_event("MOTION", {})
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_dispatch_passes_attributes_dict(self):
         entity = _make_motion_event_entity()
@@ -2378,7 +2378,7 @@ class TestMotionDetectorEventDispatchesDirectly:
         # device_id is a read-only property derived from _device.id - no direct assign
         entity._attr_unique_id = "root-1_md-1"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         entity._last_fired_timestamp = ""  # dedup guard - empty so callback fires
         return entity
 
@@ -2392,7 +2392,7 @@ class TestMotionDetectorEventDispatchesDirectly:
         entity = self._make_entity()
         entity._dispatch_event("MOTION", {})
         entity._trigger_event.assert_called_once()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
 
 class TestMotionEventDedupGuard:
@@ -2408,7 +2408,7 @@ class TestMotionEventDedupGuard:
         )
         entity._last_fired_timestamp = "2026-06-28T10:00:00.000Z"  # same as device
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_same_ts_no_dispatch(self):
@@ -2473,7 +2473,7 @@ def _make_smoke_system_entity(
     entity._entry_id = "entry1"
     entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
@@ -2554,7 +2554,7 @@ class TestSmokeDetectionSystemEvent:
     def test_callback_calls_schedule_update(self):
         entity = _make_smoke_system_entity()
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_surveillance_alarm_service_registered(self):
         sas = FakeSurveillanceAlarmService()
@@ -2655,12 +2655,12 @@ def _make_smoke_system_event_entity(alarm_name="ALARM_ON"):
     entity._attr_unique_id = "root:ss_hdm:smoke:sys:1"
     entity.hass = _make_hass_direct()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
 class TestSmokeDetectionSystemEventDispatch:
-    """_dispatch_event must call _trigger_event and schedule_update_ha_state."""
+    """_dispatch_event must call _trigger_event and async_write_ha_state."""
 
     def test_dispatch_calls_trigger_event(self):
         entity = _make_smoke_system_event_entity()
@@ -2675,7 +2675,7 @@ class TestSmokeDetectionSystemEventDispatch:
     def test_dispatch_calls_schedule_update(self):
         entity = _make_smoke_system_event_entity()
         entity._dispatch_event("ALARM", {})
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_dispatch_passes_attributes_dict(self):
         entity = _make_smoke_system_event_entity()
@@ -2688,7 +2688,7 @@ class TestSmokeDetectionSystemEventDispatch:
         entity = _make_smoke_system_event_entity("ALARM_ON")
         entity._event_callback()
         entity._trigger_event.assert_called_once()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_event_types_is_alarm(self):
         entity = _make_smoke_system_event_entity()
@@ -2713,7 +2713,7 @@ class TestSmokeDetectionSystemEventDispatchesDirectly:
         )
         entity._attr_unique_id = "root-1_ss-1"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_event_callback_calls_dispatch_directly(self):
@@ -2741,7 +2741,7 @@ class TestSmokeDetectionSystemEventBadEnum:
         )
         entity._attr_unique_id = "root-1_ss-1"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_bad_alarm_no_dispatch(self):
@@ -2808,7 +2808,7 @@ def _make_smoke_detector_entity(
     entity._entry_id = "entry1"
     entity.hass = _make_hass_sync()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
@@ -2894,7 +2894,7 @@ class TestSmokeDetectorEvent:
     def test_callback_calls_schedule_update(self):
         entity = _make_smoke_detector_entity()
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_alarm_service_registered(self):
         als = FakeAlarmService()
@@ -2975,12 +2975,12 @@ def _make_smoke_detector_event_entity(alarmstate_name="PRIMARY_ALARM"):
     entity._attr_unique_id = "root:sd_hdm:smoke:d1"
     entity.hass = _make_hass_direct()
     entity._trigger_event = MagicMock()
-    entity.schedule_update_ha_state = MagicMock()
+    entity.async_write_ha_state = MagicMock()
     return entity
 
 
 class TestSmokeDetectorEventDispatch:
-    """_dispatch_event must call _trigger_event and schedule_update_ha_state."""
+    """_dispatch_event must call _trigger_event and async_write_ha_state."""
 
     def test_dispatch_calls_trigger_event(self):
         entity = _make_smoke_detector_event_entity()
@@ -2995,7 +2995,7 @@ class TestSmokeDetectorEventDispatch:
     def test_dispatch_calls_schedule_update(self):
         entity = _make_smoke_detector_event_entity()
         entity._dispatch_event("ALARM", {})
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_dispatch_passes_attributes_dict(self):
         entity = _make_smoke_detector_event_entity()
@@ -3008,9 +3008,9 @@ class TestSmokeDetectorEventDispatch:
         entity = _make_smoke_detector_event_entity("SECONDARY_ALARM")
         entity.hass = _make_hass_direct()  # executes fn immediately
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         entity._event_callback()
-        entity.schedule_update_ha_state.assert_called_once()
+        entity.async_write_ha_state.assert_called_once()
 
     def test_event_types_is_alarm(self):
         entity = _make_smoke_detector_event_entity()
@@ -3035,7 +3035,7 @@ class TestSmokeDetectorEventDispatchesDirectly:
         )
         entity._attr_unique_id = "root-1_sd-1"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_event_callback_calls_dispatch_directly(self):
@@ -3063,7 +3063,7 @@ class TestSmokeDetectorEventBadEnum:
         )
         entity._attr_unique_id = "root-1_sd-1"
         entity._trigger_event = MagicMock()
-        entity.schedule_update_ha_state = MagicMock()
+        entity.async_write_ha_state = MagicMock()
         return entity
 
     def test_bad_alarmstate_no_dispatch(self):
@@ -3550,3 +3550,26 @@ def test_umlaut_transliteration() -> None:
     assert _is_valid_object_id(slugify("Außentür"))
     assert _is_valid_object_id(slugify("Überwachung"))
     assert _is_valid_object_id(slugify("Öffner Küche"))
+
+
+class TestTwoEventsInOnePollKeepBothStates:
+    """Each dispatch must write state immediately, else the second
+    _trigger_event overwrites the first before any write happens."""
+
+    def test_each_trigger_is_written_before_the_next(self):
+        from custom_components.bosch_shc.event import UniversalSwitchEvent as KeypadEvent
+
+        ent = KeypadEvent.__new__(KeypadEvent)
+        order = []
+        ent._trigger_event = lambda et, attrs: order.append(("trigger", et))
+        ent.async_write_ha_state = lambda: order.append(("write",))
+
+        ent._dispatch_event("PRESS_LONG", {})
+        ent._dispatch_event("PRESS_LONG_RELEASED", {})
+
+        assert order == [
+            ("trigger", "PRESS_LONG"),
+            ("write",),
+            ("trigger", "PRESS_LONG_RELEASED"),
+            ("write",),
+        ]
