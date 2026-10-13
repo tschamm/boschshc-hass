@@ -563,13 +563,13 @@ class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
 
         for device in self._devices:
             for service in device.device_services:
-                service.subscribe_callback(self.entity_id, _on_state_change)
-            device.subscribe_callback(self.entity_id, _on_device_change)
+                service.subscribe_callback(self, _on_state_change)
+            device.subscribe_callback(self, _on_device_change)
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from every member device's services."""
         await super().async_will_remove_from_hass()
         for device in self._devices:
             for service in device.device_services:
-                service.unsubscribe_callback(self.entity_id)
-            device.unsubscribe_callback(self.entity_id)
+                service.unsubscribe_callback(self)
+            device.unsubscribe_callback(self)

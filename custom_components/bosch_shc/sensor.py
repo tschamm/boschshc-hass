@@ -1479,12 +1479,12 @@ class EmmaPowerSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
         def update_entity_information() -> None:
             self.schedule_update_ha_state()
 
-        self._device.subscribe_callback(self.entity_id, update_entity_information)
+        self._device.subscribe_callback(self, update_entity_information)
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
-        self._device.unsubscribe_callback(self.entity_id)
+        self._device.unsubscribe_callback(self)
 
     @property
     def native_value(self) -> Any:

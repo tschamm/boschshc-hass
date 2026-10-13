@@ -4018,7 +4018,7 @@ class TestAsyncSetupEntry:
                     await entity.async_added_to_hass()
 
         _run(_run_setup())
-        assert any(k is not None and "_eventlistener" in k for k in cb_store)
+        assert any(isinstance(k, str) and "_eventlistener" in k for k in cb_store)
 
     def test_smoke_detector_added(self):
         alarm_svc = _make_service("Alarm")
@@ -4064,7 +4064,7 @@ class TestAsyncSetupEntry:
                     await entity.async_added_to_hass()
 
         _run(_run_setup())
-        assert any(k is not None and "_eventlistener" in k for k in cb_store)
+        assert any(isinstance(k, str) and "_eventlistener" in k for k in cb_store)
 
     def test_smoke_detection_system_added(self):
         surv_svc = _make_service("SurveillanceAlarm")
@@ -4113,7 +4113,7 @@ class TestAsyncSetupEntry:
                     await entity.async_added_to_hass()
 
         _run(_run_setup())
-        assert any(k is not None and "_eventlistener" in k for k in cb_store)
+        assert any(isinstance(k, str) and "_eventlistener" in k for k in cb_store)
 
     def test_twinguard_smoke_alarm_sensor_added_when_twinguards_present(self):
         """TwinguardSmokeAlarmSensor created for each Twinguard when SDS exists."""
@@ -4274,7 +4274,7 @@ class TestAsyncSetupEntry:
                     await entity.async_added_to_hass()
 
         _run(_run_setup())
-        assert any(k is not None and "_eventlistener" in k for k in cb_store)
+        assert any(isinstance(k, str) and "_eventlistener" in k for k in cb_store)
 
     def test_motion_detector2_battery_added_when_supported(self):
         """MD2 device with battery support -> BatterySensor entity created."""

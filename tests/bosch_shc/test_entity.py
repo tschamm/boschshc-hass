@@ -327,7 +327,7 @@ class TestAsyncAddedToHass:
 
         self._run_added(ent)
 
-        assert any(c[0] == "subscribe" and c[1] == "switch.test" for c in svc.calls), (
+        assert any(c[0] == "subscribe" and c[1] is ent for c in svc.calls), (
             f"Expected service subscribe call, got: {svc.calls}"
         )
 
@@ -357,7 +357,7 @@ class TestAsyncAddedToHass:
         self._run_added(ent)
 
         assert any(
-            c[0] == "subscribe" and c[1] == "switch.test" for c in device_calls
+            c[0] == "subscribe" and c[1] is ent for c in device_calls
         ), f"Expected device subscribe call, got: {device_calls}"
 
 
@@ -400,15 +400,25 @@ class TestAsyncWillRemoveFromHass:
         ent, svc, _ = self._make_wired_entity()
         self._run_remove(ent)
         assert any(
-            c[0] == "unsubscribe" and c[1] == "switch.test" for c in svc.calls
+            c[0] == "unsubscribe" and c[1] is ent for c in svc.calls
         ), f"Expected service unsubscribe, got: {svc.calls}"
 
     def test_async_will_remove_unsubscribes_device(self):
         ent, _, device_calls = self._make_wired_entity()
         self._run_remove(ent)
         assert any(
-            c[0] == "unsubscribe" and c[1] == "switch.test" for c in device_calls
+            c[0] == "unsubscribe" and c[1] is ent for c in device_calls
         ), f"Expected device unsubscribe, got: {device_calls}"
+
+
+    def test_rename_keeps_unsubscribe_key(self):
+        """Callbacks are keyed on the entity object, so an in-place entity_id
+        change (HA 2026.11+) cannot orphan them."""
+        ent, svc, device_calls = self._make_wired_entity()
+        ent.entity_id = "switch.renamed"
+        self._run_remove(ent)
+        assert ("unsubscribe", ent) in svc.calls
+        assert ("unsubscribe", ent) in device_calls
 
 
 # ---------------------------------------------------------------------------

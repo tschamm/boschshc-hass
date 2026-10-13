@@ -1757,7 +1757,7 @@ class TestEmmaPowerSensorLifecycle:
             await entity.async_added_to_hass()
 
         asyncio.run(_run())
-        assert "sensor.emma_power" in callbacks
+        assert entity in callbacks
 
     def test_async_will_remove_from_hass_unsubscribes(self):
         dev, callbacks = self._make_emma()
@@ -1770,7 +1770,7 @@ class TestEmmaPowerSensorLifecycle:
             await entity.async_will_remove_from_hass()
 
         asyncio.run(_run())
-        assert "sensor.emma_power" not in callbacks
+        assert entity not in callbacks
 
     def test_callback_triggers_schedule_update(self):
         dev, callbacks = self._make_emma()
@@ -1782,7 +1782,7 @@ class TestEmmaPowerSensorLifecycle:
             await entity.async_added_to_hass()
 
         asyncio.run(_run())
-        callbacks["sensor.emma_power"]()  # fire the stored callback
+        callbacks[entity]()  # fire the stored callback
         entity.schedule_update_ha_state.assert_called_once()
 
     def test_entity_registry_enabled_default_is_false(self):

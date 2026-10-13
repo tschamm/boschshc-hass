@@ -339,7 +339,7 @@ def test_unique_id_format_unchanged():
 # ---------------------------------------------------------------------------
 
 def test_async_added_to_hass_subscribes_callback():
-    """Subscribes an on_state_changed callback keyed by entity_id."""
+    """Subscribes an on_state_changed callback keyed by the entity object."""
     device = _fake_device()
     panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
     panel._device = device
@@ -350,7 +350,7 @@ def test_async_added_to_hass_subscribes_callback():
 
     asyncio.run(panel.async_added_to_hass())
 
-    assert "alarm_control_panel.test" in device._subscriptions
+    assert panel in device._subscriptions
 
 
 def test_async_added_to_hass_callback_calls_schedule_update():
@@ -367,12 +367,12 @@ def test_async_added_to_hass_callback_calls_schedule_update():
     asyncio.run(panel.async_added_to_hass())
 
     # Fire the callback that was registered
-    device._subscriptions["alarm_control_panel.cb_test"]()
+    device._subscriptions[panel]()
     assert schedule_update.called
 
 
 def test_async_will_remove_from_hass_unsubscribes():
-    """Unsubscribes the callback keyed by entity_id on removal."""
+    """Unsubscribes the callback keyed by the entity object on removal."""
     device = _fake_device()
     panel = IntrusionSystemAlarmControlPanel.__new__(IntrusionSystemAlarmControlPanel)
     panel._device = device
@@ -383,10 +383,10 @@ def test_async_will_remove_from_hass_unsubscribes():
 
     # First subscribe, then remove
     asyncio.run(panel.async_added_to_hass())
-    assert "alarm_control_panel.remove_test" in device._subscriptions
+    assert panel in device._subscriptions
 
     asyncio.run(panel.async_will_remove_from_hass())
-    assert "alarm_control_panel.remove_test" not in device._subscriptions
+    assert panel not in device._subscriptions
 
 
 def test_async_will_remove_from_hass_tolerates_not_subscribed():

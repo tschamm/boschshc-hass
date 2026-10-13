@@ -2208,8 +2208,8 @@ def test_subscribes_to_every_member_device_and_service_on_add():
     d1.subscribe_callback.assert_called_once()
 
     asyncio.run(group.async_will_remove_from_hass())
-    service.unsubscribe_callback.assert_called_once_with("light.wohnzimmer_light")
-    d1.unsubscribe_callback.assert_called_once_with("light.wohnzimmer_light")
+    service.unsubscribe_callback.assert_called_once_with(group)
+    d1.unsubscribe_callback.assert_called_once_with(group)
 
 
 def test_device_deletion_triggers_config_entry_reload():

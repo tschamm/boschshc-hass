@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.34 — Entity renames no longer leak callbacks
+
+- **Renaming an entity ID no longer leaves stale callbacks behind.** Home
+  Assistant 2026.11 changes the entity ID in place instead of removing and
+  re-adding the entity. The boschshcpy callbacks were keyed on the entity ID,
+  so after a rename they kept firing for the old key and were never removed.
+  They are now keyed on the entity object itself, which survives a rename.
+  Affects all SHC entities, the Emma power sensor, the room light group and
+  the intrusion alarm panel (#435).
+
 ## 0.12.33 — Setup, unload and pairing robustness
 
 - **Failed setup no longer leaves polling running.** If loading the
