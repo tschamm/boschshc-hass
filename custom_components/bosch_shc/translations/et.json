@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Häire oleku muutmine ebaõnnestus."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnostikaolemid on selle SHC jaoks välja lülitatud. Lülita integratsiooni valikutes sisse „Loo diagnostilised andurid“ ja vajuta nuppu uuesti."
+    },
     "button_press_failed": {
       "message": "Nupuvajutus ebaõnnestus."
     },

@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Zmena stavu alarmu zlyhala."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnostické entity sú pre tento SHC vypnuté. Zapnite „Vytvoriť diagnostické senzory“ v možnostiach integrácie a stlačte tlačidlo znova."
+    },
     "button_press_failed": {
       "message": "Stlačenie tlačidla zlyhalo."
     },

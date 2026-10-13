@@ -943,6 +943,9 @@
     "alarm_state_failed": {
       "message": "Změna stavu alarmu se nezdařila."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnostické entity jsou pro tuto SHC vypnuty. Zapněte „Vytvořit diagnostické senzory“ v možnostech integrace a stiskněte tlačítko znovu."
+    },
     "button_press_failed": {
       "message": "Stisknutí tlačítka se nezdařilo."
     },

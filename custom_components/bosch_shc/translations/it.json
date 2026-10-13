@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Modifica dello stato dell'allarme non riuscita."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Le entità di diagnostica sono disattivate per questo SHC. Attiva «Crea sensori diagnostici» nelle opzioni dell'integrazione e premi di nuovo il pulsante."
+    },
     "button_press_failed": {
       "message": "Pressione del pulsante non riuscita."
     },

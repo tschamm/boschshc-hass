@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Endring av alarmtilstand mislyktes."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnostikkenheter er slått av for denne SHC-en. Slå på «Opprett diagnostikksensorer» i integrasjonsvalgene og trykk på knappen igjen."
+    },
     "button_press_failed": {
       "message": "Knappetrykk mislyktes."
     },

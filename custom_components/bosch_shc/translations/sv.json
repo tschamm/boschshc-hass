@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Det gick inte att ändra larmläget."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnostikentiteter är avstängda för denna SHC. Slå på ”Skapa diagnostiksensorer” i integrationsalternativen och tryck på knappen igen."
+    },
     "button_press_failed": {
       "message": "Knapptryckningen misslyckades."
     },

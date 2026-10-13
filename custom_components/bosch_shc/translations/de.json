@@ -920,6 +920,9 @@
     "alarm_state_failed": {
       "message": "Änderung des Alarmstatus fehlgeschlagen."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnose-Entitäten sind für diese SHC ausgeschaltet. Aktiviere „Diagnose-Sensoren erstellen“ in den Integrationsoptionen und drücke die Taste erneut."
+    },
     "button_press_failed": {
       "message": "Tastendruck fehlgeschlagen."
     },

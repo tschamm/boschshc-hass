@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "A riasztás állapotának megváltoztatása sikertelen."
     },
+    "diagnostic_entities_disabled": {
+      "message": "A diagnosztikai entitások ki vannak kapcsolva ennél az SHC-nél. Kapcsold be a „Diagnosztikai érzékelők létrehozása” opciót az integráció beállításaiban, majd nyomd meg újra a gombot."
+    },
     "button_press_failed": {
       "message": "A gombnyomás sikertelen."
     },

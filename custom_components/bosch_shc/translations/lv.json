@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Trauksmes stāvokļa maiņa neizdevās."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Šim SHC diagnostikas vienības ir izslēgtas. Integrācijas opcijās ieslēdziet „Izveidot diagnostikas sensorus” un vēlreiz nospiediet pogu."
+    },
     "button_press_failed": {
       "message": "Pogas nospiešana neizdevās."
     },

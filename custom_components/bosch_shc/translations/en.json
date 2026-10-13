@@ -920,6 +920,9 @@
     "alarm_state_failed": {
       "message": "Alarm state change failed."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Diagnostic entities are turned off for this SHC. Turn on \"Create diagnostic sensors\" in the integration options, then press the button again."
+    },
     "button_press_failed": {
       "message": "Button press failed."
     },

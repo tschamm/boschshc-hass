@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Zmiana stanu alarmu nie powiodła się."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Encje diagnostyczne są wyłączone dla tego SHC. Włącz „Utwórz czujniki diagnostyczne” w opcjach integracji i naciśnij przycisk ponownie."
+    },
     "button_press_failed": {
       "message": "Naciśnięcie przycisku nie powiodło się."
     },

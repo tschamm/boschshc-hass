@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "알람 상태 변경에 실패했습니다."
     },
+    "diagnostic_entities_disabled": {
+      "message": "이 SHC의 진단 엔티티가 꺼져 있습니다. 통합 옵션에서 \"진단 센서 생성\"을 켠 다음 버튼을 다시 누르세요."
+    },
     "button_press_failed": {
       "message": "버튼 누르기에 실패했습니다."
     },

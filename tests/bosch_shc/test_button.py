@@ -30,6 +30,7 @@ import pytest
 from homeassistant.components.button import ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers import entity_registry as er
 
 from boschshcpy.exceptions import SHCException
 from custom_components.bosch_shc.button import (
@@ -53,6 +54,7 @@ from custom_components.bosch_shc.button import (
     async_setup_entry,
 )
 from custom_components.bosch_shc.const import (
+    OPT_DIAGNOSTIC_ENTITIES,
     OPT_AUTOMATION_RULES_AS_ENTITIES,
     OPT_EXCLUDED_DEVICES,
     OPT_SCENARIOS_AS_BUTTONS,
@@ -2794,3 +2796,54 @@ class TestAlarmMuteButtonSetupEntry:
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)
         )
         assert not any(isinstance(e, SHCWaterAlarmMuteButton) for e in entities)
+
+
+# ---------------------------------------------------------------------------
+# SHCEnableAllDiagnosticsButton.async_press (#417)
+# ---------------------------------------------------------------------------
+
+
+def _diag_button(options):
+    """Button wired to a fake hass whose config entry carries ``options``."""
+    btn = SHCEnableAllDiagnosticsButton(entry_unique_id=None, entry_id="e1")
+    entry = SimpleNamespace(options=options)
+    btn.hass = SimpleNamespace(
+        config_entries=SimpleNamespace(
+            async_get_entry=lambda entry_id: entry,
+            async_reload=AsyncMock(return_value=True),
+        )
+    )
+    return btn
+
+
+def test_enable_all_diagnostics_press_errors_when_option_off():
+    """Option off -> no diagnostic sensors exist; say so instead of no-op."""
+    btn = _diag_button({OPT_DIAGNOSTIC_ENTITIES: False})
+    with patch("custom_components.bosch_shc.button.er.async_get") as get_reg:
+        with pytest.raises(HomeAssistantError) as err:
+            asyncio.run(btn.async_press())
+    assert err.value.translation_key == "diagnostic_entities_disabled"
+    get_reg.assert_not_called()
+    btn.hass.config_entries.async_reload.assert_not_called()
+
+
+def test_enable_all_diagnostics_press_enables_and_reloads_when_option_on():
+    btn = _diag_button({})  # option defaults to on
+    disabled = SimpleNamespace(
+        entity_id="sensor.zb_routing",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled_by=er.RegistryEntryDisabler.INTEGRATION,
+    )
+    registry = MagicMock()
+    with (
+        patch("custom_components.bosch_shc.button.er.async_get", return_value=registry),
+        patch(
+            "custom_components.bosch_shc.button.er.async_entries_for_config_entry",
+            return_value=[disabled],
+        ),
+    ):
+        asyncio.run(btn.async_press())
+    registry.async_update_entity.assert_called_once_with(
+        "sensor.zb_routing", disabled_by=None
+    )
+    btn.hass.config_entries.async_reload.assert_awaited_once_with("e1")

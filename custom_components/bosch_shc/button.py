@@ -35,6 +35,7 @@ from .const import (
     DOMAIN,
     LOGGER,
     OPT_AUTOMATION_RULES_AS_ENTITIES,
+    OPT_DIAGNOSTIC_ENTITIES,
     OPT_SCENARIOS_AS_BUTTONS,
     OPT_SCENARIOS_FILTER,
 )
@@ -740,6 +741,15 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
         """Clear disabled_by=INTEGRATION on every diagnostic entity of this entry."""
         if self._reload_in_progress:
             return
+        # #417: option off -> no diagnostic sensors exist; a silent no-op
+        # looks like a broken button, so raise an actionable error instead.
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        if entry is not None and not entry.options.get(OPT_DIAGNOSTIC_ENTITIES, True):
+            raise HomeAssistantError(
+                "Diagnostic entities are turned off for this SHC",
+                translation_domain=DOMAIN,
+                translation_key="diagnostic_entities_disabled",
+            )
         registry = er.async_get(self.hass)
         to_enable = [
             entity_entry.entity_id

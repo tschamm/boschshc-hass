@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "アラーム状態の変更に失敗しました。"
     },
+    "diagnostic_entities_disabled": {
+      "message": "この SHC では診断エンティティがオフになっています。統合のオプションで「診断センサーを作成する」をオンにしてから、もう一度ボタンを押してください。"
+    },
     "button_press_failed": {
       "message": "ボタンの押下に失敗しました。"
     },

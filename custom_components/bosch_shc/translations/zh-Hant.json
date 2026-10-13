@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "警報狀態變更失敗。"
     },
+    "diagnostic_entities_disabled": {
+      "message": "此 SHC 的診斷實體已關閉。請在整合選項中開啟「建立診斷感測器」，然後再按一次按鈕。"
+    },
     "button_press_failed": {
       "message": "按鈕按下失敗。"
     },

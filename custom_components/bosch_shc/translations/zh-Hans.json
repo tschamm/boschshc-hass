@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "警报状态更改失败。"
     },
+    "diagnostic_entities_disabled": {
+      "message": "此 SHC 的诊断实体已关闭。请在集成选项中开启“创建诊断传感器”，然后再次按下按钮。"
+    },
     "button_press_failed": {
       "message": "按钮按下失败。"
     },

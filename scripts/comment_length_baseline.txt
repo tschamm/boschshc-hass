@@ -18,16 +18,16 @@
 # ahead of button.py's baselined blocks; the guard's own new 4-line comment
 # was condensed to 2 lines rather than added here.
 custom_components/bosch_shc/alarm_control_panel.py:100
-custom_components/bosch_shc/button.py:140
-custom_components/bosch_shc/button.py:156
-custom_components/bosch_shc/button.py:181
-custom_components/bosch_shc/button.py:205
-custom_components/bosch_shc/button.py:262
-custom_components/bosch_shc/button.py:342
-custom_components/bosch_shc/button.py:400
-custom_components/bosch_shc/button.py:436
-custom_components/bosch_shc/button.py:861
-custom_components/bosch_shc/button.py:916
+custom_components/bosch_shc/button.py:141
+custom_components/bosch_shc/button.py:157
+custom_components/bosch_shc/button.py:182
+custom_components/bosch_shc/button.py:206
+custom_components/bosch_shc/button.py:263
+custom_components/bosch_shc/button.py:343
+custom_components/bosch_shc/button.py:401
+custom_components/bosch_shc/button.py:437
+custom_components/bosch_shc/button.py:871
+custom_components/bosch_shc/button.py:926
 custom_components/bosch_shc/climate.py:32
 custom_components/bosch_shc/climate.py:76
 custom_components/bosch_shc/climate.py:109

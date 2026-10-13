@@ -943,6 +943,9 @@
     "alarm_state_failed": {
       "message": "No s'ha pogut canviar l'estat de l'alarma."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Les entitats de diagnòstic estan desactivades per a aquest SHC. Activa «Crear sensors de diagnòstic» a les opcions de la integració i torna a prémer el botó."
+    },
     "button_press_failed": {
       "message": "La pulsació del botó ha fallat."
     },

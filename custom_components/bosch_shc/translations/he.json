@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "שינוי מצב האזעקה נכשל."
     },
+    "diagnostic_entities_disabled": {
+      "message": "ישויות האבחון כבויות עבור ה-SHC הזה. הפעל את „צור חיישנים אבחוניים“ באפשרויות האינטגרציה ולחץ שוב על הכפתור."
+    },
     "button_press_failed": {
       "message": "לחיצת הכפתור נכשלה."
     },

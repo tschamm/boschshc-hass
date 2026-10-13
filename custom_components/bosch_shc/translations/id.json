@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Perubahan status alarm gagal."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Entitas diagnostik dinonaktifkan untuk SHC ini. Aktifkan \"Buat sensor diagnostik\" di opsi integrasi, lalu tekan tombol lagi."
+    },
     "button_press_failed": {
       "message": "Penekanan tombol gagal."
     },

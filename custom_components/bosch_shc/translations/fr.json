@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Échec du changement d'état de l'alarme."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Les entités de diagnostic sont désactivées pour ce SHC. Activez « Créer des capteurs de diagnostic » dans les options de l'intégration, puis appuyez de nouveau sur le bouton."
+    },
     "button_press_failed": {
       "message": "Échec de l'appui sur le bouton."
     },

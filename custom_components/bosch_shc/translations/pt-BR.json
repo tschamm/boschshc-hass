@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Falha ao alterar o estado do alarme."
     },
+    "diagnostic_entities_disabled": {
+      "message": "As entidades de diagnóstico estão desativadas para este SHC. Ative \"Criar sensores de diagnóstico\" nas opções da integração e pressione o botão novamente."
+    },
     "button_press_failed": {
       "message": "Falha ao pressionar o botão."
     },

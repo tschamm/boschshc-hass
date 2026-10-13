@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.35 — Clear message when the diagnostics button has nothing to enable
+
+- **"Enable all diagnostics" now explains itself.** With the "Create
+  diagnostic sensors" option turned off, no diagnostic sensors exist, so the
+  button did nothing and looked broken. It now shows an error that names the
+  option to turn on (#417). Translated into all supported languages.
+
 ## 0.12.34 — Entity renames no longer leak callbacks
 
 - **Renaming an entity ID no longer leaves stale callbacks behind.** Home

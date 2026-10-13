@@ -934,6 +934,9 @@
     "alarm_state_failed": {
       "message": "Alarm durumu değişikliği başarısız oldu."
     },
+    "diagnostic_entities_disabled": {
+      "message": "Bu SHC için tanılama varlıkları kapalı. Entegrasyon seçeneklerinde \"Tanılama sensörleri oluştur\" seçeneğini açın ve düğmeye yeniden basın."
+    },
     "button_press_failed": {
       "message": "Düğmeye basma işlemi başarısız oldu."
     },
