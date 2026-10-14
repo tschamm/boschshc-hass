@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.36 — Twinguard smoke lookup moved into boschshcpy
+
+- **Twinguard smoke alarm lookup now comes from the library.** The sensor no
+  longer parses the controller's smoke-alarm messages itself; it asks
+  boschshcpy 0.6.20 which devices raised the alarm. Behaviour is unchanged.
+  Requires `boschshcpy>=0.6.20`.
+- **"Enable all diagnostics" explains a skipped case.** When it finds nothing
+  to enable but some diagnostic entities were disabled by you, it now logs how
+  many and where to enable them. Entities you disabled stay untouched (#417).
+
 ## 0.12.35 — Clear message when the diagnostics button has nothing to enable
 
 - **"Enable all diagnostics" now explains itself.** With the "Create

@@ -762,10 +762,25 @@ class SHCEnableAllDiagnosticsButton(ButtonEntity):  # type: ignore[misc]
         if not to_enable:
             # #417: log at INFO (not debug) so a silent no-op -- nothing
             # left disabled-by-default to enable -- is still visible.
+            user_disabled = sum(
+                1
+                for entity_entry in er.async_entries_for_config_entry(
+                    registry, self._entry_id
+                )
+                if entity_entry.entity_category == EntityCategory.DIAGNOSTIC
+                and entity_entry.disabled_by == er.RegistryEntryDisabler.USER
+            )
             LOGGER.info(
                 "Enable-all-diagnostics: no disabled-by-default diagnostic "
                 "entities found for this SHC; nothing to enable"
             )
+            if user_disabled:
+                LOGGER.info(
+                    "Enable-all-diagnostics: %d diagnostic entities were disabled "
+                    "by the user and are left alone; enable them in Settings > "
+                    "Devices & services > Entities",
+                    user_disabled,
+                )
             return
         for entity_id in to_enable:
             registry.async_update_entity(entity_id, disabled_by=None)

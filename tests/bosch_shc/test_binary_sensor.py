@@ -2299,6 +2299,7 @@ class TestTwinguardAlarmTrackerAlarmStateValueError:
         session = SimpleNamespace(
             api=SimpleNamespace(get_messages=AsyncMock(return_value=[])),
         )
+        _wire_lib_triggers(sds, session)
         return TwinguardAlarmTracker(session=session, smoke_detection_system=sds, hass=hass)
 
     def test_alarm_state_value_error_returns_none(self):
@@ -2348,6 +2349,7 @@ class TestTwinguardAlarmTrackerRefreshNoChange:
         session = SimpleNamespace(
             api=SimpleNamespace(get_messages=AsyncMock(return_value=[])),
         )
+        _wire_lib_triggers(sds, session)
         return TwinguardAlarmTracker(session=session, smoke_detection_system=sds, hass=hass)
 
     def test_refresh_no_change_does_not_notify_listeners(self):
@@ -2525,33 +2527,26 @@ class TestTwinguardSmokeTestException:
         assert "err" in str(exc_info.value)
 
 
+def _wire_lib_triggers(sds, session):
+    """Give a fake smoke detection system the real boschshcpy trigger lookup."""
+    from types import MethodType
+
+    from boschshcpy import SHCSmokeDetectionSystem
+
+    sds._api = session.api
+    for name in ("async_triggered_device_ids", "_device_ids_from_messages"):
+        setattr(sds, name, MethodType(getattr(SHCSmokeDetectionSystem, name), sds))
+    sds._surveillance_events = SHCSmokeDetectionSystem._surveillance_events
+
+
 class TestTwinguardAlarmTracker:
     """Unit tests for TwinguardAlarmTracker (no HA, no network)."""
 
     def _make_tracker(self, sds, session, hass=None):
+        _wire_lib_triggers(sds, session)
         return TwinguardAlarmTracker(
             session=session, smoke_detection_system=sds, hass=hass or _make_hass(),
         )
-
-    def test_parse_surveillance_events_with_list(self):
-        events = [{"type": "SMOKE_LIGHT", "triggerId": "tw1"}, {"type": "ALARM_OFF"}]
-        assert TwinguardAlarmTracker._parse_surveillance_events(events) == events
-
-    def test_parse_surveillance_events_with_json_string(self):
-        raw = '[{"type":"SMOKE_LIGHT","triggerId":"tw1"},{"type":"ALARM_OFF"}]'
-        result = TwinguardAlarmTracker._parse_surveillance_events(raw)
-        assert result == [{"type": "SMOKE_LIGHT", "triggerId": "tw1"}, {"type": "ALARM_OFF"}]
-
-    def test_parse_surveillance_events_empty(self):
-        assert TwinguardAlarmTracker._parse_surveillance_events(None) == []
-        assert TwinguardAlarmTracker._parse_surveillance_events("") == []
-        assert TwinguardAlarmTracker._parse_surveillance_events([]) == []
-
-    def test_parse_surveillance_events_invalid_json(self):
-        assert TwinguardAlarmTracker._parse_surveillance_events("not-json") == []
-
-    def test_parse_surveillance_events_non_list_json(self):
-        assert TwinguardAlarmTracker._parse_surveillance_events('{"key": "val"}') == []
 
     def test_refresh_alarm_off_clears_trigger_ids(self):
         surv_svc = _make_service("SurveillanceAlarm")
@@ -2989,7 +2984,12 @@ class TestExtractTriggerIdsNonSmokeAlarm:
     """Messages with messageCode.name != 'SMOKE_ALARM' must be skipped."""
 
     def _make_tracker(self, sds_id="sds-001"):
-        fake_sds = SimpleNamespace(id=sds_id, device_services=[])
+        fake_sds = SimpleNamespace(
+            id=sds_id,
+            device_services=[],
+            alarm=SurveillanceAlarmService.State.ALARM_ON,
+        )
+        _wire_lib_triggers(fake_sds, SimpleNamespace(api=None))
         tracker = TwinguardAlarmTracker.__new__(TwinguardAlarmTracker)
         tracker._smoke_detection_system = fake_sds
         tracker._active_trigger_ids = set()
@@ -3002,34 +3002,30 @@ class TestExtractTriggerIdsNonSmokeAlarm:
     def test_non_smoke_alarm_message_skipped(self):
         tracker = self._make_tracker()
 
-        tracker._session = SimpleNamespace(
-            api=SimpleNamespace(
-                get_messages=AsyncMock(return_value=[
-                    {"messageCode": {"name": "OTHER_EVENT"}, "sourceId": "sds-001"},
-                    {"messageCode": {"name": "SMOKE_ALARM"}, "sourceId": "other-id"},
-                ])
-            )
-        )
+        get_messages = AsyncMock(return_value=[
+            {"messageCode": {"name": "OTHER_EVENT"}, "sourceId": "sds-001"},
+            {"messageCode": {"name": "SMOKE_ALARM"}, "sourceId": "other-id"},
+        ])
+        tracker._smoke_detection_system._api = SimpleNamespace(get_messages=get_messages)
 
         result = asyncio.run(tracker._extract_trigger_ids_from_messages())
+        get_messages.assert_awaited_once()
         assert isinstance(result, set)
         assert len(result) == 0
 
     def test_smoke_alarm_matching_source_produces_trigger_id(self):
         tracker = self._make_tracker(sds_id="sds-001")
 
-        tracker._session = SimpleNamespace(
-            api=SimpleNamespace(
-                get_messages=AsyncMock(return_value=[
-                    {
-                        "messageCode": {"name": "SMOKE_ALARM"},
-                        "sourceId": "sds-001",
-                        "arguments": {
-                            "surveillanceEvents": [{"triggerId": "tg-dev-001"}]
-                        },
-                    }
-                ])
-            )
+        tracker._smoke_detection_system._api = SimpleNamespace(
+            get_messages=AsyncMock(return_value=[
+                {
+                    "messageCode": {"name": "SMOKE_ALARM"},
+                    "sourceId": "sds-001",
+                    "arguments": {
+                        "surveillanceEvents": [{"triggerId": "tg-dev-001"}]
+                    },
+                }
+            ])
         )
 
         result = asyncio.run(tracker._extract_trigger_ids_from_messages())

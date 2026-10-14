@@ -2847,3 +2847,23 @@ def test_enable_all_diagnostics_press_enables_and_reloads_when_option_on():
         "sensor.zb_routing", disabled_by=None
     )
     btn.hass.config_entries.async_reload.assert_awaited_once_with("e1")
+
+
+def test_enable_all_diagnostics_press_logs_user_disabled_hint(caplog):
+    btn = _diag_button({})
+    user_disabled = SimpleNamespace(
+        entity_id="sensor.zb_routing",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled_by=er.RegistryEntryDisabler.USER,
+    )
+    with (
+        patch("custom_components.bosch_shc.button.er.async_get"),
+        patch(
+            "custom_components.bosch_shc.button.er.async_entries_for_config_entry",
+            return_value=[user_disabled],
+        ),
+        caplog.at_level("INFO"),
+    ):
+        asyncio.run(btn.async_press())
+    assert "1 diagnostic entities were disabled by the user" in caplog.text
+    btn.hass.config_entries.async_reload.assert_not_called()
