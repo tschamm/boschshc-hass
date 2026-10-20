@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.37 — Motion Detector brightness no longer freezes
+
+- **Brightness of the Motion Detector stays current (#440).** The controller
+  only reports lux while a motion light or an illuminance automation asks for
+  it, so the sensor could show the same value for weeks. The integration now
+  asks the controller to report it, like the Bosch app does when you set up an
+  illuminance automation. It runs in the background and never delays setup.
+  Not yet confirmed on real hardware. Requires `boschshcpy>=0.6.21`.
+
 ## 0.12.36 — Twinguard smoke lookup moved into boschshcpy
 
 - **Twinguard smoke alarm lookup now comes from the library.** The sensor no

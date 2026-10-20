@@ -21,6 +21,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from boschshcpy import CommunicationQualityService
+from boschshcpy.exceptions import SHCSessionError
 from boschshcpy.services_impl import (
     AirQualityLevelService,
     BatteryLevelService,
@@ -2182,6 +2183,49 @@ class TestIlluminanceLevelSensor:
 
     def test_unit_lux(self):
         assert _illum_sensor(9).native_unit_of_measurement == LIGHT_LUX
+
+    # SHC only reports lux when asked (#440)
+    @staticmethod
+    def _sensor(device):
+        s = IlluminanceLevelSensor.__new__(IlluminanceLevelSensor)
+        s._device = device
+        return s
+
+    def test_enable_calls_device(self):
+        device = SimpleNamespace(name="MD", async_enable_illuminance_sensor=AsyncMock())
+        asyncio.run(self._sensor(device)._async_enable_illuminance())
+        device.async_enable_illuminance_sensor.assert_awaited_once_with()
+
+    def test_enable_swallows_any_error(self):
+        for error in (SHCSessionError("nope"), ValueError("bad json"), TimeoutError()):
+            device = SimpleNamespace(
+                name="MD", async_enable_illuminance_sensor=AsyncMock(side_effect=error)
+            )
+            asyncio.run(self._sensor(device)._async_enable_illuminance())  # no raise
+
+    def test_enable_tolerates_older_boschshcpy(self):
+        device = SimpleNamespace(name="MD")
+        asyncio.run(self._sensor(device)._async_enable_illuminance())  # no raise
+
+    def test_added_schedules_background_task(self):
+        from custom_components.bosch_shc.entity import SHCEntity
+
+        device = SimpleNamespace(
+            id="md-1", name="MD", async_enable_illuminance_sensor=AsyncMock()
+        )
+        s = self._sensor(device)
+        s.hass = MagicMock()
+        s.async_on_remove = MagicMock()
+        with patch.object(SHCEntity, "async_added_to_hass", AsyncMock()):
+            asyncio.run(s.async_added_to_hass())
+        s.hass.async_create_background_task.assert_called_once()
+        coro, name = s.hass.async_create_background_task.call_args[0]
+        assert name == "bosch_shc enable illuminance md-1"
+        coro.close()
+        # cancelled together with the entity so a hung SHC call cannot outlive it
+        s.async_on_remove.assert_called_once_with(
+            s.hass.async_create_background_task.return_value.cancel
+        )
 
 
 def _make_illuminance_test_sensor(illuminance_value):

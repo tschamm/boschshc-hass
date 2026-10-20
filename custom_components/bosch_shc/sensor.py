@@ -1558,6 +1558,32 @@ class IlluminanceLevelSensor(SHCSensor[_IlluminanceDevice]):  # type: ignore[mis
         """Initialize an SHC illuminance level reporting sensor."""
         super().__init__(device, self.entity_description, entry_id)
 
+    async def async_added_to_hass(self) -> None:
+        """Ask the SHC to report illuminance for this Motion Detector (#440).
+
+        The controller only pushes lux while a MotionLight or an illuminance
+        automation needs it; otherwise the last value stays frozen. The Bosch
+        app sends this activation when configuring an illuminance trigger.
+        Runs in the background so an unreachable SHC never delays setup.
+        """
+        await super().async_added_to_hass()
+        task = self.hass.async_create_background_task(
+            self._async_enable_illuminance(),
+            f"bosch_shc enable illuminance {self._device.id}",
+        )
+        self.async_on_remove(task.cancel)
+
+    async def _async_enable_illuminance(self) -> None:
+        """Best effort: any failure is logged and must never reach HA."""
+        try:
+            await self._device.async_enable_illuminance_sensor()
+        except Exception as err:  # noqa: BLE001
+            LOGGER.debug(
+                "Could not enable illuminance reporting for %s: %s",
+                self._device.name,
+                err,
+            )
+
 
 class BatteryLevelSensor(SHCSensor[SHCBatteryDevice]):  # type: ignore[misc]
     """Granular battery-level diagnostic sensor (ENUM, all 5 BatteryLevelService states)."""
