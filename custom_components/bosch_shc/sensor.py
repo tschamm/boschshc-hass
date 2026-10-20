@@ -1571,7 +1571,11 @@ class IlluminanceLevelSensor(SHCSensor[_IlluminanceDevice]):  # type: ignore[mis
             self._async_enable_illuminance(),
             f"bosch_shc enable illuminance {self._device.id}",
         )
-        self.async_on_remove(task.cancel)
+
+        def _cancel_task() -> None:
+            task.cancel()
+
+        self.async_on_remove(_cancel_task)
 
     async def _async_enable_illuminance(self) -> None:
         """Best effort: any failure is logged and must never reach HA."""

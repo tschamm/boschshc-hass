@@ -2223,9 +2223,8 @@ class TestIlluminanceLevelSensor:
         assert name == "bosch_shc enable illuminance md-1"
         coro.close()
         # cancelled together with the entity so a hung SHC call cannot outlive it
-        s.async_on_remove.assert_called_once_with(
-            s.hass.async_create_background_task.return_value.cancel
-        )
+        s.async_on_remove.call_args[0][0]()
+        s.hass.async_create_background_task.return_value.cancel.assert_called_once_with()
 
 
 def _make_illuminance_test_sensor(illuminance_value):
