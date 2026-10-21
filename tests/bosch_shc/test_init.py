@@ -1184,6 +1184,192 @@ class TestServiceHandlers:
         session_obj.api.get_information.assert_awaited_once()
         assert result == {"info": {"version": "9.0"}}
 
+    def test_rawscan_service_smoke_commands(self, fake_hass, fake_entry, fake_session):
+        """'smoke_system_state' and 'smoke_configuration' dispatch to the api."""
+        session = fake_session
+        session.api.get_smoke_system_state = AsyncMock(
+            return_value={"systemAvailability": {"available": True}}
+        )
+        session.api.get_smoke_configuration = AsyncMock(
+            return_value={"alarmActuatorGroups": []}
+        )
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        handler = handlers[SERVICE_TRIGGER_RAWSCAN]
+
+        for command, expected in (
+            ("smoke_system_state", {"systemAvailability": {"available": True}}),
+            ("smoke_configuration", {"alarmActuatorGroups": []}),
+        ):
+            call_obj = self._make_service_call(**{
+                "title": "",
+                ATTR_COMMAND: command,
+                ATTR_DEVICE_ID: "",
+                "service_id": "",
+            })
+            assert _run(handler(call_obj)) == {command: expected}
+
+    # -- get_measurement_history service --
+
+    def _history_call(self, **overrides):
+        data = {
+            "title": "",
+            ATTR_DEVICE_ID: "hdm:ZigBee:tg1",
+            "reference_time": 1760000000,
+            "interval": 86400,
+            "rounding": 3600,
+            "overlap": 0,
+        }
+        data.update(overrides)
+        return self._make_service_call(**data)
+
+    def test_measurement_history_returns_page(self, fake_hass, fake_entry, fake_session):
+        page = {"times": [1], "history": {"TEMPERATURE": [21.5]}}
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(return_value=page)
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        result = _run(handlers["get_measurement_history"](self._history_call()))
+
+        assert result == {"history": page}
+        session_obj.api.get_measurements_page.assert_awaited_once_with(
+            "hdm:ZigBee:tg1", 1760000000, 86400, 3600, 0
+        )
+
+    def test_measurement_history_defaults_reference_time_to_now(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(return_value={})
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        data = {
+            "title": "",
+            ATTR_DEVICE_ID: "d",
+            "interval": 60,
+            "rounding": 60,
+            "overlap": 0,
+        }
+        _run(handlers["get_measurement_history"](self._make_service_call(**data)))
+
+        reference_time = session_obj.api.get_measurements_page.await_args.args[1]
+        import time
+
+        assert isinstance(reference_time, int)
+        assert abs(reference_time - time.time()) < 60
+
+    def test_measurement_history_invalid_argument(self, fake_hass, fake_entry, fake_session):
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(side_effect=ValueError("bad"))
+
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
+        with pytest.raises(ServiceValidationError) as err:
+            _run(handlers["get_measurement_history"](self._history_call()))
+        assert err.value.translation_key == "measurement_history_invalid"
+        assert err.value.translation_placeholders == {"error": "bad"}
+
+    def test_measurement_history_shc_error(self, fake_hass, fake_entry, fake_session):
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(side_effect=SHCConnectionError("down"))
+
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
+        with pytest.raises(ServiceValidationError) as err:
+            _run(handlers["get_measurement_history"](self._history_call()))
+        assert err.value.translation_key == "measurement_history_failed"
+
+    def test_measurement_history_unreadable_reply_is_not_blamed_on_arguments(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        import json
+
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(
+            side_effect=json.JSONDecodeError("bad", "x", 0)
+        )
+
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
+        with pytest.raises(ServiceValidationError) as err:
+            _run(handlers["get_measurement_history"](self._history_call()))
+        assert err.value.translation_key == "measurement_history_failed"
+
+    def test_rawscan_unreadable_smoke_reply_is_translated(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        import json
+
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_smoke_system_state = AsyncMock(
+            side_effect=json.JSONDecodeError("bad", "x", 0)
+        )
+
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
+        call_obj = self._make_service_call(**{
+            "title": "",
+            ATTR_COMMAND: "smoke_system_state",
+            ATTR_DEVICE_ID: "",
+            "service_id": "",
+        })
+        with pytest.raises(ServiceValidationError) as err:
+            _run(handlers[SERVICE_TRIGGER_RAWSCAN](call_obj))
+        assert err.value.translation_key == "rawscan_command_failed"
+
+    def test_measurement_history_schema_defaults_and_ranges(self):
+        import voluptuous as vol
+
+        from custom_components.bosch_shc import GET_MEASUREMENT_HISTORY_SCHEMA
+
+        parsed = GET_MEASUREMENT_HISTORY_SCHEMA({ATTR_DEVICE_ID: "d"})
+        assert parsed["interval"] == 86400
+        assert parsed["rounding"] == 3600
+        assert parsed["overlap"] == 0
+        assert "reference_time" not in parsed
+        for bad in ({"interval": 0}, {"rounding": 0}, {"overlap": -1}, {"reference_time": -1}):
+            with pytest.raises(vol.Invalid):
+                GET_MEASUREMENT_HISTORY_SCHEMA({ATTR_DEVICE_ID: "d", **bad})
+        with pytest.raises(vol.Invalid):
+            GET_MEASUREMENT_HISTORY_SCHEMA({})
+
+    def test_measurement_history_unexpected_reply_shape(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(return_value=[1, 2])
+
+        handlers, hass, entry, _ = self._setup_with_session(fake_hass, fake_entry, session)
+        with pytest.raises(ServiceValidationError) as err:
+            _run(handlers["get_measurement_history"](self._history_call()))
+        assert err.value.translation_key == "measurement_history_failed"
+
+    def test_measurement_history_title_mismatch(self, fake_hass, fake_entry, fake_session):
+        from homeassistant.exceptions import ServiceValidationError
+
+        session = fake_session
+        session.api.get_measurements_page = AsyncMock(return_value={})
+
+        handlers, hass, entry, session_obj = self._setup_with_session(
+            fake_hass, fake_entry, session
+        )
+        with pytest.raises(ServiceValidationError) as err:
+            _run(handlers["get_measurement_history"](self._history_call(title="Other")))
+        assert err.value.translation_key == "rawscan_entry_not_found"
+        session_obj.api.get_measurements_page.assert_not_awaited()
+
     def test_rawscan_service_filters_by_title(self, fake_hass, fake_entry, fake_session):
         """Title mismatch → ServiceValidationError (no matching entry)."""
         from homeassistant.exceptions import ServiceValidationError

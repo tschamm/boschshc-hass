@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.38 — Smoke system status and measurement history
+
+- **Two new rawscan commands.** `smoke_system_state` and `smoke_configuration`
+  read whether the smoke detection system is available and which alarm actuator
+  groups it has. Use them with the `trigger_rawscan` action.
+- **New action `get_measurement_history`.** It reads one page of stored
+  measurements (for example the temperature or humidity history of a Twinguard)
+  from the controller and returns it in the response. You pick the sensor
+  device, the page length and the rounding step in seconds. Nothing is stored
+  in Home Assistant and nothing polls in the background.
+- The controller endpoints were found in the Bosch app and are not in the
+  official API description. They are **not yet confirmed on real hardware**, so
+  replies may differ from what is described here. Requires `boschshcpy>=0.6.22`.
+
 ## 0.12.37 — Motion Detector brightness no longer freezes
 
 - **Brightness of the Motion Detector stays current (#440).** The controller

@@ -69,3 +69,48 @@ refresh_zigbee_routing:
       description: "Optional. The SHC controller name (hostname). Leave empty to use the first configured SHC. Find it in HA under Settings → Devices & Services → Bosch SHC (the entry title), or in the Bosch Smart Home app under Smart Home Controller settings."
       selector:
         text:
+
+get_measurement_history:
+  fields:
+    title:
+      example: "shc012345"
+      required: false
+      description: "Optional. The SHC controller name (hostname). Leave empty to use the first configured SHC."
+      selector:
+        text:
+    device_id:
+      example: "hdm:ZigBee:000d6"
+      required: true
+      selector:
+        text:
+    reference_time:
+      example: 1760000000
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    interval:
+      default: 86400
+      required: false
+      selector:
+        number:
+          min: 1
+          unit_of_measurement: s
+          mode: box
+    rounding:
+      default: 3600
+      required: false
+      selector:
+        number:
+          min: 1
+          unit_of_measurement: s
+          mode: box
+    overlap:
+      default: 0
+      required: false
+      selector:
+        number:
+          min: 0
+          unit_of_measurement: s
+          mode: box

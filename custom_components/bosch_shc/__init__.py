@@ -67,7 +67,11 @@ from .certificate import parse_certificate
 from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
+    ATTR_INTERVAL,
     ATTR_LAST_TIME_TRIGGERED,
+    ATTR_OVERLAP,
+    ATTR_REFERENCE_TIME,
+    ATTR_ROUNDING,
     ATTR_SERVICE_ID,
     ATTR_TITLE,
     CAMERA_TOOL_DOMAIN,
@@ -91,6 +95,7 @@ from .const import (
     OPT_SSL_SKIP_VERIFY,
     OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
+    SERVICE_GET_MEASUREMENT_HISTORY,
     SERVICE_REFRESH_ZIGBEE_ROUTING,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
@@ -141,6 +146,23 @@ RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
 EXPORT_ZIGBEE_TOPOLOGY_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_TITLE, default=""): cv.string,
+    }
+)
+
+GET_MEASUREMENT_HISTORY_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_TITLE, default=""): cv.string,
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Optional(ATTR_REFERENCE_TIME): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Optional(ATTR_INTERVAL, default=86400): vol.All(
+            vol.Coerce(int), vol.Range(min=1)
+        ),
+        vol.Optional(ATTR_ROUNDING, default=3600): vol.All(
+            vol.Coerce(int), vol.Range(min=1)
+        ),
+        vol.Optional(ATTR_OVERLAP, default=0): vol.All(
+            vol.Coerce(int), vol.Range(min=0)
+        ),
     }
 )
 
@@ -230,6 +252,8 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                     "information": api.get_information,
                     "public_information": api.get_public_information,
                     "intrusion_detection": api.get_domain_intrusion_detection,
+                    "smoke_system_state": api.get_smoke_system_state,
+                    "smoke_configuration": api.get_smoke_configuration,
                 }
                 if command not in commands:
                     raise ServiceValidationError(
@@ -246,6 +270,7 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                     SHCConnectionError,
                     aiohttp.ClientError,
                     asyncio.TimeoutError,
+                    ValueError,
                 ) as err:
                     raise ServiceValidationError(
                         f"Failed to execute rawscan command '{command}': {err}",
@@ -366,6 +391,85 @@ def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
         SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
         export_topology_service_call,
         schema=EXPORT_ZIGBEE_TOPOLOGY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+
+def _register_get_measurement_history_service(hass: HomeAssistant) -> None:
+    """Register the get_measurement_history service if not already registered.
+
+    Read-only: asks the SHC for one page of a sensor's stored measurements
+    (the Bosch app uses this for the Twinguard charts). One request per call,
+    no paging or polling.
+    """
+    if hass.services.has_service(DOMAIN, SERVICE_GET_MEASUREMENT_HISTORY):
+        return
+
+    async def measurement_history_service_call(call: ServiceCall) -> ServiceResponse:
+        """Fetch one page of measurement history from the SHC."""
+        title = call.data[ATTR_TITLE]
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            if not hasattr(config_entry, "runtime_data"):
+                continue
+            if config_entry.state is not ConfigEntryState.LOADED:
+                continue
+            runtime: SHCData = config_entry.runtime_data
+            if title not in ("", runtime.title):
+                continue
+            reference_time = call.data.get(ATTR_REFERENCE_TIME)
+            if reference_time is None:
+                reference_time = int(dt_util.utcnow().timestamp())
+            try:
+                page = await runtime.session.api.get_measurements_page(
+                    call.data[ATTR_DEVICE_ID],
+                    reference_time,
+                    call.data[ATTR_INTERVAL],
+                    call.data[ATTR_ROUNDING],
+                    call.data[ATTR_OVERLAP],
+                )
+            except (json.JSONDecodeError, UnicodeDecodeError) as err:
+                raise ServiceValidationError(
+                    f"The SHC returned an unreadable measurement history reply: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="measurement_history_failed",
+                ) from err
+            except ValueError as err:
+                raise ServiceValidationError(
+                    f"Invalid measurement history request: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="measurement_history_invalid",
+                    translation_placeholders={"error": str(err)},
+                ) from err
+            except (
+                JSONRPCError,
+                SHCException,
+                SHCConnectionError,
+                aiohttp.ClientError,
+                asyncio.TimeoutError,
+            ) as err:
+                raise ServiceValidationError(
+                    f"Failed to read measurement history: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="measurement_history_failed",
+                ) from err
+            if not isinstance(page, dict):
+                raise ServiceValidationError(
+                    "The SHC returned an unexpected measurement history reply.",
+                    translation_domain=DOMAIN,
+                    translation_key="measurement_history_failed",
+                )
+            return {"history": page}
+        raise ServiceValidationError(
+            f"No loaded Bosch SHC entry with title '{title}' found.",
+            translation_domain=DOMAIN,
+            translation_key="rawscan_entry_not_found",
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_MEASUREMENT_HISTORY,
+        measurement_history_service_call,
+        schema=GET_MEASUREMENT_HISTORY_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
 
@@ -999,6 +1103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             _register_rawscan_service(hass)
         _register_export_zigbee_topology_service(hass)
         _register_refresh_zigbee_routing_service(hass)
+        _register_get_measurement_history_service(hass)
 
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except BaseException:
@@ -1108,6 +1213,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY)
         if hass.services.has_service(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING):
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING)
+        if hass.services.has_service(DOMAIN, SERVICE_GET_MEASUREMENT_HISTORY):
+            hass.services.async_remove(DOMAIN, SERVICE_GET_MEASUREMENT_HISTORY)
 
     return unload_ok
 

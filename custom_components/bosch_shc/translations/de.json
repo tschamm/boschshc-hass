@@ -872,6 +872,36 @@
           "description": "Titel des SHC. Leer lassen, um den ersten konfigurierten SHC zu verwenden."
         }
       }
+    },
+    "get_measurement_history": {
+      "name": "Messwert-Historie abrufen",
+      "description": "Liest eine Seite gespeicherter Messwerte (zum Beispiel Temperatur oder Luftfeuchte eines Twinguards) vom SHC und gibt sie in der Antwort zurück. Der SHC-Endpunkt stammt aus der Bosch-App und ist noch nicht an echter Hardware bestätigt. Alle Zeiten sind in Sekunden.",
+      "fields": {
+        "title": {
+          "name": "SHC-Name",
+          "description": "Titel des SHC"
+        },
+        "device_id": {
+          "name": "Geräte-ID",
+          "description": "ID des Sensorgeräts, zum Beispiel eines Twinguards"
+        },
+        "reference_time": {
+          "name": "Bezugszeit",
+          "description": "Epoch-Sekunden, an denen die Seite ausgerichtet wird. Standard ist jetzt."
+        },
+        "interval": {
+          "name": "Intervall",
+          "description": "Länge der Seite in Sekunden. Standard ist ein Tag."
+        },
+        "rounding": {
+          "name": "Rundung",
+          "description": "Rundungsschritt in Sekunden. Standard ist eine Stunde."
+        },
+        "overlap": {
+          "name": "Überlappung",
+          "description": "Überlappung mit der vorherigen Seite in Sekunden. Standard ist 0."
+        }
+      }
     }
   },
   "issues": {
@@ -958,6 +988,12 @@
     },
     "zigbee_topology_write_failed": {
       "message": "Der Zigbee-Topologie-Export konnte nicht unter www/bosch_shc/ gespeichert werden."
+    },
+    "measurement_history_failed": {
+      "message": "Die Messwert-Historie konnte nicht vom SHC gelesen werden."
+    },
+    "measurement_history_invalid": {
+      "message": "Ungültige Anfrage der Messwert-Historie: {error}"
     }
   },
   "device": {

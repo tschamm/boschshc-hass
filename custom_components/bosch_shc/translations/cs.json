@@ -886,6 +886,36 @@
           "description": "Název SHC. Ponechte prázdné, chcete-li použít první nakonfigurovaný SHC."
         }
       }
+    },
+    "get_measurement_history": {
+      "name": "Get measurement history",
+      "description": "Reads one page of stored measurements (for example Twinguard temperature or humidity) from the SHC and returns it in the response. The SHC endpoint was found in the Bosch app and is not yet confirmed on real hardware. All times are in seconds.",
+      "fields": {
+        "title": {
+          "name": "SHC name",
+          "description": "Title of the SHC"
+        },
+        "device_id": {
+          "name": "Device id",
+          "description": "Id of the sensor device, for example a Twinguard"
+        },
+        "reference_time": {
+          "name": "Reference time",
+          "description": "Epoch seconds the page is anchored to. Defaults to now."
+        },
+        "interval": {
+          "name": "Interval",
+          "description": "Length of the page in seconds. Defaults to one day."
+        },
+        "rounding": {
+          "name": "Rounding",
+          "description": "Rounding step in seconds. Defaults to one hour."
+        },
+        "overlap": {
+          "name": "Overlap",
+          "description": "Overlap with the previous page in seconds. Defaults to 0."
+        }
+      }
     }
   },
   "issues": {
@@ -972,6 +1002,12 @@
     },
     "update_not_ready": {
       "message": "Aktualizaci firmwaru pro {name} nelze právě teď aktivovat (aktuální stav: {state})."
+    },
+    "measurement_history_failed": {
+      "message": "Failed to read measurement history from the SHC."
+    },
+    "measurement_history_invalid": {
+      "message": "Invalid measurement history request: {error}"
     }
   }
 }

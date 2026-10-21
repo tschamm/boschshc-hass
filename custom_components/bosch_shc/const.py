@@ -8,6 +8,10 @@ ATTR_EVENT_SUBTYPE = "event_subtype"
 ATTR_LAST_TIME_TRIGGERED = "lastTimeTriggered"
 ATTR_SERVICE_ID = "service_id"
 ATTR_TITLE = "title"
+ATTR_REFERENCE_TIME = "reference_time"
+ATTR_INTERVAL = "interval"
+ATTR_ROUNDING = "rounding"
+ATTR_OVERLAP = "overlap"
 
 CONF_HOSTNAME = "hostname"
 CONF_SHC_CERT = "bosch_shc-cert"
@@ -28,6 +32,7 @@ SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
 SERVICE_EXPORT_ZIGBEE_TOPOLOGY = "export_zigbee_topology"
 SERVICE_REFRESH_ZIGBEE_ROUTING = "refresh_zigbee_routing"
+SERVICE_GET_MEASUREMENT_HISTORY = "get_measurement_history"
 
 # Options flow keys
 OPT_SCENARIOS_AS_BUTTONS = "scenarios_as_buttons"
