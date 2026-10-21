@@ -11,8 +11,11 @@
   device, the page length and the rounding step in seconds. Nothing is stored
   in Home Assistant and nothing polls in the background.
 - The controller endpoints were found in the Bosch app and are not in the
-  official API description. They are **not yet confirmed on real hardware**, so
-  replies may differ from what is described here. Requires `boschshcpy>=0.6.22`.
+  official API description. Checked on a controller without a smoke system: the
+  two smoke commands answer as described, and the history endpoint exists (it
+  answers "No Measurements found" for a sensor without stored measurements). A
+  history page with real data has not been seen yet, so its content may differ
+  from what is described here. Requires `boschshcpy>=0.6.22`.
 
 ## 0.12.37 — Motion Detector brightness no longer freezes
 
