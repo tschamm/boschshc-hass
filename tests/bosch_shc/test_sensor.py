@@ -20,6 +20,8 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from boschshcpy import CommunicationQualityService
 from boschshcpy.exceptions import SHCSessionError
 from boschshcpy.services_impl import (
@@ -2225,6 +2227,18 @@ class TestIlluminanceLevelSensor:
         # cancelled together with the entity so a hung SHC call cannot outlive it
         s.async_on_remove.call_args[0][0]()
         s.hass.async_create_background_task.return_value.cancel.assert_called_once_with()
+
+
+def test_keep_illuminance_enabled_repeats():
+    device = SimpleNamespace(name="MD", async_enable_illuminance_sensor=AsyncMock())
+    sensor = TestIlluminanceLevelSensor._sensor(device)
+    with patch(
+        "custom_components.bosch_shc.sensor.asyncio.sleep",
+        AsyncMock(side_effect=[None, None, asyncio.CancelledError]),
+    ):
+        with pytest.raises(asyncio.CancelledError):
+            asyncio.run(sensor._async_keep_illuminance_enabled())
+    assert device.async_enable_illuminance_sensor.await_count == 3
 
 
 def _make_illuminance_test_sensor(illuminance_value):

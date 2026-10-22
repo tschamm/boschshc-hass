@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
@@ -658,6 +659,7 @@ POWER_YIELD_SENSOR = "power_yield"
 VALVE_TAPPET_SENSOR = "valvetappet"
 VALVE_TAPPET_STATE_SENSOR = "valve_tappet_state"
 ILLUMINANCE_SENSOR = "illuminance"
+ILLUMINANCE_ENABLE_INTERVAL = timedelta(minutes=30)
 BATTERY_LEVEL_SENSOR = "battery_level"
 COMBINED_RATING_SENSOR = "combined_rating"
 AIR_QUALITY_DESCRIPTION_SENSOR = "description"
@@ -1568,7 +1570,7 @@ class IlluminanceLevelSensor(SHCSensor[_IlluminanceDevice]):  # type: ignore[mis
         """
         await super().async_added_to_hass()
         task = self.hass.async_create_background_task(
-            self._async_enable_illuminance(),
+            self._async_keep_illuminance_enabled(),
             f"bosch_shc enable illuminance {self._device.id}",
         )
 
@@ -1576,6 +1578,16 @@ class IlluminanceLevelSensor(SHCSensor[_IlluminanceDevice]):  # type: ignore[mis
             task.cancel()
 
         self.async_on_remove(_cancel_task)
+
+    async def _async_keep_illuminance_enabled(self) -> None:
+        """Re-send the activation periodically (#440).
+
+        The app only sends it while an illuminance automation screen is open,
+        so it may be short-lived; repeating it keeps lux reporting on.
+        """
+        while True:
+            await self._async_enable_illuminance()
+            await asyncio.sleep(ILLUMINANCE_ENABLE_INTERVAL.total_seconds())
 
     async def _async_enable_illuminance(self) -> None:
         """Best effort: any failure is logged and must never reach HA."""

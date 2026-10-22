@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.39 — Motion Detector brightness keeps updating
+
+- **Brightness reporting is switched on again every 30 minutes.** The
+  controller only reports lux while reporting is active, and one activation at
+  startup was not enough on some detectors (#440). The activation request is
+  also sent without a body now, exactly like the Bosch app (needs
+  `boschshcpy` 0.6.23). Not yet confirmed on a real Motion Detector.
+
 ## 0.12.38 — Smoke system status and measurement history
 
 - **Two new rawscan commands.** `smoke_system_state` and `smoke_configuration`
