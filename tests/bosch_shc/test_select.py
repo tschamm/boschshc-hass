@@ -2775,6 +2775,11 @@ class TestActuatorTypeSelect:
         e._device = dev
         assert e.current_option is None
 
+    def test_unsupported_is_not_selectable_and_reads_as_none(self):
+        e = self._make("UNSUPPORTED")
+        assert "unsupported" not in e.options
+        assert e.current_option is None
+
     def test_current_option_none_returns_none(self):
         dev = SimpleNamespace(root_device_id="r", id="d", name="X",
                               actuator_type=None)
@@ -2946,6 +2951,26 @@ class TestOutputModeSelect:
         dev.async_set_output_mode.assert_awaited_once_with(
             SwitchConfiguration.OutputMode.DETACHED_SHORT_PRESS
         )
+
+    def _init_with_modes(self, modes):
+        service = SimpleNamespace(supported_output_modes=modes)
+        dev = SimpleNamespace(root_device_id="r", id="d", name="X",
+                              output_mode=None, _switch_config_service=service)
+        return OutputModeSelect(dev, "entry1")
+
+    def test_options_filtered_by_supported_output_modes(self):
+        e = self._init_with_modes(["ATTACHED", "DETACHED"])
+        assert e.options == ["attached", "detached"]
+
+    def test_options_ignore_unsupported_and_unknown_modes(self):
+        e = self._init_with_modes(["ATTACHED", "UNSUPPORTED", "FOO"])
+        assert e.options == ["attached"]
+
+    def test_options_fall_back_to_all_when_nothing_advertised(self):
+        from custom_components.bosch_shc.select import _OUTPUT_MODE_OPTIONS
+        assert self._init_with_modes([]).options == _OUTPUT_MODE_OPTIONS
+        dev = SimpleNamespace(root_device_id="r", id="d", name="X", output_mode=None)
+        assert OutputModeSelect(dev, "entry1").options == _OUTPUT_MODE_OPTIONS
 
     def test_created_for_relay(self):
         relay = _fake_device(output_mode=True, supports_switch_configuration=True)

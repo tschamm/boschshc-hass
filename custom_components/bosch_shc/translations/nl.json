@@ -390,8 +390,7 @@
         "name": "Actuatortype",
         "state": {
           "normally_closed": "Normaal gesloten",
-          "normally_open": "Normaal geopend",
-          "unsupported": "Niet ondersteund"
+          "normally_open": "Normaal geopend"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Gekoppeld",
           "detached": "Ontkoppeld bij elke toetsdruk",
           "detached_short_press": "Ontkoppeld bij korte toetsdruk",
-          "detached_long_press": "Ontkoppeld bij lange toetsdruk",
-          "unsupported": "Niet ondersteund"
+          "detached_long_press": "Ontkoppeld bij lange toetsdruk"
         }
       },
       "siren_sound_level": {

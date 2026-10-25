@@ -390,8 +390,7 @@
         "name": "Typ aktuátoru",
         "state": {
           "normally_closed": "Normálně zavřený",
-          "normally_open": "Normálně otevřený",
-          "unsupported": "Nepodporováno"
+          "normally_open": "Normálně otevřený"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Spojeno",
           "detached": "Odpojeno při libovolném stisknutí",
           "detached_short_press": "Odpojeno při krátkém stisknutí",
-          "detached_long_press": "Odpojeno při dlouhém stisknutí",
-          "unsupported": "Nepodporováno"
+          "detached_long_press": "Odpojeno při dlouhém stisknutí"
         }
       },
       "siren_sound_level": {

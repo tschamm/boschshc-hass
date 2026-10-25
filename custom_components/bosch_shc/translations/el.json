@@ -390,8 +390,7 @@
         "name": "Τύπος ενεργοποιητή",
         "state": {
           "normally_closed": "Κανονικά κλειστό",
-          "normally_open": "Κανονικά ανοιχτό",
-          "unsupported": "Μη υποστηριζόμενο"
+          "normally_open": "Κανονικά ανοιχτό"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Συζευγμένο",
           "detached": "Αποσυνδεδεμένο με οποιοδήποτε πάτημα",
           "detached_short_press": "Αποσυνδεδεμένο με σύντομο πάτημα",
-          "detached_long_press": "Αποσυνδεδεμένο με παρατεταμένο πάτημα",
-          "unsupported": "Μη υποστηριζόμενο"
+          "detached_long_press": "Αποσυνδεδεμένο με παρατεταμένο πάτημα"
         }
       },
       "siren_sound_level": {

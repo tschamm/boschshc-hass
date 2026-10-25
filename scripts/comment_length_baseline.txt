@@ -67,9 +67,9 @@ custom_components/bosch_shc/number.py:293
 custom_components/bosch_shc/number.py:552
 custom_components/bosch_shc/number.py:661
 custom_components/bosch_shc/select.py:96
-custom_components/bosch_shc/select.py:194
-custom_components/bosch_shc/select.py:764
-custom_components/bosch_shc/select.py:843
+custom_components/bosch_shc/select.py:192
+custom_components/bosch_shc/select.py:762
+custom_components/bosch_shc/select.py:841
 custom_components/bosch_shc/sensor.py:103
 custom_components/bosch_shc/sensor.py:194
 custom_components/bosch_shc/sensor.py:344

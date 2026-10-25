@@ -390,8 +390,7 @@
         "name": "Tipo di attuatore",
         "state": {
           "normally_closed": "Normalmente chiuso",
-          "normally_open": "Normalmente aperto",
-          "unsupported": "Non supportato"
+          "normally_open": "Normalmente aperto"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Accoppiato",
           "detached": "Disaccoppiato a ogni pressione",
           "detached_short_press": "Disaccoppiato con pressione breve",
-          "detached_long_press": "Disaccoppiato con pressione lunga",
-          "unsupported": "Non supportato"
+          "detached_long_press": "Disaccoppiato con pressione lunga"
         }
       },
       "siren_sound_level": {

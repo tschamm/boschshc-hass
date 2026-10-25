@@ -390,8 +390,7 @@
         "name": "Aktuatortyp",
         "state": {
           "normally_closed": "Normalt stängd",
-          "normally_open": "Normalt öppen",
-          "unsupported": "Stöds ej"
+          "normally_open": "Normalt öppen"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Kopplad",
           "detached": "Frikopplad vid alla knapptryckningar",
           "detached_short_press": "Frikopplad vid kort tryckning",
-          "detached_long_press": "Frikopplad vid lång tryckning",
-          "unsupported": "Stöds ej"
+          "detached_long_press": "Frikopplad vid lång tryckning"
         }
       },
       "siren_sound_level": {

@@ -390,8 +390,7 @@
         "name": "Type d'actionneur",
         "state": {
           "normally_closed": "Normalement fermé",
-          "normally_open": "Normalement ouvert",
-          "unsupported": "Non pris en charge"
+          "normally_open": "Normalement ouvert"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Couplé",
           "detached": "Découplé à chaque appui",
           "detached_short_press": "Découplé sur appui court",
-          "detached_long_press": "Découplé sur appui long",
-          "unsupported": "Non pris en charge"
+          "detached_long_press": "Découplé sur appui long"
         }
       },
       "siren_sound_level": {

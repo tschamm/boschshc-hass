@@ -390,8 +390,7 @@
         "name": "Tipo de Atuador",
         "state": {
           "normally_closed": "Normalmente fechado",
-          "normally_open": "Normalmente aberto",
-          "unsupported": "Não suportado"
+          "normally_open": "Normalmente aberto"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Associado",
           "detached": "Dissociado com qualquer pressão de tecla",
           "detached_short_press": "Dissociado com pressão curta",
-          "detached_long_press": "Dissociado com pressão longa",
-          "unsupported": "Não suportado"
+          "detached_long_press": "Dissociado com pressão longa"
         }
       },
       "siren_sound_level": {

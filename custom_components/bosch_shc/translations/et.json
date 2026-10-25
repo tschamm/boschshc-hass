@@ -390,8 +390,7 @@
         "name": "Aktuaatori tüüp",
         "state": {
           "normally_closed": "Normaalselt suletud",
-          "normally_open": "Normaalselt avatud",
-          "unsupported": "Ei toetata"
+          "normally_open": "Normaalselt avatud"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Ühendatud",
           "detached": "Eraldatud igal nupuvajutusel",
           "detached_short_press": "Eraldatud lühikesel vajutusel",
-          "detached_long_press": "Eraldatud pikal vajutusel",
-          "unsupported": "Ei toetata"
+          "detached_long_press": "Eraldatud pikal vajutusel"
         }
       },
       "siren_sound_level": {

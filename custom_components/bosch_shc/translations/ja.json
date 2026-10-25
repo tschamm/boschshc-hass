@@ -390,8 +390,7 @@
         "name": "アクチュエータータイプ",
         "state": {
           "normally_closed": "常時閉",
-          "normally_open": "常時開",
-          "unsupported": "非対応"
+          "normally_open": "常時開"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "連動",
           "detached": "キー操作で切断",
           "detached_short_press": "短押しで切断",
-          "detached_long_press": "長押しで切断",
-          "unsupported": "非対応"
+          "detached_long_press": "長押しで切断"
         }
       },
       "siren_sound_level": {

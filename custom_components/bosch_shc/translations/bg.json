@@ -390,8 +390,7 @@
         "name": "Тип задвижващ елемент",
         "state": {
           "normally_closed": "Нормално затворен",
-          "normally_open": "Нормално отворен",
-          "unsupported": "Неподдържан"
+          "normally_open": "Нормално отворен"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Свързан",
           "detached": "Отделен при всяко натискане",
           "detached_short_press": "Отделен при кратко натискане",
-          "detached_long_press": "Отделен при продължително натискане",
-          "unsupported": "Неподдържан"
+          "detached_long_press": "Отделен при продължително натискане"
         }
       },
       "siren_sound_level": {

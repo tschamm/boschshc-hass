@@ -390,8 +390,7 @@
         "name": "Тип исполнительного устройства",
         "state": {
           "normally_closed": "Нормально закрыт",
-          "normally_open": "Нормально открыт",
-          "unsupported": "Не поддерживается"
+          "normally_open": "Нормально открыт"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Связан",
           "detached": "Отключён при любом нажатии",
           "detached_short_press": "Отключён при коротком нажатии",
-          "detached_long_press": "Отключён при долгом нажатии",
-          "unsupported": "Не поддерживается"
+          "detached_long_press": "Отключён при долгом нажатии"
         }
       },
       "siren_sound_level": {

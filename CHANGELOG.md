@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.40 — Cleaner Actuator Type and Output Mode selects
+
+- **The read-only "Unsupported" choice is gone** from the Actuator Type and
+  Output Mode selects. Devices report it as a state when they have no actuator,
+  but it was never a value the controller accepts; such devices now show
+  "unknown" instead.
+- **Output Mode only offers the modes the device advertises** in its
+  supported-output-modes list. If a device advertises none, all four modes stay
+  selectable as before.
+
 ## 0.12.39 — Motion Detector brightness keeps updating
 
 - **Brightness reporting is switched on again every 30 minutes.** The

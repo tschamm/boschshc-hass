@@ -390,8 +390,7 @@
         "name": "Tipo de actuador",
         "state": {
           "normally_closed": "Normalmente cerrado",
-          "normally_open": "Normalmente abierto",
-          "unsupported": "No compatible"
+          "normally_open": "Normalmente abierto"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Acoplado",
           "detached": "Desacoplado con cualquier pulsación",
           "detached_short_press": "Desacoplado con pulsación corta",
-          "detached_long_press": "Desacoplado con pulsación larga",
-          "unsupported": "No compatible"
+          "detached_long_press": "Desacoplado con pulsación larga"
         }
       },
       "siren_sound_level": {

@@ -390,8 +390,7 @@
         "name": "Aktüatör Türü",
         "state": {
           "normally_closed": "Normalde Kapalı",
-          "normally_open": "Normalde Açık",
-          "unsupported": "Desteklenmiyor"
+          "normally_open": "Normalde Açık"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Bağlantılı",
           "detached": "Herhangi Bir Tuşa Basıldığında Ayrık",
           "detached_short_press": "Kısa Basışta Ayrık",
-          "detached_long_press": "Uzun Basışta Ayrık",
-          "unsupported": "Desteklenmiyor"
+          "detached_long_press": "Uzun Basışta Ayrık"
         }
       },
       "siren_sound_level": {

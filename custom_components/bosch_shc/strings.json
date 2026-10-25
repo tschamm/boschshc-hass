@@ -384,8 +384,7 @@
         "name": "Actuator type",
         "state": {
           "normally_closed": "Normally closed",
-          "normally_open": "Normally open",
-          "unsupported": "Unsupported"
+          "normally_open": "Normally open"
         }
       },
       "output_mode": {
@@ -394,8 +393,7 @@
           "attached": "Coupled",
           "detached": "Disconnected on any key press",
           "detached_short_press": "Disconnected on short press",
-          "detached_long_press": "Disconnected on long press",
-          "unsupported": "Unsupported"
+          "detached_long_press": "Disconnected on long press"
         }
       },
       "smart_sensitivity_security_level": {

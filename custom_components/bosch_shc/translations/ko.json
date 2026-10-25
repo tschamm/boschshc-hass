@@ -390,8 +390,7 @@
         "name": "액추에이터 유형",
         "state": {
           "normally_closed": "상시 닫힘",
-          "normally_open": "상시 열림",
-          "unsupported": "지원되지 않음"
+          "normally_open": "상시 열림"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "연동됨",
           "detached": "아무 버튼이나 누르면 분리",
           "detached_short_press": "짧게 누르면 분리",
-          "detached_long_press": "길게 누르면 분리",
-          "unsupported": "지원되지 않음"
+          "detached_long_press": "길게 누르면 분리"
         }
       },
       "siren_sound_level": {

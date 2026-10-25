@@ -390,8 +390,7 @@
         "name": "Aktuatortype",
         "state": {
           "normally_closed": "Normalt lukket",
-          "normally_open": "Normalt åpen",
-          "unsupported": "Ikke støttet"
+          "normally_open": "Normalt åpen"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Tilkoblet",
           "detached": "Frakoblet ved alle tastetrykk",
           "detached_short_press": "Frakoblet ved kort trykk",
-          "detached_long_press": "Frakoblet ved langt trykk",
-          "unsupported": "Ikke støttet"
+          "detached_long_press": "Frakoblet ved langt trykk"
         }
       },
       "siren_sound_level": {

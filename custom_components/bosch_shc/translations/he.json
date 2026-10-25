@@ -390,8 +390,7 @@
         "name": "סוג מפעיל",
         "state": {
           "normally_closed": "סגור כברירת מחדל",
-          "normally_open": "פתוח כברירת מחדל",
-          "unsupported": "לא נתמך"
+          "normally_open": "פתוח כברירת מחדל"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "מצומד",
           "detached": "מנותק בכל לחיצה",
           "detached_short_press": "מנותק בלחיצה קצרה",
-          "detached_long_press": "מנותק בלחיצה ארוכה",
-          "unsupported": "לא נתמך"
+          "detached_long_press": "מנותק בלחיצה ארוכה"
         }
       },
       "siren_sound_level": {

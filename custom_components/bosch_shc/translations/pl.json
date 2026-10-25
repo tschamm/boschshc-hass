@@ -390,8 +390,7 @@
         "name": "Typ siłownika",
         "state": {
           "normally_closed": "Normalnie zamknięty",
-          "normally_open": "Normalnie otwarty",
-          "unsupported": "Nieobsługiwane"
+          "normally_open": "Normalnie otwarty"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Sprzężony",
           "detached": "Odłączony przy dowolnym naciśnięciu",
           "detached_short_press": "Odłączony przy krótkim naciśnięciu",
-          "detached_long_press": "Odłączony przy długim naciśnięciu",
-          "unsupported": "Nieobsługiwane"
+          "detached_long_press": "Odłączony przy długim naciśnięciu"
         }
       },
       "siren_sound_level": {

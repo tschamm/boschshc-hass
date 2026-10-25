@@ -390,8 +390,7 @@
         "name": "Aktuatora veids",
         "state": {
           "normally_closed": "Parasti aizvērts",
-          "normally_open": "Parasti atvērts",
-          "unsupported": "Netiek atbalstīts"
+          "normally_open": "Parasti atvērts"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Sasaistīts",
           "detached": "Atvienots ar jebkuru pogas nospiedienu",
           "detached_short_press": "Atvienots ar īsu nospiedienu",
-          "detached_long_press": "Atvienots ar garu nospiedienu",
-          "unsupported": "Netiek atbalstīts"
+          "detached_long_press": "Atvienots ar garu nospiedienu"
         }
       },
       "siren_sound_level": {

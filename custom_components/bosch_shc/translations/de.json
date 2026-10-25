@@ -376,8 +376,7 @@
         "name": "Aktor-Typ",
         "state": {
           "normally_closed": "Normalerweise geschlossen",
-          "normally_open": "Stromlos offen",
-          "unsupported": "Nicht unterstützt"
+          "normally_open": "Stromlos offen"
         }
       },
       "output_mode": {
@@ -386,8 +385,7 @@
           "attached": "Gekoppelt",
           "detached": "Getrennt (bei jedem Tastendruck)",
           "detached_short_press": "Getrennt (bei kurzem Tastendruck)",
-          "detached_long_press": "Getrennt (bei langem Tastendruck)",
-          "unsupported": "Nicht unterstützt"
+          "detached_long_press": "Getrennt (bei langem Tastendruck)"
         }
       },
       "siren_sound_level": {

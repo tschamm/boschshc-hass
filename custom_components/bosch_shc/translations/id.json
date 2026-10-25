@@ -390,8 +390,7 @@
         "name": "Jenis Aktuator",
         "state": {
           "normally_closed": "Normalnya Tertutup",
-          "normally_open": "Normalnya Terbuka",
-          "unsupported": "Tidak Didukung"
+          "normally_open": "Normalnya Terbuka"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "Terkopel",
           "detached": "Terputus saat Tombol Ditekan",
           "detached_short_press": "Terputus saat Tekan Singkat",
-          "detached_long_press": "Terputus saat Tekan Lama",
-          "unsupported": "Tidak Didukung"
+          "detached_long_press": "Terputus saat Tekan Lama"
         }
       },
       "siren_sound_level": {

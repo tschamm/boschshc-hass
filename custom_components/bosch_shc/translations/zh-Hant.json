@@ -390,8 +390,7 @@
         "name": "執行器類型",
         "state": {
           "normally_closed": "常閉",
-          "normally_open": "常開",
-          "unsupported": "不支援"
+          "normally_open": "常開"
         }
       },
       "output_mode": {
@@ -400,8 +399,7 @@
           "attached": "連動",
           "detached": "按任意按鍵時中斷",
           "detached_short_press": "短按時中斷",
-          "detached_long_press": "長按時中斷",
-          "unsupported": "不支援"
+          "detached_long_press": "長按時中斷"
         }
       },
       "siren_sound_level": {
