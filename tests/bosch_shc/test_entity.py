@@ -356,9 +356,9 @@ class TestAsyncAddedToHass:
 
         self._run_added(ent)
 
-        assert any(
-            c[0] == "subscribe" and c[1] is ent for c in device_calls
-        ), f"Expected device subscribe call, got: {device_calls}"
+        assert any(c[0] == "subscribe" and c[1] is ent for c in device_calls), (
+            f"Expected device subscribe call, got: {device_calls}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -399,17 +399,16 @@ class TestAsyncWillRemoveFromHass:
     def test_async_will_remove_unsubscribes_service(self):
         ent, svc, _ = self._make_wired_entity()
         self._run_remove(ent)
-        assert any(
-            c[0] == "unsubscribe" and c[1] is ent for c in svc.calls
-        ), f"Expected service unsubscribe, got: {svc.calls}"
+        assert any(c[0] == "unsubscribe" and c[1] is ent for c in svc.calls), (
+            f"Expected service unsubscribe, got: {svc.calls}"
+        )
 
     def test_async_will_remove_unsubscribes_device(self):
         ent, _, device_calls = self._make_wired_entity()
         self._run_remove(ent)
-        assert any(
-            c[0] == "unsubscribe" and c[1] is ent for c in device_calls
-        ), f"Expected device unsubscribe, got: {device_calls}"
-
+        assert any(c[0] == "unsubscribe" and c[1] is ent for c in device_calls), (
+            f"Expected device unsubscribe, got: {device_calls}"
+        )
 
     def test_rename_keeps_unsubscribe_key(self):
         """Callbacks are keyed on the entity object, so an in-place entity_id
@@ -605,3 +604,28 @@ class TestAsyncRemoveStaleEntity:
             )
 
         fake_ent_reg.async_remove.assert_not_called()
+
+
+class TestUnsubscribeOnFailedAdd:
+    """HA skips async_will_remove_from_hass when adding aborts; async_on_remove covers it."""
+
+    def test_async_added_registers_unsubscribe_on_remove(self):
+        svc = FakeService()
+        device_calls = []
+        ent = SHCEntity.__new__(SHCEntity)
+        ent._device = SimpleNamespace(
+            device_services=[svc],
+            subscribe_callback=lambda eid, cb: None,
+            unsubscribe_callback=lambda eid: device_calls.append(("unsubscribe", eid)),
+        )
+        with patch(
+            "homeassistant.helpers.entity.Entity.async_added_to_hass",
+            new=AsyncMock(return_value=None),
+        ):
+            asyncio.run(ent.async_added_to_hass())
+
+        for unsub in ent._on_remove:
+            unsub()
+
+        assert ("unsubscribe", ent) in svc.calls
+        assert ("unsubscribe", ent) in device_calls

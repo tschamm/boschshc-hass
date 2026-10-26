@@ -927,6 +927,9 @@ class FakeKeypadService:
     def register_event(self, key_id: str, callback) -> None:
         self.registered[key_id] = callback
 
+    def unregister_event(self, key_id: str) -> None:
+        self.registered.pop(key_id, None)
+
     def subscribe_callback(self, eid, cb) -> None:
         pass
 
@@ -1605,11 +1608,14 @@ class TestEventLightControlAddedToHass:
             id="Keypad",
             KeyState=[key_state_1, key_state_2],
             register_event=MagicMock(),
+            unregister_event=MagicMock(),
             subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
         )
         non_keypad_service = SimpleNamespace(
             id="LatestMotion",
             subscribe_callback=MagicMock(),
+            unsubscribe_callback=MagicMock(),
         )
 
         dev = _fake_dev("lc1", device_services=[keypad_service, non_keypad_service])
@@ -2147,6 +2153,9 @@ class FakeLatestMotionService:
     def register_event(self, key_id: str, callback) -> None:
         self.registered[key_id] = callback
 
+    def unregister_event(self, key_id: str) -> None:
+        self.registered.pop(key_id, None)
+
     def subscribe_callback(self, eid, cb) -> None:
         pass
 
@@ -2313,6 +2322,21 @@ class TestMotionDetectorEvent:
         lms.registered["hdm:motion:56"]()
         entity._trigger_event.assert_not_called()
 
+    def test_unregister_runs_via_async_on_remove(self):
+        """A failed add skips async_will_remove_from_hass; async_on_remove must still unregister."""
+        lms = FakeLatestMotionService()
+        entity = _make_motion_entity(device_id="hdm:motion:57", extra_services=[lms])
+
+        async def _run_added():
+            with patch(_SHC_ENTITY_ADDED, return_value=None):
+                await MotionDetectorEvent.async_added_to_hass(entity)
+
+        asyncio.run(_run_added())
+        assert "hdm:motion:57" in lms.registered
+        for unsub in entity._on_remove:
+            unsub()
+        assert "hdm:motion:57" not in lms.registered
+
 
 def _make_motion_event_entity():
     entity = MotionDetectorEvent.__new__(MotionDetectorEvent)
@@ -2445,6 +2469,9 @@ class FakeSurveillanceAlarmService:
 
     def register_event(self, key_id: str, callback) -> None:
         self.registered[key_id] = callback
+
+    def unregister_event(self, key_id: str) -> None:
+        self.registered.pop(key_id, None)
 
     def subscribe_callback(self, eid, cb) -> None:
         pass
@@ -2780,6 +2807,9 @@ class FakeAlarmService:
 
     def register_event(self, key_id: str, callback) -> None:
         self.registered[key_id] = callback
+
+    def unregister_event(self, key_id: str) -> None:
+        self.registered.pop(key_id, None)
 
     def subscribe_callback(self, eid, cb) -> None:
         pass

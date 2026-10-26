@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.41 — Heating circuit mode and cleaner teardown
+
+- **Heating circuits now apply the mode sent with a temperature change.**
+  `climate.set_temperature` with an `hvac_mode` (Auto or Heat) switched only
+  the setpoint before; the requested mode was silently ignored.
+- **Entities now unsubscribe from the controller even when adding them fails
+  part-way.** Home Assistant skips the usual remove hook in that case, which
+  could leave a stale callback behind until the next restart.
+
 ## 0.12.40 — Cleaner Actuator Type and Output Mode selects
 
 - **The read-only "Unsupported" choice is gone** from the Actuator Type and

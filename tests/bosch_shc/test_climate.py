@@ -2796,3 +2796,49 @@ def test_target_temperature_reads_setpoint():
 
 def test_current_temperature_is_none():
     assert _hc(OM_HC.MANUAL, True).current_temperature is None
+
+
+class TestHeatingCircuitCombinedHvacMode:
+    def test_set_temperature_applies_hvac_mode(self):
+        device = _make_hc_device(operation_mode=OM_HC.AUTOMATIC)
+        entity = _wrap_hc(device)
+
+        _run(entity.async_set_temperature(
+            **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.HEAT}
+        ))
+
+        device.async_set_operation_mode.assert_awaited_once_with(OM_HC.MANUAL)
+        device.async_set_setpoint_temperature.assert_awaited_with(22.0)
+
+    def test_set_temperature_same_hvac_mode_skips_mode_write(self):
+        device = _make_hc_device(operation_mode=OM_HC.AUTOMATIC)
+        entity = _wrap_hc(device)
+
+        _run(entity.async_set_temperature(
+            **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.AUTO}
+        ))
+
+        device.async_set_operation_mode.assert_not_awaited()
+        device.async_set_setpoint_temperature.assert_awaited_with(22.0)
+
+    def test_set_temperature_unsupported_hvac_mode_is_ignored(self):
+        device = _make_hc_device(operation_mode=OM_HC.AUTOMATIC)
+        entity = _wrap_hc(device)
+
+        _run(entity.async_set_temperature(
+            **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.OFF}
+        ))
+
+        device.async_set_operation_mode.assert_not_awaited()
+        device.async_set_setpoint_temperature.assert_awaited_with(22.0)
+
+    def test_set_temperature_aborts_when_mode_write_fails(self):
+        device = _make_hc_device(operation_mode=OM_HC.AUTOMATIC)
+        device.async_set_operation_mode.side_effect = SHCException("rejected")
+        entity = _wrap_hc(device)
+
+        _run(entity.async_set_temperature(
+            **{ATTR_TEMPERATURE: 22.0, ATTR_HVAC_MODE: HVACMode.HEAT}
+        ))
+
+        device.async_set_setpoint_temperature.assert_not_awaited()

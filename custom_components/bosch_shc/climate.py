@@ -504,7 +504,14 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
         return HVACAction.HEATING if self._device.on else HVACAction.IDLE
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set a new setpoint temperature."""
+        """Set a new setpoint temperature, applying a combined hvac_mode."""
+        hvac_mode = kwargs.get(ATTR_HVAC_MODE)
+        if (
+            hvac_mode in self.hvac_modes
+            and hvac_mode != self.hvac_mode
+            and not await self._write_hvac_mode(hvac_mode)
+        ):
+            return
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
@@ -522,8 +529,12 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
 
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         """Set the operation mode."""
+        await self._write_hvac_mode(hvac_mode)
+
+    async def _write_hvac_mode(self, hvac_mode: str) -> bool:
+        """Write the operation mode; False if unsupported or the write failed."""
         if hvac_mode not in self.hvac_modes:
-            return
+            return False
         mode = (
             HeatingCircuitService.OperationMode.AUTOMATIC
             if hvac_mode == HVACMode.AUTO
@@ -537,3 +548,5 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
                 self._attr_unique_id,
                 err,
             )
+            return False
+        return True

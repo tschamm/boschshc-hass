@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from functools import partial
 from typing import Any
 
 from boschshcpy.device import SHCDevice
@@ -208,7 +209,9 @@ class SHCEntity(Entity):  # type: ignore[misc]
 
         for service in self._device.device_services:
             service.subscribe_callback(self, on_state_changed)
+            self.async_on_remove(partial(service.unsubscribe_callback, self))
         self._device.subscribe_callback(self, update_entity_information)
+        self.async_on_remove(partial(self._device.unsubscribe_callback, self))
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from SHC events."""

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, cast
 
 from boschshcpy import (
@@ -176,6 +177,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         for service in self._device.device_services:
             if service.id == "Keypad":
                 service.register_event(self._key_id, self._event_callback)
+                self.async_on_remove(partial(service.unregister_event, self._key_id))
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister the Keypad event callback."""
@@ -259,6 +261,9 @@ class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
                 # so register under every KeyState — whichever fires resolves.
                 for key_state in keypad.KeyState:
                     keypad.register_event(key_state.value, self._event_callback)
+                    self.async_on_remove(
+                        partial(keypad.unregister_event, key_state.value)
+                    )
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister all Keypad KeyState callbacks."""
@@ -402,6 +407,7 @@ class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         for service in self._device.device_services:
             if service.id == "LatestMotion":
                 service.register_event(self._device.id, self._event_callback)
+                self.async_on_remove(partial(service.unregister_event, self._device.id))
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister the LatestMotion event callback."""
@@ -463,6 +469,7 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
                 service.register_event(self._device.id, self._event_callback)
+                self.async_on_remove(partial(service.unregister_event, self._device.id))
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister the SurveillanceAlarm event callback."""
@@ -528,6 +535,7 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         for service in self._device.device_services:
             if service.id == "Alarm":
                 service.register_event(self._device.id, self._event_callback)
+                self.async_on_remove(partial(service.unregister_event, self._device.id))
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister the Alarm event callback."""
