@@ -717,21 +717,9 @@ def _air_quality_value(device: SHCTwinguard) -> str | None:
 
 
 def _air_quality_attributes(device: SHCTwinguard) -> dict[str, Any]:
-    """Return rating_description (+ comfort_zone when available).
-
-    comfort_zone is read from the AirQualityLevelService via a service-level
-    accessor (_airqualitylevel_service.comfortZone). The SHCTwinguard model
-    does not expose a model-level comfort_zone property, so we access the
-    underlying service directly and fall back to omitting it when unavailable.
-    """
-    comfort_zone = None
-    try:
-        service = getattr(device, "_airqualitylevel_service", None)
-        if service is not None:
-            comfort_zone = service.comfortZone
-    except (AttributeError, KeyError):
-        pass
+    """Return rating_description (+ comfort_zone when the controller reports one)."""
     attrs: dict[str, Any] = {"rating_description": device.description}
+    comfort_zone = device.comfort_zone
     if comfort_zone is not None:
         attrs["comfort_zone"] = comfort_zone
     return attrs

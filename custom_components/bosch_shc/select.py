@@ -979,10 +979,9 @@ class OutputModeSelect(SHCSelect):
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Offer only the modes the device advertises in supportedOutputModes."""
         super().__init__(device, entry_id)
-        service = getattr(device, "_switch_config_service", None)
         advertised = {
             str(getattr(mode, "value", mode)).lower()
-            for mode in (getattr(service, "supported_output_modes", None) or [])
+            for mode in (getattr(device, "supported_output_modes", None) or [])
         }
         filtered = [o for o in _OUTPUT_MODE_OPTIONS if o in advertised]
         if filtered:

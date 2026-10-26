@@ -984,7 +984,9 @@ class TestPuritySensor:
 
 def _air_quality_sensor(combined_rating, description="Good air"):
     s = AirQualitySensor.__new__(AirQualitySensor)
-    s._device = SimpleNamespace(combined_rating=combined_rating, description=description)
+    s._device = SimpleNamespace(
+        combined_rating=combined_rating, description=description, comfort_zone=None
+    )
     return s
 
 
@@ -1021,12 +1023,6 @@ class TestAirQualitySensor:
         assert s.native_value is None
 
 
-class _FakeAirQualityService:
-    """Fake _airqualitylevel_service that returns a concrete comfortZone."""
-    def __init__(self, comfort_zone_value):
-        self.comfortZone = comfort_zone_value
-
-
 class TestAirQualitySensorComfortZoneGuards:
     """AirQualitySensor.extra_state_attributes — comfortZone is not None
     (sensor.py lines 461-462), plus error/absent-service fallback paths.
@@ -1040,9 +1036,8 @@ class TestAirQualitySensorComfortZoneGuards:
 
     def _make_sensor(self, comfort_zone=None, description="Good air"):
         s = AirQualitySensor.__new__(AirQualitySensor)
-        service = _FakeAirQualityService(comfort_zone)
         s._device = SimpleNamespace(
-            _airqualitylevel_service=service,
+            comfort_zone=comfort_zone,
             description=description,
         )
         return s
@@ -1079,28 +1074,6 @@ class TestAirQualitySensorComfortZoneGuards:
         attrs = s.extra_state_attributes
         assert attrs["rating_description"] == "Fresh"
 
-    def test_no_service_attr_no_comfort_zone(self):
-        """If _airqualitylevel_service is absent, comfort_zone key is absent."""
-        s = AirQualitySensor.__new__(AirQualitySensor)
-        s._device = SimpleNamespace(description="Neutral")
-        attrs = s.extra_state_attributes
-        assert "comfort_zone" not in attrs
-        assert attrs["rating_description"] == "Neutral"
-
-    def test_service_comfortzone_attribute_error_falls_back(self):
-        """AttributeError on service.comfortZone → no comfort_zone key (fallback)."""
-        class _BadService:
-            @property
-            def comfortZone(self):
-                raise AttributeError("no such attr")
-
-        s = AirQualitySensor.__new__(AirQualitySensor)
-        s._device = SimpleNamespace(
-            _airqualitylevel_service=_BadService(),
-            description="test",
-        )
-        attrs = s.extra_state_attributes
-        assert "comfort_zone" not in attrs
 
 
 class TestAirQualitySensorComfortZone:
@@ -1110,18 +1083,14 @@ class TestAirQualitySensorComfortZone:
     above for the renamed collision partner.)
     """
 
-    def _make_air_quality_sensor(self, comfort_zone=None, has_service=True):
-        svc = None
-        if has_service:
-            svc = SimpleNamespace(comfortZone=comfort_zone)
-
+    def _make_air_quality_sensor(self, comfort_zone=None):
         dev = SimpleNamespace(
             name="TwinGuard",
             id="hdm:ZigBee:tw1",
             root_device_id="root-tw",
             combined_rating=SimpleNamespace(name="GOOD"),
             description="Air quality is good.",
-            _airqualitylevel_service=svc,
+            comfort_zone=comfort_zone,
         )
         sensor = AirQualitySensor.__new__(AirQualitySensor)
         sensor._device = dev
@@ -1139,12 +1108,6 @@ class TestAirQualitySensorComfortZone:
     def test_comfort_zone_absent_from_attrs_when_none(self):
         """When comfortZone is None (not present in firmware response), omit key."""
         sensor = self._make_air_quality_sensor(comfort_zone=None)
-        attrs = sensor.extra_state_attributes
-        assert "comfort_zone" not in attrs
-
-    def test_comfort_zone_absent_when_no_service(self):
-        """When _airqualitylevel_service is None, omit comfort_zone."""
-        sensor = self._make_air_quality_sensor(has_service=False)
         attrs = sensor.extra_state_attributes
         assert "comfort_zone" not in attrs
 

@@ -2953,9 +2953,8 @@ class TestOutputModeSelect:
         )
 
     def _init_with_modes(self, modes):
-        service = SimpleNamespace(supported_output_modes=modes)
         dev = SimpleNamespace(root_device_id="r", id="d", name="X",
-                              output_mode=None, _switch_config_service=service)
+                              output_mode=None, supported_output_modes=modes)
         return OutputModeSelect(dev, "entry1")
 
     def test_options_filtered_by_supported_output_modes(self):

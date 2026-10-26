@@ -164,17 +164,8 @@ def _heating_circuit_value_fn(
     """
 
     def _fn(device: SHCHeatingCircuit) -> float | None:
-        svc = getattr(device, "_heating_circuit_service", None)
-        if svc is None:
-            return None
-        try:
-            value = getattr(svc, getter_name)
-            return None if value is None else float(value)
-        except (AttributeError, KeyError) as err:
-            LOGGER.warning(
-                "Unable to read %s for %s: %s", getter_name, device.name, err
-            )
-            return None
+        value = getattr(device, getter_name, None)
+        return None if value is None else float(value)
 
     return _fn
 
@@ -221,25 +212,17 @@ def _heating_circuit_max_fn(range_attr: str) -> Callable[[SHCHeatingCircuit], fl
     return _fn
 
 
-def _service_bound_fn[_DeviceT: SHCDevice](
-    service_attr: str, field: str, default: float
+def _bound_fn[_DeviceT: SHCDevice](
+    attr: str, default: float
 ) -> Callable[[_DeviceT], float]:
-    """Return a min/max/step_fn reading a bound off a device's config service.
+    """Return a min/max/step_fn reading a bound off a device property.
 
-    Shared by LedBrightnessNumber/DisplayBrightnessNumber/DisplayOnTimeNumber
-    — each reads its bounds from a *ConfigurationService, falling back to a
-    static default when the service or field is not yet populated. Generic
-    over the caller's concrete device type since it's reused across
-    unrelated device unions (_EnergySavingDevice, _DisplayConfigDevice).
+    Falls back to a static default until the controller has reported the value.
     """
 
     def _fn(device: _DeviceT) -> float:
-        svc = getattr(device, service_attr, None)
-        if svc is not None:
-            val = getattr(svc, field, None)
-            if val is not None:
-                return float(val)
-        return default
+        val = getattr(device, attr, None)
+        return default if val is None else float(val)
 
     return _fn
 
@@ -457,15 +440,9 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
         mode=NumberMode.SLIDER,
         value_fn=_led_brightness_value_fn,
         set_value_fn=_led_brightness_set_value_fn,
-        min_value_fn=_service_bound_fn(
-            "_led_brightness_configuration_service", "min_brightness", 0.0
-        ),
-        max_value_fn=_service_bound_fn(
-            "_led_brightness_configuration_service", "max_brightness", 100.0
-        ),
-        step_fn=_service_bound_fn(
-            "_led_brightness_configuration_service", "step_size", 1.0
-        ),
+        min_value_fn=_bound_fn("led_brightness_min", 0.0),
+        max_value_fn=_bound_fn("led_brightness_max", 100.0),
+        step_fn=_bound_fn("led_brightness_step", 1.0),
     ),
     DISPLAY_BRIGHTNESS: SHCNumberEntityDescription[_DisplayConfigDevice](
         key=DISPLAY_BRIGHTNESS,
@@ -474,15 +451,9 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
         mode=NumberMode.SLIDER,
         value_fn=_display_brightness_value_fn,
         set_value_fn=_display_brightness_set_value_fn,
-        min_value_fn=_service_bound_fn(
-            "_display_config_service", "display_brightness_min", 0.0
-        ),
-        max_value_fn=_service_bound_fn(
-            "_display_config_service", "display_brightness_max", 100.0
-        ),
-        step_fn=_service_bound_fn(
-            "_display_config_service", "display_brightness_step_size", 1.0
-        ),
+        min_value_fn=_bound_fn("display_brightness_min", 0.0),
+        max_value_fn=_bound_fn("display_brightness_max", 100.0),
+        step_fn=_bound_fn("display_brightness_step_size", 1.0),
     ),
     DISPLAY_ON_TIME: SHCNumberEntityDescription[_DisplayConfigDevice](
         key=DISPLAY_ON_TIME,
@@ -492,15 +463,9 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
         mode=NumberMode.BOX,
         value_fn=_display_on_time_value_fn,
         set_value_fn=_display_on_time_set_value_fn,
-        min_value_fn=_service_bound_fn(
-            "_display_config_service", "display_on_time_min", 0.0
-        ),
-        max_value_fn=_service_bound_fn(
-            "_display_config_service", "display_on_time_max", 3600.0
-        ),
-        step_fn=_service_bound_fn(
-            "_display_config_service", "display_on_time_step_size", 1.0
-        ),
+        min_value_fn=_bound_fn("display_on_time_min", 0.0),
+        max_value_fn=_bound_fn("display_on_time_max", 3600.0),
+        step_fn=_bound_fn("display_on_time_step_size", 1.0),
     ),
     DIMMER_MIN: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_MIN,

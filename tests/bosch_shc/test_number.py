@@ -225,8 +225,26 @@ def _heating_circuit_device(eco=18.0, comfort=21.0):
         name="Heating Circuit",
         id="hdm:Rooms:hc1",
         root_device_id="aa:bb:cc:00:00:02",
-        _heating_circuit_service=svc,
+        setpoint_temperature_eco=svc.setpoint_temperature_eco,
+        setpoint_temperature_comfort=svc.setpoint_temperature_comfort,
     )
+
+
+def _led_bounds(svc):
+    """Map a fake LED config service to the device's public bound properties."""
+    if svc is None:
+        return {}
+    return {
+        "led_brightness_min": svc.min_brightness,
+        "led_brightness_max": svc.max_brightness,
+        "led_brightness_step": svc.step_size,
+    }
+
+
+def _display_bounds(svc):
+    """Map a fake display config service to the device's public bound properties."""
+    return {} if svc is None else dict(vars(svc))
+
 
 
 def _make_impulse_number(impulse_length=100):
@@ -1347,30 +1365,15 @@ class TestHeatingCircuitSetpointNativeValue:
             name="HC",
             id="hc1",
             root_device_id="root1",
-            _heating_circuit_service=None,
         )
         num = _entity_for(HEATING_CIRCUIT_SETPOINT_ECO, dev)
         assert num.native_value is None
 
-    def test_returns_none_when_attribute_error(self):
-        """When service raises AttributeError, return None + log warning."""
-
-        class _BadSvc:
-            @property
-            def setpoint_temperature_eco(self_):
-                raise AttributeError("missing")
-
-        dev = SimpleNamespace(
-            name="HC",
-            id="hc1",
-            root_device_id="root1",
-            _heating_circuit_service=_BadSvc(),
-        )
+    def test_returns_none_when_attribute_missing(self):
+        """A device without the public setpoint property reads as unknown."""
+        dev = SimpleNamespace(name="HC", id="hc1", root_device_id="root1")
         num = _entity_for(HEATING_CIRCUIT_SETPOINT_ECO, dev)
-        with patch("custom_components.bosch_shc.number.LOGGER") as mock_log:
-            result = num.native_value
-        assert result is None
-        mock_log.warning.assert_called_once()
+        assert num.native_value is None
 
 
 class TestHeatingCircuitSetpointSetValue:
@@ -1381,9 +1384,7 @@ class TestHeatingCircuitSetpointSetValue:
             name="HC",
             id="hc1",
             root_device_id="root1",
-            _heating_circuit_service=SimpleNamespace(
-                setpoint_temperature_eco=18.0,
-            ),
+            setpoint_temperature_eco=18.0,
             async_set_setpoint_temperature_eco=mock_setter,
         )
         num = _entity_for(HEATING_CIRCUIT_SETPOINT_ECO, dev)
@@ -1398,9 +1399,7 @@ class TestHeatingCircuitSetpointSetValue:
             name="HC",
             id="hc1",
             root_device_id="root1",
-            _heating_circuit_service=SimpleNamespace(
-                setpoint_temperature_eco=18.0,
-            ),
+            setpoint_temperature_eco=18.0,
             async_set_setpoint_temperature_eco=mock_setter,
         )
         num = _entity_for(HEATING_CIRCUIT_SETPOINT_ECO, dev)
@@ -1415,9 +1414,7 @@ class TestHeatingCircuitSetpointSetValue:
             name="HC",
             id="hc1",
             root_device_id="root1",
-            _heating_circuit_service=SimpleNamespace(
-                setpoint_temperature_comfort=21.0,
-            ),
+            setpoint_temperature_comfort=21.0,
             async_set_setpoint_temperature_comfort=mock_setter,
         )
         num = _entity_for(HEATING_CIRCUIT_SETPOINT_COMFORT, dev)
@@ -1431,9 +1428,7 @@ class TestHeatingCircuitSetpointSetValue:
             name="HC",
             id="hc1",
             root_device_id="root1",
-            _heating_circuit_service=SimpleNamespace(
-                setpoint_temperature_eco=18.0,
-            ),
+            setpoint_temperature_eco=18.0,
             # no async_set_setpoint_temperature_eco attribute
         )
         num = _entity_for(HEATING_CIRCUIT_SETPOINT_ECO, dev)
@@ -1474,9 +1469,7 @@ class TestHeatingCircuitSetpointDynamicBounds:
             name="HC",
             id="hc1",
             root_device_id="root1",
-            _heating_circuit_service=SimpleNamespace(
-                setpoint_temperature_eco=18.0,
-            ),
+            setpoint_temperature_eco=18.0,
             async_set_setpoint_temperature_eco=mock_setter,
             eco_temperature_range=(10.0, 22.0),
         )
@@ -1491,7 +1484,12 @@ def _hc_device(device_id):
         setpoint_temperature_eco=18.0,
         setpoint_temperature_comfort=21.0,
     )
-    return _fake_dev(device_id, name="HC", _heating_circuit_service=svc)
+    return _fake_dev(
+        device_id,
+        name="HC",
+        setpoint_temperature_eco=svc.setpoint_temperature_eco,
+        setpoint_temperature_comfort=svc.setpoint_temperature_comfort,
+    )
 
 
 class TestNumberSetupExcludedHeatingCircuit:
@@ -1563,7 +1561,6 @@ class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
             HEATING_CIRCUIT_SETPOINT_ECO,
             SimpleNamespace(
                 name="HC-None",
-                _heating_circuit_service=None,
                 # no async_set_setpoint_temperature_eco attribute
             ),
         )
@@ -1596,9 +1593,7 @@ class TestHeatingCircuitSetpointNumberSetNativeValueNoService:
             HEATING_CIRCUIT_SETPOINT_ECO,
             SimpleNamespace(
                 name="HC-OK",
-                _heating_circuit_service=SimpleNamespace(
-                    setpoint_temperature_eco=None,
-                ),
+                setpoint_temperature_eco=None,
                 async_set_setpoint_temperature_eco=mock_setter,
             ),
         )
@@ -2051,7 +2046,7 @@ class TestLedBrightnessNumber:
             root_device_id="root1",
             id="dev1",
             led_brightness=led_brightness,
-            _led_brightness_configuration_service=svc,
+            **_led_bounds(svc),
         )
         n = _entity_for(LED_BRIGHTNESS, dev)
         n._attr_unique_id = f"{dev.root_device_id}_{dev.id}_led_brightness"
@@ -2099,7 +2094,6 @@ class TestLedBrightnessNumber:
             root_device_id="r",
             id="d",
             led_brightness=50,
-            _led_brightness_configuration_service=None,
             async_set_led_brightness=mock_setter,
         )
         n = _entity_for(LED_BRIGHTNESS, dev)
@@ -2205,7 +2199,7 @@ class TestDisplayBrightnessNumber:
             root_device_id="root1",
             id="dev1",
             display_brightness=display_brightness,
-            _display_config_service=svc,
+            **_display_bounds(svc),
         )
         n = _entity_for(DISPLAY_BRIGHTNESS, dev)
         n._attr_unique_id = f"{dev.root_device_id}_{dev.id}_display_brightness"
@@ -2259,7 +2253,7 @@ class TestDisplayBrightnessNumber:
             root_device_id="r",
             id="d",
             display_brightness=50,
-            _display_config_service=None,
+            
             async_set_display_brightness=mock_setter,
         )
         n = _entity_for(DISPLAY_BRIGHTNESS, dev)
@@ -2379,7 +2373,7 @@ class TestDisplayOnTimeNumber:
             root_device_id="root1",
             id="dev1",
             display_on_time=display_on_time,
-            _display_config_service=svc,
+            **_display_bounds(svc),
         )
         n = _entity_for(DISPLAY_ON_TIME, dev)
         n._attr_unique_id = f"{dev.root_device_id}_{dev.id}_display_on_time"
@@ -2420,7 +2414,7 @@ class TestDisplayOnTimeNumber:
             root_device_id="r",
             id="d",
             display_on_time=60,
-            _display_config_service=None,
+            
             async_set_display_on_time=mock_setter,
         )
         n = _entity_for(DISPLAY_ON_TIME, dev)
@@ -2482,7 +2476,7 @@ class TestDisplayOnTimeNativeStep:
 
     def test_step_from_service(self):
         svc = SimpleNamespace(display_on_time_step_size=30)
-        device = _fake_device_cg(_display_config_service=svc, display_on_time=60.0)
+        device = _fake_device_cg(**_display_bounds(svc), display_on_time=60.0)
         num = _entity_for(DISPLAY_ON_TIME, device)
         assert num.native_step == 30.0
 
@@ -2493,7 +2487,7 @@ class TestDisplayOnTimeNativeStep:
 
     def test_step_fallback_when_attr_none(self):
         svc = SimpleNamespace(display_on_time_step_size=None)
-        device = _fake_device_cg(_display_config_service=svc, display_on_time=60.0)
+        device = _fake_device_cg(**_display_bounds(svc), display_on_time=60.0)
         num = _entity_for(DISPLAY_ON_TIME, device)
         assert num.native_step == 1.0
 

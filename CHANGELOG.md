@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.42 — Uses the library's public accessors
+
+- **Heating circuit Eco and Comfort setpoints, LED and display limits, output
+  modes and the Twinguard comfort zone are now read through public
+  `boschshcpy` properties** instead of its private services. Behaviour is
+  unchanged; it keeps the integration working across library updates.
+- Requires `boschshcpy` 0.6.24 or newer.
+
 ## 0.12.41 — Heating circuit mode and cleaner teardown
 
 - **Heating circuits now apply the mode sent with a temperature change.**
