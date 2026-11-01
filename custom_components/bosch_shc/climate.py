@@ -35,6 +35,7 @@ PARALLEL_UPDATES = 1
 # Only boost and eco remain as presets (override states on top of the hvac_mode axis).
 PRESET_BOOST = "boost"
 PRESET_ECO = "eco"
+PRESET_NONE = "none"
 
 
 async def async_setup_entry(
@@ -196,20 +197,13 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     @property
     def hvac_action(self) -> HVACAction:
         """Return the current HVAC action."""
-        if self.hvac_mode == HVACMode.OFF:
+        hvac_mode = self.hvac_mode
+        if hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
-        if (
-            self._device.supports_cooling
-            and self._device.cooling_mode
-            and self.hvac_mode == HVACMode.COOL
-        ):
-            return HVACAction.COOLING
         # getattr guard: has_demand needs boschshcpy >= 0.2.120; tolerate older libs
-        return (
-            HVACAction.HEATING
-            if getattr(self._device, "has_demand", False)
-            else HVACAction.IDLE
-        )
+        if not getattr(self._device, "has_demand", False):
+            return HVACAction.IDLE
+        return HVACAction.COOLING if hvac_mode == HVACMode.COOL else HVACAction.HEATING
 
     @property
     def preset_mode(self) -> str | None:
@@ -217,7 +211,7 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
 
         boost_mode=True  → "boost"  (only if device supports boost)
         low=True         → "eco"    (only if supports_eco)
-        otherwise        → None
+        otherwise        → "none"
         """
         if self._device.supports_boost_mode and self._device.boost_mode:
             return PRESET_BOOST
@@ -232,7 +226,7 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
         ):
             return PRESET_ECO
 
-        return None
+        return PRESET_NONE
 
     @property
     def preset_modes(self) -> list[str] | None:
@@ -249,7 +243,7 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
         # (supports_eco), not merely when the "low" field is present.
         if getattr(self._device, "supports_eco", False):
             presets.append(PRESET_ECO)
-        return presets or None
+        return [PRESET_NONE, *presets] if presets else None
 
     @property
     def supported_features(self) -> ClimateEntityFeature:
@@ -402,23 +396,26 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode (transient override states only).
 
-        "boost"  → boost_mode=True
-        "eco"    → low=True  (only if device exposes `low`)
+        "none"   → cancel boost and eco
+        "boost"  → boost_mode=True (eco is cancelled first)
+        "eco"    → low=True (boost is cancelled first)
         """
         available = self.preset_modes or []
         if preset_mode not in available:
             return
 
         try:
+            if self._device.supports_boost_mode and self._device.boost_mode:
+                await self._device.async_set_boost_mode(False)
+            if getattr(self._device, "supports_eco", False) and getattr(
+                self._device, "low", False
+            ):
+                await self._device.async_set_low(False)
+
             if preset_mode == PRESET_BOOST:
                 await self._device.async_set_boost_mode(True)
-
             elif preset_mode == PRESET_ECO:
-                if hasattr(self._device, "low"):
-                    # Clear boost first so states don't stack
-                    if self._device.supports_boost_mode and self._device.boost_mode:
-                        await self._device.async_set_boost_mode(False)
-                    await self._device.async_set_low(True)
+                await self._device.async_set_low(True)
 
         except (JSONRPCError, SHCException) as err:
             LOGGER.warning(

@@ -46,6 +46,7 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from custom_components.bosch_shc.climate import (
     PRESET_BOOST,
     PRESET_ECO,
+    PRESET_NONE,
     ClimateControl,
     HeatingCircuit,
     async_setup_entry,
@@ -663,13 +664,13 @@ class TestEcoPreset:
         # #334: AUTOMATIC → HVACMode.AUTO, no preset
         device = _make_device(low=False, boost_mode=False, operation_mode_value="AUTOMATIC")
         entity = _make_entity(device)
-        assert entity.preset_mode is None
+        assert entity.preset_mode == PRESET_NONE
 
     def test_preset_mode_none_when_manual(self):
         # #334: MANUAL → HVACMode.HEAT, no preset
         device = _make_device(low=False, boost_mode=False, operation_mode_value="MANUAL")
         entity = _make_entity(device)
-        assert entity.preset_mode is None
+        assert entity.preset_mode == PRESET_NONE
 
     def test_eco_set_temperature_writes_setpoint(self):
         """P2-B: ECO no longer blocks setpoint writes — setpoint IS written. #196"""
@@ -878,13 +879,13 @@ class TestPresetModeOverrideAxis:
         # #334: AUTOMATIC → HVACMode.AUTO (no preset)
         device = _make_device(operation_mode_value="AUTOMATIC", boost_mode=False, low=False)
         entity = _make_entity(device)
-        assert entity.preset_mode is None
+        assert entity.preset_mode == PRESET_NONE
 
     def test_preset_mode_none_when_manual(self):
         # #334: MANUAL → HVACMode.HEAT (no preset)
         device = _make_device(operation_mode_value="MANUAL", boost_mode=False, low=False)
         entity = _make_entity(device)
-        assert entity.preset_mode is None
+        assert entity.preset_mode == PRESET_NONE
 
     def test_preset_modes_includes_boost_when_supported(self):
         device = _make_device(supports_boost_mode=True)
@@ -1032,8 +1033,15 @@ class TestHvacActionNew:
 
     def test_hvac_action_cooling(self):
         device = _make_device(summer_mode=False, cooling_mode=True, supports_cooling=True)
+        device.has_demand = True
         entity = _make_entity(device)
         assert entity.hvac_action == HVACAction.COOLING
+
+    def test_hvac_action_cooling_mode_without_demand_is_idle(self):
+        device = _make_device(summer_mode=False, cooling_mode=True, supports_cooling=True)
+        device.has_demand = False
+        entity = _make_entity(device)
+        assert entity.hvac_action == HVACAction.IDLE
 
     def test_hvac_action_off_when_summer_mode(self):
         device = _make_device(summer_mode=True)
@@ -1223,14 +1231,13 @@ class TestPresetModesProperty:
         device = _make_cc_device(supports_boost_mode=False)
         entity = _make_cc(device)
         assert entity.preset_modes is not None
-        assert len(entity.preset_modes) == 1
-        assert PRESET_ECO in entity.preset_modes
+        assert entity.preset_modes == [PRESET_NONE, PRESET_ECO]
 
     def test_preset_modes_count_with_boost_and_eco(self):
-        # boost + eco = 2 (device has `low` attr)
+        # none + boost + eco (device has `low` attr)
         device = _make_cc_device(supports_boost_mode=True)
         entity = _make_cc(device)
-        assert len(entity.preset_modes) == 2
+        assert entity.preset_modes == [PRESET_NONE, PRESET_BOOST, PRESET_ECO]
 
     def test_no_auto_or_manual_in_preset_modes(self):
         """#334: 'auto' and 'manual' are never in preset_modes."""
@@ -1776,12 +1783,12 @@ class TestEcoGatedOnSupportsEco:
         device = _make_cc_device(low=True, supports_eco=False, supports_boost_mode=False)
         entity = _make_cc(device)
         assert entity.preset_modes is None
-        assert entity.preset_mode is None
+        assert entity.preset_mode == PRESET_NONE
 
     def test_eco_offered_when_supports_eco_true(self):
         device = _make_cc_device(low=True, supports_eco=True, supports_boost_mode=False)
         entity = _make_cc(device)
-        assert entity.preset_modes == [PRESET_ECO]
+        assert entity.preset_modes == [PRESET_NONE, PRESET_ECO]
         assert entity.preset_mode == PRESET_ECO
 
 
@@ -1845,14 +1852,32 @@ class TestSetPresetModeBoost:
 
         device.async_set_boost_mode.assert_awaited_with(True)
 
-    def test_boost_no_low_write(self):
-        # New impl: boost does not touch low
+    def test_boost_clears_eco_first(self):
         device = _make_cc_device(boost_mode=False, low=True, supports_boost_mode=True)
         entity = _make_cc(device)
 
         _run(entity.async_set_preset_mode(PRESET_BOOST))
 
-        device.async_set_low.assert_not_awaited()
+        device.async_set_low.assert_awaited_once_with(False)
+        device.async_set_boost_mode.assert_awaited_once_with(True)
+
+    @pytest.mark.parametrize(
+        ("boost", "low"), [(True, False), (False, True), (True, True)]
+    )
+    def test_none_preset_cancels_boost_and_eco(self, boost, low):
+        device = _make_cc_device(boost_mode=boost, low=low, supports_boost_mode=True)
+        entity = _make_cc(device)
+
+        _run(entity.async_set_preset_mode(PRESET_NONE))
+
+        if boost:
+            device.async_set_boost_mode.assert_awaited_once_with(False)
+        else:
+            device.async_set_boost_mode.assert_not_awaited()
+        if low:
+            device.async_set_low.assert_awaited_once_with(False)
+        else:
+            device.async_set_low.assert_not_awaited()
 
     def test_invalid_preset_mode_is_ignored(self):
         device = _make_cc_device()
