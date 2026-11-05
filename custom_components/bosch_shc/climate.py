@@ -405,10 +405,16 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
             return
 
         try:
-            if self._device.supports_boost_mode and self._device.boost_mode:
+            if (
+                preset_mode != PRESET_BOOST
+                and self._device.supports_boost_mode
+                and self._device.boost_mode
+            ):
                 await self._device.async_set_boost_mode(False)
-            if getattr(self._device, "supports_eco", False) and getattr(
-                self._device, "low", False
+            if (
+                preset_mode != PRESET_ECO
+                and getattr(self._device, "supports_eco", False)
+                and getattr(self._device, "low", False)
             ):
                 await self._device.async_set_low(False)
 

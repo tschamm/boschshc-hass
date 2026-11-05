@@ -1850,7 +1850,7 @@ class TestSetPresetModeBoost:
 
         _run(entity.async_set_preset_mode(PRESET_BOOST))
 
-        device.async_set_boost_mode.assert_awaited_with(True)
+        device.async_set_boost_mode.assert_awaited_once_with(True)
 
     def test_boost_clears_eco_first(self):
         device = _make_cc_device(boost_mode=False, low=True, supports_boost_mode=True)

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.12.44 — Boost and eco preset switching
+
+- **Selecting boost or eco no longer switches the active mode off and on
+  again.** The room climate control previously cleared both modes before
+  applying the chosen one, so choosing a preset that was already active sent an
+  unnecessary off/on pair to the controller. Only the other mode is cleared now.
+- The integration manifest now reports the released version again (it still
+  said 0.12.42 in the 0.12.43 release).
+
+## 0.12.43 — Room climate cooling action and "none" preset
+
+- **Room climate controls report "cooling" only while cooling is requested.**
+  Previously a demand flag in cooling mode could show as heating or cooling
+  regardless of the selected mode; the action now follows the active mode.
+- **A "none" preset cancels boost and eco.** Selecting it clears both modes;
+  selecting boost or eco clears the other first so they no longer stack. The
+  `preset_mode` attribute is now `none` instead of empty when no override is
+  active.
+
 ## 0.12.42 — Uses the library's public accessors
 
 - **Heating circuit Eco and Comfort setpoints, LED and display limits, output
