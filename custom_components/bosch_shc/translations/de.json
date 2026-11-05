@@ -598,6 +598,30 @@
           "not_supported": "Nicht unterstützt",
           "unknown": "Unbekannt"
         }
+      },
+      "dhw_tank_temperature": {
+        "name": "Warmwasserspeicher-Temperatur"
+      },
+      "dhw_operation_mode": {
+        "name": "Warmwasser-Betriebsart",
+        "state": {
+          "off": "Aus",
+          "low": "Niedrig",
+          "eco": "Eco",
+          "high": "Hoch",
+          "automatic": "Automatisch",
+          "unknown": "Unbekannt"
+        }
+      },
+      "dhw_temperature_level": {
+        "name": "Warmwasser-Temperaturstufe",
+        "state": {
+          "off": "Aus",
+          "low": "Niedrig",
+          "high": "Hoch",
+          "eco": "Eco",
+          "unknown": "Unbekannt"
+        }
       }
     },
     "binary_sensor": {

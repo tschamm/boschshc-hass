@@ -536,6 +536,13 @@ async def async_setup_entry(  # noqa: C901
                     )
                 )
 
+    for dhw in getattr(session.device_helper, "domestic_hot_water", []):
+        if device_excluded(dhw, config_entry.options):
+            continue
+        entities.append(DhwTankTemperatureSensor(dhw, config_entry.entry_id))
+        entities.append(DhwOperationModeSensor(dhw, config_entry.entry_id))
+        entities.append(DhwTemperatureLevelSensor(dhw, config_entry.entry_id))
+
     if diagnostic_enabled:
         for siren in getattr(session.device_helper, "outdoor_sirens", []):
             if device_excluded(siren, config_entry.options):
@@ -665,6 +672,9 @@ COMBINED_RATING_SENSOR = "combined_rating"
 AIR_QUALITY_DESCRIPTION_SENSOR = "description"
 WALK_STATE_SENSOR = "walk_state"
 DETECTION_STATE_SENSOR = "detection_state"
+DHW_TANK_TEMPERATURE_SENSOR = "dhw_tank_temperature"
+DHW_OPERATION_MODE_SENSOR = "dhw_operation_mode"
+DHW_TEMPERATURE_LEVEL_SENSOR = "dhw_temperature_level"
 SIREN_BATTERY_SENSOR = "siren_battery"
 SIREN_MAIN_POWER_SENSOR = "siren_main_power"
 SIREN_SOLAR_CHARGING_SENSOR = "siren_solar_charging"
@@ -861,6 +871,12 @@ def _detection_state_value(device: SHCMotionDetector2) -> str | None:
         return str(val.name.lower())
     except (AttributeError, ValueError):
         return None
+
+
+def _dhw_enum_value(value: Any) -> str | None:
+    """Return a hot-water enum member as its lowercase name."""
+    name = getattr(value, "name", None)
+    return str(name).lower() if name else None
 
 
 def _siren_main_power_value(device: SHCOutdoorSiren) -> str | None:
@@ -1168,6 +1184,34 @@ SENSOR_DESCRIPTIONS: dict[str, SHCSensorEntityDescription[Any]] = {
             "detection_test_unknown",
         ],
         value_fn=_detection_state_value,
+    ),
+    DHW_TANK_TEMPERATURE_SENSOR: SHCSensorEntityDescription[SHCDevice](
+        # Domestic hot water tank temperature (K40 heating, Bosch app 10.36
+        # model; read-only, not yet confirmed against a real device).
+        key=DHW_TANK_TEMPERATURE_SENSOR,
+        translation_key="dhw_tank_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda device: getattr(device, "tank_temperature", None),
+    ),
+    DHW_OPERATION_MODE_SENSOR: SHCSensorEntityDescription[SHCDevice](
+        key=DHW_OPERATION_MODE_SENSOR,
+        translation_key="dhw_operation_mode",
+        device_class=SensorDeviceClass.ENUM,
+        options=["off", "low", "eco", "high", "automatic", "unknown"],
+        value_fn=lambda device: _dhw_enum_value(
+            getattr(device, "operation_mode", None)
+        ),
+    ),
+    DHW_TEMPERATURE_LEVEL_SENSOR: SHCSensorEntityDescription[SHCDevice](
+        key=DHW_TEMPERATURE_LEVEL_SENSOR,
+        translation_key="dhw_temperature_level",
+        device_class=SensorDeviceClass.ENUM,
+        options=["off", "low", "high", "eco", "unknown"],
+        value_fn=lambda device: _dhw_enum_value(
+            getattr(device, "current_temperature_level", None)
+        ),
     ),
     SIREN_BATTERY_SENSOR: SHCSensorEntityDescription[SHCOutdoorSiren](
         # Outdoor Siren battery charge (#120).
@@ -1616,6 +1660,36 @@ class TwinguardDescriptionSensor(SHCSensor[SHCTwinguard]):  # type: ignore[misc]
 
     def __init__(self, device: SHCTwinguard, entry_id: str) -> None:
         """Initialize a Twinguard air-quality description diagnostic sensor."""
+        super().__init__(device, self.entity_description, entry_id)
+
+
+class DhwTankTemperatureSensor(SHCSensor[SHCDevice]):  # type: ignore[misc]
+    """Sensor for the domestic hot water tank temperature."""
+
+    entity_description = SENSOR_DESCRIPTIONS[DHW_TANK_TEMPERATURE_SENSOR]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the hot water tank temperature sensor."""
+        super().__init__(device, self.entity_description, entry_id)
+
+
+class DhwOperationModeSensor(SHCSensor[SHCDevice]):  # type: ignore[misc]
+    """Sensor for the domestic hot water operation mode."""
+
+    entity_description = SENSOR_DESCRIPTIONS[DHW_OPERATION_MODE_SENSOR]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the hot water operation mode sensor."""
+        super().__init__(device, self.entity_description, entry_id)
+
+
+class DhwTemperatureLevelSensor(SHCSensor[SHCDevice]):  # type: ignore[misc]
+    """Sensor for the domestic hot water temperature level."""
+
+    entity_description = SENSOR_DESCRIPTIONS[DHW_TEMPERATURE_LEVEL_SENSOR]
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the hot water temperature level sensor."""
         super().__init__(device, self.entity_description, entry_id)
 
 

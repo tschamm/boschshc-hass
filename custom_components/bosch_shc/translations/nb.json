@@ -612,6 +612,30 @@
           "not_supported": "Ikke støttet",
           "unknown": "Ukjent"
         }
+      },
+      "dhw_tank_temperature": {
+        "name": "Hot water tank temperature"
+      },
+      "dhw_operation_mode": {
+        "name": "Hot water operating mode",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "eco": "Eco",
+          "high": "High",
+          "automatic": "Automatic",
+          "unknown": "Unknown"
+        }
+      },
+      "dhw_temperature_level": {
+        "name": "Hot water temperature level",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High",
+          "eco": "Eco",
+          "unknown": "Unknown"
+        }
       }
     },
     "binary_sensor": {

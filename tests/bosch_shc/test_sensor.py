@@ -67,6 +67,9 @@ from custom_components.bosch_shc.sensor import (
     ReferenceMovingTimeBottomToTopSensor,
     ReferenceMovingTimeTopToBottomSensor,
     SHCOpenWindowsSensor,
+    DhwOperationModeSensor,
+    DhwTankTemperatureSensor,
+    DhwTemperatureLevelSensor,
     SirenBatterySensor,
     SirenMainPowerSensor,
     SirenSolarChargingSensor,
@@ -1868,8 +1871,9 @@ class TestPowerYieldSensor:
 class TestSensorEnergyYieldSmartPlug:
     """sensor.py lines 258-261: EnergyYieldSensor + PowerYieldSensor for smart_plugs."""
 
-    def _run_sensor_setup_smart_plugs(self, smart_plugs, options=None):
+    def _run_sensor_setup_smart_plugs(self, smart_plugs, options=None, dhw=None):
         dh = MagicMock()
+        dh.domestic_hot_water = dhw or []
         dh.thermostats = []
         dh.roomthermostats = []
         dh.wallthermostats = []
@@ -1910,6 +1914,19 @@ class TestSensorEnergyYieldSmartPlug:
         types = [type(e).__name__ for e in collected]
         assert "EnergyYieldSensor" in types
         assert "PowerYieldSensor" in types
+
+
+    def test_domestic_hot_water_sensors_added(self):
+        dhw = _fake_dev("dhw1", serial="DHW1")
+        collected = self._run_sensor_setup_smart_plugs([], dhw=[dhw])
+        types = [type(e).__name__ for e in collected]
+        assert "DhwTankTemperatureSensor" in types
+        assert "DhwOperationModeSensor" in types
+        assert "DhwTemperatureLevelSensor" in types
+
+    def test_no_domestic_hot_water_sensors_without_device(self):
+        collected = self._run_sensor_setup_smart_plugs([])
+        assert not any(type(e).__name__.startswith("Dhw") for e in collected)
 
 
 # ===========================================================================
@@ -4405,3 +4422,45 @@ class TestSHCOpenWindowsSensor:
         s = self._sensor(session=session)
         asyncio.run(s.async_update())  # must not raise
         assert s.native_value == 0
+
+
+# ===========================================================================
+# Domestic hot water sensors (K40, boschshcpy 0.6.26b1; read-only)
+# ===========================================================================
+
+
+def test_dhw_tank_temperature_sensor():
+    s = _new(DhwTankTemperatureSensor)
+    s._device = SimpleNamespace(tank_temperature=48.5)
+    assert s.native_value == 48.5
+    s._device = SimpleNamespace(tank_temperature=None)
+    assert s.native_value is None
+
+
+def test_dhw_enum_sensors_lowercase_the_member_name():
+    mode = _new(DhwOperationModeSensor)
+    mode._device = SimpleNamespace(operation_mode=SimpleNamespace(name="AUTOMATIC"))
+    assert mode.native_value == "automatic"
+    assert mode.native_value in mode.options
+
+    level = _new(DhwTemperatureLevelSensor)
+    level._device = SimpleNamespace(
+        current_temperature_level=SimpleNamespace(name="ECO")
+    )
+    assert level.native_value == "eco"
+    assert level.native_value in level.options
+
+
+def test_dhw_enum_sensors_tolerate_missing_values():
+    mode = _new(DhwOperationModeSensor)
+    mode._device = SimpleNamespace()
+    assert mode.native_value is None
+
+
+def test_dhw_sensor_init_builds_unique_ids():
+    dev = _fake_dev("dhw1")
+    assert "dhw_tank_temperature" in DhwTankTemperatureSensor(dev, "e")._attr_unique_id
+    assert "dhw_operation_mode" in DhwOperationModeSensor(dev, "e")._attr_unique_id
+    assert (
+        "dhw_temperature_level" in DhwTemperatureLevelSensor(dev, "e")._attr_unique_id
+    )

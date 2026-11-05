@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.45 — Domestic hot water sensors (untested)
+
+- **New sensors for a domestic hot water circuit (Bosch K40 heating system):**
+  tank temperature, operating mode and temperature level. They appear only
+  when the controller reports a device with the `DomesticHotWater` service.
+  The fields come from the Bosch app's data model; no real device has been
+  checked yet, so please report what you see with a rawscan.
+- Requires boschshcpy 0.6.26b1 or newer.
+
 ## 0.12.44 — Boost and eco preset switching
 
 - **Selecting boost or eco no longer switches the active mode off and on
