@@ -125,12 +125,12 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
         """Name of the device."""
         return self._room_label
 
-    @property
+    @property  # type: ignore[misc]
     def temperature_unit(self) -> str:
         """Return the temperature unit."""
         return UnitOfTemperature.CELSIUS  # type: ignore[no-any-return]
 
-    @property
+    @property  # type: ignore[misc]
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
         return self._device.temperature  # type: ignore[no-any-return]
@@ -145,7 +145,7 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
         """Return the minimum temperature allowed."""
         return 5.0
 
-    @property
+    @property  # type: ignore[misc]
     def target_temperature(self) -> float | None:
         """Return the target temperature setpoint."""
         return self._device.setpoint_temperature  # type: ignore[no-any-return]
@@ -452,7 +452,7 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
 
     _attr_target_temperature_step = 0.5
     _enable_turn_on_off_backwards_compatibility = False
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS  # type: ignore[misc]
     _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
 
@@ -484,12 +484,12 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._device: SHCHeatingCircuit = device  # type: ignore[assignment]
 
-    @property
+    @property  # type: ignore[misc]
     def current_temperature(self) -> float | None:
         """Heating circuits expose no measured temperature."""
         return None
 
-    @property
+    @property  # type: ignore[misc]
     def target_temperature(self) -> float | None:
         """Return the setpoint temperature."""
         return self._device.setpoint_temperature  # type: ignore[no-any-return]
