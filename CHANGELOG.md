@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.46 — No more temperature deprecation warning on Home Assistant 2026.11
+
+- **The room climate control and heating circuit no longer trigger Home
+  Assistant 2026.11's "deprecated current_temperature" warning.** They now use
+  the new `native_*` temperature properties on 2026.11 and newer, and keep the
+  old ones on older versions. Behaviour is unchanged (#453).
+
 ## 0.12.45 — Domestic hot water sensors (untested)
 
 - **New sensors for a domestic hot water circuit (Bosch K40 heating system):**
