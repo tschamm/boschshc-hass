@@ -127,6 +127,10 @@ PLATFORMS = [
 if hasattr(Platform, "VALVE"):
     PLATFORMS.append(Platform.VALVE)
 
+# Cap on the shutdown stop_polling(): its best-effort RE/unsubscribe otherwise
+# waits the 30 s API timeout on an unreachable SHC, holding up HA's shutdown.
+STOP_POLLING_SHUTDOWN_TIMEOUT = 5
+
 SCENARIO_TRIGGER_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_TITLE, default=""): cv.string,
@@ -1036,7 +1040,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         LOGGER.debug(
             "Bosch SHC '%s': stopping long-poll session (HA shutdown).", entry.title
         )
-        await session.stop_polling()
+        try:
+            async with asyncio.timeout(STOP_POLLING_SHUTDOWN_TIMEOUT):
+                await session.stop_polling()
+        except TimeoutError:
+            LOGGER.debug(
+                "Bosch SHC '%s': long-poll stop still pending after %s s, "
+                "not delaying shutdown further.",
+                entry.title,
+                STOP_POLLING_SHUTDOWN_TIMEOUT,
+            )
 
     LOGGER.debug(
         "Bosch SHC '%s': starting long-poll session (local_push).", entry.title

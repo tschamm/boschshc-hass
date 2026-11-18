@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import pathlib
+import time
 import types
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -2018,6 +2019,47 @@ class TestStopPollingListener:
         _run(stop_polling_fn(MagicMock()))
         # stop_polling should now have been awaited (start + stop)
         assert session.stop_polling.await_count >= 1
+
+    def test_stop_polling_listener_does_not_hold_up_shutdown(
+        self, fake_hass, fake_entry, fake_session
+    ):
+        """An unreachable SHC must not keep HA's shutdown waiting on stop_polling."""
+        from custom_components.bosch_shc.__init__ import async_setup_entry
+
+        session = fake_session
+        hass = fake_hass
+        captured_listeners = {}
+
+        def _capture_listen_once(event_name, fn):
+            captured_listeners[event_name] = fn
+            return MagicMock()
+
+        hass.bus.async_listen_once = _capture_listen_once
+
+        with (
+            patch(PATCH_SESSION, return_value=session),
+            patch(PATCH_DR_GET, return_value=_make_fake_device_registry()),
+            patch(PATCH_PARSE_CERT, return_value=None),
+            patch(PATCH_TRACK_INTERVAL, return_value=MagicMock()),
+        ):
+            _run(async_setup_entry(hass, fake_entry))
+
+        async def _unreachable_shc() -> None:
+            # Stands in for the RE/unsubscribe waiting out its 30 s API timeout.
+            await asyncio.sleep(30)
+
+        session.stop_polling = AsyncMock(side_effect=_unreachable_shc)
+        stop_polling_fn = captured_listeners[EVENT_HOMEASSISTANT_STOP]
+
+        with patch(
+            "custom_components.bosch_shc.__init__.STOP_POLLING_SHUTDOWN_TIMEOUT", 0.05
+        ):
+            started = time.monotonic()
+            _run(stop_polling_fn(MagicMock()))
+            elapsed = time.monotonic() - started
+
+        session.stop_polling.assert_awaited_once()
+        assert elapsed < 5
 
 
 # ---------------------------------------------------------------------------

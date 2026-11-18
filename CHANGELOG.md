@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.47 — Faster Home Assistant shutdown when the controller is unreachable
+
+- **Home Assistant no longer waits 30 seconds on shutdown when the Smart Home
+  Controller can't be reached.** Stopping the long-poll connection is now capped
+  at 5 seconds. A reachable controller is unaffected. Thanks to @paulbuechner
+  (#457).
+
 ## 0.12.46 — No more temperature deprecation warning on Home Assistant 2026.11
 
 - **The room climate control and heating circuit no longer trigger Home
