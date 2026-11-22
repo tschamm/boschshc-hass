@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.48 — Internal maintenance
+
+- **No change in behaviour.** Updated the test and CI dependencies (the test suite
+  now runs against boschshcpy 0.6.27 and Home Assistant 2026.11.1).
+
 ## 0.12.47 — Faster Home Assistant shutdown when the controller is unreachable
 
 - **Home Assistant no longer waits 30 seconds on shutdown when the Smart Home
