@@ -653,6 +653,7 @@ class DimmerPreviewMaxButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "preview_max_brightness"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the dimmer preview-max brightness button."""
@@ -678,6 +679,7 @@ class DimmerPreviewMinButton(SHCEntity, ButtonEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "preview_min_brightness"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the dimmer preview-min brightness button."""

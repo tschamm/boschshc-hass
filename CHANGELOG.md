@@ -12,6 +12,10 @@
   room's climate device**, where Better Thermostat looks for it. With several
   thermostats in one room the offsets stay on their own devices. Entity IDs and
   history are unchanged (#445).
+- **The dimmer "Preview max/min brightness" buttons now start disabled.** They are
+  only used once while calibrating a dimmer. Existing installations keep their
+  buttons as they are; on a new installation, enable them under the device's
+  entities if you need them.
 
 ## 0.12.48 — Internal maintenance
 

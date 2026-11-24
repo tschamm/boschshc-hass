@@ -2388,12 +2388,15 @@ class TestDimmerPreviewButtonInits:
         dev = _fake_dev("dim1")
         btn = DimmerPreviewMaxButton(dev, "entry1")
         assert btn._attr_unique_id == "root1_dim1_dimmer_preview_max"
+        # One-time calibration helper: new installs start with it disabled.
+        assert btn.entity_registry_enabled_default is False
 
     def test_dimmer_preview_min_button_init(self):
         """DimmerPreviewMinButton.__init__ sets unique_id."""
         dev = _fake_dev("dim1")
         btn = DimmerPreviewMinButton(dev, "entry1")
         assert btn._attr_unique_id == "root1_dim1_dimmer_preview_min"
+        assert btn.entity_registry_enabled_default is False
 
     def test_dimmer_preview_max_press_with_service(self):
         """DimmerPreviewMaxButton.async_press calls async_preview_max_brightness."""
