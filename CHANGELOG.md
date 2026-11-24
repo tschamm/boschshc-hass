@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.49 — Room climate "turn on" keeps the previous mode
+
+- **Turning a room climate entity on (for example by voice, "turn on the
+  heating") now resumes the mode it had before it was turned off.** Previously it
+  always came back in Auto and followed the schedule, even if you had set a manual
+  temperature. Only the on/off control mode is switched back, the Auto/Manual choice
+  is left alone (#460). Rooms that were cooling may still come back in heating mode;
+  that needs a rawscan of an off cooling room to confirm.
+
 ## 0.12.48 — Internal maintenance
 
 - **No change in behaviour.** Updated the test and CI dependencies (the test suite

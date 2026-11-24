@@ -442,9 +442,29 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
             )
 
     async def async_turn_on(self) -> None:
-        """Turn the climate device on."""
-        if self.hvac_mode == HVACMode.OFF:
-            await self.async_set_hvac_mode(HVACMode.AUTO)
+        """Turn the climate device on, resuming the previous operation mode.
+
+        OFF only writes hvacControlMode, so switching it back to HEATING (or
+        COOLING) leaves operationMode untouched and the room returns in
+        whichever of Auto/Manual it had before. #460
+        """
+        if self.hvac_mode != HVACMode.OFF:
+            return
+        control_mode = (
+            "COOLING"
+            if self._device.supports_cooling and self._device.cooling_mode
+            else "HEATING"
+        )
+        try:
+            if self.preset_mode == PRESET_ECO:
+                await self._device.async_set_low(False)
+            await self._device.async_set_hvac_control_mode(control_mode)
+        except (JSONRPCError, SHCException) as err:
+            LOGGER.warning(
+                "Failed to turn on device %s: %s",
+                self.device_name,
+                err,
+            )
 
     async def async_turn_off(self) -> None:
         """Turn the climate device off."""

@@ -1057,9 +1057,9 @@ class TestTurnOnOff334:
         device = _make_device(summer_mode=True, supports_cooling=False)
         entity = _make_entity(device)
         _run_async(entity.async_turn_on())
-        # AUTO sets hvac_control_mode=HEATING and operationMode=AUTOMATIC
+        # #460: only hvacControlMode is written, operationMode stays untouched
         device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
-        device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
+        device.async_set_operation_mode.assert_not_awaited()
 
     def test_turn_off_sets_summer_mode(self):
         device = _make_device(summer_mode=False, operation_mode_value="AUTOMATIC")
@@ -1989,7 +1989,43 @@ class TestTurnOnOffClimate:
         entity = _make_cc(device)
         _run(entity.async_turn_on())
         device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
-        device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
+        device.async_set_operation_mode.assert_not_awaited()
+
+    def test_turn_on_resumes_manual_without_touching_operation_mode(self):
+        """#460: a room that was MANUAL before OFF comes back in MANUAL."""
+        device = _make_cc_device(
+            summer_mode=True, operation_mode_value="MANUAL", low=False
+        )
+        entity = _make_cc(device)
+        _run(entity.async_turn_on())
+        device.async_set_hvac_control_mode.assert_awaited_once_with("HEATING")
+        device.async_set_operation_mode.assert_not_awaited()
+
+    def test_turn_on_resumes_cooling(self):
+        """#460: a cooling-capable room whose control mode was COOLING resumes it."""
+        device = _make_cc_device(
+            summer_mode=True, supports_cooling=True, cooling_mode=True
+        )
+        entity = _make_cc(device)
+        _run(entity.async_turn_on())
+        device.async_set_hvac_control_mode.assert_awaited_once_with("COOLING")
+
+    def test_turn_on_clears_eco_before_writing_mode(self):
+        """#460: eco (low) is cleared first so the write is not rejected. #196"""
+        device = _make_cc_device(summer_mode=True, low=True)
+        order = []
+        device.async_set_low.side_effect = lambda *a: order.append("low")
+        device.async_set_hvac_control_mode.side_effect = lambda *a: order.append("mode")
+        entity = _make_cc(device)
+        _run(entity.async_turn_on())
+        assert order == ["low", "mode"]
+
+    def test_turn_on_write_failure_is_logged_not_raised(self):
+        """#460: a failing write must not propagate out of turn_on."""
+        device = _make_cc_device(summer_mode=True)
+        device.async_set_hvac_control_mode.side_effect = SHCException("boom")
+        entity = _make_cc(device)
+        _run(entity.async_turn_on())
 
     def test_turn_on_when_already_auto_is_noop(self):
         """Mode=AUTO (not OFF) → turn_on is a noop."""
@@ -2030,9 +2066,8 @@ class TestTurnOnOff:
 
         _run(entity.async_turn_on())
 
-        # AUTO sets hvac_control_mode=HEATING and operationMode=AUTOMATIC
         device.async_set_hvac_control_mode.assert_awaited_with("HEATING")
-        device.async_set_operation_mode.assert_awaited_with(OM_CC.AUTOMATIC)
+        device.async_set_operation_mode.assert_not_awaited()
 
     def test_turn_on_noop_when_already_on_auto(self):
         """Already in AUTO mode → turn_on is noop."""
