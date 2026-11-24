@@ -30,6 +30,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.bosch_shc.const import (
+    DOMAIN,
     OPT_EXCLUDED_DEVICES,
     OPT_TEMPERATURE_DROP_ENTITIES,
 )
@@ -244,7 +245,6 @@ def _led_bounds(svc):
 def _display_bounds(svc):
     """Map a fake display config service to the device's public bound properties."""
     return {} if svc is None else dict(vars(svc))
-
 
 
 def _make_impulse_number(impulse_length=100):
@@ -864,6 +864,130 @@ class TestNumberSetupEntry:
         assert len(result) == 1
         assert isinstance(result[0], SHCNumber)
         assert result[0].entity_description.key == OFFSET
+
+    @staticmethod
+    def _trv(device_id: str, room_id: str | None) -> SimpleNamespace:
+        dev = _number_device()
+        dev.id = device_id
+        dev.room_id = room_id
+        return dev
+
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "thermostats": [_trv.__func__("trv1", "room1")],
+                "climate_controls": [
+                    SimpleNamespace(
+                        id="rcc1",
+                        room_id="room1",
+                        root_device_id="r",
+                        manufacturer="Bosch",
+                        device_model="ROOM_CLIMATE_CONTROL",
+                    )
+                ],
+            }
+        ],
+        indirect=True,
+    )
+    def test_single_trv_offset_lives_on_climate_device(
+        self, mock_config_entry, mock_session
+    ) -> None:
+        """#445: the only TRV in a room shows its offset on the room climate device."""
+        result = self._run(mock_config_entry, mock_session)
+        offsets = [e for e in result if e.entity_description.key == OFFSET]
+        assert len(offsets) == 1
+        assert offsets[0]._host_device.id == "rcc1"
+        info = offsets[0].device_info
+        assert info["identifiers"] == {(DOMAIN, "rcc1")}
+        assert info["model"] == "ROOM_CLIMATE_CONTROL"
+        assert offsets[0].unique_id == "aa:bb:cc:00:00:04_trv1_offset"
+
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "thermostats": [
+                    _trv.__func__("trv1", "room1"),
+                    _trv.__func__("trv2", None),
+                ],
+                "climate_controls": [
+                    SimpleNamespace(id="rcc1", room_id="room2", root_device_id="r"),
+                    SimpleNamespace(id="rcc2", room_id=None, root_device_id="r"),
+                ],
+            }
+        ],
+        indirect=True,
+    )
+    def test_no_room_match_keeps_own_device(
+        self, mock_config_entry, mock_session
+    ) -> None:
+        """#445: missing or mismatching room ids never move an offset."""
+        result = self._run(mock_config_entry, mock_session)
+        offsets = [e for e in result if e.entity_description.key == OFFSET]
+        assert len(offsets) == 2
+        assert all(e._host_device is None for e in offsets)
+
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "thermostats": [_trv.__func__("trv1", "room1")],
+                "climate_controls": [
+                    SimpleNamespace(
+                        id="rcc1",
+                        room_id="room1",
+                        root_device_id="r",
+                        manufacturer="Bosch",
+                        device_model="ROOM_CLIMATE_CONTROL",
+                    )
+                ],
+            }
+        ],
+        indirect=True,
+    )
+    def test_excluded_climate_device_keeps_offset_on_trv(
+        self, mock_config_entry, mock_session
+    ) -> None:
+        """#445: an excluded climate device must not become a bare ghost host."""
+        with patch(
+            "custom_components.bosch_shc.number.device_excluded",
+            side_effect=lambda dev, _opts: dev.id == "rcc1",
+        ):
+            result = self._run(mock_config_entry, mock_session)
+        offsets = [e for e in result if e.entity_description.key == OFFSET]
+        assert len(offsets) == 1
+        assert offsets[0]._host_device is None
+
+    @pytest.mark.parametrize(
+        "device_buckets",
+        [
+            {
+                "thermostats": [
+                    _trv.__func__("trv1", "room1"),
+                    _trv.__func__("trv2", "room1"),
+                ],
+                "climate_controls": [
+                    SimpleNamespace(
+                        id="rcc1",
+                        room_id="room1",
+                        root_device_id="r",
+                        manufacturer="Bosch",
+                        device_model="ROOM_CLIMATE_CONTROL",
+                    )
+                ],
+            }
+        ],
+        indirect=True,
+    )
+    def test_multiple_trvs_keep_own_device(
+        self, mock_config_entry, mock_session
+    ) -> None:
+        """#445: several TRVs per room would collide, so offsets stay on the TRVs."""
+        result = self._run(mock_config_entry, mock_session)
+        offsets = [e for e in result if e.entity_description.key == OFFSET]
+        assert len(offsets) == 2
+        assert all(e._host_device is None for e in offsets)
 
     @pytest.mark.parametrize(
         "device_buckets", [{"roomthermostats": [_number_device()]}], indirect=True
@@ -1700,7 +1824,10 @@ class TestNumberSetupNewEntities:
         keys = {e.entity_description.key for e in result}
         assert keys == {HEATING_CIRCUIT_SETPOINT_ECO, HEATING_CIRCUIT_SETPOINT_COMFORT}
         translation_keys = {e.entity_description.translation_key for e in result}
-        assert translation_keys == {HEATING_CIRCUIT_SETPOINT_ECO, HEATING_CIRCUIT_SETPOINT_COMFORT}
+        assert translation_keys == {
+            HEATING_CIRCUIT_SETPOINT_ECO,
+            HEATING_CIRCUIT_SETPOINT_COMFORT,
+        }
         assert all(not hasattr(e, "_attr_name") for e in result)
 
     @pytest.mark.parametrize(
@@ -2253,7 +2380,6 @@ class TestDisplayBrightnessNumber:
             root_device_id="r",
             id="d",
             display_brightness=50,
-            
             async_set_display_brightness=mock_setter,
         )
         n = _entity_for(DISPLAY_BRIGHTNESS, dev)
@@ -2414,7 +2540,6 @@ class TestDisplayOnTimeNumber:
             root_device_id="r",
             id="d",
             display_on_time=60,
-            
             async_set_display_on_time=mock_setter,
         )
         n = _entity_for(DISPLAY_ON_TIME, dev)
@@ -2869,9 +2994,7 @@ def test_tds_number_async_update_sets_value():
 
 def test_tds_number_async_update_handles_missing_value():
     room = MagicMock()
-    room.async_temperature_drop_service = AsyncMock(
-        return_value={"configuration": {}}
-    )
+    room.async_temperature_drop_service = AsyncMock(return_value={"configuration": {}})
     num = _make_tds_number(room)
     asyncio.run(num.async_update())
     assert num.native_value is None
@@ -2960,9 +3083,7 @@ class TestTemperatureDropNumberSetupEntry:
         )
         mock_session.device_helper.climate_controls = [climate]
         room = MagicMock()
-        room.async_temperature_drop_service = AsyncMock(
-            side_effect=SHCException("404")
-        )
+        room.async_temperature_drop_service = AsyncMock(side_effect=SHCException("404"))
         mock_session.room = MagicMock(return_value=room)
         entities = asyncio.run(
             run_setup_entry(async_setup_entry, mock_config_entry, mock_session)

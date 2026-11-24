@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections import Counter
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import timedelta
@@ -37,6 +38,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfPower, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -603,6 +605,20 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
+    # #445: a room's only TRV shows its offset on the room climate device;
+    # several TRVs per room would collide, so those stay on their own device.
+    climate_by_room = {
+        c.room_id: c
+        for c in getattr(session.device_helper, "climate_controls", [])
+        if getattr(c, "room_id", None) is not None
+        and not device_excluded(c, config_entry.options)
+    }
+    trvs_per_room = Counter(
+        getattr(t, "room_id", None)
+        for t in session.device_helper.thermostats
+        if getattr(t, "room_id", None) is not None
+    )
+
     for number in (
         list(session.device_helper.thermostats)
         + list(session.device_helper.roomthermostats)
@@ -612,11 +628,20 @@ async def async_setup_entry(  # noqa: C901
             number, "supports_temperature_offset", True
         ):
             continue
+        room_id = getattr(number, "room_id", None)
+        host = (
+            climate_by_room.get(room_id)
+            if number in session.device_helper.thermostats
+            and room_id is not None
+            and trvs_per_room[room_id] == 1
+            else None
+        )
         entities.append(
             SHCNumber(
                 device=number,
                 entity_description=NUMBER_DESCRIPTIONS[OFFSET],
                 entry_id=config_entry.entry_id,
+                host_device=host,
             )
         )
 
@@ -828,10 +853,17 @@ class SHCNumber[_DeviceT: SHCDevice](SHCEntity, NumberEntity):  # type: ignore[m
         device: _DeviceT,
         entity_description: SHCNumberEntityDescription[_DeviceT],
         entry_id: str,
+        host_device: SHCDevice | None = None,
     ) -> None:
-        """Initialize a SHC number."""
+        """Initialize a SHC number.
+
+        host_device: show the entity on this other device instead of its own
+        (a TRV's offset on its room's climate device, #445). The unique_id
+        stays tied to the TRV, so entity_ids and history are unchanged.
+        """
         super().__init__(device, entry_id)
         self._device: _DeviceT = device
+        self._host_device = host_device
         self.entity_description = entity_description
         if entity_description.translation_key is not None:
             # dynamic translation_key; remove the None SHCEntity.__init__ set,
@@ -842,6 +874,19 @@ class SHCNumber[_DeviceT: SHCDevice](SHCEntity, NumberEntity):  # type: ignore[m
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_{entity_description.key}"
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info, or the host device when one is set."""
+        if self._host_device is not None:
+            # Manufacturer/model too, so this never registers a bare device
+            # when it is added before the climate entity.
+            return DeviceInfo(
+                identifiers={(DOMAIN, self._host_device.id)},
+                manufacturer=self._host_device.manufacturer,
+                model=self._host_device.device_model,
+            )
+        return super().device_info
 
     @property
     def native_value(self) -> float | None:

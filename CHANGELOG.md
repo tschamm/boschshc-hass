@@ -8,6 +8,10 @@
   temperature. Only the on/off control mode is switched back, the Auto/Manual choice
   is left alone (#460). Rooms that were cooling may still come back in heating mode;
   that needs a rawscan of an off cooling room to confirm.
+- **A room's only radiator thermostat now shows its temperature offset on the
+  room's climate device**, where Better Thermostat looks for it. With several
+  thermostats in one room the offsets stay on their own devices. Entity IDs and
+  history are unchanged (#445).
 
 ## 0.12.48 — Internal maintenance
 
