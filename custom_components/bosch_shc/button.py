@@ -878,12 +878,12 @@ class SHCIntrusionAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
         runs second and would otherwise silently overwrite the already
         -translated name with the untranslated literal.
         """
-        info = DeviceInfo(
-            identifiers={(DOMAIN, self._device.id)},
-            translation_key="intrusion_system",
-            manufacturer=self._device.manufacturer,
-            model=self._device.device_model,
-        )
+        info: dict[str, Any] = {
+            "identifiers": {(DOMAIN, self._device.id)},
+            "translation_key": "intrusion_system",
+            "manufacturer": self._device.manufacturer,
+            "model": self._device.device_model,
+        }
         root_device_id = self._device.root_device_id
         # boschshcpy may render the hub identifier and a device's
         # root_device_id differently, so the lookup can miss; link only
@@ -901,7 +901,7 @@ class SHCIntrusionAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
                 root_device_id,
                 self._device.id,
             )
-        return info
+        return DeviceInfo(**info)  # type: ignore[typeddict-item]
 
     async def async_press(self) -> None:
         """Mute the active intrusion alarm."""
@@ -931,14 +931,14 @@ class SHCWaterAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info (its own virtual device, linked to the SHC)."""
-        info = DeviceInfo(
-            identifiers={(DOMAIN, self._device.id)},
+        info: dict[str, Any] = {
+            "identifiers": {(DOMAIN, self._device.id)},
             # #393: this device's raw name ("Water Alarm System") is a
             # hardcoded literal in boschshcpy, not user-customizable.
-            translation_key="water_alarm_system",
-            manufacturer=self._device.manufacturer,
-            model=self._device.device_model,
-        )
+            "translation_key": "water_alarm_system",
+            "manufacturer": self._device.manufacturer,
+            "model": self._device.device_model,
+        }
         root_device_id = self._device.root_device_id
         # boschshcpy may render the hub identifier and a device's
         # root_device_id differently, so the lookup can miss; link only
@@ -956,7 +956,7 @@ class SHCWaterAlarmMuteButton(ButtonEntity):  # type: ignore[misc]
                 root_device_id,
                 self._device.id,
             )
-        return info
+        return DeviceInfo(**info)  # type: ignore[typeddict-item]
 
     async def async_press(self) -> None:
         """Mute the active water alarm."""

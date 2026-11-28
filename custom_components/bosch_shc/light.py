@@ -479,12 +479,12 @@ class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
         self._devices = devices
         self._entry_id = entry_id
         self._attr_unique_id = f"room_{room_id}_light_group"
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"room_{room_id}_light")},
-            name=room_name,
-            manufacturer=devices[0].manufacturer,
-            model="Room Light Group",
-        )
+        device_info: dict[str, Any] = {
+            "identifiers": {(DOMAIN, f"room_{room_id}_light")},
+            "name": room_name,
+            "manufacturer": devices[0].manufacturer,
+            "model": "Room Light Group",
+        }
         # boschshcpy may render the hub identifier and a device's
         # root_device_id differently, so the lookup can miss; link only
         # when it resolves instead of raising out of setup (matches
@@ -499,7 +499,7 @@ class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
                 devices[0].root_device_id,
                 room_id,
             )
-        self._attr_device_info = device_info
+        self._attr_device_info = DeviceInfo(**device_info)  # type: ignore[typeddict-item]
 
     @property
     def is_on(self) -> bool | None:

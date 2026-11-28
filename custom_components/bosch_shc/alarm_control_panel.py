@@ -88,14 +88,14 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        info = DeviceInfo(
-            identifiers={(DOMAIN, self._device.id)},
+        info: dict[str, Any] = {
+            "identifiers": {(DOMAIN, self._device.id)},
             # #393: this device's raw name ("Intrusion Detection System") is
             # a hardcoded literal in boschshcpy, not user-customizable.
-            translation_key="intrusion_system",
-            manufacturer=self._device.manufacturer,
-            model=self._device.device_model,
-        )
+            "translation_key": "intrusion_system",
+            "manufacturer": self._device.manufacturer,
+            "model": self._device.device_model,
+        }
         root_device_id = self._device.root_device_id
         # boschshcpy may render the hub identifier and a device's
         # root_device_id differently, so the lookup can miss; link only
@@ -113,7 +113,7 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
                 root_device_id,
                 self._device.id,
             )
-        return info
+        return DeviceInfo(**info)  # type: ignore[typeddict-item]
 
     @property
     def available(self) -> bool:

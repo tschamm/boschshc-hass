@@ -16,6 +16,11 @@
   only used once while calibrating a dimmer. Existing installations keep their
   buttons as they are; on a new installation, enable them under the device's
   entities if you need them.
+- **Fixed a Home Assistant 2026.12 warning about deprecated device info.** The log
+  no longer reports `DeviceInfo['via_device_id']` / `['translation_key']` as
+  deprecated for the Smart Home Controller devices, the intrusion and water alarm
+  mute buttons, the intrusion system and room light groups. No change in behaviour
+  (#461).
 
 ## 0.12.48 — Internal maintenance
 

@@ -233,11 +233,11 @@ class SHCEntity(Entity):  # type: ignore[misc]
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        info = DeviceInfo(
-            identifiers={(DOMAIN, self._device.id)},
-            manufacturer=self._device.manufacturer,
-            model=self._device.device_model,
-        )
+        info: dict[str, Any] = {
+            "identifiers": {(DOMAIN, self._device.id)},
+            "manufacturer": self._device.manufacturer,
+            "model": self._device.device_model,
+        }
         # boschshcpy may render the hub identifier and a device's
         # root_device_id differently, so the lookup can miss; link only
         # when it resolves instead of raising out of setup (matches
@@ -262,7 +262,7 @@ class SHCEntity(Entity):  # type: ignore[misc]
             info["translation_key"] = "energy_manager"
         else:
             info["name"] = self.device_name
-        return info
+        return DeviceInfo(**info)  # type: ignore[typeddict-item]
 
     @property
     def available(self) -> bool:
